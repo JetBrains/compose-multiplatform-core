@@ -38,7 +38,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -194,45 +193,27 @@ public fun DatePicker(
 
     val shortMonthNames = remember { getMonthNames("MMM") }
     val fullMonthNames = remember { getMonthNames("MMMM") }
-    val yearContentDescription by
-        remember(
+    val yearContentDescription = {
+        createDescriptionDatePicker(
             selectedIndex,
             datePickerState.selectedYear,
-        ) {
-            derivedStateOf {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedYear,
-                    yearString,
-                )
-            }
+            yearString,
+        )
+    }
+    val monthContentDescription = {
+        if (selectedIndex == null) {
+            monthString
+        } else {
+            fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
         }
-    val monthContentDescription by
-        remember(
-            selectedIndex,
-            datePickerState.selectedMonth,
-        ) {
-            derivedStateOf {
-                if (selectedIndex == null) {
-                    monthString
-                } else {
-                    fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
-                }
-            }
-        }
-    val dayContentDescription by
-        remember(
+    }
+    val dayContentDescription = {
+        createDescriptionDatePicker(
             selectedIndex,
             datePickerState.selectedDay,
-        ) {
-            derivedStateOf {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedDay,
-                    dayString,
-                )
-            }
-        }
+            dayString,
+        )
+    }
 
     val datePickerOptions = datePickerType.toDatePickerOptions()
     val confirmButtonIndex = datePickerOptions.size
@@ -291,6 +272,7 @@ public fun DatePicker(
                     remember(
                         density.density,
                         LocalConfiguration.current.screenWidthDp,
+                        optionTextStyle
                     ) {
                         val mm =
                             measurer.measure(

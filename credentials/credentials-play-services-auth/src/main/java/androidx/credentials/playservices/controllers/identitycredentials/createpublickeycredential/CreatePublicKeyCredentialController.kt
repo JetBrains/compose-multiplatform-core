@@ -21,12 +21,17 @@ import android.os.CancellationSignal
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManagerCallback
-import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.CreateCredentialInterruptedException
+import androidx.credentials.exceptions.CreateCredentialNoCreateOptionException
 import androidx.credentials.exceptions.CreateCredentialUnknownException
-import androidx.credentials.internal.toJetpackCreateException
+import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderController
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.UnsupportedApiCallException
 import com.google.android.gms.identitycredentials.CreateCredentialRequest
 import com.google.android.gms.identitycredentials.CreateCredentialResponse
 import com.google.android.gms.identitycredentials.IdentityCredentialManager
@@ -68,28 +73,56 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
                     }
                 }
                 if (createCredentialResponse != null) {
-                    try {
-                        val response =
-                            this.convertResponseToCredentialManager(createCredentialResponse)
+                    val response = this.convertResponseToCredentialManager(createCredentialResponse)
+                    if (response is CreatePublicKeyCredentialResponse) {
                         cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                            executor.execute { callback.onResult(response) }
+                            executor.execute { callback.onResult(result = response) }
                         }
-                    } catch (e: Exception) {
-                        cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                            executor.execute {
-                                callback.onError(toJetpackCreateException(e.message.toString()))
-                            }
-                        }
+                        return@addOnSuccessListener
                     }
+                }
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    executor.execute { callback.onError(CreateCredentialUnknownException()) }
                 }
             }
             .addOnFailureListener { e ->
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    executor.execute {
-                        callback.onError(CreateCredentialUnknownException(e.message))
+                    val exception = fromGmsException(e)
+                    executor.execute { callback.onError(exception) }
+                }
+            }
+    }
+
+    fun fromGmsException(e: Throwable): CreateCredentialException {
+        when (e) {
+            is ApiException -> {
+                when (e.statusCode) {
+                    CommonStatusCodes.CANCELED -> {
+                        return CreateCredentialCancellationException(e.message)
+                    }
+                    CommonStatusCodes.API_NOT_CONNECTED -> {
+                        return CreateCredentialUnsupportedException(
+                            "API is not supported: " + e.message
+                        )
+                    }
+                    CommonStatusCodes.INTERNAL_ERROR -> {
+                        return CreateCredentialNoCreateOptionException(e.message)
+                    }
+                    in retryables -> {
+                        return CreateCredentialInterruptedException(e.message)
+                    }
+                    else -> {
+                        return CreateCredentialUnknownException(
+                            "Conditional create failed, failure: ${e.message}"
+                        )
                     }
                 }
             }
+            is UnsupportedApiCallException -> {
+                return CreateCredentialUnsupportedException("API is unsupported")
+            }
+        }
+        return CreateCredentialUnknownException("Conditional create failed, failure: $e")
     }
 
     public override fun convertRequestToPlayServices(
@@ -108,23 +141,10 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
     override fun convertResponseToCredentialManager(
         response: CreateCredentialResponse
     ): androidx.credentials.CreateCredentialResponse {
-        when (response.type) {
-            PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL -> {
-                // TODO(359049355): Replace with
-                // CreatePublicKeyCredentialResponse.createFrom(response.data) after
-                // making this API public
-                try {
-                    val registrationResponseJson =
-                        response.data.getString(
-                            "androidx.credentials.BUNDLE_KEY_REGISTRATION_RESPONSE_JSON"
-                        )
-                    return CreatePublicKeyCredentialResponse(registrationResponseJson!!)
-                } catch (_: NullPointerException) {
-                    throw CreateCredentialUnknownException()
-                }
-            }
-            else -> throw CreateCredentialUnknownException()
-        }
+        return androidx.credentials.CreateCredentialResponse.createFrom(
+            response.type,
+            response.data
+        )
     }
 
     companion object {

@@ -23,13 +23,22 @@ class AppFunctionCompilerOptions
 private constructor(
     /** Indicates whether aggregation should run or not. */
     val aggregateAppFunctions: Boolean,
+    /**
+     * Indicates whether the compiler should generate metadata from schema to support legacy indexer
+     * or not.
+     */
+    val generateMetadataFromSchema: Boolean,
 ) {
     companion object {
         private const val AGGREGATE_APP_FUNCTIONS_OPTION_KEY = "appfunctions:aggregateAppFunctions"
 
+        private const val SUPPORT_LEGACY_INDEXER_OPTION_KEY =
+            "appfunctions:generateMetadataFromSchema"
+
         fun from(options: Map<String, String>): AppFunctionCompilerOptions {
             return AppFunctionCompilerOptions(
-                aggregateAppFunctions = getAggregateAppFunctionsOption(options)
+                aggregateAppFunctions = getAggregateAppFunctionsOption(options),
+                generateMetadataFromSchema = getGenerateMetadataFromSchemaOption(options)
             )
         }
 
@@ -40,6 +49,20 @@ private constructor(
                 throw ProcessingException(
                     message =
                         "Compiler option appfunctions:aggregateAppFunctions should be either " +
+                            "`true` or `false`",
+                    symbol = null,
+                    throwable = e,
+                )
+            }
+        }
+
+        private fun getGenerateMetadataFromSchemaOption(options: Map<String, String>): Boolean {
+            return try {
+                options[SUPPORT_LEGACY_INDEXER_OPTION_KEY]?.toBooleanStrict() ?: false
+            } catch (e: Exception) {
+                throw ProcessingException(
+                    message =
+                        "Compiler option appfunctions:generateMetadataFromSchema should be either " +
                             "`true` or `false`",
                     symbol = null,
                     throwable = e,

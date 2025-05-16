@@ -56,7 +56,7 @@ class TimePickerScreenshotTest {
                     onTimePicked = {},
                     modifier = Modifier.testTag(TEST_TAG),
                     timePickerType = TimePickerType.HoursMinutes24H,
-                    initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23)
+                    initialTime = LocalTime.of(/* hour= */ 0, /* minute= */ 23)
                 )
             }
         )

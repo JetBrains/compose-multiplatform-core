@@ -31,6 +31,8 @@ interface XPropertySpec {
 
     val type: XTypeName
 
+    fun toBuilder(): Builder
+
     interface Builder {
         fun addAnnotation(annotation: XAnnotationSpec): Builder
 

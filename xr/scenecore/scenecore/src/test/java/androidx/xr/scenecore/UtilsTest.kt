@@ -16,10 +16,12 @@
 
 package androidx.xr.scenecore
 
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.runtime.internal.Dimensions as RuntimeDimensions
 import androidx.xr.runtime.internal.Entity as RuntimeEntity
+import androidx.xr.runtime.internal.HitTestResult as RuntimeHitTestResult
 import androidx.xr.runtime.internal.InputEvent as RuntimeInputEvent
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo as RuntimeHitInfo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -29,6 +31,7 @@ import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.ResizeEvent as RuntimeResizeEvent
 import androidx.xr.runtime.internal.SpatialCapabilities as RuntimeSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialVisibility as RuntimeSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RuntimeTextureSampler
 import androidx.xr.runtime.math.Matrix4
@@ -36,6 +39,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.ActivityPose.HitTestFilter
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -634,5 +638,100 @@ class UtilsTest {
         assertThat(rtSampler.compareMode).isEqualTo(RuntimeTextureSampler.NONE)
         assertThat(rtSampler.compareFunc).isEqualTo(RuntimeTextureSampler.LE)
         assertThat(rtSampler.anisotropyLog2).isEqualTo(2)
+    }
+
+    @Test
+    fun runtimeHitTestResultToHitTestResult_convertsCorrectly() {
+        val hitPosition = Vector3(1f, 2f, 3f)
+        val surfaceNormal = Vector3(4f, 5f, 6f)
+        val surfaceType = RuntimeHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE
+        val distance = 7f
+        val rtHitTestResult =
+            RuntimeHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+        val hitTestResult = rtHitTestResult.toHitTestResult()
+        assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)
+        assertThat(hitTestResult.surfaceNormal).isEqualTo(surfaceNormal)
+        assertThat(hitTestResult.surfaceType).isEqualTo(HitTestResult.SurfaceType.PLANE)
+        assertThat(hitTestResult.distance).isEqualTo(distance)
+    }
+
+    @Test
+    fun runtimeHitTestResultWithNullToHitTestResult_convertsCorrectly() {
+        val hitPosition = null
+        val surfaceNormal = null
+        val surfaceType =
+            RuntimeHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_UNKNOWN
+        val distance = Float.POSITIVE_INFINITY
+        val rtHitTestResult =
+            RuntimeHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+
+        val hitTestResult = rtHitTestResult.toHitTestResult()
+
+        assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)
+        assertThat(hitTestResult.surfaceNormal).isEqualTo(surfaceNormal)
+        assertThat(hitTestResult.surfaceType).isEqualTo(HitTestResult.SurfaceType.UNKNOWN)
+        assertThat(hitTestResult.distance).isEqualTo(distance)
+    }
+
+    @Test
+    fun hitTestFilterToRuntimeHitTestFilter_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        0,
+                        HitTestFilter.SELF_SCENE,
+                        HitTestFilter.OTHER_SCENES,
+                        (HitTestFilter.SELF_SCENE or HitTestFilter.OTHER_SCENES),
+                    )
+                    .map { it.toRtHitTestFilter() }
+            )
+            .containsExactly(
+                0,
+                RtHitTestFilter.SELF_SCENE,
+                RtHitTestFilter.OTHER_SCENES,
+                RtHitTestFilter.SELF_SCENE or RtHitTestFilter.OTHER_SCENES,
+            )
+    }
+
+    @Test
+    fun runtimeHitTestSurfaceTypeToHitTestSurfaceType_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        RuntimeHitTestResult.HitTestSurfaceType
+                            .HIT_TEST_RESULT_SURFACE_TYPE_UNKNOWN,
+                        RuntimeHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE,
+                        RuntimeHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_OBJECT,
+                    )
+                    .map { it.toHitTestSurfaceType() }
+            )
+            .containsExactly(
+                HitTestResult.SurfaceType.UNKNOWN,
+                HitTestResult.SurfaceType.PLANE,
+                HitTestResult.SurfaceType.OBJECT,
+            )
+    }
+
+    @Test
+    fun spatialPointerIconToRtSpatialPointerIcon_convertsCorrectly() {
+        assertThat(
+                listOf(SpatialPointerIconNone, SpatialPointerIconCircle).map {
+                    it.toRtSpatialPointerIcon()
+                }
+            )
+            .containsExactly(RtSpatialPointerIcon.TYPE_NONE, RtSpatialPointerIcon.TYPE_CIRCLE)
+            .inOrder()
+    }
+
+    @Test
+    fun rtSpatialPointerIconToInt_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        RtSpatialPointerIcon.TYPE_DEFAULT,
+                        RtSpatialPointerIcon.TYPE_NONE,
+                        RtSpatialPointerIcon.TYPE_CIRCLE,
+                    )
+                    .map { it.toSpatialPointerIcon() }
+            )
+            .containsExactly(null, SpatialPointerIconNone, SpatialPointerIconCircle)
+            .inOrder()
     }
 }

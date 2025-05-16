@@ -22,7 +22,6 @@ import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -80,7 +79,6 @@ class VideoEncoderConfigVideoProfileResolverTest(
         )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val defaultVideoSpec = VideoSpec.builder().build()
     private val timebase = Timebase.UPTIME
 
@@ -90,7 +88,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
 
     @Before
     fun setUp() {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Skip for b/264902324
         assumeFalse(

@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Binder;
@@ -23,6 +24,8 @@ import android.util.Log;
 import android.view.SurfaceControlViewHost;
 import android.view.SurfaceControlViewHost.SurfacePackage;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.FrameLayout;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
@@ -45,6 +48,7 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * <p>This entity shows 2D view on spatial panel.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
     private static final String TAG = "PanelEntity";
     private final SurfaceControlViewHost mSurfaceControlViewHost;
@@ -59,10 +63,12 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
             @NonNull String name,
             ScheduledExecutorService executor) {
         super(node, extensions, entityManager, executor);
+
+        View reparentedView = maybeReparentView(view, name, context);
         mSurfaceControlViewHost =
                 new SurfaceControlViewHost(
                         context, Objects.requireNonNull(context.getDisplay()), new Binder());
-        setupSurfaceControlViewHostAndCornerRadius(view, surfaceDimensionsPx, name);
+        setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name);
         setDefaultOnBackInvokedCallback(view);
     }
 
@@ -81,11 +87,51 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
                 new PixelDimensions(
                         (int) (surfaceDimensions.width * unscaledPixelDensity),
                         (int) (surfaceDimensions.height * unscaledPixelDensity));
+
+        View reparentedView = maybeReparentView(view, name, context);
         mSurfaceControlViewHost =
                 new SurfaceControlViewHost(
                         context, Objects.requireNonNull(context.getDisplay()), new Binder());
-        setupSurfaceControlViewHostAndCornerRadius(view, surfaceDimensionsPx, name);
+        setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name);
         setDefaultOnBackInvokedCallback(view);
+    }
+
+    // Adds a FrameLayout as a parent of the contentView if it doesn't already have one. Adding the
+    // FrameLayout ensures compatibility with LayoutInspector without visually impacting the layout
+    // of
+    // the view.
+    private static View maybeReparentView(View contentView, String name, Context context) {
+        if (contentView instanceof FrameLayout) {
+            return contentView;
+        }
+        if (contentView.getParent() != null) {
+            Log.w(
+                    TAG,
+                    "Panel "
+                            + name
+                            + " already has a parent. LayoutInspector may not work properly for"
+                            + " this panel.");
+            return contentView;
+        }
+        try {
+            FrameLayout frameLayout = new FrameLayout(context);
+            frameLayout.setLayoutParams(
+                    new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+            frameLayout.addView(contentView);
+            return frameLayout;
+        } catch (Throwable t) {
+            // This error only impacts the effectiveness of LayoutInspector, so we can just log it
+            // and
+            // return the original contentView rather than rethrowing.
+            Log.e(
+                    TAG,
+                    "Could not set a new parent View for Panel "
+                            + name
+                            + ". LayoutInspector may not work properly for this panel.",
+                    t);
+        }
+
+        return contentView;
     }
 
     // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi

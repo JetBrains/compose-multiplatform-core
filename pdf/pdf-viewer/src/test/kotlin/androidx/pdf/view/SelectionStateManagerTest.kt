@@ -27,6 +27,7 @@ import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,6 +47,7 @@ import org.robolectric.RobolectricTestRunner
 class SelectionStateManagerTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
+    private val errorFlow = MutableSharedFlow<Throwable>()
 
     // TODO(b/385407478) replace with FakePdfDocument when we're able to share it more broadly
     private val pdfDocument =
@@ -82,7 +84,8 @@ class SelectionStateManagerTest {
             SelectionStateManager(
                 pdfDocument,
                 testScope,
-                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow
             )
     }
 

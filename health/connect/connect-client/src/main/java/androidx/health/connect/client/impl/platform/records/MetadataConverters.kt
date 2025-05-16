@@ -43,8 +43,7 @@ internal fun PlatformDevice.toSdkDevice(): Device? {
     if (this == PlatformDeviceBuilder().build()) {
         return null
     }
-    @Suppress("WrongConstant") // Platform intdef and jetpack intdef match in value.
-    return Device(manufacturer = manufacturer, model = model, type = type)
+    return Device(manufacturer = manufacturer, model = model, type = type.toSdkDevice())
 }
 
 internal fun PlatformDataOrigin.toSdkDataOrigin(): DataOrigin {

@@ -44,7 +44,9 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.scene
 
 class ModeChangeApp : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +70,11 @@ class ModeChangeApp : ComponentActivity() {
                 }
                 SpatialPanel(modifier = SubspaceModifier.width(600.dp).height(400.dp)) {
                     PanelContent("FullSpace Mode", "Transition to HomeSpace Mode", true) {
-                        Session.create(this@ModeChangeApp).spatialEnvironment.requestHomeSpaceMode()
+                        (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
+                            .session
+                            .scene
+                            .spatialEnvironment
+                            .requestHomeSpaceMode()
                     }
                 }
                 SpatialPanel(modifier = SubspaceModifier.width(300.dp).height(300.dp)) {
@@ -81,7 +87,11 @@ class ModeChangeApp : ComponentActivity() {
     @Composable
     private fun HomeSpaceModeContent() {
         PanelContent("HomeSpace Mode", "Transition to FullSpace Mode", true) {
-            Session.create(this@ModeChangeApp).spatialEnvironment.requestFullSpaceMode()
+            (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
+                .session
+                .scene
+                .spatialEnvironment
+                .requestFullSpaceMode()
         }
     }
 

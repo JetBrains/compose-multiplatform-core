@@ -109,6 +109,9 @@ public abstract class PasswordDialog extends DialogFragment {
                 new OnShowListener() {
                     @Override
                     public void onShow(DialogInterface useless) {
+                        passwordField.requestFocus();
+                        showSoftKeyboard(passwordField);
+
                         // TODO: Track password prompt displayed.
                         final Button open = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                         final Button exit = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
@@ -158,9 +161,9 @@ public abstract class PasswordDialog extends DialogFragment {
 
     private void setupPasswordField(final EditText passwordField) {
         passwordField.setFocusable(true);
+        passwordField.setFocusableInTouchMode(true);
         passwordField.requestFocus();
-        // Do not expand the text field to full screen when in landscape.
-        passwordField.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        passwordField.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         // Set the open button text with title case.
         String openText = getResources().getString(R.string.button_open);

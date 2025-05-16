@@ -29,8 +29,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
+import androidx.xr.scenecore.scene
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,8 +77,8 @@ class SpatialElevationTest {
     fun spatialElevation_homeSpaceMode_doesNotElevate() {
         composeTestRule.setContent {
             TestSetup {
-                this.spatialEnvironment.requestHomeSpaceMode()
                 Parent { SpatialElevation { Text("Main Content") } }
+                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
         }
 
@@ -87,7 +89,7 @@ class SpatialElevationTest {
     fun spatialElevation_fullSpaceMode_doesElevate() {
         composeTestRule.setContent {
             TestSetup {
-                this.spatialEnvironment.requestFullSpaceMode()
+                LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
                 Parent { SpatialElevation { Text("Main Content") } }
             }
         }

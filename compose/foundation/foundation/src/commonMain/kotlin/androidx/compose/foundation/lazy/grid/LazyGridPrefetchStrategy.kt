@@ -265,7 +265,7 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
  * information about a prefetched item.
  */
 @ExperimentalFoundationApi
-interface LazyGridPrefetchResultScope {
+sealed interface LazyGridPrefetchResultScope {
 
     /** The number of items in this prefetched line. */
     val lineItemCount: Int

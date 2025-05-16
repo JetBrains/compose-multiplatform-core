@@ -18,6 +18,7 @@ package androidx.xr.scenecore.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -56,6 +57,7 @@ import java.util.concurrent.ScheduledFuture;
  *
  * <p>This entity creates trackable anchors in space.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings("BanSynchronizedMethods")
 class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     public static final Duration ANCHOR_SEARCH_DELAY = Duration.ofMillis(500);

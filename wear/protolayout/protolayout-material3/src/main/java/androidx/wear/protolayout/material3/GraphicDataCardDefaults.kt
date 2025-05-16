@@ -196,18 +196,19 @@ public object GraphicDataCardDefaults {
                             .setHeight(expand())
                             .addContent(
                                 withStyle(
-                                        defaultIconStyle =
-                                            IconStyle(
-                                                width = expand(),
-                                                height =
-                                                    ProportionalDimensionProp.Builder()
-                                                        .setAspectRatioHeight(1)
-                                                        .setAspectRatioWidth(1)
-                                                        .build(),
-                                                tintColor = defaultIconStyle.tintColor
-                                            )
-                                    )
-                                    .iconContent()
+                                    defaultIconStyle =
+                                        IconStyle(
+                                            width = expand(),
+                                            height =
+                                                ProportionalDimensionProp.Builder()
+                                                    .setAspectRatioHeight(1)
+                                                    .setAspectRatioWidth(1)
+                                                    .build(),
+                                            tintColor = defaultIconStyle.tintColor
+                                        )
+                                ) {
+                                    iconContent()
+                                }
                             )
                             .build()
                     )
@@ -225,14 +226,15 @@ public object GraphicDataCardDefaults {
                             }))
                         .dp
                 withStyle(
-                        defaultIconStyle =
-                            IconStyle(
-                                width = iconSize,
-                                height = iconSize,
-                                tintColor = defaultIconStyle.tintColor
-                            )
-                    )
-                    .iconContent()
+                    defaultIconStyle =
+                        IconStyle(
+                            width = iconSize,
+                            height = iconSize,
+                            tintColor = defaultIconStyle.tintColor
+                        )
+                ) {
+                    iconContent()
+                }
             }
 
         return Box.Builder()

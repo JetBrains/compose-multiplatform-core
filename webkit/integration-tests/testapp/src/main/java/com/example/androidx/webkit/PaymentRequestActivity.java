@@ -19,6 +19,7 @@ package com.example.androidx.webkit;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
@@ -26,6 +27,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -55,12 +57,31 @@ public class PaymentRequestActivity extends AppCompatActivity implements OnCheck
         }
 
         mWebView = findViewById(R.id.webview_supports_payment_request);
+        mWebView.setWebContentsDebuggingEnabled(true);
         mWebSettings = mWebView.getSettings();
         mPaymentRequestToggle = findViewById(R.id.payment_request_toggle);
         mHasEnrolledInstrumentToggle = findViewById(R.id.has_enrolled_instrument_toggle);
 
         mWebSettings.setJavaScriptEnabled(true);
-        mWebView.loadUrl(EXAMPLE_SITE_WITH_PAYMENT_REQUEST_API);
+        mWebSettings.setDatabaseEnabled(true);
+        mWebSettings.setDomStorageEnabled(true);
+        mWebSettings.setAllowFileAccess(true);
+        mWebSettings.setAllowContentAccess(true);
+
+        // Default layout behavior for chrome on android:
+        mWebSettings.setBuiltInZoomControls(true);
+        mWebSettings.setDisplayZoomControls(false);
+        mWebSettings.setUseWideViewPort(true);
+        mWebSettings.setLoadWithOverviewMode(true);
+        mWebSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+
+        mWebView.setWebViewClient(new WebViewClient());
+
+        if (savedInstanceState == null) {
+            mWebView.loadUrl(EXAMPLE_SITE_WITH_PAYMENT_REQUEST_API);
+        } else {
+            mWebView.restoreState(savedInstanceState);
+        }
 
         mPaymentRequestToggle.setChecked(
                 WebSettingsCompat.getPaymentRequestEnabled(mWebSettings));
@@ -80,5 +101,27 @@ public class PaymentRequestActivity extends AppCompatActivity implements OnCheck
         WebSettingsCompat.setHasEnrolledInstrumentEnabled(
                 mWebSettings, mHasEnrolledInstrumentToggle.isChecked());
         mWebView.reload();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mWebView == null || !mWebView.canGoBack()) {
+            super.onBackPressed();
+            return;
+        }
+
+        mWebView.goBack();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state);
+        mWebView.saveState(state);
+    }
+
+    @Override
+    public void onRestoreInstanceState(@NonNull Bundle state) {
+        super.onRestoreInstanceState(state);
+        mWebView.restoreState(state);
     }
 }

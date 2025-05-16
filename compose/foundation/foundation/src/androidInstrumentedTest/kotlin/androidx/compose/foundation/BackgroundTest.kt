@@ -180,6 +180,96 @@ class BackgroundTest {
     }
 
     @Test
+    fun background_changeColor() {
+        var color by mutableStateOf(Color.White)
+
+        rule.setContent {
+            SemanticParent { Box(Modifier.size(40f.toDp()).background(color = color)) }
+        }
+
+        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.White,
+            backgroundColor = null
+        )
+
+        color = Color.Magenta
+        rule.waitForIdle()
+
+        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap2.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.Magenta,
+            backgroundColor = null
+        )
+    }
+
+    @Test
+    fun background_changeBrush() {
+        var brush by mutableStateOf(SolidColor(Color.White))
+
+        rule.setContent {
+            SemanticParent { Box(Modifier.size(40f.toDp()).background(brush = brush)) }
+        }
+
+        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.White,
+            backgroundColor = null
+        )
+
+        brush = SolidColor(Color.Magenta)
+        rule.waitForIdle()
+
+        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap2.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.Magenta,
+            backgroundColor = null
+        )
+    }
+
+    @Test
+    fun background_changeAlpha() {
+        var alpha by mutableStateOf(1f)
+
+        rule.setContent {
+            SemanticParent {
+                Box(
+                    Modifier.size(40f.toDp())
+                        .background(Color.Magenta)
+                        .background(brush = SolidColor(Color.White), alpha = alpha)
+                )
+            }
+        }
+
+        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.White,
+            backgroundColor = null
+        )
+
+        alpha = 0f
+        rule.waitForIdle()
+
+        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
+        bitmap2.assertShape(
+            density = rule.density,
+            shape = RectangleShape,
+            shapeColor = Color.Magenta,
+            backgroundColor = null
+        )
+    }
+
+    @Test
     fun background_changeShape() {
         var shape by mutableStateOf(RoundedCornerShape(10f))
 

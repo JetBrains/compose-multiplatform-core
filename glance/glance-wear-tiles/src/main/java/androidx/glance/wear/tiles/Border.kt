@@ -53,7 +53,7 @@ public data class BorderDimension(
     public val dp: Dp = 0.dp,
     @DimenRes public val resourceId: Int = 0
 ) {
-    fun toDp(resources: Resources): Dp =
+    public fun toDp(resources: Resources): Dp =
         if (resourceId == 0) dp
         else (resources.getDimension(resourceId) / resources.displayMetrics.density).dp
 }

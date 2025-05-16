@@ -730,7 +730,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          * @param end the exclusive end offset of the range
          * @see withBulletList
          */
-        internal fun addBullet(bullet: Bullet, start: Int, end: Int) {
+        fun addBullet(bullet: Bullet, start: Int, end: Int) {
             annotations.add(MutableRange(item = bullet, start = start, end = end))
         }
 
@@ -746,7 +746,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          * @param end the exclusive end offset of the range
          * @see withBulletList
          */
-        internal fun addBullet(bullet: Bullet, indentation: TextUnit, start: Int, end: Int) {
+        fun addBullet(bullet: Bullet, indentation: TextUnit, start: Int, end: Int) {
             val bulletParStyle = ParagraphStyle(textIndent = TextIndent(indentation, indentation))
             annotations.add(MutableRange(item = bulletParStyle, start = start, end = end))
             annotations.add(MutableRange(item = bullet, start = start, end = end))
@@ -790,7 +790,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          *
          * @see withBulletList
          */
-        internal fun pushBullet(bullet: Bullet): Int {
+        fun pushBullet(bullet: Bullet): Int {
             MutableRange(item = bullet, start = text.length).also {
                 styleStack.add(it)
                 annotations.add(it)
@@ -799,7 +799,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         }
 
         /** Scope for a bullet list */
-        internal class BulletScope internal constructor(internal val builder: Builder) {
+        class BulletScope internal constructor(internal val builder: Builder) {
             internal val bulletListSettingStack = mutableListOf<Pair<TextUnit, Bullet>>()
         }
 
@@ -811,12 +811,17 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          *
          * Note that when nesting the [withBulletList] calls, the indentation inside the nested list
          * will be a combination of all indentations in the nested chain. For example,
-         *
-         * withBulletList(10.sp) { withBulletList(15.sp) { // items indentation 25.sp } }
+         * ```kotlin
+         * withBulletList(10.sp) {
+         *   withBulletList(15.sp) {
+         *     // items indentation 25.sp
+         *   }
+         * }
+         * ```
          */
-        internal fun <R : Any> withBulletList(
-            indentation: TextUnit = DefaultBulletIndentation,
-            bullet: Bullet = DefaultBullet,
+        fun <R : Any> withBulletList(
+            indentation: TextUnit = Bullet.DefaultIndentation,
+            bullet: Bullet = Bullet.Default,
             block: BulletScope.() -> R
         ): R {
             val adjustedIndentation =
@@ -847,6 +852,35 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
                     )
                 }
                 pop(parIndex)
+            }
+        }
+
+        /**
+         * Creates a bullet list item around the content produced by the [block]. The list item
+         * creates a separate paragraph with the indentation to the bullet defined by the preceding
+         * [Builder.withBulletList] calls.
+         *
+         * @param bullet defines the bullet to be drawn
+         * @param block function to be executed
+         * @sample androidx.compose.ui.text.samples.AnnotatedStringWithBulletListSample
+         */
+        fun <R : Any> BulletScope.withBulletListItem(
+            bullet: Bullet? = null,
+            block: Builder.() -> R
+        ): R {
+            val lastItemInStack = bulletListSettingStack.lastOrNull()
+            val itemIndentation = lastItemInStack?.first ?: Bullet.DefaultIndentation
+            val itemBullet = bullet ?: (lastItemInStack?.second ?: Bullet.Default)
+            val parIndex =
+                builder.pushStyle(
+                    ParagraphStyle(textIndent = TextIndent(itemIndentation, itemIndentation))
+                )
+            val bulletIndex = builder.pushBullet(itemBullet)
+            return try {
+                block(builder)
+            } finally {
+                builder.pop(bulletIndex)
+                builder.pop(parIndex)
             }
         }
 
@@ -1476,32 +1510,6 @@ inline fun <R : Any> Builder.withLink(link: LinkAnnotation, block: Builder.() ->
         block(this)
     } finally {
         pop(index)
-    }
-}
-
-/**
- * Creates a bullet list item around the content produced by the [block]. The list item creates a
- * separate paragraph with the indentation to the bullet defined by the preceding
- * [Builder.withBulletList] calls.
- *
- * @param bullet defines the bullet to be drawn
- * @param block function to be executed
- */
-internal fun <R : Any> Builder.BulletScope.withBulletListItem(
-    bullet: Bullet? = null,
-    block: Builder.() -> R
-): R {
-    val lastItemInStack = bulletListSettingStack.lastOrNull()
-    val itemIndentation = lastItemInStack?.first ?: DefaultBulletIndentation
-    val itemBullet = bullet ?: (lastItemInStack?.second ?: DefaultBullet)
-    val parIndex =
-        builder.pushStyle(ParagraphStyle(textIndent = TextIndent(itemIndentation, itemIndentation)))
-    val bulletIndex = builder.pushBullet(itemBullet)
-    return try {
-        block(builder)
-    } finally {
-        builder.pop(bulletIndex)
-        builder.pop(parIndex)
     }
 }
 

@@ -167,15 +167,131 @@ internal class TextFieldFocusTest {
 
         rule.onNodeWithTag(tag).requestFocus()
 
-        rule.runOnIdle {
-            assertThat(interactions.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
+        rule.waitForIdle()
+        assertThat(interactions.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
+        val focusEvent = interactions.filterIsInstance<FocusInteraction.Focus>().first()
+
+        rule.runOnUiThread { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.waitForIdle()
+        assertThat(interactions.filterIsInstance<FocusInteraction.Unfocus>()).hasSize(1)
+        assertThat(interactions.filterIsInstance<FocusInteraction.Unfocus>().first().focus)
+            .isSameInstanceAs(focusEvent)
+    }
+
+    @Test
+    fun interactionSource_emitsUnfocusEvent_whenDisabled() {
+        val interactionSource = MutableInteractionSource()
+        val tag = "TextField"
+        var enabled by mutableStateOf(true)
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            BasicTextField(
+                state = rememberTextFieldState(),
+                modifier = Modifier.testTag(tag),
+                interactionSource = interactionSource,
+                enabled = enabled
+            )
         }
 
-        focusManager.moveFocus(FocusDirection.Next)
+        val interactions = mutableListOf<Interaction>()
 
-        rule.runOnIdle {
-            assertThat(interactions.filterIsInstance<FocusInteraction.Unfocus>()).isNotEmpty()
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.onNodeWithTag(tag).requestFocus()
+
+        rule.waitForIdle()
+        assertThat(interactions.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
+        val focusEvent = interactions.filterIsInstance<FocusInteraction.Focus>().first()
+
+        enabled = false
+
+        rule.waitForIdle()
+        assertThat(interactions.filterIsInstance<FocusInteraction.Unfocus>()).hasSize(1)
+        assertThat(interactions.filterIsInstance<FocusInteraction.Unfocus>().first().focus)
+            .isSameInstanceAs(focusEvent)
+    }
+
+    @Test
+    fun interactionSource_focusEventsAreSentTo_newInteractionSource() {
+        val interactionSource1 = MutableInteractionSource()
+        val interactionSource2 = MutableInteractionSource()
+        val interactionSourceState = mutableStateOf(interactionSource1)
+        val tag = "TextField"
+        lateinit var scope: CoroutineScope
+        lateinit var focusManager: FocusManager
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            focusManager = LocalFocusManager.current
+            BasicTextField(
+                state = rememberTextFieldState(),
+                modifier = Modifier.testTag(tag),
+                interactionSource = interactionSourceState.value
+            )
         }
+
+        val interactions1 = mutableListOf<Interaction>()
+        val interactions2 = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource1.interactions.collect { interactions1.add(it) } }
+        scope.launch { interactionSource2.interactions.collect { interactions2.add(it) } }
+
+        rule.onNodeWithTag(tag).requestFocus()
+
+        rule.waitForIdle()
+        assertThat(interactions1.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
+        assertThat(interactions2.filterIsInstance<FocusInteraction.Focus>()).isEmpty()
+        val focusEvent = interactions1.filterIsInstance<FocusInteraction.Focus>().first()
+
+        interactionSourceState.value = interactionSource2
+
+        rule.runOnIdle { focusManager.clearFocus() }
+
+        rule.onNodeWithTag(tag).requestFocus()
+
+        assertThat(interactions1.filterIsInstance<FocusInteraction.Unfocus>()).hasSize(1)
+        assertThat(interactions1.filterIsInstance<FocusInteraction.Unfocus>().first().focus)
+            .isSameInstanceAs(focusEvent)
+
+        assertThat(interactions2.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
+    }
+
+    @Test
+    fun interactionSourceChanges_whenFieldDisabled_eventsAreSentToNewInteractionSource() {
+        val interactionSource1 = MutableInteractionSource()
+        val interactionSource2 = MutableInteractionSource()
+        val interactionSourceState = mutableStateOf(interactionSource1)
+        val tag = "TextField"
+        lateinit var scope: CoroutineScope
+        var enabled by mutableStateOf(false)
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            BasicTextField(
+                state = rememberTextFieldState(),
+                modifier = Modifier.testTag(tag),
+                enabled = enabled,
+                interactionSource = interactionSourceState.value
+            )
+        }
+
+        val interactions1 = mutableListOf<Interaction>()
+        val interactions2 = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource1.interactions.collect { interactions1.add(it) } }
+        scope.launch { interactionSource2.interactions.collect { interactions2.add(it) } }
+
+        rule.runOnIdle { interactionSourceState.value = interactionSource2 }
+
+        rule.runOnIdle { enabled = true }
+
+        rule.onNodeWithTag(tag).requestFocus()
+
+        assertThat(interactions1.filterIsInstance<FocusInteraction.Focus>()).isEmpty()
+        assertThat(interactions2.filterIsInstance<FocusInteraction.Focus>()).isNotEmpty()
     }
 
     @Test

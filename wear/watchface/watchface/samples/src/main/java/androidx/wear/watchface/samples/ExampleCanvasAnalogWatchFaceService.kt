@@ -441,12 +441,13 @@ open class ExampleCanvasAnalogWatchFaceService : SampleWatchFaceService() {
                     hoursDrawFreq =
                         (userStyle[hoursDrawFreqStyleSetting]!! as LongRangeOption).value.toInt()
 
-                    watchfaceColors =
+                    setWatchfaceColors(
                         WatchFaceColors(
                             Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
                             Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
                             Color.valueOf(Color.DKGRAY)
                         )
+                    )
                 }
             }
         }

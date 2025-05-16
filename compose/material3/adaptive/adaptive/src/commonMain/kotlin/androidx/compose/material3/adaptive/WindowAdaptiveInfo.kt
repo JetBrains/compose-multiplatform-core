@@ -18,6 +18,11 @@ package androidx.compose.material3.adaptive
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toSize
 import androidx.window.core.layout.WindowSizeClass
 
 /**
@@ -28,6 +33,24 @@ import androidx.window.core.layout.WindowSizeClass
  * @return [WindowAdaptiveInfo] of the provided context
  */
 @Composable expect fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo
+
+/**
+ * Returns and automatically update the current window size in [DpSize].
+ *
+ * @return an [DpSize] that represents the current window size.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun currentWindowDpSize(): DpSize =
+    with(LocalDensity.current) { currentWindowSize().toSize().toDpSize() }
+
+/**
+ * Returns and automatically update the current window size. It's a convenient function of getting
+ * [androidx.compose.ui.platform.WindowInfo.containerSize] from [LocalWindowInfo].
+ *
+ * @return an [IntSize] that represents the current window size.
+ */
+@Composable fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
 
 /**
  * This class collects window info that affects adaptation decisions. An adaptive layout is supposed

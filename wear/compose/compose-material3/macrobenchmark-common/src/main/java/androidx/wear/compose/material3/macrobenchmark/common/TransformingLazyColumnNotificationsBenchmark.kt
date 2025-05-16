@@ -60,25 +60,20 @@ val TransformingLazyColumnNotificationsBenchmark =
                             }
                             items(50_000) { index ->
                                 val notification = notificationList[index % notificationList.size]
-                                TransformExclusion {
-                                    TitleCard(
-                                        onClick = {},
-                                        title = {
-                                            Text(
-                                                notification.title,
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.labelLarge,
-                                            )
-                                        },
-                                        subtitle = { Text(notification.body) },
-                                        transformation = SurfaceTransformation(transformationSpec),
-                                        modifier =
-                                            Modifier.transformedHeight(
-                                                this@items,
-                                                transformationSpec
-                                            )
-                                    )
-                                }
+                                TitleCard(
+                                    onClick = {},
+                                    title = {
+                                        Text(
+                                            notification.title,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.labelLarge,
+                                        )
+                                    },
+                                    subtitle = { Text(notification.body) },
+                                    transformation = SurfaceTransformation(transformationSpec),
+                                    modifier =
+                                        Modifier.transformedHeight(this@items, transformationSpec)
+                                )
                             }
                         }
                     }

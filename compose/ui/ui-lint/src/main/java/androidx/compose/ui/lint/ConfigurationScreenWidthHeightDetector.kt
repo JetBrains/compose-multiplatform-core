@@ -85,7 +85,12 @@ class ConfigurationScreenWidthHeightDetector : Detector(), SourceCodeScanner {
                     (node.receiver.skipParenthesizedExprDown().tryResolveUDeclaration()
                             as? UVariable)
                         ?.uastInitializer ?: return
-                if (configurationSource.matchesQualified("LocalConfiguration.current")) {
+                if (
+                    configurationSource.matchesQualified("LocalConfiguration.current") ||
+                        configurationSource.matchesQualified(
+                            "androidx.compose.ui.platform.LocalConfiguration.current"
+                        )
+                ) {
                     report(name, context, node)
                 }
             }

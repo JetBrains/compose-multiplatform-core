@@ -21,10 +21,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuDropdownProvider
 import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuDataProvider
-import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider
+import androidx.compose.foundation.text.contextmenu.test.FakeTextContextMenuProvider
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -192,7 +193,8 @@ class TextContextMenuGesturesModifierTest {
         init {
             rule.setContent {
                 CompositionLocalProvider(
-                    LocalTextContextMenuDropdownProvider provides FakeProvider { dataProvider = it }
+                    LocalTextContextMenuDropdownProvider provides
+                        FakeTextContextMenuProvider { dataProvider = it }
                 ) {
                     Box(
                         preGestureModifier
@@ -242,14 +244,6 @@ private fun TextContextMenuBuilderScope.testItem(
     onClick: TextContextMenuSession.() -> Unit = {}
 ) {
     item(key = item, label = item.label, onClick = onClick)
-}
-
-private fun interface FakeProvider : TextContextMenuProvider {
-    fun onShow(dataProvider: TextContextMenuDataProvider)
-
-    override suspend fun showTextContextMenu(dataProvider: TextContextMenuDataProvider) {
-        onShow(dataProvider)
-    }
 }
 
 private fun <T : Any> assertNotNull(value: T?): T = value.also { assertThat(it).isNotNull() }!!

@@ -30,7 +30,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.scenecore.PermissionHelper
+import androidx.xr.runtime.SCENE_UNDERSTANDING_COARSE
 
 /**
  * Launches a dialog in the Main Panel for the scene understanding permission. If it is not given,
@@ -47,7 +47,7 @@ class DialogPermissionsApp : ComponentActivity() {
                     finish()
                 }
             }
-        permissionsLauncher.launch(arrayOf(PermissionHelper.SCENE_UNDERSTANDING_PERMISSION))
+        permissionsLauncher.launch(arrayOf(SCENE_UNDERSTANDING_COARSE))
         setContent { Subspace { SpatialContent() } }
     }
 

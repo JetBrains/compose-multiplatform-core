@@ -71,17 +71,18 @@ public interface CameraDeviceSurfaceManager {
     /**
      * Retrieves a map of suggested stream specifications for the given list of use cases.
      *
-     * @param cameraMode                        the working camera mode.
-     * @param cameraId                          the camera id of the camera device used by the
-     *                                          use cases
-     * @param existingSurfaces                  list of surfaces already configured and used by
-     *                                          the camera. The stream specifications for these
-     *                                          surface can not change.
-     * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
-     *                                          supported output sizes list that will be given a
-     *                                          suggested stream specification
-     * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
-     * @param hasVideoCapture                   whether the use cases has video capture.
+     * @param cameraMode                         the working camera mode.
+     * @param cameraId                           the camera id of the camera device used by the
+     *                                           use cases
+     * @param existingSurfaces                   list of surfaces already configured and used by
+     *                                           the camera. The stream specifications for these
+     *                                           surface can not change.
+     * @param newUseCaseConfigsSupportedSizeMap  map of configurations of the use cases to the
+     *                                           supported output sizes list that will be given a
+     *                                           suggested stream specification
+     * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
+     * @param hasVideoCapture                    whether the use cases has video capture.
+     * @param allowFeatureCombinationResolutions whether to allow feature combination resolutions.
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalStateException    if not initialized
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
@@ -96,5 +97,6 @@ public interface CameraDeviceSurfaceManager {
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
-            boolean hasVideoCapture);
+            boolean hasVideoCapture,
+            boolean allowFeatureCombinationResolutions);
 }

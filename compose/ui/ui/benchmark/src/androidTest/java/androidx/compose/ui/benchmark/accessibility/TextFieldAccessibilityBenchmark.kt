@@ -83,6 +83,9 @@ class TextFieldAccessibilityBenchmark(
                 )
             },
             benchmark = {
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
                 val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
             }
@@ -105,6 +108,9 @@ class TextFieldAccessibilityBenchmark(
                 }
             },
             benchmark = {
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
                 val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
             }

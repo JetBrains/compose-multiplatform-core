@@ -16,16 +16,40 @@
 
 package androidx.camera.lifecycle;
 
+import static androidx.camera.core.featurecombination.Feature.FPS_60;
+import static androidx.camera.core.featurecombination.Feature.HDR_HLG10;
+import static androidx.camera.core.featurecombination.Feature.PREVIEW_STABILIZATION;
+import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+import static androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
+
+import android.util.Range;
+import android.util.Rational;
+import android.view.Surface;
+
+import androidx.annotation.OptIn;
+import androidx.camera.core.CameraEffect;
+import androidx.camera.core.ExperimentalSessionConfig;
+import androidx.camera.core.LegacySessionConfig;
+import androidx.camera.core.Preview;
+import androidx.camera.core.SessionConfig;
+import androidx.camera.core.UseCase;
+import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableOptionsBundle;
+import androidx.camera.core.impl.utils.Threads;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.camera.testing.fakes.FakeCamera;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner;
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect;
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor;
 import androidx.camera.testing.impl.fakes.FakeUseCase;
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -36,11 +60,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 @SdkSuppress(minSdkVersion = 21)
+@OptIn(markerClass = ExperimentalSessionConfig.class)
 public class LifecycleCameraTest {
     private LifecycleCamera mLifecycleCamera;
     private FakeLifecycleOwner mLifecycleOwner;
@@ -48,6 +74,10 @@ public class LifecycleCameraTest {
     private CameraUseCaseAdapter mCameraUseCaseAdapter;
     private FakeCamera mFakeCamera;
     private FakeUseCase mFakeUseCase;
+    private FakeUseCase mFakeUseCase2;
+    private ViewPort mViewPort;
+    private CameraEffect mEffect;
+    private Range<Integer> mFrameRateRange;
 
     @Before
     public void setUp() {
@@ -57,9 +87,16 @@ public class LifecycleCameraTest {
         mCameraUseCaseAdapter = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         mFakeUseCase = new FakeUseCase();
+        mFakeUseCase2 = new FakeUseCase();
+        mViewPort = new ViewPort.Builder(
+                new Rational(4, 3), Surface.ROTATION_0).build();
+        mEffect = new FakeSurfaceEffect(directExecutor(),
+                new FakeSurfaceProcessor(directExecutor()));
+        mFrameRateRange = new Range<>(30, 30);
     }
 
     @Test
@@ -128,12 +165,14 @@ public class LifecycleCameraTest {
         CameraUseCaseAdapter adapter1 = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         CameraUseCaseAdapter adapter2 = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         LifecycleCamera lifecycleCamera1 = new LifecycleCamera(lifecycle1, adapter1);
         LifecycleCamera lifecycleCamera2 = new LifecycleCamera(lifecycle2, adapter2);
@@ -198,14 +237,100 @@ public class LifecycleCameraTest {
         assertThat(mLifecycleCamera.isActive()).isTrue();
     }
 
+    private LegacySessionConfig createLegacySessonConfig(UseCase... useCase) {
+        return new LegacySessionConfig(
+                Arrays.asList(useCase), null, Collections.emptyList(),
+                FRAME_RATE_RANGE_UNSPECIFIED);
+    }
+
+    private SessionConfig createSessionConfig(UseCase useCase) {
+        return new SessionConfig.Builder(Collections.singletonList(useCase)).build();
+    }
+
     @Test
-    public void bind_willBindToCameraInternal() throws CameraUseCaseAdapter.CameraException {
+    public void bindSessionConfig_willBindToCameraInternal()
+            throws CameraUseCaseAdapter.CameraException {
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
 
-        mLifecycleCamera.bind(Collections.singleton(mFakeUseCase));
+        SessionConfig sessionConfig =
+                new SessionConfig.Builder(Arrays.asList(mFakeUseCase))
+                        .setViewPort(mViewPort)
+                        .addEffect(mEffect)
+                        .build();
+        mLifecycleCamera.bind(sessionConfig);
 
         assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getViewPort())
+                .isEqualTo(sessionConfig.getViewPort());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
+                .isEqualTo(sessionConfig.getEffects());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
+                .isEqualTo(sessionConfig.getTargetHighSpeedFrameRate());
+    }
+
+    @Test
+    public void bindSessionConfig_withFeatures_featuresSetToAttachedUseCases() {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+        Preview preview = new Preview.Builder().build();
+
+        SessionConfig sessionConfig =
+                new SessionConfig.Builder(Collections.singletonList(preview))
+                        .addRequiredFeatures(HDR_HLG10)
+                        .setPreferredFeatures(FPS_60, PREVIEW_STABILIZATION)
+                        .build();
+        Threads.runOnMainSync(() -> {
+            try {
+                mLifecycleCamera.bind(sessionConfig);
+            } catch (CameraUseCaseAdapter.CameraException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // All features are added since the fake surface manager supports all combinations.
+        assertThat(preview.getFeatureCombination()).containsExactly(HDR_HLG10, FPS_60,
+                PREVIEW_STABILIZATION);
+    }
+
+    @Test
+    public void bindSessionConfig_isBoundIsCorrect() throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig =
+                new SessionConfig.Builder(Arrays.asList(mFakeUseCase))
+                        .setViewPort(mViewPort)
+                        .addEffect(mEffect)
+                        .build();
+        assertThat(mLifecycleCamera.isBound(sessionConfig)).isFalse();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isFalse();
+        mLifecycleCamera.bind(sessionConfig);
+
+        assertThat(mLifecycleCamera.isBound(sessionConfig)).isTrue();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isTrue();
+    }
+
+    @Test
+    public void bindLegacySessionConfig_willBindToCameraInternal()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig legacySessionConfig = new LegacySessionConfig(
+                Arrays.asList(mFakeUseCase),
+                mViewPort,
+                Arrays.asList(mEffect),
+                mFrameRateRange);
+        mLifecycleCamera.bind(legacySessionConfig);
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getViewPort())
+                .isEqualTo(legacySessionConfig.getViewPort());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
+                .isEqualTo(legacySessionConfig.getEffects());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
+                .isEqualTo(legacySessionConfig.getTargetHighSpeedFrameRate());
     }
 
     @Test
@@ -213,8 +338,8 @@ public class LifecycleCameraTest {
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
 
-        mLifecycleCamera.bind(Collections.singleton(mFakeUseCase));
-        mLifecycleCamera.unbind(Collections.singletonList(mFakeUseCase));
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase));
 
         assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
     }
@@ -225,9 +350,233 @@ public class LifecycleCameraTest {
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
 
-        mLifecycleCamera.bind(Collections.singleton(mFakeUseCase));
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
         mLifecycleCamera.unbindAll();
 
         assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
+    }
+
+    @Test
+    public void bindLegacySessonConfig_thenSessionConfig_throwExceptions()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+
+        assertThrows(IllegalStateException.class, () ->
+                mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2)));
+    }
+
+    @Test
+    public void bindLegacySessonConfigWithSessionConfig_throwExceptions()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase));
+
+        assertThrows(IllegalStateException.class, () ->
+                mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase2)));
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+    }
+
+    @Test
+    public void bindMultipleSessonConfig_latestSessionConfigIsBound()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig1 = createSessionConfig(mFakeUseCase);
+        SessionConfig sessionConfig2 = createSessionConfig(mFakeUseCase2);
+        mLifecycleCamera.bind(sessionConfig1);
+        mLifecycleCamera.bind(sessionConfig2);
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase2);
+        assertThat(mLifecycleCamera.isBound(sessionConfig1)).isFalse();
+        assertThat(mLifecycleCamera.isBound(sessionConfig2)).isTrue();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isFalse();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase2)).isTrue();
+    }
+
+    @Test
+    public void bindSessonConfigWithLegacySessionConfig_throwExceptions()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+
+        assertThrows(IllegalStateException.class, () ->
+                mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2)));
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+    }
+
+    @Test
+    public void bindLegacySessionConfigMultipleTimes_parametersUpdate_notThrowExceptions()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig legacySessionConfig1 = new LegacySessionConfig(
+                Arrays.asList(mFakeUseCase),
+                mViewPort,
+                Arrays.asList(mEffect),
+                mFrameRateRange
+        );
+        SessionConfig legacySessionConfig2 = createLegacySessonConfig(mFakeUseCase2);
+
+        mLifecycleCamera.bind(legacySessionConfig1);
+        mLifecycleCamera.bind(legacySessionConfig2);
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase, mFakeUseCase2);
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getViewPort())
+                .isEqualTo(legacySessionConfig2.getViewPort());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
+                .isEqualTo(legacySessionConfig2.getEffects());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
+                .isEqualTo(legacySessionConfig2.getTargetHighSpeedFrameRate());
+    }
+
+    @Test
+    public void canBindUnbindLegacySessionConfigMultipleTimes_withDuplicateUseCases()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase, mFakeUseCase));
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase, mFakeUseCase2));
+        assertThat(mLifecycleCamera.getBoundSessionConfig().getUseCases())
+                .containsExactly(mFakeUseCase, mFakeUseCase2);
+
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase, mFakeUseCase));
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase2));
+        assertThat(mLifecycleCamera.getBoundSessionConfig()).isNull();
+    }
+
+    @Test
+    public void unbindSessionConfig_canBindSessionConfigAgain()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig = createSessionConfig(mFakeUseCase);
+        mLifecycleCamera.bind(sessionConfig);
+        mLifecycleCamera.unbind(sessionConfig);
+
+        assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
+
+        // After unbinding, it can now bind new SessionConfig.
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2));
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase2);
+    }
+
+    @Test
+    public void unbindSessionConfig_noSessionConfigBoundPreviously_noOps() {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig = createSessionConfig(mFakeUseCase);
+        mLifecycleCamera.unbind(sessionConfig);
+        assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
+    }
+
+    @Test
+    public void unbindLegacyConfig_noSessionConfigBoundPreviously_noExceptions() {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig legacyConfig = createLegacySessonConfig(mFakeUseCase);
+        mLifecycleCamera.unbind(legacyConfig);
+        assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
+    }
+
+    @Test
+    public void unbindNonBoundSessionConfig_noOps()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig1 = createSessionConfig(mFakeUseCase);
+        SessionConfig sessionConfig2 = createSessionConfig(mFakeUseCase);
+
+        mLifecycleCamera.bind(sessionConfig1);
+        mLifecycleCamera.unbind(sessionConfig2);
+
+        // camera state is not changed
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+        assertThat(mLifecycleCamera.isBound(sessionConfig1)).isTrue();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isTrue();
+    }
+
+    @Test
+    public void bindLegacySessionConfig_thenUnbindSessionConfig_noOps()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+
+        mLifecycleCamera.unbind(createSessionConfig(mFakeUseCase)); // no-ops
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+    }
+
+    @Test
+    public void bindSessionConfig_thenUnbindLegacySessionConfig_noOps()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase));
+
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase)); // no-ops
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+    }
+
+    @Test
+    public void unbindLegacyConfigsMultipleTimes_canBindSessionConfigAgain()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase2));
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase2));
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase));
+
+        // After unbinding all of the use cases, it can now bind new SessionConfig.
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2));
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase2);
+    }
+
+    @Test
+    public void canNotBindSessionConfig_whenThereAreBoundUseCases()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase2));
+        mLifecycleCamera.unbind(createLegacySessonConfig(mFakeUseCase2));
+
+        // still has bound UseCases, can't allow binding SessionConfig.
+        assertThrows(IllegalStateException.class, () ->
+                mLifecycleCamera.bind(createSessionConfig(mFakeUseCase)));
+    }
+
+    @Test
+    public void unbindAll_canBindSessionConfigAgain() throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase));
+        mLifecycleCamera.unbindAll();
+
+        assertThat(mFakeCamera.getAttachedUseCases()).isEmpty();
+
+        // After unbinding, it can now bind new SessionConfig.
+        mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2));
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase2);
     }
 }

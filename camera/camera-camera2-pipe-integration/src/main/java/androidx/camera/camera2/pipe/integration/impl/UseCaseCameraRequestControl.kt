@@ -38,6 +38,7 @@ import androidx.camera.core.impl.CaptureConfig.TEMPLATE_TYPE_NONE
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.MutableTagBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.TagBundle
 import dagger.Binds
 import dagger.Module
@@ -278,7 +279,18 @@ constructor(
                 }
                 infoBundleMap[type] =
                     InfoBundle(
-                        Camera2ImplConfig.Builder().apply { config?.let { insertAllOptions(it) } },
+                        Camera2ImplConfig.Builder().apply {
+                            sessionConfig
+                                ?.expectedFrameRateRange
+                                .takeIf { it != FRAME_RATE_RANGE_UNSPECIFIED }
+                                ?.let { fpsRange ->
+                                    setCaptureRequestOption(
+                                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                                        fpsRange
+                                    )
+                                }
+                            config?.let { insertAllOptions(it) }
+                        },
                         tags.toMutableMap(),
                         listeners.toMutableSet(),
                         template,

@@ -28,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,9 +85,7 @@ public fun Dialog(
     var transitionState by remember {
         mutableStateOf(MutableTransitionState(DialogVisibility.Hide))
     }
-    val shouldShow by remember {
-        derivedStateOf { showState || transitionState.currentState == DialogVisibility.Display }
-    }
+    val shouldShow = showState || transitionState.currentState == DialogVisibility.Display
     val transition = rememberTransition(transitionState)
 
     val scaffoldState = LocalScaffoldState.current

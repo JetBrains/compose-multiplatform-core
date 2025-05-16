@@ -80,14 +80,6 @@ package androidx.privacysandbox.ui.core {
     property public static String OBSTRUCTIONS;
   }
 
-  public final class SdkRuntimeUiLibVersions {
-    method public int getClientVersion();
-    property public static int apiVersion;
-    property public int clientVersion;
-    field public static final androidx.privacysandbox.ui.core.SdkRuntimeUiLibVersions INSTANCE;
-    field public static final int apiVersion = 1; // 0x1
-  }
-
   public final class SessionData {
     ctor public SessionData();
     method public android.window.InputTransferToken? getInputTransferToken();

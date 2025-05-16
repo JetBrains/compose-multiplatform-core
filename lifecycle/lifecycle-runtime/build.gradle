@@ -29,7 +29,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(project(":lifecycle:lifecycle-common"))
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
@@ -43,7 +43,7 @@ androidXMultiplatform {
             }
         }
 
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
             dependencies {
                 api("androidx.arch.core:core-common:2.2.0")
@@ -51,7 +51,7 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
         }
 
         desktopTest {
@@ -62,7 +62,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.core:core-viewtree:1.0.0")
@@ -92,12 +92,12 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain {
+        nonJvmMain {
             dependsOn(commonMain)
         }
 
         nativeMain {
-            dependsOn(nonJvmCommonMain)
+            dependsOn(nonJvmMain)
 
             // Required for WeakReference usage
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")

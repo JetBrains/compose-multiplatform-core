@@ -60,7 +60,6 @@ import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.SCREENSHOT_GOLDEN_PATH
@@ -341,7 +340,7 @@ class ButtonScreenshotTest {
         alignment: Alignment = Alignment.Center,
         contentScale: ContentScale = ContentScale.Fit
     ) {
-        ImageButton(
+        Button(
             enabled = enabled,
             onClick = {},
             label = { Text("Image Button") },

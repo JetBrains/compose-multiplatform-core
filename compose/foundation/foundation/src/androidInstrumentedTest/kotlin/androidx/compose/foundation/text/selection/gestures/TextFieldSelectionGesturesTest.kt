@@ -236,6 +236,8 @@ internal abstract class TextFieldSelectionGesturesTest<T> : AbstractSelectionGes
             selection = 6 to 29
             hapticsCount++
         }
+
+        performTouchGesture { up() }
     }
 
     @Test
@@ -260,6 +262,8 @@ internal abstract class TextFieldSelectionGesturesTest<T> : AbstractSelectionGes
             selection = 17 to 6
             hapticsCount++
         }
+
+        performTouchGesture { up() }
     }
 
     @Test

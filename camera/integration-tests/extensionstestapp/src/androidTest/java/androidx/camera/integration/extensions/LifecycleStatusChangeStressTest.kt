@@ -34,6 +34,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -147,6 +148,7 @@ class LifecycleStatusChangeStressTest(private val config: CameraXExtensionTestPa
 
     @Test
     fun pauseResumeActivity_checkImageCaptureInEachTime() {
+        assumePcsSupportedForImageCapture(context)
         pauseResumeActivity_checkOutput_repeatedly(VERIFICATION_TARGET_IMAGE_CAPTURE)
     }
 
@@ -187,6 +189,7 @@ class LifecycleStatusChangeStressTest(private val config: CameraXExtensionTestPa
 
     @Test
     fun checkImageCapture_afterPauseResumeActivityRepeatedly() {
+        assumePcsSupportedForImageCapture(context)
         pauseResumeActivityRepeatedly_thenCheckOutput(VERIFICATION_TARGET_IMAGE_CAPTURE)
     }
 

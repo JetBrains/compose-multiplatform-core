@@ -20,6 +20,7 @@ package androidx.xr.scenecore
 
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MoveEventListener as RtMoveEventListener
 import java.util.concurrent.ConcurrentHashMap
@@ -216,7 +217,7 @@ private constructor(
         ): MovableComponent =
             MovableComponent.create(
                 platformAdapter = session.platformAdapter,
-                entityManager = session.entityManager,
+                entityManager = session.scene.entityManager,
                 systemMovable = systemMovable,
                 scaleInZ = scaleInZ,
                 anchorPlacement = anchorPlacement,

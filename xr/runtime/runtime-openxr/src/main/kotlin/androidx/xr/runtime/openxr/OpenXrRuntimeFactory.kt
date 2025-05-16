@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Runtime
 import androidx.xr.runtime.internal.RuntimeFactory
 
@@ -34,6 +35,8 @@ public class OpenXrRuntimeFactory() : RuntimeFactory {
             }
         }
     }
+
+    override val requirements: Set<Feature> = setOf(Feature.FullStack, Feature.OpenXr)
 
     override fun createRuntime(activity: Activity): Runtime {
         val timeSource = OpenXrTimeSource()

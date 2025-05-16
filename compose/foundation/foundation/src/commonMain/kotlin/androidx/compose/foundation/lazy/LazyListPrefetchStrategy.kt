@@ -222,7 +222,7 @@ private class DefaultLazyListPrefetchStrategy(private val initialNestedPrefetchI
  * information about a prefetched item.
  */
 @ExperimentalFoundationApi
-interface LazyListPrefetchResultScope {
+sealed interface LazyListPrefetchResultScope {
 
     /** The index of the prefetched item */
     val index: Int

@@ -111,7 +111,7 @@ class MemoryLeakTest {
             // We have to ignore the first run because `dispose` leaves the OwnerView in the
             // View hierarchy to reuse it next time. That is probably not the final desired behavior
             val emptyView = View(activityTestRule.activity)
-            loopAndVerifyMemory(iterations = 400, gcFrequency = 40) {
+            loopAndVerifyMemory(iterations = 400, gcFrequency = 40, ignoreFirstRun = true) {
                 activityTestRule.activity.setContent {
                     Column { repeat(3) { Box { BasicText("Hello") } } }
                 }

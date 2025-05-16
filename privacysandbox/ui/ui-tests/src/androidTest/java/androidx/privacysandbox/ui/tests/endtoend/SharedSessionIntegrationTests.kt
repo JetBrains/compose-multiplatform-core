@@ -24,6 +24,7 @@ import androidx.privacysandbox.ui.client.view.SharedUiContainer
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SharedUiAdapter
+import androidx.privacysandbox.ui.core.test.TestProtocolConstants
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.MediumTest
@@ -48,7 +49,6 @@ import org.junit.runners.Parameterized
 class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
     companion object {
         const val TIMEOUT = 1000L
-        const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
         const val CONTAINER_WIDTH = 100
         const val CONTAINER_HEIGHT = 100
 
@@ -90,6 +90,16 @@ class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boole
                 }
             linearLayout.addView(sharedUiContainer)
         }
+    }
+
+    @Test
+    fun testBinderAdapter_notReWrapped() {
+        val adapter = TestSharedUiAdapter()
+        val binderAdapter = getCoreLibInfoFromAdapter(adapter)
+        val adapterFromCoreLibInfo = SharedUiAdapterFactory.createFromCoreLibInfo(binderAdapter)
+        // send this back to the SDK and see if the same binder is sent back to the app.
+        val binderAdapter2 = getCoreLibInfoFromAdapter(adapterFromCoreLibInfo)
+        assertThat(binderAdapter).isEqualTo(binderAdapter2)
     }
 
     @Test
@@ -141,7 +151,7 @@ class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boole
         val testSession = sdkAdapter.session as TestSharedUiAdapter.TestSession
         val client = testSession.sessionClient
 
-        assertThat(client.toString()).isEqualTo(testSessionClient.toString())
+        assertThat(client.toString()).contains(testSessionClient.toString())
         assertThat(client.equals(client)).isTrue()
         assertThat(client).isNotEqualTo(testSessionClient)
         assertThat(client.hashCode()).isEqualTo(client.hashCode())
@@ -177,7 +187,10 @@ class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boole
 
     private fun getCoreLibInfoFromAdapter(sdkAdapter: SharedUiAdapter): Bundle {
         val bundle = sdkAdapter.toCoreLibInfo()
-        bundle.putBoolean(TEST_ONLY_USE_REMOTE_ADAPTER, !invokeBackwardsCompatFlow)
+        bundle.putBoolean(
+            TestProtocolConstants.testOnlyUseRemoteAdapterKey,
+            !invokeBackwardsCompatFlow
+        )
         return bundle
     }
 

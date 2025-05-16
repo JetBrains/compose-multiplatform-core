@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.collection.intSetOf
+import androidx.glance.appwidget.GlanceAppWidgetManager.Companion.SET_WIDGET_PREVIEWS_RESULT_SUCCESS
 import androidx.glance.text.Text
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -166,7 +167,7 @@ class GlanceAppWidgetManagerTest {
                 val result =
                     GlanceAppWidgetManager(context)
                         .setWidgetPreviews<TestGlanceAppWidgetReceiver>(categories)
-                assertThat(result).isTrue()
+                assertThat(result).isEqualTo(SET_WIDGET_PREVIEWS_RESULT_SUCCESS)
 
                 categories.forEach { category ->
                     val preview =

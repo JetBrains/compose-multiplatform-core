@@ -86,7 +86,8 @@ interface MeasureScope : IntrinsicMeasureScope {
                 if (this@MeasureScope is LookaheadCapablePlaceable) {
                     placementScope.placementBlock()
                 } else {
-                    SimplePlacementScope(width, layoutDirection).placementBlock()
+                    SimplePlacementScope(width, layoutDirection, density, fontScale)
+                        .placementBlock()
                 }
             }
         }
@@ -100,6 +101,8 @@ interface MeasureScope : IntrinsicMeasureScope {
 private class SimplePlacementScope(
     override val parentWidth: Int,
     override val parentLayoutDirection: LayoutDirection,
+    override val density: Float,
+    override val fontScale: Float,
 ) : Placeable.PlacementScope()
 
 /**

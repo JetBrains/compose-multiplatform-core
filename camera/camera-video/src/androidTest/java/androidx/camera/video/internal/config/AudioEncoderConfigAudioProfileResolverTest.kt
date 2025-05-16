@@ -21,7 +21,6 @@ import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.Timebase
@@ -80,7 +79,6 @@ class AudioEncoderConfigAudioProfileResolverTest(
         )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val defaultAudioSpec = AudioSpec.builder().build()
     private val timebase = Timebase.UPTIME
 
@@ -94,9 +92,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
             "Emulator API 30 crashes running this test.",
             Build.VERSION.SDK_INT == 30 && isEmulator()
         )
-
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
-
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         CameraXUtil.initialize(context, cameraConfig).get()
 
         val cameraInfo = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo

@@ -19,6 +19,7 @@ package androidx.xr.arcore.apps.whitebox.persistentanchors
 import android.app.Activity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,35 +46,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.arcore.Anchor
-import androidx.xr.arcore.AnchorCreateNotTracking
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.AnchorLoadInvalidUuid
 import androidx.xr.arcore.apps.whitebox.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.common.SessionLifecycleHelper
-import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.AnchorPersistenceMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.Session as JxrCoreSession
+import androidx.xr.scenecore.scene
 import java.util.UUID
 import kotlin.collections.List
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -83,7 +85,6 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
-    private lateinit var jxrCoreSession: JxrCoreSession
     private lateinit var movableEntity: Entity
     private val movableEntityOffset = Pose(Vector3(0f, 1f, -2.0f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
@@ -92,52 +93,50 @@ class PersistentAnchorsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        sessionHelper = SessionLifecycleHelper(this)
-        session = sessionHelper.session
+        sessionHelper =
+            SessionLifecycleHelper(
+                this,
+                Config(
+                    anchorPersistence = AnchorPersistenceMode.ENABLED,
+                    headTracking = HeadTrackingMode.ENABLED,
+                ),
+                onSessionAvailable = { session ->
+                    this.session = session
+
+                    createTargetPanel()
+                    setContent { MainPanel() }
+                    lifecycleScope.launch {
+                        // First load will fail, so we launch a second load after a delay which
+                        // should succeed.
+                        uuids.emit(Anchor.getPersistedAnchorUuids(session))
+                        delay(2.seconds)
+                        uuids.emit(Anchor.getPersistedAnchorUuids(session))
+                    }
+                    lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
+                },
+            )
         lifecycle.addObserver(sessionHelper)
-
-        jxrCoreSession = JxrCoreSession.create(this)
-
-        createTargetPanel()
-
-        session.lifecycleScope.launch {
-            session.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                session.configure(Config(anchorPersistence = AnchorPersistenceMode.Enabled))
-                setContent { MainPanel() }
-                onResumeCallback()
-            }
-        }
     }
 
     private fun createTargetPanel() {
         val composeView = ComposeView(this)
         composeView.setContent { TargetPanel() }
-        configureComposeView(composeView, this)
         movableEntity =
             PanelEntity.create(
-                jxrCoreSession,
+                session,
                 composeView,
                 PixelDimensions(640, 640),
                 "movableEntity",
                 movableEntityOffset,
             )
-        movableEntity.setParent(jxrCoreSession.activitySpace)
-    }
-
-    private fun onResumeCallback() {
-        lifecycleScope.launch {
-            // First load will fail, so we launch a second load after a delay which should succeed.
-            uuids.emit(Anchor.getPersistedAnchorUuids(session))
-            delay(2.seconds)
-            uuids.emit(Anchor.getPersistedAnchorUuids(session))
-        }
-        lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
+        movableEntity.setParent(session.scene.activitySpace)
+        configureComposeView(composeView, this)
     }
 
     private fun updatePlaneEntity() {
-        jxrCoreSession.spatialUser.head?.let {
+        session.scene.spatialUser.head?.let {
             movableEntity.setPose(
-                it.transformPoseTo(movableEntityOffset, jxrCoreSession.activitySpace)
+                it.transformPoseTo(movableEntityOffset, session.scene.activitySpace)
             )
         }
     }
@@ -146,9 +145,15 @@ class PersistentAnchorsActivity : ComponentActivity() {
         composeView.setViewCompositionStrategy(
             ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
         )
-        composeView.setViewTreeLifecycleOwner(activity as LifecycleOwner)
-        composeView.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
-        composeView.setViewTreeSavedStateRegistryOwner(activity as SavedStateRegistryOwner)
+
+        // TODO: b/413478924 - Use controlPanelEntity.view when the api is available.
+        val parentView: View =
+            if (composeView.parent != null && composeView.parent is View) composeView.parent as View
+            else composeView
+
+        parentView.setViewTreeLifecycleOwner(activity as LifecycleOwner)
+        parentView.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
+        parentView.setViewTreeSavedStateRegistryOwner(activity as SavedStateRegistryOwner)
     }
 
     @Composable
@@ -225,41 +230,47 @@ class PersistentAnchorsActivity : ComponentActivity() {
         // the target panel and future anchors.
         anchorOffset.value += 0.25f
         val anchorPose =
-            jxrCoreSession.activitySpace.transformPoseTo(
+            session.scene.activitySpace.transformPoseTo(
                 movableEntity.getPose().translate(Vector3(anchorOffset.value, 0f, 0f)),
-                jxrCoreSession.perceptionSpace,
+                session.scene.perceptionSpace,
             )
-        try {
-            when (val anchorResult = Anchor.create(session, anchorPose)) {
-                is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
-                is AnchorCreateResourcesExhausted -> {
-                    Log.e(ACTIVITY_NAME, "Failed to create anchor: anchor resources exhausted.")
-                    Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
-                }
-                is AnchorCreateNotTracking -> {
-                    Log.e(ACTIVITY_NAME, "Failed to create anchor: camera not tracking.")
-                    Toast.makeText(this, "Camera not tracking.", Toast.LENGTH_LONG).show()
-                }
+        val anchorResult = Anchor.create(session, anchorPose)
+        when (anchorResult) {
+            is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
+            is AnchorCreateResourcesExhausted -> {
+                Log.e(ACTIVITY_NAME, "Failed to create anchor: anchor resources exhausted.")
+                Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
-        } catch (e: IllegalStateException) {
-            Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+            else -> {
+                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                Toast.makeText(this, "Anchor failed to create.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
     private fun createAnchorPanel(anchor: Anchor) {
         val composeView = ComposeView(this)
-        configureComposeView(composeView, this)
-        val anchorEntity = AnchorEntity.create(jxrCoreSession, anchor)
-        val panelEntity =
-            PanelEntity.create(
-                jxrCoreSession,
-                composeView,
-                PixelDimensions(640, 640),
-                "anchorEntity ${anchor.hashCode()}",
-                Pose(),
-            )
-        panelEntity.setParent(anchorEntity)
-        composeView.setContent { AnchorPanel(anchor, panelEntity) }
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        val activity = this
+
+        lifecycleScope.launch {
+            anchor.state.collect { anchorState ->
+                if (anchorState.trackingState == TrackingState.TRACKING) {
+                    val panelEntity =
+                        PanelEntity.create(
+                            session,
+                            composeView,
+                            PixelDimensions(640, 640),
+                            "anchorEntity ${anchor.hashCode()}",
+                            Pose(),
+                        )
+                    panelEntity.setParent(anchorEntity)
+                    composeView.setContent { AnchorPanel(anchor, panelEntity) }
+                    configureComposeView(composeView, activity)
+                    cancel()
+                }
+            }
+        }
     }
 
     @Composable
@@ -312,26 +323,34 @@ class PersistentAnchorsActivity : ComponentActivity() {
     }
 
     private fun loadAnchor(uuid: UUID) {
-        try {
-            when (val anchorResult = Anchor.load(session, uuid)) {
-                is AnchorCreateSuccess -> {
-                    lifecycleScope.launch {
-                        // We need to wait until the anchor is tracked before querying its pose.
-                        delay(1.seconds)
-                        createAnchorPanel(anchorResult.anchor)
-                    }
-                }
-                is AnchorCreateResourcesExhausted -> {
-                    Log.e(ACTIVITY_NAME, "Failed to create anchor: anchor resources exhausted.")
-                    Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
-                }
-                is AnchorCreateNotTracking -> {
-                    Log.e(ACTIVITY_NAME, "Failed to create anchor: camera not tracking.")
-                    Toast.makeText(this, "Camera not tracking.", Toast.LENGTH_LONG).show()
+        val anchorResult =
+            try {
+                Anchor.load(session, uuid)
+            } catch (e: IllegalStateException) {
+                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+                return
+            }
+
+        when (anchorResult) {
+            is AnchorCreateSuccess -> {
+                lifecycleScope.launch {
+                    // We need to wait until the anchor is tracked before querying its pose.
+                    delay(1.seconds)
+                    createAnchorPanel(anchorResult.anchor)
                 }
             }
-        } catch (e: IllegalStateException) {
-            Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+            is AnchorCreateResourcesExhausted -> {
+                Log.e(ACTIVITY_NAME, "Failed to load anchor: anchor resources exhausted.")
+                Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
+            }
+            is AnchorLoadInvalidUuid -> {
+                Log.e(ACTIVITY_NAME, "Failed to load anchor: invalid UUID.")
+                Toast.makeText(this, "Invalid UUID.", Toast.LENGTH_LONG).show()
+            }
+            else -> {
+                Log.e(ACTIVITY_NAME, "Failed to load anchor: ${anchorResult::class.simpleName}")
+                Toast.makeText(this, "Anchor failed to load.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

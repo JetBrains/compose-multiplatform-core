@@ -17,6 +17,9 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue
+import androidx.xr.runtime.math.Vector3
+import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * Interface for a SceneCore activity space. There is one activity space and it is the ancestor for
@@ -55,4 +58,24 @@ public interface ActivitySpace : SystemSpaceEntity {
          */
         public fun onBoundsChanged(bounds: Dimensions)
     }
+
+    /**
+     * Creates a hit test at the from the specified origin in the specified direction into the
+     * scene.
+     *
+     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
+     * @param direction The direction for the hit test ray from the ActivityPose.
+     * @param hitTestFilter The scenes that will be in range for the hit test.
+     * @param activityPose The ActivityPose to hit test against.
+     * @return a {@code ListenableFuture<HitTestResult>}. The HitResult describes if it hit
+     *   something and where relative to the given ActivityPose. Listeners will be called on the
+     *   main thread if Runnable::run is supplied.
+     */
+    @Suppress("AsyncSuffixFuture")
+    public fun hitTestRelativeToActivityPose(
+        origin: Vector3,
+        direction: Vector3,
+        @HitTestFilterValue hitTestFilter: Int,
+        activityPose: ActivityPose,
+    ): ListenableFuture<HitTestResult>
 }

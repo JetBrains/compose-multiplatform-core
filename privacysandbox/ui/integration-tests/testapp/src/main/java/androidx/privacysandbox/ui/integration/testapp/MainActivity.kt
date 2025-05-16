@@ -68,8 +68,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleBar: TextView
     private lateinit var sdkApi: ISdkApi
 
-    fun getSdkApi(): ISdkApi {
-        return sdkApi
+    fun getCurrentFragment(): BaseFragment {
+        return currentFragment
     }
 
     @AdFormat

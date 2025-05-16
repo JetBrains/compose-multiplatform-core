@@ -81,7 +81,8 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are:
  * [FilledTonalButton] which defaults to [ButtonDefaults.filledTonalButtonColors], [OutlinedButton]
  * which defaults to [ButtonDefaults.outlinedButtonColors] and [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * Button can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -146,6 +147,95 @@ public fun Button(
     )
 
 /**
+ * Base level Wear Material3 [Button] that offers parameters for container image backgrounds, with a
+ * single slot to take any content.
+ *
+ * An Image background is a means to reinforce the meaning of information in a Button. Buttons
+ * should have a content color that contrasts with the background image and scrim.
+ *
+ * This [Button] takes [containerPainter] for the image background to be drawn when the button is
+ * enabled and [disabledContainerPainter] for the image background when the button is disabled (The
+ * [ButtonColors] containerColor and disabledContainerColor properties are ignored). It is
+ * recommended to use [ButtonDefaults.containerPainter] to create the painters so that a scrim is
+ * drawn on top of the container image, ensuring that any content above the background is legible.
+ *
+ * The [Button] is Stadium-shaped by default and has a max height designed to take no more than two
+ * lines of text of [Typography.labelMedium] style. With localisation and/or large font sizes, the
+ * text can extend to a maximum of 3 lines in which case, the [Button] height adjusts to accommodate
+ * the contents.
+ *
+ * [Button] can be enabled or disabled. A disabled button will not respond to click events.
+ *
+ * Example of a [Button] with an image background:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ * @param onClick Will be called when the user clicks the button
+ * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
+ *   returned by [ButtonDefaults.containerPainter].
+ * @param modifier Modifier to be applied to the button
+ * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
+ *   set, [onLongClickLabel] should be set as well.
+ * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
+ * @param enabled Controls the enabled state of the button. When `false`, this button will not be
+ *   clickable
+ * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
+ *   enabled, such as returned by [ButtonDefaults.containerPainter] with alpha =
+ *   [ButtonDefaults.DisabledContainerAlpha].
+ * @param shape Defines the button's shape. It is strongly recommended to use the default as this
+ *   shape is a key characteristic of the Wear Material3 Theme
+ * @param colors [ButtonColors] that will be used to resolve the background and content color for
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
+ * @param border Optional [BorderStroke] that will be used to resolve the border for this button in
+ *   different states.
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
+ *   preview the button in different states. Note that if `null` is provided, interactions will
+ *   still happen internally.
+ * @param transformation Transformation to be used when button appears inside a container that needs
+ *   to dynamically change its content separately from the background.
+ * @param content Slot for composable body content displayed on the Button
+ */
+// TODO(b/261838497) Add Material3 UX guidance links
+@Composable
+public fun Button(
+    onClick: () -> Unit,
+    containerPainter: Painter,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    enabled: Boolean = true,
+    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
+    shape: Shape = ButtonDefaults.shape,
+    colors: ButtonColors = ButtonDefaults.buttonWithContainerPainterColors(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
+    content: @Composable RowScope.() -> Unit,
+): Unit =
+    ButtonImpl(
+        onClick = onClick,
+        modifier = modifier.buttonSizeModifier(),
+        onLongClick = onLongClick,
+        onLongClickLabel = onLongClickLabel,
+        enabled = enabled,
+        shape = shape,
+        labelFont = OutlinedButtonTokens.LabelFont.value,
+        containerPainter = containerPainter,
+        disabledContainerPainter = disabledContainerPainter,
+        colors = colors,
+        border = border,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        transformation = transformation,
+        content = content
+    )
+
+/**
  * Base level Wear Material3 [FilledTonalButton] that offers a single slot to take any content. Used
  * as the container for more opinionated [FilledTonalButton] components that take specific content
  * such as icons and labels.
@@ -164,7 +254,8 @@ public fun Button(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [OutlinedButton] which defaults to
  * [ButtonDefaults.outlinedButtonColors] and [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * FilledTonalButton can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -246,7 +337,8 @@ public fun FilledTonalButton(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [FilledTonalButton] which defaults to
  * [ButtonDefaults.filledTonalButtonColors], [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * OutlinedButton can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -311,93 +403,6 @@ public fun OutlinedButton(
     )
 
 /**
- * Base level Wear Material3 [ImageButton] that offers a single slot to take any content. Used as
- * the container for more opinionated [ImageButton] components that take specific content such as
- * icons and labels.
- *
- * An Image background is a means to reinforce the meaning of information in a Button. Buttons
- * should have a content color that contrasts with the background image and scrim.
- *
- * [ImageButton] takes [containerPainter] for the image background to be drawn when the button is
- * enabled and [disabledContainerPainter] for the image background when the button is disabled. It
- * is recommended to use [ButtonDefaults.containerPainter] to create the painters so that a scrim is
- * drawn on top of the container image, ensuring that any content above the background is legible.
- *
- * The [ImageButton] is Stadium-shaped by default and has a max height designed to take no more than
- * two lines of text of [Typography.labelMedium] style. With localisation and/or large font sizes,
- * the text can extend to a maximum of 3 lines in which case, the [ImageButton] height adjusts to
- * accommodate the contents.
- *
- * [ImageButton] can be enabled or disabled. A disabled button will not respond to click events.
- *
- * Example of an [ImageButton]:
- *
- * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
- * @param onClick Will be called when the user clicks the button
- * @param containerPainter The [Painter] to use to draw the container image of the [ImageButton],
- *   such as returned by [ButtonDefaults.containerPainter].
- * @param modifier Modifier to be applied to the button
- * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
- *   set, [onLongClickLabel] should be set as well.
- * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
- * @param enabled Controls the enabled state of the button. When `false`, this button will not be
- *   clickable
- * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
- *   enabled, such as returned by [ButtonDefaults.containerPainter] with alpha =
- *   [ButtonDefaults.DisabledContainerAlpha].
- * @param shape Defines the button's shape. It is strongly recommended to use the default as this
- *   shape is a key characteristic of the Wear Material3 Theme
- * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.outlinedButtonColors].
- * @param border Optional [BorderStroke] that will be used to resolve the border for this button in
- *   different states.
- * @param contentPadding The spacing values to apply internally between the container and the
- *   content
- * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
- *   preview the button in different states. Note that if `null` is provided, interactions will
- *   still happen internally.
- * @param transformation Transformation to be used when button appears inside a container that needs
- *   to dynamically change its content separately from the background.
- * @param content Slot for composable body content displayed on the OutlinedButton
- */
-// TODO(b/261838497) Add Material3 UX guidance links
-@Composable
-public fun ImageButton(
-    onClick: () -> Unit,
-    containerPainter: Painter,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-    onLongClickLabel: String? = null,
-    enabled: Boolean = true,
-    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
-    shape: Shape = ButtonDefaults.shape,
-    colors: ButtonColors = ButtonDefaults.imageButtonColors(),
-    border: BorderStroke? = null,
-    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
-    interactionSource: MutableInteractionSource? = null,
-    transformation: SurfaceTransformation? = null,
-    content: @Composable RowScope.() -> Unit,
-): Unit =
-    ButtonImpl(
-        onClick = onClick,
-        modifier = modifier.buttonSizeModifier(),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        shape = shape,
-        labelFont = OutlinedButtonTokens.LabelFont.value,
-        containerPainter = containerPainter,
-        disabledContainerPainter = disabledContainerPainter,
-        colors = colors,
-        border = border,
-        contentPadding = contentPadding,
-        interactionSource = interactionSource,
-        transformation = transformation,
-        content = content
-    )
-
-/**
  * Base level Wear Material3 [ChildButton] that offers a single slot to take any content. Used as
  * the container for more opinionated [ChildButton] components that take specific content such as
  * icons and labels.
@@ -415,7 +420,8 @@ public fun ImageButton(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [FilledTonalButton] which defaults to
  * [ButtonDefaults.filledTonalButtonColors], [OutlinedButton] which defaults to
- * [ButtonDefaults.outlinedButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.outlinedButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * ChildButton can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -499,7 +505,8 @@ public fun ChildButton(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are:
  * [FilledTonalButton] which defaults to [ButtonDefaults.filledTonalButtonColors], [OutlinedButton]
  * which defaults to [ButtonDefaults.outlinedButtonColors] and [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * [Button] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -608,6 +615,132 @@ public fun Button(
     )
 
 /**
+ * Wear Material3 [Button] that offers parameters for container image backgrounds, with three slots
+ * and a specific layout for an icon, label and secondaryLabel. The icon and secondaryLabel are
+ * optional. The items are laid out with the icon, if provided, at the start of a row, with a column
+ * next containing the two label slots.
+ *
+ * An image background is a means to reinforce the meaning of information in a Button. Buttons
+ * should have a content color that contrasts with the background image and scrim.
+ *
+ * This [Button] takes [containerPainter] for the container image background to be drawn when the
+ * button is enabled and [disabledContainerPainter] for the image background when the button is
+ * disabled (the [ButtonColors] containerColor and disabledContainerColor properties are ignored).
+ * It is recommended to use [ButtonDefaults.containerPainter] to create the painters so that a scrim
+ * is drawn on top of the container image, ensuring that any content above the background is
+ * legible.
+ *
+ * The [Button] is stadium-shaped by default and its standard height is designed to take 2 lines of
+ * text of [Typography.labelMedium] style - either a two-line label or both a single line label and
+ * a secondary label. With localisation and/or large font sizes, the [Button] height adjusts to
+ * accommodate the contents. The label and secondary label should be consistently aligned.
+ *
+ * [Button] can be enabled or disabled. A disabled button will not respond to click events.
+ *
+ * Example of a [Button] with an image background, an icon and a secondary label:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ * @param onClick Will be called when the user clicks the button
+ * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
+ *   returned by [ButtonDefaults.containerPainter].
+ * @param modifier Modifier to be applied to the button
+ * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
+ *   set, [onLongClickLabel] should be set as well.
+ * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
+ * @param secondaryLabel A slot for providing the button's secondary label. The contents are
+ *   expected to be text which is "start" aligned if there is an icon preset and "start" or "center"
+ *   aligned if not. label and secondaryLabel contents should be consistently aligned.
+ * @param icon A slot for providing the button's icon. The contents are expected to be a
+ *   horizontally and vertically aligned icon of size [ButtonDefaults.IconSize] or
+ *   [ButtonDefaults.LargeIconSize].
+ * @param enabled Controls the enabled state of the button. When `false`, this button will not be
+ *   clickable
+ * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
+ *   enabled, such as returned by [ButtonDefaults.disabledContainerPainter].
+ * @param shape Defines the button's shape. It is strongly recommended to use the default as this
+ *   shape is a key characteristic of the Wear Material3 Theme
+ * @param colors [ButtonColors] that will be used to resolve the background and content color for
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
+ * @param border Optional [BorderStroke] that will be used to resolve the button border in different
+ *   states.
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
+ *   preview the button in different states. Note that if `null` is provided, interactions will
+ *   still happen internally.
+ * @param transformation Transformation to be used when button appears inside a container that needs
+ *   to dynamically change its content separately from the background.
+ * @param label A slot for providing the button's main label. The contents are expected to be text
+ *   which is "start" aligned if there is an icon preset and "start" or "center" aligned if not.
+ */
+// TODO(b/261838497) Add Material3 UX guidance links
+@Composable
+public fun Button(
+    onClick: () -> Unit,
+    containerPainter: Painter,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    secondaryLabel: (@Composable RowScope.() -> Unit)? = null,
+    icon: (@Composable BoxScope.() -> Unit)? = null,
+    enabled: Boolean = true,
+    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
+    shape: Shape = ButtonDefaults.shape,
+    colors: ButtonColors = ButtonDefaults.buttonWithContainerPainterColors(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
+    label: @Composable RowScope.() -> Unit,
+): Unit =
+    ButtonImpl(
+        onClick = onClick,
+        modifier = modifier.buttonSizeModifier(),
+        onLongClick = onLongClick,
+        onLongClickLabel = onLongClickLabel,
+        secondaryLabelContent =
+            provideNullableScopeContent(
+                contentColor = colors.secondaryContentColor(enabled),
+                textStyle = FilledButtonTokens.SecondaryLabelFont.value,
+                textConfiguration =
+                    TextConfiguration(
+                        textAlign = TextAlign.Start,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                    ),
+                content = secondaryLabel
+            ),
+        icon = icon,
+        enabled = enabled,
+        shape = shape,
+        labelFont = OutlinedButtonTokens.LabelFont.value,
+        containerPainter = containerPainter,
+        disabledContainerPainter = disabledContainerPainter,
+        colors = colors,
+        border = border,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        transformation = transformation,
+        labelContent =
+            provideScopeContent(
+                contentColor = colors.contentColor(enabled),
+                textStyle = FilledButtonTokens.LabelFont.value,
+                textConfiguration =
+                    TextConfiguration(
+                        textAlign =
+                            if (icon != null || secondaryLabel != null) TextAlign.Start
+                            else TextAlign.Center,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 3,
+                    ),
+                content = label
+            )
+    )
+
+/**
  * Wear Material3 [FilledTonalButton] that offers three slots and a specific layout for an icon,
  * label and secondaryLabel. The icon and secondaryLabel are optional. The items are laid out with
  * the icon, if provided, at the start of a row, with a column next containing the two label slots.
@@ -632,7 +765,8 @@ public fun Button(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [OutlinedButton] which defaults to
  * [ButtonDefaults.outlinedButtonColors] and [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * [FilledTonalButton] can be enabled or disabled. A disabled button will not respond to click
  * events.
@@ -753,7 +887,8 @@ public fun FilledTonalButton(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [FilledTonalButton] which defaults to
  * [ButtonDefaults.filledTonalButtonColors], [ChildButton] which defaults to
- * [ButtonDefaults.childButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.childButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * [OutlinedButton] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -853,129 +988,6 @@ public fun OutlinedButton(
     )
 
 /**
- * Wear Material3 [ImageButton] that offers three slots and a specific layout for an icon, label and
- * secondaryLabel. The icon and secondaryLabel are optional. The items are laid out with the icon,
- * if provided, at the start of a row, with a column next containing the two label slots.
- *
- * An Image background is a means to reinforce the meaning of information in a Button. Buttons
- * should have a content color that contrasts with the background image and scrim.
- *
- * [ImageButton] takes [containerPainter] for the image background to be drawn when the button is
- * enabled and [disabledContainerPainter] for the image background when the button is disabled. It
- * is recommended to use [ButtonDefaults.containerPainter] to create the painters so that a scrim is
- * drawn on top of the container image, ensuring that any content above the background is legible.
- *
- * The [ImageButton] is stadium-shaped by default and its standard height is designed to take 2
- * lines of text of [Typography.labelMedium] style - either a two-line label or both a single line
- * label and a secondary label. With localisation and/or large font sizes, the [ImageButton] height
- * adjusts to accommodate the contents. The label and secondary label should be consistently
- * aligned.
- *
- * [ImageButton] can be enabled or disabled. A disabled button will not respond to click events.
- *
- * Example of an [ImageButton] with an icon and secondary label:
- *
- * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
- * @param onClick Will be called when the user clicks the button
- * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
- *   returned by [ButtonDefaults.containerPainter].
- * @param modifier Modifier to be applied to the button
- * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
- *   set, [onLongClickLabel] should be set as well.
- * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
- * @param secondaryLabel A slot for providing the button's secondary label. The contents are
- *   expected to be text which is "start" aligned if there is an icon preset and "start" or "center"
- *   aligned if not. label and secondaryLabel contents should be consistently aligned.
- * @param icon A slot for providing the button's icon. The contents are expected to be a
- *   horizontally and vertically aligned icon of size [ButtonDefaults.IconSize] or
- *   [ButtonDefaults.LargeIconSize].
- * @param enabled Controls the enabled state of the button. When `false`, this button will not be
- *   clickable
- * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
- *   enabled, such as returned by [ButtonDefaults.containerPainter] with alpha =
- *   [ButtonDefaults.DisabledContainerAlpha].
- * @param shape Defines the button's shape. It is strongly recommended to use the default as this
- *   shape is a key characteristic of the Wear Material3 Theme
- * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.outlinedButtonColors].
- * @param border Optional [BorderStroke] that will be used to resolve the button border in different
- *   states.
- * @param contentPadding The spacing values to apply internally between the container and the
- *   content
- * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
- *   preview the button in different states. Note that if `null` is provided, interactions will
- *   still happen internally.
- * @param transformation Transformation to be used when button appears inside a container that needs
- *   to dynamically change its content separately from the background.
- * @param label A slot for providing the button's main label. The contents are expected to be text
- *   which is "start" aligned if there is an icon preset and "start" or "center" aligned if not.
- */
-// TODO(b/261838497) Add Material3 UX guidance links
-@Composable
-public fun ImageButton(
-    onClick: () -> Unit,
-    containerPainter: Painter,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-    onLongClickLabel: String? = null,
-    secondaryLabel: (@Composable RowScope.() -> Unit)? = null,
-    icon: (@Composable BoxScope.() -> Unit)? = null,
-    enabled: Boolean = true,
-    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
-    shape: Shape = ButtonDefaults.shape,
-    colors: ButtonColors = ButtonDefaults.imageButtonColors(),
-    border: BorderStroke? = null,
-    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
-    interactionSource: MutableInteractionSource? = null,
-    transformation: SurfaceTransformation? = null,
-    label: @Composable RowScope.() -> Unit,
-): Unit =
-    ButtonImpl(
-        onClick = onClick,
-        modifier = modifier.buttonSizeModifier(),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        secondaryLabelContent =
-            provideNullableScopeContent(
-                contentColor = colors.secondaryContentColor(enabled),
-                textStyle = FilledButtonTokens.SecondaryLabelFont.value,
-                textConfiguration =
-                    TextConfiguration(
-                        textAlign = TextAlign.Start,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 2,
-                    ),
-                content = secondaryLabel
-            ),
-        icon = icon,
-        enabled = enabled,
-        shape = shape,
-        labelFont = OutlinedButtonTokens.LabelFont.value,
-        containerPainter = containerPainter,
-        disabledContainerPainter = disabledContainerPainter,
-        colors = colors,
-        border = border,
-        contentPadding = contentPadding,
-        interactionSource = interactionSource,
-        transformation = transformation,
-        labelContent =
-            provideScopeContent(
-                contentColor = colors.contentColor(enabled),
-                textStyle = FilledButtonTokens.LabelFont.value,
-                textConfiguration =
-                    TextConfiguration(
-                        textAlign =
-                            if (icon != null || secondaryLabel != null) TextAlign.Start
-                            else TextAlign.Center,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 3,
-                    ),
-                content = label
-            )
-    )
-
-/**
  * Wear Material3 [ChildButton] that offers three slots and a specific layout for an icon, label and
  * secondaryLabel. The icon and secondaryLabel are optional. The items are laid out with the icon,
  * if provided, at the start of a row, with a column next containing the two label slots.
@@ -996,7 +1008,8 @@ public fun ImageButton(
  * Other recommended buttons with [ButtonColors] for different levels of emphasis are: [Button]
  * which defaults to [ButtonDefaults.buttonColors], [FilledTonalButton] which defaults to
  * [ButtonDefaults.filledTonalButtonColors], [OutlinedButton] which defaults to
- * [ButtonDefaults.outlinedButtonColors]. For a background image, see [ImageButton].
+ * [ButtonDefaults.outlinedButtonColors]. For a background image, see the overload of Button with a
+ * containerPainter parameter.
  *
  * [ChildButton] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -1126,7 +1139,7 @@ public fun ChildButton(
  * Other recommended [ButtonColors] for different levels of emphasis are:
  * [ButtonDefaults.filledTonalButtonColors], [ButtonDefaults.outlinedButtonColors] and
  * [ButtonDefaults.childButtonColors]. Buttons can also take an image background using
- * [ButtonDefaults.imageButtonColors].
+ * [ButtonDefaults.buttonWithContainerPainterColors].
  *
  * [CompactButton] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -1486,13 +1499,13 @@ public object ButtonDefaults {
             disabledIconColor = disabledIconColor
         )
 
-    /** Creates a [ButtonColors] for the content in an [ImageButton]. */
+    /** Creates a [ButtonColors] for the content in a [Button] with an image container painter. */
     @Composable
-    public fun imageButtonColors(): ButtonColors =
-        MaterialTheme.colorScheme.defaultImageButtonColors
+    public fun buttonWithContainerPainterColors(): ButtonColors =
+        MaterialTheme.colorScheme.defaultButtonWithContainerPainterColors
 
     /**
-     * Creates a [ButtonColors] for the content in an [ImageButton].
+     * Creates a [ButtonColors] for the content in a [Button] with an image container painter.
      *
      * Example of a Button with an image background:
      *
@@ -1507,7 +1520,7 @@ public object ButtonDefaults {
      * @param disabledIconColor The icon color of this [Button] when disabled, used for icon content
      */
     @Composable
-    public fun imageButtonColors(
+    public fun buttonWithContainerPainterColors(
         contentColor: Color = Color.Unspecified,
         secondaryContentColor: Color = Color.Unspecified,
         iconColor: Color = Color.Unspecified,
@@ -1515,7 +1528,7 @@ public object ButtonDefaults {
         disabledSecondaryContentColor: Color = Color.Unspecified,
         disabledIconColor: Color = Color.Unspecified,
     ): ButtonColors =
-        MaterialTheme.colorScheme.defaultImageButtonColors.copy(
+        MaterialTheme.colorScheme.defaultButtonWithContainerPainterColors.copy(
             contentColor = contentColor,
             secondaryContentColor = secondaryContentColor,
             iconColor = iconColor,
@@ -1525,8 +1538,8 @@ public object ButtonDefaults {
         )
 
     /**
-     * Creates a [Painter] for the background of an [ImageButton] that displays an image with a
-     * scrim on top to make sure that any content above the background will be legible.
+     * Creates a [Painter] for the background of a [Button] with container painter, that displays an
+     * image with a scrim on top to make sure that any content above the background will be legible.
      *
      * An Image background is a means to reinforce the meaning of information in a Button. Buttons
      * should have a content color that contrasts with the background image and scrim.
@@ -1548,28 +1561,27 @@ public object ButtonDefaults {
     @Composable
     public fun containerPainter(
         image: Painter,
-        scrim: Brush? =
-            Brush.linearGradient(
-                colors = listOf(imageBackgroundGradientStartColor, imageBackgroundGradientEndColor)
-            ),
+        scrim: Brush? = scrimBrush(),
         sizeToIntrinsics: Boolean = false,
         alignment: Alignment = Alignment.Center,
         contentScale: ContentScale = ContentScale.Fit,
         alpha: Float = DefaultAlpha,
     ): Painter {
-        return containerPainter(
-            painter = image,
-            scrim = scrim,
-            sizeToIntrinsics = sizeToIntrinsics,
-            alignment = alignment,
-            contentScale = contentScale,
-            alpha = alpha,
-        )
+        return remember(image, scrim, sizeToIntrinsics, alignment, contentScale, alpha) {
+            containerPainter(
+                painter = image,
+                scrim = scrim,
+                sizeToIntrinsics = sizeToIntrinsics,
+                alignment = alignment,
+                contentScale = contentScale,
+                alpha = alpha,
+            )
+        }
     }
 
     /**
-     * Creates a [Painter] for the disabled background of an [ImageButton] - draws the
-     * containerPainter with an alpha applied to achieve a disabled effect.
+     * Creates a [Painter] for the disabled background of a [Button] with container painter - draws
+     * the containerPainter with an alpha applied to achieve a disabled effect.
      *
      * An Image background is a means to reinforce the meaning of information in a Button. Buttons
      * should have a content color that contrasts with the background image and scrim.
@@ -1577,11 +1589,20 @@ public object ButtonDefaults {
      * @param containerPainter The [Painter] to use to draw the container background of the [Button]
      *   when enabled. An alpha will be applied to this to achieve a disabled effect.
      */
-    @Composable
     public fun disabledContainerPainter(
         containerPainter: Painter,
     ): Painter {
         return containerPainter(painter = containerPainter, alpha = DisabledContainerAlpha)
+    }
+
+    /** Creates a [Brush] for the recommended scrim drawn on top of image container backgrounds. */
+    @Composable
+    public fun scrimBrush(): Brush {
+        val startColor = scrimGradientStartColor
+        val endColor = scrimGradientEndColor
+        return remember(startColor, endColor) {
+            Brush.linearGradient(colors = listOf(startColor, endColor))
+        }
     }
 
     /**
@@ -1752,7 +1773,7 @@ public object ButtonDefaults {
      * The default gradient start color when drawing a scrim over an image to ensure that the text
      * text drawn over the image is legible.
      */
-    public val imageBackgroundGradientStartColor: Color
+    public val scrimGradientStartColor: Color
         @Composable
         get() =
             ImageButtonTokens.BackgroundImageGradientColor.value.copy(
@@ -1763,7 +1784,7 @@ public object ButtonDefaults {
      * The default gradient end color when drawing a scrim over an image to ensure that the text
      * text drawn over the image is legible.
      */
-    public val imageBackgroundGradientEndColor: Color
+    public val scrimGradientEndColor: Color
         @Composable
         get() =
             ImageButtonTokens.BackgroundImageGradientColor.value.copy(
@@ -1927,33 +1948,34 @@ public object ButtonDefaults {
                     .also { defaultButtonColorsCached = it }
         }
 
-    private val ColorScheme.defaultImageButtonColors: ButtonColors
+    private val ColorScheme.defaultButtonWithContainerPainterColors: ButtonColors
         get() {
-            return defaultImageButtonColorsCached
+            return defaultButtonWithContainerPainterColorsCached
                 ?: ButtonColors(
-                    containerColor = Color.Unspecified,
-                    contentColor = fromToken(ImageButtonTokens.ContentColor),
-                    secondaryContentColor =
-                        fromToken(ImageButtonTokens.SecondaryContentColor)
-                            .copy(alpha = ImageButtonTokens.SecondaryContentOpacity),
-                    iconColor = fromToken(ImageButtonTokens.IconColor),
-                    disabledContainerColor = Color.Unspecified,
-                    disabledContentColor =
-                        fromToken(ImageButtonTokens.DisabledContentColor)
-                            .toDisabledColor(
-                                disabledAlpha = ImageButtonTokens.DisabledContentOpacity
-                            ),
-                    disabledSecondaryContentColor =
-                        fromToken(ImageButtonTokens.DisabledContentColor)
-                            .toDisabledColor(
-                                disabledAlpha = ImageButtonTokens.DisabledContentOpacity
-                            ),
-                    disabledIconColor =
-                        fromToken(ImageButtonTokens.DisabledContentColor)
-                            .toDisabledColor(
-                                disabledAlpha = ImageButtonTokens.DisabledContentOpacity
-                            )
-                )
+                        containerColor = Color.Unspecified,
+                        contentColor = fromToken(ImageButtonTokens.ContentColor),
+                        secondaryContentColor =
+                            fromToken(ImageButtonTokens.SecondaryContentColor)
+                                .copy(alpha = ImageButtonTokens.SecondaryContentOpacity),
+                        iconColor = fromToken(ImageButtonTokens.IconColor),
+                        disabledContainerColor = Color.Unspecified,
+                        disabledContentColor =
+                            fromToken(ImageButtonTokens.DisabledContentColor)
+                                .toDisabledColor(
+                                    disabledAlpha = ImageButtonTokens.DisabledContentOpacity
+                                ),
+                        disabledSecondaryContentColor =
+                            fromToken(ImageButtonTokens.DisabledContentColor)
+                                .toDisabledColor(
+                                    disabledAlpha = ImageButtonTokens.DisabledContentOpacity
+                                ),
+                        disabledIconColor =
+                            fromToken(ImageButtonTokens.DisabledContentColor)
+                                .toDisabledColor(
+                                    disabledAlpha = ImageButtonTokens.DisabledContentOpacity
+                                )
+                    )
+                    .also { defaultButtonWithContainerPainterColorsCached = it }
         }
 
     /**
@@ -1967,12 +1989,12 @@ public object ButtonDefaults {
  * Represents the container and content colors used in buttons in different states.
  *
  * @param containerColor The background color of this [Button] when enabled (overridden by the
- *   containerPainter parameter on [ImageButton]
+ *   containerPainter parameter on Buttons with image backgrounds).
  * @param contentColor The content color of this [Button] when enabled.
  * @param secondaryContentColor The content color of this [Button] when enabled.
  * @param iconColor The content color of this [Button] when enabled.
  * @param disabledContainerColor The background color of this [Button] when not enabled (overridden
- *   by the disabledContainerPainter parameter on [ImageButton])
+ *   by the disabledContainerPainter parameter on Buttons with image backgrounds)
  * @param disabledContentColor The content color of this [Button] when not enabled.
  * @param disabledSecondaryContentColor The content color of this [Button] when not enabled.
  * @param disabledIconColor The content color of this [Button] when not enabled.

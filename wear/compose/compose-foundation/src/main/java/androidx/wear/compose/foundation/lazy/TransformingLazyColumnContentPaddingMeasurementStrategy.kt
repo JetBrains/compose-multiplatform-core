@@ -240,6 +240,8 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         actuallyVisibleItems.fastForEach { item ->
             itemAnimator.getAnimation(item.key, 0)?.let {
                 it.transformedHeight = item.transformedHeight
+                it.measuredHeight = item.measuredHeight
+                it.measurementDirection = item.measurementDirection
             }
         }
 
@@ -310,7 +312,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 )
             visibleItems.addFirst(additionalItem)
             topOffset -= additionalItem.transformedHeight + itemSpacing
-            topPassIndex -= 1
+            topPassIndex -= 1 // Indexes must be incremental.
         }
     }
 
@@ -336,7 +338,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 )
             bottomOffset += additionalItem.transformedHeight + itemSpacing
             visibleItems.add(additionalItem)
-            bottomPassIndex += 1
+            bottomPassIndex += 1 // Indexes must be incremental.
         }
     }
 
@@ -369,8 +371,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         visibleItems.fastForEachIndexed { idx, item ->
             item.measureScrollProgress =
                 bottomItemScrollProgress(
-                    // TODO: artemiy - Investigate why this is needed.
-                    if (idx == 0) previousOffset - itemSpacing else previousOffset,
+                    previousOffset,
                     item.measuredHeight,
                     containerConstraints.maxHeight
                 )
@@ -388,8 +389,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         for (idx in visibleItems.indices.reversed()) {
             visibleItems[idx].measureScrollProgress =
                 topItemScrollProgress(
-                    // TODO: artemiy - Investigate why this is needed.
-                    if (idx == 0) bottomLineOffset + 2 * itemSpacing else bottomLineOffset,
+                    bottomLineOffset,
                     visibleItems[idx].measuredHeight,
                     containerConstraints.maxHeight
                 )
@@ -400,7 +400,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
 
     private fun overscrolledBackwards(
         visibleItem: TransformingLazyColumnMeasuredItem,
-    ): Boolean = visibleItem.let { it.index == 0 && it.offset >= beforeContentPadding }
+    ): Boolean = visibleItem.let { it.index == 0 && it.offset > beforeContentPadding }
 
     private fun overscrolledForward(
         visibleItem: TransformingLazyColumnMeasuredItem,

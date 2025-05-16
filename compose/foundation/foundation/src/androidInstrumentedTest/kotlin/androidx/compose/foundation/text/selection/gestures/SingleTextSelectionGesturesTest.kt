@@ -19,7 +19,6 @@ package androidx.compose.foundation.text.selection.gestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.foundation.text.selection.gestures.util.SelectionSubject
 import androidx.compose.foundation.text.selection.gestures.util.TextSelectionAsserter
@@ -37,7 +36,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
-@ContextMenuFlagSuppress(suppressedFlagValue = true)
 internal class SingleTextSelectionGesturesTest : TextSelectionGesturesTest() {
 
     private val testTag = "testTag"

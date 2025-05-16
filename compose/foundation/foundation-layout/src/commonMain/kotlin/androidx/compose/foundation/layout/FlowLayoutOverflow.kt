@@ -76,16 +76,10 @@ private constructor(
 
     companion object {
         /** Display all content, even if there is not enough space in the specified bounds. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
-        val Visible = FlowRowOverflow(OverflowType.Visible)
+        @ExperimentalLayoutApi val Visible = FlowRowOverflow(OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
-        val Clip = FlowRowOverflow(OverflowType.Clip)
+        @ExperimentalLayoutApi val Clip = FlowRowOverflow(OverflowType.Clip)
 
         /**
          * Registers an "expand indicator" composable for handling overflow in a [FlowRow].
@@ -212,16 +206,11 @@ private constructor(
     @ExperimentalLayoutApi
     companion object {
         /** Display all content, even if there is not enough space in the specified bounds. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
         val Visible = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
-        val Clip = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Clip)
+        @ExperimentalLayoutApi val Clip = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Clip)
 
         /**
          * Registers an "expand indicator" composable for handling overflow in a [FlowColumn].
@@ -351,15 +340,11 @@ private constructor(
     @ExperimentalLayoutApi
     companion object {
         /** Display all content, even if there is not enough space in the specified bounds. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
         val Visible = ContextualFlowRowOverflow(FlowLayoutOverflow.OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
         val Clip = ContextualFlowRowOverflow(FlowLayoutOverflow.OverflowType.Clip)
 
         /**
@@ -493,15 +478,11 @@ private constructor(
     @ExperimentalLayoutApi
     companion object {
         /** Display all content, even if there is not enough space in the specified bounds. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
         val Visible = ContextualFlowColumnOverflow(FlowLayoutOverflow.OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @ExperimentalLayoutApi
-        @get:ExperimentalLayoutApi
         val Clip = ContextualFlowColumnOverflow(FlowLayoutOverflow.OverflowType.Clip)
 
         /**

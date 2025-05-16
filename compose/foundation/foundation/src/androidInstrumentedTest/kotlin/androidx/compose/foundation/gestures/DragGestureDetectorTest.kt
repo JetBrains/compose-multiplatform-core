@@ -86,7 +86,8 @@ class DragGestureDetectorTest(dragType: GestureType) {
     private val DragTouchSlopUtil = layoutWithGestureDetector {
         var count = 0
         detectDragGestures(
-            onDragStart = {
+            orientationLock = null,
+            onDragStart = { _: PointerInputChange, _: PointerInputChange, _: Offset ->
                 gestureStarted = true
                 startOrder = count++
             },

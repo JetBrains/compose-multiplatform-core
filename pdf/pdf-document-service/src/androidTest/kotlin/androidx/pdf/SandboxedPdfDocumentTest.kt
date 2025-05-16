@@ -324,7 +324,7 @@ class SandboxedPdfDocumentTest {
         private const val PDF_DOCUMENT_PARTIALLY_CORRUPTED_FILE = "partially_corrupted.pdf"
         private const val PDF_DOCUMENT_WITH_TEXT_AND_IMAGE = "alt_text.pdf"
 
-        private suspend fun withDocument(filename: String, block: suspend (PdfDocument) -> Unit) {
+        internal suspend fun withDocument(filename: String, block: suspend (PdfDocument) -> Unit) {
             val document = openDocument(filename)
             try {
                 block(document)

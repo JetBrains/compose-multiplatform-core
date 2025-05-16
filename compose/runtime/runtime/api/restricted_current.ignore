@@ -1,6 +1,16 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.runtime.Composer#getCompositeKeyHashCode():
-    Added method androidx.compose.runtime.Composer.getCompositeKeyHashCode()
+BecameUnchecked: androidx.compose.runtime.Composer#getApplyCoroutineContext():
+    Removed method androidx.compose.runtime.Composer.getApplyCoroutineContext() from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.Composer#getCompoundKeyHash():
+    Removed method androidx.compose.runtime.Composer.getCompoundKeyHash() from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.Composer#getRecomposeScope():
+    Removed method androidx.compose.runtime.Composer.getRecomposeScope() from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.MonotonicFrameClockKt#getMonotonicFrameClock(kotlin.coroutines.CoroutineContext):
+    Removed method androidx.compose.runtime.MonotonicFrameClockKt.getMonotonicFrameClock(kotlin.coroutines.CoroutineContext) from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.MonotonicFrameClockKt#getMonotonicFrameClock(kotlin.coroutines.CoroutineContext) parameter #0:
+    Removed parameter arg1 in androidx.compose.runtime.MonotonicFrameClockKt.getMonotonicFrameClock(kotlin.coroutines.CoroutineContext arg1) from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt#isLiveLiteralsEnabled():
+    Removed method androidx.compose.runtime.internal.LiveLiteralKt.isLiveLiteralsEnabled() from compatibility checked API surface
 
 
 RemovedClass: androidx.compose.runtime.Immutable:

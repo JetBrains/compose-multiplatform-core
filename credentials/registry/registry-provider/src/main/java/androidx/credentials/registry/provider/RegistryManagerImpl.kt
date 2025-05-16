@@ -42,4 +42,23 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         }
         provider.onRegisterCredentials(request, cancellationSignal, executor, callback)
     }
+
+    override fun clearCredentialRegistryAsync(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+    ) {
+        val provider: RegistryManagerProvider? =
+            RegistryManagerProviderFactory(context).getBestAvailableProvider()
+        if (provider == null) {
+            callback.onError(
+                IllegalArgumentException(
+                    "clearCredentialRegistry: no provider dependencies found - please ensure " +
+                        "the desired provider dependencies are added"
+                )
+            )
+            return
+        }
+        provider.onClearCredentialRegistry(request, executor, callback)
+    }
 }

@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
+import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -43,9 +45,11 @@ import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.junit.After;
 import org.junit.Before;
@@ -65,6 +69,7 @@ public final class EntityTest {
     private final Pose mTestPose = new Pose(new Vector3(1f, 2f, 3f), Quaternion.Identity);
     private JxrPlatformAdapterAxr mJxrPlatformAdapterAxr;
     private TestEntity mEntity;
+    private Activity mActivity;
 
     static class TestEntity extends AndroidXrEntity {
         TestEntity(
@@ -78,20 +83,20 @@ public final class EntityTest {
 
     @Before
     public void setUp() {
-        Activity activity = Robolectric.buildActivity(Activity.class).create().start().get();
+        mActivity = Robolectric.buildActivity(Activity.class).create().start().get();
 
         PerceptionLibrary perceptionLibrary = mock(PerceptionLibrary.class);
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(PerceptionLibraryConstants.OPEN_XR_SPACE_TYPE_VIEW);
         when(perceptionLibrary.initSession(
-                        activity,
+                        mActivity,
                         PerceptionLibraryConstants.OPEN_XR_SPACE_TYPE_VIEW,
                         mFakeScheduledExecutorService))
                 .thenReturn(immediateFuture(mock(Session.class)));
-        when(perceptionLibrary.getActivity()).thenReturn(activity);
+        when(perceptionLibrary.getActivity()).thenReturn(mActivity);
         mJxrPlatformAdapterAxr =
                 JxrPlatformAdapterAxr.create(
-                        activity,
+                        mActivity,
                         mFakeScheduledExecutorService,
                         mXrExtensions,
                         new FakeImpressApi(),
@@ -99,7 +104,8 @@ public final class EntityTest {
                         perceptionLibrary,
                         mock(SplitEngineSubspaceManager.class),
                         mock(ImpSplitEngineRenderer.class),
-                        false);
+                        false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
         mEntity =
                 new TestEntity(
                         mXrExtensions.createNode(),
@@ -400,5 +406,77 @@ public final class EntityTest {
     @Test
     public void setAlpha_invalidSpace_throwsException() {
         assertThrows(IllegalArgumentException.class, () -> mEntity.setAlpha(0.5f, 999));
+    }
+
+    @Test
+    public void hitTest_returnsTransformedHitTest() throws Exception {
+        float distance = 2.0f;
+        Vec3 hitPosition = new Vec3(1.0f, 2.0f, 3.0f);
+        Vec3 surfaceNormal = new Vec3(0.0f, 1.0f, 0.0f);
+        int surfaceType = com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL;
+        com.android.extensions.xr.space.HitTestResult extensionsHitTestResult =
+                new com.android.extensions.xr.space.HitTestResult.Builder(
+                                distance, hitPosition, true, surfaceType)
+                        .setSurfaceNormal(surfaceNormal)
+                        .build();
+        mEntity.setPose(
+                new Pose(
+                        new Vector3(1f, 1, 1f),
+                        Quaternion.fromEulerAngles(new Vector3(90f, 0f, 0f))),
+                Space.ACTIVITY);
+        ShadowXrExtensions.extract(mXrExtensions)
+                .setHitTestResult(mActivity, extensionsHitTestResult);
+
+        ListenableFuture<HitTestResult> hitTestResultFuture =
+                mEntity.hitTest(
+                        new Vector3(1f, 1f, 1f), new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
+        mFakeScheduledExecutorService.runAll();
+        HitTestResult hitTestResult = hitTestResultFuture.get();
+
+        assertThat(hitTestResult.getDistance()).isEqualTo(distance);
+        // Since the entity is rotated 90 degrees about the x axis, the hit position should be
+        // rotated
+        // 90 degrees about the x axis.
+        assertVector3(hitTestResult.getHitPosition(), new Vector3(0f, 2f, -1f));
+        assertVector3(hitTestResult.getSurfaceNormal(), new Vector3(0f, 0f, -1f));
+        assertThat(hitTestResult.getSurfaceType())
+                .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE);
+    }
+
+    @Test
+    public void hitTest_withScaledActivitySpace_returnsTransformedHitTest() throws Exception {
+        float distance = 2.0f;
+        Vec3 hitPosition = new Vec3(0.5f, 1.0f, 1.5f);
+        Vec3 surfaceNormal = new Vec3(0.0f, 1.0f, 0.0f);
+        int surfaceType = com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL;
+        ((ActivitySpaceImpl) mJxrPlatformAdapterAxr.getActivitySpace())
+                .setOpenXrReferenceSpacePose(Matrix4.fromScale(2f));
+        com.android.extensions.xr.space.HitTestResult extensionsHitTestResult =
+                new com.android.extensions.xr.space.HitTestResult.Builder(
+                                distance, hitPosition, true, surfaceType)
+                        .setSurfaceNormal(surfaceNormal)
+                        .build();
+        mEntity.setPose(
+                new Pose(
+                        new Vector3(0.5f, 0.5f, 0.5f),
+                        Quaternion.fromEulerAngles(new Vector3(90f, 0f, 0f))),
+                Space.ACTIVITY);
+        ShadowXrExtensions.extract(mXrExtensions)
+                .setHitTestResult(mActivity, extensionsHitTestResult);
+
+        ListenableFuture<HitTestResult> hitTestResultFuture =
+                mEntity.hitTest(
+                        new Vector3(1f, 1f, 1f), new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
+        mFakeScheduledExecutorService.runAll();
+        HitTestResult hitTestResult = hitTestResultFuture.get();
+
+        assertThat(hitTestResult.getDistance()).isEqualTo(distance);
+        // Since the entity is rotated 90 degrees about the x axis, the hit position should be
+        // rotated
+        // 90 degrees about the x axis.
+        assertVector3(hitTestResult.getHitPosition(), new Vector3(0f, 1f, -0.5f));
+        assertVector3(hitTestResult.getSurfaceNormal(), new Vector3(0f, 0f, -1f));
+        assertThat(hitTestResult.getSurfaceType())
+                .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE);
     }
 }

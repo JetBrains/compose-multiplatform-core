@@ -65,19 +65,19 @@ class PickerScreenshotTest {
 
     private val screenHeight = 150.dp
 
-    @Test fun picker() = verifyScreenshot { samplePicker() }
+    @Test fun picker() = verifyScreenshot { SamplePicker() }
 
-    @Test fun picker_without_gradient() = verifyScreenshot { samplePicker(gradientRatio = 0f) }
+    @Test fun picker_without_gradient() = verifyScreenshot { SamplePicker(gradientRatio = 0f) }
 
-    @Test fun picker_negative_separation() = verifyScreenshot { samplePicker(separation = -8.dp) }
+    @Test fun picker_negative_separation() = verifyScreenshot { SamplePicker(separation = -8.dp) }
 
-    @Test fun dual_picker() = verifyScreenshot { dualPicker() }
+    @Test fun dual_picker() = verifyScreenshot { DualPicker() }
 
     @Test
-    fun dual_picker_with_readonlylabel() = verifyScreenshot { dualPicker(readOnlyLabel = "Min") }
+    fun dual_picker_with_readonlylabel() = verifyScreenshot { DualPicker(readOnlyLabel = "Min") }
 
     @Composable
-    private fun samplePicker(
+    private fun SamplePicker(
         gradientRatio: Float = PickerDefaults.DefaultGradientRatio,
         separation: Dp = 0.dp,
     ) {
@@ -103,7 +103,7 @@ class PickerScreenshotTest {
     }
 
     @Composable
-    private fun dualPicker(readOnlyLabel: String? = null) {
+    private fun DualPicker(readOnlyLabel: String? = null) {
         // This test verifies read-only mode alongside an 'editable' Picker.
         val textStyle = MaterialTheme.typography.display1
 

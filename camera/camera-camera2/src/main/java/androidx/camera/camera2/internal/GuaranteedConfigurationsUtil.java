@@ -17,6 +17,7 @@
 package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
 import android.util.Size;
@@ -648,67 +649,67 @@ public final class GuaranteedConfigurationsUtil {
         // (YUV, s1440p)
         SurfaceCombination surfaceCombination1 = new SurfaceCombination();
         surfaceCombination1.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination1);
 
         // (PRIV, s1440p)
         SurfaceCombination surfaceCombination2 = new SurfaceCombination();
         surfaceCombination2.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination2);
 
         // (JPEG, s1440p)
         SurfaceCombination surfaceCombination3 = new SurfaceCombination();
         surfaceCombination3.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination3);
 
         // (YUV, s720p) + (JPEG, s1440p)
         SurfaceCombination surfaceCombination4 = new SurfaceCombination();
         surfaceCombination4.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9));
         surfaceCombination4.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination4);
 
         // (PRIV, s720p) + (JPEG, s1440p)
         SurfaceCombination surfaceCombination5 = new SurfaceCombination();
         surfaceCombination5.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9));
         surfaceCombination5.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination5);
 
         // (YUV, s720p) + (YUV, s1440p)
         SurfaceCombination surfaceCombination6 = new SurfaceCombination();
         surfaceCombination6.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9));
         surfaceCombination6.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination6);
 
         // (YUV, s720p) + (PRIV, s1440p)
         SurfaceCombination surfaceCombination7 = new SurfaceCombination();
         surfaceCombination7.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9));
         surfaceCombination7.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination7);
 
         // (PRIV, s720p) + (YUV, s1440p)
         SurfaceCombination surfaceCombination8 = new SurfaceCombination();
         surfaceCombination8.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9));
         surfaceCombination8.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination8);
 
         // (PRIV, s720p) + (PRIV, s1440p)
         SurfaceCombination surfaceCombination9 = new SurfaceCombination();
         surfaceCombination9.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9));
         surfaceCombination9.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination9);
 
         return combinationList;
@@ -724,14 +725,14 @@ public final class GuaranteedConfigurationsUtil {
         // (PRIV, s1440p, PREVIEW_VIDEO_STILL)
         SurfaceCombination surfaceCombination1 = new SurfaceCombination();
         surfaceCombination1.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p,
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3,
                         CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL));
         combinationList.add(surfaceCombination1);
 
         // (YUV, s1440p, PREVIEW_VIDEO_STILL)
         SurfaceCombination surfaceCombination2 = new SurfaceCombination();
         surfaceCombination2.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p,
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3,
                         CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL));
         combinationList.add(surfaceCombination2);
 
@@ -866,19 +867,19 @@ public final class GuaranteedConfigurationsUtil {
         // (PRIV, s1440p)
         SurfaceCombination surfaceCombination1 = new SurfaceCombination();
         surfaceCombination1.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination1);
 
         // (YUV, s1440p)
         SurfaceCombination surfaceCombination2 = new SurfaceCombination();
         surfaceCombination2.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination2);
 
         // (PRIV, s1440p) + (JPEG, MAXIMUM)
         SurfaceCombination surfaceCombination3 = new SurfaceCombination();
         surfaceCombination3.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         surfaceCombination3.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM));
         combinationList.add(surfaceCombination3);
@@ -886,7 +887,7 @@ public final class GuaranteedConfigurationsUtil {
         // (YUV, s1440p) + (JPEG, MAXIMUM)
         SurfaceCombination surfaceCombination4 = new SurfaceCombination();
         surfaceCombination4.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         surfaceCombination4.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM));
         combinationList.add(surfaceCombination4);
@@ -894,7 +895,7 @@ public final class GuaranteedConfigurationsUtil {
         // (PRIV, s1440p) + (YUV, MAXIMUM)
         SurfaceCombination surfaceCombination5 = new SurfaceCombination();
         surfaceCombination5.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         surfaceCombination5.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.MAXIMUM));
         combinationList.add(surfaceCombination5);
@@ -902,7 +903,7 @@ public final class GuaranteedConfigurationsUtil {
         // (YUV, s1440p) + (YUV, MAXIMUM)
         SurfaceCombination surfaceCombination6 = new SurfaceCombination();
         surfaceCombination6.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         surfaceCombination6.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.MAXIMUM));
         combinationList.add(surfaceCombination6);
@@ -912,7 +913,7 @@ public final class GuaranteedConfigurationsUtil {
         surfaceCombination7.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW));
         surfaceCombination7.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination7);
 
         // (YUV, PREVIEW) + (PRIV, s1440)
@@ -920,7 +921,7 @@ public final class GuaranteedConfigurationsUtil {
         surfaceCombination8.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW));
         surfaceCombination8.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination8);
 
         // (PRIV, PREVIEW) + (YUV, s1440)
@@ -928,7 +929,7 @@ public final class GuaranteedConfigurationsUtil {
         surfaceCombination9.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW));
         surfaceCombination9.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination9);
 
         // (YUV, PREVIEW) + (YUV, s1440)
@@ -936,7 +937,7 @@ public final class GuaranteedConfigurationsUtil {
         surfaceCombination10.addSurfaceConfig(
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW));
         surfaceCombination10.addSurfaceConfig(
-                SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p));
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3));
         combinationList.add(surfaceCombination10);
 
         return combinationList;
@@ -991,7 +992,7 @@ public final class GuaranteedConfigurationsUtil {
         // high-speed.
         SurfaceConfig surfaceConfig = SurfaceConfig.transformSurfaceConfig(CameraMode.DEFAULT,
                 ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, maxSupportedSize,
-                surfaceSizeDefinition);
+                surfaceSizeDefinition, SurfaceConfig.ConfigSource.CAPTURE_SESSION_TABLES);
 
         // Create high-speed supported combinations based on the constraints:
         // - Only support preview and/or video surface.
@@ -1010,5 +1011,125 @@ public final class GuaranteedConfigurationsUtil {
         surfaceCombinations.add(surfaceCombination);
 
         return surfaceCombinations;
+    }
+
+    /**
+     * Generates the list of {@link SurfaceCombination} that are guaranteed to be queryable with
+     * feature combination query APIs.
+     *
+     * <p> Note that these stream combinations are not guaranteed to be always supported, but rather
+     * guaranteed to provide a valid result via feature combination query (i.e.
+     * {@link CameraDevice.CameraDeviceSetup#isSessionConfigurationSupported} API).
+     *
+     * <p> These combinations are generated based on the documentation of
+     * {@link CameraCharacteristics#INFO_SESSION_CONFIGURATION_QUERY_VERSION}.
+     */
+    public static @NonNull List<@NonNull SurfaceCombination> generateQueryableFcqCombinations() {
+        List<SurfaceCombination> combinations = new ArrayList<>();
+
+        // (PRIV, S1080P)
+        combinations.add(new SurfaceCombination(
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1080P_16_9)));
+
+        // (PRIV, S720P)
+        combinations.add(new SurfaceCombination(
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9)));
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, MAX_16_9)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S1080P_16_9,
+                        /* jpegXSize = */ ConfigSize.MAXIMUM_16_9
+                )
+        );
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, UHD)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S1080P_16_9,
+                        /* jpegXSize = */ ConfigSize.UHD
+                )
+        );
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, S1440P)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S1080P_16_9,
+                        /* jpegXSize = */ ConfigSize.S1440P_16_9
+                )
+        );
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, S1080P)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S1080P_16_9,
+                        /* jpegXSize = */ ConfigSize.S1080P_16_9
+                )
+        );
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, MAX_16_9)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S720P_16_9,
+                        /* jpegXSize = */ ConfigSize.MAXIMUM_16_9
+                )
+        );
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, UHD)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S720P_16_9,
+                        /* jpegXSize = */ ConfigSize.UHD
+                )
+        );
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, S1080P)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S720P_16_9,
+                        /* jpegXSize = */ ConfigSize.S1080P_16_9
+                )
+        );
+
+        // (PRIV, XVGA) + (JPEG/JPEG_R, MAX_4_3)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.X_VGA,
+                        /* jpegXSize = */ ConfigSize.MAXIMUM_4_3
+                )
+        );
+
+        // (PRIV, S1080P_4_3) + (JPEG/JPEG_R, MAX_4_3)
+        combinations.addAll(
+                createPrivJpegXCombinations(
+                        /* privSize = */ ConfigSize.S1080P_4_3,
+                        /* jpegXSize = */ ConfigSize.MAXIMUM_4_3
+                )
+        );
+
+        // TODO: Add the combinations for Android 16
+
+        return combinations;
+    }
+
+    /**
+     * Creates a list of [SurfaceCombination] based on the input PRIV size and JPEG_X (i.e. JPEG
+     * and JPEG_R) size.
+     */
+    private static @NonNull List<@NonNull SurfaceCombination> createPrivJpegXCombinations(
+            ConfigSize privSize,
+            ConfigSize jpegXSize
+    ) {
+        List<SurfaceCombination> combinationList = new ArrayList<>();
+
+        combinationList.add(new SurfaceCombination(
+                SurfaceConfig.create(ConfigType.PRIV, privSize),
+                SurfaceConfig.create(ConfigType.JPEG, jpegXSize)));
+
+        combinationList.add(new SurfaceCombination(
+                SurfaceConfig.create(ConfigType.PRIV, privSize),
+                SurfaceConfig.create(ConfigType.JPEG_R, jpegXSize)));
+
+        return combinationList;
     }
 }

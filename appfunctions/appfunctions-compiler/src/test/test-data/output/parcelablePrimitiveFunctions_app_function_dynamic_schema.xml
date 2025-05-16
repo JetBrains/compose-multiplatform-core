@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.ParcelablePrimitiveFunctions#pendingIntentInput</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -27,9 +24,6 @@
         <functionId>com.testdata.ParcelablePrimitiveFunctions#pendingIntentInput</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.ParcelablePrimitiveFunctions#pendingIntentOutput</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -42,4 +36,7 @@
         </response>
         <functionId>com.testdata.ParcelablePrimitiveFunctions#pendingIntentOutput</functionId>
     </appfunction>
+    <AppFunctionComponentMetadataDocument>
+        <id>unused</id>
+    </AppFunctionComponentMetadataDocument>
 </appfunctions>

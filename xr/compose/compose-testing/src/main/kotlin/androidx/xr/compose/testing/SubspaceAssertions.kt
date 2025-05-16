@@ -41,6 +41,20 @@ public fun SubspaceSemanticsNodeInteraction.assertWidthIsEqualTo(
 }
 
 /**
+ * Asserts that the layout of this node has width that is NOT equal to [expectedWidth].
+ *
+ * @param expectedWidth The width to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertWidthIsNotEqualTo(
+    expectedWidth: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.width.assertIsNotEqualTo(expectedWidth, "width") }
+}
+
+/**
  * Asserts that the layout of this node has height equal to [expectedHeight].
  *
  * @param expectedHeight The height to assert.
@@ -52,6 +66,20 @@ public fun SubspaceSemanticsNodeInteraction.assertHeightIsEqualTo(
     expectedHeight: Dp
 ): SubspaceSemanticsNodeInteraction {
     return withSize { it.height.assertIsEqualTo(expectedHeight, "height") }
+}
+
+/**
+ * Asserts that the layout of this node has height that is NOT equal to [expectedHeight].
+ *
+ * @param expectedHeight The height to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertHeightIsNotEqualTo(
+    expectedHeight: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.height.assertIsNotEqualTo(expectedHeight, "height") }
 }
 
 /**
@@ -469,6 +497,25 @@ public fun Dp.assertIsEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(
     if (!isWithinTolerance(expected, tolerance)) {
         // Comparison failed, report the error in DPs
         throw AssertionError("Actual $subject is $this, expected $expected (tolerance: $tolerance)")
+    }
+}
+
+/**
+ * Asserts that this value is NOT equal to the given [expected] value.
+ *
+ * Performs the comparison with the given [tolerance] or the default one if none is provided.
+ *
+ * @param expected The expected value to which this one should NOT be equal to.
+ * @param subject Used in the error message to identify which item this assertion failed on.
+ * @param tolerance The tolerance within which the values should be treated as equal.
+ * @throws AssertionError if comparison fails.
+ */
+private fun Dp.assertIsNotEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
+    if (isWithinTolerance(expected, tolerance)) {
+        // Comparison failed, report the error in DPs
+        throw AssertionError(
+            "Actual $subject is $this, should NOT be $expected (tolerance: $tolerance)"
+        )
     }
 }
 

@@ -88,7 +88,7 @@ class HorizontalPageIndicatorScreenshotTest {
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                defaultHorizontalPageIndicator(indicatorStyle)
+                DefaultHorizontalPageIndicator(indicatorStyle)
             }
         }
         rule.waitForIdle()
@@ -120,7 +120,7 @@ class HorizontalPageIndicatorScreenshotTest {
     }
 
     @Composable
-    private fun defaultHorizontalPageIndicator(indicatorStyle: PageIndicatorStyle) {
+    private fun DefaultHorizontalPageIndicator(indicatorStyle: PageIndicatorStyle) {
         Box(modifier = Modifier.testTag(TEST_TAG).size(150.dp)) {
             HorizontalPageIndicator(
                 indicatorStyle = indicatorStyle,

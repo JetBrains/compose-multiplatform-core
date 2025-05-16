@@ -213,11 +213,11 @@ class KlibParsingCursorExtensionsTest {
 
     @Test
     fun parseQualifiedName() {
-        val input = "androidx.collection/MutableScatterMap something"
+        val input = "androidx.collection/MutableScatterMap { something"
         val cursor = Cursor(input)
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
-        assertThat(cursor.currentLine).isEqualTo("something")
+        assertThat(cursor.currentLine).isEqualTo("{ something")
     }
 
     @Test
@@ -239,6 +239,23 @@ class KlibParsingCursorExtensionsTest {
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
         assertThat(cursor.currentLine).isEqualTo("? something")
+    }
+
+    @Test
+    fun parseQualifiedNameWithQualifiedReceiver() {
+        val input = "androidx.compose.ui.text/AnnotatedString.Builder.BulletScope {"
+        val cursor = Cursor(input)
+        val qName = cursor.parseAbiQualifiedName()
+        assertThat(qName.toString())
+            .isEqualTo("androidx.compose.ui.text/AnnotatedString.Builder.BulletScope")
+    }
+
+    @Test
+    fun parseQualifiedNameBeforeDefaultParameterSymbol() {
+        val input = "androidx.collection/MutableScatterMap =..."
+        val cursor = Cursor(input)
+        val qName = cursor.parseAbiQualifiedName()
+        assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
     }
 
     @Test
@@ -349,6 +366,28 @@ class KlibParsingCursorExtensionsTest {
         val typeArg = receiver?.arguments?.single()?.type
         assertThat(typeArg?.nullability).isEqualTo(AbiTypeNullability.MARKED_NULLABLE)
         assertThat(typeArg?.tag).isEqualTo("A")
+    }
+
+    @Test
+    fun parseSimpleContextParams() {
+        val input = "context(kotlin/Int)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(1)
+        assertThat(contextParams?.single()?.type?.className.toString()).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseContextWithMultipleParams() {
+        val input = "context(kotlin/Int, kotlin.collections/List<kotlin/String>)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(2)
+        assertThat(contextParams?.first()?.type?.className.toString()).isEqualTo("kotlin/Int")
+        assertThat(contextParams?.last()?.type?.className.toString())
+            .isEqualTo("kotlin.collections/List")
+        assertThat(contextParams?.last()?.type?.arguments?.first()?.type?.className.toString())
+            .isEqualTo("kotlin/String")
     }
 
     @Test
@@ -629,5 +668,33 @@ class KlibParsingCursorExtensionsTest {
         val cursor = Cursor(input)
         assertThat(cursor.hasEnumEntry()).isTrue()
         assertThat(cursor.currentLine).isEqualTo(input)
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForFunctionName() {
+        val input = "myFun ()"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("myFun ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassName() {
+        val input = "MyClass  {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassWithSuper() {
+        val input = "MyClass = : my.lib/MyClass {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass =")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForForValueParameter() {
+        val input = "MyClass ,"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
     }
 }

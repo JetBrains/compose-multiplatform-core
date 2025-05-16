@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
 
 /**
@@ -26,13 +27,13 @@ import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
  * USAGE_MEDIA then the point provided will serve as the focal point of the media sound bed.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class PointSourceParams(public val entity: Entity) {
+public class PointSourceParams(internal val entity: Entity) {
 
     internal val rtPointSourceParams: RtPointSourceParams =
         RtPointSourceParams((entity as BaseEntity<*>).rtEntity)
 }
 
 internal fun RtPointSourceParams.toPointSourceParams(session: Session): PointSourceParams? {
-    val jxrEntity = session.getEntityForRtEntity(entity)
+    val jxrEntity = session.scene.getEntityForRtEntity(entity)
     return jxrEntity?.let { PointSourceParams(it) }
 }

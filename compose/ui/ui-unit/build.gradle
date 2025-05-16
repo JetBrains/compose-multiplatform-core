@@ -53,13 +53,16 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -95,7 +98,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.truth)
                 implementation("androidx.collection:collection-ktx:1.4.2")

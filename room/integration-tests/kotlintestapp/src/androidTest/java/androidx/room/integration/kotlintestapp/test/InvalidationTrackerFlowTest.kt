@@ -328,6 +328,7 @@ class InvalidationTrackerFlowTest {
     private fun runTest(testBody: suspend TestScope.() -> Unit) =
         testCoroutineScope.runTest(timeout = 10.minutes) {
             testBody.invoke(this)
+            testScheduler.advanceUntilIdle()
             database.close()
         }
 }

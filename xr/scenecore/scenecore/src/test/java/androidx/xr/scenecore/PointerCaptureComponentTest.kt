@@ -17,13 +17,17 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.InputEvent as RtInputEvent
 import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import org.junit.Before
@@ -39,9 +43,11 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class PointerCaptureComponentTest {
+    private val fakeRuntimeFactory = FakeRuntimeFactory()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
+    private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockRtEntity = mock<RtEntity>()
     private val mockRtComponent = mock<RtPointerCaptureComponent>()
 
@@ -66,17 +72,18 @@ class PointerCaptureComponentTest {
     @Before
     fun setUp() {
         whenever(mockRuntime.spatialEnvironment).thenReturn(mock())
-        whenever(mockRuntime.activitySpace).thenReturn(mock())
-        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mock())
+        whenever(mockRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mockActivitySpace)
         whenever(mockRuntime.headActivityPose).thenReturn(mock())
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockRtEntity)
         whenever(mockRtEntity.addComponent(any())).thenReturn(true)
         whenever(mockRuntime.createPointerCaptureComponent(any(), any(), any()))
             .thenReturn(mockRtComponent)
 
-        session = Session.create(activity, mockRuntime)
+        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
     @Test

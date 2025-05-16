@@ -32,7 +32,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.InactiveSurfac
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
-import androidx.camera.camera2.pipe.testing.TestUseCaseCamera
+import androidx.camera.camera2.pipe.integration.testing.TestUseCaseCamera
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.DeferrableSurfaces
 import androidx.camera.core.impl.ImmediateSurface

@@ -22,6 +22,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
+import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.ListenableFuture
 import java.time.Duration
 import java.util.UUID
@@ -84,12 +85,14 @@ public interface JxrPlatformAdapter {
      * route. The future returned by this method will fire listeners on the UI thread if
      * Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
 
     /**
      * Loads glTF Asset from a provided byte array. The future returned by this method will fire
      * listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     // TODO(b/397746548): Add InputStream support for loading glTFs.
     // Suppressed to allow CompletableFuture.
     public fun loadGltfByByteArray(
@@ -105,6 +108,7 @@ public interface JxrPlatformAdapter {
     public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
 
     /** Loads an ExrImage from a provided byte array using the Split Engine route. */
+    @Suppress("AsyncSuffixFuture")
     // Suppressed to allow CompletableFuture.
     public fun loadExrImageByByteArray(
         assetData: ByteArray,
@@ -115,6 +119,7 @@ public interface JxrPlatformAdapter {
      * Loads a texture resource for the given asset name or URL. The future returned by this method
      * will fire listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun loadTexture(
         assetName: String,
         sampler: TextureSampler,
@@ -133,13 +138,14 @@ public interface JxrPlatformAdapter {
      * Creates a water material by querying it from the system's built-in materials. The future
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>?
 
     /** Destroys the given water material resource. */
     public fun destroyWaterMaterial(material: MaterialResource)
 
-    /** Sets the reflection cube texture for the water material. */
-    public fun setReflectionCube(material: MaterialResource, reflectionCube: TextureResource)
+    /** Sets the reflection map texture for the water material. */
+    public fun setReflectionMap(material: MaterialResource, reflectionMap: TextureResource)
 
     /** Sets the normal map texture for the water material. */
     public fun setNormalMap(material: MaterialResource, normalMap: TextureResource)
@@ -172,13 +178,47 @@ public interface JxrPlatformAdapter {
         parentEntity: Entity,
     ): GltfEntity
 
-    /** A factory function for an Entity which displays drawable surfaces. */
+    /**
+     * Factory method for SurfaceEntity.
+     *
+     * @param stereoMode Stereo mode for the surface.
+     * @param pose Pose of this entity relative to its parent, default value is Identity.
+     * @param canvasShape The [CanvasShape] which describes the spatialized shape of the canvas.
+     * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
+     *   enabled.
+     * @param parentEntity The parent entity of this entity.
+     * @return A [SurfaceEntity] which is a child of the parent entity.
+     */
     public fun createSurfaceEntity(
         stereoMode: Int,
-        canvasShape: SurfaceEntity.CanvasShape,
         pose: Pose,
+        canvasShape: SurfaceEntity.CanvasShape,
+        contentSecurityLevel: Int,
         parentEntity: Entity,
     ): SurfaceEntity
+
+    /**
+     * Sets whether the depth test is enabled for all panels in the Scene when the Scene is in full
+     * space mode. Panels in home space mode are unaffected.
+     *
+     * <p>When the depth test for panels is enabled, panels in the Scene will undergo depth testing,
+     * where they can appear behind other content in the Scene. When the depth test is disabled,
+     * panels in the Scene do not undergo depth tests, that will always be drawn on top of other
+     * objects in the Scene that were already drawn. Panels and non-panel content (ex:
+     * SurfaceEntity, GltfEntity) are always drawn after the SpatialEnvironment in back to front
+     * order when such an order exists. Subsequent content will be drawn on top of panels with no
+     * depth test if the subsequent content is drawn later.
+     *
+     * <p>This method says "panel" because it only affects panels. Other content in the Scene is
+     * unaffected by this setting.
+     *
+     * <p>By default the depth test is enabled for all panels in the Scene. It can be disabled, or
+     * re-enabled, by using this method.
+     *
+     * @param enabled True to enable the depth test for all panels in the Scene (default), false to
+     *   disable the depth test for all panels in the Scene.
+     */
+    public fun enablePanelDepthTest(enabled: Boolean)
 
     /**
      * Adds the given {@link Consumer} as a listener to be invoked when this Session's current
@@ -337,6 +377,17 @@ public interface JxrPlatformAdapter {
     public fun createEntity(pose: Pose, name: String, parent: Entity): Entity
 
     /**
+     * A factory function to create a SubspaceNodeEntity.
+     *
+     * @param subspaceNode The SubspaceNode to create the SubspaceNodeEntity from.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun createSubspaceNodeEntity(
+        subspaceNode: SubspaceNode,
+        size: Dimensions,
+    ): SubspaceNodeEntity
+
+    /**
      * Create an Interactable component.
      *
      * @param executor Executor to use for input callbacks.
@@ -418,6 +469,8 @@ public interface JxrPlatformAdapter {
         stateListener: PointerCaptureComponent.StateListener,
         inputListener: InputEventListener,
     ): PointerCaptureComponent
+
+    public fun createSpatialPointerComponent(): SpatialPointerComponent
 
     /**
      * A factory function to recreate an Anchor entity which was persisted in a previous session.

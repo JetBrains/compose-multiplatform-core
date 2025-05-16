@@ -266,7 +266,7 @@ class MovableComponentImpl implements MovableComponent {
                     Entity parent = updatedParent;
                     mMoveEventListenersMap.forEach(
                             (listener, listenerExecutor) ->
-                                    executor.execute(
+                                    listenerExecutor.execute(
                                             () ->
                                                     listener.onMoveEvent(
                                                             new MoveEvent(

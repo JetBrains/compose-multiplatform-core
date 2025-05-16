@@ -40,6 +40,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -98,6 +99,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
     @Before
     fun setup() {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumePcsSupportedForImageCapture(context)
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())

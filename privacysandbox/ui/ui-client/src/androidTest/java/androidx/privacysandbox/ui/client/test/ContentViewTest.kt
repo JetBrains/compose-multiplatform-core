@@ -24,8 +24,8 @@ import android.view.MotionEvent
 import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
 import androidx.privacysandbox.ui.client.ContentView
+import androidx.privacysandbox.ui.client.IRemoteSessionController
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
-import androidx.privacysandbox.ui.core.IRemoteSessionController
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -60,10 +60,10 @@ class ContentViewTest {
         lastTransferredEventCallback = null
 
         val remoteController =
-            object : IRemoteSessionController.Stub() {
+            object : IRemoteSessionController {
                 override fun close() {}
 
-                override fun notifyConfigurationChanged(configuration: Configuration?) {}
+                override fun notifyConfigurationChanged(configuration: Configuration) {}
 
                 override fun notifyResized(width: Int, height: Int) {}
 
@@ -71,9 +71,9 @@ class ContentViewTest {
 
                 override fun notifyFetchUiForSession() {}
 
-                override fun notifyUiChanged(uiContainerInfo: Bundle?) {}
+                override fun notifyUiChanged(uiContainerInfo: Bundle) {}
 
-                override fun notifySessionRendered(supportedSignalOptions: List<String?>?) {}
+                override fun notifySessionRendered(supportedSignalOptions: List<String>) {}
 
                 override fun notifyMotionEvent(
                     motionEvent: MotionEvent,

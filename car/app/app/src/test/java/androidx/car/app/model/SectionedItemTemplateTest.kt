@@ -35,7 +35,7 @@ class SectionedItemTemplateTest {
             GridSection.Builder()
                 .addItem(GridItem.Builder().setImage(CarIcon.COMPOSE_MESSAGE).build())
                 .setTitle(CarText.Builder("Section 2").build())
-                .setItemSize(GridSection.ITEM_SIZE_LARGE)
+                .setItemSize(GridSection.ITEM_SIZE_EXTRA_LARGE)
                 .build()
         )
     private val testActions =

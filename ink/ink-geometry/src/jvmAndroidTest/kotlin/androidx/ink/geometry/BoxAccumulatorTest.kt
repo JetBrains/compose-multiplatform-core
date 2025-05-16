@@ -265,11 +265,30 @@ class BoxAccumulatorTest {
         val oldEnvelope = BoxAccumulator().add(rect1234)
         val newEnvelope = BoxAccumulator()
 
-        newEnvelope.populateFrom(oldEnvelope)
+        newEnvelope.populateFrom(oldEnvelope.box)
         val rect = newEnvelope.box
 
         assertThat(rect).isNotNull()
         assertThat(rect).isEqualTo(rect1234)
+    }
+
+    @Test
+    fun populateFrom_whenOldIsEmpty_shouldClear() {
+        val oldEnvelope = BoxAccumulator()
+        val newEnvelope = BoxAccumulator().add(rect1234)
+
+        assertThat(newEnvelope.box).isNotNull()
+        newEnvelope.populateFrom(oldEnvelope.box)
+        assertThat(newEnvelope.box).isNull()
+    }
+
+    @Test
+    fun populateFromValues_setsValues() {
+        val envelope = BoxAccumulator().add(rect1234)
+        assertThat(envelope.box).isEqualTo(rect1234)
+        envelope.populateFrom(10f, 20f, 30f, 40f)
+        assertThat(envelope.box)
+            .isEqualTo(ImmutableBox.fromTwoPoints(ImmutableVec(10F, 20F), ImmutableVec(30F, 40F)))
     }
 
     @Test

@@ -16,7 +16,6 @@
 
 package androidx.appfunctions.compiler.processors
 
-import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializable
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
@@ -31,6 +30,7 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.IntrospectionHelper
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionDataClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.FromAppFunctionDataMethod
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.FromAppFunctionDataMethod.APP_FUNCTION_DATA_PARAM_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.ToAppFunctionDataMethod.APP_FUNCTION_SERIALIZABLE_PARAM_NAME
@@ -62,7 +62,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      *
      * This method uses [appendFromAppFunctionDataMethodBodyCommon] to generate the common code for
      * iterating through all the properties of a target serializable and extracting its
-     * corresponding value from an [AppFunctionData]. It then returns the serializable itself.
+     * corresponding value from an AppFunctionData. It then returns the serializable itself.
      *
      * For example, given the following non proxy serializable class:
      * ```
@@ -103,7 +103,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * This method is similar to [appendFromAppFunctionDataMethodBody]. It uses
      * [appendFromAppFunctionDataMethodBodyCommon] to generate the common code for iterating through
      * all the properties of a target serializable and extracting its corresponding value from an
-     * [AppFunctionData]. However, It then returns a proxy serializable target class instead of the
+     * AppFunctionData. However, It then returns a proxy serializable target class instead of the
      * serializable itself.
      *
      * For example, given the following proxy serializable class:
@@ -159,7 +159,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
 
     /**
      * Generates common factory code for iterating through all the properties of a target
-     * serializable and extracting its corresponding value from an [AppFunctionData].
+     * serializable and extracting its corresponding value from an AppFunctionData.
      *
      * This function is used to build the `FromAppFunctionData` method of the generated
      * AppFunctionSerializableFactory.
@@ -183,10 +183,9 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * ```
      *
      * Note that this method does not actually populate the value to be returned. It will only
-     * handle extracting the relevant properties from the provided [AppFunctionData] to construct
-     * the relevant [androidx.appfunctions.AppFunctionSerializable] data class. The caller will
-     * append the actual return statement which could return the dataclass itself or a proxy target
-     * class.
+     * handle extracting the relevant properties from the provided AppFunctionData to construct the
+     * relevant androidx.appfunctions.AppFunctionSerializable data class. The caller will append the
+     * actual return statement which could return the dataclass itself or a proxy target class.
      */
     private fun appendFromAppFunctionDataMethodBodyCommon(getterResultName: String): CodeBlock {
         return buildCodeBlock {
@@ -213,7 +212,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      *
      * This method uses [appendToAppFunctionDataMethodBodyCommon] to generate the common code for
      * iterating through all the properties of a target serializable and extracting its single
-     * property values. It then returns an [AppFunctionData] instance with the extracted values.
+     * property values. It then returns an AppFunctionData instance with the extracted values.
      *
      * For example, given the following non proxy serializable class:
      * ```
@@ -257,7 +256,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * This method is similar to [appendToAppFunctionDataMethodBody]. It uses
      * [appendToAppFunctionDataMethodBodyCommon] to generate the common code for iterating through
      * all the properties of a target serializable and extracting its single property values. It
-     * then returns an [AppFunctionData] instance with the extracted values.
+     * then returns an AppFunctionData instance with the extracted values.
      *
      * The key difference from [appendToAppFunctionDataMethodBody] is the `toAppFunctionData`
      * factory method accepts the target class instead of an AppFunctionSerializable type directly.
@@ -322,7 +321,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
 
     /**
      * Generates common factory code for iterating through all the properties of an
-     * [androidx.appfunctions.AppFunctionSerializable] to populate an [AppFunctionData] instance.
+     * androidx.appfunctions.AppFunctionSerializable to populate an AppFunctionData instance.
      *
      * This function is used to build the `toAppFunctionData` method of the generated
      * AppFunctionSerializableFactory.
@@ -348,15 +347,19 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * }
      * ```
      *
-     * Note that this method works directly with an [androidx.appfunctions.AppFunctionSerializable]
+     * Note that this method works directly with an androidx.appfunctions.AppFunctionSerializable
      * class. In a case where the factory is for a proxy, the caller is expected to add the
      * serializable representation of the proxy to the code block before calling this method.
      */
     private fun appendToAppFunctionDataMethodBodyCommon(): CodeBlock {
         return buildCodeBlock {
             add(factoryInitStatements)
-            val qualifiedClassName = annotatedClass.qualifiedName
-            addStatement("val builder = %T(%S)", AppFunctionData.Builder::class, qualifiedClassName)
+            val qualifiedClassName = annotatedClass.jvmQualifiedName
+            addStatement(
+                "val builder = %T(%S)",
+                AppFunctionDataClass.BuilderClass.CLASS_NAME,
+                qualifiedClassName
+            )
             for (property in annotatedClass.getProperties()) {
                 val formatStringMap =
                     mapOf<String, Any>(
@@ -443,7 +446,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             PRIMITIVE_SINGULAR,
             PRIMITIVE_ARRAY,
             PRIMITIVE_LIST -> appendPrimitiveGetterStatement(paramName, afType)
-            SERIALIZABLE_SINGULAR -> appendSerializableGetterStatement(paramName, afType)
+            SERIALIZABLE_SINGULAR ->
+                appendSerializableGetterStatement(
+                    paramName,
+                    getSerializableFactoryVariableName(getAnnotatedSerializable(afType)),
+                    afType
+                )
             SERIALIZABLE_LIST ->
                 appendSerializableListGetterStatement(
                     paramName,
@@ -457,7 +465,8 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     )
                 appendSerializableGetterStatement(
                     paramName,
-                    AppFunctionTypeReference(targetSerializableProxy.serializableReferenceType)
+                    getSerializableFactoryVariableName(targetSerializableProxy),
+                    afType
                 )
             }
             SERIALIZABLE_PROXY_LIST -> {
@@ -469,6 +478,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     paramName,
                     afType,
                     targetSerializableProxy.serializableReferenceType.getTypeShortName()
+                )
+            }
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
                 )
             }
         }
@@ -501,6 +516,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
 
     private fun CodeBlock.Builder.appendSerializableGetterStatement(
         paramName: String,
+        factoryName: String,
         afType: AppFunctionTypeReference
     ): CodeBlock.Builder {
         val annotatedSerializable = getAnnotatedSerializable(afType)
@@ -508,7 +524,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
             mapOf<String, Any>(
                 "param_name" to paramName,
                 "param_type" to afType.selfTypeReference.toTypeName(),
-                "factory_name" to getSerializableFactoryVariableName(annotatedSerializable),
+                "factory_name" to factoryName,
                 "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
                 "getter_name" to getAppFunctionDataGetterName(afType),
                 "from_app_function_data_method_name" to FromAppFunctionDataMethod.METHOD_NAME,
@@ -669,7 +685,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             PRIMITIVE_SINGULAR,
             PRIMITIVE_ARRAY,
             PRIMITIVE_LIST -> appendPrimitiveSetterStatement(paramName, afType)
-            SERIALIZABLE_SINGULAR -> appendSerializableSetterStatement(paramName, afType)
+            SERIALIZABLE_SINGULAR ->
+                appendSerializableSetterStatement(
+                    paramName,
+                    getSerializableFactoryVariableName(getAnnotatedSerializable(afType)),
+                    afType
+                )
             SERIALIZABLE_LIST ->
                 appendSerializableListSetterStatement(
                     paramName,
@@ -683,7 +704,8 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     )
                 appendSerializableSetterStatement(
                     paramName,
-                    AppFunctionTypeReference(targetSerializableProxy.serializableReferenceType)
+                    getSerializableFactoryVariableName(targetSerializableProxy),
+                    afType
                 )
             }
             SERIALIZABLE_PROXY_LIST -> {
@@ -695,6 +717,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     paramName,
                     afType,
                     targetSerializableProxy.serializableReferenceType.getTypeShortName()
+                )
+            }
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
                 )
             }
         }
@@ -715,13 +743,13 @@ class AppFunctionSerializableFactoryCodeBuilder(
 
     private fun CodeBlock.Builder.appendSerializableSetterStatement(
         paramName: String,
+        factoryName: String,
         afType: AppFunctionTypeReference
     ): CodeBlock.Builder {
-        val annotatedSerializable = getAnnotatedSerializable(afType)
         val formatStringMap =
             mapOf<String, Any>(
                 "param_name" to paramName,
-                "factory_name" to getSerializableFactoryVariableName(annotatedSerializable),
+                "factory_name" to factoryName,
                 "setter_name" to getAppFunctionDataSetterName(afType),
             )
 
@@ -769,6 +797,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> "getAppFunctionDataList"
             PRIMITIVE_LIST -> "get${shortTypeName}List"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -788,6 +822,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             PRIMITIVE_LIST,
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> if (afType.isNullable) "" else " ?: emptyList()"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -800,6 +840,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             SERIALIZABLE_PROXY_SINGULAR -> "setAppFunctionData"
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> "setAppFunctionDataList"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 

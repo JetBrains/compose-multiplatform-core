@@ -140,13 +140,7 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testRemoveInCallback() {
-        val onBackPressedCallback =
-            object : CountingOnBackPressedCallback() {
-                override fun handleOnBackPressed() {
-                    super.handleOnBackPressed()
-                    remove()
-                }
-            }
+        val onBackPressedCallback = CountingOnBackPressedCallback { remove() }
 
         dispatcher.addCallback(onBackPressedCallback)
         assertWithMessage("Handler should return true once a callback is added")
@@ -251,15 +245,11 @@ class OnBackPressedHandlerTest {
     @Test
     fun testPassthroughListener() {
         val onBackPressedCallback = CountingOnBackPressedCallback()
-        val passThroughOnBackPressedCallback =
-            object : CountingOnBackPressedCallback() {
-                override fun handleOnBackPressed() {
-                    super.handleOnBackPressed()
-                    // Trigger the next listener
-                    isEnabled = false
-                    dispatcher.onBackPressed()
-                }
-            }
+        val passThroughOnBackPressedCallback = CountingOnBackPressedCallback {
+            // Trigger the next listener
+            isEnabled = false
+            dispatcher.onBackPressed()
+        }
 
         dispatcher.addCallback(onBackPressedCallback)
         dispatcher.addCallback(passThroughOnBackPressedCallback)
@@ -337,14 +327,31 @@ class OnBackPressedHandlerTest {
 
     @UiThreadTest
     @Test
+    fun testLifecycleCallbackManualRemoval() {
+        val lifecycleOnBackPressedCallback = CountingOnBackPressedCallback()
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.INITIALIZED)
+
+        dispatcher.addCallback(lifecycleOwner, lifecycleOnBackPressedCallback)
+        dispatcher.onBackPressed()
+        assertWithMessage("Non-started callbacks shouldn't have their count incremented")
+            .that(lifecycleOnBackPressedCallback.count)
+            .isEqualTo(0)
+
+        // Remove the callback manually
+        lifecycleOnBackPressedCallback.remove()
+
+        // Now start the Lifecycle
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        dispatcher.onBackPressed()
+        assertWithMessage("Removed callback shouldn't have their count incremented")
+            .that(lifecycleOnBackPressedCallback.count)
+            .isEqualTo(0)
+    }
+
+    @UiThreadTest
+    @Test
     fun testLifecycleRemoveInCallback() {
-        val onBackPressedCallback =
-            object : CountingOnBackPressedCallback() {
-                override fun handleOnBackPressed() {
-                    super.handleOnBackPressed()
-                    remove()
-                }
-            }
+        val onBackPressedCallback = CountingOnBackPressedCallback { remove() }
         val lifecycleOwner = TestLifecycleOwner()
 
         dispatcher.addCallback(lifecycleOwner, onBackPressedCallback)
@@ -499,12 +506,98 @@ class OnBackPressedHandlerTest {
         assertWithMessage("reportCount").that(reportCount).isEqualTo(3)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
     }
+
+    @UiThreadTest
+    @Test
+    fun testBothCallbacksAdded() {
+        val callback1 = CountingOnBackPressedCallback()
+        dispatcher.eventDispatcher.addCallback(callback1.eventCallback)
+
+        val callback2 = CountingOnBackPressedCallback()
+        dispatcher.addCallback(callback2)
+
+        dispatcher.onBackPressed()
+        dispatcher.onBackPressed()
+
+        assertWithMessage("Count should not be incremented as the callback is not at the top")
+            .that(callback1.count)
+            .isEqualTo(0)
+        assertWithMessage("Count should be incremented after each onBackPressed")
+            .that(callback2.count)
+            .isEqualTo(2)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testCallbackIsAddedToMultipleDispatchers() {
+        val dispatcher1 = OnBackPressedDispatcher()
+        val dispatcher2 = OnBackPressedDispatcher()
+
+        val callback = CountingOnBackPressedCallback()
+
+        dispatcher1.addCallback(callback)
+        dispatcher2.addCallback(callback)
+
+        dispatcher1.onBackPressed()
+
+        assertWithMessage("Count should be incremented after onBackPressed")
+            .that(callback.count)
+            .isEqualTo(1)
+
+        dispatcher2.onBackPressed()
+
+        assertWithMessage("Count should be incremented after onBackPressed")
+            .that(callback.count)
+            .isEqualTo(2)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testNavigationEventDispatchesToOnBackPressedCallback() {
+        val callback = CountingOnBackPressedCallback()
+        dispatcher.addCallback(callback)
+
+        dispatcher.eventDispatcher.dispatchOnCompleted()
+
+        assertWithMessage("Count should be incremented after dispatchOnCompleted")
+            .that(callback.count)
+            .isEqualTo(1)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testOnBackPressedDispatchesToNavigationEventCallback() {
+        val callback = CountingOnBackPressedCallback()
+        dispatcher.eventDispatcher.addCallback(callback.eventCallback)
+
+        dispatcher.onBackPressed()
+
+        assertWithMessage("Count should be incremented after onBackPressed")
+            .that(callback.count)
+            .isEqualTo(1)
+    }
 }
 
-open class CountingOnBackPressedCallback(enabled: Boolean = true) : OnBackPressedCallback(enabled) {
+/**
+ * A custom implementation of [OnBackPressedCallback] designed for testing purposes.
+ *
+ * This fake callback allows you to track the number of times the back press event is handled. It's
+ * useful in tests to verify that your back press logic is correctly invoked.
+ *
+ * Each time [handleOnBackPressed] is called, the [count] property is incremented. Additionally, an
+ * optional lambda function [onBackPressed] can be provided to execute custom logic when the back
+ * press is handled.
+ */
+private class CountingOnBackPressedCallback(
+    enabled: Boolean = true,
+    private val onBackPressed: OnBackPressedCallback.() -> Unit = {},
+) : OnBackPressedCallback(enabled) {
+
     var count = 0
+        private set
 
     override fun handleOnBackPressed() {
         count++
+        onBackPressed()
     }
 }

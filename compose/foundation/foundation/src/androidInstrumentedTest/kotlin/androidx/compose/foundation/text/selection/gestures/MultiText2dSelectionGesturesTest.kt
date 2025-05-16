@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
@@ -44,7 +43,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(ContextMenuFlagFlipperRunner::class)
-@ContextMenuFlagSuppress(suppressedFlagValue = true)
 internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest() {
 
     // 3 x 3 grid of texts

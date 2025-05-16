@@ -44,7 +44,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinStdlib)
                 api("androidx.compose.foundation:foundation:1.7.8")
-                api("androidx.compose.ui:ui-geometry:1.7.8")
+                api("androidx.compose.ui:ui:1.8.0-rc03")
                 api("androidx.window:window-core:1.4.0-rc01")
             }
         }

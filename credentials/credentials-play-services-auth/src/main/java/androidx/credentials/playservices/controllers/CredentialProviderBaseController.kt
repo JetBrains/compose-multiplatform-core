@@ -80,8 +80,13 @@ internal open class CredentialProviderBaseController(private val context: Contex
         // Key for the result intent to send back to the controller
         const val RESULT_DATA_TAG = "RESULT_DATA"
 
-        // Key for the actual parcelable type sent to the hidden activity
-        const val EXTRA_GET_CREDENTIAL_INTENT = "EXTRA_GET_CREDENTIAL_INTENT"
+        // Key for the actual parcelable type sent to the hidden activity, regardless of API flow.
+        const val EXTRA_FLOW_PENDING_INTENT = "EXTRA_FLOW_PENDING_INTENT"
+
+        const val EXTRA_DIGITAL_CREDENTIAL_INTENT = "EXTRA_DIGITAL_CREDENTIAL_INTENT"
+
+        // Key for the error name to be used in the activity error reporting.
+        const val EXTRA_ERROR_NAME = "EXTRA_ERROR_NAME"
 
         // Key for the failure boolean sent back from hidden activity to controller
         const val FAILURE_RESPONSE_TAG = "FAILURE_RESPONSE"

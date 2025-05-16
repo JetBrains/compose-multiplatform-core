@@ -24,7 +24,7 @@ import android.content.Intent
  * Broadcast receiver handling updates after a package update. Useful to know if classes appeared or
  * disappeared and need cleaning.
  */
-open class MyPackageReplacedReceiver : BroadcastReceiver() {
+public open class MyPackageReplacedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         checkNotNull(context) { "onReceive context is null" }
         checkNotNull(intent) { "onReceive intent is null" }

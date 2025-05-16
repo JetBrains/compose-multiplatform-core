@@ -31,6 +31,8 @@ interface XFileSpec {
         mode: XFiler.Mode = XFiler.Mode.Isolating
     )
 
+    fun toBuilder(): Builder
+
     companion object {
         @JvmStatic
         fun of(packageName: String, typeSpec: XTypeSpec) = builder(packageName, typeSpec).build()

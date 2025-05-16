@@ -1046,26 +1046,17 @@ object ButtonDefaults {
     val MinHeight = ButtonSmallTokens.ContainerHeight
 
     /** The default height for a extra small button container. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val ExtraSmallContainerHeight = ButtonXSmallTokens.ContainerHeight
 
     /** The default height for a medium button container. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val MediumContainerHeight = ButtonMediumTokens.ContainerHeight
 
     /** The default height for a large button container. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val LargeContainerHeight = ButtonLargeTokens.ContainerHeight
+    @ExperimentalMaterial3ExpressiveApi val LargeContainerHeight = ButtonLargeTokens.ContainerHeight
 
     /** The default height for a extra large button container. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val ExtraLargeContainerHeight = ButtonXLargeTokens.ContainerHeight
 
@@ -1074,34 +1065,19 @@ object ButtonDefaults {
     val IconSize = 18.dp
 
     /** The default size of the icon used inside of a extra small button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val ExtraSmallIconSize = ButtonXSmallTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val ExtraSmallIconSize = ButtonXSmallTokens.IconSize
 
     /** The expressive size of the icon used inside a small button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val SmallIconSize = ButtonSmallTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val SmallIconSize = ButtonSmallTokens.IconSize
 
     /** The default size of the icon used inside of a medium button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val MediumIconSize = ButtonMediumTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val MediumIconSize = ButtonMediumTokens.IconSize
 
     /** The default size of the icon used inside of a large button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val LargeIconSize = ButtonLargeTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val LargeIconSize = ButtonLargeTokens.IconSize
 
     /** The default size of the icon used inside of a extra large button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val ExtraLargeIconSize = ButtonXLargeTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val ExtraLargeIconSize = ButtonXLargeTokens.IconSize
 
     /**
      * The default size of the spacing between an icon and a text when they used inside a small
@@ -1113,69 +1089,46 @@ object ButtonDefaults {
      * The default spacing between an icon and a text when they used inside any extra small button.
      */
     // TODO use the value from ButtonXSmallTokens.kt once it's been corrected
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val ExtraSmallIconSpacing = 4.dp
+    @ExperimentalMaterial3ExpressiveApi val ExtraSmallIconSpacing = 4.dp
 
     /** The default spacing between an icon and a text when they used inside any medium button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val MediumIconSpacing = ButtonMediumTokens.IconLabelSpace
+    @ExperimentalMaterial3ExpressiveApi val MediumIconSpacing = ButtonMediumTokens.IconLabelSpace
 
     /** The default spacing between an icon and a text when they used inside any large button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val LargeIconSpacing = ButtonLargeTokens.IconLabelSpace
+    @ExperimentalMaterial3ExpressiveApi val LargeIconSpacing = ButtonLargeTokens.IconLabelSpace
 
     /**
      * The default spacing between an icon and a text when they used inside any extra large button.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val ExtraLargeIconSpacing = ButtonXLargeTokens.IconLabelSpace
 
     /** Square shape for default buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val squareShape: Shape
         @Composable get() = ButtonSmallTokens.ContainerShapeSquare.value
 
     /** Pressed shape for default buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val pressedShape: Shape
         @Composable get() = ButtonSmallTokens.PressedContainerShape.value
 
     /** Pressed shape for extra small buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val extraSmallPressedShape: Shape
         @Composable get() = ButtonXSmallTokens.PressedContainerShape.value
 
     /** Pressed shape for medium buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val mediumPressedShape: Shape
         @Composable get() = ButtonMediumTokens.PressedContainerShape.value
 
     /** Pressed shape for large buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val largePressedShape: Shape
         @Composable get() = ButtonLargeTokens.PressedContainerShape.value
 
     /** Pressed shape for extra large buttons. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val extraLargePressedShape: Shape
         @Composable get() = ButtonXLargeTokens.PressedContainerShape.value

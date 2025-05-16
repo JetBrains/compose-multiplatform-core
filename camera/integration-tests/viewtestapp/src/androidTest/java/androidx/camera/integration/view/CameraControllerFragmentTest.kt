@@ -164,7 +164,11 @@ class CameraControllerFragmentTest(
                     started = true
                     return@observe
                 }
-                if (started) {
+
+                // The FOCUS_FAILED state can occur before FOCUS_STARTED if none of the provided
+                // AF/AE/AWB MeteringPoints are supported by the device. In such cases, we can
+                // consider the focus operation to be finished.
+                if (started || it.focusState == TAP_TO_FOCUS_FAILED) {
                     finalState = it.focusState
                     focused.release()
                 }

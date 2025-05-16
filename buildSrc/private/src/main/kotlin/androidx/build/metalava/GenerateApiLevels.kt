@@ -18,6 +18,7 @@ package androidx.build.metalava
 
 import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
+import androidx.build.registerAsComponentForKmpPublishing
 import androidx.build.registerAsComponentForPublishing
 import java.io.File
 import org.gradle.api.Project
@@ -89,7 +90,7 @@ internal val Project.versionMetadataUsage: Usage
 internal fun Project.registerVersionMetadataComponent(
     generateApiTask: TaskProvider<GenerateApiTask>
 ) {
-    configurations.create("libraryVersionMetadata") { configuration ->
+    configurations.register("libraryVersionMetadata") { configuration ->
         configuration.isVisible = false
         configuration.isCanBeResolved = false
 
@@ -111,5 +112,6 @@ internal fun Project.registerVersionMetadataComponent(
         configuration.outgoing.artifact(levelsFile) { it.classifier = "versionMetadata" }
 
         registerAsComponentForPublishing(configuration)
+        registerAsComponentForKmpPublishing(configuration)
     }
 }

@@ -16,12 +16,13 @@
 package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material3.SplitButtonDefaults.InnerCornerSize
 import androidx.compose.material3.SplitButtonDefaults.OuterCornerSize
+import androidx.compose.material3.SplitButtonDefaults.SmallInnerCornerSize
 import androidx.compose.material3.tokens.SplitButtonSmallTokens
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,7 +63,6 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-// TODO: b/370605854 - Add test case for checked trailing button
 class SplitButtonTest {
     @get:Rule val rule = createComposeRule()
 
@@ -361,7 +361,7 @@ class SplitButtonTest {
             )
         }
 
-        val trailingButtonTopStartPx = InnerCornerSize.toPx(trailingButtonSize, density)
+        val trailingButtonTopStartPx = SmallInnerCornerSize.toPx(trailingButtonSize, density)
         val trailingButtonTopEndPx = OuterCornerSize.toPx(trailingButtonSize, density) / 2
 
         val paddingPxCorrection =
@@ -400,6 +400,311 @@ class SplitButtonTest {
         (trailingButtonBounds.right - iconBounds.right).assertIsEqualTo(
             expectedTrailingButtonEndPadding,
             "end padding for trailing button"
+        )
+    }
+
+    @Test
+    fun filledSplitButton_extraSmall_positioning() {
+        val size = SplitButtonDefaults.ExtraSmallContainerHeight
+
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leadingButton").heightIn(size),
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Leading Icon",
+                            modifier =
+                                Modifier.testTag("leadingIcon").semantics(
+                                    mergeDescendants = true
+                                ) {}
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        modifier = Modifier.heightIn(size).testTag("trailingButton"),
+                        checked = false,
+                        onCheckedChange = {},
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
+                    }
+                }
+            )
+        }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leadingButton").getUnclippedBoundsInRoot()
+        val leadingIconBounds = rule.onNodeWithTag("leadingIcon").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithTag("text").getUnclippedBoundsInRoot()
+
+        (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            12.dp,
+            "start padding for leading button"
+        )
+        (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            4.dp,
+            "icon and text between spacing for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            10.dp,
+            "end padding for leading button"
+        )
+    }
+
+    @Test
+    fun filledSplitButton_small_positioning() {
+        val size = SplitButtonDefaults.SmallContainerHeight
+
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leadingButton").heightIn(size),
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Leading Icon",
+                            modifier =
+                                Modifier.testTag("leadingIcon").semantics(
+                                    mergeDescendants = true
+                                ) {}
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        modifier = Modifier.heightIn(size).testTag("trailingButton"),
+                        checked = false,
+                        onCheckedChange = {},
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
+                    }
+                }
+            )
+        }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leadingButton").getUnclippedBoundsInRoot()
+        val leadingIconBounds = rule.onNodeWithTag("leadingIcon").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithTag("text").getUnclippedBoundsInRoot()
+
+        (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            8.dp,
+            "icon and text between spacing for leading button"
+        )
+        (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            16.dp,
+            "start padding for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            12.dp,
+            "end padding for leading button"
+        )
+    }
+
+    @Test
+    fun filledSplitButton_medium_positioning() {
+        val size = SplitButtonDefaults.MediumContainerHeight
+
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leadingButton").heightIn(size),
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Leading Icon",
+                            modifier =
+                                Modifier.testTag("leadingIcon").semantics(
+                                    mergeDescendants = true
+                                ) {}
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        modifier = Modifier.heightIn(size).testTag("trailingButton"),
+                        checked = false,
+                        onCheckedChange = {},
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
+                    }
+                }
+            )
+        }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leadingButton").getUnclippedBoundsInRoot()
+        val leadingIconBounds = rule.onNodeWithTag("leadingIcon").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithTag("text").getUnclippedBoundsInRoot()
+
+        (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            8.dp,
+            "icon and text between spacing for leading button"
+        )
+        (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            24.dp,
+            "start padding for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            24.dp,
+            "end padding for leading button"
+        )
+    }
+
+    @Test
+    fun filledSplitButton_large_positioning() {
+        val size = SplitButtonDefaults.LargeContainerHeight
+
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leadingButton").heightIn(size),
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Leading Icon",
+                            modifier =
+                                Modifier.testTag("leadingIcon").semantics(
+                                    mergeDescendants = true
+                                ) {}
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        modifier = Modifier.heightIn(size).testTag("trailingButton"),
+                        checked = false,
+                        onCheckedChange = {},
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
+                    }
+                }
+            )
+        }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leadingButton").getUnclippedBoundsInRoot()
+        val leadingIconBounds = rule.onNodeWithTag("leadingIcon").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithTag("text").getUnclippedBoundsInRoot()
+
+        (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            12.dp,
+            "icon and text between spacing for leading button"
+        )
+        (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            48.dp,
+            "start padding for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            48.dp,
+            "end padding for leading button"
+        )
+    }
+
+    @Test
+    fun filledSplitButton_extraLarge_positioning() {
+        val size = SplitButtonDefaults.ExtraLargeContainerHeight
+
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leadingButton").heightIn(size),
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Leading Icon",
+                            modifier =
+                                Modifier.testTag("leadingIcon").semantics(
+                                    mergeDescendants = true
+                                ) {}
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        modifier = Modifier.heightIn(size).testTag("trailingButton"),
+                        checked = false,
+                        onCheckedChange = {},
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
+                    }
+                }
+            )
+        }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leadingButton").getUnclippedBoundsInRoot()
+        val leadingIconBounds = rule.onNodeWithTag("leadingIcon").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithTag("text").getUnclippedBoundsInRoot()
+
+        (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            16.dp,
+            "icon and text between spacing for leading button"
+        )
+        (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            64.dp,
+            "start padding for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            64.dp,
+            "end padding for leading button"
         )
     }
 }

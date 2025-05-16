@@ -486,6 +486,10 @@ constructor(
 
     @WorkerThread internal open suspend fun backgroundThreadInitInternal() {}
 
+    // Note: public experimental properties are not allowed because the accessors will not appear
+    // experimental to Java clients. There are public accessors for this property below.
+    @WatchFaceExperimental private var watchfaceColors: WatchFaceColors? = null
+
     /**
      * Representative [WatchFaceColors] which are made available to system clients via
      * [androidx.wear.watchface.client.InteractiveWatchFaceClient.OnWatchFaceColorsListener].
@@ -493,23 +497,28 @@ constructor(
      * Initially this value is `null` signifying that the colors are unknown. When possible the
      * watchFace should assign `non null` [WatchFaceColors] and keep this updated when the colors
      * change (e.g. due to a style change).
+     *
+     * @see [setWatchfaceColors]
+     */
+    @WatchFaceExperimental public fun getWatchfaceColors(): WatchFaceColors? = watchfaceColors
+
+    /**
+     * Setter for the representative [WatchFaceColors].
+     *
+     * @see [getWatchfaceColors]
      */
     @WatchFaceExperimental
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:WatchFaceExperimental
-    @set:WatchFaceExperimental
-    public var watchfaceColors: WatchFaceColors? = null
-        set(value) {
-            require(value != null) { "watchfaceColors must be non-null " }
+    public fun setWatchfaceColors(value: WatchFaceColors?) {
+        require(value != null) { "watchfaceColors must be non-null " }
 
-            val hostApi = watchFaceHostApi
-            if (hostApi == null) {
-                pendingWatchFaceColors = value
-                pendingWatchFaceColorsSet = true
-            } else {
-                hostApi.onWatchFaceColorsChanged(value)
-            }
+        val hostApi = watchFaceHostApi
+        if (hostApi == null) {
+            pendingWatchFaceColors = value
+            pendingWatchFaceColorsSet = true
+        } else {
+            hostApi.onWatchFaceColorsChanged(value)
         }
+    }
 
     /**
      * Multiple [WatchFaceService] instances and hence Renderers can exist concurrently (e.g. a

@@ -47,7 +47,7 @@ import androidx.glance.testing.GlanceNodeMatcher
  * @param testTag value to match against the free form string specified in the `testTag` semantics
  *   modifier on the Glance composable nodes.
  */
-fun hasTestTag(testTag: String): GlanceNodeMatcher<MappedNode> =
+public fun hasTestTag(testTag: String): GlanceNodeMatcher<MappedNode> =
     hasSemanticsPropertyValue(SemanticsProperties.TestTag, testTag)
 
 private fun <T> hasSemanticsPropertyValue(
@@ -73,7 +73,7 @@ private fun <T> hasSemanticsPropertyValue(
  * @param ignoreCase whether case should be ignored. Default is case sensitive.
  * @see SemanticsProperties.ContentDescription
  */
-fun hasContentDescription(
+public fun hasContentDescription(
     value: String,
     ignoreCase: Boolean = false
 ): GlanceNodeMatcher<MappedNode> =
@@ -105,7 +105,7 @@ fun hasContentDescription(
  * @param ignoreCase whether case should be ignored. Default is case sensitive.
  * @see SemanticsProperties.ContentDescription
  */
-fun hasContentDescriptionEqualTo(
+public fun hasContentDescriptionEqualTo(
     value: String,
     ignoreCase: Boolean = false
 ): GlanceNodeMatcher<MappedNode> =
@@ -153,7 +153,7 @@ private fun hasContentDescription(
  * @param ignoreCase whether to perform case insensitive matching. Defaults to case sensitive
  *   matching.
  */
-fun hasText(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher<MappedNode> =
+public fun hasText(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description = "contains text '$text' (ignoreCase: '$ignoreCase') as substring"
     ) { node ->
@@ -172,7 +172,10 @@ fun hasText(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher<Mapped
  * @param ignoreCase whether to perform case insensitive matching. Defaults to case sensitive
  *   matching.
  */
-fun hasTextEqualTo(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher<MappedNode> =
+public fun hasTextEqualTo(
+    text: String,
+    ignoreCase: Boolean = false
+): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(description = "text == '$text' (ignoreCase: '$ignoreCase')") { node ->
         val emittable = node.value.emittable
         emittable is EmittableWithText && emittable.text.equals(text, ignoreCase)
@@ -185,7 +188,7 @@ fun hasTextEqualTo(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher
  * [GlanceNodeAssertionsProvider.onAllNodes] functions on assertion providers to filter out matching
  * node(s) or in assertions to validate that node(s) satisfy the condition.
  */
-fun hasClickAction(): GlanceNodeMatcher<MappedNode> =
+public fun hasClickAction(): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(description = "has click action") { node ->
         node.value.emittable.modifier.any { it is ActionModifier }
     }
@@ -198,7 +201,7 @@ fun hasClickAction(): GlanceNodeMatcher<MappedNode> =
  * [GlanceNodeAssertionsProvider.onAllNodes] functions on assertion providers to filter out matching
  * node(s) or in assertions to validate that node(s) satisfy the condition.
  */
-fun hasNoClickAction(): GlanceNodeMatcher<MappedNode> =
+public fun hasNoClickAction(): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(description = "has no click action") { node ->
         node.value.emittable.modifier.all { it !is ActionModifier }
     }
@@ -265,7 +268,7 @@ internal fun <T : Activity> hasStartActivityClickAction(
  * @param activityOptions Additional options built from an [android.app.ActivityOptions] that are
  *   expected to have been passed in the `actionStartActivity` method call
  */
-inline fun <reified T : Activity> hasStartActivityClickAction(
+public inline fun <reified T : Activity> hasStartActivityClickAction(
     parameters: ActionParameters = actionParametersOf(),
     activityOptions: Bundle? = null
 ): GlanceNodeMatcher<MappedNode> =
@@ -285,7 +288,7 @@ inline fun <reified T : Activity> hasStartActivityClickAction(
  *
  * @param matcher a matcher that needs to be satisfied for the descendant node to be matched
  */
-fun hasAnyDescendant(matcher: GlanceNodeMatcher<MappedNode>): GlanceNodeMatcher<MappedNode> {
+public fun hasAnyDescendant(matcher: GlanceNodeMatcher<MappedNode>): GlanceNodeMatcher<MappedNode> {
 
     @SuppressLint("ListIterator") // this is not a hot code path
     fun checkIfSubtreeMatchesRecursive(
@@ -317,7 +320,7 @@ fun hasAnyDescendant(matcher: GlanceNodeMatcher<MappedNode>): GlanceNodeMatcher<
  * @param parameters the parameters associated with the action that are expected to have been passed
  *   in the `actionStartActivity` method call
  */
-fun hasStartActivityClickAction(
+public fun hasStartActivityClickAction(
     componentName: ComponentName,
     parameters: ActionParameters = actionParametersOf()
 ): GlanceNodeMatcher<MappedNode> =

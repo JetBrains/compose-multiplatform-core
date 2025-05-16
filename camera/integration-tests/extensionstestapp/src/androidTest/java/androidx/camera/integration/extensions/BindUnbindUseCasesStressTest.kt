@@ -37,6 +37,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.GLUtil
 import androidx.camera.testing.impl.StressTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
@@ -148,6 +149,7 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
     @Test
     fun bindUnbindUseCases_checkImageCaptureInEachTime_withPreviewImageCapture(): Unit =
         runBlocking {
+            assumePcsSupportedForImageCapture(context)
             bindUseCases_checkOutput_thenUnbindAll_repeatedly(
                 preview,
                 imageCapture,
@@ -220,6 +222,7 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
     @Test
     fun checkImageCapture_afterBindUnbindUseCasesRepeatedly_withPreviewImageCapture(): Unit =
         runBlocking {
+            assumePcsSupportedForImageCapture(context)
             bindUseCases_unbindAll_repeatedly_thenCheckOutput(
                 preview,
                 imageCapture,

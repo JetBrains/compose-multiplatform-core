@@ -18,6 +18,7 @@ package androidx.credentials.registry.provider
 
 import android.content.Context
 import android.os.CancellationSignal
+import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
@@ -107,6 +108,40 @@ public abstract class RegistryManager internal constructor() {
     }
 
     /**
+     * Clear registries that were registered using the [registerCredentials] (Kotlin) or
+     * [registerCredentialsAsync] (Java) API.
+     *
+     * @param request the request to specify clearing configurations
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public suspend fun clearCredentialRegistry(
+        request: ClearCredentialRegistryRequest
+    ): ClearCredentialRegistryResponse = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object : CredentialManagerCallback<ClearCredentialRegistryResponse, Exception> {
+                override fun onResult(result: ClearCredentialRegistryResponse) {
+                    if (continuation.isActive) {
+                        continuation.resume(result)
+                    }
+                }
+
+                override fun onError(e: Exception) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+            }
+
+        clearCredentialRegistryAsync(
+            request,
+            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+            // handle getting to the right thread or pool via the ContinuationInterceptor.
+            Runnable::run,
+            callback
+        )
+    }
+
+    /**
      * Registers credentials with the Credential Manager.
      *
      * This API uses callbacks instead of Kotlin coroutines.
@@ -130,5 +165,20 @@ public abstract class RegistryManager internal constructor() {
             CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
     )
 
-    // TODO: b/355652174 add clear registry APIs.
+    /**
+     * Clear registries that were registered using the [registerCredentials] (Kotlin) or
+     * [registerCredentialsAsync] (Java) API.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * @param request the request to specify clearing configurations
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public abstract fun clearCredentialRegistryAsync(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+    )
 }

@@ -1,23 +1,7 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#getFocusability():
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.getFocusability()
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus():
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus()
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus(int):
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus(int)
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#setFocusability(int):
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.setFocusability(int)
-
-
-BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#showLayoutBounds:
-    Removed property AbstractComposeView.showLayoutBounds from compatibility checked API surface
-
-
-RemovedMethod: androidx.compose.ui.graphics.TransformOrigin#getPivotFractionX():
-    Removed method androidx.compose.ui.graphics.TransformOrigin.getPivotFractionX()
-RemovedMethod: androidx.compose.ui.graphics.TransformOrigin#getPivotFractionY():
-    Removed method androidx.compose.ui.graphics.TransformOrigin.getPivotFractionY()
-RemovedMethod: androidx.compose.ui.layout.ScaleFactor#getScaleX():
-    Removed method androidx.compose.ui.layout.ScaleFactor.getScaleX()
-RemovedMethod: androidx.compose.ui.layout.ScaleFactor#getScaleY():
-    Removed method androidx.compose.ui.layout.ScaleFactor.getScaleY()
+BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#getShowLayoutBounds():
+    Removed method androidx.compose.ui.platform.AbstractComposeView.getShowLayoutBounds() from compatibility checked API surface
+BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#setShowLayoutBounds(boolean):
+    Removed method androidx.compose.ui.platform.AbstractComposeView.setShowLayoutBounds(boolean) from compatibility checked API surface
+BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#setShowLayoutBounds(boolean) parameter #0:
+    Removed parameter arg1 in androidx.compose.ui.platform.AbstractComposeView.setShowLayoutBounds(boolean arg1) from compatibility checked API surface

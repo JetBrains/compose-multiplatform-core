@@ -40,7 +40,7 @@ internal class PdfViewManager(
             highlights.addAll(highlightBound.toHighlight(highlightColor))
         }
 
-        pdfView.highlights = highlights
+        pdfView.setHighlights(highlights)
     }
 
     fun scrollToCurrentSearchResult(highlightData: HighlightData) {

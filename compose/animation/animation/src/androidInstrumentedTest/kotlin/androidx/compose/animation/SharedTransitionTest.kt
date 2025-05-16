@@ -30,6 +30,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,11 +43,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +71,7 @@ import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Alignment.Companion.TopEnd
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -80,9 +84,12 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.approachLayout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -95,6 +102,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -2705,6 +2713,130 @@ class SharedTransitionTest {
     }
 
     @Test
+    fun testNoAdditionalPlacementWhenNoMatch() {
+        val state = LazyListState()
+        val placementCount = Array(20) { 0 }
+        val controlState = LazyListState()
+        val controlPlacementCount = Array(20) { 0 }
+        rule.setContent {
+            Row {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    AnimatedVisibility(true) {
+                        SharedTransitionLayout {
+                            LazyColumn(Modifier.size(100.dp), state) {
+                                repeat(20) { id ->
+                                    item(id) {
+                                        Box(
+                                            Modifier.sharedElement(
+                                                    rememberSharedContentState("$id"),
+                                                    this@AnimatedVisibility
+                                                )
+                                                .onPlaced { placementCount[id]++ }
+                                                .size(10.dp)
+                                                .background(Color.Black)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    LazyColumn(Modifier.size(100.dp), controlState) {
+                        repeat(20) { id ->
+                            item(id) {
+                                Box(
+                                    Modifier.onPlaced { controlPlacementCount[id]++ }
+                                        .size(10.dp)
+                                        .background(Color.Black)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            repeat(20) {
+                runBlocking {
+                    state.scrollBy(5f)
+                    controlState.scrollBy(5f)
+                }
+            }
+        }
+        rule.runOnIdle {
+            repeat(20) { assertEquals(controlPlacementCount[it], placementCount[it]) }
+        }
+    }
+
+    // Verify that lookahead placement is not affected when skipToLookahead is used (indirectly
+    // via sharedBounds) by child returning a different size than
+    // parent when measured with the same lookahead constraints.
+    @Test
+    fun testLookaheadPositionInSkipToLookaheadSize() {
+        var target by mutableStateOf(true)
+        var targetPos: MutableList<Offset?> = mutableListOf()
+        var scope: SharedTransitionScope? = null
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(Modifier) {
+                    scope = this@SharedTransitionLayout
+                    AnimatedContent(
+                        target,
+                        transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }
+                    ) { state ->
+                        Box(
+                            Modifier.requiredSizeIn(maxWidth = 400.dp, maxHeight = 400.dp)
+                                .sharedBounds(
+                                    rememberSharedContentState("test"),
+                                    animatedVisibilityScope = this@AnimatedContent
+                                )
+                                .layout { m, c ->
+                                    m.measure(c).run {
+                                        val w = if (isLookingAhead) width else 200
+                                        val h = if (isLookingAhead) height else 300
+                                        layout(w, h) {
+                                            if (
+                                                isLookingAhead && state == target && target == false
+                                            ) {
+                                                // Check that in spite of returning a different
+                                                // size in approach, it doesn't affect the
+                                                // lookahead placement.
+                                                targetPos.add(
+                                                    0,
+                                                    coordinates?.let { it.positionInParent() }
+                                                )
+                                            }
+                                            place(0, 0)
+                                        }
+                                    }
+                                }
+                                .background(Color.Red)
+                        ) {
+                            Box(Modifier.fillMaxSize().background(Color.Black))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        target = !target
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        assertTrue(scope?.isTransitionActive!!)
+        targetPos.forEach {
+            if (it != null) {
+                assertEquals(Offset.Zero, it)
+            }
+        }
+    }
+
+    @Test
     fun testScaleToBoundsCaching() {
         val alignments =
             listOf(
@@ -2980,6 +3112,350 @@ class SharedTransitionTest {
         }
         rule.waitForIdle()
         assertEquals(100, intrinsicWidth)
+    }
+
+    @Test
+    fun SharedElementWithStructuralChangesAmidAnimation() {
+        var selectFirst by mutableStateOf(true)
+        // The alignment will be changed amid animation.
+        var alignment by mutableStateOf(TopStart)
+        var positionInTransition: Offset? = null
+        var selectFirstPositionInTransition: Offset? = null
+        var scope: SharedTransitionScope? = null
+        rule.setContent {
+            val key = remember { Any() }
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(Modifier.size(400.dp)) {
+                    scope = this
+                    AnimatedContent(selectFirst) { selectFirst ->
+                        if (!selectFirst) {
+                            Box(Modifier.fillMaxSize()) {
+                                Box(
+                                    Modifier.align(alignment)
+                                        .sharedBounds(
+                                            rememberSharedContentState(key = key),
+                                            this@AnimatedContent
+                                        )
+                                        .background(Color.Red)
+                                        .onGloballyPositioned {
+                                            positionInTransition = it.positionInRoot()
+                                        }
+                                        .size(100.dp)
+                                ) {
+                                    Text("false", color = Color.White)
+                                }
+                            }
+                        } else {
+                            Box(
+                                Modifier.offsetWithMFR(IntOffset(10, 180))
+                                    .sharedBounds(
+                                        rememberSharedContentState(
+                                            key = key,
+                                        ),
+                                        this,
+                                    )
+                                    .onGloballyPositioned {
+                                        selectFirstPositionInTransition = it.positionInRoot()
+                                    }
+                                    .alpha(0.5f)
+                                    .background(Color.Blue)
+                                    .size(180.dp)
+                            ) {
+                                Text("true", color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { selectFirst = false }
+        repeat(3) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+        }
+        assert(positionInTransition != null)
+        assertTrue(scope?.isTransitionActive == true)
+        val lastPosition = positionInTransition
+        rule.runOnIdle { alignment = Alignment.BottomCenter }
+        repeat(3) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+        }
+        // Assert that the alignment change is causing the animation to turn around and animate
+        // towards the bottom center of the screen
+        assert(positionInTransition!!.y > lastPosition!!.y)
+        assert(positionInTransition!!.x > lastPosition!!.x)
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntOffset(150, 300), positionInTransition!!.round())
+
+        // Trigger transition again in the other direction and change the alignment during
+        // transition.
+        rule.mainClock.autoAdvance = false
+        selectFirstPositionInTransition = null
+        rule.runOnIdle { selectFirst = true }
+        repeat(3) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+        }
+        assert(selectFirstPositionInTransition != null)
+        assertTrue(scope?.isTransitionActive == true)
+        rule.runOnIdle { alignment = Alignment.TopStart }
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntOffset(10, 180), selectFirstPositionInTransition!!.round())
+    }
+
+    private fun Modifier.offsetWithMFR(offset: IntOffset) =
+        this.layout { m, c ->
+            m.measure(c).run {
+                layout(width, height) {
+                    withMotionFrameOfReferencePlacement { place(offset.x, offset.y) }
+                }
+            }
+        }
+
+    // Source and destination have different amount of MFR offset, and structural offset. But
+    // they total up to the same amount. Test that the MFR offset change is handled correctly
+    // and animating back and forth creates no change in the animated position.
+    @Test
+    fun TestSharedElementWithFixedMfrOffset() {
+        var selectFirst by mutableStateOf(true)
+        var position1: Offset? = null
+        var position2: Offset? = null
+        var scope: SharedTransitionScope? = null
+        rule.setContent {
+            val key = remember { Any() }
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(Modifier.fillMaxSize()) {
+                    scope = this
+                    AnimatedContent(
+                        selectFirst,
+                        transitionSpec = {
+                            EnterTransition.None togetherWith ExitTransition.None using null
+                        }
+                    ) { selectFirst ->
+                        if (!selectFirst) {
+                            Box(
+                                Modifier.layout { m, c ->
+                                        m.measure(c).run {
+                                            layout(width, height) {
+                                                withMotionFrameOfReferencePlacement {
+                                                    place(80, 80)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .sharedBounds(
+                                        rememberSharedContentState(key = key),
+                                        this@AnimatedContent
+                                    )
+                                    .onGloballyPositioned { position1 = it.positionInRoot() }
+                                    .background(Color.Red)
+                                    .size(100.dp)
+                            ) {
+                                Text("false", color = Color.White)
+                            }
+                        } else {
+                            Box(
+                                Modifier.offset { IntOffset(180, 180) }
+                                    .layout { m, c ->
+                                        m.measure(c).run {
+                                            layout(width, height) {
+                                                withMotionFrameOfReferencePlacement {
+                                                    place(-100, -100)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .sharedBounds(
+                                        rememberSharedContentState(
+                                            key = key,
+                                        ),
+                                        this,
+                                    )
+                                    .onGloballyPositioned { position2 = it.positionInRoot() }
+                                    .alpha(0.5f)
+                                    .background(Color.Blue)
+                                    .size(180.dp)
+                            ) {
+                                Text("true", color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        selectFirst = false
+        while (!scope!!.isTransitionActive) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        assertEquals(Offset(80f, 80f), position1)
+        assertEquals(Offset(80f, 80f), position2)
+
+        // Interrupts the animation
+        selectFirst = true
+        while (!scope!!.isTransitionActive) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        while (scope.isTransitionActive) {
+            assertEquals(Offset(80f, 80f), position1)
+            assertEquals(Offset(80f, 80f), position2)
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+    }
+
+    // Test that when shared element is being scrolled during the animation, the scroll delta
+    // is directly applied.
+    @Test
+    fun SharedElementWithChangingMfrOffset() {
+        var target by mutableStateOf(true)
+        var scope: SharedTransitionScope? = null
+        var position1: Offset? = null
+        var position2: Offset? = null
+        val state = LazyListState()
+        var scrollPosition by mutableStateOf(0)
+        rule.setContent {
+            val key = remember { Any() }
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(Modifier.fillMaxSize()) {
+                    scope = this
+                    AnimatedContent(
+                        target,
+                        Modifier.fillMaxSize(),
+                        transitionSpec = {
+                            EnterTransition.None togetherWith ExitTransition.None using null
+                        }
+                    ) { target ->
+                        if (target) {
+                            Box {
+                                Box(
+                                    Modifier.layout { m, c ->
+                                            m.measure(c).run {
+                                                layout(width, height) {
+                                                    withMotionFrameOfReferencePlacement {
+                                                        place(80, 80)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .offset(x = -40.dp)
+                                        // After the offsets, the expected target offset is (40, 80)
+                                        .sharedElement(
+                                            rememberSharedContentState(key = key),
+                                            this@AnimatedContent
+                                        )
+                                        .onGloballyPositioned { position1 = it.positionInRoot() }
+                                        .background(Color.Red)
+                                        .size(300.dp)
+                                ) {
+                                    Text("false", color = Color.White)
+                                }
+                            }
+                        } else {
+                            LazyColumn(Modifier.padding(40.dp, 80.dp), state) {
+                                repeat(5) { id ->
+                                    item {
+                                        Box(
+                                            Modifier.size(100.dp)
+                                                .padding(10.dp)
+                                                .background(Color.Gray)
+                                        )
+                                    }
+                                }
+                                item { // item id 5
+                                    Box(
+                                        Modifier.sharedElement(
+                                                rememberSharedContentState(
+                                                    key = key,
+                                                ),
+                                                this@AnimatedContent,
+                                            )
+                                            .onGloballyPositioned {
+                                                position2 = it.positionInRoot()
+                                            }
+                                            .background(Color.Blue)
+                                            .size(100.dp)
+                                    ) {
+                                        Text("true", color = Color.White)
+                                    }
+                                }
+                                repeat(30) {
+                                    item {
+                                        Box(
+                                            Modifier.size(100.dp)
+                                                .padding(10.dp)
+                                                .background(Color.Gray)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.runOnIdle {
+            rule.mainClock.autoAdvance = false
+            target = false
+        }
+        rule.waitForIdle()
+
+        while (scope?.isTransitionActive != true) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+        }
+
+        assertNotNull(position2)
+        val positionBeforeScrolling = position2
+        repeat(4) {
+            rule.runOnIdle { runBlocking { state.scrollBy(100f) } }
+            rule.waitForIdle()
+            val expectedPosition =
+                positionBeforeScrolling!!.copy(y = positionBeforeScrolling.y - 100f * (it + 1))
+            assertEquals(expectedPosition, position2)
+        }
+        rule.runOnIdle { runBlocking { state.scrollBy(99f) } }
+        rule.waitForIdle()
+        val expectedPosition = positionBeforeScrolling!!.copy(y = positionBeforeScrolling.y - 499f)
+        assertEquals(expectedPosition, position2)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+
+        // Change the direction of the animation. Animate back with the lazy list scrolled very
+        // close to the target position in the destination.
+        rule.mainClock.autoAdvance = false
+        target = true
+
+        while (scope?.isTransitionActive != true) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        assertEquals(40f, position1?.x)
+        assert(position1!!.y >= 80f)
+        assert(position1!!.y <= 81f)
+
+        // Test that throughout the animation, the position never goes out of the 1 px range. i.e.
+        // no jump.
+        while (scope?.isTransitionActive == true) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+
+            assertEquals(40f, position1?.x)
+            assert(position1!!.y >= 80f)
+            assert(position1!!.y <= 81f)
+        }
     }
 }
 

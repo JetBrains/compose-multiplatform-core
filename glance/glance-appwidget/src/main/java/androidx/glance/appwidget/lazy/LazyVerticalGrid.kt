@@ -43,7 +43,7 @@ import androidx.glance.layout.wrapContentHeight
  *   wrapped in a Box.
  */
 @Composable
-fun LazyVerticalGrid(
+public fun LazyVerticalGrid(
     gridCells: GridCells,
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
@@ -79,7 +79,7 @@ fun LazyVerticalGrid(
  */
 @ExperimentalGlanceApi
 @Composable
-fun LazyVerticalGrid(
+public fun LazyVerticalGrid(
     gridCells: GridCells,
     activityOptions: Bundle,
     modifier: GlanceModifier = GlanceModifier,
@@ -168,7 +168,7 @@ private fun LazyVerticalGridItem(
 @JvmDefaultWithCompatibility
 /** Receiver scope which is used by [LazyColumn]. */
 @LazyScopeMarker
-interface LazyVerticalGridScope {
+public interface LazyVerticalGridScope {
     /**
      * Adds a single item.
      *
@@ -178,7 +178,7 @@ interface LazyVerticalGridScope {
      *   devices.
      * @param content the content of the item
      */
-    fun item(itemId: Long = UnspecifiedItemId, content: @Composable LazyItemScope.() -> Unit)
+    public fun item(itemId: Long = UnspecifiedItemId, content: @Composable LazyItemScope.() -> Unit)
 
     /**
      * Adds a [count] of items.
@@ -190,14 +190,14 @@ interface LazyVerticalGridScope {
      *   higher devices.
      * @param itemContent the content displayed by a single item
      */
-    fun items(
+    public fun items(
         count: Int,
         itemId: ((index: Int) -> Long) = { UnspecifiedItemId },
         itemContent: @Composable LazyItemScope.(index: Int) -> Unit
     )
 
-    companion object {
-        const val UnspecifiedItemId = Long.MIN_VALUE
+    public companion object {
+        public const val UnspecifiedItemId: Long = Long.MIN_VALUE
     }
 }
 
@@ -211,7 +211,7 @@ interface LazyVerticalGridScope {
  *   devices.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyVerticalGridScope.items(
+public inline fun <T> LazyVerticalGridScope.items(
     items: List<T>,
     crossinline itemId: ((item: T) -> Long) = { LazyVerticalGridScope.UnspecifiedItemId },
     crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
@@ -227,7 +227,7 @@ inline fun <T> LazyVerticalGridScope.items(
  *   devices.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyVerticalGridScope.itemsIndexed(
+public inline fun <T> LazyVerticalGridScope.itemsIndexed(
     items: List<T>,
     crossinline itemId: ((index: Int, item: T) -> Long) = { _, _ ->
         LazyVerticalGridScope.UnspecifiedItemId
@@ -245,7 +245,7 @@ inline fun <T> LazyVerticalGridScope.itemsIndexed(
  *   item the item with the given itemId will be kept as the first visible one.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyVerticalGridScope.items(
+public inline fun <T> LazyVerticalGridScope.items(
     items: Array<T>,
     noinline itemId: ((item: T) -> Long) = { LazyVerticalGridScope.UnspecifiedItemId },
     crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
@@ -261,7 +261,7 @@ inline fun <T> LazyVerticalGridScope.items(
  *   item the item with the given itemId will be kept as the first visible one.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyVerticalGridScope.itemsIndexed(
+public inline fun <T> LazyVerticalGridScope.itemsIndexed(
     items: Array<T>,
     noinline itemId: ((index: Int, item: T) -> Long) = { _, _ ->
         LazyVerticalGridScope.UnspecifiedItemId
@@ -316,7 +316,7 @@ internal class EmittableLazyVerticalGrid : EmittableLazyVerticalGridList() {
 }
 
 /** Defines the number of columns of the GridView. */
-sealed class GridCells {
+public sealed class GridCells {
     /**
      * Defines a fixed number of columns, limited to 1 through 5.
      *
@@ -325,7 +325,7 @@ sealed class GridCells {
      *
      * @param count number of columns in LazyVerticalGrid
      */
-    class Fixed(val count: Int) : GridCells() {
+    public class Fixed(public val count: Int) : GridCells() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -353,7 +353,7 @@ sealed class GridCells {
      * @param minSize fixed width of each column in LazyVerticalGrid
      */
     @RequiresApi(31)
-    class Adaptive(val minSize: Dp) : GridCells() {
+    public class Adaptive(public val minSize: Dp) : GridCells() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false

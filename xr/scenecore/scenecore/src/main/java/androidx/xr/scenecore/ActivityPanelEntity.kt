@@ -21,6 +21,7 @@ import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.math.Pose
@@ -112,7 +113,7 @@ private constructor(
         ): ActivityPanelEntity =
             ActivityPanelEntity.create(
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 PixelDimensions(windowBoundsPx.width(), windowBoundsPx.height()),
                 name,
                 session.activity,

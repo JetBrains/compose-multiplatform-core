@@ -33,7 +33,7 @@ import androidx.room.Room.LOG_TAG
  * in the manifest by default so there should be no need to override it in a normal situation.
  */
 @ExperimentalRoomApi
-class MultiInstanceInvalidationService : Service() {
+public class MultiInstanceInvalidationService : Service() {
     internal var maxClientId = 0
     internal val clientNames = mutableMapOf<Int, String>()
 

@@ -24,7 +24,7 @@ import kotlin.jvm.JvmOverloads
  *
  * @see [RawQuery]
  */
-class RoomRawQuery
+public class RoomRawQuery
 @JvmOverloads
 constructor(
     /**
@@ -32,7 +32,7 @@ constructor(
      *
      * The query can have placeholders (?) to bind arguments.
      */
-    val sql: String,
+    public val sql: String,
     /**
      * The function that receives a [SQLiteStatement] and binds arguments.
      *
@@ -44,7 +44,7 @@ constructor(
         onBindStatement.invoke(BindOnlySQLiteStatement(it))
     }
 
-    fun getBindingFunction(): (SQLiteStatement) -> Unit = bindingFunction
+    public fun getBindingFunction(): (SQLiteStatement) -> Unit = bindingFunction
 }
 
 private class BindOnlySQLiteStatement(delegate: SQLiteStatement) : SQLiteStatement by delegate {

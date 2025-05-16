@@ -43,9 +43,9 @@ import kotlinx.coroutines.withContext
 /** Object containing the result from composition of [GlanceWearTiles]. */
 @ExperimentalGlanceWearTilesApi
 @Suppress("deprecation") // For backwards compatibility.
-class WearTilesCompositionResult(
-    val layout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement,
-    val resources: androidx.wear.tiles.ResourceBuilders.Resources
+public class WearTilesCompositionResult(
+    public val layout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement,
+    public val resources: androidx.wear.tiles.ResourceBuilders.Resources
 )
 
 @ExperimentalGlanceWearTilesApi
@@ -58,7 +58,7 @@ class WearTilesCompositionResult(
  * @param content Definition of the UI.
  * @return Composition result containing the glance ui.
  */
-suspend fun compose(
+public suspend fun compose(
     context: Context,
     size: DpSize,
     state: Any? = null,

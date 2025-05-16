@@ -37,9 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.arcore.apps.whitebox.handtracking.HandTrackingActivity as HandTrackingActivity
-import androidx.xr.arcore.apps.whitebox.helloar.HelloArActivity as HelloArActivity
-import androidx.xr.arcore.apps.whitebox.persistentanchors.PersistentAnchorsActivity as PersistentAnchorsActivity
+import androidx.xr.arcore.apps.whitebox.handtracking.HandTrackingActivity
+import androidx.xr.arcore.apps.whitebox.helloar.HelloArActivity
+import androidx.xr.arcore.apps.whitebox.persistentanchors.PersistentAnchorsActivity
 import java.text.SimpleDateFormat
 import java.util.Locale
 

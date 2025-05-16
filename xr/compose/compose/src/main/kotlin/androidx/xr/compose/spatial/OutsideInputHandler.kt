@@ -49,7 +49,7 @@ internal fun OutsideInputHandler(enabled: Boolean = true, onOutsideInput: () -> 
  * practice, use the constructor that takes a targetView and onOutsideInput.
  */
 private class InputCaptureView private constructor(context: Context) :
-    View(context), RememberObserver, View.OnLayoutChangeListener {
+    View(context), RememberObserver {
     constructor(targetView: View, onOutsideInput: State<() -> Unit>) : this(targetView.context) {
         this.targetView = targetView
         this.onOutsideInput = onOutsideInput
@@ -62,6 +62,8 @@ private class InputCaptureView private constructor(context: Context) :
             WindowManager.LayoutParams().apply {
                 type = WindowManager.LayoutParams.TYPE_APPLICATION_PANEL
                 flags = WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+                width = WindowManager.LayoutParams.MATCH_PARENT
+                height = WindowManager.LayoutParams.MATCH_PARENT
             }
     }
 
@@ -71,15 +73,9 @@ private class InputCaptureView private constructor(context: Context) :
     private var targetView: View? = null
         set(value) {
             if (field != value && value != null) {
-                field?.removeOnLayoutChangeListener(this)
-                value.addOnLayoutChangeListener(this)
                 updateLayoutParams<WindowManager.LayoutParams> {
                     // Get the Window token from the parent view
                     token = value.applicationWindowToken
-
-                    // Match the size of the target view.
-                    width = value.width
-                    height = value.height
                 }
                 if (isAttachedToWindow) {
                     windowManager.updateViewLayout(this, layoutParams)
@@ -125,36 +121,10 @@ private class InputCaptureView private constructor(context: Context) :
     }
 
     override fun onForgotten() {
-        targetView?.removeOnLayoutChangeListener(this)
         windowManager.removeView(this)
     }
 
     override fun onRemembered() {
         windowManager.addView(this, layoutParams)
-    }
-
-    /**
-     * Update the layout parameters of this view to match the size of the [targetView].
-     *
-     * This is called when the [targetView] is laid out.
-     */
-    override fun onLayoutChange(
-        v: View?,
-        left: Int,
-        top: Int,
-        right: Int,
-        bottom: Int,
-        oldLeft: Int,
-        oldTop: Int,
-        oldRight: Int,
-        oldBottom: Int,
-    ) {
-        updateLayoutParams<WindowManager.LayoutParams> {
-            width = right - left
-            height = bottom - top
-        }
-        if (isAttachedToWindow) {
-            windowManager.updateViewLayout(this, layoutParams)
-        }
     }
 }

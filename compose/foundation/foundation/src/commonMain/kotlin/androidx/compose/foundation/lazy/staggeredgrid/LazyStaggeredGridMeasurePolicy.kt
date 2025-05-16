@@ -22,12 +22,11 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.GraphicsContext
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -48,7 +47,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
     coroutineScope: CoroutineScope,
     slots: LazyGridStaggeredGridSlotsProvider,
     graphicsContext: GraphicsContext
-): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult =
+): LazyLayoutMeasurePolicy =
     remember(
         state,
         itemProviderLambda,
@@ -60,7 +59,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
         slots,
         graphicsContext
     ) {
-        { constraints ->
+        LazyLayoutMeasurePolicy { constraints ->
             state.measurementScopeInvalidator.attachToScope()
             // Tracks if the lookahead pass has occurred
             val isInLookaheadScope = state.hasLookaheadOccurred || isLookingAhead

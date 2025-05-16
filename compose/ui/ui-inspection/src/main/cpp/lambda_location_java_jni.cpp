@@ -47,31 +47,6 @@ jvmtiEnv *CreateJvmtiEnv(JavaVM *vm) {
     return jvmti_env;
 }
 
-static jclass location_class = nullptr;
-static jmethodID location_class_constructor = nullptr;
-
-bool create_lambda_location_result_fields(JNIEnv *env) {
-    static bool failure_creating_result = false;
-
-    if (failure_creating_result) {
-        return false;
-    }
-    if (location_class != nullptr) {
-        return true;
-    }
-    failure_creating_result = true;  // In case the next lines throw exceptions...
-    jclass local_location_class =
-            env->FindClass("androidx/compose/ui/inspection/LambdaLocation");
-    location_class = (jclass) env->NewGlobalRef(local_location_class);
-    location_class_constructor =
-            env->GetMethodID(location_class, "<init>", "(Ljava/lang/String;II)V");
-    if (location_class == nullptr || location_class_constructor == nullptr) {
-        return false;
-    }
-    failure_creating_result = false;
-    return true;
-}
-
 /**
  * Create a Jvmti environment.
  * The env is created and kept in a static for the duration of the JVM lifetime.
@@ -311,8 +286,10 @@ int compareLineNumberEntry(const void *a, const void * b) {
 
 const int ACC_BRIDGE = 0x40;
 
-jobject resolveLocation(JNIEnv *env, jclass lambda_class) {
-    if (!create_lambda_location_result_fields(env)) {
+jobject resolveLocation(JNIEnv *env, jclass location_class, jclass lambda_class) {
+    jmethodID location_class_constructor =
+        env->GetMethodID(location_class, "<init>", "(Ljava/lang/Class;Ljava/lang/String;II)V");
+    if (location_class_constructor == nullptr) {
         return nullptr;
     }
     jvmtiEnv *jvmti = getJvmti(env);
@@ -390,7 +367,7 @@ jobject resolveLocation(JNIEnv *env, jclass lambda_class) {
     jstring file_name = env->NewStringUTF(source_name_ptr);
     jvmti->Deallocate((unsigned char *) source_name_ptr);
     jobject result = env->NewObject(location_class, location_class_constructor,
-                                    file_name, start_line, end_line);
+                                    lambda_class, file_name, start_line, end_line);
     return result;
 }
 } // namespace compose_inspection
@@ -398,9 +375,9 @@ jobject resolveLocation(JNIEnv *env, jclass lambda_class) {
 extern "C" {
 
 JNIEXPORT jobject JNICALL
-Java_androidx_compose_ui_inspection_LambdaLocation_resolve(
-        JNIEnv *env, __unused jclass clazz, jclass lambda_class) {
-    return compose_inspection::resolveLocation(env, lambda_class);
+Java_androidx_compose_ui_inspection_LambdaLocation_resolveWithJvmTI(
+        JNIEnv *env, jclass location_class, jclass lambda_class) {
+    return compose_inspection::resolveLocation(env, location_class, lambda_class);
 }
 
 }

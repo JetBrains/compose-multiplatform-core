@@ -35,7 +35,6 @@ import org.jspecify.annotations.Nullable;
  * Wrapper class that can be used as a unique identifier for a session. Also contains an accessor
  * for the {@link AuthTabCallback} for the session if there was any.
  */
-@ExperimentalAuthTab
 public final class AuthTabSessionToken {
     private static final String TAG = "AuthTabSessionToken";
 

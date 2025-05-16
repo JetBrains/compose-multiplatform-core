@@ -52,19 +52,19 @@ class GroupSizeValidationTests {
 
     @Test
     fun textLikeSize() = compositionTest {
-        slotExpect(name = "TextLike", noMoreGroupsThan = 4, noMoreSlotsThan = 4) { TextLike("") }
+        slotExpect(name = "TextLike", noMoreGroupsThan = 4, noMoreSlotsThan = 5) { TextLike("") }
     }
 
     @Test
     fun basicTextLikeSize() = compositionTest {
-        slotExpect(name = "TextLike", noMoreGroupsThan = 5, noMoreSlotsThan = 13) {
+        slotExpect(name = "TextLike", noMoreGroupsThan = 5, noMoreSlotsThan = 14) {
             BasicTextLike("")
         }
     }
 
     @Test
     fun checkboxLike() = compositionTest {
-        slotExpect(name = "CheckboxLike", noMoreGroupsThan = 8, noMoreSlotsThan = 17) {
+        slotExpect(name = "CheckboxLike", noMoreGroupsThan = 8, noMoreSlotsThan = 18) {
             CheckboxLike(checked = false, onCheckedChange = {})
         }
     }

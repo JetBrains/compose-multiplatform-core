@@ -21,17 +21,17 @@ import android.os.Handler
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.SpatialCapabilities
-import androidx.xr.scenecore.addSpatialCapabilitiesChangedListener
-import androidx.xr.scenecore.getSpatialCapabilities
+import androidx.xr.scenecore.scene
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 class SpatialCapabilitiesTestActivity : AppCompatActivity() {
 
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
     private val debugTextView by lazy { findViewById<TextView>(R.id.debug_text_area) }
     private val debugTextString: StringBuilder = StringBuilder()
     private val formatter = SimpleDateFormat("HH:mm:ss", Locale.US)
@@ -48,11 +48,11 @@ class SpatialCapabilitiesTestActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.toggle_fsm_hsm).setOnClickListener { _ ->
             if (isFsm) {
-                session.spatialEnvironment.requestHomeSpaceMode()
+                session.scene.spatialEnvironment.requestHomeSpaceMode()
                 isFsm = false
                 debugTextString.append("Toggled to HSM\n")
             } else {
-                session.spatialEnvironment.requestFullSpaceMode()
+                session.scene.spatialEnvironment.requestFullSpaceMode()
                 isFsm = true
                 debugTextString.append("Toggled to FSM\n")
             }
@@ -61,12 +61,12 @@ class SpatialCapabilitiesTestActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.log_capabilities).setOnClickListener { _ -> logCapabilities() }
 
-        session.addSpatialCapabilitiesChangedListener() { _ ->
+        session.scene.addSpatialCapabilitiesChangedListener() { _ ->
             debugTextString.append("Capabilities changed event received.\n")
             logCapabilities()
         }
 
-        session.activitySpace.addBoundsChangedListener { bounds ->
+        session.scene.activitySpace.addBoundsChangedListener { bounds ->
             debugTextString.append(
                 "Bounds Changed event received: w=${bounds.width}, h=${bounds.height}, d=${bounds.depth}\n"
             )
@@ -76,7 +76,7 @@ class SpatialCapabilitiesTestActivity : AppCompatActivity() {
 
     private fun logCapabilities() {
         val capsStr: StringBuilder = StringBuilder()
-        val caps = session.getSpatialCapabilities()
+        val caps = session.scene.spatialCapabilities
         capsStr.append(capToStr("UI", caps, SpatialCapabilities.SPATIAL_CAPABILITY_UI))
         capsStr.append(capToStr("3D", caps, SpatialCapabilities.SPATIAL_CAPABILITY_3D_CONTENT))
         capsStr.append(

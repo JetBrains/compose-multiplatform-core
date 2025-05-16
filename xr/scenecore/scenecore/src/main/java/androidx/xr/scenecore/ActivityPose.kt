@@ -17,13 +17,17 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
 import androidx.xr.runtime.internal.HeadActivityPose as RtHeadActivityPose
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * Interface for a ActivityPose.
@@ -50,6 +54,50 @@ public interface ActivityPose {
      * @return The pose relative to the destination ActivityPose.
      */
     public fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose
+
+    /** A filter for which Scenes to hit test with ActivityPose.hitTest */
+    public object HitTestFilter {
+        /** Register hit tests for the scene which this Activity pose belongs to. */
+        public const val SELF_SCENE: Int = 1 shl 0
+        /**
+         * Register hit tests only for other scenes. An Application will only have access to other
+         * scenes if it has the com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE permission.
+         */
+        public const val OTHER_SCENES: Int = 1 shl 1
+    }
+
+    @Retention(AnnotationRetention.SOURCE)
+    @Suppress("PublicTypedef")
+    @IntDef(flag = true, value = [HitTestFilter.SELF_SCENE, HitTestFilter.OTHER_SCENES])
+    public annotation class HitTestFilterValue
+
+    /**
+     * Creates a hit test from the specified origin in the specified direction into the scene.
+     *
+     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
+     * @param direction The direction for the hit test ray from the origin.
+     * @return a ListenableFuture<HitResult>. The HitResult describes if it hit something and where
+     *   relative to this [ActivityPose]. Listeners will be called on the main thread if
+     *   Runnable::run is supplied.
+     */
+    public fun hitTestAsync(origin: Vector3, direction: Vector3): ListenableFuture<HitTestResult>
+
+    /**
+     * Creates a hit test from the specified origin in the specified direction into the scene.
+     *
+     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
+     * @param direction The direction for the hit test ray from the origin
+     * @param hitTestFilter Filter for which scenes to hit test. Hitting other scenes is only
+     *   allowed for apps with the `com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE` permission.
+     * @return a ListenableFuture<HitResult>. The HitResult describes if it hit something and where
+     *   relative to this [ActivityPose]. Listeners will be called on the main thread if
+     *   Runnable::run is supplied.
+     */
+    public fun hitTestAsync(
+        origin: Vector3,
+        direction: Vector3,
+        @HitTestFilterValue hitTestFilter: Int,
+    ): ListenableFuture<HitTestResult>
 }
 
 /**
@@ -74,6 +122,42 @@ public abstract class BaseActivityPose<out RtActivityPoseType : RtActivityPose>(
             return Pose.Identity
         }
         return rtActivityPose.transformPoseTo(pose, destination.rtActivityPose)
+    }
+
+    override fun hitTestAsync(
+        origin: Vector3,
+        direction: Vector3,
+        @ActivityPose.HitTestFilterValue hitTestFilter: Int,
+    ): ListenableFuture<HitTestResult> {
+        val hitTestRtFuture =
+            this.rtActivityPose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
+        val resultFuture = ResolvableFuture.create<HitTestResult>()
+        hitTestRtFuture.addListener(
+            {
+                try {
+                    val hitTestRt = hitTestRtFuture.get()
+                    resultFuture.set(hitTestRt.toHitTestResult())
+                } catch (e: Exception) {
+                    if (e is InterruptedException) {
+                        Thread.currentThread().interrupt()
+                    }
+                    resultFuture.setException(e)
+                }
+            },
+            Runnable::run,
+        )
+        return resultFuture
+    }
+
+    override fun hitTestAsync(
+        origin: Vector3,
+        direction: Vector3
+    ): ListenableFuture<HitTestResult> {
+        return hitTestAsync(
+            origin,
+            direction,
+            ActivityPose.HitTestFilter.SELF_SCENE.toRtHitTestFilter(),
+        )
     }
 }
 

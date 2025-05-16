@@ -25,13 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
@@ -79,68 +78,67 @@ private fun <T> BasicNonScrollableLazyLayout(
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-private fun basicMeasurePolicy(
-    orientation: Orientation,
-    itemCount: Int
-): LazyLayoutMeasureScope.(Constraints) -> MeasureResult = { constraints ->
-    fun Placeable.mainAxisSize() = if (orientation == Orientation.Vertical) height else width
-    fun Placeable.crossAxisSize() = if (orientation == Orientation.Vertical) width else height
+private fun basicMeasurePolicy(orientation: Orientation, itemCount: Int): LazyLayoutMeasurePolicy =
+    LazyLayoutMeasurePolicy { constraints ->
+        fun Placeable.mainAxisSize() = if (orientation == Orientation.Vertical) height else width
+        fun Placeable.crossAxisSize() = if (orientation == Orientation.Vertical) width else height
 
-    val viewportSize =
-        if (orientation == Orientation.Vertical) constraints.maxHeight else constraints.maxWidth
+        val viewportSize =
+            if (orientation == Orientation.Vertical) constraints.maxHeight else constraints.maxWidth
 
-    val childConstraints =
-        Constraints(
-            maxWidth =
-                if (orientation == Orientation.Vertical) viewportSize else Constraints.Infinity,
-            maxHeight =
-                if (orientation == Orientation.Horizontal) viewportSize else Constraints.Infinity
-        )
+        val childConstraints =
+            Constraints(
+                maxWidth =
+                    if (orientation == Orientation.Vertical) viewportSize else Constraints.Infinity,
+                maxHeight =
+                    if (orientation == Orientation.Horizontal) viewportSize
+                    else Constraints.Infinity
+            )
 
-    var currentItemIndex = 0
-    // saves placeables and their main axis position
-    val placeables = mutableListOf<Pair<Placeable, Int>>()
-    var crossAxisSize = 0
-    var mainAxisSize = 0
+        var currentItemIndex = 0
+        // saves placeables and their main axis position
+        val placeables = mutableListOf<Pair<Placeable, Int>>()
+        var crossAxisSize = 0
+        var mainAxisSize = 0
 
-    // measure items until we either fill in the space or run out of items.
-    while (mainAxisSize < viewportSize && currentItemIndex < itemCount) {
-        val itemPlaceables = measure(currentItemIndex, childConstraints)
-        for (item in itemPlaceables) {
-            // save placeable to be placed later.
-            placeables.add(item to mainAxisSize)
+        // measure items until we either fill in the space or run out of items.
+        while (mainAxisSize < viewportSize && currentItemIndex < itemCount) {
+            val itemPlaceables = compose(currentItemIndex).map { it.measure(childConstraints) }
+            for (item in itemPlaceables) {
+                // save placeable to be placed later.
+                placeables.add(item to mainAxisSize)
 
-            mainAxisSize += item.mainAxisSize() // item size contributes to main axis size
-            // cross axis size will the size of tallest/widest item
-            crossAxisSize = maxOf(crossAxisSize, item.crossAxisSize())
-        }
-        currentItemIndex++
-    }
-
-    val layoutWidth =
-        if (orientation == Orientation.Horizontal) {
-            minOf(mainAxisSize, viewportSize)
-        } else {
-            crossAxisSize
-        }
-    val layoutHeight =
-        if (orientation == Orientation.Vertical) {
-            minOf(mainAxisSize, viewportSize)
-        } else {
-            crossAxisSize
+                mainAxisSize += item.mainAxisSize() // item size contributes to main axis size
+                // cross axis size will the size of tallest/widest item
+                crossAxisSize = maxOf(crossAxisSize, item.crossAxisSize())
+            }
+            currentItemIndex++
         }
 
-    layout(layoutWidth, layoutHeight) {
-        // since this is a linear list all items are placed on the same cross-axis position
-        for ((placeable, position) in placeables) {
-            if (orientation == Orientation.Vertical) {
-                placeable.place(0, position)
+        val layoutWidth =
+            if (orientation == Orientation.Horizontal) {
+                minOf(mainAxisSize, viewportSize)
             } else {
-                placeable.place(position, 0)
+                crossAxisSize
+            }
+        val layoutHeight =
+            if (orientation == Orientation.Vertical) {
+                minOf(mainAxisSize, viewportSize)
+            } else {
+                crossAxisSize
+            }
+
+        layout(layoutWidth, layoutHeight) {
+            // since this is a linear list all items are placed on the same cross-axis position
+            for ((placeable, position) in placeables) {
+                if (orientation == Orientation.Vertical) {
+                    placeable.place(0, position)
+                } else {
+                    placeable.place(position, 0)
+                }
             }
         }
     }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 private class BasicLazyLayoutItemProvider<T>(

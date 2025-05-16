@@ -138,21 +138,17 @@ internal object XrNavigationBarOverride : NavigationBarOverride {
  * The default [HorizontalOrbiterProperties] used by [NavigationBar] if none is specified in
  * [LocalNavigationBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultNavigationBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
         position = OrbiterEdge.Horizontal.Bottom,
         offset = XrNavigationBarTokens.OrbiterEdgeOffset,
         alignment = Alignment.CenterHorizontally,
-        settings = OrbiterDefaults.orbiterSettings,
+        settings = OrbiterDefaults.Settings,
         shape = SpatialRoundedCornerShape(CornerSize(50)),
     )
 
 /** The [HorizontalOrbiterProperties] used by [NavigationBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalNavigationBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =

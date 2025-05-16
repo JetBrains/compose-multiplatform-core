@@ -22,6 +22,10 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -29,14 +33,14 @@ import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.Session
+import androidx.xr.scenecore.scene
 import kotlin.math.tan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SpatialUserActivity : AppCompatActivity() {
     private val TAG = "SpatialUserTag"
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
     private val poseOffset = Pose(Vector3(0f, 0f, -1f), Quaternion.Identity)
     private var checkVisibility = false
     var panelString = "Left: Visible \n Right: Invisible"
@@ -54,6 +58,8 @@ class SpatialUserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.spatialuser_activity)
+        session.resume()
+        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
 
         // Create a single panel with text
         @SuppressLint("InflateParams")
@@ -66,11 +72,15 @@ class SpatialUserActivity : AppCompatActivity() {
                 "panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
             )
-        panelEntity.setParent(session.activitySpace)
+        panelEntity.setParent(session.scene.activitySpace)
 
         val buttonRecenter: Button = panelContentView.findViewById(R.id.buttonRecenter)
         buttonRecenter.setOnClickListener {
-            val pos = session.spatialUser.head?.transformPoseTo(poseOffset, session.activitySpace)
+            val pos =
+                session.scene.spatialUser.head?.transformPoseTo(
+                    poseOffset,
+                    session.scene.activitySpace
+                )
             if (pos != null) {
                 panelEntity.setPose(pos)
             }
@@ -82,12 +92,14 @@ class SpatialUserActivity : AppCompatActivity() {
         lifecycleScope.launch {
             while (true) {
                 delay(16L)
-                val leftCamera = session.spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-                val rightCamera = session.spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+                val leftCamera =
+                    session.scene.spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
+                val rightCamera =
+                    session.scene.spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
                 val leftVisible =
-                    leftCamera?.let { isEntityInView(session.mainPanelEntity, it) } ?: false
+                    leftCamera?.let { isEntityInView(session.scene.mainPanelEntity, it) } ?: false
                 val rightVisible =
-                    rightCamera?.let { isEntityInView(session.mainPanelEntity, it) } ?: false
+                    rightCamera?.let { isEntityInView(session.scene.mainPanelEntity, it) } ?: false
                 panelString = "Is Main Panel In View?\nLeft: ${leftVisible}\nRight: ${rightVisible}"
                 panelView.text = panelString
             }

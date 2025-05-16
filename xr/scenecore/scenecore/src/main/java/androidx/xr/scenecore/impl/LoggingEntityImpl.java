@@ -21,7 +21,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.ActivityPose.HitTestRangeValue;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEventListener;
@@ -91,15 +91,15 @@ class LoggingEntityImpl extends BaseEntity implements LoggingEntity {
     public ListenableFuture<HitTestResult> hitTest(
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
-            @HitTestRangeValue int hitTestRange) {
+            @HitTestFilterValue int hitTestFilter) {
         Log.i(
                 TAG,
                 "Hit testing Logging Entity with origin: "
                         + origin
                         + " direction: "
                         + direction
-                        + " hitTestRange: "
-                        + hitTestRange);
+                        + " hitTestFilter: "
+                        + hitTestFilter);
         ResolvableFuture<HitTestResult> future = ResolvableFuture.create();
         future.set(
                 new HitTestResult(

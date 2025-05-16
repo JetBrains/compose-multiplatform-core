@@ -23,6 +23,7 @@
  */
 
 
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -90,4 +91,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "SQLite API"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

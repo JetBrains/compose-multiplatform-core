@@ -58,10 +58,6 @@ package androidx.ink.geometry {
     property public abstract float xMin;
     property public abstract float yMax;
     property public abstract float yMin;
-    field public static final androidx.ink.geometry.Box.Companion Companion;
-  }
-
-  public static final class Box.Companion {
   }
 
   public final class BoxAccumulator {
@@ -77,7 +73,7 @@ package androidx.ink.geometry {
     method public androidx.ink.geometry.Box? getBox();
     method public boolean isAlmostEqual(androidx.ink.geometry.BoxAccumulator other, @FloatRange(from=0.0) float tolerance);
     method public boolean isEmpty();
-    method public androidx.ink.geometry.BoxAccumulator populateFrom(androidx.ink.geometry.BoxAccumulator input);
+    method public androidx.ink.geometry.BoxAccumulator populateFrom(androidx.ink.geometry.Box? input);
     method public androidx.ink.geometry.BoxAccumulator reset();
     property public androidx.ink.geometry.Box? box;
   }
@@ -182,30 +178,35 @@ package androidx.ink.geometry {
     method public static boolean intersects(androidx.ink.geometry.Box, androidx.ink.geometry.Segment segment);
     method public static boolean intersects(androidx.ink.geometry.Box, androidx.ink.geometry.Triangle triangle);
     method public static boolean intersects(androidx.ink.geometry.Box, androidx.ink.geometry.Vec point);
+    method public static boolean intersects(androidx.ink.geometry.Box, float x, float y);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.Box box);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.Parallelogram other);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.PartitionedMesh mesh, androidx.ink.geometry.AffineTransform meshToParallelogram);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.Segment segment);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.Triangle triangle);
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, androidx.ink.geometry.Vec point);
+    method public static boolean intersects(androidx.ink.geometry.Parallelogram, float x, float y);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Box box, androidx.ink.geometry.AffineTransform meshToBox);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Parallelogram parallelogram, androidx.ink.geometry.AffineTransform meshToParallelogram);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.PartitionedMesh other, androidx.ink.geometry.AffineTransform thisToCommonTransForm, androidx.ink.geometry.AffineTransform otherToCommonTransform);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Segment segment, androidx.ink.geometry.AffineTransform meshToSegment);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Triangle triangle, androidx.ink.geometry.AffineTransform meshToTriangle);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Vec point, androidx.ink.geometry.AffineTransform meshToPoint);
+    method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, float x, float y, androidx.ink.geometry.AffineTransform meshToPoint);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.Box box);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.Parallelogram parallelogram);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.PartitionedMesh mesh, androidx.ink.geometry.AffineTransform meshToSegment);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.Segment other);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.Triangle triangle);
     method public static boolean intersects(androidx.ink.geometry.Segment, androidx.ink.geometry.Vec point);
+    method public static boolean intersects(androidx.ink.geometry.Segment, float x, float y);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.Box box);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.Parallelogram parallelogram);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.PartitionedMesh mesh, androidx.ink.geometry.AffineTransform meshToTriangle);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.Segment segment);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.Triangle other);
     method public static boolean intersects(androidx.ink.geometry.Triangle, androidx.ink.geometry.Vec point);
+    method public static boolean intersects(androidx.ink.geometry.Triangle, float x, float y);
     method public static boolean intersects(androidx.ink.geometry.Vec, androidx.ink.geometry.Box box);
     method public static boolean intersects(androidx.ink.geometry.Vec, androidx.ink.geometry.Parallelogram parallelogram);
     method public static boolean intersects(androidx.ink.geometry.Vec, androidx.ink.geometry.PartitionedMesh mesh, androidx.ink.geometry.AffineTransform meshToPoint);

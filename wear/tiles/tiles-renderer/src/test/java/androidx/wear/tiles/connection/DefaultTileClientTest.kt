@@ -374,10 +374,6 @@ public class DefaultTileClientTest {
             onTileLeaveCalled = true
         }
 
-        override fun processRecentInteractionEvents(
-            events: MutableList<TileInteractionEventData>?
-        ) {}
-
         override fun onRecentInteractionEvents(
             events: List<TileInteractionEventData?>?,
             callback: InteractionEventsCallback?

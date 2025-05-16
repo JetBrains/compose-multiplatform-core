@@ -20,6 +20,7 @@ package androidx.xr.scenecore
 
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
 import java.util.concurrent.ConcurrentHashMap
@@ -197,7 +198,7 @@ private constructor(
                     ResizeEvent.RESIZE_STATE_END ->
                         entity?.let { resizeListener.onResizeEnd(it, resizeEvent.newSize) }
                     ResizeEvent.RESIZE_STATE_START ->
-                        entity?.let { resizeListener.onResizeStart(it, size) }
+                        entity?.let { resizeListener.onResizeStart(it, resizeEvent.newSize) }
                 }
             }
         }

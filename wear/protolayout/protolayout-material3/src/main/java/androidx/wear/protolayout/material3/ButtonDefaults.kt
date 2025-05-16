@@ -430,7 +430,7 @@ internal constructor(
                 secondaryLabelTypography = Typography.LABEL_SMALL,
                 avatarSizePercentage = 23.15f,
                 avatarPaddingPercentage = 2.1f,
-                labelsPaddingPercentage = 6f,
+                labelsPaddingPercentage = 7.1f,
                 innerVerticalPadding = padding(vertical = 6f, horizontal = Float.NaN),
                 avatarToLabelsSpaceDp = 6,
             )

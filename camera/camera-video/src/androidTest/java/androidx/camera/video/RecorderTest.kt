@@ -87,6 +87,7 @@ import androidx.camera.video.VideoRecordEvent.Resume
 import androidx.camera.video.internal.OutputStorage
 import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
+import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
 import androidx.camera.video.internal.compat.quirk.MediaStoreVideoCannotWrite
 import androidx.camera.video.internal.encoder.EncoderFactory
@@ -187,7 +188,7 @@ class RecorderTest(
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var camera: Camera
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private lateinit var cameraSelector: CameraSelector
 
     private lateinit var preview: Preview
     private lateinit var surfaceTexturePreview: Preview
@@ -195,7 +196,7 @@ class RecorderTest(
 
     @Before
     fun setUp() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         // Skip for b/241876294
         assumeFalse(
             "Skip test for devices with ExtraSupportedResolutionQuirk, since the extra" +
@@ -979,6 +980,15 @@ class RecorderTest(
     }
 
     @Test
+    fun canSetVideoEncodingFrameRate() {
+        // Arrange.
+        val recorder = createRecorder(videoEncodingFrameRate = 60)
+
+        // Assert.
+        assertThat(recorder.videoEncodingFrameRate).isEqualTo(60)
+    }
+
+    @Test
     fun setNonSupportedVideoCapabilitiesSource_throwException() {
         assertThrows(IllegalArgumentException::class.java) {
             createRecorder(videoCapabilitiesSource = Integer.MAX_VALUE)
@@ -1067,6 +1077,48 @@ class RecorderTest(
     }
 
     @Test
+    fun insufficientStorageOnNextRecordingStarts_shouldFailWithInsufficientStorageError() {
+        assumeTrue(
+            "RecorderTest can't support second recording when using non persistent input surface",
+            DeviceQuirks.get(EncoderNotUsePersistentInputSurfaceQuirk::class.java) == null
+        )
+        // Arrange.
+        var storageAvailableBytes = 100L * 1024L * 1024L // 100MB
+        // Required size is less than storage size.
+        val requiredFreeStorageBytes = storageAvailableBytes - 10L
+        val outputStorageFactory =
+            object : OutputStorage.Factory {
+                override fun create(outputOptions: OutputOptions): OutputStorage =
+                    object : OutputStorage {
+                        override fun getOutputOptions(): OutputOptions = outputOptions
+
+                        override fun getAvailableBytes(): Long = storageAvailableBytes
+                    }
+            }
+        val recorder =
+            createRecorder(
+                outputStorageFactory = outputStorageFactory,
+                requiredFreeStorageBytes = requiredFreeStorageBytes
+            )
+        val recording = recordingSession.createRecording(recorder = recorder)
+
+        // Act: first recording should succeed.
+        recording.recordAndVerify()
+
+        // Arrange: reduce the storage size to be less than requiredFreeStorageBytes.
+        @Suppress("AssignedValueIsNeverRead") // it will be read by the next recording.
+        storageAvailableBytes = requiredFreeStorageBytes - 10L
+
+        // Act: start next recording
+        val recording2 = recordingSession.createRecording(recorder = recorder).start()
+
+        // Verify.
+        val result = recording2.verifyFinalize(error = ERROR_INSUFFICIENT_STORAGE)
+        // Video is not saved.
+        assertThat(result.uri).isEqualTo(Uri.EMPTY)
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = 23)
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(
@@ -1086,7 +1138,7 @@ class RecorderTest(
         val cameraSelector =
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
-                CameraSelector.DEFAULT_BACK_CAMERA,
+                cameraSelector,
                 sessionProcessor
             )
         val capabilities =
@@ -1115,7 +1167,7 @@ class RecorderTest(
         val cameraSelector =
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
-                CameraSelector.DEFAULT_BACK_CAMERA,
+                cameraSelector,
                 sessionProcessor
             )
         val capabilities =
@@ -1166,6 +1218,7 @@ class RecorderTest(
         retrySetupVideoDelayMs: Long? = null,
         audioSource: Int? = null,
         requiredFreeStorageBytes: Long? = null,
+        videoEncodingFrameRate: Int? = null
     ): Recorder {
         val recorder =
             Recorder.Builder()
@@ -1182,6 +1235,7 @@ class RecorderTest(
                 }
                 .build()
                 .apply {
+                    videoEncodingFrameRate?.let { setVideoEncodingFrameRate(it) }
                     retrySetupVideoMaxCount?.let { sRetrySetupVideoMaxCount = it }
                     retrySetupVideoDelayMs?.let { sRetrySetupVideoDelayMs = it }
                 }

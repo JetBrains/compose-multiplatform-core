@@ -15,7 +15,7 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
   <uses-permission android:name="android.permission.HAND_TRACKING" />
   <application android:label="ARCore Whitebox" android:taskAffinity="">
     <activity

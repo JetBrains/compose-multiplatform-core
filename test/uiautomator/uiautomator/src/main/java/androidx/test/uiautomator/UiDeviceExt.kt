@@ -18,15 +18,20 @@
 package androidx.test.uiautomator
 
 import android.app.Instrumentation
+import android.graphics.Rect
 import android.os.Build
+import android.view.Display
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.uiautomator.internal.TimeoutClock
+import androidx.test.uiautomator.internal.displayManager
 import androidx.test.uiautomator.internal.findViews
 import androidx.test.uiautomator.internal.keyCharacterMap
 import androidx.test.uiautomator.internal.notNull
+import androidx.test.uiautomator.internal.takeViewNodeTree
 import androidx.test.uiautomator.internal.uiDevice
+import androidx.test.uiautomator.internal.waitForStableInternal
 
 /** Returns all the windows on all the displays. */
 public fun UiDevice.windows(): List<AccessibilityWindowInfo> = windowRoots.map { it.window }
@@ -41,6 +46,8 @@ public fun UiDevice.activeWindow(): AccessibilityWindowInfo = waitForRootInActiv
  * @param sleepIntervalMs a interval to wait before retrying checking if the node is available.
  * @param clearCache whether the accessibility nodes cache should be cleared when checking.
  * @return the root node for this window.
+ * @throws [IllegalStateException] if the root node in the active window cannot be acquired before
+ *   the give timeout [timeoutMs].
  */
 @JvmOverloads
 public fun UiDevice.waitForRootInActiveWindow(
@@ -50,18 +57,76 @@ public fun UiDevice.waitForRootInActiveWindow(
 ): AccessibilityNodeInfo {
 
     val clock = TimeoutClock(timeoutMs = timeoutMs, sleepIntervalMs = sleepIntervalMs)
-    while (uiAutomation.rootInActiveWindow == null) {
+    var node: AccessibilityNodeInfo? = null
+    var window: AccessibilityWindowInfo? = null
+
+    while (true) {
+
+        // Check if both root node and window for it exist
+        if (node != null && window != null) {
+            return node
+        }
 
         // Clear accessibility cache: some nodes are cached and may not get updated.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && clearCache) {
             uiAutomation.clearCache()
         }
+
+        // If this was a timeout, throw exception
         if (clock.isTimeoutOrSleep()) {
             throw IllegalStateException("Cannot acquire root view in active window.")
         }
+
+        // Otherwise try again to retrieve node and window
+        node = uiAutomation.rootInActiveWindow
+        window = node?.window
     }
-    return uiAutomation.rootInActiveWindow
 }
+
+/**
+ * Waits for the root node of the active window to become stable.
+ *
+ * A node is considered stable when it and its descendants have not changed over an interval of
+ * time. Optionally also the node image can be checked. Internally it works checking periodically
+ * that the internal properties of the node have not changed.
+ *
+ * @param stableTimeoutMs a timeout for the wait operation, to ensure not waiting forever for
+ *   stability.
+ * @param stableIntervalMs the interval during which the node should not be changing, in order to be
+ *   considered stable.
+ * @param stablePollIntervalMs specifies how often the ui should be checked for changes.
+ * @param requireStableScreenshot specifies if also the bitmap of the node should not change over
+ *   the specified [stableIntervalMs]. Note that this won't work with views that change constantly,
+ *   like a video player.
+ * @return a [StableResult] containing the latest acquired view hierarchy and screenshot, and a flag
+ *   indicating if the node was stable before timeout.
+ */
+@JvmOverloads
+public fun UiDevice.waitForStableInActiveWindow(
+    stableTimeoutMs: Long = 3000,
+    stableIntervalMs: Long = 500,
+    stablePollIntervalMs: Long = 50,
+    requireStableScreenshot: Boolean = true,
+): StableResult =
+    waitForStableInternal(
+        stableTimeoutMs = stableTimeoutMs,
+        stablePollIntervalMs = stablePollIntervalMs,
+        stableIntervalMs = stableIntervalMs,
+        bitmapProvider = {
+            if (requireStableScreenshot) waitForRootInActiveWindow().takeScreenshot() else null
+        },
+        rootViewNodeProvider = {
+            val node = waitForRootInActiveWindow()
+            val displayRect =
+                Rect().apply {
+                    val displayId =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) node.window.displayId
+                        else Display.DEFAULT_DISPLAY
+                    @Suppress("DEPRECATION") displayManager.getDisplay(displayId).getRectSize(this)
+                }
+            takeViewNodeTree(root = node, displayRect = displayRect)
+        }
+    )
 
 /**
  * Types the given [text] string simulating key press through [Instrumentation.sendKeySync]. This is

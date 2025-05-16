@@ -181,6 +181,8 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 7 to 6
             hapticsCount++
         }
+
+        performTouchGesture { up() }
     }
 
     @Test
@@ -237,6 +239,8 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 6 to 29
             hapticsCount++
         }
+
+        performTouchGesture { up() }
     }
 
     @Test

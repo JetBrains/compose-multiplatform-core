@@ -34,12 +34,13 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import java.util.EnumSet
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.calls.singleFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtTypeArgumentList
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UResolvable
 import org.jetbrains.uast.kotlin.isKotlin
 import org.jetbrains.uast.skipParenthesizedExprDown
 
@@ -143,14 +144,14 @@ class AutoboxingStateCreationDetector : Detector(), SourceCodeScanner {
 
         val sourcePsi = invocation.sourcePsi as? KtElement ?: return null
         analyze(sourcePsi) {
-            val resolvedCall = sourcePsi.resolveCall()?.singleFunctionCallOrNull() ?: return null
+            val resolvedCall = sourcePsi.resolveToCall()?.singleFunctionCallOrNull() ?: return null
             val stateType =
                 resolvedCall.typeArgumentsMapping.asIterable().singleOrNull()?.value ?: return null
             return when {
                 stateType.isMarkedNullable -> null
                 else -> {
                     // NB: use expanded class symbol for type alias
-                    val fqName = stateType.expandedClassSymbol?.classIdIfNonLocal?.asFqNameString()
+                    val fqName = stateType.expandedSymbol?.classId?.asFqNameString()
                     replacements[fqName]
                 }
             }
@@ -165,7 +166,7 @@ class AutoboxingStateCreationDetector : Detector(), SourceCodeScanner {
                 ?: return true // No argument passed; we're using the default policy
 
         val policyMethod =
-            (policyExpr as? UCallExpression)?.resolve()
+            (policyExpr as? UResolvable)?.resolve() as? PsiMethod
                 ?: return false // Argument isn't a direct function call. Assume it's a more complex
         // policy, or isn't always the structural equality policy.
 

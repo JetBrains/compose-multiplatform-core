@@ -46,6 +46,7 @@ import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.scenecore.scene
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
@@ -78,9 +79,9 @@ private fun XrModeButton() {
         enabled = isDeviceXr,
         onClick = {
             if (isFullSpaceMode) {
-                session?.spatialEnvironment?.requestHomeSpaceMode()
+                session?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             } else {
-                session?.spatialEnvironment?.requestFullSpaceMode()
+                session?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
         },
     ) {

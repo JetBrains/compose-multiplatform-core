@@ -25,7 +25,6 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -498,7 +497,6 @@ src/androidx/compose/runtime/foo/{.kt:98: Warning: Reading a value annotated wit
             )
     }
 
-    @Ignore("b/234042500 - the API we need is not currently handled by Lint's bytecode remapping")
     @Test
     fun errors_getterInheritanceHierarchy() {
         lint()

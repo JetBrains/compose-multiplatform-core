@@ -31,6 +31,8 @@ interface XFunSpec {
 
     val name: XName
 
+    fun toBuilder(): Builder
+
     interface Builder {
 
         fun addAnnotation(annotation: XAnnotationSpec): Builder

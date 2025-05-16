@@ -21,13 +21,13 @@ import android.graphics.Point
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
-import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import androidx.testutils.defaultComposeScrollingMetrics
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +49,7 @@ class DifferentTypesListScrollBenchmark {
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = listOf(FrameTimingMetric(), FrameTimingGfxInfoMetric()),
+            metrics = defaultComposeScrollingMetrics() + FrameTimingGfxInfoMetric(),
             compilationMode = CompilationMode.Full(),
             iterations = 5,
             setupBlock = {

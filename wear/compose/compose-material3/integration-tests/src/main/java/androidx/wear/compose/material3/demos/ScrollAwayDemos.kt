@@ -27,11 +27,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ScrollInfoProvider
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.integration.demos.common.Centralize
@@ -55,13 +57,14 @@ val ScrollAwayDemos =
 @Composable
 fun ScrollAwayLazyColumn() {
     val scrollState = rememberLazyListState()
-    val focusRequester = rememberActiveFocusRequester()
+    val focusRequester = remember { FocusRequester() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = scrollState,
             modifier =
                 Modifier.fillMaxSize()
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
@@ -109,12 +112,13 @@ fun ScrollAwayLazyColumn() {
 @Composable
 fun ScrollAwayColumn() {
     val scrollState = rememberScrollState()
-    val focusRequester = rememberActiveFocusRequester()
+    val focusRequester = remember { FocusRequester() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,

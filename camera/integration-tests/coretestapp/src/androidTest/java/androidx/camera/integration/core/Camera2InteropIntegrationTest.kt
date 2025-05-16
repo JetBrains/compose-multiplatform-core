@@ -26,7 +26,6 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
 import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
@@ -57,8 +56,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +66,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -96,6 +92,7 @@ class Camera2InteropIntegrationTest(
 
     private var processCameraProvider: ProcessCameraProvider? = null
     private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    lateinit var captureCallback: Camera2InteropUtil.CaptureCallback
 
     companion object {
         @JvmStatic
@@ -113,8 +110,8 @@ class Camera2InteropIntegrationTest(
         // Configures the test target config
         ProcessCameraProvider.configureInstance(cameraConfig)
         processCameraProvider = ProcessCameraProvider.awaitInstance(context)
-
         assumeTrue(processCameraProvider!!.hasCamera(cameraSelector))
+        captureCallback = Camera2InteropUtil.CaptureCallback()
     }
 
     @After
@@ -266,9 +263,7 @@ class Camera2InteropIntegrationTest(
         }
 
         // Assert.
-        captureCallback.waitFor(numOfCaptures = 20) { captureRequests, _ ->
-            assertThat(captureRequests.last().get(testKey)).isEqualTo(testValue)
-        }
+        captureCallback.verifyLastCaptureRequest(mapOf(testKey to testValue))
     }
 
     @Test
@@ -291,9 +286,7 @@ class Camera2InteropIntegrationTest(
         }
 
         // Assert.
-        captureCallback.waitFor(numOfCaptures = 20) { captureRequests, _ ->
-            assertThat(captureRequests.last().get(testKey)).isEqualTo(testValue)
-        }
+        captureCallback.verifyLastCaptureRequest(mapOf(testKey to testValue))
     }
 
     @Test
@@ -313,8 +306,8 @@ class Camera2InteropIntegrationTest(
         camera.clearInteropOptions()
 
         // Assert.
-        captureCallback.waitFor(numOfCaptures = 20) { captureRequests, _ ->
-            assertThat(captureRequests.last().get(testKey)).isNotEqualTo(testValue)
+        captureCallback.verifyFor(numOfCaptures = 20) { captureRequests, _ ->
+            captureRequests.last()[testKey] != testValue
         }
     }
 
@@ -336,14 +329,14 @@ class Camera2InteropIntegrationTest(
         }
 
         // Assert.
-        captureCallback.waitFor(numOfCaptures = 20) { _, captureResults ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                assertThat(captureResults.last().physicalCameraTotalResults.keys)
-                    .containsExactly(testCameraId)
-            } else {
-                assertThat(captureResults.last().physicalCameraResults.keys)
-                    .containsExactly(testCameraId)
-            }
+        captureCallback.verifyFor(numOfCaptures = 20) { _, captureResults ->
+            val cameraIds =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    captureResults.last().physicalCameraTotalResults.keys
+                } else {
+                    captureResults.last().physicalCameraResults.keys
+                }
+            cameraIds.size == 1 && cameraIds.contains(testCameraId)
         }
     }
 
@@ -454,49 +447,6 @@ class Camera2InteropIntegrationTest(
         Camera2InteropUtil.Camera2CameraControlWrapper.from(implName, cameraControl)
             .clearCaptureRequestOptions()
     }
-
-    private val captureCallback =
-        object : CameraCaptureSession.CaptureCallback() {
-
-            val waitingList = mutableListOf<CaptureContainer>()
-
-            fun waitFor(
-                timeout: Long = TimeUnit.SECONDS.toMillis(5),
-                numOfCaptures: Int = 1,
-                verifyResults:
-                    (
-                        captureRequests: List<CaptureRequest>,
-                        captureResults: List<TotalCaptureResult>
-                    ) -> Unit =
-                    { _, _ ->
-                        // No-op
-                    }
-            ) {
-                val resultContainer = CaptureContainer(CountDownLatch(numOfCaptures))
-                waitingList.add(resultContainer)
-                assertTrue(resultContainer.countDownLatch.await(timeout, TimeUnit.MILLISECONDS))
-                verifyResults(resultContainer.captureRequests, resultContainer.captureResults)
-                waitingList.remove(resultContainer)
-            }
-
-            override fun onCaptureCompleted(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                result: TotalCaptureResult
-            ) {
-                waitingList.toList().forEach {
-                    it.captureRequests.add(request)
-                    it.captureResults.add(result)
-                    it.countDownLatch.countDown()
-                }
-            }
-        }
-
-    data class CaptureContainer(
-        val countDownLatch: CountDownLatch,
-        val captureRequests: MutableList<CaptureRequest> = mutableListOf(),
-        val captureResults: MutableList<TotalCaptureResult> = mutableListOf()
-    )
 
     // Sealed class for converting CameraDevice.StateCallback into a StateFlow
     sealed class DeviceState {

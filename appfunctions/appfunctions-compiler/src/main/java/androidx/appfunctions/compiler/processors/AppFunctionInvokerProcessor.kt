@@ -26,6 +26,7 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionCompon
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
+import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -143,6 +144,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
 
         val fileSpec =
             FileSpec.builder(originalPackageName, invokerClassName)
+                .addGeneratedTimeStamp()
                 .addType(invokerClassBuilder.build())
                 .build()
         codeGenerator

@@ -4,6 +4,7 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import androidx.appfunctions.`internal`.serializableproxies.`$LocalDateTimeFactory`
 import androidx.appfunctions.`internal`.serializableproxies.`$UriFactory`
+import java.time.LocalDateTime
 import javax.`annotation`.processing.Generated
 
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
@@ -18,14 +19,21 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
     val localDateTimeList = localDateTimeListData.map { data ->
       appFunctionLocalDateTimeFactory.fromAppFunctionData(data)
     }
-    val androidUriData = checkNotNull(appFunctionData.getAppFunctionData("androidUri"))
-    val androidUri = appFunctionUriFactory.fromAppFunctionData(androidUriData)
+    val localDateTimeNullableData = appFunctionData.getAppFunctionData("localDateTimeNullable")
+    var localDateTimeNullable: LocalDateTime? = null
+    if (localDateTimeNullableData != null) {
+      localDateTimeNullable = appFunctionLocalDateTimeFactory.fromAppFunctionData(localDateTimeNullableData)
+    }
     val androidUriListData = appFunctionData.getAppFunctionDataList("androidUriList") ?: emptyList()
     val androidUriList = androidUriListData.map { data ->
       appFunctionUriFactory.fromAppFunctionData(data)
     }
+    val androidUriNullableData = appFunctionData.getAppFunctionDataList("androidUriNullable")
+    val androidUriNullable = androidUriNullableData?.map { data ->
+      appFunctionUriFactory.fromAppFunctionData(data)
+    }
 
-    val resultSerializableWithProxyType = SerializableWithProxyType(localDateTime, localDateTimeList, androidUri, androidUriList)
+    val resultSerializableWithProxyType = SerializableWithProxyType(localDateTime, localDateTimeList, localDateTimeNullable, androidUriList, androidUriNullable)
     return resultSerializableWithProxyType
   }
 
@@ -41,12 +49,20 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
     builder.setAppFunctionDataList("localDateTimeList", localDateTimeList.map{ appFunctionLocalDateTime ->
       appFunctionLocalDateTimeFactory.toAppFunctionData(appFunctionLocalDateTime)
     })
-    val androidUri = serializableWithProxyType_appFunctionSerializable.androidUri
-    builder.setAppFunctionData("androidUri", appFunctionUriFactory.toAppFunctionData(androidUri))
+    val localDateTimeNullable = serializableWithProxyType_appFunctionSerializable.localDateTimeNullable
+    if (localDateTimeNullable != null) {
+      builder.setAppFunctionData("localDateTimeNullable", appFunctionLocalDateTimeFactory.toAppFunctionData(localDateTimeNullable))
+    }
     val androidUriList = serializableWithProxyType_appFunctionSerializable.androidUriList
     builder.setAppFunctionDataList("androidUriList", androidUriList.map{ appFunctionUri ->
       appFunctionUriFactory.toAppFunctionData(appFunctionUri)
     })
+    val androidUriNullable = serializableWithProxyType_appFunctionSerializable.androidUriNullable
+    if (androidUriNullable != null) {
+      builder.setAppFunctionDataList("androidUriNullable", androidUriNullable.map{ appFunctionUri ->
+        appFunctionUriFactory.toAppFunctionData(appFunctionUri)
+      })
+    }
 
     return builder.build()
   }

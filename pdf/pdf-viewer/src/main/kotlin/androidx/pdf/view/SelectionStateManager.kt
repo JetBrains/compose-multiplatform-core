@@ -24,6 +24,9 @@ import android.view.MotionEvent
 import androidx.annotation.VisibleForTesting
 import androidx.pdf.PdfDocument
 import androidx.pdf.content.PageSelection
+import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -39,6 +42,7 @@ internal class SelectionStateManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val handleTouchTargetSizePx: Int,
+    private val errorFlow: MutableSharedFlow<Throwable>,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
@@ -220,16 +224,19 @@ internal class SelectionStateManager(
     }
 
     private fun updateAllSelectionAsync(pageNum: Int) {
-        updateSelectionAsync { pdfDocument.getSelectAllSelectionBounds(pageNum) }
+        updateSelectionAsync(pageNum..pageNum) { pdfDocument.getSelectAllSelectionBounds(pageNum) }
     }
 
     private fun updateRangeSelectionAsync(start: PdfPoint, end: PdfPoint) {
-        updateSelectionAsync {
+        updateSelectionAsync(start.pageNum..end.pageNum) {
             pdfDocument.getSelectionBounds(start.pageNum, start.pagePoint, end.pagePoint)
         }
     }
 
-    private fun updateSelectionAsync(getNewSelection: suspend () -> PageSelection?) {
+    private fun updateSelectionAsync(
+        pageRange: IntRange,
+        getNewSelection: suspend () -> PageSelection?
+    ) {
         val prevJob = setSelectionJob
         setSelectionJob =
             backgroundScope
@@ -253,8 +260,18 @@ internal class SelectionStateManager(
                             }
                         }
                     } catch (e: DeadObjectException) {
-                        // Ignoring a dead object exception because the service died.
-                        // User can retry the operation.
+                        val exception =
+                            RequestFailedException(
+                                requestMetadata =
+                                    RequestMetadata(
+                                        requestName = CONTENT_SELECTION_REQUEST_NAME,
+                                        pageRange = pageRange
+                                    ),
+                                throwable = e,
+                                // Non-critical failure, user can retry the operation.
+                                showError = false
+                            )
+                        errorFlow.emit(exception)
                     }
                 }
                 .also { it.invokeOnCompletion { setSelectionJob = null } }

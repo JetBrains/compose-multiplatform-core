@@ -22,9 +22,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
@@ -37,17 +42,21 @@ import androidx.wear.compose.material3.PagerScaffoldDefaults
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.material3.VerticalPagerScaffold
 import androidx.wear.compose.material3.samples.HorizontalPagerScaffoldSample
 import androidx.wear.compose.material3.samples.ScaffoldSample
 import androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 val ScaffoldDemos =
     listOf(
         ComposableDemo("Scaffold Sample") { ScaffoldSample() },
         ComposableDemo("Screen Scaffold with SLC") { ScaffoldWithSLCEdgeButtonSample() },
+        ComposableDemo("Screen Scaffold Loading SLC") { ScaffoldLoadingSLCEdgeButtonSample() },
         ComposableDemo("Screen Scaffold with TLC") { ScaffoldWithTLCEdgeButtonSample() },
         ComposableDemo("Horizontal Pager Scaffold") {
             HorizontalPagerScaffoldSample(it.navigateBack)
@@ -150,6 +159,41 @@ fun VerticalPagerScaffoldFadeOutIndicatorDemo() {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ScaffoldLoadingSLCEdgeButtonSample() {
+    // Simulate the loading of the UI's content
+    val loaded = remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        launch {
+            delay(2000)
+            loaded.value = true
+        }
+    }
+
+    val loadedListState = rememberScalingLazyListState()
+    val unLoadedListState = rememberScalingLazyListState()
+
+    val listState = if (loaded.value) loadedListState else unLoadedListState
+    ScreenScaffold(scrollState = listState, timeText = { TimeText() }) { contentPadding ->
+        ScalingLazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = contentPadding,
+        ) {
+            if (loaded.value) {
+                items(10) {
+                    Button(
+                        onClick = {},
+                        label = { Text("Item ${it + 1}") },
+                    )
+                }
+            } else {
+                item { Text("Loading...") }
             }
         }
     }

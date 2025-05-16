@@ -58,9 +58,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -138,6 +139,21 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
 
     private val selection = mutableStateOf<Selection?>(null)
 
+    @get:Rule(order = Int.MIN_VALUE)
+    val flagRule =
+        @OptIn(ExperimentalFoundationApi::class)
+        object : TestWatcher() {
+            override fun starting(description: Description?) {
+                initialFlagValue = ComposeFoundationFlags.isNewContextMenuEnabled
+                ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuFlagValue
+            }
+
+            override fun finished(description: Description?) {
+                ComposeFoundationFlags.isNewContextMenuEnabled =
+                    checkPreconditionNotNull(initialFlagValue)
+            }
+        }
+
     @Composable
     override fun Content() {
         SelectionContainer(
@@ -187,23 +203,37 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
                 arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
                 arrayOf(RIGHT, ON_SECOND, SECOND, false),
                 arrayOf(RIGHT, BELOW, SECOND, false),
+                arrayOf(LEFT, ABOVE, FIRST_REVERSED, true),
+                arrayOf(LEFT, ON_FIRST, FIRST_REVERSED, true),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(LEFT, OVERLAP_EQUIDISTANT, EITHER, true),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(LEFT, ON_SECOND, SECOND_REVERSED, true),
+                arrayOf(LEFT, BELOW, SECOND, true),
+                arrayOf(CENTER, ABOVE, FIRST_REVERSED, true),
+                arrayOf(CENTER, ON_FIRST, FIRST, true),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(CENTER, OVERLAP_EQUIDISTANT, EITHER, true),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(CENTER, ON_SECOND, SECOND, true),
+                arrayOf(CENTER, BELOW, SECOND, true),
+                arrayOf(RIGHT, ABOVE, FIRST_REVERSED, true),
+                arrayOf(RIGHT, ON_FIRST, FIRST, true),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_FIRST, FIRST, true),
+                arrayOf(RIGHT, OVERLAP_EQUIDISTANT, EITHER, true),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, true),
+                arrayOf(RIGHT, ON_SECOND, SECOND, true),
+                arrayOf(RIGHT, BELOW, SECOND, true),
             )
     }
 
     private var initialFlagValue: Boolean? = null
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Before
-    fun before() {
-        initialFlagValue = ComposeFoundationFlags.isNewContextMenuEnabled
-        ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuFlagValue
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @After
-    fun after() {
-        ComposeFoundationFlags.isNewContextMenuEnabled = checkPreconditionNotNull(initialFlagValue)
-    }
 
     @Test
     fun minTouchTargetSelectionGestureTest() = runTest {

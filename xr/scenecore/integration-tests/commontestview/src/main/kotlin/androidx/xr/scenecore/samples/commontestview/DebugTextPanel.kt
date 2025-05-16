@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.samples.commontestview
 
 import android.content.Context
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.Session
 
 /**
  * A debug panel that holds a panel entity with a view that displays a list of text lines.

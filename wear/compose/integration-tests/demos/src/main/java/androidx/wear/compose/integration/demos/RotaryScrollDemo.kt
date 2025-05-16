@@ -33,15 +33,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Text
@@ -54,70 +56,34 @@ public fun NestedScrollPagerDemo() {
         state = state,
         modifier = Modifier.fillMaxSize(),
     ) { page ->
-        HierarchicalFocusCoordinator(requiresFocus = { page == state.currentPage }) {
-            when (page) {
-                0 -> {
-                    val scrollableState = rememberScrollState()
-                    Box(
-                        Modifier.fillMaxSize()
-                            .rotaryScrollable(
-                                RotaryScrollableDefaults.behavior(scrollableState),
-                                rememberActiveFocusRequester()
-                            )
-                            .verticalScroll(scrollableState)
-                            .padding(30.dp),
-                        Alignment.Center
-                    ) {
-                        Text("Scroll down to snap to the next page", textAlign = TextAlign.Center)
-                    }
+        val focusRequester = remember { FocusRequester() }
+        val scrollableState = rememberScrollState()
+        Box(
+            Modifier.fillMaxSize()
+                .hierarchicalFocusGroup(active = (page == state.currentPage))
+                .requestFocusOnHierarchyActive()
+                .rotaryScrollable(
+                    RotaryScrollableDefaults.behavior(scrollableState),
+                    focusRequester = focusRequester
+                )
+                .verticalScroll(scrollableState)
+                .background(if (page == 1) Color.Gray else Color.Black)
+                .padding(30.dp),
+            Alignment.Center
+        ) {
+            Column {
+                if (page > 0) {
+                    Text("Scroll up to snap to the previous page", textAlign = TextAlign.Center)
                 }
-                1 -> {
-                    val scrollableState = rememberScrollState()
-                    Column(
-                        Modifier.fillMaxSize()
-                            .rotaryScrollable(
-                                RotaryScrollableDefaults.behavior(scrollableState),
-                                rememberActiveFocusRequester()
-                            )
-                            .verticalScroll(scrollableState)
-                            .background(Color.Gray)
-                            .padding(30.dp)
-                    ) {
-                        Box(Modifier.fillMaxSize()) {
-                            Text(
-                                text = "Scroll up to snap to the previous page",
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        repeat(20) { innerIndex ->
-                            Box(Modifier.height(38.dp).fillMaxWidth(), Alignment.Center) {
-                                Text(
-                                    text = "Item $innerIndex",
-                                )
-                            }
-                        }
-                        Box(Modifier.fillMaxSize(), Alignment.Center) {
-                            Text(
-                                text = "Scroll down to snap to the next page",
-                                textAlign = TextAlign.Center
-                            )
+                if (page == 1) {
+                    repeat(20) { innerIndex ->
+                        Box(Modifier.height(38.dp).fillMaxWidth(), Alignment.Center) {
+                            Text(text = "Item $innerIndex")
                         }
                     }
                 }
-                2 -> {
-                    val scrollableState = rememberScrollState()
-                    Box(
-                        Modifier.fillMaxSize()
-                            .rotaryScrollable(
-                                RotaryScrollableDefaults.behavior(scrollableState),
-                                rememberActiveFocusRequester()
-                            )
-                            .verticalScroll(scrollableState)
-                            .padding(30.dp),
-                        Alignment.Center
-                    ) {
-                        Text("Scroll up to snap to the previous page", textAlign = TextAlign.Center)
-                    }
+                if (page < 2) {
+                    Text("Scroll down to snap to the next page", textAlign = TextAlign.Center)
                 }
             }
         }
@@ -135,27 +101,28 @@ public fun NestedScrollLazyColumnDemo(reverseLayout: Boolean) {
     ) {
         item { TopText() }
         item {
-            HierarchicalFocusCoordinator(requiresFocus = { true }) {
-                val state = rememberLazyListState()
-                val overscrollEffect = rememberOverscrollEffect()
+            val state = rememberLazyListState()
+            val overscrollEffect = rememberOverscrollEffect()
+            val focusRequester = remember { FocusRequester() }
 
-                LazyColumn(
-                    modifier =
-                        Modifier.rotaryScrollable(
-                                RotaryScrollableDefaults.behavior(state),
-                                overscrollEffect = overscrollEffect,
-                                focusRequester = rememberActiveFocusRequester(),
-                                reverseDirection = reverseLayout
-                            )
-                            .overscroll(overscrollEffect)
-                            .size(150.dp)
-                            .background(Color.Yellow)
-                            .padding(PaddingValues(30.dp)),
-                    state = state,
-                    reverseLayout = reverseLayout
-                ) {
-                    items(20) { index -> ItemText(index) }
-                }
+            LazyColumn(
+                modifier =
+                    Modifier.hierarchicalFocusGroup(true)
+                        .requestFocusOnHierarchyActive()
+                        .rotaryScrollable(
+                            RotaryScrollableDefaults.behavior(state),
+                            overscrollEffect = overscrollEffect,
+                            focusRequester = focusRequester,
+                            reverseDirection = reverseLayout
+                        )
+                        .overscroll(overscrollEffect)
+                        .size(150.dp)
+                        .background(Color.Yellow)
+                        .padding(PaddingValues(30.dp)),
+                state = state,
+                reverseLayout = reverseLayout
+            ) {
+                items(20) { index -> ItemText(index) }
             }
         }
         item { BottomText() }
@@ -174,12 +141,13 @@ public fun NestedScrollTLCDemo() {
     ) {
         item { TopText() }
         item {
-            HierarchicalFocusCoordinator(requiresFocus = { true }) {
-                TransformingLazyColumn(
-                    Modifier.size(150.dp).background(Color.Yellow).padding(PaddingValues(30.dp)),
-                ) {
-                    items(20) { index -> ItemText(index) }
-                }
+            TransformingLazyColumn(
+                Modifier.hierarchicalFocusGroup(true)
+                    .size(150.dp)
+                    .background(Color.Yellow)
+                    .padding(PaddingValues(30.dp)),
+            ) {
+                items(20) { index -> ItemText(index) }
             }
         }
         item { BottomText() }
@@ -198,12 +166,13 @@ public fun NestedScrollSLCDemo() {
     ) {
         item { TopText() }
         item {
-            HierarchicalFocusCoordinator(requiresFocus = { true }) {
-                ScalingLazyColumn(
-                    Modifier.size(150.dp).background(Color.Yellow).padding(PaddingValues(30.dp))
-                ) {
-                    items(20) { index -> ItemText(index) }
-                }
+            ScalingLazyColumn(
+                Modifier.hierarchicalFocusGroup(true)
+                    .size(150.dp)
+                    .background(Color.Yellow)
+                    .padding(PaddingValues(30.dp))
+            ) {
+                items(20) { index -> ItemText(index) }
             }
         }
         item { BottomText() }

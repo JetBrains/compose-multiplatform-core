@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.GltfModelResource as RtGltfModel
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import com.google.common.util.concurrent.ListenableFuture
@@ -99,6 +100,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) : M
          */
         @MainThread
         @JvmStatic
+        @Suppress("AsyncSuffixFuture")
         public fun create(
             session: Session,
             assetData: ByteArray,

@@ -28,7 +28,7 @@ import org.gradle.api.attributes.java.TargetJvmEnvironment
  */
 fun configureAarAsJarForConfiguration(project: Project, configurationName: String) {
     val testAarsAsJars =
-        project.configurations.create("${configurationName}AarAsJar") {
+        project.configurations.register("${configurationName}AarAsJar") {
             it.isTransitive = false
             it.isCanBeConsumed = false
             it.isCanBeResolved = true
@@ -39,6 +39,13 @@ fun configureAarAsJarForConfiguration(project: Project, configurationName: Strin
             it.attributes.attribute(
                 Usage.USAGE_ATTRIBUTE,
                 project.objects.named(Usage::class.java, Usage.JAVA_API)
+            )
+            it.attributes.attribute(
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                project.objects.named(
+                    TargetJvmEnvironment::class.java,
+                    TargetJvmEnvironment.ANDROID
+                )
             )
         }
     val artifactType = Attribute.of("artifactType", String::class.java)
@@ -53,21 +60,14 @@ fun configureAarAsJarForConfiguration(project: Project, configurationName: Strin
     }
 
     val aarAsJar =
-        testAarsAsJars.incoming
-            .artifactView { viewConfiguration ->
-                viewConfiguration.attributes.attribute(artifactType, "aarAsJar")
-            }
-            .files
-    project.configurations
-        .getByName(configurationName)
-        .dependencies
-        .add(project.dependencies.create(aarAsJar))
-
-    project.configurations
-        .getByName(testAarsAsJars.name)
-        .attributes
-        .attribute(
-            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-            project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
-        )
+        testAarsAsJars.map { configuration ->
+            configuration.incoming
+                .artifactView { viewConfiguration ->
+                    viewConfiguration.attributes.attribute(artifactType, "aarAsJar")
+                }
+                .files
+        }
+    project.configurations.named(configurationName).configure { configuration ->
+        configuration.dependencies.add(project.dependencies.create(aarAsJar.get()))
+    }
 }

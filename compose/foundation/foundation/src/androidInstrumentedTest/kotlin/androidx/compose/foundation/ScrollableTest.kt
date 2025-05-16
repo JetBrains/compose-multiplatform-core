@@ -3382,7 +3382,7 @@ private fun espressoSwipe(
 
 internal class TestScrollMotionDurationScale(override val scaleFactor: Float) : MotionDurationScale
 
-private class ScrollableContainerReaderNodeElement(val hasScrollableBlock: (Boolean) -> Unit) :
+internal class ScrollableContainerReaderNodeElement(val hasScrollableBlock: (Boolean) -> Unit) :
     ModifierNodeElement<ScrollableContainerReaderNode>() {
     override fun create(): ScrollableContainerReaderNode {
         return ScrollableContainerReaderNode(hasScrollableBlock)
@@ -3408,7 +3408,7 @@ private class ScrollableContainerReaderNodeElement(val hasScrollableBlock: (Bool
     }
 }
 
-private class ScrollableContainerReaderNode(var hasScrollableBlock: (Boolean) -> Unit) :
+internal class ScrollableContainerReaderNode(var hasScrollableBlock: (Boolean) -> Unit) :
     Modifier.Node(), TraversableNode {
     override val traverseKey: Any = TraverseKey
 

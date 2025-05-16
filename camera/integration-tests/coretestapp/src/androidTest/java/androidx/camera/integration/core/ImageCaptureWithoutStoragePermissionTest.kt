@@ -31,13 +31,13 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.CountdownDeferred
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -176,23 +176,6 @@ class ImageCaptureWithoutStoragePermissionTest(
             Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
             Truth.assertThat(results.size).isEqualTo(savedImagesCount)
             Truth.assertThat(errors.size).isEqualTo(errorsCount)
-        }
-    }
-
-    private class CountdownDeferred(count: Int) {
-
-        private val deferredItems =
-            mutableListOf<CompletableDeferred<Unit>>().apply {
-                repeat(count) { add(CompletableDeferred()) }
-            }
-        private var index = 0
-
-        fun countDown() {
-            deferredItems[index++].complete(Unit)
-        }
-
-        suspend fun await() {
-            deferredItems.forEach { it.await() }
         }
     }
 }

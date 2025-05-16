@@ -36,7 +36,6 @@ import java.util.concurrent.Executor;
  *
  * Use {@link CustomTabsClient#newAuthTabSession} to create an instance.
  */
-@ExperimentalAuthTab
 public final class AuthTabSession {
     private final IAuthTabCallback mCallback;
     private final ComponentName mComponentName;

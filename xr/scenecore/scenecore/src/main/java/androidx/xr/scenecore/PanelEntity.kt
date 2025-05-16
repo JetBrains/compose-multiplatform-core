@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import android.content.Context
 import android.view.View
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.math.Pose
@@ -182,7 +183,7 @@ internal constructor(
             PanelEntity.create(
                 session.activity,
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 view,
                 dimensions,
                 name,
@@ -212,7 +213,7 @@ internal constructor(
             PanelEntity.create(
                 session.activity,
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 view,
                 pixelDimensions,
                 name,

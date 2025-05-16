@@ -17,6 +17,7 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.ui.Alignment
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -392,6 +393,314 @@ class ThreePaneScaffoldValueTest {
         scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
         scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
         scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitate_onePaneLayout_noDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination = null
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitate_onePaneLayout_levitateCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.TopCenter),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Primary)
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Levitated(Alignment.TopCenter)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitate_onePaneLayout_currentDestinationNotLevitated() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.TopCenter),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitateSinglePaneOnly_onePaneLayout_levitateCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.TopCenter
+                        ),
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Secondary,
+            PaneAdaptedValue.Levitated(Alignment.TopCenter)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitate_twoPaneLayout_noDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination = null
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitate_twoPaneLayout_levitateCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.BottomEnd),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Primary)
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Levitated(Alignment.BottomEnd)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitate_twoPaneLayout_currentDestinationNotLevitated() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.BottomEnd),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitateAndHistory_onePaneLayout_levitateCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.BottomEnd),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                    )
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Levitated(Alignment.BottomEnd)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitateAndHistory_twoPaneLayout_currentDestinationNotLevitated() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.BottomEnd),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitateSinglePaneOnly_twoPaneLayout_expandCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.TopCenter
+                        ),
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitateWithHistorySinglePaneOnly_twoPaneLayout_expandPane() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.TopCenter
+                        ),
+                        AdaptStrategy.Hide
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithLevitateAndReflow_onePaneLayout_levitateCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.TopCenter),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(targetPane = ThreePaneScaffoldRole.Secondary)
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Primary)
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Levitated(Alignment.TopCenter)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Tertiary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Secondary)
+        )
+    }
+
+    @Test
+    fun calculateWithLevitateAndReflow_onePaneLayout_noReflowToLevitatedPane() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.TopCenter),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(targetPane = ThreePaneScaffoldRole.Primary)
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Primary)
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Levitated(Alignment.TopCenter)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithLevitateAndReflow_onePaneLayout_noReflowToNotLevitatedPane() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Levitate(alignment = Alignment.TopCenter),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(targetPane = ThreePaneScaffoldRole.Primary)
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
     }
 
     private fun ThreePaneScaffoldValue.assertState(

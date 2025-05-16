@@ -23,7 +23,7 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.core.util.TypedValueCompat;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -36,6 +36,7 @@ import com.android.extensions.xr.node.NodeTransaction;
 import java.util.concurrent.ScheduledExecutorService;
 
 /** BasePanelEntity provides implementations of capabilities common to PanelEntities. */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     private static final float DEFAULT_CORNER_RADIUS_DP = 32.0f;
     protected PixelDimensions mPixelDimensions;
@@ -55,17 +56,15 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
                 .defaultPixelsPerMeter(Resources.getSystem().getDisplayMetrics().density);
     }
 
-    @SuppressLint("ObsoleteSdkInt")
-    @RequiresApi(34)
     protected float getDefaultCornerRadiusInMeters() {
         // Get the width and height of the panel in DP.
         float widthDp =
-                TypedValue.deriveDimension(
+                TypedValueCompat.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.width,
                         Resources.getSystem().getDisplayMetrics());
         float heightDp =
-                TypedValue.deriveDimension(
+                TypedValueCompat.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.height,
                         Resources.getSystem().getDisplayMetrics());
@@ -82,8 +81,7 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
         // Convert the updated corner radius to pixels.
         float radiusPixels =
-                TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
+                TypedValueCompat.dpToPx(
                         radiusDp,
                         Resources.getSystem().getDisplayMetrics());
 

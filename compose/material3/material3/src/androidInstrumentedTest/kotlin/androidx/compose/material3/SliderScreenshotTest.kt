@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -97,6 +98,21 @@ class SliderScreenshotTest {
             }
         }
         assertSliderAgainstGolden("slider_withSteps_rtl")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun sliderTest_withSteps_rtl_lookaheadScope() {
+        rule.setMaterialContent(lightColorScheme()) {
+            LookaheadScope {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(wrap.testTag(wrapperTestTag)) {
+                        Slider(remember { SliderState(value = 0.2f, steps = 4) })
+                    }
+                }
+            }
+        }
+        assertSliderAgainstGolden("sliderTest_withSteps_rtl_lookaheadScope")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -433,6 +449,30 @@ class SliderScreenshotTest {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
     @Test
+    fun verticalSliderTest_rtl() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val sliderState = remember { SliderState(0.3f) }
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(wrap.testTag(wrapperTestTag)) {
+                    VerticalSlider(
+                        state = sliderState,
+                        modifier = Modifier.height(300.dp),
+                        track = {
+                            SliderDefaults.Track(
+                                sliderState = sliderState,
+                                modifier = Modifier.width(36.dp),
+                                trackCornerSize = 12.dp
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        assertSliderAgainstGolden("verticalSliderTest_rtl")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
     fun verticalSliderTest_reversed() {
         rule.setMaterialContent(lightColorScheme()) {
             val sliderState = remember { SliderState(0.3f) }
@@ -452,6 +492,101 @@ class SliderScreenshotTest {
             }
         }
         assertSliderAgainstGolden("verticalSliderTest_reversed")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun centeredSliderTest() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                val sliderState = remember { SliderState(value = -25f, valueRange = -50f..50f) }
+                Slider(
+                    sliderState,
+                    track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                )
+            }
+        }
+        assertSliderAgainstGolden("centeredSliderTest")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun centeredSliderTest_dark() {
+        rule.setMaterialContent(darkColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                val sliderState = remember { SliderState(value = -25f, valueRange = -50f..50f) }
+                Slider(
+                    sliderState,
+                    track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                )
+            }
+        }
+        assertSliderAgainstGolden("centeredSliderTest_dark")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun centeredSliderTest_rtl() {
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(wrap.testTag(wrapperTestTag)) {
+                    val sliderState = remember { SliderState(value = -25f, valueRange = -50f..50f) }
+                    Slider(
+                        sliderState,
+                        track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                    )
+                }
+            }
+        }
+        assertSliderAgainstGolden("centeredSliderTest_rtl")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun centeredSliderTest_middle() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                val sliderState = remember { SliderState(value = 0f, valueRange = -50f..50f) }
+                Slider(
+                    sliderState,
+                    track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                )
+            }
+        }
+        assertSliderAgainstGolden("centeredSliderTest_middle")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun centeredSliderTest_steps() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                val sliderState = remember {
+                    SliderState(value = 30f, valueRange = -50f..50f, steps = 9)
+                }
+                Slider(
+                    sliderState,
+                    track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                )
+            }
+        }
+        assertSliderAgainstGolden("centeredSliderTest_steps")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun verticalCenteredSliderTest() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val sliderState = remember { SliderState(value = -25f, valueRange = -50f..50f) }
+            Box(wrap.testTag(wrapperTestTag)) {
+                VerticalSlider(
+                    state = sliderState,
+                    modifier = Modifier.height(300.dp),
+                    track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+                )
+            }
+        }
+        assertSliderAgainstGolden("verticalCenteredSliderTest")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -484,6 +619,50 @@ class SliderScreenshotTest {
             }
         }
         assertSliderAgainstGolden("rangeSlider_middle_no_inside_corner")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun rangeSliderTest_middle_no_inside_corner_rtl() {
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(wrap.testTag(wrapperTestTag)) {
+                    RangeSlider(
+                        state = remember { RangeSliderState(0.5f, 1f) },
+                        track = {
+                            SliderDefaults.Track(
+                                rangeSliderState = it,
+                                trackInsideCornerSize = 0.dp
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        assertSliderAgainstGolden("rangeSliderTest_middle_no_inside_corner_rtl")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun rangeSliderTest_middle_no_inside_corner_rtl_lookaheadScope() {
+        rule.setMaterialContent(lightColorScheme()) {
+            LookaheadScope {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(wrap.testTag(wrapperTestTag)) {
+                        RangeSlider(
+                            state = remember { RangeSliderState(0.5f, 1f) },
+                            track = {
+                                SliderDefaults.Track(
+                                    rangeSliderState = it,
+                                    trackInsideCornerSize = 0.dp
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        assertSliderAgainstGolden("rangeSliderTest_middle_no_inside_corner_rtl_lookaheadScope")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

@@ -61,12 +61,14 @@ jobs:
           project: collection
           project-root: playground-projects/collection-playground
           gradle-enterprise-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-          # Gradle flags match those used in presubmit.yml
+          # Gradle flags match those used in presubmit.yml, plus disabling validating integration
+          # patches as a patch file may already be applied.
           gradle-flags: >
             -Dorg.gradle.internal.http.connectionTimeout=60000
             -Dorg.gradle.internal.http.socketTimeout=60000
             -Dorg.gradle.internal.repository.max.retries=20
             -Dorg.gradle.internal.repository.initial.backoff=500
             --stacktrace
+            -x validateIntegrationPatches
           # Disable the cache since this is the only build using the latest KGP.
           gradle-cache-disabled: true

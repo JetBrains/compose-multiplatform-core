@@ -86,6 +86,8 @@ class AndroidXIssueRegistry : IssueRegistry() {
                     BanNullMarked.ISSUE,
                     AutoValueNullnessOverride.ISSUE,
                     FlaggedApiDetector.ISSUE,
+                    ClassVerificationFailureDetector.METHOD_CALL_ISSUE,
+                    ClassVerificationFailureDetector.IMPLICIT_CAST_ISSUE,
                 )
             }
     }

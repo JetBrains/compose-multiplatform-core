@@ -31,10 +31,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.outlined.MarkEmailUnread
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.AppBarRow
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -58,6 +64,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TwoRowsTopAppBar
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -68,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 
 /**
  * A sample for a simple use of small [TopAppBar].
@@ -98,6 +106,114 @@ fun SimpleTopAppBar() {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = "Localized description"
+                        )
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Sampled
+@Composable
+fun SimpleTopAppBarWithAdaptiveActions() {
+    val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    // Material guidelines state 3 items max in compact, and 5 items max elsewhere.
+    // To test this, try a resizable emulator, or a phone in landscape and portrait orientation.
+    val maxItemCount =
+        if (sizeClass.minWidthDp >= WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) {
+            5
+        } else {
+            3
+        }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    AppBarRow(
+                        maxItemCount = maxItemCount,
+                        overflowIndicator = {
+                            IconButton(onClick = { it.show() }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = "Localized description"
+                                )
+                            }
+                        }
+                    ) {
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Attachment,
+                                    contentDescription = null
+                                )
+                            },
+                            label = "Attachment"
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Filled.Edit, contentDescription = null)
+                            },
+                            label = "Edit"
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Outlined.Star, contentDescription = null)
+                            },
+                            label = "Favorite"
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Filled.Snooze, contentDescription = null)
+                            },
+                            label = "Alarm"
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.MarkEmailUnread,
+                                    contentDescription = "Localized description"
+                                )
+                            },
+                            label = "Email"
                         )
                     }
                 }
@@ -1083,4 +1199,78 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
             }
         }
     )
+}
+
+/** A sample for a [FlexibleBottomAppBar] with an overflow behavior when the content doesn't fit. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun BottomAppBarWithOverflow() {
+    FlexibleBottomAppBar(
+        contentPadding = PaddingValues(horizontal = 96.dp),
+        horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+    ) {
+        AppBarRow(
+            overflowIndicator = { menuState ->
+                IconButton(
+                    onClick = {
+                        if (menuState.isExpanded) {
+                            menuState.dismiss()
+                        } else {
+                            menuState.show()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Localized description"
+                    )
+                }
+            }
+        ) {
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Localized description"
+                    )
+                },
+                label = "ArrowBack"
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Localized description"
+                    )
+                },
+                label = "ArrowForward"
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Localized description") },
+                label = "Add"
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Check, contentDescription = "Localized description") },
+                label = "Check"
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Edit, contentDescription = "Localized description") },
+                label = "Edit"
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+                },
+                label = "Favorite"
+            )
+        }
+    }
 }

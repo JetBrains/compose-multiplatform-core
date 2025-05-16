@@ -849,20 +849,14 @@ object ProgressIndicatorDefaults {
     val CircularIndeterminateStrokeCap: StrokeCap = StrokeCap.Round
 
     /** Default track stop indicator size for a linear progress indicator. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3Api
     @ExperimentalMaterial3Api
     val LinearTrackStopIndicatorSize: Dp = LinearProgressIndicatorTokens.StopSize
 
     /** Default indicator track gap size for a linear progress indicator. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3Api
     @ExperimentalMaterial3Api
     val LinearIndicatorTrackGapSize: Dp = LinearProgressIndicatorTokens.TrackActiveSpace
 
     /** Default indicator track gap size for a circular progress indicator. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3Api
     @ExperimentalMaterial3Api
     val CircularIndicatorTrackGapSize: Dp = CircularProgressIndicatorTokens.TrackActiveSpace
 

@@ -16,6 +16,10 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.OverscrollFactory
@@ -30,11 +34,13 @@ import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,14 +59,17 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.ActiveFocusListener
+import androidx.wear.compose.foundation.LocalScreenIsActive
 import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.materialcore.screenHeightPx
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * [ScreenScaffold] is one of the Wear Material3 scaffold components.
@@ -593,12 +602,14 @@ public fun ScreenScaffold(
     edgeButtonSpacing: Dp = ScreenScaffoldDefaults.EdgeButtonSpacing,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
-): Unit {
+) {
+    val localDensity = LocalDensity.current
     val effectiveEdgeButtonSpacing =
         (edgeButtonSpacing - ScreenScaffoldDefaults.EdgeButtonMinSpacing).coerceAtLeast(0.dp)
     // Adds the gap between content and edge button.
-    val lastItemOffsetCorrection = with(LocalDensity.current) { effectiveEdgeButtonSpacing.toPx() }
-    val localDensity = LocalDensity.current
+    val lastItemOffsetCorrection = with(localDensity) { effectiveEdgeButtonSpacing.toPx() }
+    val edgeButtonHeightAnimationThresholdPx =
+        with(localDensity) { EDGE_BUTTON_HEIGHT_ANIMATION_THRESHOLD.toPx() }
 
     ScreenScaffold(
         modifier = modifier,
@@ -609,6 +620,14 @@ public fun ScreenScaffold(
         overscrollEffect = overscrollEffect,
         content = {
             var intrinsicButtonHeight by remember(edgeButton) { mutableStateOf<Float?>(null) }
+            val currentEdgeButtonTargetHeight by
+                remember(scrollInfoProvider, lastItemOffsetCorrection) {
+                    derivedStateOf {
+                        (scrollInfoProvider.lastItemOffset - lastItemOffsetCorrection)
+                            .coerceAtLeast(0f)
+                    }
+                }
+            val edgeButtonAnimatedHeight = remember { Animatable(currentEdgeButtonTargetHeight) }
 
             content(
                 // Replace bottom content padding adjusted for the edge button.
@@ -630,10 +649,53 @@ public fun ScreenScaffold(
                             }
                         }
                     ) {
-                        (scrollInfoProvider.lastItemOffset - lastItemOffsetCorrection)
-                            .coerceAtLeast(0f)
+                        if (scrollInfoProvider.isScrollInProgress) {
+                            currentEdgeButtonTargetHeight
+                        } else {
+                            edgeButtonAnimatedHeight.value
+                        }
                     },
             )
+
+            LaunchedEffect(
+                scrollInfoProvider,
+                lastItemOffsetCorrection,
+                edgeButtonAnimatedHeight,
+                edgeButtonHeightAnimationThresholdPx
+            ) {
+                snapshotFlow {
+                        Pair(scrollInfoProvider.isScrollInProgress, currentEdgeButtonTargetHeight)
+                    }
+                    .collectLatest { (isScrollInProgress, edgeButtonTargetHeight) ->
+                        if (isScrollInProgress) {
+                            if (edgeButtonAnimatedHeight.isRunning) {
+                                edgeButtonAnimatedHeight.stop()
+                            }
+                            if (edgeButtonAnimatedHeight.value != edgeButtonTargetHeight) {
+                                edgeButtonAnimatedHeight.snapTo(edgeButtonTargetHeight)
+                            }
+                        } else {
+                            if (
+                                abs(edgeButtonTargetHeight - edgeButtonAnimatedHeight.value) >
+                                    edgeButtonHeightAnimationThresholdPx
+                            ) {
+                                launch {
+                                    edgeButtonAnimatedHeight.animateTo(
+                                        targetValue = edgeButtonTargetHeight,
+                                        animationSpec = DEFAULT_EDGE_BUTTON_ANIMATION_SPEC
+                                    )
+                                }
+                            } else {
+                                if (
+                                    edgeButtonAnimatedHeight.value != edgeButtonTargetHeight &&
+                                        !edgeButtonAnimatedHeight.isRunning
+                                ) {
+                                    edgeButtonAnimatedHeight.snapTo(edgeButtonTargetHeight)
+                                }
+                            }
+                        }
+                    }
+            }
         }
     )
 }
@@ -687,22 +749,25 @@ public fun ScreenScaffold(
     val scaffoldState = LocalScaffoldState.current
     val key = remember { Any() }
 
-    key(scrollInfoProvider) {
-        DisposableEffect(key) { onDispose { scaffoldState.screenContent.removeScreen(key) } }
+    // Update the timeText & scrollInfoProvider if there is a change and the screen is already
+    // present
+    scaffoldState.screenContent.updateIfNeeded(key, timeText, scrollInfoProvider)
 
-        ActiveFocusListener { focused ->
-            if (focused) {
-                scaffoldState.screenContent.addScreen(key, timeText, scrollInfoProvider)
-            } else {
-                scaffoldState.screenContent.removeScreen(key)
-            }
-        }
-    }
+    DisposableEffect(key) { onDispose { scaffoldState.screenContent.removeScreen(key) } }
 
     scaffoldState.screenContent.UpdateIdlingDetectorIfNeeded()
 
+    val screenIsActive = LocalScreenIsActive.current
+    LaunchedEffect(screenIsActive) {
+        if (screenIsActive) {
+            scaffoldState.screenContent.addScreen(key, timeText, scrollInfoProvider)
+        } else {
+            scaffoldState.screenContent.removeScreen(key)
+        }
+    }
+
     WrapWithOverscrollFactoryIfRequired(overscrollEffect) {
-        Box(modifier = modifier.fillMaxSize()) {
+        Box(modifier.fillMaxSize()) {
             Box(modifier = Modifier.overscroll(overscrollEffect)) { content(contentPadding) }
             scrollInfoProvider?.let {
                 AnimatedIndicator(
@@ -923,3 +988,7 @@ private class OffsetOverscrollFactory(
         return true
     }
 }
+
+private val EDGE_BUTTON_HEIGHT_ANIMATION_THRESHOLD = 16.dp
+private val DEFAULT_EDGE_BUTTON_ANIMATION_SPEC: AnimationSpec<Float> =
+    spring(stiffness = Spring.StiffnessMediumLow)

@@ -85,7 +85,6 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalSavedStateRegistryOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.findViewTreeCompositionContext
@@ -132,6 +131,7 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView

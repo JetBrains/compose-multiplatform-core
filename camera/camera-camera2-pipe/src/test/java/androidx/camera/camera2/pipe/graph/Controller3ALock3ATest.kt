@@ -206,6 +206,9 @@ internal class Controller3ALock3ATest {
         // Result of lock3A call shouldn't be complete yet since the AE and AF are not locked yet.
         assertThat(result.isCompleted).isFalse()
 
+        // One repeating request to reset the current 3A parameters and start monitoring.
+        captureSequenceProcessor.nextEvent()
+
         // Check the correctness of the requests submitted by lock3A.
         // One repeating request was sent to monitor the state of AE to get converged.
         val event1 = captureSequenceProcessor.nextEvent()
@@ -395,8 +398,12 @@ internal class Controller3ALock3ATest {
         assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
-        // There should be one request to monitor AF to finish it's scan.
+        // One repeating request to reset the current 3A parameters and start monitoring.
         captureSequenceProcessor.nextEvent()
+
+        // There should be one request to monitor AF to finish its scan to be converged.
+        captureSequenceProcessor.nextEvent()
+
         // One request to lock AE
         val event2 = captureSequenceProcessor.nextEvent()
         assertThat(event2.requiredParameters).containsEntry(CaptureRequest.CONTROL_AE_LOCK, true)
@@ -484,7 +491,10 @@ internal class Controller3ALock3ATest {
                 CaptureRequest.CONTROL_AF_TRIGGER,
                 CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
             )
-        // There should be one request to monitor AF to finish it's scan.
+
+        // There should be one request to monitor AF to finish its scan.
+        captureSequenceProcessor.nextEvent()
+
         // There should be one request to monitor lock AE.
         val event2 = captureSequenceProcessor.nextEvent()
         assertThat(event2.isRepeating).isTrue()
@@ -563,7 +573,10 @@ internal class Controller3ALock3ATest {
         assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
-        // There should be one request to monitor AF to finish it's scan.
+        // One repeating request to reset the current 3A parameters and start monitoring.
+        captureSequenceProcessor.nextEvent()
+
+        // There should be one request to monitor AF to finish its scan to be converged.
         val event = captureSequenceProcessor.nextEvent()
         assertThat(event.isRepeating).isTrue()
 

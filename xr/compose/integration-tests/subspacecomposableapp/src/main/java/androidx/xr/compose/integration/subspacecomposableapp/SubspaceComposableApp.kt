@@ -62,7 +62,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,19 +92,21 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.Session
+import androidx.xr.scenecore.scene
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.guava.await
 
 class SubspaceComposableApp : ComponentActivity() {
 
-    val session by lazy { Session.create(this) }
+    val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,10 +142,12 @@ class SubspaceComposableApp : ComponentActivity() {
         NavHost(navController = navController, startDestination = PageRoutes.HOME) {
             composable(PageRoutes.HOME) {
                 SideEffect {
-                    Session.create(this@SubspaceComposableApp)
+                    (Session.create(this@SubspaceComposableApp) as SessionCreateSuccess)
+                        .session
+                        .scene
                         .spatialEnvironment
                         .requestHomeSpaceMode()
-                    session.mainPanelEntity.setHidden(false)
+                    session.scene.mainPanelEntity.setHidden(false)
                 }
 
                 MainContent(text = "Home Page in Home Space Mode", navController = navController)
@@ -152,20 +155,24 @@ class SubspaceComposableApp : ComponentActivity() {
 
             composable(PageRoutes.PANELS) {
                 SideEffect {
-                    Session.create(this@SubspaceComposableApp)
+                    (Session.create(this@SubspaceComposableApp) as SessionCreateSuccess)
+                        .session
+                        .scene
                         .spatialEnvironment
                         .requestFullSpaceMode()
-                    session.mainPanelEntity.setHidden(true)
+                    session.scene.mainPanelEntity.setHidden(true)
                 }
 
                 Subspace { PanelGrid(navController = navController) }
             }
             composable(PageRoutes.ARROWS) {
                 SideEffect {
-                    Session.create(this@SubspaceComposableApp)
+                    (Session.create(this@SubspaceComposableApp) as SessionCreateSuccess)
+                        .session
+                        .scene
                         .spatialEnvironment
                         .requestFullSpaceMode()
-                    session.mainPanelEntity.setHidden(false)
+                    session.scene.mainPanelEntity.setHidden(false)
                 }
 
                 MainContent(text = "Now some arrows are shown!", navController = navController)
@@ -303,18 +310,18 @@ class SubspaceComposableApp : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        val context = LocalContext.current
-        val textView = remember {
-            TextView(context).apply {
-                setText(text)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                setBackgroundColor(LTGRAY)
-                setTextColor(BLACK)
-                setGravity(Gravity.CENTER)
-            }
-        }
-
-        SpatialPanel(view = textView, modifier = modifier)
+        SpatialPanel(
+            factory = { context ->
+                TextView(context).apply {
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                    setBackgroundColor(LTGRAY)
+                    setTextColor(BLACK)
+                    gravity = Gravity.CENTER
+                }
+            },
+            update = { it.text = text },
+            modifier = modifier,
+        )
     }
 
     @Composable

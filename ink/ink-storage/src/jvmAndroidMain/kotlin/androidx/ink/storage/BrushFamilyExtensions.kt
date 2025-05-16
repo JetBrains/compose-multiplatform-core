@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 package androidx.ink.storage
 
 import androidx.ink.brush.BrushFamily
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -28,6 +29,7 @@ import java.util.zip.GZIPOutputStream
  * Write the gzip-compressed serialized representation of the [BrushFamily] to the given
  * [OutputStream].
  */
+@ExperimentalInkCustomBrushApi
 public fun BrushFamily.encode(output: OutputStream) {
     GZIPOutputStream(output).use {
         it.write(BrushSerializationNative.serializeBrushFamily(nativePointer, mapOf()))
@@ -41,6 +43,7 @@ public fun BrushFamily.encode(output: OutputStream) {
  * [OutputStream] by [BrushFamily.encode]. Java callers should use
  * [BrushFamilySerialization.decodeOrThrow].
  */
+@ExperimentalInkCustomBrushApi
 public fun BrushFamily.Companion.decodeOrThrow(input: InputStream): BrushFamily =
     decode(input, throwOnParseError = true)!!
 
@@ -50,6 +53,7 @@ public fun BrushFamily.Companion.decodeOrThrow(input: InputStream): BrushFamily 
  * `ink.proto.BrushFamily` binary proto messages, the same as written to [OutputStream] by
  * [BrushFamily.encode]. Java callers should use [BrushFamilySerialization.decodeOrNull].
  */
+@ExperimentalInkCustomBrushApi
 public fun BrushFamily.Companion.decodeOrNull(input: InputStream): BrushFamily? =
     decode(input, throwOnParseError = false)
 
@@ -59,6 +63,7 @@ public fun BrushFamily.Companion.decodeOrNull(input: InputStream): BrushFamily? 
 // overload arbitrarily, which leads to potentially very confusing behavior (e.g. decodeOrNull might
 // work by coincidence at one point and then suddenly stop working when more overloads are added).
 
+@ExperimentalInkCustomBrushApi
 public object BrushFamilySerialization {
     /**
      * Write the gzip-compressed serialized representation of the [BrushFamily] to the given

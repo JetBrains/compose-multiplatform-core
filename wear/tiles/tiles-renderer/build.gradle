@@ -63,7 +63,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
@@ -77,10 +76,6 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-
     namespace = "androidx.wear.tiles.renderer"
 }
 
@@ -106,5 +101,6 @@ androidx {
             "and render an already constructed Wear Tile."
     legacyDisableKotlinStrictApiMode = true
     addGoldenImageAssets()
+    enableRobolectric()
 }
 

@@ -42,7 +42,7 @@ package androidx.glance.wear.tiles {
     ctor public TimeInterval(optional java.time.Instant start, optional java.time.Instant end);
     method public java.time.Instant component1();
     method public java.time.Instant component2();
-    method public androidx.glance.wear.tiles.TimeInterval copy(java.time.Instant start, java.time.Instant end);
+    method public androidx.glance.wear.tiles.TimeInterval copy(optional java.time.Instant start, optional java.time.Instant end);
     method public java.time.Instant getEnd();
     method public java.time.Instant getStart();
     property public java.time.Instant end;

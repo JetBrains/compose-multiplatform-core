@@ -258,21 +258,14 @@ src/test/test.kt:9: Warning: Implicitly passing Unit as argument to key1 [Opaque
             )
             .expectFixDiffs(
                 """
-Fix for src/test/test.kt line 8: Move expression outside of `remember`'s arguments and pass `Unit` explicitly:
+Fix for src/test/test.kt line 9: Move expression outside of `remember`'s arguments and pass `Unit` explicitly:
 @@ -8 +8
 -                         val x = remember(
 -                             if (condition) {
--                                 doSomething()
--                             } else {
--                                 doSomethingElse()
--                             }
 +                         if (condition) {
-+     doSomething()
-+ }else {
-+     doSomethingElse()
-+ }
+@@ -14 +13
 + val x = remember(
-+                             kotlin.Unit
++                             Unit
                 """
             )
     }
@@ -590,18 +583,13 @@ src/test/test.kt:10: Warning: Implicitly passing Unit as argument to key1 [Opaqu
 Fix for src/test/test.kt line 10: Move expression outside of `produceState`'s arguments and pass `Unit` explicitly:
 @@ -8 +8
 -                         val x by produceState(
-+                         if (condition) {
-+     doSomething()
-+ }else {
-+     doSomethingElse()
-+ }
-+ val x by produceState(
+-                             initialValue = "123",
 -                             if (condition) {
--                                 doSomething()
--                             } else {
--                                 doSomethingElse()
--                             }
-+                             kotlin.Unit
++                         if (condition) {
+@@ -15 +13
++ val x by produceState(
++                             initialValue = "123",
++                             Unit
                 """
             )
     }
@@ -947,17 +935,10 @@ Fix for src/test/test.kt line 9: Move expression outside of `DisposableEffect`'s
 @@ -8 +8
 -                         DisposableEffect(
 -                             if (condition) {
--                                 doSomething()
--                             } else {
--                                 doSomethingElse()
--                             }
 +                         if (condition) {
-+     doSomething()
-+ }else {
-+     doSomethingElse()
-+ }
+@@ -14 +13
 + DisposableEffect(
-+                             kotlin.Unit
++                             Unit
                 """
             )
     }
@@ -1298,17 +1279,10 @@ Fix for src/test/test.kt line 9: Move expression outside of `LaunchedEffect`'s a
 @@ -8 +8
 -                         LaunchedEffect(
 -                             if (condition) {
--                                 doSomething()
--                             } else {
--                                 doSomethingElse()
--                             }
 +                         if (condition) {
-+     doSomething()
-+ }else {
-+     doSomethingElse()
-+ }
+@@ -14 +13
 + LaunchedEffect(
-+                             kotlin.Unit
++                             Unit
                 """
             )
     }
@@ -1645,17 +1619,10 @@ Fix for src/test/test.kt line 9: Move expression outside of `key`'s arguments an
 @@ -8 +8
 -                         key(
 -                             if (condition) {
--                                 doSomething()
--                             } else {
--                                 doSomethingElse()
--                             }
 +                         if (condition) {
-+     doSomething()
-+ }else {
-+     doSomethingElse()
-+ }
+@@ -14 +13
 + key(
-+                             kotlin.Unit
++                             Unit
                 """
             )
     }

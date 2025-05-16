@@ -19,7 +19,7 @@ package androidx.core.haptics.samples
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
-import android.animation.ValueAnimator.INFINITE
+import android.animation.ValueAnimator.RESTART
 import android.content.Context
 import androidx.annotation.Sampled
 import androidx.core.haptics.HapticAttributes
@@ -82,7 +82,7 @@ fun PlayThenCancel(
 ) {
     ValueAnimator.ofFloat(0f, 1f).apply {
         duration = 3.seconds.inWholeMilliseconds
-        repeatMode = INFINITE
+        repeatMode = RESTART
         addListener(
             object : AnimatorListenerAdapter() {
                 override fun onAnimationStart(animation: Animator) {

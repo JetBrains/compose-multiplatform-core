@@ -77,7 +77,9 @@ internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
             return
         }
         val dispatchMessage: Message =
-            Message.obtain(handler) { processMotionEvent(motionEvent, motionEventTransferCallback) }
+            Message.obtain(eventDispatchHandler) {
+                processMotionEvent(motionEvent, motionEventTransferCallback)
+            }
         dispatchMessage.isAsynchronous = true
 
         eventDispatchHandler?.sendMessageAtTime(

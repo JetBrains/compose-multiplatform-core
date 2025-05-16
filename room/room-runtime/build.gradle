@@ -23,6 +23,7 @@
  */
 
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -63,6 +64,7 @@ android {
             version = 1
         }
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.room"
     // TODO(b/345531033)
     experimentalProperties["android.lint.useK2Uast"] = false
@@ -224,7 +226,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Runtime"
-    legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 

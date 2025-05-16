@@ -725,9 +725,6 @@ private fun LayoutWithLinksAndInlineContent(
 /**
  * This function pre-measures the text on Android platform to warm the platform text layout cache in
  * a background thread before the actual text layout begins.
- *
- * @return An optional callback to cancel the background task from proceeding. If the measurement
- *   starts on the main thread, there is no point in starting this task in the background thread.
  */
 @Composable
 @NonRestartableComposable
@@ -740,9 +737,6 @@ internal expect fun BackgroundTextMeasurement(
 /**
  * This function pre-measures the text on Android platform to warm the platform text layout cache in
  * a background thread before the actual text layout begins.
- *
- * @return An optional callback to cancel the background task from proceeding. If the measurement
- *   starts on the main thread, there is no point in starting this task in the background thread.
  */
 @Composable
 @NonRestartableComposable

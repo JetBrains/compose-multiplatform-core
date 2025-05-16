@@ -57,6 +57,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.ScreenFlashWrapper
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -140,7 +141,7 @@ class ImageCaptureTest {
             FakeCamera("1", null, FakeCameraInfoInternal("1", CameraSelector.LENS_FACING_FRONT))
 
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertDefaultBackCamera(camera.cameraInfoInternal.cameraId) { camera }
                 cameraFactory.insertDefaultFrontCamera(cameraFront.cameraInfoInternal.cameraId) {
@@ -594,17 +595,21 @@ class ImageCaptureTest {
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, ImageFormat.JPEG_R))
         )
         val fakeCameraInfo =
-            FakeCameraInfoInternal().apply {
-                setSupportedResolutions(ImageFormat.PRIVATE, listOf())
-                setSupportedResolutions(ImageFormat.JPEG, listOf())
-                setSupportedResolutions(ImageFormat.JPEG_R, listOf())
-            }
+            FakeCameraInfoInternal(
+                    StreamSpecsCalculatorImpl(FakeUseCaseConfigFactory(), fakeManager)
+                )
+                .apply {
+                    setSupportedResolutions(ImageFormat.PRIVATE, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG_R, listOf())
+                }
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(FakeCameraControl(), fakeCameraInfo),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory()
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory
             )
         adapter.addUseCases(listOf(imageCapture))
 

@@ -20,7 +20,9 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.CameraViewActivityPose;
+import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.common.BaseActivityPose;
@@ -28,6 +30,8 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * A ActivityPose representing a user's camera. This can be used to determine the location and field
@@ -37,6 +41,7 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
     private static final String TAG = "CameraViewActivityPose";
     private final PerceptionLibrary mPerceptionLibrary;
     @CameraType private final int mCameraType;
+    private final ActivitySpaceImpl mActivitySpace;
     private final OpenXrActivityPoseHelper mOpenXrActivityPoseHelper;
     // Default the pose to null. A null pose indicates that the camera is not ready yet.
     private Pose mLastOpenXrPose = null;
@@ -48,6 +53,7 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
             PerceptionLibrary perceptionLibrary) {
         mCameraType = cameraType;
         mPerceptionLibrary = perceptionLibrary;
+        mActivitySpace = activitySpace;
         mOpenXrActivityPoseHelper = new OpenXrActivityPoseHelper(activitySpace, activitySpaceRoot);
     }
 
@@ -67,6 +73,15 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
     public Vector3 getActivitySpaceScale() {
         // This WorldPose is assumed to always have a scale of 1.0f in the OpenXR reference space.
         return mOpenXrActivityPoseHelper.getActivitySpaceScale(new Vector3(1f, 1f, 1f));
+    }
+
+    @NonNull
+    @Override
+    public ListenableFuture<HitTestResult> hitTest(
+            @NonNull Vector3 origin,
+            @NonNull Vector3 direction,
+            @HitTestFilterValue int hitTestFilter) {
+        return mActivitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this);
     }
 
     @Nullable

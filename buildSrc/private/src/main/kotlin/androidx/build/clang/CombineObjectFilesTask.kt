@@ -141,10 +141,10 @@ fun TaskProvider<CombineObjectFilesTask>.configureFrom(
         task.objectFiles.addAll(
             multiTargetNativeCompilation.targetsProvider(filter).map { nativeTargetCompilations ->
                 nativeTargetCompilations.map { nativeTargetCompilation ->
-                    nativeTargetCompilation.sharedLibTask.map { sharedLibraryTask ->
+                    nativeTargetCompilation.linkerTask.map { linkerTask ->
                         ObjectFile(
-                            konanTarget = sharedLibraryTask.clangParameters.konanTarget,
-                            file = sharedLibraryTask.clangParameters.outputFile
+                            konanTarget = linkerTask.clangParameters.konanTarget,
+                            file = linkerTask.clangParameters.outputFile
                         )
                     }
                 }

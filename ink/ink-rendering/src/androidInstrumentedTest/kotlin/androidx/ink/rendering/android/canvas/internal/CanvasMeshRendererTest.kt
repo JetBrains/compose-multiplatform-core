@@ -112,18 +112,14 @@ class CanvasMeshRendererTest {
                 start(
                     Brush.createWithColorIntArgb(StockBrushes.markerLatest, 0x44112233, 10f, 0.25f)
                 )
-                assertThat(
-                        enqueueInputs(
-                                buildStrokeInputBatchFromPoints(
-                                    floatArrayOf(10f, 20f, 100f, 120f),
-                                    startTime = 0L
-                                ),
-                                MutableStrokeInputBatch(),
-                            )
-                            .isSuccess
-                    )
-                    .isTrue()
-                assertThat(updateShape(3L).isSuccess).isTrue()
+                enqueueInputsOrThrow(
+                    buildStrokeInputBatchFromPoints(
+                        floatArrayOf(10f, 20f, 100f, 120f),
+                        startTime = 0L
+                    ),
+                    MutableStrokeInputBatch(),
+                )
+                updateShapeOrThrow(3L)
             }
         assertThat(meshRenderer.createAndroidMesh(inProgressStroke, coatIndex = 0, meshIndex = 0))
             .isNotNull()

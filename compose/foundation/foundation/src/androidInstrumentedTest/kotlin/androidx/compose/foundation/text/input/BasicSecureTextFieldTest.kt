@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +25,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.contextmenu.internal.ProvidePlatformTextContextMenuToolbar
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
+import androidx.compose.foundation.text.contextmenu.test.SpyTextActionModeCallback
+import androidx.compose.foundation.text.contextmenu.test.assertNotNull
+import androidx.compose.foundation.text.contextmenu.test.items
 import androidx.compose.foundation.text.selection.FakeTextToolbar
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.runtime.CompositionLocalProvider
@@ -54,11 +61,12 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -68,7 +76,7 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalTestApi::class)
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(ContextMenuFlagFlipperRunner::class)
 internal class BasicSecureTextFieldTest {
 
     // Keyboard shortcut tests for BasicSecureTextField are in TextFieldKeyEventTest
@@ -159,6 +167,27 @@ internal class BasicSecureTextFieldTest {
             rule.mainClock.advanceTimeBy(50)
             assertThat(fetchTextLayoutResult().layoutInput.text.text)
                 .isEqualTo("\u2022d\u2022\u2022")
+        }
+    }
+
+    @Test
+    fun lastTypedCharacterIsRevealed_whenReplacingSelection() {
+        inputMethodInterceptor.setContent {
+            BasicSecureTextField(state = rememberTextFieldState(), modifier = Modifier.testTag(Tag))
+        }
+
+        with(rule.onNodeWithTag(Tag)) {
+            performTextInput("abc")
+            rule.mainClock.advanceTimeBy(200)
+            assertThat(fetchTextLayoutResult().layoutInput.text.text)
+                .isEqualTo("\u2022\u2022\u2022")
+            performTextInputSelection(TextRange(1, 2))
+            performTextInput("#")
+            rule.mainClock.advanceTimeBy(50)
+            assertThat(fetchTextLayoutResult().layoutInput.text.text).isEqualTo("\u2022#\u2022")
+            rule.mainClock.advanceTimeBy(1500)
+            assertThat(fetchTextLayoutResult().layoutInput.text.text)
+                .isEqualTo("\u2022\u2022\u2022")
         }
     }
 
@@ -400,6 +429,7 @@ internal class BasicSecureTextFieldTest {
         rule.onNodeWithTag(Tag).assert(SemanticsMatcher.keyNotDefined(SemanticsActions.CutText))
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun toolbarDoesNotShowCopyOrCut() {
         var copyOptionAvailable = false
@@ -432,6 +462,34 @@ internal class BasicSecureTextFieldTest {
             assertThat(copyOptionAvailable).isFalse()
             assertThat(cutOptionAvailable).isFalse()
         }
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun toolbarDoesNotShowCopyOrCut_newContextMenu() {
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+        val state = TextFieldState("Hello")
+        inputMethodInterceptor.setContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                BasicSecureTextField(state = state, modifier = Modifier.testTag(Tag))
+            }
+        }
+
+        rule.onNodeWithTag(Tag).requestFocus()
+        // We need to disable the traversalMode to show the toolbar.
+        rule.onNodeWithTag(Tag).performSemanticsAction(SemanticsActions.SetSelection) {
+            it(0, 5, false)
+        }
+
+        rule.waitForIdle()
+
+        val menu = assertNotNull(spyTextActionModeCallback.menu)
+        val actualLabels = menu.items().map { it.title }
+
+        assertThat(actualLabels).doesNotContain("Cut")
+        assertThat(actualLabels).doesNotContain("Copy")
     }
 
     @Test
@@ -529,5 +587,41 @@ internal class BasicSecureTextFieldTest {
         }
 
         rule.onNodeWithTag(Tag).assertWidthIsEqualTo(with(rule.density) { width.toDp() })
+    }
+
+    @Test
+    fun hoistedScrollState_passedToBasicTextField() {
+        val scrollState = ScrollState(0)
+        rule.setContent {
+            BasicSecureTextField(
+                rememberTextFieldState("abcd ".repeat(100)),
+                Modifier.testTag(Tag),
+                scrollState = scrollState
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(scrollState.maxValue).isNotEqualTo(0)
+            assertThat(scrollState.value).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun hoistedScrollState_passedToBasicTextField_afterScroll() {
+        val scrollState = ScrollState(0)
+        rule.setContent {
+            BasicSecureTextField(
+                rememberTextFieldState("abcd ".repeat(100)),
+                Modifier.testTag(Tag),
+                scrollState = scrollState
+            )
+        }
+
+        rule.onNodeWithTag(Tag).performTouchInput { swipeLeft() }
+
+        rule.runOnIdle {
+            assertThat(scrollState.maxValue).isNotEqualTo(0)
+            assertThat(scrollState.value).isNotEqualTo(0)
+        }
     }
 }

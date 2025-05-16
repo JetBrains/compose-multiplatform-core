@@ -29,6 +29,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.test.IgnoreJsTarget
 
 class SnapshotObserverTests {
     @Test
@@ -259,6 +260,7 @@ class SnapshotObserverTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409727050
     fun canHaveMultipleObservers() {
         val events = mutableListOf<Pair<Any?, String>>()
         fun observer(prefix: String) =

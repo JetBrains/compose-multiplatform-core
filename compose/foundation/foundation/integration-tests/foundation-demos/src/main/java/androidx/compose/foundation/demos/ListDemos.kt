@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
@@ -77,6 +78,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -108,6 +110,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.layout.LayoutBoundsHolder
+import androidx.compose.ui.layout.layoutBounds
+import androidx.compose.ui.layout.onFirstVisible
+import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
@@ -131,6 +137,8 @@ val LazyListDemos =
         ComposableDemo("Hoisted state") { ListHoistedStateDemo() },
         ComposableDemo("Horizontal list") { LazyRowItemsDemo() },
         ComposableDemo("List with indexes") { ListWithIndexSample() },
+        ComposableDemo("Impression Logging") { LazyColumnImpressionsDemo() },
+        ComposableDemo("Autoplay") { LazyColumnAutoplayDemo() },
         ComposableDemo("Pager-like list") { PagerLikeDemo() },
         ComposableDemo("Rtl list") { RtlListDemo() },
         ComposableDemo("LazyColumn DSL") { LazyColumnScope() },
@@ -157,6 +165,87 @@ val LazyListDemos =
         ComposableDemo("2D Custom Lazy Layout") { Lazy2DGridDemo() },
         PagingDemos
     )
+
+@Preview
+@Composable
+private fun LazyColumnImpressionsDemo() {
+    val viewport = remember { LayoutBoundsHolder() }
+    Box {
+        LazyColumn {
+            items(100) { index ->
+                var impressions by rememberSaveable { mutableIntStateOf(0) }
+                Card(Modifier.padding(10.dp)) {
+                    Column {
+                        Text("Item Title $index", fontSize = 40.sp)
+                        Text("This is a description")
+                        Text("Impression count: $impressions")
+
+                        Box(
+                            Modifier.onFirstVisible(
+                                    minDurationMs = 500,
+                                    minFractionVisible = 1f,
+                                    viewportBounds = viewport,
+                                ) {
+                                    impressions++
+                                }
+                                .border(1.dp, Color.Black)
+                                .background(Color.Blue)
+                                .fillMaxWidth()
+                                .height(80.dp)
+                        )
+                    }
+                }
+            }
+        }
+        Box(
+            Modifier.offset(x = 0.dp, y = 200.dp)
+                .layoutBounds(viewport)
+                .border(1.dp, Color.Red)
+                .fillMaxWidth()
+                .height(400.dp)
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LazyColumnAutoplayDemo() {
+    val viewport = remember { LayoutBoundsHolder() }
+    Box {
+        LazyColumn {
+            items(100) { index ->
+                var visible by remember { mutableStateOf(false) }
+                Card(Modifier.padding(10.dp)) {
+                    Column {
+                        Text("Item Title $index", fontSize = 40.sp)
+                        Text("This is a description")
+
+                        Box(
+                            Modifier.onVisibilityChanged(
+                                    minDurationMs = 500,
+                                    minFractionVisible = 1f,
+                                    viewportBounds = viewport,
+                                ) {
+                                    visible = it
+                                }
+                                .border(1.dp, Color.Black)
+                                .background(if (visible) Color.Blue else Color.Red)
+                                .fillMaxWidth()
+                                .height(100.dp)
+                        )
+                    }
+                }
+            }
+        }
+        Box(
+            Modifier.offset(x = 0.dp, y = 200.dp)
+                .layoutBounds(viewport)
+                .border(1.dp, Color.Red)
+                .fillMaxWidth()
+                .height(400.dp)
+        )
+    }
+}
 
 @Preview
 @Composable

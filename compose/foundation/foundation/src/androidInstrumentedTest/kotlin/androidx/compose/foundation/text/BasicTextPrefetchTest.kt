@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import java.util.concurrent.Executor
 import org.junit.Assume.assumeTrue
@@ -47,6 +49,26 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.O_MR1)
+    fun prefetchDoesNotHappen_whenAndroidVersionIsOlderThanP() {
+        val executor = MockExecutor()
+        var assertions = 0
+        rule.setContent {
+            ProvidePrefetchScheduler(executor) {
+                Truth.assertThat(executor.commands.size).isEqualTo(0)
+                BasicText("Hello World")
+                Truth.assertThat(executor.commands.size).isEqualTo(0)
+                assertions++
+            }
+        }
+
+        rule.waitForIdle()
+        Truth.assertThat(assertions).isEqualTo(1)
+        Truth.assertThat(executor.commands.size).isEqualTo(0)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_simpleString_prefetchRequestComesDuringComposition() {
         val executor = MockExecutor()
         var assertions = 0
@@ -65,6 +87,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_simpleString_prefetchHappens_whenTextChanges() {
         val executor = MockExecutor()
         var text by mutableStateOf("Hello World")
@@ -80,6 +103,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_simpleString_prefetchHappens_whenStyleChanges() {
         val executor = MockExecutor()
         var style by mutableStateOf(TextStyle(fontSize = 10.sp))
@@ -97,6 +121,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_simpleString_doesNotPrefetch_whenTextIsShort() {
         val executor = MockExecutor()
         var text by mutableStateOf("a")
@@ -113,6 +138,24 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun basicText_simpleString_doesNotPrefetch_whenTextIsLong() {
+        val executor = MockExecutor()
+        var text by mutableStateOf("a".repeat(1005))
+        rule.setContent { ProvidePrefetchScheduler(executor) { BasicText(text) } }
+
+        while (text.length > 999) {
+            rule.waitForIdle()
+            Truth.assertThat(executor.commands.size).isEqualTo(0)
+            text = text.drop(1)
+        }
+        // only prefetch when text is at most 999 characters long
+        rule.waitForIdle()
+        Truth.assertThat(executor.commands.size).isEqualTo(1)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_annotatedString_prefetchRequestComesDuringComposition() {
         val executor = MockExecutor()
         var assertions = 0
@@ -131,6 +174,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_annotatedString_prefetchHappens_whenTextChanges() {
         val executor = MockExecutor()
         var text by mutableStateOf(AnnotatedString("Hello World"))
@@ -146,6 +190,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_annotatedString_prefetchHappens_whenStyleChanges() {
         val executor = MockExecutor()
         var style by mutableStateOf(TextStyle(fontSize = 10.sp))
@@ -165,6 +210,7 @@ class BasicTextPrefetchTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun basicText_annotatedString_doesNotPrefetch_whenTextIsShort() {
         val executor = MockExecutor()
         var text by mutableStateOf(AnnotatedString("a"))
@@ -176,6 +222,23 @@ class BasicTextPrefetchTest {
             text += AnnotatedString("a")
         }
         // only prefetch when text becomes at least 8 characters long
+        rule.waitForIdle()
+        Truth.assertThat(executor.commands.size).isEqualTo(1)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun basicText_annotatedString_doesNotPrefetch_whenTextIsLong() {
+        val executor = MockExecutor()
+        var text by mutableStateOf(AnnotatedString("a".repeat(1005)))
+        rule.setContent { ProvidePrefetchScheduler(executor) { BasicText(text) } }
+
+        while (text.length > 999) {
+            rule.waitForIdle()
+            Truth.assertThat(executor.commands.size).isEqualTo(0)
+            text = AnnotatedString(text.drop(1).toString())
+        }
+        // only prefetch when text is at most 999 characters long
         rule.waitForIdle()
         Truth.assertThat(executor.commands.size).isEqualTo(1)
     }

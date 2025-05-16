@@ -77,6 +77,9 @@ class TextAccessibilityBenchmark(
         measureRepeatedOnUiThread(
             content = { Text("Text Composable", Modifier.testTag("tag")) },
             benchmark = {
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
                 val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
             }
@@ -95,6 +98,9 @@ class TextAccessibilityBenchmark(
                 }
             },
             benchmark = {
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
                 val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
             }

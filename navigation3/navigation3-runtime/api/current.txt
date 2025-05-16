@@ -1,0 +1,95 @@
+// Signature format: 4.0
+package androidx.navigation3.runtime {
+
+  public final class DecoratedNavEntryProviderKt {
+    method @androidx.compose.runtime.Composable public static <T> void DecoratedNavEntryProvider(java.util.List<? extends T> backStack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<? extends T>> entryProvider, optional java.util.List<androidx.navigation3.runtime.NavEntryDecorator<? extends java.lang.Object?>> entryDecorators, kotlin.jvm.functions.Function1<? super java.util.List<? extends androidx.navigation3.runtime.NavEntry<T>>,kotlin.Unit> content);
+  }
+
+  public final class EntryClassProvider<T> {
+    ctor public EntryClassProvider(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.reflect.KClass<T> component1();
+    method public java.util.Map<java.lang.String,java.lang.Object> component2();
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
+    method public androidx.navigation3.runtime.EntryClassProvider<T> copy(optional kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.reflect.KClass<T> getClazz();
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.reflect.KClass<T> clazz;
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+  }
+
+  @kotlin.DslMarker public @interface EntryDsl {
+  }
+
+  public final class EntryProvider<T> {
+    ctor public EntryProvider(T key, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public T component1();
+    method public java.util.Map<java.lang.String,java.lang.Object> component2();
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
+    method public androidx.navigation3.runtime.EntryProvider<T> copy(optional T key, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public T getKey();
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+  }
+
+  @androidx.navigation3.runtime.EntryDsl public final class EntryProviderBuilder<T> {
+    ctor public EntryProviderBuilder(kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback);
+    method public <T> void addEntryProvider(kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public <T> void addEntryProvider(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> build();
+  }
+
+  public final class EntryProviderKt {
+    method public static inline <reified T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<? extends java.lang.Object?>, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<T>, T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public static inline <T> kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> entryProvider(optional kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.EntryProviderBuilder<T>,kotlin.Unit> builder);
+  }
+
+  public final class NavBackStack_androidKt {
+    method @androidx.compose.runtime.Composable public static <T> androidx.compose.runtime.snapshots.SnapshotStateList<T> rememberMutableStateListOf(T... elements);
+    method @androidx.compose.runtime.Composable public static <T extends androidx.navigation3.runtime.NavKey> androidx.compose.runtime.snapshots.SnapshotStateList<androidx.navigation3.runtime.NavKey> rememberNavBackStack(T... elements);
+  }
+
+  public class NavEntry<T> {
+    ctor public NavEntry(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public T getKey();
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+  }
+
+  public final class NavEntryDecorator<T> {
+  }
+
+  public final class NavEntryDecoratorKt {
+    method @androidx.compose.runtime.Composable public static <T> void DecorateNavEntry(androidx.navigation3.runtime.NavEntry<T> entry, java.util.List<androidx.navigation3.runtime.NavEntryDecorator<? extends java.lang.Object?>> entryDecorators);
+    method public static <T> androidx.navigation3.runtime.NavEntryDecorator<T> navEntryDecorator(optional kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit> onPop, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.NavEntry<T>,kotlin.Unit> decorator);
+  }
+
+  public class NavEntryWrapper<T> extends androidx.navigation3.runtime.NavEntry<T> {
+    ctor public NavEntryWrapper(androidx.navigation3.runtime.NavEntry<T> navEntry);
+    method public final androidx.navigation3.runtime.NavEntry<T> getNavEntry();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+    property public final androidx.navigation3.runtime.NavEntry<T> navEntry;
+  }
+
+  @kotlinx.serialization.Serializable public class NavKey {
+    ctor public NavKey();
+    ctor public NavKey(optional kotlin.uuid.Uuid uuid);
+  }
+
+  public final class SavedStateNavEntryDecoratorKt {
+    method public static androidx.navigation3.runtime.NavEntryDecorator<java.lang.Object> SavedStateNavEntryDecorator(androidx.compose.runtime.saveable.SaveableStateHolder saveableStateHolder);
+    method @androidx.compose.runtime.Composable public static androidx.navigation3.runtime.NavEntryDecorator<java.lang.Object> rememberSavedStateNavEntryDecorator(optional androidx.compose.runtime.saveable.SaveableStateHolder saveableStateHolder);
+  }
+
+}
+

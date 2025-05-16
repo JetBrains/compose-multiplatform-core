@@ -72,6 +72,12 @@ internal class PdfServiceConnectionImpl(override val context: Context) : PdfServ
                 // See b/380140417
                 data = uri
             }
+        /**
+         * Make [PdfDocumentServiceImpl] a started service so it could be kept alive for some
+         * duration after the last client unbinds from the service.
+         */
+        context.startService(intent)
+
         context.bindService(intent, /* conn= */ this, /* flags= */ Context.BIND_AUTO_CREATE)
         _eventStateFlow.first { it is Connected }
     }

@@ -27,14 +27,16 @@ class InAppMediateeSdkApi(private val context: Context) {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         withSlowDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
+        automatedTestCallbackBundle: Bundle
     ): Bundle {
         return MediateeSdkApiImpl.loadAdUtil(
             adFormat,
             adType,
             withSlowDraw,
             drawViewability,
-            context
+            context,
+            automatedTestCallbackBundle
         )
     }
 }

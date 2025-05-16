@@ -20,12 +20,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
+import androidx.savedstate.read
+import androidx.savedstate.savedState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -300,6 +305,76 @@ class SaveableStateHolderTest {
         rule.runOnIdle {
             val savedData = registry.performSave()
             assertThat(savedData).isEqualTo(emptyMap<String, List<Any?>>())
+        }
+    }
+
+    @Test
+    fun childSavedStateRegistryRestores() {
+        var increment = 0
+        var number = -1
+        var restorableNumber = -1
+        restorationTester.setContent {
+            val holder = rememberSaveableStateHolder()
+            holder.SaveableStateProvider(Screens.Screen1) {
+                number = remember { increment++ }
+
+                val owner = LocalSavedStateRegistryOwner.current
+                restorableNumber = remember {
+                    owner.savedStateRegistry.consumeRestoredStateForKey("key1")?.read {
+                        getIntOrNull("key2") ?: -50
+                    } ?: increment++
+                }
+                SideEffect {
+                    val valueSnapshot = restorableNumber
+                    owner.savedStateRegistry.registerSavedStateProvider("key1") {
+                        savedState { putInt("key2", valueSnapshot) }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(number).isEqualTo(0)
+            assertThat(restorableNumber).isEqualTo(1)
+            number = -1
+            restorableNumber = -1
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle {
+            assertThat(number).isEqualTo(2)
+            assertThat(restorableNumber).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun childLocalCompositionsAreSet() {
+        var key by mutableStateOf(1)
+        val rootRegistry = SaveableStateRegistry(restoredValues = null) { true }
+
+        val localRegistries = mutableListOf<SaveableStateRegistry>()
+        val localOwners = mutableListOf<SavedStateRegistryOwner>()
+        rule.setContent {
+            CompositionLocalProvider(LocalSaveableStateRegistry provides rootRegistry) {
+                val holder = rememberSaveableStateHolder()
+                holder.SaveableStateProvider(key) {
+                    localRegistries += LocalSaveableStateRegistry.current!!
+                    localOwners += LocalSavedStateRegistryOwner.current
+                }
+            }
+        }
+
+        rule.runOnIdle { key = 2 }
+        rule.runOnIdle { key = 3 }
+        rule.runOnIdle { key = 4 }
+        rule.runOnIdle { key = 5 }
+
+        rule.runOnIdle {
+            assertThat(localRegistries.size).isEqualTo(5)
+            assertThat(localRegistries).doesNotContain(rootRegistry)
+            assertThat(localRegistries).containsExactlyElementsIn(localOwners)
+            assertThat(localRegistries).containsNoDuplicates()
         }
     }
 

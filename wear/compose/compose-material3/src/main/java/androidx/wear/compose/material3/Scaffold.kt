@@ -72,7 +72,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
             val (screenContent, timeText) = currentContent()
             Box(
                 modifier =
-                    screenContent?.scrollInfoProvider?.let {
+                    screenContent?.scrollInfoProvider?.value?.let {
                         Modifier.fillMaxSize().scrollAway(it) { screenStage.value }
                     } ?: Modifier
             ) {
@@ -89,7 +89,20 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
         timeText: @Composable (() -> Unit)?,
         scrollInfoProvider: ScrollInfoProvider? = null
     ) {
-        contentItems.add(ScreenContent(key, scrollInfoProvider, timeText))
+        contentItems.add(ScreenContent(key, mutableStateOf(scrollInfoProvider), timeText))
+    }
+
+    fun updateIfNeeded(
+        key: Any,
+        timeText: @Composable (() -> Unit)?,
+        scrollInfoProvider: ScrollInfoProvider? = null
+    ) {
+        contentItems
+            .find { it.key == key }
+            ?.let {
+                it.timeText = timeText
+                it.scrollInfoProvider.value = scrollInfoProvider
+            }
     }
 
     internal val screenStage: MutableState<ScreenStage> = mutableStateOf(ScreenStage.New)
@@ -98,7 +111,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     internal fun UpdateIdlingDetectorIfNeeded() {
         val scrollInfoProvider = currentContent().first?.scrollInfoProvider
         LaunchedEffect(scrollInfoProvider) { screenStage.value = ScreenStage.New }
-        if (scrollInfoProvider?.isScrollInProgress == true) {
+        if (scrollInfoProvider?.value?.isScrollInProgress == true) {
             screenStage.value = ScreenStage.Scrolling
         } else {
             LaunchedEffect(Unit) {
@@ -117,7 +130,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
             if (it.timeText != null) {
                 resultTimeText = it.timeText
             }
-            if (it.scrollInfoProvider != null) {
+            if (it.scrollInfoProvider.value != null) {
                 resultContent = it
             }
         }
@@ -128,8 +141,8 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
 
     private data class ScreenContent(
         val key: Any,
-        val scrollInfoProvider: ScrollInfoProvider? = null,
-        val timeText: (@Composable () -> Unit)? = null,
+        var scrollInfoProvider: MutableState<ScrollInfoProvider?> = mutableStateOf(null),
+        var timeText: (@Composable () -> Unit)? = null,
     )
 }
 

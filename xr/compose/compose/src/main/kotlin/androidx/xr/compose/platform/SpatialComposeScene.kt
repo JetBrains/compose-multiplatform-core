@@ -24,7 +24,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.scenecore.Session
+import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.runtime.Session
 
 /**
  * A 3D scene represented via Compose elements and coordinated with SceneCore.
@@ -43,6 +44,7 @@ internal class SpatialComposeScene(
     @InternalSubspaceApi public val jxrSession: Session,
     parentCompositionContext: CompositionContext? = null,
     rootEntity: CoreEntity? = null,
+    rootVolumeConstraints: VolumeConstraints = VolumeConstraints(),
 ) : DefaultLifecycleObserver, LifecycleOwner {
     init {
         SceneManager.onSceneCreated(this)
@@ -50,7 +52,7 @@ internal class SpatialComposeScene(
 
     /** Root of the spatial scene graph of this [SpatialComposeScene]. */
     internal val rootElement: SpatialComposeElement =
-        SpatialComposeElement(this, parentCompositionContext, rootEntity)
+        SpatialComposeElement(this, parentCompositionContext, rootEntity, rootVolumeConstraints)
 
     public fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         rootElement.setContent(content)

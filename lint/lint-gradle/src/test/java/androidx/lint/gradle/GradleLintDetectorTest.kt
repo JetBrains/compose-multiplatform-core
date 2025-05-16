@@ -19,6 +19,7 @@ package androidx.lint.gradle
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestLintResult
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 
@@ -31,8 +32,14 @@ abstract class GradleLintDetectorTest(
 
     override fun getIssues(): List<Issue> = issues
 
-    /** Convenience method for running a lint test over the input [files] and [STUBS]. */
-    fun check(vararg files: TestFile): TestLintResult {
-        return lint().files(*STUBS, *files).run()
+    /**
+     * Convenience method for running a lint test over the input [files] and [STUBS]. Skips all test
+     * modes in [skipTestModes].
+     */
+    fun check(
+        vararg files: TestFile,
+        skipTestModes: Array<TestMode> = emptyArray()
+    ): TestLintResult {
+        return lint().files(*STUBS, *files).skipTestModes(*skipTestModes).run()
     }
 }

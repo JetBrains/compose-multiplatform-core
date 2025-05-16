@@ -127,11 +127,6 @@ fun Project.getApiFileDirectory(): File {
     return File(project.projectDir, "api")
 }
 
-/** Returns whether the project's API file directory exists. */
-fun Project.hasApiFileDirectory(): Boolean {
-    return project.getApiFileDirectory().exists()
-}
-
 /** Returns the directory containing the project's built current API file. */
 private fun Project.getBuiltApiFileDirectory(): File {
     @Suppress("DEPRECATION") return File(project.buildDir, "api")

@@ -44,7 +44,7 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testRuntimeOnly(libs.kotlinReflect)
     testImplementation(libs.kotlinStdlibJdk8)
-    testImplementation(libs.androidLintApiPrevAnalysis)
+    testImplementation(libs.androidLint)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
     testImplementation(libs.truth)

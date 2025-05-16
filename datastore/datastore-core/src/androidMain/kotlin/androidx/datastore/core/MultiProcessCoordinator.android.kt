@@ -123,7 +123,6 @@ internal class MultiProcessCoordinator(
     }
 
     private val lazySharedCounter = lazy {
-        SharedCounter.loadLib()
         SharedCounter.create {
             val versionFile = fileWithSuffix(VERSION_SUFFIX)
             versionFile.createIfNotExists()

@@ -421,7 +421,7 @@ internal class TextStringSimpleNode(
         val layoutCache = getLayoutCache()
         val localParagraph =
             requirePreconditionNotNull(layoutCache.paragraph) {
-                "no paragraph (layoutCache=$_layoutCache, textSubstitution=$textSubstitution)"
+                "Internal Error: ParagraphLayoutCache could not provide a Paragraph during the draw phase. Please report this bug on the official Issue Tracker with the following diagnostic information: (layoutCache=$_layoutCache, textSubstitution=$textSubstitution)"
             }
 
         drawIntoCanvas { canvas ->

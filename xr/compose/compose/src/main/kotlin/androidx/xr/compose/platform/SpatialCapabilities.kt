@@ -22,14 +22,13 @@ import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.Session
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_3D_CONTENT
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_APP_ENVIRONMENT
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
-import androidx.xr.scenecore.addSpatialCapabilitiesChangedListener
-import androidx.xr.scenecore.getSpatialCapabilities
+import androidx.xr.scenecore.scene
 
 @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public val LocalSpatialCapabilities: CompositionLocal<SpatialCapabilities> =
@@ -46,7 +45,6 @@ public val LocalSpatialCapabilities: CompositionLocal<SpatialCapabilities> =
 /**
  * Provides information and functionality related to the spatial capabilities of the application.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialCapabilities {
     /**
      * Indicates whether the application may create spatial UI elements (e.g. SpatialPanel).
@@ -84,17 +82,18 @@ public interface SpatialCapabilities {
     public val isSpatialAudioEnabled: Boolean
 
     public companion object {
+        // TODO(b/417291809): Consider removing this map.
         private val sessionInstances: MutableMap<Session, SpatialCapabilities> = mutableMapOf()
 
-        public fun getOrCreate(session: Session): SpatialCapabilities =
+        internal fun getOrCreate(session: Session): SpatialCapabilities =
             sessionInstances.getOrPut(session) { SessionSpatialCapabilities(session) }
     }
 }
 
 private class SessionSpatialCapabilities(session: Session) : SpatialCapabilities {
     private var capabilities by
-        mutableStateOf(session.getSpatialCapabilities()).apply {
-            session.addSpatialCapabilitiesChangedListener { value = it }
+        mutableStateOf(session.scene.spatialCapabilities).apply {
+            session.scene.addSpatialCapabilitiesChangedListener { value = it }
         }
 
     override val isSpatialUiEnabled: Boolean

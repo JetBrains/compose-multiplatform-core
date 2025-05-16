@@ -87,6 +87,7 @@ public interface Entity : ActivityPose {
      * the Entity.
      *
      * @param scale The [Vector3] scale factor relative to the given space.
+     * @param relativeTo The space in which to set the scale.
      */
     public fun setScale(scale: Vector3, @SpaceValue relativeTo: Int)
 
@@ -112,6 +113,7 @@ public interface Entity : ActivityPose {
      * Sets the alpha transparency for the given Entity, relative to the given space.
      *
      * @param alpha Alpha transparency level for the Entity.
+     * @param relativeTo The space in which to set the alpha.
      */
     public fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int)
 
@@ -156,12 +158,27 @@ public interface Entity : ActivityPose {
     public fun dispose()
 
     /**
-     * Add these components to entity.
+     * Add given component to entity.
      *
      * @param component Component to add to the Entity.
      * @return True if the given component is added to the Entity.
      */
     public fun addComponent(component: Component): Boolean
+
+    /**
+     * Retrieves all Components of the given type [T] and its sub-types attached to this Entity.
+     *
+     * @param type The type of Component to retrieve.
+     * @return List<Component> of the given type attached to this Entity.
+     */
+    public fun <T : Component> getComponentsOfType(type: Class<out T>): List<T>
+
+    /**
+     * Retrieves all components attached to this Entity.
+     *
+     * @return List<Component> attached to this Entity.
+     */
+    public fun getComponents(): List<Component>
 
     /**
      * Remove the given component from the entity.

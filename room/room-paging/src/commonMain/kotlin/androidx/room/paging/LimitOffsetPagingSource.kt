@@ -29,7 +29,6 @@ import androidx.room.concurrent.AtomicInt
 import androidx.room.paging.util.INITIAL_ITEM_COUNT
 import androidx.room.paging.util.queryDatabase
 import androidx.room.paging.util.queryItemCount
-import androidx.room.useReaderConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -117,16 +116,20 @@ internal class CommonLimitOffsetImpl<Value : Any>(
      * load.
      */
     private suspend fun initialLoad(params: LoadParams<Int>): LoadResult<Int, Value> {
-        return db.useReaderConnection { connection ->
-            connection.withTransaction(SQLiteTransactionType.DEFERRED) {
-                val tempCount = queryItemCount(sourceQuery, db)
-                itemCount.set(tempCount)
-                queryDatabase(
-                    params = params,
-                    sourceQuery = sourceQuery,
-                    itemCount = tempCount,
-                    convertRows = convertRows,
-                )
+        // Load in the database's coroutine context since useConnection is unconfined.
+        return withContext(db.getCoroutineScope().coroutineContext) {
+            db.useConnection(isReadOnly = true) { connection ->
+                // Using a transaction to ensure initial load's data integrity.
+                connection.withTransaction(SQLiteTransactionType.DEFERRED) {
+                    val tempCount = queryItemCount(sourceQuery, db)
+                    itemCount.set(tempCount)
+                    queryDatabase(
+                        params = params,
+                        sourceQuery = sourceQuery,
+                        itemCount = tempCount,
+                        convertRows = convertRows,
+                    )
+                }
             }
         }
     }

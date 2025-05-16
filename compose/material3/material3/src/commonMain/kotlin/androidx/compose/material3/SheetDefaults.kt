@@ -188,7 +188,7 @@ class SheetState(
             "Attempted to animate to partial expanded when skipPartiallyExpanded was enabled. Set" +
                 " skipPartiallyExpanded to false to use this function."
         }
-        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, showMotionSpec)
+        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, hideMotionSpec)
     }
 
     /**
@@ -396,7 +396,8 @@ object BottomSheetDefaults {
 
     /** Default insets to be used and consumed by the [ModalBottomSheet]'s content. */
     val windowInsets: WindowInsets
-        @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+        @Composable
+        get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Top)
 
     internal val PositionalThreshold = 56.dp
 

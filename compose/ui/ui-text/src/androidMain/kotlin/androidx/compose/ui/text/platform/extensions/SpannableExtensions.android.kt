@@ -138,14 +138,15 @@ internal fun Spannable.setBulletSpans(
         } ?: 0f
     annotations.fastForEach {
         (it.item as? Bullet)?.let { bullet ->
-            val bulletSize = resolveBulletTextUnitToPx(bullet.size, contextFontSize, density)
+            val bulletWidthPx = resolveBulletTextUnitToPx(bullet.width, contextFontSize, density)
+            val bulletHeightPx = resolveBulletTextUnitToPx(bullet.height, contextFontSize, density)
             val gapWidthPx = resolveBulletTextUnitToPx(bullet.padding, contextFontSize, density)
-            if (!bulletSize.isNaN() && !gapWidthPx.isNaN()) {
+            if (!bulletWidthPx.isNaN() && !bulletHeightPx.isNaN() && !gapWidthPx.isNaN()) {
                 setSpan(
                     CustomBulletSpan(
                         shape = bullet.shape,
-                        bulletWidthPx = bulletSize,
-                        bulletHeightPx = bulletSize,
+                        bulletWidthPx = bulletWidthPx,
+                        bulletHeightPx = bulletHeightPx,
                         gapWidthPx = gapWidthPx,
                         density = density,
                         brush = bullet.brush,

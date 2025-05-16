@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Anchor
+import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
@@ -72,7 +73,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override fun loadAnchor(uuid: UUID): Anchor {
         val nativeAnchor = nativeLoadAnchor(uuid)
         when (nativeAnchor) {
-            -2L -> throw IllegalStateException("Failed to load anchor.")
+            -2L -> throw AnchorInvalidUuidException()
             -10L -> throw AnchorResourcesExhaustedException()
         }
         val anchor = OpenXrAnchor(nativeAnchor, xrResources, loadedUuid = uuid)
@@ -100,6 +101,8 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val rightHand: Hand
         get() = xrResources.rightHand
 
+    override val earth: OpenXrEarth = xrResources.earth
+
     private var lastUpdateXrTime: Long = 0L
 
     /**
@@ -108,6 +111,13 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
      * @param xrTime the number of nanoseconds since the start of the OpenXR epoch.
      */
     public fun update(xrTime: Long) {
+        for (updatable in xrResources.updatables) {
+            updatable.update(xrTime)
+        }
+        lastUpdateXrTime = xrTime
+    }
+
+    internal fun updatePlanes(xrTime: Long) {
         val planes = nativeGetPlanes()
         // Add new planes to the list of trackables.
         for (plane in planes) {
@@ -121,12 +131,6 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
             xrResources.addTrackable(plane, trackable)
             xrResources.addUpdatable(trackable as Updatable)
         }
-
-        for (updatable in xrResources.updatables) {
-            updatable.update(xrTime)
-        }
-
-        lastUpdateXrTime = xrTime
     }
 
     internal fun clear() {

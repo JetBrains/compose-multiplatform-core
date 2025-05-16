@@ -17,16 +17,22 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.LifecycleManager
 
 /**
  * The User object is used to retrieve information about the user. This includes the Head and The
  * CameraViews.
  *
+ * @param lifecycleManager The [LifecycleManager] for the Session.
  * @param runtime The JxrPlatformAdapter for the Session.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SpatialUser(private val runtime: JxrPlatformAdapter) {
+public class SpatialUser(
+    private val lifecycleManager: LifecycleManager,
+    private val runtime: JxrPlatformAdapter,
+) {
     private var cachedLeftCamera: CameraView? = null
     private var cachedRightCamera: CameraView? = null
     private var cachedHead: Head? = null
@@ -49,14 +55,25 @@ public class SpatialUser(private val runtime: JxrPlatformAdapter) {
 
     internal companion object {
         /** Factory function for creating [SpatialUser] instance. */
-        internal fun create(runtime: JxrPlatformAdapter): SpatialUser {
-            return SpatialUser(runtime)
+        internal fun create(
+            lifecycleManager: LifecycleManager,
+            runtime: JxrPlatformAdapter,
+        ): SpatialUser {
+            return SpatialUser(lifecycleManager, runtime)
         }
     }
 
-    /** Returns a Head for the SpatialUser or null if it is not yet available. */
+    /**
+     * Returns a Head for the SpatialUser or null if it is not yet available.
+     *
+     * @throws [IllegalStateException] if [session.config.headTracking] is set to
+     *   [HeadTrackingMode.DISABLED].
+     */
     public var head: Head? = null
         get() {
+            check(lifecycleManager.config.headTracking != HeadTrackingMode.DISABLED) {
+                "Config.HeadTrackingMode is set to Disabled."
+            }
             if (cachedHead == null) {
                 cachedHead = Head.create(runtime)
             }
@@ -66,13 +83,27 @@ public class SpatialUser(private val runtime: JxrPlatformAdapter) {
     /**
      * Returns a list of CameraViews that the user is using. The length of the list is dependent on
      * the device type. The list will be empty if the cameras are not yet available.
+     *
+     * @throws [IllegalStateException] if [session.config.headTracking] is set to
+     *   [HeadTrackingMode.DISABLED].
      */
     public fun getCameraViews(): List<CameraView> {
+        check(lifecycleManager.config.headTracking != HeadTrackingMode.DISABLED) {
+            "Config.HeadTrackingMode is set to Disabled."
+        }
         return listOfNotNull<CameraView>(leftCamera, rightCamera)
     }
 
-    /** Returns a CameraView for the specified CameraType or null if it is not available. */
+    /**
+     * Returns a CameraView for the specified CameraType or null if it is not available.
+     *
+     * @throws [IllegalStateException] if [session.config.headTracking] is set to
+     *   [HeadTrackingMode.DISABLED].
+     */
     public fun getCameraView(cameraType: CameraView.CameraType): CameraView? {
+        check(lifecycleManager.config.headTracking != HeadTrackingMode.DISABLED) {
+            "Config.HeadTrackingMode is set to Disabled."
+        }
         if (cameraType == CameraView.CameraType.LEFT_EYE) {
             return leftCamera
         } else if (cameraType == CameraView.CameraType.RIGHT_EYE) {

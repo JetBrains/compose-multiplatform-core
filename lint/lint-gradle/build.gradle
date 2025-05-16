@@ -30,12 +30,12 @@ plugins {
 }
 
 dependencies {
-    compileOnly(libs.androidLintApiPrevKotlin)
-    compileOnly(libs.androidLintChecksPrevKotlin)
+    compileOnly(libs.androidLintApiStableAnalysis)
+    compileOnly(libs.androidLintChecksStableAnalysis)
     compileOnly(libs.kotlinStdlib)
 
-    testImplementation(libs.androidLintPrevKotlin)
-    testImplementation(libs.androidLintTestsPrevKotlin)
+    testImplementation(libs.androidLintStableAnalysis)
+    testImplementation(libs.androidLintTestsStableAnalysis)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

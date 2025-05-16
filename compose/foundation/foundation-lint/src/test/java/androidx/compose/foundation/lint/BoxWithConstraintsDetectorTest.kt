@@ -350,6 +350,9 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                 val BoxWithConstraintsScope.prop: Int
                     get() = 0
 
+                val BoxWithConstraintsScope?.nullableProp: Int
+                    get() = 0
+
                 @Composable
                 fun Test() {
                     BoxWithConstraints {
@@ -363,6 +366,9 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                     }
                     BoxWithConstraints {
                         prop
+                    }
+                    BoxWithConstraints {
+                        nullableProp
                     }
                     BoxWithConstraints {
                         Foo { this@BoxWithConstraints.lambda() }

@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
@@ -230,7 +231,10 @@ public fun OpenOnPhoneDialogContent(
         val size = screenWidthDp() * SizeFraction
         Box(
             modifier =
-                Modifier.padding(top = topPadding.dp).size(size.dp).align(Alignment.TopCenter),
+                Modifier.padding(top = topPadding.dp)
+                    .size(size.dp)
+                    .align(Alignment.TopCenter)
+                    .clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             iconAndProgressContainer(
@@ -275,7 +279,7 @@ public fun CurvedScope.openOnPhoneDialogCurvedText(
     curvedText(
         text = text,
         style = style,
-        maxSweepAngle = CurvedTextDefaults.StaticContentMaxSweepAngle,
+        maxSweepAngle = OpenOnPhoneMaxSweepAngle,
         modifier = CurvedModifier.padding(PaddingDefaults.edgePadding)
     )
 
@@ -498,3 +502,4 @@ private const val HeightPaddingFraction = 0.157f
 private const val SizeFraction = 1 - WidthPaddingFraction * 2
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
+private const val OpenOnPhoneMaxSweepAngle = 130f

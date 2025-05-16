@@ -123,10 +123,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusEnterSample
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalComposeUiApi
-    @get:ExperimentalComposeUiApi
-    @set:ExperimentalComposeUiApi
     @set:Deprecated("Use onEnter instead", ReplaceWith("onEnter"))
     var enter: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }
@@ -165,10 +162,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusExitSample
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalComposeUiApi
-    @get:ExperimentalComposeUiApi
-    @set:ExperimentalComposeUiApi
     @set:Deprecated("Use onExit instead", ReplaceWith("onExit"))
     var exit: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }

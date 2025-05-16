@@ -147,12 +147,3 @@ android {
     compileSdk = 35
     namespace = "androidx.compose.material"
 }
-
-// TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
-                "-Xlambdas=class"
-        ]
-    }
-}

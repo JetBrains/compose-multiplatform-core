@@ -20,6 +20,7 @@ import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
 import androidx.xr.runtime.math.Pose
@@ -39,8 +40,8 @@ import androidx.xr.runtime.math.Pose
  *   the user's eyes.
  * @property dimensions The dimensions of the canvas in the local spatial coordinate system of the
  *   entity.
- * @property alphaMaskTexture The texture to be composited into the alpha channel of the surface. If
- *   null, the alpha mask will be disabled.
+ * @property primaryAlphaMaskTexture The texture to be composited into the alpha channel of the
+ *   surface. If null, the alpha mask will be disabled.
  * @property auxiliaryAlphaMaskTexture The texture to be composited into the alpha channel of the
  *   secondary view of the surface. This is only used for interleaved stereo content. If null, the
  *   alpha mask will be disabled.
@@ -93,6 +94,26 @@ private constructor(
         }
     }
 
+    @IntDef(ContentSecurityLevel.NONE, ContentSecurityLevel.PROTECTED)
+    @Retention(AnnotationRetention.SOURCE)
+    internal annotation class ContentSecurityLevelValue
+
+    /**
+     * Specifies whether the Surface which backs this entity should support DRM content. This is
+     * useful when decoding video content which requires DRM.
+     *
+     * See https://developer.android.com/reference/android/media/MediaDrm for more details.
+     */
+    public object ContentSecurityLevel {
+        // The Surface content is not secured. DRM content can not be decoded into this Surface.
+        // Screen captures of the SurfaceEntity will show the Surface content.
+        public const val NONE: Int = 0
+
+        // The surface content is secured. DRM content can be decoded into this Surface.
+        // Screen captures of the SurfaceEntity will redact the Surface content.
+        public const val PROTECTED: Int = 1
+    }
+
     /**
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
@@ -101,7 +122,13 @@ private constructor(
      * Values here match values from androidx.media3.common.C.StereoMode in
      * //third_party/java/android_libs/media:common
      */
-    @IntDef(StereoMode.MONO, StereoMode.TOP_BOTTOM, StereoMode.SIDE_BY_SIDE)
+    @IntDef(
+        StereoMode.MONO,
+        StereoMode.TOP_BOTTOM,
+        StereoMode.SIDE_BY_SIDE,
+        StereoMode.MULTIVIEW_LEFT_PRIMARY,
+        StereoMode.MULTIVIEW_RIGHT_PRIMARY,
+    )
     @Retention(AnnotationRetention.SOURCE)
     internal annotation class StereoModeValue
 
@@ -131,6 +158,14 @@ private constructor(
             }
         }
 
+        private fun getRtContentSecurityLevel(contentSecurityLevel: Int): Int {
+            return when (contentSecurityLevel) {
+                ContentSecurityLevel.NONE -> RtSurfaceEntity.ContentSecurityLevel.NONE
+                ContentSecurityLevel.PROTECTED -> RtSurfaceEntity.ContentSecurityLevel.PROTECTED
+                else -> RtSurfaceEntity.ContentSecurityLevel.NONE
+            }
+        }
+
         /**
          * Factory method for SurfaceEntity.
          *
@@ -139,6 +174,9 @@ private constructor(
          * @param stereoMode An [Int] which defines how surface subregions map to eyes
          * @param pose Pose for this StereoSurface entity, relative to its parent.
          * @param canvasShape The [CanvasShape] which describes the spatialized shape of the canvas.
+         * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
+         *   enabled for the surface.
+         * @return a SurfaceEntity instance
          */
         internal fun create(
             adapter: JxrPlatformAdapter,
@@ -146,6 +184,7 @@ private constructor(
             stereoMode: Int = StereoMode.SIDE_BY_SIDE,
             pose: Pose = Pose.Identity,
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
+            contentSecurityLevel: Int = ContentSecurityLevel.NONE,
         ): SurfaceEntity {
             val rtCanvasShape =
                 when (canvasShape) {
@@ -160,8 +199,9 @@ private constructor(
             return SurfaceEntity(
                 adapter.createSurfaceEntity(
                     getRtStereoMode(stereoMode),
-                    rtCanvasShape,
                     pose,
+                    rtCanvasShape,
+                    getRtContentSecurityLevel(contentSecurityLevel),
                     adapter.activitySpaceRootImpl,
                 ),
                 entityManager,
@@ -179,6 +219,8 @@ private constructor(
          * @param stereoMode Stereo mode for the surface.
          * @param pose Pose of this entity relative to its parent, default value is Identity.
          * @param canvasShape The [CanvasShape] which describes the spatialized shape of the canvas.
+         * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
+         *   enabled for the surface.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -189,13 +231,15 @@ private constructor(
             stereoMode: Int = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
             pose: Pose = Pose.Identity,
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
+            contentSecurityLevel: Int = ContentSecurityLevel.NONE,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 stereoMode,
                 pose,
                 canvasShape,
+                contentSecurityLevel,
             )
     }
 

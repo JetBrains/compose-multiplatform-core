@@ -40,13 +40,13 @@ import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
+public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
     private val sourceQuery: RoomSQLiteQuery,
     private val db: RoomDatabase,
     vararg tables: String
 ) : ListenableFuturePagingSource<Int, Value>() {
 
-    constructor(
+    public constructor(
         supportSQLiteQuery: SupportSQLiteQuery,
         db: RoomDatabase,
         vararg tables: String,
@@ -179,8 +179,8 @@ abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
         return state.getClippedRefreshKey()
     }
 
-    companion object {
-        const val BUG_LINK =
+    public companion object {
+        public const val BUG_LINK: String =
             "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }
 }

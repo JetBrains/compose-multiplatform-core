@@ -1700,7 +1700,7 @@ private object BrushBehaviorNative {
         NativeLoader.load()
     }
 
-    public fun createFromTerminalNodes(terminalNodes: List<BrushBehavior.TerminalNode>): Long {
+    fun createFromTerminalNodes(terminalNodes: List<BrushBehavior.TerminalNode>): Long {
         val orderedNodes = ArrayDeque<BrushBehavior.Node>()
         val stack = ArrayDeque<BrushBehavior.Node>(terminalNodes)
         while (!stack.isEmpty()) {
@@ -1713,20 +1713,19 @@ private object BrushBehaviorNative {
     }
 
     /** Creates a new native `BrushBehavior` with the given ordered nodes. */
-    @UsedByNative
-    public external fun createFromOrderedNodes(orderdNodeNativePointers: LongArray): Long
+    @UsedByNative external fun createFromOrderedNodes(orderdNodeNativePointers: LongArray): Long
 
     /** Release the underlying memory allocated in [createFromOrderedNodes]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
     /** Returns the number of `BrushBehavior::Node`s in the native `BrushBehavior`. */
-    @UsedByNative public external fun getNodeCount(nativePointer: Long): Int
+    @UsedByNative external fun getNodeCount(nativePointer: Long): Int
 
     /**
      * Returns an unowned native pointer to a new, stack-allocated copy of the native
      * `BrushBehavior::Node` at the given index in the pointed-at `BrushBehavior`.
      */
-    @UsedByNative public external fun newCopyOfNode(nativePointer: Long, index: Int): Long
+    @UsedByNative external fun newCopyOfNode(nativePointer: Long, index: Int): Long
 }
 
 /**
@@ -1744,44 +1743,44 @@ private object BrushBehaviorNodeNative {
     }
 
     @UsedByNative
-    public external fun createSource(
+    external fun createSource(
         source: Int,
         sourceValueRangeStart: Float,
         sourceValueRangeEnd: Float,
         sourceOutOfRangeBehavior: Int,
     ): Long
 
-    @UsedByNative public external fun createConstant(value: Float): Long
+    @UsedByNative external fun createConstant(value: Float): Long
 
-    @UsedByNative public external fun createNoise(seed: Int, varyOver: Int, basePeriod: Float): Long
+    @UsedByNative external fun createNoise(seed: Int, varyOver: Int, basePeriod: Float): Long
 
-    @UsedByNative public external fun createFallbackFilter(isFallbackFor: Int): Long
+    @UsedByNative external fun createFallbackFilter(isFallbackFor: Int): Long
 
     @UsedByNative
-    public external fun createToolTypeFilter(
+    external fun createToolTypeFilter(
         mouseEnabled: Boolean,
         touchEnabled: Boolean,
         stylusEnabled: Boolean,
         unknownEnabled: Boolean,
     ): Long
 
-    @UsedByNative public external fun createDamping(dampingSource: Int, dampingGap: Float): Long
+    @UsedByNative external fun createDamping(dampingSource: Int, dampingGap: Float): Long
 
-    @UsedByNative public external fun createResponse(easingFunctionNativePointer: Long): Long
+    @UsedByNative external fun createResponse(easingFunctionNativePointer: Long): Long
 
-    @UsedByNative public external fun createBinaryOp(operation: Int): Long
+    @UsedByNative external fun createBinaryOp(operation: Int): Long
 
-    @UsedByNative public external fun createInterpolation(interpolation: Int): Long
+    @UsedByNative external fun createInterpolation(interpolation: Int): Long
 
     @UsedByNative
-    public external fun createTarget(
+    external fun createTarget(
         target: Int,
         targetModifierRangeStart: Float,
         targetModifierRangeEnd: Float,
     ): Long
 
     @UsedByNative
-    public external fun createPolarTarget(
+    external fun createPolarTarget(
         polarTarget: Int,
         angleRangeStart: Float,
         angleRangeEnd: Float,
@@ -1789,110 +1788,108 @@ private object BrushBehaviorNodeNative {
         magnitudeRangeEnd: Float,
     ): Long
 
-    @UsedByNative public external fun free(nodeNativePointer: Long)
+    @UsedByNative external fun free(nodeNativePointer: Long)
 
-    @UsedByNative public external fun getNodeType(nodeNativePointer: Long): Int
+    @UsedByNative external fun getNodeType(nodeNativePointer: Long): Int
 
     // SourceNode accessors:
 
-    public fun getSource(nativePointer: Long): BrushBehavior.Source =
+    fun getSource(nativePointer: Long): BrushBehavior.Source =
         BrushBehavior.Source(getSourceInt(nativePointer))
 
     @UsedByNative private external fun getSourceInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun getSourceValueRangeStart(nativePointer: Long): Float
+    @UsedByNative external fun getSourceValueRangeStart(nativePointer: Long): Float
 
-    @UsedByNative public external fun getSourceValueRangeEnd(nativePointer: Long): Float
+    @UsedByNative external fun getSourceValueRangeEnd(nativePointer: Long): Float
 
-    public fun getSourceOutOfRangeBehavior(nativePointer: Long): BrushBehavior.OutOfRange =
+    fun getSourceOutOfRangeBehavior(nativePointer: Long): BrushBehavior.OutOfRange =
         BrushBehavior.OutOfRange(getSourceOutOfRangeBehaviorInt(nativePointer))
 
     @UsedByNative private external fun getSourceOutOfRangeBehaviorInt(nativePointer: Long): Int
 
     // ConstantNode accessors:
 
-    @UsedByNative public external fun getConstantValue(nativePointer: Long): Float
+    @UsedByNative external fun getConstantValue(nativePointer: Long): Float
 
     // NoiseNode accessors:
 
-    @UsedByNative public external fun getNoiseSeed(nativePointer: Long): Int
+    @UsedByNative external fun getNoiseSeed(nativePointer: Long): Int
 
-    public fun getNoiseVaryOver(nativePointer: Long): BrushBehavior.DampingSource =
+    fun getNoiseVaryOver(nativePointer: Long): BrushBehavior.DampingSource =
         BrushBehavior.DampingSource(getNoiseVaryOverInt(nativePointer))
 
     @UsedByNative private external fun getNoiseVaryOverInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun getNoiseBasePeriod(nativePointer: Long): Float
+    @UsedByNative external fun getNoiseBasePeriod(nativePointer: Long): Float
 
     // FallbackFilterNode accessors:
 
-    public fun getFallbackFilterIsFallbackFor(
-        nativePointer: Long
-    ): BrushBehavior.OptionalInputProperty =
+    fun getFallbackFilterIsFallbackFor(nativePointer: Long): BrushBehavior.OptionalInputProperty =
         BrushBehavior.OptionalInputProperty(getFallbackFilterIsFallbackForInt(nativePointer))
 
     @UsedByNative private external fun getFallbackFilterIsFallbackForInt(nativePointer: Long): Int
 
     // ToolTypeFilterNode accessors:
 
-    @UsedByNative public external fun getToolTypeFilterMouseEnabled(nativePointer: Long): Boolean
+    @UsedByNative external fun getToolTypeFilterMouseEnabled(nativePointer: Long): Boolean
 
-    @UsedByNative public external fun getToolTypeFilterTouchEnabled(nativePointer: Long): Boolean
+    @UsedByNative external fun getToolTypeFilterTouchEnabled(nativePointer: Long): Boolean
 
-    @UsedByNative public external fun getToolTypeFilterStylusEnabled(nativePointer: Long): Boolean
+    @UsedByNative external fun getToolTypeFilterStylusEnabled(nativePointer: Long): Boolean
 
-    @UsedByNative public external fun getToolTypeFilterUnknownEnabled(nativePointer: Long): Boolean
+    @UsedByNative external fun getToolTypeFilterUnknownEnabled(nativePointer: Long): Boolean
 
     // DampingNode accessors:
 
-    public fun getDampingSource(nativePointer: Long): BrushBehavior.DampingSource =
+    fun getDampingSource(nativePointer: Long): BrushBehavior.DampingSource =
         BrushBehavior.DampingSource(getDampingSourceInt(nativePointer))
 
     @UsedByNative private external fun getDampingSourceInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun getDampingGap(nativePointer: Long): Float
+    @UsedByNative external fun getDampingGap(nativePointer: Long): Float
 
     // Getters for ResponseNode:
 
-    @UsedByNative public external fun newCopyOfResponseEasingFunction(nativePointer: Long): Long
+    @UsedByNative external fun newCopyOfResponseEasingFunction(nativePointer: Long): Long
 
     // BinaryOpNode accessors:
 
-    public fun getBinaryOperation(nativePointer: Long): BrushBehavior.BinaryOp =
+    fun getBinaryOperation(nativePointer: Long): BrushBehavior.BinaryOp =
         BrushBehavior.BinaryOp(getBinaryOperationInt(nativePointer))
 
     @UsedByNative private external fun getBinaryOperationInt(nativePointer: Long): Int
 
     // InterpolationNode accessors:
 
-    public fun getInterpolation(nativePointer: Long): BrushBehavior.Interpolation =
+    fun getInterpolation(nativePointer: Long): BrushBehavior.Interpolation =
         BrushBehavior.Interpolation(getInterpolationInt(nativePointer))
 
     @UsedByNative private external fun getInterpolationInt(nativePointer: Long): Int
 
     // TargetNode accessors:
 
-    public fun getTarget(nativePointer: Long): BrushBehavior.Target =
+    fun getTarget(nativePointer: Long): BrushBehavior.Target =
         BrushBehavior.Target(getTargetInt(nativePointer))
 
     @UsedByNative private external fun getTargetInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun getTargetModifierRangeStart(nativePointer: Long): Float
+    @UsedByNative external fun getTargetModifierRangeStart(nativePointer: Long): Float
 
-    @UsedByNative public external fun getTargetModifierRangeEnd(nativePointer: Long): Float
+    @UsedByNative external fun getTargetModifierRangeEnd(nativePointer: Long): Float
 
     // PolarTargetNode accessors:
 
-    public fun getPolarTarget(nativePointer: Long): BrushBehavior.PolarTarget =
+    fun getPolarTarget(nativePointer: Long): BrushBehavior.PolarTarget =
         BrushBehavior.PolarTarget(getPolarTargetInt(nativePointer))
 
     @UsedByNative private external fun getPolarTargetInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun getPolarTargetAngleRangeStart(nativePointer: Long): Float
+    @UsedByNative external fun getPolarTargetAngleRangeStart(nativePointer: Long): Float
 
-    @UsedByNative public external fun getPolarTargetAngleRangeEnd(nativePointer: Long): Float
+    @UsedByNative external fun getPolarTargetAngleRangeEnd(nativePointer: Long): Float
 
-    @UsedByNative public external fun getPolarTargetMagnitudeRangeStart(nativePointer: Long): Float
+    @UsedByNative external fun getPolarTargetMagnitudeRangeStart(nativePointer: Long): Float
 
-    @UsedByNative public external fun getPolarTargetMagnitudeRangeEnd(nativePointer: Long): Float
+    @UsedByNative external fun getPolarTargetMagnitudeRangeEnd(nativePointer: Long): Float
 }

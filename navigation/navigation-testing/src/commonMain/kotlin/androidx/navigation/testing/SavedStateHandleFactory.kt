@@ -87,10 +87,8 @@ public operator fun SavedStateHandle.Companion.invoke(
         savedState.write { putAll(tempSavedState) }
     }
     // convert arg bundle to arg map
-    val finalMap = mutableMapOf<String, Any?>()
-    savedState
-        .read { toMap().keys }
-        .forEach { name -> finalMap[name] = savedState.read { toMap()[name] } }
+    val finalMap = savedState.read { toMap() }
     // populate handle with arg map
-    return SavedStateHandle(finalMap)
+    @Suppress("VisibleForTests") // Safe to use here as this is a test utilities module.
+    return SavedStateHandle(initialState = finalMap)
 }

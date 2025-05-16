@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraPipe.CameraBackendConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.FrameGraph
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -46,37 +47,57 @@ private constructor(
 ) : CameraPipe, AutoCloseable {
     private val closed = atomic(false)
     private val _cameraGraphs = mutableListOf<CameraGraphSimulator>()
+    private val _frameGraphs = mutableListOf<FrameGraphSimulator>()
+
     public val cameraGraphs: List<CameraGraphSimulator>
         get() = _cameraGraphs
 
-    override fun create(config: CameraGraph.Config): CameraGraphSimulator {
-        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
+    public val frameGraphs: List<FrameGraphSimulator>
+        get() = _frameGraphs
 
-        val cameraGraph = cameraPipeInternal.create(config)
-        val fakeCameraController =
-            checkNotNull(fakeCameraBackend.cameraControllers.lastOrNull()) {
-                "Expected cameraPipe.create to create a CameraController instance from " +
-                    "$fakeCameraBackend as part of its initialization."
-            }
-        val cameraMetadata = cameraPipeInternal.cameras().awaitCameraMetadata(config.camera)!!
-        val cameraGraphSimulator =
-            CameraGraphSimulator(
-                cameraMetadata,
-                fakeCameraController,
-                fakeImageReaders,
-                fakeImageSources,
-                cameraGraph,
-                config,
-            )
-        _cameraGraphs.add(cameraGraphSimulator)
-        return cameraGraphSimulator
+    @Deprecated(
+        "Use createCameraGraph instead.",
+        replaceWith = ReplaceWith("createCameraGraph(config)")
+    )
+    override fun create(config: CameraGraph.Config): CameraGraphSimulator =
+        createCameraGraph(config)
+
+    override fun createCameraGraph(config: CameraGraph.Config): CameraGraphSimulator {
+        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
+        val cameraGraph = cameraPipeInternal.createCameraGraph(config)
+
+        return createCameraGraphSimulator(cameraGraphConfig = config, cameraGraph = cameraGraph)
     }
 
     override fun createCameraGraphs(
         config: CameraGraph.ConcurrentConfig
     ): List<CameraGraphSimulator> {
         check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
-        return config.graphConfigs.map { create(it) }
+        return config.graphConfigs.map { createCameraGraph(it) }
+    }
+
+    override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraphSimulator {
+        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
+        val frameGraph = cameraPipeInternal.createFrameGraph(frameGraphConfig)
+        val cameraGraph = frameGraph.unwrapAs(CameraGraph::class)
+        checkNotNull(cameraGraph) { "Failed to unwrap $frameGraph as a CameraGraph!" }
+
+        val cameraGraphSimulator =
+            createCameraGraphSimulator(
+                cameraGraphConfig = frameGraphConfig.cameraGraphConfig,
+                cameraGraph = cameraGraph
+            )
+
+        val frameGraphSimulator = FrameGraphSimulator(frameGraph, cameraGraphSimulator)
+        _frameGraphs.add(frameGraphSimulator)
+        return frameGraphSimulator
+    }
+
+    override fun createFrameGraphs(
+        frameGraphConfigs: FrameGraph.ConcurrentConfig
+    ): List<FrameGraphSimulator> {
+        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
+        return frameGraphConfigs.frameGraphConfigs.map { createFrameGraph(it) }
     }
 
     override fun cameras(): CameraDevices = cameraPipeInternal.cameras()
@@ -90,44 +111,19 @@ private constructor(
             cameraPipeInternal.globalAudioRestrictionMode = value
         }
 
+    override fun shutdown() {
+        // Nothing to shutdown
+    }
+
     /** Directly create and return a new [CameraGraph] and [CameraGraphSimulator]. */
     public fun createCameraGraphSimulator(graphConfig: CameraGraph.Config): CameraGraphSimulator {
-        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
-        val cameraGraph = cameraPipeInternal.create(graphConfig)
-        val cameraController =
-            fakeCameraBackend.cameraControllers.first { it.cameraGraphId == cameraGraph.id }
-        val cameraGraphSimulator =
-            createCameraGraphSimulator(cameraGraph, graphConfig, cameraController)
-        _cameraGraphs.add(cameraGraphSimulator)
-        return cameraGraphSimulator
+        return createCameraGraph(graphConfig)
     }
 
     /** Directly create and return a new set of [CameraGraph]s and [CameraGraphSimulator]s. */
     public fun createCameraGraphSimulators(
         config: CameraGraph.ConcurrentConfig
-    ): List<CameraGraphSimulator> = config.graphConfigs.map { createCameraGraphSimulator(it) }
-
-    private fun createCameraGraphSimulator(
-        graph: CameraGraph,
-        graphConfig: CameraGraph.Config,
-        cameraController: CameraControllerSimulator
-    ): CameraGraphSimulator {
-        check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
-        val cameraId = cameraController.cameraId
-        val cameraMetadata = fakeCameraBackend.awaitCameraMetadata(cameraController.cameraId)
-        checkNotNull(cameraMetadata) { "Failed to retrieve metadata for $cameraId!" }
-
-        val cameraGraphSimulator =
-            CameraGraphSimulator(
-                cameraMetadata,
-                cameraController,
-                fakeImageReaders,
-                fakeImageSources,
-                graph,
-                graphConfig,
-            )
-        return cameraGraphSimulator
-    }
+    ): List<CameraGraphSimulator> = createCameraGraphs(config)
 
     public fun checkImageReadersClosed() {
         fakeImageSources.checkImageSourcesClosed()
@@ -143,6 +139,33 @@ private constructor(
         for (cameraGraph in _cameraGraphs) {
             check(cameraGraph.isClosed) { "$cameraGraph was not closed!" }
         }
+    }
+
+    private fun createCameraGraphSimulator(
+        cameraGraphConfig: CameraGraph.Config,
+        cameraGraph: CameraGraph,
+    ): CameraGraphSimulator {
+
+        val fakeCameraController =
+            checkNotNull(fakeCameraBackend.cameraControllers.lastOrNull()) {
+                "Expected CameraPipe.create to create a CameraController instance from " +
+                    "$fakeCameraBackend as part of its initialization."
+            }
+        val cameraId = cameraGraphConfig.camera
+        val cameraMetadata = cameraPipeInternal.cameras().awaitCameraMetadata(cameraId)
+        checkNotNull(cameraMetadata) { "Failed to retrieve metadata for $cameraId!" }
+
+        val cameraGraphSimulator =
+            CameraGraphSimulator(
+                cameraMetadata,
+                fakeCameraController,
+                fakeImageReaders,
+                fakeImageSources,
+                cameraGraph,
+                cameraGraphConfig,
+            )
+        _cameraGraphs.add(cameraGraphSimulator)
+        return cameraGraphSimulator
     }
 
     override fun close() {

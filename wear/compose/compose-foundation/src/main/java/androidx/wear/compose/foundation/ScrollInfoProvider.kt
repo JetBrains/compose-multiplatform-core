@@ -279,15 +279,41 @@ private class TransformingLazyColumnStateScrollInfoProvider(
                 initialStartOffset - newOffset
             } ?: Float.NaN
 
+    private var previousLastItemKey: Any? = null
+
     override val lastItemOffset: Float
         get() {
             val layoutInfo = state.layoutInfo
             val screenHeightPx = layoutInfo.viewportSize.height
-            return layoutInfo.visibleItems.lastOrNull()?.let {
-                if (it.index != layoutInfo.totalItemsCount - 1) {
+            return layoutInfo.visibleItems.lastOrNull()?.let { lastItem ->
+                if (lastItem.index != layoutInfo.totalItemsCount - 1) {
+                    previousLastItemKey = null
                     return@let 0f
                 }
-                (screenHeightPx - it.offset - it.transformedHeight).toFloat().coerceAtLeast(0f)
+
+                val animation =
+                    if (!state.isScrollInProgress) {
+                        state.animator.getAnimation(lastItem.key, 0)
+                    } else {
+                        null
+                    }
+
+                val offset =
+                    if (
+                        animation?.isPlacementAnimationInProgress == true &&
+                            previousLastItemKey == lastItem.key &&
+                            animation.animatedScrollProgress.isSpecified
+                    ) {
+                        animation.finalOffset.y
+                    } else {
+                        lastItem.offset
+                    }
+
+                if (animation?.isPlacementAnimationInProgress != true) {
+                    previousLastItemKey = lastItem.key
+                }
+
+                (screenHeightPx - offset - lastItem.transformedHeight).toFloat().coerceAtLeast(0f)
             } ?: 0f
         }
 

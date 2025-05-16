@@ -62,7 +62,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
         GradleTransformWorkaround.maybeApply(rootProject)
         PlaygroundCIHostTestsTask.register(rootProject)
         primaryProjectPaths =
-            target.extensions.extraProperties.get("primaryProjects").toString().split(",").toSet()
+            target.extensions.extraProperties.get("primaryProjects")!!.toString().split(",").toSet()
         rootProject.subprojects { configureSubProject(it) }
     }
 
@@ -223,7 +223,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
         }
 
         companion object {
-            private val NAME = "playgroundCIHostTests"
+            private const val NAME = "playgroundCIHostTests"
 
             fun addTask(project: Project, task: AbstractTestTask) {
                 project.rootProject.tasks.named(NAME).configure { it.dependsOn(task) }

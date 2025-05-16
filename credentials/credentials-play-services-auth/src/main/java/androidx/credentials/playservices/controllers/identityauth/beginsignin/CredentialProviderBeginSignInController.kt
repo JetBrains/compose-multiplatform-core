@@ -118,7 +118,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
                 }
                 val hiddenIntent = Intent(context, HiddenActivity::class.java)
                 generateHiddenActivityIntent(resultReceiver, hiddenIntent, BEGIN_SIGN_IN_TAG)
-                hiddenIntent.putExtra(EXTRA_GET_CREDENTIAL_INTENT, result.pendingIntent)
+                hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result.pendingIntent)
                 try {
                     context.startActivity(hiddenIntent)
                 } catch (_: Exception) {
@@ -143,10 +143,11 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
         var errName = GET_NO_CREDENTIALS
         if (e is ApiException && e.statusCode in retryables) {
             errName = GET_INTERRUPTED
-        } else {
-            errName = GET_UNKNOWN
         }
-        return getCredentialExceptionTypeToException(errName, e.message)
+        return getCredentialExceptionTypeToException(
+            errName,
+            "During begin sign in, failure response from one tap: ${e.message}"
+        )
     }
 
     internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int, data: Intent?) {

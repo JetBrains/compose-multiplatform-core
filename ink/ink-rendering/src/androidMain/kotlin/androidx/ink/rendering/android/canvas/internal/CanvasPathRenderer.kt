@@ -25,14 +25,14 @@ import androidx.annotation.FloatRange
 import androidx.core.graphics.withMatrix
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.MutableVec
 import androidx.ink.geometry.PartitionedMesh
 import androidx.ink.geometry.outlinesToPath
 import androidx.ink.geometry.populateMatrix
-import androidx.ink.geometry.populatePathFromOutlines
-import androidx.ink.rendering.android.TextureBitmapStore
+import androidx.ink.geometry.populateOutlines
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
@@ -368,7 +368,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
             }
             for (groupIndex in 0 until shape.getRenderGroupCount()) {
                 val path = paths[groupIndex]
-                shape.populatePathFromOutlines(groupIndex, path)
+                shape.populateOutlines(groupIndex, path)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
                     path.transform(strokeToScreenTransform)
                 }

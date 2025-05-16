@@ -30,10 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -272,38 +270,6 @@ private fun LayoutSpatialPopup(
 @Composable
 private fun getWindowVisibleDisplayFrame(): Rect {
     return Rect().apply { LocalView.current.getWindowVisibleDisplayFrame(this) }
-}
-
-/**
- * Opens a popup with the given content.
- *
- * @param spatialElevationLevel the resting elevation level of the popup.
- * @param content the composable content to be displayed within the popup, along with a callback
- *   which is explicitly to be used for the [onGloballyPositioned] modifier of the Popup composable.
- */
-@Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SpatialPopup(
-    spatialElevationLevel: SpatialElevationLevel = SpatialElevationLevel.Level0,
-    content: @Composable (onGloballyPositioned: (LayoutCoordinates) -> Unit) -> Unit,
-) {
-    var contentSize: IntSize by remember { mutableStateOf(IntSize.Zero) }
-    var contentOffset by remember { mutableStateOf(Offset.Zero) }
-
-    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-        ElevatedPanel(
-            spatialElevationLevel = spatialElevationLevel,
-            contentSize = contentSize,
-            contentOffset = contentOffset,
-        ) {
-            content { coordinates ->
-                contentSize = coordinates.size
-                contentOffset = coordinates.positionInRoot()
-            }
-        }
-    } else {
-        content {}
-    }
 }
 
 /** Calculates the position of a [Popup] on a screen. */

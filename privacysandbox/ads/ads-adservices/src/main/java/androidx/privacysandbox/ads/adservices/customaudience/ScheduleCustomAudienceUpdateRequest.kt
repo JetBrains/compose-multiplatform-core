@@ -79,6 +79,7 @@ constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 14)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 14)
+    @Suppress("deprecation") // suppress warning of deprecated Builder
     internal fun convertToAdServices():
         android.adservices.customaudience.ScheduleCustomAudienceUpdateRequest {
         return android.adservices.customaudience.ScheduleCustomAudienceUpdateRequest.Builder(

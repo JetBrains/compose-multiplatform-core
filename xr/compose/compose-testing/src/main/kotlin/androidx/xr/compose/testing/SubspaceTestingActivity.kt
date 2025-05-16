@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.testing
 
+import android.app.Activity
 import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.annotation.NonNull
@@ -25,8 +26,9 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.xr.compose.platform.SceneManager
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.scenecore.impl.JxrPlatformAdapterAxr
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary
@@ -43,7 +45,7 @@ import org.robolectric.shadows.ShadowDisplay
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SubspaceTestingActivity : ComponentActivity() {
     public val extensions: XrExtensions = XrExtensionsProvider.getXrExtensions()!!
-    public val session: Session by lazy { createFakeSession(this) }
+    @Suppress("MutableBareField") public var session: Session? = null
 
     /** Throws an exception by default under test; return Robolectric Display impl instead. */
     @NonNull override fun getDisplay(): Display = ShadowDisplay.getDefaultDisplay()
@@ -120,21 +122,46 @@ public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodes
 public fun createFakeSession(
     activity: SubspaceTestingActivity,
     runtime: JxrPlatformAdapter = createFakeRuntime(activity),
-): Session = Session.create(activity, runtime)
+): Session =
+    Session(
+        activity,
+        FakeRuntimeFactory().createRuntime(activity).apply { lifecycleManager.create() },
+        runtime,
+    )
+
+/**
+ * Create a fake [Session] for testing using configs from [TestJxrPlatformAdapter].
+ *
+ * A convenience method that creates a fake [Session] for testing. If runtime is not provided, a
+ * fake [JxrPlatformAdapter] using [TestJxrPlatformAdapter] will be created by default.
+ *
+ * @param activity The [Activity] to use for the [Session].
+ * @param runtime The [JxrPlatformAdapter] to use for the [Session].
+ */
+internal fun createFakeSessionWithTestConfigs(
+    activity: Activity,
+    runtime: JxrPlatformAdapter = createFakeRuntime(activity),
+): Session =
+    Session(
+        activity,
+        FakeRuntimeFactory().createRuntime(activity).apply { lifecycleManager.create() },
+        runtime,
+    )
 
 /**
  * Create a fake [JxrPlatformAdapter] for testing.
  *
  * A convenience method that creates a fake [JxrPlatformAdapter] for testing.
  *
- * @param activity The [SubspaceTestingActivity] to use for the [JxrPlatformAdapter].
+ * @param activity The [Activity] to use for the [JxrPlatformAdapter].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun createFakeRuntime(activity: SubspaceTestingActivity): JxrPlatformAdapter =
+public fun createFakeRuntime(activity: Activity): JxrPlatformAdapter =
+    // FakeJxrPlatformAdapterFactory().createPlatformAdapter(activity)
     JxrPlatformAdapterAxr.create(
         /* activity = */ activity,
         /* executor = */ FakeScheduledExecutorService(),
-        /* extensions = */ activity.extensions,
+        /* extensions = */ (activity as SubspaceTestingActivity).extensions,
         /* impressApi = */ FakeImpressApi(),
         /* perceptionLibrary = */ PerceptionLibrary(),
         /* splitEngineSubspaceManager = */ mock(SplitEngineSubspaceManager::class.java),

@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
  * starts being collected, if a database operation changes one of the tables that the [Flow] was
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
-expect class InvalidationTracker
+public expect class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 constructor(
     database: RoomDatabase,
@@ -85,7 +85,10 @@ constructor(
      *   `true`.
      */
     @JvmOverloads
-    fun createFlow(vararg tables: String, emitInitialState: Boolean = true): Flow<Set<String>>
+    public fun createFlow(
+        vararg tables: String,
+        emitInitialState: Boolean = true
+    ): Flow<Set<String>>
 
     /**
      * Synchronize created [Flow]s with their tables.
@@ -107,7 +110,7 @@ constructor(
      * via another connection or through [RoomDatabase.useConnection] you might need to invoke this
      * function manually to trigger invalidation.
      */
-    fun refreshAsync()
+    public fun refreshAsync()
 
     /**
      * Non-asynchronous version of [refreshAsync] with the addition that it will return true if
@@ -116,7 +119,8 @@ constructor(
      * An optional array of tables can be given to validate if any of those tables had pending
      * invalidations, if so causing this function to return true.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) suspend fun refresh(vararg tables: String): Boolean
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun refresh(vararg tables: String): Boolean
 
     /** Stops invalidation tracker operations. */
     internal fun stop()

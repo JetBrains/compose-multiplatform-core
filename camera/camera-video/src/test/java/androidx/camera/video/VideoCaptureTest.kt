@@ -70,6 +70,7 @@ import androidx.camera.core.impl.SessionConfig.DEFAULT_SESSION_TYPE
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.Timebase
+import androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE
 import androidx.camera.core.impl.utils.CameraOrientationUtil.surfaceRotationToDegrees
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.impl.utils.TransformUtils.rectToSize
@@ -90,6 +91,9 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_480P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_1080P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_480P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_720P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_480P
@@ -99,6 +103,8 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QVGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_VGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeAudioProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeVideoProfileProxy
+import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
+import androidx.camera.testing.impl.FrameRateUtil.FPS_240_240
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
 import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
@@ -1910,6 +1916,133 @@ class VideoCaptureTest {
         )
     }
 
+    @Test
+    fun bind_withUnsupportedHighSpeedFrameRate_throwException() {
+        // Arrange.
+        val profileMap =
+            mapOf(
+                QUALITY_HIGH to PROFILES_HIGH_SPEED_1080P,
+                QUALITY_1080P to PROFILES_HIGH_SPEED_1080P,
+                QUALITY_LOW to PROFILES_HIGH_SPEED_1080P
+            )
+        val targetHighSpeedFrameRate = FPS_240_240
+        // Arrange: FPS_240_240 is not supported.
+        val frameRatesMap = mapOf(FHD to setOf(FPS_120_120))
+        setupCamera(profiles = profileMap)
+        createCameraUseCaseAdapter()
+        val videoOutput =
+            createVideoOutput(
+                videoCapabilities =
+                    createFakeVideoCapabilities(
+                        profilesMap = mapOf(DynamicRange.SDR to profileMap),
+                        supportedFrameRates = mapOf(DynamicRange.SDR to frameRatesMap)
+                    ),
+            )
+        val videoCapture =
+            createVideoCapture(
+                videoOutput = videoOutput,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+
+        // Act & Assert.
+        assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+            addAndAttachUseCases(videoCapture)
+        }
+    }
+
+    @Test
+    fun bind_withSupportedTargetHighSpeedFrameRate_keepResolutions() {
+        // Arrange.
+        val profileMap =
+            mapOf(
+                QUALITY_HIGH to PROFILES_HIGH_SPEED_1080P,
+                QUALITY_1080P to PROFILES_HIGH_SPEED_1080P, // FHD
+                QUALITY_720P to PROFILES_HIGH_SPEED_720P, // HD
+                QUALITY_480P to PROFILES_HIGH_SPEED_480P, // SD
+                QUALITY_LOW to PROFILES_HIGH_SPEED_480P
+            )
+        val targetHighSpeedFrameRate = FPS_120_120
+        // Arrange: FHD, HD contain target high-speed frame rate.
+        val frameRatesMap =
+            mapOf(
+                FHD to setOf(FPS_120_120),
+                HD to setOf(FPS_120_120, FPS_240_240),
+                SD to setOf(FPS_240_240)
+            )
+        val qualitySelector = QualitySelector.fromOrderedList(listOf(UHD, FHD, HD, SD))
+        setupCamera(profiles = profileMap)
+        createCameraUseCaseAdapter()
+        val videoOutput =
+            createVideoOutput(
+                videoCapabilities =
+                    createFakeVideoCapabilities(
+                        profilesMap = mapOf(DynamicRange.SDR to profileMap),
+                        supportedFrameRates = mapOf(DynamicRange.SDR to frameRatesMap)
+                    ),
+                mediaSpec =
+                    MediaSpec.builder()
+                        .configureVideo { it.setQualitySelector(qualitySelector) }
+                        .build()
+            )
+        val videoCapture =
+            createVideoCapture(
+                videoOutput = videoOutput,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert: FHD and HD is kept
+        assertThat(videoCapture.customOrderedResolutions)
+            .containsExactly(RESOLUTION_1080P, RESOLUTION_720P)
+    }
+
+    @Test
+    fun customOrderedResolutionsIsSetAndQualitySelectorIsNotSet_notOverwrite() {
+        // Arrange.
+        val anySize1 = Size(640, 360)
+        val anySize2 = Size(500, 500)
+        val customOrderedResolutions = listOf(anySize1, anySize2)
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture =
+            createVideoCapture(
+                videoOutput = createVideoOutput(),
+                customOrderedResolutions = customOrderedResolutions
+            )
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert: custom ordered resolutions is not overwritten.
+        assertCustomOrderedResolutions(videoCapture, anySize1, anySize2)
+    }
+
+    @Test
+    fun customOrderedResolutionsAndQualitySelectorAreSet_throwException() {
+        // Arrange.
+        val customOrderedResolutions = listOf(RESOLUTION_VGA, RESOLUTION_QHD)
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture =
+            createVideoCapture(
+                videoOutput =
+                    createVideoOutput(
+                        mediaSpec =
+                            MediaSpec.builder()
+                                .configureVideo { it.setQualitySelector(QualitySelector.from(FHD)) }
+                                .build()
+                    ),
+                customOrderedResolutions = customOrderedResolutions
+            )
+
+        // Act.
+        assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+            addAndAttachUseCases(videoCapture)
+        }
+    }
+
     private fun testSelectedQualityIsExpected(
         streamSpecConfiguredResolution: Size,
         streamSpecResolution: Size = streamSpecConfiguredResolution,
@@ -2049,7 +2182,7 @@ class VideoCaptureTest {
         videoCapture: VideoCapture<out VideoOutput>,
         vararg expectedResolutions: Size
     ) {
-        val resolutions = (videoCapture.currentConfig as ImageOutputConfig).customOrderedResolutions
+        val resolutions = videoCapture.customOrderedResolutions
         assertThat(resolutions).containsExactlyElementsIn(expectedResolutions).inOrder()
     }
 
@@ -2170,8 +2303,10 @@ class VideoCaptureTest {
         mirrorMode: Int? = null,
         targetResolution: Size? = null,
         targetFrameRate: Range<Int>? = null,
+        targetHighSpeedFrameRate: Range<Int>? = null,
         dynamicRange: DynamicRange? = null,
         videoEncoderInfoFinder: VideoEncoderInfo.Finder? = null,
+        customOrderedResolutions: List<Size>? = null
     ): VideoCapture<VideoOutput> =
         VideoCapture.Builder(videoOutput ?: createVideoOutput())
             .setSessionOptionUnpacker { _, _, _ -> }
@@ -2180,11 +2315,15 @@ class VideoCaptureTest {
                 mirrorMode?.let { setMirrorMode(it) }
                 targetResolution?.let { setTargetResolution(it) }
                 targetFrameRate?.let { setTargetFrameRate(it) }
+                targetHighSpeedFrameRate?.let {
+                    mutableConfig.insertOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE, it)
+                }
                 dynamicRange?.let { setDynamicRange(it) }
                 setVideoEncoderInfoFinder(
                     videoEncoderInfoFinder
                         ?: VideoEncoderInfo.Finder { _ -> createVideoEncoderInfo() }
                 )
+                customOrderedResolutions?.let { setCustomOrderedResolutions(it) }
             }
             .build()
 
@@ -2271,7 +2410,7 @@ class VideoCaptureTest {
 
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(FakeAppConfig.create())
-                .setCameraFactoryProvider { _, _, _, _ -> cameraFactory }
+                .setCameraFactoryProvider { _, _, _, _, _ -> cameraFactory }
                 .setDeviceSurfaceManagerProvider { _, _, _ -> surfaceManager }
                 .build()
         CameraXUtil.initialize(context, cameraXConfig).get()
@@ -2288,6 +2427,9 @@ class VideoCaptureTest {
         }
 
     private fun VideoCapture<*>.isSurfaceProcessingEnabled() = node != null
+
+    private val VideoCapture<*>.customOrderedResolutions: List<Size>
+        get() = (currentConfig as ImageOutputConfig).customOrderedResolutions
 
     companion object {
         private val CAMERA_0_QUALITY_SIZE: Map<Quality, Size> =
@@ -2368,7 +2510,8 @@ class VideoCaptureTest {
 
         /** Create a fake VideoCapabilities. */
         private fun createFakeVideoCapabilities(
-            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>
+            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>,
+            supportedFrameRates: Map<DynamicRange, Map<Quality, Set<Range<Int>>>> = emptyMap()
         ): VideoCapabilities {
             val videoCapabilitiesMap =
                 profilesMap.mapValues {
@@ -2399,7 +2542,7 @@ class VideoCaptureTest {
                     quality: Quality,
                     dynamicRange: DynamicRange
                 ): Set<Range<Int>> {
-                    return emptySet()
+                    return supportedFrameRates[dynamicRange]?.get(quality) ?: emptySet()
                 }
 
                 override fun isStabilizationSupported(): Boolean {

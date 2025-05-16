@@ -150,7 +150,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         val cropRectWithStabilizationDeferred = CompletableDeferred<Rect?>()
         cameraSession.setRepeatingRequest(
             requestBuilder.build(),
-            CaptureCallback(cropRectWithStabilizationDeferred),
+            CaptureCallback(cropRectWithStabilizationDeferred, 20),
             cameraHandler
         )
 
@@ -212,14 +212,21 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         return deferred.await()
     }
 
-    private class CaptureCallback(private val deferred: CompletableDeferred<Rect?>) :
-        CameraCaptureSession.CaptureCallback() {
+    private class CaptureCallback(
+        private val deferred: CompletableDeferred<Rect?>,
+        private val numFramesToWait: Int = 1
+    ) : CameraCaptureSession.CaptureCallback() {
+        private var numFramesReceived = 0
+
         override fun onCaptureCompleted(
             session: CameraCaptureSession,
             request: CaptureRequest,
             result: TotalCaptureResult
         ) {
-            deferred.complete(result.get(CaptureResult.SCALER_CROP_REGION))
+            numFramesReceived++
+            if (numFramesReceived >= numFramesToWait) {
+                deferred.complete(result.get(CaptureResult.SCALER_CROP_REGION))
+            }
         }
     }
 }

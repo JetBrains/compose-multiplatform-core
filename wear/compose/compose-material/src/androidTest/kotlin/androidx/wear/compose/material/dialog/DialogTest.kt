@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -269,7 +270,9 @@ class DialogBehaviourTest {
                         title = {},
                         negativeButton = { Button(onClick = {}, content = {}) },
                         positiveButton = { Button(onClick = {}, content = {}) },
-                        content = { Text("Dialog", modifier = Modifier.testTag(TEST_TAG)) },
+                        content = {
+                            Text("Dialog", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                     )
                 }
             }
@@ -304,7 +307,9 @@ class DialogBehaviourTest {
                     Alert(
                         icon = {},
                         title = {},
-                        message = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
+                        message = {
+                            Text("Text", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                         content = {},
                     )
                 }
@@ -340,7 +345,9 @@ class DialogBehaviourTest {
                     Confirmation(
                         onTimeout = { showDialog = false },
                         icon = {},
-                        content = { Text("Dialog", modifier = Modifier.testTag(TEST_TAG)) },
+                        content = {
+                            Text("Dialog", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                     )
                 }
             }
@@ -397,7 +404,9 @@ class DialogBehaviourTest {
                     Alert(
                         icon = {},
                         title = {},
-                        message = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
+                        message = {
+                            Text("Text", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                         content = {},
                     )
                 }

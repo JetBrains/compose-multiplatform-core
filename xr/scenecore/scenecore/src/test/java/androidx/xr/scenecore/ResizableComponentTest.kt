@@ -17,12 +17,22 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
+import android.content.Context
+import android.view.View
+import android.widget.TextView
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.Dimensions as RtDimensions
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
+import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.ResizableComponent as RtResizableComponent
 import androidx.xr.runtime.internal.ResizeEvent as RtResizeEvent
 import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
+import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import org.junit.Before
@@ -41,10 +51,12 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ResizableComponentTest {
+    private val fakeRuntimeFactory = FakeRuntimeFactory()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
     private val mockContentlessEntity = mock<RtEntity>()
+    private val mockActivitySpace = mock<RtActivitySpace>()
 
     object MockitoHelper {
         // use this in place of captor.capture() if you are trying to capture an argument that is
@@ -56,13 +68,14 @@ class ResizableComponentTest {
     @Before
     fun setUp() {
         whenever(mockRuntime.spatialEnvironment).thenReturn(mock())
-        whenever(mockRuntime.activitySpace).thenReturn(mock())
-        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mock())
+        whenever(mockRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mockActivitySpace)
         whenever(mockRuntime.headActivityPose).thenReturn(mock())
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
         whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockContentlessEntity)
-        session = Session.create(activity, mockRuntime)
+        whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
     @Test
@@ -143,7 +156,6 @@ class ResizableComponentTest {
         resizableComponent.size = testSize
 
         assertThat(resizableComponent.size).isEqualTo(testSize)
-        // verify(mockRtResizableComponent).size = any()
         verify(mockRtResizableComponent).size = RtDimensions(2f, 2f, 0f)
     }
 
@@ -422,5 +434,31 @@ class ResizableComponentTest {
         rtResizeEventListener2.onResizeEvent(rtResizeEvent)
         verify(mockResizeListener, times(2)).onResizeStart(any(), any())
         verify(mockResizeListener2, times(2)).onResizeStart(any(), any())
+    }
+
+    @Test
+    fun createResizableComponent_callsRuntimeCreateResizableComponent() {
+        whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
+
+        val resizableComponent = ResizableComponent.create(session)
+        val view = TextView(activity)
+        val mockRtPanelEntity = mock<RtPanelEntity>()
+        whenever(mockRtPanelEntity.size).thenReturn(RtDimensions(1f, 1f, 1f))
+        whenever(
+                mockRuntime.createPanelEntity(
+                    any<Context>(),
+                    any<Pose>(),
+                    any<View>(),
+                    any<RtPixelDimensions>(),
+                    any<String>(),
+                    any<RtEntity>(),
+                )
+            )
+            .thenReturn(mockRtPanelEntity)
+        whenever(mockRtPanelEntity.addComponent(any())).thenReturn(true)
+        val panelEntity = PanelEntity.create(session, view, PixelDimensions(720, 480), "test")
+        assertThat(panelEntity.addComponent(resizableComponent)).isTrue()
+
+        verify(mockRuntime).createResizableComponent(any(), any())
     }
 }

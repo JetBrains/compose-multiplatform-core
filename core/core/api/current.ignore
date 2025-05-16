@@ -1,7 +1,3 @@
 // Baseline format: 1.0
-AddedPackage: androidx.core.view.insets:
-    Added package androidx.core.view.insets
-
-
-RemovedPackage: androidx.core.view.insetscontrast:
-    Removed package androidx.core.view.insetscontrast
+RemovedMethod: androidx.core.view.RoundedCornerCompat#RoundedCornerCompat(int, int, int, int):
+    Removed constructor androidx.core.view.RoundedCornerCompat(int,int,int,int)

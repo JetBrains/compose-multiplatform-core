@@ -185,7 +185,7 @@ public fun Slider(
                     buttonControlSize = CONTROL_SIZE,
                     modifier =
                         Modifier.semantics(mergeDescendants = true) {
-                            progressBarRangeInfo = ProgressBarRangeInfo(valueRatio, 0f..1f)
+                            progressBarRangeInfo = ProgressBarRangeInfo(value, valueRange)
                         },
                     content = {
                         SliderButtonContent(
@@ -220,7 +220,7 @@ public fun Slider(
                     buttonControlSize = CONTROL_SIZE,
                     modifier =
                         Modifier.semantics(mergeDescendants = true) {
-                            progressBarRangeInfo = ProgressBarRangeInfo(valueRatio, 0f..1f)
+                            progressBarRangeInfo = ProgressBarRangeInfo(value, valueRange)
                         },
                     content = {
                         SliderButtonContent(

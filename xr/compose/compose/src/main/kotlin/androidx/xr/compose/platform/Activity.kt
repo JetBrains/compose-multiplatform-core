@@ -20,8 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
-import androidx.annotation.RestrictTo
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -33,7 +31,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.scene
 
 private val activityToSpatialComposeScene = mutableMapOf<Activity, SpatialComposeScene>()
 
@@ -46,7 +46,6 @@ private val activityToSpatialComposeScene = mutableMapOf<Activity, SpatialCompos
  *
  * @param content A `@Composable` function declaring the spatial UI content.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun ComponentActivity.setSubspaceContent(
     content: @Composable @SubspaceComposable () -> Unit
 ) {
@@ -66,20 +65,15 @@ public fun ComponentActivity.setSubspaceContent(
  * @param session The JXR session to use for this subspace.
  * @param content A `@Composable` function declaring the spatial UI content.
  */
-@VisibleForTesting
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun ComponentActivity.setSubspaceContent(
+private fun ComponentActivity.setSubspaceContent(
     session: Session,
     content: @Composable @SubspaceComposable () -> Unit,
 ) {
-    val spatialComposeScene = getOrCreateSpatialSceneForActivity(session)
-
-    spatialComposeScene.setContent {
+    getOrCreateSpatialSceneForActivity(session).setContent {
         DisposableEffect(session) {
-            session.mainPanelEntity.setHidden(true)
-            onDispose { session.mainPanelEntity.setHidden(false) }
+            session.scene.mainPanelEntity.setHidden(true)
+            onDispose { session.scene.mainPanelEntity.setHidden(false) }
         }
-
         // We need to emulate the composition locals that setContent provides
         CompositionLocalProvider(
             LocalConfiguration provides resources.configuration,
@@ -124,7 +118,7 @@ private fun ComponentActivity.setUpSubspace(spatialComposeScene: SpatialComposeS
 
 /** Get the default [Session] for this [ComponentActivity]. */
 private val ComponentActivity.defaultSession
-    get() = Session.create(this)
+    get() = (Session.create(this) as SessionCreateSuccess).session
 
 /** Utility extension function to fetch the current [Activity] based on the [Context] object. */
 internal tailrec fun Context.getActivity(): Activity {

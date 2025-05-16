@@ -247,6 +247,9 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
                             getRotationDegrees(sharingInputEdge.getSensorToBufferTransform()),
                             isViewportSet);
             selectedChildSizes.put(useCase, preferredChildSize.getOriginalSelectedChildSize());
+            Logger.d(TAG,
+                    "Selected child size: " + preferredChildSize.getOriginalSelectedChildSize()
+                            + ", useCase: " + useCase);
         }
         return selectedChildSizes;
     }

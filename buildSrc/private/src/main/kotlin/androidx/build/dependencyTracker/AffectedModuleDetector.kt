@@ -111,7 +111,7 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
             rootProject.extensions.add(ROOT_PROP_NAME, instance)
 
             val enabledProvider = rootProject.providers.gradleProperty(ENABLE_ARG)
-            val enabled = enabledProvider.isPresent() && enabledProvider.get() != "false"
+            val enabled = enabledProvider.isPresent && enabledProvider.get() != "false"
 
             val distDir = rootProject.getDistributionDirectory()
             val outputFile = distDir.resolve(LOG_FILE_NAME)

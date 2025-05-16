@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,9 @@ public fun StrokeInputBatch.encode(output: OutputStream) {
  * representation is gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto messages, the
  * same as written to [OutputStream] by [StrokeInputBatch.encode]. Java callers should use
  * [StrokeInputBatchSerialization.decodeOrThrow].
+ *
+ * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide a
+ * valid gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto message.
  */
 public fun StrokeInputBatch.Companion.decodeOrThrow(input: InputStream): ImmutableStrokeInputBatch =
     decode(input, throwOnParseError = true)!!
@@ -52,6 +55,10 @@ public fun StrokeInputBatch.Companion.decodeOrThrow(input: InputStream): Immutab
  * representation is gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto messages, the
  * same as written to [OutputStream] by [StrokeInputBatch.encode]. Java callers should use
  * [StrokeInputBatchSerialization.decodeOrNull].
+ *
+ * Will return `null` if the input stream does not provide a valid gzip-compressed
+ * `ink.proto.CodedStrokeInputBatch` binary proto message. If failed reads should fall back to some
+ * default value, prefer this to [decodeOrThrow].
  */
 public fun StrokeInputBatch.Companion.decodeOrNull(input: InputStream): ImmutableStrokeInputBatch? =
     decode(input, throwOnParseError = false)
@@ -77,6 +84,9 @@ public object StrokeInputBatchSerialization {
      * serialized representation is gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto
      * messages, the same as written to [OutputStream] by [encode]. Kotlin callers should use
      * [StrokeInputBatch.Companion.decodeOrThrow] instead.
+     *
+     * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide
+     * a valid gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto message.
      */
     @JvmStatic
     public fun decodeOrThrow(input: InputStream): ImmutableStrokeInputBatch =
@@ -88,6 +98,10 @@ public object StrokeInputBatchSerialization {
      * representation is gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto messages,
      * the same as written to [OutputStream] by [encode]. Kotlin callers should use
      * [StrokeInputBatch.Companion.decodeOrNull] instead.
+     *
+     * Will return `null` if the input stream does not provide a valid gzip-compressed
+     * `ink.proto.CodedStrokeInputBatch` binary proto message. If failed reads should fall back to
+     * some default value, prefer this to [decodeOrThrow].
      */
     @JvmStatic
     public fun decodeOrNull(input: InputStream): ImmutableStrokeInputBatch? =

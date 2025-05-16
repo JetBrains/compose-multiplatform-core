@@ -21,11 +21,13 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.internal.HandJointType
-import androidx.xr.runtime.internal.TrackingState
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandJointType
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,14 +60,14 @@ class OpenXrHandTest {
     @Test
     fun update_updatesActiveStatus() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
-        check(underTest.trackingState != TrackingState.Tracking)
+        check(underTest.trackingState != TrackingState.TRACKING)
 
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        assertThat(underTest.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
     @Test
@@ -98,6 +100,14 @@ class OpenXrHandTest {
         }
     }
 
+    @Test
+    fun update_handTrackingDisabled_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
+        val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
+        openXrManager.configure(Config(handTracking = Config.HandTrackingMode.DISABLED))
+
+        assertFailsWith<IllegalStateException> { underTest.update(xrTime) }
+    }
+
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
@@ -105,6 +115,7 @@ class OpenXrHandTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
+            openXrManager.configure(Config(handTracking = Config.HandTrackingMode.ENABLED))
 
             testBody()
 

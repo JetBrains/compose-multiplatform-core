@@ -46,7 +46,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
 }
 
@@ -60,9 +59,6 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.tiles"
 }
 
@@ -71,4 +67,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Wear Tiles"
+    enableRobolectric()
 }

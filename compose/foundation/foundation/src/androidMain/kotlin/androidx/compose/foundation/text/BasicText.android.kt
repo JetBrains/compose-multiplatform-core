@@ -16,9 +16,11 @@
 
 package androidx.compose.foundation.text
 
+import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -43,13 +45,17 @@ import java.util.concurrent.RejectedExecutionException
  * approximately reduces text layout duration on main thread from 50% to 90%.
  *
  * By default this CompositionLocal provides null, which means that prefetch behavior is disabled
- * for BasicText. You can provide an executor like `Executors.newSingleThreadExecutor()` for
+ * for `BasicText`. You can provide an executor like `Executors.newSingleThreadExecutor()` for
  * BasicText to schedule background tasks, by doing so also enabling prefetch behavior.
  *
  * Please note that prefetch text does not guarantee a net performance increase. It may actually be
  * harmful in certain scenarios where there is not enough time between composition and measurement
- * for background thread to actually start warming the cache. Use benchmarking tools to check
- * whether enabling this behavior works well for your use case.
+ * for background thread to actually start warming the cache, or when the text is long enough that
+ * it floods the cache and overflows it, at around 5000 words.
+ *
+ * Use benchmarking tools to check whether enabling this behavior works well for your use case.
+ *
+ * @sample androidx.compose.foundation.samples.BackgroundTextMeasurementSample
  */
 val LocalBackgroundTextMeasurementExecutor = staticCompositionLocalOf<Executor?> { null }
 
@@ -68,16 +74,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        ParagraphIntrinsics(
-                            text = text,
-                            style = resolvedStyle,
-                            density = density,
-                            fontFamilyResolver = fontFamilyResolver,
-                            annotations = emptyList()
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            ParagraphIntrinsics(
+                                text = text,
+                                style = resolvedStyle,
+                                density = density,
+                                fontFamilyResolver = fontFamilyResolver,
+                                annotations = emptyList()
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}
@@ -100,16 +108,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        MultiParagraphIntrinsics(
-                            annotatedString = text,
-                            style = resolvedStyle,
-                            density = density,
-                            placeholders = placeholders ?: emptyList(),
-                            fontFamilyResolver = fontFamilyResolver
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            MultiParagraphIntrinsics(
+                                annotatedString = text,
+                                style = resolvedStyle,
+                                density = density,
+                                placeholders = placeholders ?: emptyList(),
+                                fontFamilyResolver = fontFamilyResolver
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}
@@ -125,7 +135,14 @@ private const val PrefetchTextMinimumCoreCount = 4
  * Defines the shortest text length that can be considered for prefetching. Texts that are shorter
  * than this number are usually not worth creating a threading overhead.
  */
-private const val PrefetchTextLengthThreshold = 8
+private const val MinTextLengthThreshold = 8
+
+/**
+ * Defines the longest text length that can be considered for prefetching. Texts that are longer
+ * than this number have a chance to flood the cache to cause overflow, essentially leading to
+ * double measurement that causes performance regression.
+ */
+private const val MaxTextLengthThreshold = 1000
 
 /** Reading the core count is expensive. Do it once and cache it globally. */
 private var backingCoreCountSatisfactory: Boolean? = null
@@ -141,5 +158,8 @@ internal val coreCountSatisfactory: Boolean
     }
 
 internal fun shouldPrefetch(textLength: Int): Boolean {
-    return textLength >= PrefetchTextLengthThreshold && coreCountSatisfactory
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+        textLength >= MinTextLengthThreshold &&
+        textLength < MaxTextLengthThreshold &&
+        coreCountSatisfactory
 }

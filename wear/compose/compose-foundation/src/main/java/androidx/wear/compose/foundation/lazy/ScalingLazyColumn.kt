@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
@@ -60,9 +61,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.wear.compose.foundation.BasicSwipeToDismissBox
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.LocalReduceMotion
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
@@ -396,11 +397,11 @@ public fun ScalingLazyColumn(
  * aligned. If [rotaryScrollableBehavior] is set for snap (using
  * [RotaryScrollableDefaults.snapBehavior]), [flingBehavior] should be set for snap as well (using
  * [ScalingLazyColumnDefaults.snapFlingBehavior]). This composable uses
- * [rememberActiveFocusRequester] as FocusRequester for rotary support. It requires that this
- * [ScalingLazyColumn] should be wrapped by [HierarchicalFocusCoordinator]. By default
- * [HierarchicalFocusCoordinator] is already implemented in [BasicSwipeToDismissBox], which is a
- * part of material Scaffold - meaning that rotary will be able to request a focus without any
- * additional changes.
+ * [requestFocusOnHierarchyActive] to request focus for rotary support. It requires that this
+ * [ScalingLazyColumn] this can be configured by adding [hierarchicalFocusGroup] to the [modifier]
+ * parameter or on an ancestor composable. [hierarchicalFocusGroup] is already used in
+ * [BasicSwipeToDismissBox] (and other components), which is a part of material Scaffold - meaning
+ * that, in most cases, rotary will be able to request focus without any additional changes.
  *
  * Example of a [ScalingLazyColumn] with default parameters:
  *
@@ -524,11 +525,11 @@ public fun ScalingLazyColumn(
  * aligned. If [rotaryScrollableBehavior] is set for snap (using
  * [RotaryScrollableDefaults.snapBehavior]), [flingBehavior] should be set for snap as well (using
  * [ScalingLazyColumnDefaults.snapFlingBehavior]). This composable uses
- * [rememberActiveFocusRequester] as FocusRequester for rotary support. It requires that this
- * [ScalingLazyColumn] should be wrapped by [HierarchicalFocusCoordinator]. By default
- * [HierarchicalFocusCoordinator] is already implemented in [BasicSwipeToDismissBox], which is a
- * part of material Scaffold - meaning that rotary will be able to request a focus without any
- * additional changes.
+ * [requestFocusOnHierarchyActive] to request focus for rotary support. It requires that this
+ * [ScalingLazyColumn] this can be configured by adding [hierarchicalFocusGroup] to the [modifier]
+ * parameter or on an ancestor composable. [hierarchicalFocusGroup] is already used in
+ * [BasicSwipeToDismissBox] (and other components), which is a part of material Scaffold - meaning
+ * that, in most cases, rotary will be able to request focus without any additional changes.
  *
  * Example of a [ScalingLazyColumn] with default parameters:
  *
@@ -617,15 +618,18 @@ public fun ScalingLazyColumn(
     content: ScalingLazyListScope.() -> Unit
 ) {
     var initialized by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     BoxWithConstraints(
         modifier =
             if (rotaryScrollableBehavior != null && userScrollEnabled)
-                modifier.rotaryScrollable(
-                    behavior = rotaryScrollableBehavior,
-                    focusRequester = rememberActiveFocusRequester(),
-                    reverseDirection = reverseLayout,
-                    overscrollEffect = overscrollEffect
-                )
+                modifier
+                    .requestFocusOnHierarchyActive()
+                    .rotaryScrollable(
+                        behavior = rotaryScrollableBehavior,
+                        focusRequester = focusRequester,
+                        reverseDirection = reverseLayout,
+                        overscrollEffect = overscrollEffect
+                    )
             else modifier,
         propagateMinConstraints = true
     ) {

@@ -29,6 +29,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
@@ -524,9 +525,10 @@ class TooltipTest {
                 tooltip = {
                     PlainTooltip(
                         modifier =
-                            Modifier.drawCaret {
-                                it?.let { anchorBounds = it.boundsInWindow() }
-                                onDrawBehind {}
+                            Modifier.layout { measureables, constraints ->
+                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
+                                val placeable = measureables.measure(constraints)
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                             }
                     ) {}
                 }
@@ -566,11 +568,12 @@ class TooltipTest {
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 state = rememberTooltipState(initialIsVisible = true, isPersistent = true),
                 tooltip = {
-                    RichTooltip(
+                    PlainTooltip(
                         modifier =
-                            Modifier.drawCaret {
-                                it?.let { anchorBounds = it.boundsInWindow() }
-                                onDrawBehind {}
+                            Modifier.layout { measureables, constraints ->
+                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
+                                val placeable = measureables.measure(constraints)
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                             }
                     ) {}
                 }
@@ -799,6 +802,39 @@ class TooltipTest {
             .onNodeWithTag(AnchorTestTag)
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick))
+    }
+
+    @Test
+    fun fullWidthTooltipCaret_xPositioning() {
+        val screenWidth = 1080
+        val tooltipWidth = 1080f
+
+        // Test for when the anchor is near the left side of the screen
+        var caretX: Float =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 135f, right = 185f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(160f)
+
+        // Test for when the anchor is in the middle of the screen
+        caretX =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 515.5f, right = 565.5f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(540.5f)
+
+        // Test for when the anchor is in the right side of the screen
+        caretX =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 920.88f, right = 970.88f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(945.88f)
     }
 }
 

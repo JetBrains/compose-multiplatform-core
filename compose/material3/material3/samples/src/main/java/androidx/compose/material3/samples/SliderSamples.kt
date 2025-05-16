@@ -301,6 +301,31 @@ fun SliderWithTrackIconsSample() {
 @Preview
 @Sampled
 @Composable
+fun CenteredSliderSample() {
+    val sliderState =
+        rememberSliderState(
+            valueRange = -50f..50f,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            }
+        )
+    val interactionSource = remember { MutableInteractionSource() }
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(text = "%.2f".format(sliderState.value))
+        Slider(
+            state = sliderState,
+            interactionSource = interactionSource,
+            thumb = { SliderDefaults.Thumb(interactionSource = interactionSource) },
+            track = { SliderDefaults.CenteredTrack(sliderState = sliderState) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
 fun VerticalSliderSample() {
     val coroutineScope = rememberCoroutineScope()
     val sliderState =
@@ -359,6 +384,67 @@ fun VerticalSliderSample() {
                     trackCornerSize = 12.dp
                 )
             },
+            reverseDirection = true
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun VerticalCenteredSliderSample() {
+    val coroutineScope = rememberCoroutineScope()
+    val sliderState =
+        rememberSliderState(
+            // Only allow multiples of 10. Excluding the endpoints of `valueRange`,
+            // there are 9 steps (10, 20, ..., 90).
+            steps = 9,
+            valueRange = -50f..50f
+        )
+    val snapAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
+    var currentValue by rememberSaveable { mutableFloatStateOf(sliderState.value) }
+    var animateJob: Job? by remember { mutableStateOf(null) }
+    sliderState.shouldAutoSnap = false
+    sliderState.onValueChange = { newValue ->
+        currentValue = newValue
+        // only update the sliderState instantly if dragging
+        if (sliderState.isDragging) {
+            animateJob?.cancel()
+            sliderState.value = newValue
+        }
+    }
+    sliderState.onValueChangeFinished = {
+        animateJob =
+            coroutineScope.launch {
+                animate(
+                    initialValue = sliderState.value,
+                    targetValue = currentValue,
+                    animationSpec = snapAnimationSpec
+                ) { value, _ ->
+                    sliderState.value = value
+                }
+            }
+    }
+    val interactionSource = remember { MutableInteractionSource() }
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            text = "%.2f".format(sliderState.value)
+        )
+        Spacer(Modifier.height(16.dp))
+        VerticalSlider(
+            state = sliderState,
+            modifier =
+                Modifier.height(300.dp)
+                    .align(Alignment.CenterHorizontally)
+                    .progressSemantics(
+                        currentValue,
+                        sliderState.valueRange.start..sliderState.valueRange.endInclusive,
+                        sliderState.steps
+                    ),
+            interactionSource = interactionSource,
+            track = { SliderDefaults.CenteredTrack(sliderState = sliderState) },
             reverseDirection = true
         )
     }

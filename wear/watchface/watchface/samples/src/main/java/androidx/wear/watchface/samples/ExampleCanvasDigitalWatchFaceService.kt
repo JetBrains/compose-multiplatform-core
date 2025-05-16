@@ -456,12 +456,13 @@ class ExampleCanvasDigitalWatchFaceService : SampleWatchFaceService() {
                             userStyle[colorStyleSetting]!!.toString()
                         )
 
-                    watchfaceColors =
+                    setWatchfaceColors(
                         WatchFaceColors(
                             Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
                             Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
                             Color.valueOf(Color.DKGRAY)
                         )
+                    )
 
                     // Apply the userStyle to the complicationSlots. ComplicationDrawables for each
                     // of the styles are defined in XML so we need to replace the complication's

@@ -49,6 +49,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.testing.fakes.FakeAppConfig
@@ -127,7 +128,8 @@ class PreviewTest {
                 _: Context?,
                 _: CameraThreadConfig?,
                 _: CameraSelector?,
-                _: Long? ->
+                _: Long?,
+                _: StreamSpecsCalculator ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertDefaultBackCamera(backCamera.cameraInfoInternal.cameraId) {
                     backCamera

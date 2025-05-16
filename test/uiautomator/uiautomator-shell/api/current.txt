@@ -1,0 +1,62 @@
+// Signature format: 4.0
+package androidx.test.shell {
+
+  public final class Shell implements java.lang.AutoCloseable {
+    method public void close();
+    method public androidx.test.shell.Shell.CommandOutput command(String command);
+    method public static androidx.test.shell.Shell create();
+    method public static androidx.test.shell.Shell create(optional androidx.test.shell.ShellProcess shellProcess);
+    method public boolean isClosed();
+    field public static final androidx.test.shell.Shell.Companion Companion;
+  }
+
+  public static final class Shell.CommandOutput {
+    ctor public Shell.CommandOutput(byte[] rawStdOut, byte[] rawStdErr);
+    method public androidx.test.shell.Shell.CommandOutput.StdOutput getStdErr();
+    method public androidx.test.shell.Shell.CommandOutput.StdOutput getStdOut();
+    property public androidx.test.shell.Shell.CommandOutput.StdOutput stdErr;
+    property public androidx.test.shell.Shell.CommandOutput.StdOutput stdOut;
+  }
+
+  public final class Shell.CommandOutput.StdOutput {
+    method public byte[] getBytes();
+    method public String text();
+    method public String text(optional java.nio.charset.Charset charset);
+    property public byte[] bytes;
+  }
+
+  public static final class Shell.Companion {
+    method public androidx.test.shell.Shell create();
+    method public androidx.test.shell.Shell create(optional androidx.test.shell.ShellProcess shellProcess);
+  }
+
+  public final class ShellProcess implements java.lang.AutoCloseable {
+    method public void close();
+    method public static androidx.test.shell.ShellProcess create();
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
+    method public java.io.InputStream getStdErr();
+    method public java.io.OutputStream getStdIn();
+    method public java.io.InputStream getStdOut();
+    method public boolean isClosed();
+    method public void writeLine(String string);
+    property public java.io.InputStream stdErr;
+    property public java.io.OutputStream stdIn;
+    property public java.io.InputStream stdOut;
+    field public static final androidx.test.shell.ShellProcess.Companion Companion;
+  }
+
+  public static final class ShellProcess.Companion {
+    method public androidx.test.shell.ShellProcess create();
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
+  }
+
+}
+

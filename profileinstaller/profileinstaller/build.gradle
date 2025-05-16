@@ -50,4 +50,5 @@ androidx {
 
 android {
     namespace = "androidx.profileinstaller"
+    testOptions.unitTests.returnDefaultValues = true
 }

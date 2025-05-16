@@ -268,6 +268,13 @@ internal constructor(
          * Marks the [WorkRequest] as important to the user. In this case, WorkManager provides an
          * additional signal to the OS that this work is important.
          *
+         * Note that although the execution time of this work won't be counted against your app's
+         * quota while your app is in the foreground, if the expedited work continues in the
+         * background, you are susceptible to quota. However, power management restrictions, such as
+         * Battery Saver and Doze, are less likely to affect expedited work. Because of this,
+         * expedited work is best suited for short tasks which need to start immediately and are
+         * important to the user or user-initiated.
+         *
          * @param policy The [OutOfQuotaPolicy] to be used.
          */
         @SuppressLint("MissingGetterMatchingBuilder")

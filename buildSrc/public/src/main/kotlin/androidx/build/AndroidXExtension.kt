@@ -316,7 +316,8 @@ abstract class AndroidXExtension(
 
     var type: SoftwareType = SoftwareType.UNSET
 
-    val failOnDeprecationWarnings = project.objects.property(Boolean::class.java).convention(true)
+    val failOnDeprecationWarnings: Property<Boolean> =
+        project.objects.property(Boolean::class.java).convention(true)
 
     /** Whether this project should fail on javac compilation warnings */
     fun failOnDeprecationWarnings(enabled: Boolean) = failOnDeprecationWarnings.set(enabled)
@@ -344,7 +345,7 @@ abstract class AndroidXExtension(
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
                 project.path.startsWith(":privacysandbox:") -> mutableListOf("privacysandbox")
-                project.path.startsWith(":wear:") -> mutableListOf("wear")
+                project.path.startsWith(":wear:watchface") -> mutableListOf("wear_optin")
                 else -> mutableListOf()
             }
         if (deviceTests.enableAlsoRunningOnPhysicalDevices) {
@@ -423,6 +424,11 @@ abstract class AndroidXExtension(
                     File(project.rootDir, "../../golden$subdirectory").absolutePath
                 )
         }
+    }
+
+    /** Enable Robolectric tests for Android Host Tests. */
+    fun enableRobolectric() {
+        configureRobolectric(project)
     }
 
     /** Locates a project by path. */

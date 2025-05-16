@@ -708,10 +708,7 @@ internal suspend fun <T> AnchoredDraggableState<T>.animateTo(
 @ExperimentalMaterialApi
 internal object AnchoredDraggableDefaults {
     /** The default animation used by [AnchoredDraggableState]. */
-    @get:ExperimentalMaterialApi
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalMaterialApi
-    val AnimationSpec = SpringSpec<Float>()
+    @ExperimentalMaterialApi val AnimationSpec = SpringSpec<Float>()
 }
 
 internal class AnchoredDragFinishedSignal :

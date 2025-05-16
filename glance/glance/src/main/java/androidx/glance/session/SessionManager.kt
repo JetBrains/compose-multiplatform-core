@@ -41,7 +41,7 @@ import kotlinx.coroutines.sync.withLock
  * their composition.
  */
 @RestrictTo(LIBRARY_GROUP)
-interface SessionManager {
+public interface SessionManager {
     /**
      * [runWithLock] provides a scope in which to run operations on SessionManager.
      *
@@ -50,7 +50,7 @@ interface SessionManager {
      * long-running operations in [block]. The client should not maintain a reference to the
      * [SessionManagerScope] after [block] returns.
      */
-    suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T
+    public suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T
 
     /**
      * The name of the session key parameter, which is used to set the session key in the Worker's
@@ -58,32 +58,32 @@ interface SessionManager {
      *
      * TODO: consider using a typealias instead
      */
-    val keyParam: String
+    public val keyParam: String
         get() = "KEY"
 }
 
 @RestrictTo(LIBRARY_GROUP)
-interface SessionManagerScope {
+public interface SessionManagerScope {
     /** Start a session for the Glance in [session]. */
-    suspend fun startSession(context: Context, session: Session)
+    public suspend fun startSession(context: Context, session: Session)
 
     /** Closes the channel for the session corresponding to [key]. */
-    suspend fun closeSession(key: String)
+    public suspend fun closeSession(key: String)
 
     /** Returns true if a session is active with the given [key]. */
-    suspend fun isSessionRunning(context: Context, key: String): Boolean
+    public suspend fun isSessionRunning(context: Context, key: String): Boolean
 
     /** Gets the session corresponding to [key] if it exists */
-    fun getSession(key: String): Session?
+    public fun getSession(key: String): Session?
 }
 
 @get:RestrictTo(LIBRARY_GROUP)
-val GlanceSessionManager: SessionManager = SessionManagerImpl(SessionWorker::class.java)
+public val GlanceSessionManager: SessionManager = SessionManagerImpl(SessionWorker::class.java)
 
-typealias InputDataFactory = SessionManagerImpl.(Session) -> Data
+public typealias InputDataFactory = SessionManagerImpl.(Session) -> Data
 
 @RestrictTo(LIBRARY_GROUP)
-class SessionManagerImpl(
+public class SessionManagerImpl(
     private val workerClass: Class<out ListenableWorker>,
     private val inputDataFactory: InputDataFactory = { session ->
         workDataOf(keyParam to session.key)
@@ -161,9 +161,9 @@ class SessionManagerImpl(
 // This interface is used to allow us to use the same SessionManagerImpl with WorkManager or
 // RemoteWorkManager (which do not have a common supertype),
 @RestrictTo(LIBRARY_GROUP)
-interface WorkManagerProxy {
-    companion object {
-        val Default =
+public interface WorkManagerProxy {
+    public companion object {
+        public val Default: WorkManagerProxy =
             object : WorkManagerProxy {
                 override suspend fun enqueueUniqueWork(
                     context: Context,
@@ -190,12 +190,12 @@ interface WorkManagerProxy {
             }
     }
 
-    suspend fun enqueueUniqueWork(
+    public suspend fun enqueueUniqueWork(
         context: Context,
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
         workRequest: OneTimeWorkRequest
     )
 
-    suspend fun workerIsRunningOrEnqueued(context: Context, uniqueWorkName: String): Boolean
+    public suspend fun workerIsRunningOrEnqueued(context: Context, uniqueWorkName: String): Boolean
 }

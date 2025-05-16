@@ -18,6 +18,8 @@ package androidx.compose.foundation.text.input.internal
 
 import android.graphics.Typeface
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
+import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -115,6 +117,34 @@ class TextFieldLayoutStateCacheTest {
                 append("hello")
                 placeCursorBeforeCharAt(0)
             }
+        }
+    }
+
+    @Test
+    fun updateNonMeasureInputs_invalidatesSnapshot_whenAnnotatedOutputTransformation_readChanges() {
+        var color by mutableStateOf(Color.Red)
+        transformedTextFieldState =
+            TransformedTextFieldState(
+                textFieldState = textFieldState,
+                outputTransformation =
+                    AnnotatedOutputTransformation {
+                        addAnnotation(SpanStyle(color = color), 0, text.length)
+                    }
+            )
+        assertInvalidationsOnChange(1) { color = Color.Blue }
+    }
+
+    @Test
+    fun updateNonMeasureInputs_invalidatesSnapshot_whenOutputTransformationChanges() {
+        assertInvalidationsOnChange(1) {
+            val outputTransformation = OutputTransformation {}
+            transformedTextFieldState =
+                TransformedTextFieldState(
+                    textFieldState,
+                    inputTransformation = null,
+                    outputTransformation = outputTransformation
+                )
+            updateNonMeasureInputs()
         }
     }
 

@@ -18,11 +18,11 @@ package androidx.savedstate.serialization.utils
 
 import androidx.savedstate.RobolectricTest
 import androidx.savedstate.SavedState
-import androidx.savedstate.platformEncodeDecode
 import androidx.savedstate.read
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
+import androidx.savedstate.serialization.platformEncodeDecode
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer

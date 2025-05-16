@@ -33,17 +33,18 @@ import androidx.wear.compose.material3.samples.EdgeButtonSample
 import androidx.wear.compose.material3.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.material3.samples.FadingExpandingLabelButtonSample
 import androidx.wear.compose.material3.samples.ImageCardSample
-import androidx.wear.compose.material3.samples.ImageCardWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
-import androidx.wear.compose.material3.samples.SwipeToRevealNonAnchoredSample
+import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnScalingMorphingEffectSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnScrollingSample
+import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnReducedMotionSample
 
 val WearMaterial3Demos =
     Material3DemoCategory(
@@ -114,7 +115,13 @@ val WearMaterial3Demos =
                         ComposableDemo("ToggleButtons") { ButtonGroupToggleButtonsDemo() },
                     )
                 ),
-                ComposableDemo("List Header") { Centralize { ListHeaderSample() } },
+                Material3DemoCategory(
+                    "List Header",
+                    listOf(
+                        ComposableDemo("List headers") { ListHeaderSample() },
+                        ComposableDemo("Long list headers") { ListHeaderDemo() },
+                    )
+                ),
                 Material3DemoCategory("Time Text", TimeTextDemos),
                 Material3DemoCategory(
                     "Card",
@@ -125,7 +132,7 @@ val WearMaterial3Demos =
                         ComposableDemo("Title Card") { TitleCardDemo() },
                         ComposableDemo("Base Image Card") { Centralize { ImageCardSample() } },
                         ComposableDemo("Image Card") {
-                            Centralize { ImageCardWithTimeAndTitleSample() }
+                            Centralize { TitleCardWithImageWithTimeAndTitleSample() }
                         },
                         ComposableDemo("Image Card Builder") { ImageCardBuilder() }
                     )
@@ -187,8 +194,10 @@ val WearMaterial3Demos =
                         ComposableDemo("In TransformingLazyColumn") {
                             SwipeToRevealWithTransformingLazyColumnSample()
                         },
-                        ComposableDemo("Non-anchoring") {
-                            ScalingLazyDemo { item { SwipeToRevealNonAnchoredSample() } }
+                        ComposableDemo("No Partial Reveal") {
+                            ScalingLazyDemo {
+                                item { SwipeToRevealNoPartiallyRevealedStateSample() }
+                            }
                         },
                         ComposableDemo("Long labels") { SwipeToRevealWithLongLabels() },
                         ComposableDemo("Custom Icons") { SwipeToRevealWithCustomIcons() },
@@ -222,13 +231,16 @@ val WearMaterial3Demos =
                         ComposableDemo("Notifications") {
                             TransformingLazyColumnNotificationsDemo()
                         },
-                        ComposableDemo("Scaling Morphing Effect Sample") {
-                            TransformingLazyColumnScalingMorphingEffectSample()
+                        ComposableDemo("Expandable Cards") {
+                            TransformingLazyColumnExpandableCardSample()
                         },
-                        ComposableDemo("Surface Transformation") { SurfaceTransformationDemo() },
-                        ComposableDemo("TLC Buttons") { TransformingLazyColumnButtons() },
-                        ComposableDemo("TLC Cards") { TransformingLazyColumnCards() },
-                        ComposableDemo("Animation Demo") { TransformingLazyColumnScrollingSample() }
+                        ComposableDemo("TLC Buttons and Cards") { SurfaceTransformationDemo() },
+                        ComposableDemo("Animation Demo") {
+                            TransformingLazyColumnAnimationSample()
+                        },
+                        ComposableDemo("Reduced Motion") {
+                            TransformingLazyColumnReducedMotionSample()
+                        },
                     )
                 ),
                 ComposableDemo("Text") { TextWeightDemo() }

@@ -42,6 +42,7 @@ internal class PerceptionStateExtender : StateExtender {
         perceptionManager = runtime.perceptionManager
         xrResourcesManager.lifecycleManager = runtime.lifecycleManager
         xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
+        xrResourcesManager.initiateEarth(perceptionManager.earth)
     }
 
     override suspend fun extend(coreState: CoreState) {

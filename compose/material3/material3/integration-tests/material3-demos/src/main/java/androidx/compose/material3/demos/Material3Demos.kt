@@ -23,6 +23,7 @@ val Material3Demos =
     DemoCategory(
         "Material 3",
         listOf(
+            ComposableDemo("Button Groups") { ButtonGroupDemos() },
             ComposableDemo("Color Scheme") { ColorSchemeDemo() },
             ComposableDemo("FAB Menu") { FloatingActionButtonMenuDemo() },
             ComposableDemo("Pull To Refresh") { PullToRefreshDemo() },

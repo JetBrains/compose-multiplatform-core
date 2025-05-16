@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
@@ -25,12 +26,14 @@ import androidx.compose.foundation.gestures.detectTapAndPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.hasText
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.DefaultCursorThickness
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.TextDragObserver
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
 import androidx.compose.foundation.text.getLineHeight
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.getSelectedText
@@ -61,6 +64,7 @@ import androidx.compose.foundation.text.selection.getTextFieldSelectionLayout
 import androidx.compose.foundation.text.selection.isPrecisePointer
 import androidx.compose.foundation.text.selection.selectionGesturePointerInputBtf2
 import androidx.compose.foundation.text.selection.visibleBounds
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -94,6 +98,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -117,6 +122,7 @@ internal class TextFieldSelectionState(
     private var readOnly: Boolean,
     var isFocused: Boolean,
     private var isPassword: Boolean,
+    private val toolbarRequester: ToolbarRequester,
 ) {
     /** [HapticFeedback] handle to perform haptic feedback. */
     private var hapticFeedBack: HapticFeedback? = null
@@ -222,7 +228,7 @@ internal class TextFieldSelectionState(
 
     /** Whether the text toolbar is currently shown. */
     var textToolbarShown by mutableStateOf(false)
-        private set
+        internal set
 
     /** Access helper for text layout node coordinates that checks attached state. */
     private val textLayoutCoordinates: LayoutCoordinates?
@@ -381,14 +387,7 @@ internal class TextFieldSelectionState(
             launch(start = CoroutineStart.UNDISPATCHED) { detectCursorHandleDragGestures() }
             launch(start = CoroutineStart.UNDISPATCHED) {
                 detectTapGestures(
-                    onTap = {
-                        textToolbarState =
-                            if (textToolbarState == Cursor) {
-                                None
-                            } else {
-                                Cursor
-                            }
-                    }
+                    onTap = { textToolbarState = if (textToolbarState == Cursor) None else Cursor }
                 )
             }
         }
@@ -445,7 +444,6 @@ internal class TextFieldSelectionState(
 
     fun dispose() {
         hideTextToolbar()
-
         clipboard = null
         hapticFeedBack = null
     }
@@ -824,6 +822,8 @@ internal class TextFieldSelectionState(
             dragTotalDistance = Offset.Zero
             previousRawDragOffset = -1
 
+            if (textLayoutState.layoutResult == null) return
+
             // Long Press at the blank area, the cursor should show up at the end of the line.
             if (!textLayoutState.isPositionOnText(startPoint)) {
                 val offset = textLayoutState.getOffsetForPosition(startPoint)
@@ -858,7 +858,12 @@ internal class TextFieldSelectionState(
 
         override fun onDrag(delta: Offset) {
             // selection never started, did not consume any drag
-            if (!enabled || textFieldState.visualText.isEmpty()) return
+            if (
+                !enabled ||
+                    textLayoutState.layoutResult == null ||
+                    textFieldState.visualText.isEmpty()
+            )
+                return
 
             dragTotalDistance += delta
 
@@ -1086,95 +1091,98 @@ internal class TextFieldSelectionState(
      *   [TextToolbarState.Selection]
      */
     private suspend fun observeTextToolbarVisibility() {
-        snapshotFlow {
-                val isCollapsed = textFieldState.visualText.selection.collapsed
-                val textToolbarStateVisible =
-                    isCollapsed && textToolbarState == Cursor ||
-                        !isCollapsed && textToolbarState == Selection
-
-                val textToolbarVisible =
-                    // toolbar is requested specifically for the current selection state
-                    textToolbarStateVisible &&
-                        draggingHandle == null && // not dragging any selection handles
-                        isInTouchMode // toolbar hidden when not in touch mode
-
-                // final visibility decision is made by contentRect visibility.
-                // if contentRect is not in visible bounds, just pass Rect.Zero to the observer so
-                // that
-                // it hides the toolbar. If Rect is successfully passed to the observer, toolbar
-                // will
-                // be displayed.
-                if (!textToolbarVisible) {
-                    Rect.Zero
+        snapshotFlow { derivedVisibleContentBounds }
+            .run {
+                if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+                    /*
+                     * The old context menu needs show to be called for every position update.
+                     * However, the new context menu only needs show called once, then it will be
+                     * updated by reading the `derivedVisibleContentBounds` directly. So, for the
+                     * new context menu, only trigger a show/hide based on whether or not a position
+                     * exists at all, and then the cached position in the derived state will be used
+                     * by the context menu itself.
+                     */
+                    distinctUntilChangedBy { it == null }
                 } else {
-                    // contentRect is calculated in root coordinates. VisibleBounds are in
-                    // textLayoutCoordinates. Convert visibleBounds to root before checking the
-                    // overlap.
-                    val visibleBounds = textLayoutCoordinates?.visibleBounds()
-                    if (visibleBounds != null) {
-                        val visibleBoundsTopLeftInRoot =
-                            textLayoutCoordinates?.localToRoot(visibleBounds.topLeft)
-                        val visibleBoundsInRoot =
-                            Rect(visibleBoundsTopLeftInRoot!!, visibleBounds.size)
-
-                        // contentRect can be very wide if a big part of text is selected. Our
-                        // toolbar
-                        // should be aligned only to visible region.
-                        getContentRect()
-                            .takeIf { visibleBoundsInRoot.overlaps(it) }
-                            ?.intersect(visibleBoundsInRoot) ?: Rect.Zero
-                    } else {
-                        Rect.Zero
-                    }
+                    this
                 }
             }
             .collect { rect ->
-                val textToolbarShown = rect != Rect.Zero
-                this.textToolbarShown = textToolbarShown // don't read the field, it is state.
-                if (textToolbarShown) {
-                    textToolbarHandler?.showTextToolbar(this, rect)
+                if (rect != null) {
+                    showTextToolbar(rect)
                 } else {
                     hideTextToolbar()
                 }
             }
     }
 
+    internal val derivedVisibleContentBounds: Rect? by derivedStateOf {
+        val isCollapsedSelection = textFieldState.visualText.selection.collapsed
+
+        // toolbar is requested specifically for the current selection state
+        val textToolbarStateVisible =
+            isCollapsedSelection && textToolbarState == Cursor ||
+                !isCollapsedSelection && textToolbarState == Selection
+
+        val textToolbarVisible =
+            textToolbarStateVisible &&
+                draggingHandle == null && // not dragging any selection handles
+                isInTouchMode // toolbar hidden when not in touch mode
+
+        // final visibility decision is made by contentRect visibility. if contentRect is not in
+        // visible bounds, just pass Rect.Zero to the observer so that it hides the toolbar.
+        // If Rect sis successfully passed to the observer, toolbar will be displayed.
+        if (!textToolbarVisible) return@derivedStateOf null
+
+        // contentRect is calculated in root coordinates.
+        // VisibleBounds are in textLayoutCoordinates.
+        // Convert visibleBounds to root before checking the overlap.
+        val textLayoutCoordinates = textLayoutCoordinates ?: return@derivedStateOf null
+        val visibleBounds = textLayoutCoordinates.visibleBounds()
+        val visibleBoundsTopLeftInRoot = textLayoutCoordinates.localToRoot(visibleBounds.topLeft)
+        val visibleBoundsInRoot = Rect(visibleBoundsTopLeftInRoot, visibleBounds.size)
+
+        // contentRect can be very wide if a big part of text is selected.
+        // Our toolbar should be aligned only to visible region.
+        val contentRect = getContentRect()
+        if (!contentRect.overlaps(visibleBoundsInRoot)) return@derivedStateOf null
+
+        contentRect.intersect(visibleBoundsInRoot)
+    }
+
     /**
      * Calculate selected region as [Rect]. The top is the top of the first selected line, and the
      * bottom is the bottom of the last selected line. The left is the leftmost handle's horizontal
      * coordinates, and the right is the rightmost handle's coordinates.
+     *
+     * This function expects [textLayoutCoordinates] to be non-null.
      */
     private fun getContentRect(): Rect {
+        val textLayoutCoordinates =
+            checkPreconditionNotNull(textLayoutCoordinates) {
+                "textLayoutCoordinates should not be null."
+            }
+
         val text = textFieldState.visualText
         // accept cursor position as content rect when selection is collapsed
         // contentRect is defined in text layout node coordinates, so it needs to be realigned to
         // the root container.
         if (text.selection.collapsed) {
             val cursorRect = getCursorRect()
-            val topLeft = textLayoutCoordinates?.localToRoot(cursorRect.topLeft) ?: Offset.Zero
+            val topLeft = textLayoutCoordinates.localToRoot(cursorRect.topLeft)
             return Rect(topLeft, cursorRect.size)
         }
-        val startOffset = textLayoutCoordinates?.localToRoot(getHandlePosition(true)) ?: Offset.Zero
-        val endOffset = textLayoutCoordinates?.localToRoot(getHandlePosition(false)) ?: Offset.Zero
+        val startOffset = textLayoutCoordinates.localToRoot(getHandlePosition(true))
+        val endOffset = textLayoutCoordinates.localToRoot(getHandlePosition(false))
+        val layoutResult = textLayoutState.layoutResult ?: return Rect.Zero
         val startTop =
             textLayoutCoordinates
-                ?.localToRoot(
-                    Offset(
-                        0f,
-                        textLayoutState.layoutResult?.getCursorRect(text.selection.start)?.top ?: 0f
-                    )
-                )
-                ?.y ?: 0f
+                .localToRoot(Offset(0f, layoutResult.getCursorRect(text.selection.start).top))
+                .y
         val endTop =
             textLayoutCoordinates
-                ?.localToRoot(
-                    Offset(
-                        0f,
-                        textLayoutState.layoutResult?.getCursorRect(text.selection.end)?.top ?: 0f
-                    )
-                )
-                ?.y ?: 0f
-
+                .localToRoot(Offset(0f, layoutResult.getCursorRect(text.selection.end).top))
+                .y
         return Rect(
             left = min(startOffset.x, endOffset.x),
             right = max(startOffset.x, endOffset.x),
@@ -1429,6 +1437,21 @@ internal class TextFieldSelectionState(
         requestAutofillAction?.invoke()
     }
 
+    /**
+     * This function get the selected region as a Rectangle region, and pass it to [TextToolbar] to
+     * make the FloatingToolbar show up in the proper place. In addition, this function passes the
+     * copy, paste and cut method as callbacks when "copy", "cut" or "paste" is clicked.
+     *
+     * @param contentRect Rectangle region where the toolbar will be anchored.
+     */
+    private suspend fun showTextToolbar(contentRect: Rect) {
+        if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+            toolbarRequester.show()
+        } else {
+            textToolbarHandler?.showTextToolbar(this, contentRect)
+        }
+    }
+
     fun deselect() {
         if (!textFieldState.visualText.selection.collapsed) {
             textFieldState.collapseSelectionToEnd()
@@ -1439,7 +1462,11 @@ internal class TextFieldSelectionState(
     }
 
     private fun hideTextToolbar() {
-        textToolbarHandler?.hideTextToolbar()
+        if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+            toolbarRequester.hide()
+        } else {
+            textToolbarHandler?.hideTextToolbar()
+        }
     }
 
     /**

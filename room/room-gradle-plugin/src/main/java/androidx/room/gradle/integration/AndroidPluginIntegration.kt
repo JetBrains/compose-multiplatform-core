@@ -35,7 +35,7 @@ import kotlin.reflect.KClass
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.compile.JavaCompile
-import org.jetbrains.kotlin.gradle.internal.KaptTask
+import org.jetbrains.kotlin.gradle.tasks.BaseKapt
 
 internal class AndroidPluginIntegration(private val common: CommonIntegration) {
     private val agpBasePluginId = "com.android.base"
@@ -187,7 +187,7 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
         argumentProviderFactory: (Task) -> RoomArgumentProvider
     ) =
         project.plugins.withId("kotlin-kapt") {
-            project.tasks.withType(KaptTask::class.java).configureEach { task ->
+            project.tasks.withType(BaseKapt::class.java).configureEach { task ->
                 if (androidVariantsTaskNames.isKaptTask(task.name)) {
                     val argProvider = argumentProviderFactory.invoke(task)
                     // TODO: Update once KT-58009 is fixed.

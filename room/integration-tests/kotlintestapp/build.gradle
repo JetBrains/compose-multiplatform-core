@@ -18,6 +18,7 @@
 // -Dorg.gradle.debug=true
 // -Dkotlin.compiler.execution.strategy="in-process"
 
+
 import androidx.build.KotlinTarget
 import com.google.devtools.ksp.gradle.KspTask
 
@@ -142,6 +143,5 @@ tasks.withType(KspTask).configureEach { kspTask ->
 }
 
 androidx {
-    //TODO(b/407507716): Target Kotlin 2 when support for it is stable in kapt
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

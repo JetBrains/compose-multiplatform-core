@@ -17,6 +17,10 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
+import android.content.Context
+import android.view.View
+import android.widget.TextView
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
@@ -25,11 +29,15 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MovableComponent as RtMovableComponent
 import androidx.xr.runtime.internal.MoveEvent as RtMoveEvent
 import androidx.xr.runtime.internal.MoveEventListener as RtMoveEventListener
+import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
+import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
+import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import org.junit.Before
@@ -47,6 +55,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MovableComponentTest {
+    private val fakeRuntimeFactory = FakeRuntimeFactory()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
@@ -66,15 +75,16 @@ class MovableComponentTest {
     fun setUp() {
         whenever(mockRuntime.spatialEnvironment).thenReturn(mock())
         whenever(mockRuntime.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mock())
+        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mockActivitySpace)
         whenever(mockRuntime.headActivityPose).thenReturn(mock())
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockContentlessEntity)
         whenever(mockRuntime.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntity)
         whenever(mockAnchorEntity.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
-        session = Session.create(activity, mockRuntime)
+        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
     @Test
@@ -351,5 +361,30 @@ class MovableComponentTest {
         assertThat(entity.addComponent(movableComponent)).isTrue()
         entity.removeComponent(movableComponent)
         assertThat(entity.addComponent(movableComponent)).isTrue()
+    }
+
+    @Test
+    fun createMovableComponent_callsRuntimeCreateMovableComponent() {
+        whenever(mockRuntime.createMovableComponent(any(), any(), any(), any())).thenReturn(mock())
+
+        val movableComponent = MovableComponent.create(session)
+        val view = TextView(activity)
+        val mockRtPanelEntity = mock<RtPanelEntity>()
+        whenever(
+                mockRuntime.createPanelEntity(
+                    any<Context>(),
+                    any<Pose>(),
+                    any<View>(),
+                    any<RtPixelDimensions>(),
+                    any<String>(),
+                    any<RtEntity>(),
+                )
+            )
+            .thenReturn(mockRtPanelEntity)
+        whenever(mockRtPanelEntity.addComponent(any())).thenReturn(true)
+        val panelEntity = PanelEntity.create(session, view, PixelDimensions(720, 480), "test")
+        assertThat(panelEntity.addComponent(movableComponent)).isTrue()
+
+        verify(mockRuntime).createMovableComponent(any(), any(), any(), any())
     }
 }

@@ -24,8 +24,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
@@ -664,13 +666,12 @@ class PagerTest {
 
     @Composable
     fun DefaultLazyColumn(state: LazyListState) {
+        val focusRequester = remember { FocusRequester() }
         LazyColumn(
             state = state,
             modifier =
-                Modifier.rotaryScrollable(
-                    RotaryScrollableDefaults.behavior(state),
-                    rememberActiveFocusRequester()
-                )
+                Modifier.requestFocusOnHierarchyActive()
+                    .rotaryScrollable(RotaryScrollableDefaults.behavior(state), focusRequester)
         ) {
             for (i in 0..20) {
                 item { BasicText(modifier = Modifier.height(lcItemSizeDp), text = "Page content") }

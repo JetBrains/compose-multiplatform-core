@@ -32,7 +32,6 @@ import org.gradle.api.artifacts.ConfigurationVariant
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.file.Directory
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
@@ -70,7 +69,7 @@ fun registerCompileAidlApi(
     variant: Variant,
     aidlExecutable: Provider<RegularFile>,
     aidlFramework: Provider<RegularFile>,
-    shadowFramework: DirectoryProperty,
+    shadowFramework: Provider<Directory>,
     aidlVersion: Provider<String>,
     sourceDir: SourceDirectories.Flat,
     packagedDir: Provider<Directory>,
@@ -91,8 +90,8 @@ fun registerCompileAidlApi(
             task.sourceDirs.set(sourceDir.all)
             task.sourceOutputDir.set(outputDir)
             task.packagedDir.set(packagedDir)
-            task.importDirs.set(importsDir.all)
-            task.importDirs.add(shadowFramework)
+            task.importDirs.addAll(importsDir.all)
+            task.shadowFrameworkDir.set(shadowFramework)
             depImports.forEach { task.dependencyImportDirs.addAll(it.elements) }
             task.extraArgs.set(listOf("--structured"))
         }
@@ -162,7 +161,7 @@ fun registerGenerateAidlApi(
     variant: Variant,
     aidlExecutable: Provider<RegularFile>,
     aidlFramework: Provider<RegularFile>,
-    shadowFramework: DirectoryProperty,
+    shadowFramework: Provider<Directory>,
     aidlVersion: Provider<String>,
     sourceDir: SourceDirectories.Flat,
     importsDir: SourceDirectories.Flat,
@@ -182,8 +181,8 @@ fun registerGenerateAidlApi(
         task.aidlVersion.set(aidlVersion)
         task.sourceDirs.set(sourceDir.all)
         task.sourceOutputDir.set(builtApiDir)
-        task.importDirs.set(importsDir.all)
-        task.importDirs.add(shadowFramework)
+        task.importDirs.addAll(importsDir.all)
+        task.shadowFrameworkDir.set(shadowFramework)
         depImports.forEach { task.dependencyImportDirs.addAll(it.elements) }
         task.extraArgs.set(listOf("--structured", "--dumpapi"))
         task.dependsOn(compileAidlApiTask)
@@ -197,7 +196,7 @@ fun registerCheckApiAidlRelease(
     variant: Variant,
     aidlExecutable: Provider<RegularFile>,
     aidlFramework: Provider<RegularFile>,
-    shadowFramework: DirectoryProperty,
+    shadowFramework: Provider<Directory>,
     importsDir: SourceDirectories.Flat,
     depImports: List<FileCollection>,
     lastReleasedApiDir: Directory,
@@ -213,8 +212,8 @@ fun registerCheckApiAidlRelease(
         task.variantName = variant.name
         task.aidlExecutable.set(aidlExecutable)
         task.aidlFrameworkProvider.set(aidlFramework)
-        task.importDirs.set(importsDir.all)
-        task.importDirs.add(shadowFramework)
+        task.importDirs.addAll(importsDir.all)
+        task.shadowFrameworkDir.set(shadowFramework)
         depImports.forEach { task.dependencyImportDirs.addAll(it.elements) }
         task.checkApiMode.set(StableAidlCheckApi.MODE_COMPATIBLE)
         task.expectedApiDir.set(lastReleasedApiDir)
@@ -230,7 +229,7 @@ fun registerCheckAidlApi(
     variant: Variant,
     aidlExecutable: Provider<RegularFile>,
     aidlFramework: Provider<RegularFile>,
-    shadowFramework: DirectoryProperty,
+    shadowFramework: Provider<Directory>,
     importsDir: SourceDirectories.Flat,
     depImports: List<FileCollection>,
     lastCheckedInApiFile: Directory,
@@ -247,8 +246,8 @@ fun registerCheckAidlApi(
         task.variantName = variant.name
         task.aidlExecutable.set(aidlExecutable)
         task.aidlFrameworkProvider.set(aidlFramework)
-        task.importDirs.set(importsDir.all)
-        task.importDirs.add(shadowFramework)
+        task.importDirs.addAll(importsDir.all)
+        task.shadowFrameworkDir.set(shadowFramework)
         depImports.forEach { task.dependencyImportDirs.addAll(it.elements) }
         task.checkApiMode.set(StableAidlCheckApi.MODE_EQUAL)
         task.expectedApiDir.set(lastCheckedInApiFile)

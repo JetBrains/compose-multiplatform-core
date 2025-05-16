@@ -745,6 +745,18 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(WebViewFeature.PAYMENT_REQUEST,
                     Features.PAYMENT_REQUEST);
 
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers:
+     * {@link WebViewBuilder#build(Context)},
+     * {@link WebViewBuilder#build(Context, AttributeSet)},
+     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
+     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final ApiFeature.NoFramework WEBVIEW_BUILDER =
+            new ApiFeature.NoFramework(WebViewFeature.WEBVIEW_BUILDER, Features.WEBVIEW_BUILDER);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

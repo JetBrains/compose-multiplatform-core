@@ -19,7 +19,13 @@ package androidx.xr.runtime
 import android.app.Activity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
+import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
+import androidx.xr.runtime.internal.ApkNotInstalledException
+import androidx.xr.runtime.internal.UnsupportedDeviceException
+import androidx.xr.runtime.testing.FakeJxrPlatformAdapter
 import androidx.xr.runtime.testing.FakeLifecycleManager
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.runtime.testing.FakeStateExtender
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -83,6 +89,70 @@ class SessionTest {
     }
 
     @Test
+    fun create_permissionException_returnsPermissionsNotGrantedResult() {
+        FakeRuntimeFactory.hasCreatePermission = false
+
+        val result = Session.create(activity)
+        // Reset the flag to true so other tests are not affected.
+        FakeRuntimeFactory.hasCreatePermission = true
+
+        assertThat(result).isInstanceOf(SessionCreatePermissionsNotGranted::class.java)
+    }
+
+    @Test
+    fun create_arcoreNotInstalledException_returnsApkRequiredResult() {
+        FakeRuntimeFactory.lifecycleCreateException = ApkNotInstalledException(ARCORE_PACKAGE_NAME)
+
+        val result = Session.create(activity)
+
+        assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
+        assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
+    }
+
+    @Test
+    fun create_arcoreUnsupportedDeviceException_returnsUnsupportedDeviceResult() {
+        FakeRuntimeFactory.lifecycleCreateException = UnsupportedDeviceException()
+
+        val result = Session.create(activity)
+
+        assertThat(result).isInstanceOf(SessionCreateUnsupportedDevice::class.java)
+    }
+
+    @Test
+    fun create_arcoreCheckAvailabilityInProgressException_returnsApkRequiredResult() {
+        FakeRuntimeFactory.lifecycleCreateException =
+            ApkCheckAvailabilityInProgressException(ARCORE_PACKAGE_NAME)
+
+        val result = Session.create(activity)
+
+        assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
+        assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
+    }
+
+    @Test
+    fun create_arcoreCheckAvailabilityErrorException_returnsApkRequiredResult() {
+        FakeRuntimeFactory.lifecycleCreateException =
+            ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
+
+        val result = Session.create(activity)
+
+        assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
+        assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
+    }
+
+    @Test
+    fun create_initializesPlatformAdapter() {
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+
+        // The FakeJxrPlatformAdapter is being loaded in Session here because it is defined as a
+        // class
+        // in the "//third_party/arcore/androidx/java/androidx/xr/testing" dependency.
+        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
+        assertThat(platformAdapter).isNotNull()
+        assertThat(platformAdapter.state.name).isEqualTo("CREATED")
+    }
+
+    @Test
     fun configure_destroyed_throwsIllegalStateException() {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         underTest.destroy()
@@ -96,19 +166,19 @@ class SessionTest {
         check(
             underTest.config.equals(
                 Config(
-                    PlaneTrackingMode.HorizontalAndVertical,
-                    HandTrackingMode.Enabled,
-                    DepthEstimationMode.Enabled,
-                    AnchorPersistenceMode.Enabled,
+                    Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    Config.HandTrackingMode.ENABLED,
+                    Config.DepthEstimationMode.ENABLED,
+                    Config.AnchorPersistenceMode.ENABLED,
                 )
             )
         )
         val config =
             Config(
-                PlaneTrackingMode.Disabled,
-                HandTrackingMode.Disabled,
-                DepthEstimationMode.Disabled,
-                AnchorPersistenceMode.Disabled,
+                Config.PlaneTrackingMode.DISABLED,
+                Config.HandTrackingMode.DISABLED,
+                Config.DepthEstimationMode.DISABLED,
+                Config.AnchorPersistenceMode.DISABLED,
             )
 
         val result = underTest.configure(config)
@@ -122,15 +192,31 @@ class SessionTest {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         val currentConfig = underTest.config
-        check(currentConfig.depthEstimation == DepthEstimationMode.Enabled)
+        check(currentConfig.depthEstimation == Config.DepthEstimationMode.ENABLED)
         lifecycleManager.hasMissingPermission = true
 
         val result =
             underTest.configure(
-                underTest.config.copy(depthEstimation = DepthEstimationMode.Disabled)
+                underTest.config.copy(depthEstimation = Config.DepthEstimationMode.DISABLED)
             )
 
-        assertThat(result).isInstanceOf(SessionConfigurePermissionNotGranted::class.java)
+        assertThat(result).isInstanceOf(SessionConfigurePermissionsNotGranted::class.java)
+        assertThat(underTest.config).isEqualTo(currentConfig)
+    }
+
+    @Test
+    fun configure_unsupportedMode_returnsConfigurationNotSupportedResult() {
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
+        val currentConfig = underTest.config
+
+        lifecycleManager.shouldSupportPlaneTracking = false
+        val result =
+            underTest.configure(
+                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            )
+
+        assertThat(result).isInstanceOf(SessionConfigureConfigurationNotSupported::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)
     }
 
@@ -146,6 +232,16 @@ class SessionTest {
         assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.RESUMED)
+    }
+
+    @Test
+    fun resume_returnsSuccessAndSetsPlatformAdapterToResumed() {
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        val result = underTest.resume()
+
+        assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
+        assertThat((underTest.platformAdapter as FakeJxrPlatformAdapter).state.name)
+            .isEqualTo("STARTED")
     }
 
     @Test
@@ -206,6 +302,17 @@ class SessionTest {
     }
 
     @Test
+    fun pause_setsPlatformAdapterToPaused() {
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        underTest.resume()
+
+        underTest.pause()
+
+        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
+        assertThat(platformAdapter.state.name).isEqualTo("PAUSED")
+    }
+
+    @Test
     fun pause_destroyed_throwsIllegalStateException() {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         underTest.destroy()
@@ -235,6 +342,17 @@ class SessionTest {
     }
 
     @Test
+    fun destroy_setsPlatformAdapterToStopped() {
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        underTest.resume()
+
+        underTest.destroy()
+
+        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
+        assertThat(platformAdapter.state.name).isEqualTo("STOPPED")
+    }
+
+    @Test
     fun destroy_cancelsCoroutineScope() {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         // Creating a job that will not finish by the time destroy is called.
@@ -252,5 +370,9 @@ class SessionTest {
         session.resume()
         testScope.advanceUntilIdle()
         session.pause()
+    }
+
+    private companion object {
+        const private val ARCORE_PACKAGE_NAME = "com.google.ar.core"
     }
 }

@@ -38,3 +38,21 @@ public class FakeStateExtender() : StateExtender {
         extended.add(coreState)
     }
 }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnotherFakeStateExtender() : StateExtender {
+
+    /** Whether the [StateExtender] has been initialized or not. */
+    public var isInitialized: Boolean = false
+
+    /** List of [CoreState] instances that have been extended. */
+    public val extended: MutableList<CoreState> = mutableListOf<CoreState>()
+
+    override fun initialize(runtime: Runtime) {
+        isInitialized = true
+    }
+
+    override suspend fun extend(coreState: CoreState) {
+        extended.add(coreState)
+    }
+}

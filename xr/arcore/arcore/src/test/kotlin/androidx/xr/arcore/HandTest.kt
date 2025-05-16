@@ -17,13 +17,17 @@
 package androidx.xr.arcore
 
 import android.app.Activity
+import android.content.ContentResolver
+import android.provider.Settings
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.Config.HandTrackingMode
+import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -33,6 +37,7 @@ import androidx.xr.runtime.testing.FakeRuntimeHand
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,6 +52,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
 @RunWith(AndroidJUnit4::class)
 class HandTest {
@@ -65,12 +71,15 @@ class HandTest {
             "android.permission.HAND_TRACKING",
         )
 
+    private lateinit var mockContentResolver: ContentResolver
+
     @Before
     fun setUp() {
         xrResourcesManager = XrResourcesManager()
         testDispatcher = StandardTestDispatcher()
         testScope = TestScope(testDispatcher)
         FakeRuntimeAnchor.anchorsCreated = 0
+        mockContentResolver = mock<ContentResolver>()
     }
 
     @After
@@ -84,11 +93,11 @@ class HandTest {
             runTest(testDispatcher) {
                 val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
                 check(Hand.left(session) != null)
-                check(Hand.left(session)!!.state.value.trackingState != TrackingState.Tracking)
+                check(Hand.left(session)!!.state.value.trackingState != TrackingState.TRACKING)
                 check(Hand.left(session)!!.state.value.handJoints.isEmpty())
 
                 val leftRuntimeHand = perceptionManager.leftHand!! as FakeRuntimeHand
-                leftRuntimeHand.trackingState = TrackingState.Tracking
+                leftRuntimeHand.trackingState = TrackingState.TRACKING
                 val expectedHandJoints: Map<HandJointType, Pose> =
                     HandJointType.values().associate { joint ->
                         val i = joint.ordinal.toFloat()
@@ -102,7 +111,7 @@ class HandTest {
                 awaitNewCoreState(session, testScope)
 
                 assertThat(Hand.left(session)!!.state.value.trackingState)
-                    .isEqualTo(TrackingState.Tracking)
+                    .isEqualTo(TrackingState.TRACKING)
                 for (jointType in HandJointType.values()) {
                     val leftHandJoints = Hand.left(session)!!.state.value.handJoints
                     assertThat(leftHandJoints[jointType]!!.translation)
@@ -118,7 +127,7 @@ class HandTest {
     @Test
     fun left_handTrackingDisabled_throwsIllegalStateException() =
         createTestSessionAndRunTest(testDispatcher) {
-            session.configure(Config(handTracking = HandTrackingMode.Disabled))
+            session.configure(Config(handTracking = HandTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { Hand.left(session) }
         }
@@ -129,11 +138,11 @@ class HandTest {
             runTest(testDispatcher) {
                 val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
                 check(Hand.right(session) != null)
-                check(Hand.right(session)!!.state.value.trackingState != TrackingState.Tracking)
+                check(Hand.right(session)!!.state.value.trackingState != TrackingState.TRACKING)
                 check(Hand.right(session)!!.state.value.handJoints.isEmpty())
 
                 val rightRuntimeHand = perceptionManager.rightHand!! as FakeRuntimeHand
-                rightRuntimeHand.trackingState = TrackingState.Tracking
+                rightRuntimeHand.trackingState = TrackingState.TRACKING
                 val expectedHandJoints: Map<HandJointType, Pose> =
                     HandJointType.values().associate { joint ->
                         val i = joint.ordinal.toFloat()
@@ -147,7 +156,7 @@ class HandTest {
                 awaitNewCoreState(session, testScope)
 
                 assertThat(Hand.right(session)!!.state.value.trackingState)
-                    .isEqualTo(TrackingState.Tracking)
+                    .isEqualTo(TrackingState.TRACKING)
                 for (jointType in HandJointType.values()) {
                     val rightHandJoints = Hand.right(session)!!.state.value.handJoints
                     assertThat(rightHandJoints[jointType]!!.translation)
@@ -163,7 +172,7 @@ class HandTest {
     @Test
     fun right_handTrackingDisabled_throwsIllegalStateException() =
         createTestSessionAndRunTest(testDispatcher) {
-            session.configure(Config(handTracking = HandTrackingMode.Disabled))
+            session.configure(Config(handTracking = HandTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { Hand.right(session) }
         }
@@ -172,10 +181,10 @@ class HandTest {
     fun update_stateMachesRuntimeHand() = runBlocking {
         val runtimeHand = FakeRuntimeHand()
         val underTest = Hand(runtimeHand)
-        check(underTest.state.value.trackingState != TrackingState.Tracking)
+        check(underTest.state.value.trackingState != TrackingState.TRACKING)
         check(underTest.state.value.handJoints.isEmpty())
 
-        runtimeHand.trackingState = TrackingState.Tracking
+        runtimeHand.trackingState = TrackingState.TRACKING
         val expectedHandJoints: Map<HandJointType, Pose> =
             HandJointType.values().associate { joint ->
                 val i = joint.ordinal.toFloat()
@@ -188,7 +197,7 @@ class HandTest {
         runtimeHand.handJointsBuffer = generateTestBuffer(expectedHandJoints)
         underTest.update()
 
-        assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
         for (jointType in HandJointType.values()) {
             val handJoints = underTest.state.value.handJoints
             assertThat(handJoints[jointType]!!.translation)
@@ -199,6 +208,20 @@ class HandTest {
             )
         }
     }
+
+    @Test
+    fun getHandedness_settingNotConfigured_returnsUnknown() =
+        createTestSessionAndRunTest(testDispatcher) {
+            assertThat(Hand.getHandedness(mockContentResolver)).isEqualTo(Hand.Handedness.UNKNOWN)
+        }
+
+    @Test
+    fun getHandedness_settingConfigured_returnsCorrectHandedness() =
+        createTestSessionAndRunTest(testDispatcher) {
+            Settings.System.putInt(mockContentResolver, Hand.PRIMARY_HAND_SETTING_NAME, 1)
+
+            assertThat(Hand.getHandedness(mockContentResolver)).isEqualTo(Hand.Handedness.RIGHT)
+        }
 
     private fun createTestSessionAndRunTest(
         coroutineDispatcher: CoroutineDispatcher = StandardTestDispatcher(),
@@ -223,7 +246,7 @@ class HandTest {
         session.pause()
     }
 
-    fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): ByteBuffer {
+    fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): FloatBuffer {
         val buffer = ByteBuffer.allocate(handJointBufferSize).order(ByteOrder.nativeOrder())
 
         repeat(26) {
@@ -239,7 +262,7 @@ class HandTest {
         }
 
         buffer.flip()
-        return buffer
+        return buffer.asFloatBuffer()
     }
 
     fun assertRotationEquals(actual: Quaternion, expected: Quaternion) {

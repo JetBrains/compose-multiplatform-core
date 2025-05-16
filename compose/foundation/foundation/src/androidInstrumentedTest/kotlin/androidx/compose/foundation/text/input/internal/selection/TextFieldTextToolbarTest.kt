@@ -35,6 +35,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -91,17 +93,18 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Fact
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
-import com.google.common.truth.Subject.Factory
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 @LargeTest
+@RunWith(ContextMenuFlagFlipperRunner::class)
+@ContextMenuFlagSuppress(suppressedFlagValue = true)
 class TextFieldTextToolbarTest : FocusedWindowTest {
-
     @get:Rule val rule = createComposeRule()
 
     val fontSize = 10.sp
@@ -443,12 +446,8 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         }
         rule.runOnIdle {
             assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown)
-            val secondRectAnchor = shownRect!!
-            Truth.assertAbout(RectSubject.SUBJECT_FACTORY)
-                .that(secondRectAnchor)!!
-                .isEqualToWithTolerance(
-                    firstRectAnchor.translate(translateX = -fontSizePx, translateY = 0f)
-                )
+            val expectedRect = firstRectAnchor.translate(translateX = -fontSizePx, translateY = 0f)
+            assertThatRect(shownRect).isEqualToWithTolerance(expectedRect)
         }
     }
 
@@ -851,7 +850,7 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
 
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown) }
 
-        focusRequester.requestFocus()
+        rule.runOnUiThread { focusRequester.requestFocus() }
 
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
     }
@@ -969,12 +968,15 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         FakeTextToolbar(onShowMenu = { _, _, _, _, _, _ -> }, onHideMenu = { println("hide") })
 }
 
+internal fun assertThatRect(actual: Rect?): RectSubject =
+    assertAbout(RectSubject.SUBJECT_FACTORY).that(actual)
+
 internal class RectSubject
 private constructor(failureMetadata: FailureMetadata?, private val subject: Rect?) :
     Subject(failureMetadata, subject) {
 
     companion object {
-        internal val SUBJECT_FACTORY: Factory<RectSubject?, Rect?> =
+        internal val SUBJECT_FACTORY: Factory<RectSubject, Rect?> =
             Factory { failureMetadata, subject ->
                 RectSubject(failureMetadata, subject)
             }

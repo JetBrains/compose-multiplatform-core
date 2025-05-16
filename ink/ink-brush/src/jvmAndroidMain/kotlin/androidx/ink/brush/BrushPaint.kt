@@ -797,18 +797,18 @@ private object BrushPaintNative {
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative public external fun create(textureLayerNativePointers: LongArray): Long
+    @UsedByNative external fun create(textureLayerNativePointers: LongArray): Long
 
     /** Release the underlying memory allocated in [create]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
-    @UsedByNative public external fun getTextureLayerCount(nativePointer: Long): Int
+    @UsedByNative external fun getTextureLayerCount(nativePointer: Long): Int
 
     /**
      * Returns a new, unowned native pointer to a copy of the texture layer at the given index on
      * the pointed-at native `BrushPaint`.
      */
-    @UsedByNative public external fun newCopyOfTextureLayer(nativePointer: Long, index: Int): Long
+    @UsedByNative external fun newCopyOfTextureLayer(nativePointer: Long, index: Int): Long
 }
 
 /** Singleton wrapper around BrushPaint.TextureLayer native JNI calls. */
@@ -820,7 +820,7 @@ private object TextureLayerNative {
     }
 
     @UsedByNative
-    public external fun create(
+    external fun create(
         clientTextureId: String,
         sizeX: Float,
         sizeY: Float,
@@ -837,51 +837,51 @@ private object TextureLayerNative {
         blendMode: Int,
     ): Long
 
-    @UsedByNative public external fun getClientTextureId(nativePointer: Long): String
+    @UsedByNative external fun getClientTextureId(nativePointer: Long): String
 
-    @UsedByNative public external fun getSizeX(nativePointer: Long): Float
+    @UsedByNative external fun getSizeX(nativePointer: Long): Float
 
-    @UsedByNative public external fun getSizeY(nativePointer: Long): Float
+    @UsedByNative external fun getSizeY(nativePointer: Long): Float
 
-    @UsedByNative public external fun getOffsetX(nativePointer: Long): Float
+    @UsedByNative external fun getOffsetX(nativePointer: Long): Float
 
-    @UsedByNative public external fun getOffsetY(nativePointer: Long): Float
+    @UsedByNative external fun getOffsetY(nativePointer: Long): Float
 
-    @UsedByNative public external fun getRotationInRadians(nativePointer: Long): Float
+    @UsedByNative external fun getRotationInRadians(nativePointer: Long): Float
 
-    @UsedByNative public external fun getOpacity(nativePointer: Long): Float
+    @UsedByNative external fun getOpacity(nativePointer: Long): Float
 
-    @UsedByNative public external fun getAnimationFrames(nativePointer: Long): Int
+    @UsedByNative external fun getAnimationFrames(nativePointer: Long): Int
 
-    public fun getSizeUnit(nativePointer: Long): BrushPaint.TextureSizeUnit =
+    fun getSizeUnit(nativePointer: Long): BrushPaint.TextureSizeUnit =
         BrushPaint.TextureSizeUnit(getSizeUnitInt(nativePointer))
 
-    @UsedByNative public external fun getSizeUnitInt(nativePointer: Long): Int
+    @UsedByNative external fun getSizeUnitInt(nativePointer: Long): Int
 
-    public fun getOrigin(nativePointer: Long): BrushPaint.TextureOrigin =
+    fun getOrigin(nativePointer: Long): BrushPaint.TextureOrigin =
         BrushPaint.TextureOrigin(getOriginInt(nativePointer))
 
     @UsedByNative private external fun getOriginInt(nativePointer: Long): Int
 
-    public fun getMapping(nativePointer: Long): BrushPaint.TextureMapping =
+    fun getMapping(nativePointer: Long): BrushPaint.TextureMapping =
         BrushPaint.TextureMapping(getMappingInt(nativePointer))
 
     @UsedByNative private external fun getMappingInt(nativePointer: Long): Int
 
-    public fun getWrapX(nativePointer: Long): BrushPaint.TextureWrap =
+    fun getWrapX(nativePointer: Long): BrushPaint.TextureWrap =
         BrushPaint.TextureWrap(getWrapXInt(nativePointer))
 
     @UsedByNative private external fun getWrapXInt(nativePointer: Long): Int
 
-    public fun getWrapY(nativePointer: Long): BrushPaint.TextureWrap =
+    fun getWrapY(nativePointer: Long): BrushPaint.TextureWrap =
         BrushPaint.TextureWrap(getWrapYInt(nativePointer))
 
     @UsedByNative private external fun getWrapYInt(nativePointer: Long): Int
 
-    public fun getBlendMode(nativePointer: Long): BrushPaint.BlendMode =
+    fun getBlendMode(nativePointer: Long): BrushPaint.BlendMode =
         BrushPaint.BlendMode(getBlendModeInt(nativePointer))
 
     @UsedByNative private external fun getBlendModeInt(nativePointer: Long): Int
 
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 }

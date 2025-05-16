@@ -17,6 +17,7 @@
 package androidx.credentials.registry.provider
 
 import android.os.CancellationSignal
+import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 
@@ -41,6 +42,20 @@ public interface RegistryManagerProvider {
         executor: Executor,
         callback:
             CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+    )
+
+    /**
+     * Invoked on a request to clear credential registries.
+     *
+     * @param request the request to specify clearing configurations
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun onClearCredentialRegistry(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
     )
 
     /** Returns true if the provider is available on this device, or otherwise false. */

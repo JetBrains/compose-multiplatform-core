@@ -25,6 +25,7 @@ import androidx.compose.runtime.ReusableComposeNode
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mock.View
 import androidx.compose.runtime.mock.ViewApplier
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
@@ -36,7 +37,6 @@ import androidx.compose.runtime.rememberUpdatedState
 
 /*
 ┌─ reserved in case more imports will be added (╯°□°）╯︵ ┻━┻
-│
 │
 │
 │
@@ -147,4 +147,21 @@ fun NodeWithCallbacks(
 @Composable
 fun Wrapper(content: @Composable () -> Unit) {
     content()
+}
+
+@Composable
+fun MovableWrapper(content: @Composable () -> Unit) {
+    val movableContent = remember { movableContentOf(content) }
+
+    movableContent()
+}
+
+@Composable
+fun WrappedMovableContent(
+    content: @Composable (Boolean) -> Unit,
+    wrap: @Composable (@Composable (Boolean) -> Unit) -> Unit
+) {
+    val movableContent = remember { movableContentOf(content) }
+
+    wrap(movableContent)
 }

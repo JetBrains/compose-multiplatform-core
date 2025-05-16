@@ -68,7 +68,11 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
 
         @JvmStatic
         private val lensFacingList =
-            arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)
+            arrayOf(
+                CameraSelector.LENS_FACING_BACK,
+                CameraSelector.LENS_FACING_FRONT,
+                CameraSelector.LENS_FACING_EXTERNAL
+            )
 
         @JvmStatic
         private val cameraXConfigList =

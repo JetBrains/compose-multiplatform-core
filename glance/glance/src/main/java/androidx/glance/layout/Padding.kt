@@ -31,7 +31,7 @@ import androidx.glance.GlanceModifier
  * If any value is not defined, it will be [0.dp] or whatever value was defined by an earlier
  * modifier.
  */
-fun GlanceModifier.padding(
+public fun GlanceModifier.padding(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
@@ -55,7 +55,7 @@ fun GlanceModifier.padding(
  * If any value is not defined, it will be [0.dp] or whatever value was defined by an earlier
  * modifier.
  */
-fun GlanceModifier.padding(
+public fun GlanceModifier.padding(
     @DimenRes start: Int = 0,
     @DimenRes top: Int = 0,
     @DimenRes end: Int = 0,
@@ -77,7 +77,7 @@ fun GlanceModifier.padding(
  * If any value is not defined, it will be [0.dp] or whatever value was defined by an earlier
  * modifier.
  */
-fun GlanceModifier.padding(
+public fun GlanceModifier.padding(
     horizontal: Dp = 0.dp,
     vertical: Dp = 0.dp,
 ): GlanceModifier =
@@ -97,7 +97,7 @@ fun GlanceModifier.padding(
  * If any value is not defined, it will be [0.dp] or whatever value was defined by an earlier
  * modifier.
  */
-fun GlanceModifier.padding(
+public fun GlanceModifier.padding(
     @DimenRes horizontal: Int = 0,
     @DimenRes vertical: Int = 0
 ): GlanceModifier =
@@ -113,7 +113,7 @@ fun GlanceModifier.padding(
 /**
  * Apply [all] dp of additional space along each edge of the content, left, top, right and bottom.
  */
-fun GlanceModifier.padding(all: Dp): GlanceModifier {
+public fun GlanceModifier.padding(all: Dp): GlanceModifier {
     val allDp = all.toPadding()
     return this.then(
         PaddingModifier(
@@ -128,7 +128,7 @@ fun GlanceModifier.padding(all: Dp): GlanceModifier {
 /**
  * Apply [all] dp of additional space along each edge of the content, left, top, right and bottom.
  */
-fun GlanceModifier.padding(@DimenRes all: Int): GlanceModifier {
+public fun GlanceModifier.padding(@DimenRes all: Int): GlanceModifier {
     val allDp = all.toPadding()
     return this.then(
         PaddingModifier(
@@ -144,7 +144,7 @@ fun GlanceModifier.padding(@DimenRes all: Int): GlanceModifier {
  * Apply additional space along each edge of the content in [Dp]: [left], [top], [right] and
  * [bottom], ignoring the current locale's layout direction.
  */
-fun GlanceModifier.absolutePadding(
+public fun GlanceModifier.absolutePadding(
     left: Dp = 0.dp,
     top: Dp = 0.dp,
     right: Dp = 0.dp,
@@ -163,7 +163,7 @@ fun GlanceModifier.absolutePadding(
  * Apply additional space along each edge of the content in [Dp]: [left], [top], [right] and
  * [bottom], ignoring the current locale's layout direction.
  */
-fun GlanceModifier.absolutePadding(
+public fun GlanceModifier.absolutePadding(
     @DimenRes left: Int = 0,
     @DimenRes top: Int = 0,
     @DimenRes right: Int = 0,
@@ -183,7 +183,7 @@ private fun Dp.toPadding() = PaddingDimension(dp = this)
 private fun Int.toPadding() = if (this == 0) PaddingDimension() else PaddingDimension(this)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun GlanceModifier.collectPadding(): PaddingModifier? =
+public fun GlanceModifier.collectPadding(): PaddingModifier? =
     foldIn<PaddingModifier?>(null) { acc, modifier ->
         if (modifier is PaddingModifier) {
             (acc ?: PaddingModifier()) + modifier
@@ -193,7 +193,8 @@ fun GlanceModifier.collectPadding(): PaddingModifier? =
     }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun GlanceModifier.collectPaddingInDp(resources: Resources) = collectPadding()?.toDp(resources)
+public fun GlanceModifier.collectPaddingInDp(resources: Resources) =
+    collectPadding()?.toDp(resources)
 
 private fun List<Int>.toDp(resources: Resources) =
     fold(0.dp) { acc, res ->
@@ -201,7 +202,7 @@ private fun List<Int>.toDp(resources: Resources) =
     }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class PaddingModifier(
+public data class PaddingModifier(
     val left: PaddingDimension = PaddingDimension(),
     val start: PaddingDimension = PaddingDimension(),
     val top: PaddingDimension = PaddingDimension(),
@@ -210,7 +211,7 @@ data class PaddingModifier(
     val bottom: PaddingDimension = PaddingDimension(),
 ) : GlanceModifier.Element {
 
-    operator fun plus(other: PaddingModifier) =
+    public operator fun plus(other: PaddingModifier): PaddingModifier =
         PaddingModifier(
             left = left + other.left,
             start = start + other.start,
@@ -220,7 +221,7 @@ data class PaddingModifier(
             bottom = bottom + other.bottom,
         )
 
-    fun toDp(resources: Resources): PaddingInDp =
+    public fun toDp(resources: Resources): PaddingInDp =
         PaddingInDp(
             left = left.dp + left.resourceIds.toDp(resources),
             start = start.dp + start.resourceIds.toDp(resources),
@@ -232,25 +233,25 @@ data class PaddingModifier(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class PaddingDimension(
+public data class PaddingDimension(
     val dp: Dp = 0.dp,
     val resourceIds: List<Int> = emptyList(),
 ) {
-    constructor(@DimenRes resource: Int) : this(resourceIds = listOf(resource))
+    public constructor(@DimenRes resource: Int) : this(resourceIds = listOf(resource))
 
-    operator fun plus(other: PaddingDimension) =
+    public operator fun plus(other: PaddingDimension): PaddingDimension =
         PaddingDimension(
             dp = dp + other.dp,
             resourceIds = resourceIds + other.resourceIds,
         )
 
-    companion object {
-        val Zero = PaddingDimension()
+    public companion object {
+        public val Zero: PaddingDimension = PaddingDimension()
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class PaddingInDp(
+public data class PaddingInDp(
     val left: Dp = 0.dp,
     val start: Dp = 0.dp,
     val top: Dp = 0.dp,
@@ -259,7 +260,7 @@ data class PaddingInDp(
     val bottom: Dp = 0.dp,
 ) {
     /** Transfer [start] / [end] to [left] / [right] depending on [isRtl]. */
-    fun toAbsolute(isRtl: Boolean) =
+    public fun toAbsolute(isRtl: Boolean): PaddingInDp =
         PaddingInDp(
             left = left + if (isRtl) end else start,
             top = top,
@@ -268,7 +269,7 @@ data class PaddingInDp(
         )
 
     /** Transfer [left] / [right] to [start] / [end] depending on [isRtl]. */
-    fun toRelative(isRtl: Boolean) =
+    public fun toRelative(isRtl: Boolean): PaddingInDp =
         PaddingInDp(
             start = start + if (isRtl) right else left,
             top = top,

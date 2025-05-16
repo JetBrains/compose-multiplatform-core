@@ -100,6 +100,9 @@ abstract class androidx.room/BaseRoomConnectionManager { // androidx.room/BaseRo
     final inner class DriverWrapper : androidx.sqlite/SQLiteDriver { // androidx.room/BaseRoomConnectionManager.DriverWrapper|null[0]
         constructor <init>(androidx.sqlite/SQLiteDriver) // androidx.room/BaseRoomConnectionManager.DriverWrapper.<init>|<init>(androidx.sqlite.SQLiteDriver){}[0]
 
+        final val hasConnectionPool // androidx.room/BaseRoomConnectionManager.DriverWrapper.hasConnectionPool|{}hasConnectionPool[0]
+            final fun <get-hasConnectionPool>(): kotlin/Boolean // androidx.room/BaseRoomConnectionManager.DriverWrapper.hasConnectionPool.<get-hasConnectionPool>|<get-hasConnectionPool>(){}[0]
+
         final fun open(kotlin/String): androidx.sqlite/SQLiteConnection // androidx.room/BaseRoomConnectionManager.DriverWrapper.open|open(kotlin.String){}[0]
     }
 
@@ -120,6 +123,7 @@ abstract class androidx.room/RoomDatabase { // androidx.room/RoomDatabase|null[0
     final fun close() // androidx.room/RoomDatabase.close|close(){}[0]
     final fun getCoroutineScope(): kotlinx.coroutines/CoroutineScope // androidx.room/RoomDatabase.getCoroutineScope|getCoroutineScope(){}[0]
     final fun internalInitInvalidationTracker(androidx.sqlite/SQLiteConnection) // androidx.room/RoomDatabase.internalInitInvalidationTracker|internalInitInvalidationTracker(androidx.sqlite.SQLiteConnection){}[0]
+    final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, kotlin.coroutines/SuspendFunction1<androidx.room/Transactor, #A1>): #A1 // androidx.room/RoomDatabase.useConnection|useConnection(kotlin.Boolean;kotlin.coroutines.SuspendFunction1<androidx.room.Transactor,0:0>){0§<kotlin.Any?>}[0]
     open fun createAutoMigrations(kotlin.collections/Map<kotlin.reflect/KClass<out androidx.room.migration/AutoMigrationSpec>, androidx.room.migration/AutoMigrationSpec>): kotlin.collections/List<androidx.room.migration/Migration> // androidx.room/RoomDatabase.createAutoMigrations|createAutoMigrations(kotlin.collections.Map<kotlin.reflect.KClass<out|androidx.room.migration.AutoMigrationSpec>,androidx.room.migration.AutoMigrationSpec>){}[0]
     open fun createOpenDelegate(): androidx.room/RoomOpenDelegateMarker // androidx.room/RoomDatabase.createOpenDelegate|createOpenDelegate(){}[0]
     open fun getRequiredAutoMigrationSpecClasses(): kotlin.collections/Set<kotlin.reflect/KClass<out androidx.room.migration/AutoMigrationSpec>> // androidx.room/RoomDatabase.getRequiredAutoMigrationSpecClasses|getRequiredAutoMigrationSpecClasses(){}[0]

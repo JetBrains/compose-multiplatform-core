@@ -15,6 +15,7 @@
  */
 package androidx.build
 
+import androidx.build.checkapi.shouldConfigureApiTasks
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.Lint
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
@@ -283,6 +284,12 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Broken in 7.0.0-alpha15 due to b/187343720
         disable.add("UnusedResources")
 
+        // b/416046484: broken in 8.11.0-alpha10+ (Kotlin 2.2.0)
+        // TODO(b/416387032): Need to upgrade all binary dep usages
+        disable.add("ModifierFactoryExtensionFunction")
+        disable.add("ModifierFactoryReturnType")
+        disable.add("ModifierFactoryUnreferencedReceiver")
+
         // Disable NullAnnotationGroup check for :compose:ui:ui-text (b/233788571)
         if (isLibrary && project.group == "androidx.compose.ui" && project.name == "ui-text") {
             disable.add("NullAnnotationGroup")
@@ -314,6 +321,24 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
 
         // Report errors for incompatible custom lint jars
         fatal.add("ObsoleteLintCustomCheck")
+
+        // If a project targets only Kotlin consumers, it is allowed to define experimental
+        // properties because the Kotlin compiler warns users that the properties are experimental.
+        // If a project can have Java clients, enable the lint check banning experimental properties
+        // because the experimental detector lint which warns Java clients about experimental usage
+        // isn't able to handle experimental properties correctly.
+        // Projects that don't run API compatibility checks can define experimental properties (lint
+        // check disabled) since the entire API surface makes no compatibility guarantees.
+        if (extension.type.targetsKotlinConsumersOnly || !extension.shouldConfigureApiTasks()) {
+            disable.add("ExperimentalPropertyAnnotation")
+        } else {
+            fatal.add("ExperimentalPropertyAnnotation")
+        }
+
+        if (!isLibrary) {
+            // This lint check is specifically for libraries.
+            disable.add("MissingServiceExportedEqualsTrue")
+        }
 
         val lintXmlPath =
             if (extension.type == SoftwareType.SAMPLES) {
@@ -372,7 +397,7 @@ private fun ConfigurableFileCollection.withChangesAllowed(
 private fun Any.findDeclaredFieldOnClass(name: String): Field? =
     try {
         this::class.java.getDeclaredField(name)
-    } catch (e: NoSuchFieldException) {
+    } catch (_: NoSuchFieldException) {
         null
     }
 

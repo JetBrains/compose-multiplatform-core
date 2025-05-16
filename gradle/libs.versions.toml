@@ -2,29 +2,28 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "8.11.0-alpha03"
+androidGradlePlugin = "8.11.0-alpha05"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "31.11.0-alpha03"
+androidLint = "31.11.0-alpha05"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2025.1.1.3"
+androidStudio = "2025.1.1.5"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
-# Lint version that uses the old analysis API. Updating projects using this version to the new
-# analysis API would make those lint checks unavailable for users of previous AGP versions.
-androidLintPrevAnalysis = "31.7.0-alpha02"
-# Lint version that uses an older version of Kotlin (pre 2.1). Updating projects using this version
-# would require bumping their Kotlin target to 2.1
-androidLintPrevKotlin = "31.8.0-alpha06"
+# Minimum stable Lint version with stable Kotlin Analysis APIs. Versions prior to this contain
+# unstable declarations that were removed / changed in this version, and rely on Lint bytecode
+# re-writing logic for forwards compatibility. Pinning to this version should guarantee API
+# compatibility for Analysis API usage.
+androidLintStableAnalysis = "31.8.2"
 androidxActivity = "1.9.3"
-androidxTestRunner = "1.7.0-alpha01"
-androidxTestRules = "1.7.0-alpha01"
-androidxTestMonitor = "1.8.0-alpha01"
-androidxTestCore = "1.7.0-alpha01"
-androidxTestExtJunit = "1.3.0-alpha01"
-androidxTestExtTruth = "1.7.0-alpha01"
+androidxTestRunner = "1.7.0-alpha03"
+androidxTestRules = "1.7.0-alpha03"
+androidxTestMonitor = "1.8.0-alpha03"
+androidxTestCore = "1.7.0-alpha03"
+androidxTestExtJunit = "1.3.0-alpha03"
+androidxTestExtTruth = "1.7.0-alpha03"
 annotationVersion = "1.7.0"
 atomicFu = "0.17.0"
 autoService = "1.0-rc6"
@@ -39,8 +38,8 @@ dagger = "2.54"
 dependencyAnalysisGradlePlugin = "2.11.0"
 dexmaker = "2.28.4"
 dokka = "1.8.20-dev-214"
-espresso = "3.7.0-alpha01"
-espressoDevice = "1.1.0-alpha01"
+espresso = "3.7.0-alpha03"
+espressoDevice = "1.1.0-alpha03"
 grpc = "1.52.0"
 guavaJre = "33.2.1-jre"
 hamcrestCore = "1.3"
@@ -53,16 +52,16 @@ kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
 kotlin21 = "2.1.20"
-kotlin = "2.1.20"
+kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
 kotlinGradlePluginAnnotations = "1.9.24"
 kotlinGradlePluginApi = "1.9.24"
 kotlinCompileTesting = "1.4.9"
-kotlinCoroutines = "1.7.3"
+kotlinCoroutines = "1.8.1"
 kotlinNativeUtils = "1.9.24"
 kotlinSerialization = "1.7.3"
 kotlinToolingCore = "1.9.24"
-ksp = "2.1.20-1.0.31"
+ksp = "2.1.21-2.0.1"
 ktfmt = "0.50"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -92,18 +91,15 @@ androidGradleSettingsPlugin = { module = "com.android.tools.build:gradle-setting
 androidLayoutlibApi = { module = "com.android.tools.layoutlib:layoutlib-api", version.ref = "androidLint" }
 androidLint = { module = "com.android.tools.lint:lint", version.ref = "androidLint" }
 androidLintMin = { module = "com.android.tools.lint:lint", version.ref = "androidLintMin" }
-androidLintPrevAnalysis = { module = "com.android.tools.lint:lint", version.ref = "androidLintPrevAnalysis" }
-androidLintApiPrevAnalysis = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintPrevAnalysis" }
-androidLintPrevKotlin = { module = "com.android.tools.lint:lint", version.ref = "androidLintPrevKotlin" }
-androidLintApiPrevKotlin = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintPrevKotlin" }
+androidLintStableAnalysis = { module = "com.android.tools.lint:lint", version.ref = "androidLintStableAnalysis" }
+androidLintApiStableAnalysis = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintStableAnalysis" }
 androidLintApi = { module = "com.android.tools.lint:lint-api", version.ref = "androidLint" }
 androidLintMinApi = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintMin" }
 androidLintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLint" }
-androidLintChecksPrevKotlin = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLintPrevKotlin" }
+androidLintChecksStableAnalysis = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLintStableAnalysis" }
 androidLintChecksMin = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLintMin" }
 androidLintTests = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLint" }
-androidLintTestsPrevAnalysis = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintPrevAnalysis" }
-androidLintTestsPrevKotlin = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintPrevKotlin" }
+androidLintTestsStableAnalysis = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintStableAnalysis" }
 androidToolsCommon = { module = "com.android.tools:common", version.ref = "androidLint" }
 androidToolsRepository= { module = "com.android.tools:repository", version.ref = "androidLint" }
 androidToolsSdkCommon = { module = "com.android.tools:sdk-common", version.ref = "androidLint" }
@@ -134,7 +130,7 @@ byteBuddyAgent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byt
 checkerframework = { module = "org.checkerframework:checker-qual", version = "2.5.3" }
 checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
-dackka = { module = "com.google.devsite:dackka", version = "1.6.3" }
+dackka = { module = "com.google.devsite:dackka", version = "1.6.4" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dependency-analysis-gradle-plugin = { module = "com.autonomousapps:dependency-analysis-gradle-plugin", version.ref = "dependencyAnalysisGradlePlugin" }
 daggerCompiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }

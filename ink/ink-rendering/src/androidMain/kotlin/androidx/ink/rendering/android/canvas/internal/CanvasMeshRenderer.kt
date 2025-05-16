@@ -32,6 +32,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.collection.MutableObjectLongMap
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.brush.color.colorspace.ColorSpaces as ComposeColorSpaces
 import androidx.ink.geometry.AffineTransform
@@ -42,7 +43,6 @@ import androidx.ink.geometry.MeshFormat
 import androidx.ink.geometry.populateMatrix
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke

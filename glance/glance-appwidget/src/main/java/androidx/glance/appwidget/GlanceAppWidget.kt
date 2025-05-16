@@ -55,11 +55,11 @@ import kotlinx.coroutines.CancellationException
  *   unless [errorUiLayout] is 0, in which case the error will be rethrown. If [onCompositionError]
  *   is overridden, [errorUiLayout] will not be read..
  */
-abstract class GlanceAppWidget(
+public abstract class GlanceAppWidget(
     @LayoutRes internal open val errorUiLayout: Int = R.layout.glance_error_layout,
 ) {
     @RestrictTo(Scope.LIBRARY_GROUP)
-    open fun getSessionManager(context: Context): SessionManager = GlanceSessionManager
+    public open fun getSessionManager(context: Context): SessionManager = GlanceSessionManager
 
     /**
      * Override this function to provide the Glance Composable.
@@ -85,7 +85,7 @@ abstract class GlanceAppWidget(
      * @sample androidx.glance.appwidget.samples.provideGlanceSample
      * @sample androidx.glance.appwidget.samples.provideGlancePeriodicWorkSample
      */
-    abstract suspend fun provideGlance(
+    public abstract suspend fun provideGlance(
         context: Context,
         id: GlanceId,
     )
@@ -109,26 +109,26 @@ abstract class GlanceAppWidget(
      * @sample androidx.glance.appwidget.samples.providePreviewSample
      * @see AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN
      */
-    open suspend fun providePreview(context: Context, widgetCategory: Int) {}
+    public open suspend fun providePreview(context: Context, widgetCategory: Int) {}
 
     /** Defines the handling of sizes. */
-    open val sizeMode: SizeMode = SizeMode.Single
+    public open val sizeMode: SizeMode = SizeMode.Single
 
     /** Defines handling of sizes for previews. */
-    open val previewSizeMode: PreviewSizeMode = SizeMode.Single
+    public open val previewSizeMode: PreviewSizeMode = SizeMode.Single
 
     /** Data store for widget data specific to the view. */
-    open val stateDefinition: GlanceStateDefinition<*>? = PreferencesGlanceStateDefinition
+    public open val stateDefinition: GlanceStateDefinition<*>? = PreferencesGlanceStateDefinition
 
     /**
      * Method called by the framework when an App Widget has been removed from its host.
      *
      * When the method returns, the state associated with the [glanceId] will be deleted.
      */
-    open suspend fun onDelete(context: Context, glanceId: GlanceId) {}
+    public open suspend fun onDelete(context: Context, glanceId: GlanceId) {}
 
     /** Run the composition in [provideGlance] and send the result to [AppWidgetManager]. */
-    suspend fun update(context: Context, id: GlanceId) {
+    public suspend fun update(context: Context, id: GlanceId) {
         require(id is AppWidgetId && id.isRealId) { "Invalid Glance ID" }
         update(context, id.appWidgetId)
     }
@@ -217,7 +217,7 @@ abstract class GlanceAppWidget(
      */
     @Suppress("GenericException")
     @Throws(Throwable::class)
-    open fun onCompositionError(
+    public open fun onCompositionError(
         context: Context,
         glanceId: GlanceId,
         appWidgetId: Int,
@@ -257,20 +257,20 @@ abstract class GlanceAppWidget(
      * If null, then the default components will be used.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    open fun getComponents(context: Context): GlanceComponents? = null
+    public open fun getComponents(context: Context): GlanceComponents? = null
 
     @RestrictTo(Scope.LIBRARY_GROUP)
     protected open fun createAppWidgetSession(
         context: Context,
         id: AppWidgetId,
         options: Bundle? = null
-    ) = AppWidgetSession(this@GlanceAppWidget, id, options)
+    ): AppWidgetSession = AppWidgetSession(this@GlanceAppWidget, id, options)
 }
 
-@RestrictTo(Scope.LIBRARY_GROUP) data class AppWidgetId(val appWidgetId: Int) : GlanceId
+@RestrictTo(Scope.LIBRARY_GROUP) public data class AppWidgetId(val appWidgetId: Int) : GlanceId
 
 /** Update all App Widgets managed by the [GlanceAppWidget] class. */
-suspend fun GlanceAppWidget.updateAll(@Suppress("ContextFirst") context: Context) {
+public suspend fun GlanceAppWidget.updateAll(@Suppress("ContextFirst") context: Context) {
     val manager = GlanceAppWidgetManager(context)
     manager.getGlanceIds(javaClass).forEach { update(context, it) }
 }
@@ -278,7 +278,7 @@ suspend fun GlanceAppWidget.updateAll(@Suppress("ContextFirst") context: Context
 /**
  * Update all App Widgets managed by the [GlanceAppWidget] class, if they fulfill some condition.
  */
-suspend inline fun <reified State> GlanceAppWidget.updateIf(
+public suspend inline fun <reified State> GlanceAppWidget.updateIf(
     @Suppress("ContextFirst") context: Context,
     predicate: (State) -> Boolean
 ) {
@@ -300,7 +300,7 @@ suspend inline fun <reified State> GlanceAppWidget.updateIf(
  *
  * TODO: make this a protected member once b/206013293 is fixed.
  */
-suspend fun GlanceAppWidget.provideContent(
+public suspend fun GlanceAppWidget.provideContent(
     content: @Composable @GlanceComposable () -> Unit
 ): Nothing {
     coroutineContext[ContentReceiver]?.provideContent(content)
@@ -316,15 +316,15 @@ suspend fun GlanceAppWidget.provideContent(
  * process.
  */
 @RestrictTo(Scope.LIBRARY_GROUP)
-class GlanceComponents(
-    val actionTrampolineActivity: ComponentName,
-    val invisibleActionTrampolineActivity: ComponentName,
-    val actionCallbackBroadcastReceiver: ComponentName,
-    val remoteViewsService: ComponentName,
+public class GlanceComponents(
+    public val actionTrampolineActivity: ComponentName,
+    public val invisibleActionTrampolineActivity: ComponentName,
+    public val actionCallbackBroadcastReceiver: ComponentName,
+    public val remoteViewsService: ComponentName,
 ) {
-    companion object {
+    public companion object {
         /** The default components used for GlanceAppWidget. */
-        fun getDefault(context: Context) =
+        public fun getDefault(context: Context): GlanceComponents =
             GlanceComponents(
                 actionTrampolineActivity =
                     ComponentName(context, ActionTrampolineActivity::class.java),

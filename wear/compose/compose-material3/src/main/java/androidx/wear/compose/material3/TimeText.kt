@@ -24,8 +24,8 @@ import android.text.format.DateFormat
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -59,6 +59,8 @@ import androidx.wear.compose.materialcore.currentTimeMillis
 import androidx.wear.compose.materialcore.is24HourFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * Layout to show the current time and a label, they will be drawn in a curve, following the top
@@ -255,15 +257,18 @@ internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
     val context = LocalContext.current
     val updatedTimeLambda by rememberUpdatedState(time)
 
-    DisposableEffect(context, updatedTimeLambda) {
-        val receiver =
-            TimeBroadcastReceiver(
-                onTimeChanged = { currentTime = updatedTimeLambda() },
-                onTimeZoneChanged = { calendar = Calendar.getInstance() }
-            )
-        receiver.register(context)
-        onDispose { receiver.unregister(context) }
-    }
+    remember(context, updatedTimeLambda) {
+            callbackFlow<Unit> {
+                val receiver =
+                    TimeBroadcastReceiver(
+                        onTimeChanged = { currentTime = updatedTimeLambda() },
+                        onTimeZoneChanged = { calendar = Calendar.getInstance() }
+                    )
+                receiver.register(context)
+                awaitClose { receiver.unregister(context) }
+            }
+        }
+        .collectAsState(Unit)
     return timeText
 }
 

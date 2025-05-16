@@ -70,7 +70,7 @@ public interface SpatialAlignment {
          *
          * @param width The content width in pixels.
          * @param space The available space in pixels.
-         * @see [horizontalOffset]
+         * @see [SpatialAlignment.horizontalOffset]
          */
         public fun offset(width: Int, space: Int): Int
     }
@@ -85,7 +85,7 @@ public interface SpatialAlignment {
          *
          * @param height The content height in pixels.
          * @param space The available space in pixels.
-         * @see [verticalOffset]
+         * @see [SpatialAlignment.verticalOffset]
          */
         public fun offset(height: Int, space: Int): Int
     }
@@ -99,7 +99,7 @@ public interface SpatialAlignment {
          *
          * @param depth The content depth in pixels.
          * @param space The available space in pixels.
-         * @see [depthOffset]
+         * @see [SpatialAlignment.depthOffset]
          */
         public fun offset(depth: Int, space: Int): Int
     }

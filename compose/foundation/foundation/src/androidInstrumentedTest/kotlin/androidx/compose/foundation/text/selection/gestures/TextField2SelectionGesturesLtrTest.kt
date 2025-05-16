@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text.selection.gestures
 
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.onNodeWithTag
@@ -27,7 +26,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
-@ContextMenuFlagSuppress(suppressedFlagValue = true)
 internal class TextField2SelectionGesturesLtrTest :
     TextField2SelectionGesturesTest(
         initialText = "line1\nline2 text1 text2\nline3",

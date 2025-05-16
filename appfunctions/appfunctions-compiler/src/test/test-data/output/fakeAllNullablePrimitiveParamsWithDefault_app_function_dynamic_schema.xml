@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveArrayParamsWithDefault</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -125,9 +122,6 @@
         <functionId>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveArrayParamsWithDefault</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveParamsWithDefault</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -203,4 +197,7 @@
         <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveParamsWithDefault</functionId>
     </appfunction>
+    <AppFunctionComponentMetadataDocument>
+        <id>unused</id>
+    </AppFunctionComponentMetadataDocument>
 </appfunctions>

@@ -746,66 +746,111 @@ private fun extractParameterInfo(
     data: List<Any?>,
     context: SourceInformationContext?
 ): List<ParameterInformation> {
-    if (data.isNotEmpty()) {
-        val recomposeScope =
-            data.firstOrNull { it != null && it.javaClass.name.endsWith(recomposeScopeNameSuffix) }
-        if (recomposeScope != null) {
-            try {
-                val blockField = recomposeScope.javaClass.accessibleField("block")
-                if (blockField != null) {
-                    val block = blockField.get(recomposeScope)
-                    if (block != null) {
-                        val blockClass = block.javaClass
-                        val defaultsField = blockClass.accessibleField(defaultFieldName)
-                        val changedField = blockClass.accessibleField(changedFieldName)
-                        val default =
-                            if (defaultsField != null) defaultsField.get(block) as Int else 0
-                        val changed =
-                            if (changedField != null) changedField.get(block) as Int else 0
-                        val fields =
-                            blockClass.declaredFields
-                                .filter {
-                                    it.name.startsWith(parameterPrefix) &&
-                                        !it.name.startsWith(internalFieldPrefix) &&
-                                        !it.name.startsWith(jacocoDataField)
-                                }
-                                .sortedBy { it.name }
-                        val parameters = mutableListOf<ParameterInformation>()
-                        val parametersMetadata = context?.parameters ?: emptyList()
-                        repeat(fields.size) { index ->
-                            val metadata =
-                                if (index < parametersMetadata.size) parametersMetadata[index]
-                                else Parameter(index)
-                            if (metadata.sortedIndex >= fields.size) return@repeat
-                            val field = fields[metadata.sortedIndex]
-                            field.isAccessible = true
-                            val value = field.get(block)
-                            val fromDefault = (1 shl index) and default != 0
-                            val changedOffset = index * BITS_PER_SLOT + 1
-                            val parameterChanged =
-                                ((SLOT_MASK shl changedOffset) and changed) shr changedOffset
-                            val static = parameterChanged and STATIC_BITS == STATIC_BITS
-                            val compared = parameterChanged and STATIC_BITS == 0
-                            val stable = parameterChanged and STABLE_BITS == 0
-                            parameters.add(
-                                ParameterInformation(
-                                    name = field.name.substring(1),
-                                    value = value,
-                                    fromDefault = fromDefault,
-                                    static = static,
-                                    compared = compared && !fromDefault,
-                                    inlineClass = metadata.inlineClass,
-                                    stable = stable
-                                )
-                            )
-                        }
-                        return parameters
-                    }
-                }
-            } catch (_: Throwable) {}
+    val recomposeScope =
+        data.firstOrNull { it != null && it.javaClass.name.endsWith(recomposeScopeNameSuffix) }
+            ?: return emptyList()
+
+    val block =
+        recomposeScope.javaClass.accessibleField("block")?.get(recomposeScope) ?: return emptyList()
+
+    val parametersMetadata = context?.parameters.orEmpty()
+    val blockClass = block.javaClass
+
+    return try {
+        val inlineFields = filterParameterFields(blockClass.declaredFields, isIndyLambda = true)
+
+        if (inlineFields.isNotEmpty()) {
+            extractFromIndyLambdaFields(inlineFields, block, parametersMetadata)
+        } else {
+            val legacyFields =
+                filterParameterFields(blockClass.declaredFields, isIndyLambda = false)
+            extractFromLegacyFields(legacyFields, block, parametersMetadata)
         }
+    } catch (e: Exception) {
+        emptyList()
     }
-    return emptyList()
+}
+
+@OptIn(UiToolingDataApi::class)
+private fun extractFromIndyLambdaFields(
+    fields: List<Field>,
+    block: Any,
+    metadata: List<Parameter>
+): List<ParameterInformation> {
+    val sortedFields =
+        fields.sortedBy { it.name.substringAfter("f$").toIntOrNull() ?: Int.MAX_VALUE }
+
+    val blockClass = block.javaClass
+    val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
+    val changed = blockClass.accessibleField(changedFieldName)?.get(block) as? Int ?: 0
+
+    return sortedFields.mapIndexed { index, field ->
+        buildParameterInfo(field, block, index, defaults, changed, metadata.getOrNull(index))
+    }
+}
+
+@OptIn(UiToolingDataApi::class)
+private fun extractFromLegacyFields(
+    fields: List<Field>,
+    block: Any,
+    metadata: List<Parameter>
+): List<ParameterInformation> {
+    val blockClass = block.javaClass
+    val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
+    val changed = blockClass.accessibleField(changedFieldName)?.get(block) as? Int ?: 0
+
+    return fields.mapIndexedNotNull { index, _ ->
+        val paramMeta = metadata.getOrNull(index) ?: Parameter(index)
+        val sortedIndex = paramMeta.sortedIndex
+        if (sortedIndex >= fields.size) return@mapIndexedNotNull null
+
+        val field = fields[sortedIndex]
+        buildParameterInfo(field, block, index, defaults, changed, paramMeta)
+    }
+}
+
+@UiToolingDataApi
+private fun buildParameterInfo(
+    field: Field,
+    block: Any,
+    index: Int,
+    defaults: Int,
+    changed: Int,
+    metadata: Parameter?
+): ParameterInformation {
+    field.isAccessible = true
+    val value = field.get(block)
+
+    val fromDefault = (1 shl index) and defaults != 0
+    val changedOffset = index * BITS_PER_SLOT + 1
+    val parameterChanged = ((SLOT_MASK shl changedOffset) and changed) shr changedOffset
+
+    val static = parameterChanged and STATIC_BITS == STATIC_BITS
+    val compared = parameterChanged and STATIC_BITS == 0
+    val stable = parameterChanged and STABLE_BITS == 0
+
+    return ParameterInformation(
+        name = field.name.substring(1),
+        value = value,
+        fromDefault = fromDefault,
+        static = static,
+        compared = compared && !fromDefault,
+        inlineClass = metadata?.inlineClass,
+        stable = stable
+    )
+}
+
+private fun filterParameterFields(fields: Array<Field>, isIndyLambda: Boolean): List<Field> {
+    return fields.filter { field ->
+        val name = field.name
+        val matchesInlinePattern = name.matches(Regex("^f\\$\\d+$"))
+        val matchesLegacyPattern = name.startsWith(parameterPrefix)
+
+        val validPrefix =
+            isIndyLambda && matchesInlinePattern || !isIndyLambda && matchesLegacyPattern
+
+        validPrefix && !name.startsWith(internalFieldPrefix) && !name.startsWith(jacocoDataField)
+    }
 }
 
 private const val BITS_PER_SLOT = 3
@@ -816,7 +861,7 @@ private const val STABLE_BITS = 0b100
 /** The source position of the group extracted from the key, if one exists for the group. */
 @UiToolingDataApi
 val Group.position: String?
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET") @UiToolingDataApi get() = keyPosition(key)
+    get() = keyPosition(key)
 
 private fun Class<*>.accessibleField(name: String): Field? =
     declaredFields.firstOrNull { it.name == name }?.apply { isAccessible = true }

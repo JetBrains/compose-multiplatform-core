@@ -754,7 +754,7 @@ class ExtensionWindowBackendTest {
 
         val records = mutableListOf<AddCall>()
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
+        @Deprecated("Deprecated in interface but added for compatibility")
         override fun addWindowLayoutInfoListener(
             activity: Activity,
             consumer: JavaConsumer<OEMWindowLayoutInfo>
@@ -769,7 +769,7 @@ class ExtensionWindowBackendTest {
             records.add(AddCall(context))
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
+        @Deprecated("Deprecated in interface but added for compatibility")
         override fun removeWindowLayoutInfoListener(consumer: JavaConsumer<OEMWindowLayoutInfo>) {}
 
         class AddCall(val context: Context)
@@ -787,7 +787,7 @@ class ExtensionWindowBackendTest {
         val consumers = mutableListOf<JavaConsumer<OEMWindowLayoutInfo>>()
         val oemConsumers = mutableListOf<OEMConsumer<OEMWindowLayoutInfo>>()
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
+        @Deprecated("Deprecated in interface but added for compatibility")
         override fun addWindowLayoutInfoListener(
             activity: Activity,
             consumer: JavaConsumer<OEMWindowLayoutInfo>
@@ -802,7 +802,7 @@ class ExtensionWindowBackendTest {
             oemConsumers.add(consumer)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
+        @Deprecated("Deprecated in interface but added for compatibility")
         override fun removeWindowLayoutInfoListener(consumer: JavaConsumer<OEMWindowLayoutInfo>) {
             consumers.remove(consumer)
         }

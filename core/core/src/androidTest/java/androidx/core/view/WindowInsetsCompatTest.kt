@@ -96,19 +96,6 @@ class WindowInsetsCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 21)
-    public fun inset_halfAmount() {
-        val start = Insets.of(0, 10, 0, 0)
-        val insets = WindowInsetsCompat.Builder().setInsets(Type.statusBars(), start).build()
-
-        val result = insets.inset(0, 5, 0, 0).systemWindowInsets
-        assertEquals(start.left, result.left)
-        assertEquals(start.top - 5, result.top)
-        assertEquals(start.right, result.right)
-        assertEquals(start.bottom, result.bottom)
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_set_ime_insets() {
         val start = Insets.of(10, 11, 12, 13)
         val insets =
@@ -159,6 +146,19 @@ class WindowInsetsCompatTest {
         assertEquals(systemOverlays, result.getInsets(Type.systemOverlays()))
         assertEquals(Insets.of(10, 50, 0, 100), result.getInsets(Type.systemBars()))
         assertEquals(Insets.of(10, 50, 0, 100), result.systemWindowInsets)
+    }
+
+    /** On API 31+ we can test the rounded corner. */
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    public fun builder_min31_roundedCorner() {
+        val position = RoundedCornerCompat.POSITION_BOTTOM_RIGHT
+        val roundedCorner =
+            RoundedCornerCompat(position, 1 /* radius */, 2 /* centerX */, 3 /* centerY */)
+
+        val result = WindowInsetsCompat.Builder().setRoundedCorner(position, roundedCorner).build()
+
+        assertEquals(roundedCorner, result.getRoundedCorner(position))
     }
 
     /** On API 29+ we can test more types. */

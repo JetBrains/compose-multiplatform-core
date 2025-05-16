@@ -19,15 +19,19 @@ package androidx.xr.runtime.internal
 import android.view.Surface
 import androidx.annotation.RestrictTo
 
-/** Interface for a surface which images can be rendered into. */
+/**
+ * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
+ * this Surface in various ways, such as via MediaPlayer, ExoPlayer, or custom rendering. The
+ * Surface content is texture mapped to the geometric shape defined by the [CanvasShape]. The
+ * application can render stereoscopic content into the Surface and specify how it is routed to the
+ * User's eyes for stereo viewing using the [stereoMode] property.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SurfaceEntity : Entity {
     /**
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
      * correctly produce a stereoscopic view to the user.
-     *
-     * @param mode An int StereoMode
      */
     public var stereoMode: Int
 
@@ -83,6 +87,26 @@ public interface SurfaceEntity : Entity {
             public const val MULTIVIEW_LEFT_PRIMARY: Int = 4
             // Multiview video, [primary, auxiliary] views will map to [right, left] eyes
             public const val MULTIVIEW_RIGHT_PRIMARY: Int = 5
+        }
+    }
+
+    /**
+     * Specifies whether the Surface which backs this Entity should support DRM content. This is
+     * useful when decoding video content which requires DRM.
+     *
+     * See https://developer.android.com/reference/android/media/MediaDrm for more details.
+     */
+    public annotation class ContentSecurityLevel {
+        public companion object {
+            // The Surface content is not secured. DRM content can not be decoded into this Surface.
+            // Screen captures of the SurfaceEntity will show the Surface content.
+            public const val NONE: Int = 0
+            // The surface content is secured. DRM content can be decoded into this Surface.
+            // Screen captures of the SurfaceEntity will redact the Surface content.
+            // TODO: b/411767049 - Redact only the Surface content, not the entire feed while the
+            // Surface
+            // is visible.
+            public const val PROTECTED: Int = 1
         }
     }
 

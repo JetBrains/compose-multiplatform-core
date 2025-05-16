@@ -35,7 +35,7 @@
     <string name="m3c_date_picker_headline_description" msgid="3664277305226978227">"‏انتخاب فعلی: %1$s"</string>
     <string name="m3c_date_picker_no_selection_description" msgid="5811000998184572395">"هیچ‌کدام"</string>
     <string name="m3c_date_picker_today_description" msgid="3199387177749801575">"امروز"</string>
-    <string name="m3c_date_picker_year_picker_pane_title" msgid="2068382232816991922">"انتخابگر سال نمایان است"</string>
+    <string name="m3c_date_picker_year_picker_pane_title" msgid="2068382232816991922">"انتخاب‌گر سال نمایان است"</string>
     <string name="m3c_date_input_title" msgid="7306227249789210568">"انتخاب تاریخ"</string>
     <string name="m3c_date_input_headline" msgid="8166741421776570875">"تاریخ واردشده"</string>
     <string name="m3c_date_input_label" msgid="2895559812010326913">"تاریخ"</string>

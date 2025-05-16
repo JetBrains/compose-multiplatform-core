@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalComposeRuntimeApi::class)
 @MediumTest
 @RunWith(Parameterized::class)
 class UiErrorTraceTests(private val lookahead: Boolean) {

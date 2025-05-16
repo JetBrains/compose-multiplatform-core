@@ -22,6 +22,7 @@ import androidx.compose.ui.node.LookaheadCapablePlaceable
 import androidx.compose.ui.node.MotionReferencePlacementDelegate
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -150,7 +151,13 @@ abstract class Placeable : Measured {
      */
     // TODO(b/150276678): using the PlacementScope to place outside the layout pass is not working.
     @PlacementScopeMarker
-    abstract class PlacementScope {
+    abstract class PlacementScope : Density {
+        override val density: Float
+            get() = 1f
+
+        override val fontScale: Float
+            get() = 1f
+
         /**
          * Keeps the parent layout node's width to make the automatic mirroring of the position in
          * RTL environment. If the value is zero, than the [Placeable] will be be placed to the
@@ -550,7 +557,17 @@ private class LookaheadCapablePlacementScope(private val within: LookaheadCapabl
         }
 
     override fun Ruler.current(defaultValue: Float): Float =
-        within.findRulerValue(this, defaultValue)
+        if (calculate !== null) {
+            calculate(defaultValue)
+        } else {
+            within.findRulerValue(this, defaultValue)
+        }
+
+    override val density: Float
+        get() = within.density
+
+    override val fontScale: Float
+        get() = within.fontScale
 }
 
 /** The PlacementScope that is used at the root of the compose layout hierarchy. */
@@ -563,4 +580,10 @@ private class OuterPlacementScope(val owner: Owner) : Placeable.PlacementScope()
 
     override val coordinates: LayoutCoordinates
         get() = owner.root.outerCoordinator
+
+    override val density: Float
+        get() = owner.density.density
+
+    override val fontScale: Float
+        get() = owner.density.fontScale
 }

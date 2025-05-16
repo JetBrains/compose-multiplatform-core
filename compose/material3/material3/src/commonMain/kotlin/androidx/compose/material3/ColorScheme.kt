@@ -42,12 +42,8 @@ import kotlin.math.ln
  * The Material color system and custom schemes provide default values for color as a starting point
  * for customization.
  *
- * Example of extending color scheme, including implementing Fixed Accent colors:
- *
- * @sample androidx.compose.material3.samples.ColorSchemeFixedAccentColorSample
- *
  * To learn more about colors, see
- * [Material Design colors](https://m3.material.io/styles/color/overview).
+ * [Material Design colors](https://m3.material.io/styles/color/system/overview).
  *
  * @property primary The primary color is the color displayed most frequently across your app’s
  *   screens and components.
@@ -117,6 +113,36 @@ import kotlin.math.ln
  * @property surfaceContainerLowest A [surface] variant for containers with lower emphasis than
  *   [surfaceContainerLow]. Use this role for content which requires less emphasis than
  *   [surfaceContainerLow].
+ * @property primaryFixed A [primary] variant that maintains the same tone in light and dark themes.
+ *   The fixed color role may be used instead of the equivalent container role in situations where
+ *   such fixed behavior is desired.
+ * @property primaryFixedDim A [primary] variant that maintains the same tone in light and dark
+ *   themes. Dim roles provide a stronger, more emphasized tone relative to the equivalent fixed
+ *   color.
+ * @property onPrimaryFixed Color used for text and icons displayed on top of [primaryFixed] or
+ *   [primaryFixedDim]. Maintains the same tone in light and dark themes.
+ * @property onPrimaryFixedVariant An [onPrimaryFixed] variant which provides less emphasis. Useful
+ *   when a strong contrast is not required.
+ * @property secondaryFixed A [secondary] variant that maintains the same tone in light and dark
+ *   themes. The fixed color role may be used instead of the equivalent container role in situations
+ *   where such fixed behavior is desired.
+ * @property secondaryFixedDim A [secondary] variant that maintains the same tone in light and dark
+ *   themes. Dim roles provide a stronger, more emphasized tone relative to the equivalent fixed
+ *   color.
+ * @property onSecondaryFixed Color used for text and icons displayed on top of [secondaryFixed] or
+ *   [secondaryFixedDim]. Maintains the same tone in light and dark themes.
+ * @property onSecondaryFixedVariant An [onSecondaryFixed] variant which provides less emphasis.
+ *   Useful when a strong contrast is not required.
+ * @property tertiaryFixed A [tertiary] variant that maintains the same tone in light and dark
+ *   themes. The fixed color role may be used instead of the equivalent container role in situations
+ *   where such fixed behavior is desired.
+ * @property tertiaryFixedDim A [tertiary] variant that maintains the same tone in light and dark
+ *   themes. Dim roles provide a stronger, more emphasized tone relative to the equivalent fixed
+ *   color.
+ * @property onTertiaryFixed Color used for text and icons displayed on top of [tertiaryFixed] or
+ *   [tertiaryFixedDim]. Maintains the same tone in light and dark themes.
+ * @property onTertiaryFixedVariant An [onTertiaryFixed] variant which provides less emphasis.
+ *   Useful when a strong contrast is not required.
  */
 @Immutable
 class ColorScheme(
@@ -156,10 +182,22 @@ class ColorScheme(
     val surfaceContainerHighest: Color,
     val surfaceContainerLow: Color,
     val surfaceContainerLowest: Color,
+    val primaryFixed: Color,
+    val primaryFixedDim: Color,
+    val onPrimaryFixed: Color,
+    val onPrimaryFixedVariant: Color,
+    val secondaryFixed: Color,
+    val secondaryFixedDim: Color,
+    val onSecondaryFixed: Color,
+    val onSecondaryFixedVariant: Color,
+    val tertiaryFixed: Color,
+    val tertiaryFixedDim: Color,
+    val onTertiaryFixed: Color,
+    val onTertiaryFixedVariant: Color,
 ) {
     @Deprecated(
         level = DeprecationLevel.WARNING,
-        message = "Use constructor with additional 'surfaceContainer' roles.",
+        message = "Use constructor with additional 'fixed' container roles.",
         replaceWith =
             ReplaceWith(
                 "ColorScheme(primary,\n" +
@@ -230,6 +268,13 @@ class ColorScheme(
         outline: Color,
         outlineVariant: Color,
         scrim: Color,
+        surfaceBright: Color,
+        surfaceDim: Color,
+        surfaceContainer: Color,
+        surfaceContainerHigh: Color,
+        surfaceContainerHighest: Color,
+        surfaceContainerLow: Color,
+        surfaceContainerLowest: Color,
     ) : this(
         primary = primary,
         onPrimary = onPrimary,
@@ -260,13 +305,25 @@ class ColorScheme(
         outline = outline,
         outlineVariant = outlineVariant,
         scrim = scrim,
-        surfaceBright = Color.Unspecified,
-        surfaceDim = Color.Unspecified,
-        surfaceContainer = Color.Unspecified,
-        surfaceContainerHigh = Color.Unspecified,
-        surfaceContainerHighest = Color.Unspecified,
-        surfaceContainerLow = Color.Unspecified,
-        surfaceContainerLowest = Color.Unspecified,
+        surfaceBright = surfaceBright,
+        surfaceDim = surfaceDim,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceContainerLow = surfaceContainerLow,
+        surfaceContainerLowest = surfaceContainerLowest,
+        primaryFixed = Color.Unspecified,
+        primaryFixedDim = Color.Unspecified,
+        onPrimaryFixed = Color.Unspecified,
+        onPrimaryFixedVariant = Color.Unspecified,
+        secondaryFixed = Color.Unspecified,
+        secondaryFixedDim = Color.Unspecified,
+        onSecondaryFixed = Color.Unspecified,
+        onSecondaryFixedVariant = Color.Unspecified,
+        tertiaryFixed = Color.Unspecified,
+        tertiaryFixedDim = Color.Unspecified,
+        onTertiaryFixed = Color.Unspecified,
+        onTertiaryFixedVariant = Color.Unspecified,
     )
 
     /** Returns a copy of this ColorScheme, optionally overriding some of the values. */
@@ -307,6 +364,18 @@ class ColorScheme(
         surfaceContainerHighest: Color = this.surfaceContainerHighest,
         surfaceContainerLow: Color = this.surfaceContainerLow,
         surfaceContainerLowest: Color = this.surfaceContainerLowest,
+        primaryFixed: Color = this.primaryFixed,
+        primaryFixedDim: Color = this.primaryFixedDim,
+        onPrimaryFixed: Color = this.onPrimaryFixed,
+        onPrimaryFixedVariant: Color = this.onPrimaryFixedVariant,
+        secondaryFixed: Color = this.secondaryFixed,
+        secondaryFixedDim: Color = this.secondaryFixedDim,
+        onSecondaryFixed: Color = this.onSecondaryFixed,
+        onSecondaryFixedVariant: Color = this.onSecondaryFixedVariant,
+        tertiaryFixed: Color = this.tertiaryFixed,
+        tertiaryFixedDim: Color = this.tertiaryFixedDim,
+        onTertiaryFixed: Color = this.onTertiaryFixed,
+        onTertiaryFixedVariant: Color = this.onTertiaryFixedVariant
     ): ColorScheme =
         ColorScheme(
             primary = primary,
@@ -345,11 +414,23 @@ class ColorScheme(
             surfaceContainerHighest = surfaceContainerHighest,
             surfaceContainerLow = surfaceContainerLow,
             surfaceContainerLowest = surfaceContainerLowest,
+            primaryFixed = primaryFixed,
+            primaryFixedDim = primaryFixedDim,
+            onPrimaryFixed = onPrimaryFixed,
+            onPrimaryFixedVariant = onPrimaryFixedVariant,
+            secondaryFixed = secondaryFixed,
+            secondaryFixedDim = secondaryFixedDim,
+            onSecondaryFixed = onSecondaryFixed,
+            onSecondaryFixedVariant = onSecondaryFixedVariant,
+            tertiaryFixed = tertiaryFixed,
+            tertiaryFixedDim = tertiaryFixedDim,
+            onTertiaryFixed = onTertiaryFixed,
+            onTertiaryFixedVariant = onTertiaryFixedVariant,
         )
 
     @Deprecated(
         message =
-            "Maintained for binary compatibility. Use overload with additional surface roles " +
+            "Maintained for binary compatibility. Use overload with additional fixed roles " +
                 "instead",
         level = DeprecationLevel.HIDDEN
     )
@@ -416,6 +497,89 @@ class ColorScheme(
             scrim = scrim,
         )
 
+    @Deprecated(
+        message =
+            "Maintained for binary compatibility. Use overload with additional fixed roles " +
+                "instead",
+        level = DeprecationLevel.HIDDEN
+    )
+    fun copy(
+        primary: Color = this.primary,
+        onPrimary: Color = this.onPrimary,
+        primaryContainer: Color = this.primaryContainer,
+        onPrimaryContainer: Color = this.onPrimaryContainer,
+        inversePrimary: Color = this.inversePrimary,
+        secondary: Color = this.secondary,
+        onSecondary: Color = this.onSecondary,
+        secondaryContainer: Color = this.secondaryContainer,
+        onSecondaryContainer: Color = this.onSecondaryContainer,
+        tertiary: Color = this.tertiary,
+        onTertiary: Color = this.onTertiary,
+        tertiaryContainer: Color = this.tertiaryContainer,
+        onTertiaryContainer: Color = this.onTertiaryContainer,
+        background: Color = this.background,
+        onBackground: Color = this.onBackground,
+        surface: Color = this.surface,
+        onSurface: Color = this.onSurface,
+        surfaceVariant: Color = this.surfaceVariant,
+        onSurfaceVariant: Color = this.onSurfaceVariant,
+        surfaceTint: Color = this.surfaceTint,
+        inverseSurface: Color = this.inverseSurface,
+        inverseOnSurface: Color = this.inverseOnSurface,
+        error: Color = this.error,
+        onError: Color = this.onError,
+        errorContainer: Color = this.errorContainer,
+        onErrorContainer: Color = this.onErrorContainer,
+        outline: Color = this.outline,
+        outlineVariant: Color = this.outlineVariant,
+        scrim: Color = this.scrim,
+        surfaceBright: Color = this.surfaceBright,
+        surfaceDim: Color = this.surfaceDim,
+        surfaceContainer: Color = this.surfaceContainer,
+        surfaceContainerHigh: Color = this.surfaceContainerHigh,
+        surfaceContainerHighest: Color = this.surfaceContainerHighest,
+        surfaceContainerLow: Color = this.surfaceContainerLow,
+        surfaceContainerLowest: Color = this.surfaceContainerLowest,
+    ): ColorScheme =
+        copy(
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
+            onPrimaryContainer = onPrimaryContainer,
+            inversePrimary = inversePrimary,
+            secondary = secondary,
+            onSecondary = onSecondary,
+            secondaryContainer = secondaryContainer,
+            onSecondaryContainer = onSecondaryContainer,
+            tertiary = tertiary,
+            onTertiary = onTertiary,
+            tertiaryContainer = tertiaryContainer,
+            onTertiaryContainer = onTertiaryContainer,
+            background = background,
+            onBackground = onBackground,
+            surface = surface,
+            onSurface = onSurface,
+            surfaceVariant = surfaceVariant,
+            onSurfaceVariant = onSurfaceVariant,
+            surfaceTint = surfaceTint,
+            inverseSurface = inverseSurface,
+            inverseOnSurface = inverseOnSurface,
+            error = error,
+            onError = onError,
+            errorContainer = errorContainer,
+            onErrorContainer = onErrorContainer,
+            outline = outline,
+            outlineVariant = outlineVariant,
+            scrim = scrim,
+            surfaceBright = surfaceBright,
+            surfaceDim = surfaceDim,
+            surfaceContainer = surfaceContainer,
+            surfaceContainerHigh = surfaceContainerHigh,
+            surfaceContainerHighest = surfaceContainerHighest,
+            surfaceContainerLow = surfaceContainerLow,
+            surfaceContainerLowest = surfaceContainerLowest,
+        )
+
     override fun toString(): String {
         return "ColorScheme(" +
             "primary=$primary" +
@@ -454,6 +618,18 @@ class ColorScheme(
             "surfaceContainerHighest=$surfaceContainerHighest" +
             "surfaceContainerLow=$surfaceContainerLow" +
             "surfaceContainerLowest=$surfaceContainerLowest" +
+            "primaryFixed=$primaryFixed" +
+            "primaryFixedDim=$primaryFixedDim" +
+            "onPrimaryFixed=$onPrimaryContainer" +
+            "onPrimaryFixedVariant=$onPrimaryFixedVariant" +
+            "secondaryFixed=$secondaryFixed" +
+            "secondaryFixedDim=$secondaryFixedDim" +
+            "onSecondaryFixed=$onSecondaryFixed" +
+            "onSecondaryFixedVariant=$onSecondaryFixedVariant" +
+            "tertiaryFixed=$tertiaryFixed" +
+            "tertiaryFixedDim=$tertiaryFixedDim" +
+            "onTertiaryFixed=$onTertiaryFixed" +
+            "onTertiaryFixedVariant=$onTertiaryFixedVariant" +
             ")"
     }
 
@@ -535,6 +711,91 @@ class ColorScheme(
     internal var defaultFloatingToolbarStandardColorsCached: FloatingToolbarColors? = null
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal var defaultFloatingToolbarVibrantColorsCached: FloatingToolbarColors? = null
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Use constructor with additional 'surfaceContainer' roles.",
+    )
+    constructor(
+        primary: Color,
+        onPrimary: Color,
+        primaryContainer: Color,
+        onPrimaryContainer: Color,
+        inversePrimary: Color,
+        secondary: Color,
+        onSecondary: Color,
+        secondaryContainer: Color,
+        onSecondaryContainer: Color,
+        tertiary: Color,
+        onTertiary: Color,
+        tertiaryContainer: Color,
+        onTertiaryContainer: Color,
+        background: Color,
+        onBackground: Color,
+        surface: Color,
+        onSurface: Color,
+        surfaceVariant: Color,
+        onSurfaceVariant: Color,
+        surfaceTint: Color,
+        inverseSurface: Color,
+        inverseOnSurface: Color,
+        error: Color,
+        onError: Color,
+        errorContainer: Color,
+        onErrorContainer: Color,
+        outline: Color,
+        outlineVariant: Color,
+        scrim: Color,
+    ) : this(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        inversePrimary = inversePrimary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        surfaceTint = surfaceTint,
+        inverseSurface = inverseSurface,
+        inverseOnSurface = inverseOnSurface,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+        outline = outline,
+        outlineVariant = outlineVariant,
+        scrim = scrim,
+        surfaceBright = Color.Unspecified,
+        surfaceDim = Color.Unspecified,
+        surfaceContainer = Color.Unspecified,
+        surfaceContainerHigh = Color.Unspecified,
+        surfaceContainerHighest = Color.Unspecified,
+        surfaceContainerLow = Color.Unspecified,
+        surfaceContainerLowest = Color.Unspecified,
+        primaryFixed = Color.Unspecified,
+        primaryFixedDim = Color.Unspecified,
+        onPrimaryFixed = Color.Unspecified,
+        onPrimaryFixedVariant = Color.Unspecified,
+        secondaryFixed = Color.Unspecified,
+        secondaryFixedDim = Color.Unspecified,
+        onSecondaryFixed = Color.Unspecified,
+        onSecondaryFixedVariant = Color.Unspecified,
+        tertiaryFixed = Color.Unspecified,
+        tertiaryFixedDim = Color.Unspecified,
+        onTertiaryFixed = Color.Unspecified,
+        onTertiaryFixedVariant = Color.Unspecified,
+    )
 }
 
 /** Returns a light Material color scheme. */
@@ -575,8 +836,322 @@ fun lightColorScheme(
     surfaceContainerLow: Color = ColorLightTokens.SurfaceContainerLow,
     surfaceContainerLowest: Color = ColorLightTokens.SurfaceContainerLowest,
     surfaceDim: Color = ColorLightTokens.SurfaceDim,
+    primaryFixed: Color = ColorLightTokens.PrimaryFixed,
+    primaryFixedDim: Color = ColorLightTokens.PrimaryFixedDim,
+    onPrimaryFixed: Color = ColorLightTokens.OnPrimaryFixed,
+    onPrimaryFixedVariant: Color = ColorLightTokens.OnPrimaryFixedVariant,
+    secondaryFixed: Color = ColorLightTokens.SecondaryFixed,
+    secondaryFixedDim: Color = ColorLightTokens.SecondaryFixedDim,
+    onSecondaryFixed: Color = ColorLightTokens.OnSecondaryFixed,
+    onSecondaryFixedVariant: Color = ColorLightTokens.OnSecondaryFixedVariant,
+    tertiaryFixed: Color = ColorLightTokens.TertiaryFixed,
+    tertiaryFixedDim: Color = ColorLightTokens.TertiaryFixedDim,
+    onTertiaryFixed: Color = ColorLightTokens.OnTertiaryFixed,
+    onTertiaryFixedVariant: Color = ColorLightTokens.OnTertiaryFixedVariant,
 ): ColorScheme =
     ColorScheme(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        inversePrimary = inversePrimary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        surfaceTint = surfaceTint,
+        inverseSurface = inverseSurface,
+        inverseOnSurface = inverseOnSurface,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+        outline = outline,
+        outlineVariant = outlineVariant,
+        scrim = scrim,
+        surfaceBright = surfaceBright,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceContainerLow = surfaceContainerLow,
+        surfaceContainerLowest = surfaceContainerLowest,
+        surfaceDim = surfaceDim,
+        primaryFixed = primaryFixed,
+        primaryFixedDim = primaryFixedDim,
+        onPrimaryFixed = onPrimaryFixed,
+        onPrimaryFixedVariant = onPrimaryFixedVariant,
+        secondaryFixed = secondaryFixed,
+        secondaryFixedDim = secondaryFixedDim,
+        onSecondaryFixed = onSecondaryFixed,
+        onSecondaryFixedVariant = onSecondaryFixedVariant,
+        tertiaryFixed = tertiaryFixed,
+        tertiaryFixedDim = tertiaryFixedDim,
+        onTertiaryFixed = onTertiaryFixed,
+        onTertiaryFixedVariant = onTertiaryFixedVariant,
+    )
+
+/** Returns a dark Material color scheme. */
+fun darkColorScheme(
+    primary: Color = ColorDarkTokens.Primary,
+    onPrimary: Color = ColorDarkTokens.OnPrimary,
+    primaryContainer: Color = ColorDarkTokens.PrimaryContainer,
+    onPrimaryContainer: Color = ColorDarkTokens.OnPrimaryContainer,
+    inversePrimary: Color = ColorDarkTokens.InversePrimary,
+    secondary: Color = ColorDarkTokens.Secondary,
+    onSecondary: Color = ColorDarkTokens.OnSecondary,
+    secondaryContainer: Color = ColorDarkTokens.SecondaryContainer,
+    onSecondaryContainer: Color = ColorDarkTokens.OnSecondaryContainer,
+    tertiary: Color = ColorDarkTokens.Tertiary,
+    onTertiary: Color = ColorDarkTokens.OnTertiary,
+    tertiaryContainer: Color = ColorDarkTokens.TertiaryContainer,
+    onTertiaryContainer: Color = ColorDarkTokens.OnTertiaryContainer,
+    background: Color = ColorDarkTokens.Background,
+    onBackground: Color = ColorDarkTokens.OnBackground,
+    surface: Color = ColorDarkTokens.Surface,
+    onSurface: Color = ColorDarkTokens.OnSurface,
+    surfaceVariant: Color = ColorDarkTokens.SurfaceVariant,
+    onSurfaceVariant: Color = ColorDarkTokens.OnSurfaceVariant,
+    surfaceTint: Color = primary,
+    inverseSurface: Color = ColorDarkTokens.InverseSurface,
+    inverseOnSurface: Color = ColorDarkTokens.InverseOnSurface,
+    error: Color = ColorDarkTokens.Error,
+    onError: Color = ColorDarkTokens.OnError,
+    errorContainer: Color = ColorDarkTokens.ErrorContainer,
+    onErrorContainer: Color = ColorDarkTokens.OnErrorContainer,
+    outline: Color = ColorDarkTokens.Outline,
+    outlineVariant: Color = ColorDarkTokens.OutlineVariant,
+    scrim: Color = ColorDarkTokens.Scrim,
+    surfaceBright: Color = ColorDarkTokens.SurfaceBright,
+    surfaceContainer: Color = ColorDarkTokens.SurfaceContainer,
+    surfaceContainerHigh: Color = ColorDarkTokens.SurfaceContainerHigh,
+    surfaceContainerHighest: Color = ColorDarkTokens.SurfaceContainerHighest,
+    surfaceContainerLow: Color = ColorDarkTokens.SurfaceContainerLow,
+    surfaceContainerLowest: Color = ColorDarkTokens.SurfaceContainerLowest,
+    surfaceDim: Color = ColorDarkTokens.SurfaceDim,
+    primaryFixed: Color = ColorDarkTokens.PrimaryFixed,
+    primaryFixedDim: Color = ColorDarkTokens.PrimaryFixedDim,
+    onPrimaryFixed: Color = ColorDarkTokens.OnPrimaryFixed,
+    onPrimaryFixedVariant: Color = ColorDarkTokens.OnPrimaryFixedVariant,
+    secondaryFixed: Color = ColorDarkTokens.SecondaryFixed,
+    secondaryFixedDim: Color = ColorDarkTokens.SecondaryFixedDim,
+    onSecondaryFixed: Color = ColorDarkTokens.OnSecondaryFixed,
+    onSecondaryFixedVariant: Color = ColorDarkTokens.OnSecondaryFixedVariant,
+    tertiaryFixed: Color = ColorDarkTokens.TertiaryFixed,
+    tertiaryFixedDim: Color = ColorDarkTokens.TertiaryFixedDim,
+    onTertiaryFixed: Color = ColorDarkTokens.OnTertiaryFixed,
+    onTertiaryFixedVariant: Color = ColorDarkTokens.OnTertiaryFixedVariant,
+): ColorScheme =
+    ColorScheme(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        inversePrimary = inversePrimary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        surfaceTint = surfaceTint,
+        inverseSurface = inverseSurface,
+        inverseOnSurface = inverseOnSurface,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+        outline = outline,
+        outlineVariant = outlineVariant,
+        scrim = scrim,
+        surfaceBright = surfaceBright,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceContainerLow = surfaceContainerLow,
+        surfaceContainerLowest = surfaceContainerLowest,
+        surfaceDim = surfaceDim,
+        primaryFixed = primaryFixed,
+        primaryFixedDim = primaryFixedDim,
+        onPrimaryFixed = onPrimaryFixed,
+        onPrimaryFixedVariant = onPrimaryFixedVariant,
+        secondaryFixed = secondaryFixed,
+        secondaryFixedDim = secondaryFixedDim,
+        onSecondaryFixed = onSecondaryFixed,
+        onSecondaryFixedVariant = onSecondaryFixedVariant,
+        tertiaryFixed = tertiaryFixed,
+        tertiaryFixedDim = tertiaryFixedDim,
+        onTertiaryFixed = onTertiaryFixed,
+        onTertiaryFixedVariant = onTertiaryFixedVariant,
+    )
+
+/**
+ * The Material color system contains pairs of colors that are typically used for the background and
+ * content color inside a component. For example, a [Button] typically uses `primary` for its
+ * background, and `onPrimary` for the color of its content (usually text or iconography).
+ *
+ * This function tries to match the provided [backgroundColor] to a 'background' color in this
+ * [ColorScheme], and then will return the corresponding color used for content. For example, when
+ * [backgroundColor] is [ColorScheme.primary], this will return [ColorScheme.onPrimary].
+ *
+ * If [backgroundColor] does not match a background color in the theme, this will return
+ * [Color.Unspecified].
+ *
+ * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
+ *   the theme's [ColorScheme], then returns [Color.Unspecified].
+ * @see contentColorFor
+ */
+@Stable
+fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
+    when (backgroundColor) {
+        primary -> onPrimary
+        secondary -> onSecondary
+        tertiary -> onTertiary
+        background -> onBackground
+        error -> onError
+        primaryContainer -> onPrimaryContainer
+        secondaryContainer -> onSecondaryContainer
+        tertiaryContainer -> onTertiaryContainer
+        errorContainer -> onErrorContainer
+        inverseSurface -> inverseOnSurface
+        surface -> onSurface
+        surfaceVariant -> onSurfaceVariant
+        surfaceBright -> onSurface
+        surfaceContainer -> onSurface
+        surfaceContainerHigh -> onSurface
+        surfaceContainerHighest -> onSurface
+        surfaceContainerLow -> onSurface
+        surfaceContainerLowest -> onSurface
+        surfaceDim -> onSurface
+        primaryFixed -> onPrimaryFixed
+        primaryFixedDim -> onPrimaryFixed
+        secondaryFixed -> onSecondaryFixed
+        secondaryFixedDim -> onSecondaryFixed
+        tertiaryFixed -> onTertiaryFixed
+        tertiaryFixedDim -> onTertiaryFixed
+        else -> Color.Unspecified
+    }
+
+/**
+ * The Material color system contains pairs of colors that are typically used for the background and
+ * content color inside a component. For example, a [Button] typically uses `primary` for its
+ * background, and `onPrimary` for the color of its content (usually text or iconography).
+ *
+ * This function tries to match the provided [backgroundColor] to a 'background' color in this
+ * [ColorScheme], and then will return the corresponding color used for content. For example, when
+ * [backgroundColor] is [ColorScheme.primary], this will return [ColorScheme.onPrimary].
+ *
+ * If [backgroundColor] does not match a background color in the theme, this will return the current
+ * value of [LocalContentColor] as a best-effort color.
+ *
+ * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
+ *   the theme's [ColorScheme], then returns the current value of [LocalContentColor].
+ * @see ColorScheme.contentColorFor
+ */
+@Composable
+@ReadOnlyComposable
+fun contentColorFor(backgroundColor: Color) =
+    MaterialTheme.colorScheme.contentColorFor(backgroundColor).takeOrElse {
+        LocalContentColor.current
+    }
+
+/**
+ * Computes the surface tonal color at different elevation levels e.g. surface1 through surface5.
+ *
+ * @param elevation Elevation value used to compute alpha of the color overlay layer.
+ * @return the [ColorScheme.surface] color with an alpha of the [ColorScheme.surfaceTint] color
+ *   overlaid on top of it.
+ */
+@Stable
+fun ColorScheme.surfaceColorAtElevation(
+    elevation: Dp,
+): Color {
+    if (elevation == 0.dp) return surface
+    val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
+    return surfaceTint.copy(alpha = alpha).compositeOver(surface)
+}
+
+/**
+ * Returns a light Material color scheme.
+ *
+ * The default color scheme for [MaterialExpressiveTheme]. For dark mode, use [darkColorScheme].
+ *
+ * Example of MaterialExpressiveTheme toggling expressiveLightColorScheme and darkTheme.
+ *
+ * @sample androidx.compose.material3.samples.MaterialExpressiveThemeColorSchemeSample
+ */
+@ExperimentalMaterial3ExpressiveApi
+fun expressiveLightColorScheme() =
+    lightColorScheme(
+        // TODO: Replace palette references with color token references when available.
+        onPrimaryContainer = PaletteTokens.Primary30,
+        onSecondaryContainer = PaletteTokens.Secondary30,
+        onTertiaryContainer = PaletteTokens.Tertiary30,
+        onErrorContainer = PaletteTokens.Error30
+    )
+
+@Deprecated(
+    message =
+        "Maintained for binary compatibility. Use overload with additional Fixed roles instead",
+    level = DeprecationLevel.HIDDEN
+)
+/** Returns a light Material color scheme. */
+fun lightColorScheme(
+    primary: Color = ColorLightTokens.Primary,
+    onPrimary: Color = ColorLightTokens.OnPrimary,
+    primaryContainer: Color = ColorLightTokens.PrimaryContainer,
+    onPrimaryContainer: Color = ColorLightTokens.OnPrimaryContainer,
+    inversePrimary: Color = ColorLightTokens.InversePrimary,
+    secondary: Color = ColorLightTokens.Secondary,
+    onSecondary: Color = ColorLightTokens.OnSecondary,
+    secondaryContainer: Color = ColorLightTokens.SecondaryContainer,
+    onSecondaryContainer: Color = ColorLightTokens.OnSecondaryContainer,
+    tertiary: Color = ColorLightTokens.Tertiary,
+    onTertiary: Color = ColorLightTokens.OnTertiary,
+    tertiaryContainer: Color = ColorLightTokens.TertiaryContainer,
+    onTertiaryContainer: Color = ColorLightTokens.OnTertiaryContainer,
+    background: Color = ColorLightTokens.Background,
+    onBackground: Color = ColorLightTokens.OnBackground,
+    surface: Color = ColorLightTokens.Surface,
+    onSurface: Color = ColorLightTokens.OnSurface,
+    surfaceVariant: Color = ColorLightTokens.SurfaceVariant,
+    onSurfaceVariant: Color = ColorLightTokens.OnSurfaceVariant,
+    surfaceTint: Color = primary,
+    inverseSurface: Color = ColorLightTokens.InverseSurface,
+    inverseOnSurface: Color = ColorLightTokens.InverseOnSurface,
+    error: Color = ColorLightTokens.Error,
+    onError: Color = ColorLightTokens.OnError,
+    errorContainer: Color = ColorLightTokens.ErrorContainer,
+    onErrorContainer: Color = ColorLightTokens.OnErrorContainer,
+    outline: Color = ColorLightTokens.Outline,
+    outlineVariant: Color = ColorLightTokens.OutlineVariant,
+    scrim: Color = ColorLightTokens.Scrim,
+    surfaceBright: Color = ColorLightTokens.SurfaceBright,
+    surfaceContainer: Color = ColorLightTokens.SurfaceContainer,
+    surfaceContainerHigh: Color = ColorLightTokens.SurfaceContainerHigh,
+    surfaceContainerHighest: Color = ColorLightTokens.SurfaceContainerHighest,
+    surfaceContainerLow: Color = ColorLightTokens.SurfaceContainerLow,
+    surfaceContainerLowest: Color = ColorLightTokens.SurfaceContainerLowest,
+    surfaceDim: Color = ColorLightTokens.SurfaceDim,
+): ColorScheme =
+    lightColorScheme(
         primary = primary,
         onPrimary = onPrimary,
         primaryContainer = primaryContainer,
@@ -684,6 +1259,11 @@ fun lightColorScheme(
     )
 
 /** Returns a dark Material color scheme. */
+@Deprecated(
+    message =
+        "Maintained for binary compatibility. Use overload with additional surface roles instead",
+    level = DeprecationLevel.HIDDEN
+)
 fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,
     onPrimary: Color = ColorDarkTokens.OnPrimary,
@@ -722,7 +1302,7 @@ fun darkColorScheme(
     surfaceContainerLowest: Color = ColorDarkTokens.SurfaceContainerLowest,
     surfaceDim: Color = ColorDarkTokens.SurfaceDim,
 ): ColorScheme =
-    ColorScheme(
+    darkColorScheme(
         primary = primary,
         onPrimary = onPrimary,
         primaryContainer = primaryContainer,
@@ -830,127 +1410,6 @@ fun darkColorScheme(
     )
 
 /**
- * The Material color system contains pairs of colors that are typically used for the background and
- * content color inside a component. For example, a [Button] typically uses `primary` for its
- * background, and `onPrimary` for the color of its content (usually text or iconography).
- *
- * This function tries to match the provided [backgroundColor] to a 'background' color in this
- * [ColorScheme], and then will return the corresponding color used for content. For example, when
- * [backgroundColor] is [ColorScheme.primary], this will return [ColorScheme.onPrimary].
- *
- * If [backgroundColor] does not match a background color in the theme, this will return
- * [Color.Unspecified].
- *
- * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
- *   the theme's [ColorScheme], then returns [Color.Unspecified].
- * @see contentColorFor
- */
-@Stable
-fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
-    when (backgroundColor) {
-        primary -> onPrimary
-        secondary -> onSecondary
-        tertiary -> onTertiary
-        background -> onBackground
-        error -> onError
-        primaryContainer -> onPrimaryContainer
-        secondaryContainer -> onSecondaryContainer
-        tertiaryContainer -> onTertiaryContainer
-        errorContainer -> onErrorContainer
-        inverseSurface -> inverseOnSurface
-        surface -> onSurface
-        surfaceVariant -> onSurfaceVariant
-        surfaceBright -> onSurface
-        surfaceContainer -> onSurface
-        surfaceContainerHigh -> onSurface
-        surfaceContainerHighest -> onSurface
-        surfaceContainerLow -> onSurface
-        surfaceContainerLowest -> onSurface
-        surfaceDim -> onSurface
-        else -> Color.Unspecified
-    }
-
-/**
- * The Material color system contains pairs of colors that are typically used for the background and
- * content color inside a component. For example, a [Button] typically uses `primary` for its
- * background, and `onPrimary` for the color of its content (usually text or iconography).
- *
- * This function tries to match the provided [backgroundColor] to a 'background' color in this
- * [ColorScheme], and then will return the corresponding color used for content. For example, when
- * [backgroundColor] is [ColorScheme.primary], this will return [ColorScheme.onPrimary].
- *
- * If [backgroundColor] does not match a background color in the theme, this will return the current
- * value of [LocalContentColor] as a best-effort color.
- *
- * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
- *   the theme's [ColorScheme], then returns the current value of [LocalContentColor].
- * @see ColorScheme.contentColorFor
- */
-@Composable
-@ReadOnlyComposable
-fun contentColorFor(backgroundColor: Color) =
-    MaterialTheme.colorScheme.contentColorFor(backgroundColor).takeOrElse {
-        LocalContentColor.current
-    }
-
-/**
- * Returns [ColorScheme.surfaceColorAtElevation] with the provided elevation if
- * [LocalTonalElevationEnabled] is set to true, and the provided background color matches
- * [ColorScheme.surface]. Otherwise, the provided color is returned unchanged.
- *
- * @param backgroundColor The background color to compare to [ColorScheme.surface]
- * @param elevation The elevation provided to [ColorScheme.surfaceColorAtElevation] if
- *   [backgroundColor] matches surface.
- * @return [ColorScheme.surfaceColorAtElevation] at [elevation] if [backgroundColor] ==
- *   [ColorScheme.surface] and [LocalTonalElevationEnabled] is set to true. Else [backgroundColor]
- */
-@Composable
-@ReadOnlyComposable
-internal fun ColorScheme.applyTonalElevation(backgroundColor: Color, elevation: Dp): Color {
-    val tonalElevationEnabled = LocalTonalElevationEnabled.current
-    return if (backgroundColor == surface && tonalElevationEnabled) {
-        surfaceColorAtElevation(elevation)
-    } else {
-        backgroundColor
-    }
-}
-
-/**
- * Computes the surface tonal color at different elevation levels e.g. surface1 through surface5.
- *
- * @param elevation Elevation value used to compute alpha of the color overlay layer.
- * @return the [ColorScheme.surface] color with an alpha of the [ColorScheme.surfaceTint] color
- *   overlaid on top of it.
- */
-@Stable
-fun ColorScheme.surfaceColorAtElevation(
-    elevation: Dp,
-): Color {
-    if (elevation == 0.dp) return surface
-    val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
-    return surfaceTint.copy(alpha = alpha).compositeOver(surface)
-}
-
-/**
- * Returns a light Material color scheme.
- *
- * The default color scheme for [MaterialExpressiveTheme]. For dark mode, use [darkColorScheme].
- *
- * Example of MaterialExpressiveTheme toggling expressiveLightColorScheme and darkTheme.
- *
- * @sample androidx.compose.material3.samples.MaterialExpressiveThemeColorSchemeSample
- */
-@ExperimentalMaterial3ExpressiveApi
-fun expressiveLightColorScheme() =
-    lightColorScheme(
-        // TODO: Replace palette references with color token references when available.
-        onPrimaryContainer = PaletteTokens.Primary30,
-        onSecondaryContainer = PaletteTokens.Secondary30,
-        onTertiaryContainer = PaletteTokens.Tertiary30,
-        onErrorContainer = PaletteTokens.Error30
-    )
-
-/**
  * Helper function for component color tokens. Here is an example on how to use component color
  * tokens: ``MaterialTheme.colorScheme.fromToken(ExtendedFabBranded.BrandedContainerColor)``
  */
@@ -993,7 +1452,18 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
         ColorSchemeKeyTokens.SurfaceDim -> surfaceDim
         ColorSchemeKeyTokens.Tertiary -> tertiary
         ColorSchemeKeyTokens.TertiaryContainer -> tertiaryContainer
-        else -> Color.Unspecified
+        ColorSchemeKeyTokens.PrimaryFixed -> primaryFixed
+        ColorSchemeKeyTokens.PrimaryFixedDim -> primaryFixedDim
+        ColorSchemeKeyTokens.OnPrimaryFixed -> onPrimaryFixed
+        ColorSchemeKeyTokens.OnPrimaryFixedVariant -> onPrimaryFixedVariant
+        ColorSchemeKeyTokens.SecondaryFixed -> secondaryFixed
+        ColorSchemeKeyTokens.SecondaryFixedDim -> secondaryFixedDim
+        ColorSchemeKeyTokens.OnSecondaryFixed -> onSecondaryFixed
+        ColorSchemeKeyTokens.OnSecondaryFixedVariant -> onSecondaryFixedVariant
+        ColorSchemeKeyTokens.TertiaryFixed -> tertiaryFixed
+        ColorSchemeKeyTokens.TertiaryFixedDim -> tertiaryFixedDim
+        ColorSchemeKeyTokens.OnTertiaryFixed -> onTertiaryFixed
+        ColorSchemeKeyTokens.OnTertiaryFixedVariant -> onTertiaryFixedVariant
     }
 }
 
@@ -1006,15 +1476,6 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
 internal val LocalColorScheme = staticCompositionLocalOf { lightColorScheme() }
 
 /**
- * Composition Local used to check if [ColorScheme.applyTonalElevation] will be applied down the
- * tree.
- *
- * Setting this value to false will cause all subsequent surfaces down the tree to not apply
- * tonalElevation.
- */
-val LocalTonalElevationEnabled = staticCompositionLocalOf { true }
-
-/**
  * A low level of alpha used to represent disabled components, such as text in a disabled Button.
  */
 internal const val DisabledAlpha = 0.38f
@@ -1025,3 +1486,34 @@ internal const val DisabledAlpha = 0.38f
  */
 internal val ColorSchemeKeyTokens.value: Color
     @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.fromToken(this)
+
+/**
+ * Returns [ColorScheme.surfaceColorAtElevation] with the provided elevation if
+ * [LocalTonalElevationEnabled] is set to true, and the provided background color matches
+ * [ColorScheme.surface]. Otherwise, the provided color is returned unchanged.
+ *
+ * @param backgroundColor The background color to compare to [ColorScheme.surface]
+ * @param elevation The elevation provided to [ColorScheme.surfaceColorAtElevation] if
+ *   [backgroundColor] matches surface.
+ * @return [ColorScheme.surfaceColorAtElevation] at [elevation] if [backgroundColor] ==
+ *   [ColorScheme.surface] and [LocalTonalElevationEnabled] is set to true. Else [backgroundColor]
+ */
+@Composable
+@ReadOnlyComposable
+internal fun ColorScheme.applyTonalElevation(backgroundColor: Color, elevation: Dp): Color {
+    val tonalElevationEnabled = LocalTonalElevationEnabled.current
+    return if (backgroundColor == surface && tonalElevationEnabled) {
+        surfaceColorAtElevation(elevation)
+    } else {
+        backgroundColor
+    }
+}
+
+/**
+ * Composition Local used to check if [ColorScheme.applyTonalElevation] will be applied down the
+ * tree.
+ *
+ * Setting this value to false will cause all subsequent surfaces down the tree to not apply
+ * tonalElevation.
+ */
+val LocalTonalElevationEnabled = staticCompositionLocalOf { true }

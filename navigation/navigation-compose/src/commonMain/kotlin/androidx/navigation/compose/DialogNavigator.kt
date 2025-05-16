@@ -32,7 +32,7 @@ import androidx.navigation.compose.DialogNavigator.Destination
  * instantiated [Destination] or calling [dialog].
  */
 @Navigator.Name("dialog")
-public class DialogNavigator() : Navigator<Destination>() {
+public class DialogNavigator() : Navigator<Destination>(NAME) {
 
     /** Get the back stack from the [state]. */
     internal val backStack

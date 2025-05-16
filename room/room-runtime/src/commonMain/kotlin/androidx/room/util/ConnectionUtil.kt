@@ -31,7 +31,7 @@ import kotlin.jvm.JvmName
  * for details.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun getLastInsertedRowId(connection: SQLiteConnection): Long {
+public fun getLastInsertedRowId(connection: SQLiteConnection): Long {
     if (getTotalChangedRows(connection) == 0) {
         return -1
     }
@@ -49,7 +49,7 @@ fun getLastInsertedRowId(connection: SQLiteConnection): Long {
  * details.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun getTotalChangedRows(connection: SQLiteConnection): Int {
+public fun getTotalChangedRows(connection: SQLiteConnection): Int {
     return connection.prepare("SELECT changes()").use {
         it.step()
         it.getLong(0).toInt()

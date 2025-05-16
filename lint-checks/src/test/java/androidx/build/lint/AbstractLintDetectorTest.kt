@@ -60,10 +60,12 @@ abstract class AbstractLintDetectorTest(
         return lint().projects(*projectsWithStubs).testModes(testModes).allowDuplicates().run()
     }
 
-    fun check(
-        vararg files: TestFile,
-    ): TestLintResult {
-        return lint().files(*stubs, *files).allowDuplicates().run()
+    fun check(vararg files: TestFile, testModes: List<TestMode>? = null): TestLintResult {
+        return lint()
+            .files(*stubs, *files)
+            .apply { if (testModes != null) testModes(testModes) }
+            .allowDuplicates()
+            .run()
     }
 }
 

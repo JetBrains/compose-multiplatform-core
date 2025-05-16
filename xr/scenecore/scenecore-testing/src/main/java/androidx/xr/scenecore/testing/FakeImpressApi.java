@@ -26,6 +26,8 @@ import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
 
 import com.google.ar.imp.apibindings.ImpressApi;
+import com.google.ar.imp.apibindings.KhronosPbrMaterial;
+import com.google.ar.imp.apibindings.KhronosPbrMaterialSpec;
 import com.google.ar.imp.apibindings.Texture;
 import com.google.ar.imp.apibindings.TextureSampler;
 import com.google.ar.imp.apibindings.WaterMaterial;
@@ -56,8 +58,6 @@ public class FakeImpressApi implements ImpressApi {
     /** Test bookkeeping data for a Android Surface */
     @SuppressWarnings({"ParcelCreator", "ParcelNotFinal"})
     public static class TestSurface extends Surface {
-        public int id;
-
         public TestSurface(int id) {
             super(new SurfaceTexture(id));
         }
@@ -126,29 +126,48 @@ public class FakeImpressApi implements ImpressApi {
         public enum Type {
             GENERIC,
             WATER,
-            WATER_ALPHA
+            WATER_ALPHA,
+            KHRONOS_PBR
         }
 
-        @NonNull public Type type;
-        public long materialHandle;
+        @NonNull Type mType;
+        long mMaterialHandle;
 
         public MaterialData(@NonNull Type type, long materialHandle) {
-            this.type = type;
-            this.materialHandle = materialHandle;
+            this.mType = type;
+            this.mMaterialHandle = materialHandle;
+        }
+
+        @NonNull
+        public Type getType() {
+            return mType;
+        }
+
+        public long getMaterialHandle() {
+            return mMaterialHandle;
         }
     }
 
     /** Test bookkeeping data for a Gltf gltfToken */
     public static class GltfNodeData {
-        public int entityId;
-        @Nullable public MaterialData materialOverride;
+        int mEntityId;
+        @Nullable MaterialData mMaterialOverride;
 
         public void setEntityId(int entityId) {
-            this.entityId = entityId;
+            this.mEntityId = entityId;
         }
 
         public void setMaterialOverride(@Nullable MaterialData materialOverride) {
-            this.materialOverride = materialOverride;
+            this.mMaterialOverride = materialOverride;
+        }
+
+        public int getEntityId() {
+            return mEntityId;
+        }
+
+        @Nullable
+        public MaterialData getMaterialOverride() {
+            return mMaterialOverride;
         }
     }
 
@@ -171,10 +190,10 @@ public class FakeImpressApi implements ImpressApi {
     final Map<Integer, StereoSurfaceEntityData> mStereoSurfaceEntities = new HashMap<>();
 
     // Map of texture image tokens to their associated Texture object
-    public final Map<Long, Texture> mTextureImages = new HashMap<>();
+    final Map<Long, Texture> mTextureImages = new HashMap<>();
 
     // Map of material tokens to their associated MaterialData object
-    public final Map<Long, MaterialData> mMaterials = new HashMap<>();
+    final Map<Long, MaterialData> mMaterials = new HashMap<>();
 
     private int mNextImageBasedLightingAssetId = 1;
     private int mNextModelId = 1;
@@ -388,7 +407,7 @@ public class FakeImpressApi implements ImpressApi {
         if (gltfNodeData == null) {
             return -1;
         }
-        return mImpressNodes.get(gltfNodeData).entityId;
+        return mImpressNodes.get(gltfNodeData).mEntityId;
     }
 
     /** Returns the number of impress nodes that are currently animating. */
@@ -403,6 +422,13 @@ public class FakeImpressApi implements ImpressApi {
 
     @Override
     public int createStereoSurface(@StereoMode int stereoMode) {
+        return createStereoSurface(stereoMode, ContentSecurityLevel.NONE);
+    }
+
+    // TODO - b/410899125: Set the content security level properly.
+    @Override
+    public int createStereoSurface(
+            @StereoMode int stereoMode, @ContentSecurityLevel int contentSecurityLevel) {
         StereoSurfaceEntityData data = new StereoSurfaceEntityData();
         data.mImpressNode = createImpressNode();
         data.mSurface = new TestSurface(data.mImpressNode);
@@ -490,6 +516,17 @@ public class FakeImpressApi implements ImpressApi {
     }
 
     @Override
+    public void setContentColorMetadataForStereoSurface(
+        int stereoSurfaceNode,
+        @ColorSpace int colorSpace,
+        @ColorTransfer int colorTransfer,
+        @ColorRange int colorRange,
+        int maxLuminance) {}
+
+    @Override
+    public void resetContentColorMetadataForStereoSurface(int stereoSurfaceNode) {}
+
+    @Override
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     public ListenableFuture<Texture> loadTexture(
@@ -530,7 +567,7 @@ public class FakeImpressApi implements ImpressApi {
     }
 
     @Override
-    @SuppressWarnings("RestrictTo")
+    @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @NonNull
     public ListenableFuture<WaterMaterial> createWaterMaterial(boolean isAlphaMapVersion) {
         long materialToken = mNextMaterialId++;
@@ -546,7 +583,7 @@ public class FakeImpressApi implements ImpressApi {
     }
 
     @Override
-    public void setReflectionCubeOnWaterMaterial(long nativeMaterial, long reflectionCube) {
+    public void setReflectionMapOnWaterMaterial(long nativeMaterial, long reflectionMap) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -595,6 +632,250 @@ public class FakeImpressApi implements ImpressApi {
     @Override
     public void setAlphaStepVOnWaterMaterial(
             long nativeWaterMaterial, float x, float y, float z, float w) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    @SuppressWarnings("RestrictTo")
+    @NonNull
+    public ListenableFuture<KhronosPbrMaterial> createKhronosPbrMaterial(
+        @NonNull KhronosPbrMaterialSpec spec) {
+        long materialToken = mNextMaterialId++;
+        KhronosPbrMaterial material =
+            new KhronosPbrMaterial.Builder()
+                .setImpressApi(this)
+                .setNativeMaterial(materialToken)
+                .build();
+        mMaterials.put(materialToken, new MaterialData(
+            MaterialData.Type.KHRONOS_PBR, materialToken));
+        ResolvableFuture<KhronosPbrMaterial> ret = ResolvableFuture.create();
+        ret.set(material);
+        return ret;
+    }
+
+    @Override
+    public void setBaseColorTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long baseColorTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setBaseColorUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setBaseColorFactorsOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float x, float y, float z, float w) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setMetallicRoughnessTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long metallicRoughnessTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setMetallicFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setRoughnessFactorOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setNormalTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long normalTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setNormalUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setNormalFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setAmbientOcclusionTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long ambientOcclusionTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setAmbientOcclusionFactorOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setEmissiveTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long emissiveTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setEmissiveUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setEmissiveFactorsOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float x, float y, float z) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setClearcoatTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long clearcoatTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setClearcoatNormalTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long clearcoatNormalTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long clearcoatRoughnessTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setClearcoatFactorsOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float intensity, float roughness, float normal) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setSheenColorTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long sheenColorTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setSheenColorFactorsOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float x, float y, float z) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setSheenRoughnessTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long sheenRoughnessTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setSheenRoughnessFactorOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setTransmissionTextureOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, long transmissionTexture) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setTransmissionUvTransformOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial,
+        float ux,
+        float uy,
+        float uz,
+        float vx,
+        float vy,
+        float vz,
+        float wx,
+        float wy,
+        float wz) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setTransmissionFactorOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float factor) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setIndexOfRefractionOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float indexOfRefraction) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public void setAlphaCutoffOnKhronosPbrMaterial(
+        long nativeKhronosPbrMaterial, float alphaCutoff) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -685,7 +966,7 @@ public class FakeImpressApi implements ImpressApi {
     @Nullable
     private GltfNodeData getGltfNodeData(int impressNode) {
         for (Map.Entry<GltfNodeData, GltfNodeData> pair : mImpressNodes.entrySet()) {
-            if (pair.getKey().entityId == impressNode) {
+            if (pair.getKey().mEntityId == impressNode) {
                 return pair.getKey();
             }
         }

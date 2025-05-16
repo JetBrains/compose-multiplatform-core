@@ -29,7 +29,7 @@ import kotlin.jvm.JvmName
  * the column doesn't exist.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun getColumnIndexOrThrow(stmt: SQLiteStatement, name: String): Int {
+public fun getColumnIndexOrThrow(stmt: SQLiteStatement, name: String): Int {
     val index: Int = stmt.columnIndexOf(name)
     if (index >= 0) {
         return index
@@ -57,7 +57,7 @@ internal fun SQLiteStatement.columnIndexOfCommon(name: String): Int {
 
 /** Returns the zero-based index for the given column name, or -1 if the column doesn't exist. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun getColumnIndex(stmt: SQLiteStatement, name: String): Int {
+public fun getColumnIndex(stmt: SQLiteStatement, name: String): Int {
     return stmt.columnIndexOf(name)
 }
 
@@ -77,7 +77,7 @@ fun getColumnIndex(stmt: SQLiteStatement, name: String): Int {
  * @return the wrapped Cursor.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun wrapMappedColumns(
+public fun wrapMappedColumns(
     statement: SQLiteStatement,
     columnNames: Array<String>,
     mapping: IntArray

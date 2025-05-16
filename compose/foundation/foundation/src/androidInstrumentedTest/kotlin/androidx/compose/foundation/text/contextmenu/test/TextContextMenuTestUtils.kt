@@ -26,8 +26,10 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.foundation.text.contextmenu.internal.TextActionModeCallback
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
 import androidx.compose.foundation.text.contextmenu.modifier.collectTextContextMenuData
 import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuDataProvider
+import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -40,6 +42,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toOffset
+import com.google.common.truth.IterableSubject
+import com.google.common.truth.Ordered
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 
@@ -92,8 +96,11 @@ internal class TestTextContextMenuDataReaderNode(
 }
 
 internal fun TextContextMenuData.assertItems(expectedKeys: List<Any>) {
-    assertThat(components.map { it.key }).containsExactly(*expectedKeys.toTypedArray()).inOrder()
+    assertThat(components.map { it.key }).containsExactlyList(expectedKeys).inOrder()
 }
+
+private inline fun <reified T> IterableSubject.containsExactlyList(expected: List<T>): Ordered =
+    containsExactly(*expected.toTypedArray())
 
 internal class SpyTextActionModeCallback : TextActionModeCallback {
     lateinit var delegate: TextActionModeCallback
@@ -202,3 +209,23 @@ internal fun <T : Any> assertNotNull(obj: T?, messageBlock: (() -> String)? = nu
             }
         subject.isNotNull()
     }!!
+
+internal class FakeToolbarRequester : ToolbarRequester() {
+    var shown = false
+
+    override fun show() {
+        shown = true
+    }
+
+    override fun hide() {
+        shown = false
+    }
+}
+
+internal class FakeTextContextMenuProvider(
+    private val onShow: suspend (TextContextMenuDataProvider) -> Unit
+) : TextContextMenuProvider {
+    override suspend fun showTextContextMenu(dataProvider: TextContextMenuDataProvider) {
+        onShow(dataProvider)
+    }
+}

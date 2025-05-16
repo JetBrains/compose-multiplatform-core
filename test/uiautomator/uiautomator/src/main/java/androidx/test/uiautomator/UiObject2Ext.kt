@@ -115,23 +115,23 @@ public fun UiObject2.onViews(
  *
  * Example:
  * ```kotlin
- * onView { isScrollable }.scrollUntilView(Direction.DOWN) { id == "button" }.click()
+ * onView { isScrollable }.scrollToView(Direction.DOWN) { id == "button" }.click()
  * ```
  *
  * @param direction the scroll [Direction].
  * @param timeoutMs a timeout to find the view that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
- * @return a list of [UiObject2] from nodes that matches the given [block] condition.
+ * @return a [UiObject2] that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.scrollUntilView(
+public fun UiObject2.scrollToView(
     direction: Direction,
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2 =
-    scrollUntilViewOrNull(
+    scrollToViewOrNull(
             direction = direction,
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
@@ -145,7 +145,7 @@ public fun UiObject2.scrollUntilView(
  *
  * Example:
  * ```kotlin
- * onView { isScrollable }.scrollUntilView(Direction.DOWN) { id == "button" }.click()
+ * onView { isScrollable }.scrollToView(Direction.DOWN) { id == "button" }.click()
  * ```
  *
  * @param direction the scroll [Direction].
@@ -155,7 +155,7 @@ public fun UiObject2.scrollUntilView(
  * @return a [UiObject2] that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.scrollUntilViewOrNull(
+public fun UiObject2.scrollToViewOrNull(
     direction: Direction,
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,

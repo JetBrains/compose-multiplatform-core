@@ -285,4 +285,12 @@ internal class OffsetApplier<N>(private val applier: Applier<N>, private val off
     override fun clear() {
         composeImmediateRuntimeError("Clear is not valid on OffsetApplier")
     }
+
+    override fun apply(block: N.(Any?) -> Unit, value: Any?) {
+        applier.apply(block, value)
+    }
+
+    override fun reuse() {
+        applier.reuse()
+    }
 }

@@ -16,19 +16,28 @@
 
 package androidx.pdf
 
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.PointF
+import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.annotation.RequiresExtension
+import androidx.core.os.OperationCanceledException
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.Lifecycle
 import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.TestUtils.waitFor
+import androidx.pdf.actions.SelectionViewActions
+import androidx.pdf.actions.clickOnPdfPoint
 import androidx.pdf.matchers.SearchViewAssertions
 import androidx.pdf.util.Preconditions
+import androidx.pdf.view.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScroller
@@ -45,11 +54,17 @@ import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.matcher.RootMatchers
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -59,6 +74,7 @@ import androidx.test.uiautomator.UiSelector
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -74,6 +90,7 @@ class PdfViewerFragmentV2TestSuite {
 
     @Before
     fun setup() {
+        Intents.init()
         scenario =
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
@@ -103,6 +120,7 @@ class PdfViewerFragmentV2TestSuite {
                 .unregister(fragment.pdfSearchViewVisibleIdlingResource.countingIdlingResource)
         }
         scenario.close()
+        Intents.release()
     }
 
     @Test
@@ -365,12 +383,214 @@ class PdfViewerFragmentV2TestSuite {
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
     }
 
-    // TODO(b/392638037): Add immersive mode integration test
+    /**
+     * This test verifies the behavior of the Pdf viewer in immersive mode, specifically the
+     * visibility of the toolbox
+     */
+    @Test
+    fun testPdfViewerFragment_immersiveMode_toggleMenu() {
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_FILE,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            // Loading view assertion
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
 
-    // TODO(b/401173291): Add Dismissing password dialog to throw OperationCancelledException
-    // integration test
+        onView(withId(PdfR.id.pdfLoadingProgressBar))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        scenario.onFragment {
+            it.setIsAnnotationIntentResolvable(true)
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}"
+            )
+        }
 
-    // TODO(b/401229449): Add Select Api in PdfDocument integration test
+        // Show the toolbox and check visibility
+        scenario.onFragment { it.isToolboxVisible = true }
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
+
+        // Hide the toolbox and check visibility
+        scenario.onFragment { it.isToolboxVisible = false }
+
+        onView(withId(R.id.edit_fab))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+
+        // Show the toolbox and check visibility
+        scenario.onFragment { it.isToolboxVisible = true }
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
+
+        // Swipe down to hide the toolbox and check visibility
+        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
+        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
+        onView(withId(R.id.edit_fab))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+
+        // Swipe up to top of pdf show the toolbox and check visibility
+        onView(withId(PdfR.id.pdfView)).perform(swipeDown())
+        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
+
+        // Enter immersive mode and check visibility
+        scenario.onFragment { it.onRequestImmersiveMode(true) }
+        onView(withId(R.id.edit_fab))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+
+        // Exit immersive mode and check visibility
+        scenario.onFragment { it.onRequestImmersiveMode(false) }
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
+
+        // Click the host app search button and check visibility
+        scenario.onFragment {
+            it.pdfSearchViewVisibleIdlingResource.increment()
+            it.isTextSearchActive = true
+        }
+        onView(withId(PdfR.id.pdfSearchView)).check(matches(isDisplayed()))
+        onView(withId(R.id.edit_fab))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+    }
+
+    @Test
+    fun testPdfViewerFragment_dismissPasswordDialog() {
+
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_PROTECTED_DOCUMENT_FILE,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            // Loading view assertion
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+        scenario.onFragment { fragment ->
+            fragment.pdfLoadingIdlingResource.decrement()
+            assertNull(fragment.documentError)
+        }
+
+        onView(ViewMatchers.withText(CANCEL)).inRoot(RootMatchers.isDialog()).perform(click())
+
+        scenario.onFragment { fragment ->
+            assert(fragment.documentError is OperationCanceledException)
+        }
+    }
+
+    @Test
+    fun testPdfViewerFragment_whenSelectAllClicked_allContentShouldBeSelected() {
+        // Load the document and assert loading view is displayed
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_SELECT,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+
+        // Assert loading progress bar is gone and document is loaded
+        onView(withId(PdfR.id.pdfLoadingProgressBar))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        scenario.onFragment {
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}"
+            )
+        }
+
+        // The exact View position of any piece of text will vary by device, scroll position, zoom
+        // level, etc. Act on an absolute PDF coordinate that's known to contain text instead.
+        val pdfPointWithText = PdfPoint(pageNum = 0, pagePoint = PointF(297.22455F, 619.1273F))
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView))
+            .perform(clickOnPdfPoint(pdfPointWithText, Tap.LONG))
+        onView(ViewMatchers.withText(SELECT_ALL))
+            .inRoot(RootMatchers.isPlatformPopup())
+            .perform(click())
+
+        // Get the PdfView instance and assert selection
+        var pdfView: PdfView? = null
+        val expectedSelectionBoundsSize = 34
+        scenario.onFragment { fragment -> pdfView = fragment.getPdfViewInstance() }
+        assertNotNull(pdfView)
+        val selection = pdfView?.currentSelection
+        assertNotNull(selection)
+        assertNotNull(selection?.bounds)
+        assert(selection?.bounds?.size == expectedSelectionBoundsSize)
+    }
+
+    @Test
+    fun testPdfViewerFragment_customLinkHandler_isCalledAndOverridesDefault() {
+        scenario.onFragment { fragment -> fragment.shouldOverrideLinkHandling = true }
+
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_SAMPLE_LINKS_FILE,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            // Loading view assertion
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+
+        onView(withId(PdfR.id.pdfLoadingProgressBar))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        scenario.onFragment {
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}"
+            )
+        }
+
+        val selectionViewActions = SelectionViewActions()
+
+        // PDF Link coordinates for sample link PDF
+        val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
+        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
+
+        onView(withText("Handled by custom link handler"))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun testPdfViewerFragment_defaultLinkHandling_launchesBrowserIntent() {
+        scenario.onFragment { fragment -> fragment.shouldOverrideLinkHandling = false }
+
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_SAMPLE_LINKS_FILE,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            // Loading view assertion
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+
+        onView(withId(PdfR.id.pdfLoadingProgressBar))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        scenario.onFragment {
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}"
+            )
+        }
+
+        intending(hasAction(Intent.ACTION_VIEW))
+            .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+
+        val selectionViewActions = SelectionViewActions()
+
+        // PDF Link coordinates for sample link PDF
+        val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
+        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
+
+        val capturedIntent = Intents.getIntents().firstOrNull()
+        assertNotNull(
+            "Expected an external link intent to be launched, but it was null.",
+            capturedIntent
+        )
+    }
 
     private fun withPdfView(
         scenario: FragmentScenario<TestPdfViewerFragment>,
@@ -389,7 +609,13 @@ class PdfViewerFragmentV2TestSuite {
 
     companion object {
         private const val TEST_DOCUMENT_FILE = "sample.pdf"
+        private const val TEST_PROTECTED_DOCUMENT_FILE = "sample-protected.pdf"
         private const val TEST_CORRUPTED_DOCUMENT_FILE = "corrupted.pdf"
+        private const val TEST_DOCUMENT_SELECT = "sample-select.pdf"
+        private const val TEST_SAMPLE_LINKS_FILE = "sample_links.pdf"
+
+        private const val SELECT_ALL = "Select all"
+        private const val CANCEL = "Cancel"
         private const val SEARCH_QUERY = "ipsum"
         private const val KEYBOARD_CONTENT_DESC = "keyboard"
 

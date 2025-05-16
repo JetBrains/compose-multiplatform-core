@@ -38,7 +38,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 /** Copy APKs (from ApkOutputProviders) needed for building androidTest.zip */
-@Suppress("UnstableApiUsage") // Working with ApkOutputProviders b/397701480
 @DisableCachingByDefault(because = "Only filesystem operations")
 abstract class CopyApksFromOutputProviderTask
 @Inject

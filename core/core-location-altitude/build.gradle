@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -44,14 +45,14 @@ dependencies {
 
     implementation(project(":core:core-location-altitude-proto"))
     implementation("androidx.core:core:1.13.0")
-    implementation(project(":room:room-runtime"))
-    implementation(project(":room:room-common"))
-    implementation(project(":sqlite:sqlite"))
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-common:2.7.1")
+    implementation("androidx.sqlite:sqlite:2.5.1")
     implementation(libs.autoValueAnnotations)
     implementation(libs.kotlinStdlib)
 
     annotationProcessor(libs.autoValue)
-    annotationProcessor(project(":room:room-compiler"))
+    annotationProcessor("androidx.room:room-compiler:2.7.1")
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
@@ -66,4 +67,5 @@ androidx {
     mavenVersion = LibraryVersions.CORE_LOCATION_ALTITUDE
     inceptionYear = "2022"
     description = "Provides compatibility APIs concerning location altitudes."
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

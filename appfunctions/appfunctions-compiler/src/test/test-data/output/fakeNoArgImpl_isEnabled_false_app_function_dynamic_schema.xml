@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeNoArgImpl_IsEnabled_False#noArg</id>
         <enabledByDefault>false</enabledByDefault>
         <response>
@@ -19,4 +16,7 @@
         <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeNoArgImpl_IsEnabled_False#noArg</functionId>
     </appfunction>
+    <AppFunctionComponentMetadataDocument>
+        <id>unused</id>
+    </AppFunctionComponentMetadataDocument>
 </appfunctions>

@@ -27,6 +27,7 @@ import androidx.testutils.generateAllEnumerations
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,6 +52,7 @@ class InvalidationTrackerBenchmark(private val sampleSize: Int, private val mode
     }
 
     @Test
+    @Ignore // b/410015038
     fun largeTransaction() {
         val db =
             Room.databaseBuilder(context, TestDatabase::class.java, DB_NAME)

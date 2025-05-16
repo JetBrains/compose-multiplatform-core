@@ -38,7 +38,6 @@ package androidx.work {
     property public java.util.concurrent.Executor executor;
     property public androidx.core.util.Consumer<java.lang.Throwable>? initializationExceptionHandler;
     property public androidx.work.InputMergerFactory inputMergerFactory;
-    property @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public boolean isMarkingJobsAsImportantWhileForeground;
     property public int maxJobSchedulerId;
     property public int minJobSchedulerId;
     property public androidx.work.RunnableScheduler runnableScheduler;

@@ -19,6 +19,7 @@ package androidx.compose.runtime.tooling
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.ReusableContentHost
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalComposeRuntimeApi::class)
 class ErrorTraceTests {
     @BeforeTest
     fun setUp() {
@@ -323,6 +325,7 @@ class ErrorTraceTests {
     @Test
     fun nodeReuse() =
         exceptionTest(
+            // todo(b/409033128): Investigate why NodeWithCallbacks has unknown line
             // missing ReusableComposeNode because writer is not set directly to the node group
             "NodeWithCallbacks(ErrorTraceComposables.kt:<unknown line>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
@@ -342,7 +345,7 @@ class ErrorTraceTests {
     fun nodeDeactivate() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "ReusableContentHost(Composables.kt:<line number>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)"
@@ -362,7 +365,7 @@ class ErrorTraceTests {
     fun setContentNodeAttach() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "InlineWrapper(ErrorTraceComposables.kt:57)",
             "<lambda>(ErrorTraceTests.kt:<line number>)"
@@ -374,7 +377,7 @@ class ErrorTraceTests {
     fun recomposeNodeAttach() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
             "<lambda>(ErrorTraceTests.kt:<line number>)"
@@ -393,10 +396,11 @@ class ErrorTraceTests {
         }
 
     @Test
+    // todo(b/409033128): Investigate why NodeWithCallbacks has an incorrect line
     fun recomposeNodeAttachInlineWrapper() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             // (b/380272059): groupless source information is missing here after recomposition
             //                "<lambda>(ErrorTraceTests.kt:<line number>)",
             //                "InlineWrapper(ErrorTraceComposables.kt:148)",
@@ -437,7 +441,7 @@ class ErrorTraceTests {
     fun setContentNodeUpdate() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
             "<lambda>(ErrorTraceTests.kt:<line number>)"
@@ -449,7 +453,7 @@ class ErrorTraceTests {
     fun recomposeUpdate() =
         exceptionTest(
             "ReusableComposeNode(Composables.kt:<unknown line>)",
-            "NodeWithCallbacks(ErrorTraceComposables.kt:121)",
+            "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
             "<lambda>(ErrorTraceTests.kt:<line number>)"
@@ -471,6 +475,137 @@ class ErrorTraceTests {
             }
 
             state = true
+            advance()
+        }
+
+    @Test
+    fun setContentMovableContent() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(MovableContent.kt:<line number>)",
+            "<lambda>(Composer.kt:<line number>)",
+            "<lambda>(MovableContent.kt:<unknown line>)",
+            "MovableWrapper(ErrorTraceComposables.kt:156)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)"
+        ) {
+            compose { MovableWrapper { throwTestException() } }
+        }
+
+    @Test
+    fun recomposeMovableContent() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(MovableContent.kt:<line number>)",
+            "<lambda>(Composer.kt:<line number>)",
+            "<lambda>(MovableContent.kt:<unknown line>)",
+            "MovableWrapper(ErrorTraceComposables.kt:156)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)"
+        ) {
+            var state by mutableStateOf(false)
+            compose {
+                MovableWrapper {
+                    if (state) {
+                        throwTestException()
+                    }
+                }
+            }
+
+            state = true
+            advance()
+        }
+
+    @Test
+    fun moveMovableContentOf() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(Composer.kt:<line number>)",
+            "<lambda>(MovableContent.kt:<unknown line>)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+            "WrappedMovableContent(ErrorTraceComposables.kt:166)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)"
+        ) {
+            var state by mutableStateOf(false)
+            compose {
+                WrappedMovableContent(
+                    content = {
+                        if (it) {
+                            throwTestException()
+                        }
+                    }
+                ) { movableContent ->
+                    if (!state) {
+                        movableContent(false)
+                    } else {
+                        Wrapper { movableContent(true) }
+                    }
+                }
+            }
+
+            state = true
+            advance()
+        }
+
+    @Test
+    fun moveMovableContentOfStateRead() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(Composer.kt:<line number>)",
+            "<lambda>(MovableContent.kt:<unknown line>)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+            "WrappedMovableContent(ErrorTraceComposables.kt:166)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)"
+        ) {
+            var state by mutableStateOf(false)
+            compose {
+                WrappedMovableContent(
+                    content = {
+                        if (state) {
+                            throwTestException()
+                        }
+                    }
+                ) { movableContent ->
+                    if (!state) {
+                        movableContent(state)
+                    } else {
+                        Wrapper { movableContent(state) }
+                    }
+                }
+            }
+
+            state = true
+            advance()
+        }
+
+    @Test
+    fun moveMovableContentOfReverse() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(Composer.kt:<line number>)",
+            "<lambda>(MovableContent.kt:<unknown line>)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+            "Wrapper(ErrorTraceComposables.kt:149)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+            "WrappedMovableContent(ErrorTraceComposables.kt:166)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)"
+        ) {
+            var state by mutableStateOf(true)
+            compose {
+                WrappedMovableContent(
+                    content = {
+                        if (it) {
+                            throwTestException()
+                        }
+                    }
+                ) { movableContent ->
+                    if (!state) {
+                        movableContent(false)
+                    } else {
+                        Wrapper { movableContent(true) }
+                    }
+                }
+            }
+
+            state = false
             advance()
         }
 }

@@ -28,7 +28,9 @@ import android.os.Parcelable
 import android.os.Parcelable.ClassLoaderCreator
 import android.util.AttributeSet
 import android.util.Log
+import android.view.InputDevice
 import android.view.MotionEvent
+import android.view.PointerIcon
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewConfiguration
@@ -403,7 +405,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private val accessibilityManager: AccessibilityManager
     private var accessibilityProvider: AccessibilityProvider? = null
-    private var dividerHasA11yHover = false
+    private var isDividerHovered = false
 
     @VisibleForTesting internal var isAccessibilityEnabledForTesting = false
 
@@ -556,6 +558,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
     private fun createUserResizingDividerDrawableState(viewState: IntArray): IntArray {
+        // This function doesn't handle the case when the divider is hovered and pressed
+        // simultaneously for simplicity since it's an impossible state.
+        if (android.R.attr.state_hovered in viewState || isDividerHovered) {
+            return if (isDividerHovered) {
+                // Add the hover state for the divider drawable
+                viewState.copyOf(viewState.size + 1).also { stateArray ->
+                    stateArray[stateArray.lastIndex] = android.R.attr.state_hovered
+                }
+            } else {
+                viewState.remove(android.R.attr.state_hovered)
+            }
+        }
+
         if (android.R.attr.state_pressed !in viewState && !isDividerDragging) {
             return viewState
         }
@@ -566,11 +581,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 stateArray[stateArray.lastIndex] = android.R.attr.state_pressed
             }
         } else {
-            var foundPressed = false
-            IntArray(viewState.size - 1) { index ->
-                if (viewState[index] == android.R.attr.state_pressed) foundPressed = true
-                viewState[if (foundPressed) index + 1 else index]
-            }
+            viewState.remove(android.R.attr.state_pressed)
+        }
+    }
+
+    // Helper method that removes the given element from the IntArray.
+    private fun IntArray.remove(element: Int): IntArray {
+        var found = false
+        return IntArray(size - 1) { index ->
+            if (this[index] == element) found = true
+            this[if (found) index + 1 else index]
         }
     }
 
@@ -1359,39 +1379,59 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     override fun dispatchHoverEvent(event: MotionEvent?): Boolean {
-        if (
-            event == null ||
-                !isUserResizable ||
-                !accessibilityManager.isEnabled ||
-                !accessibilityManager.isTouchExplorationEnabled
-        ) {
+        if (event == null || !isUserResizable) {
             return super.dispatchHoverEvent(event)
         }
 
+        val a11yEnabled =
+            accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled
         when (event.action) {
             MotionEvent.ACTION_HOVER_MOVE,
             MotionEvent.ACTION_HOVER_ENTER -> {
                 val hoverOnDivider =
                     draggableDividerHandler.dividerBoundsContains(event.x.toInt(), event.y.toInt())
 
-                if (dividerHasA11yHover xor hoverOnDivider) {
-                    val eventType =
-                        if (hoverOnDivider) {
-                            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER
-                        } else {
-                            AccessibilityEvent.TYPE_VIEW_HOVER_EXIT
-                        }
-                    sendAccessibilityEventForDivider(eventType)
-                    dividerHasA11yHover = hoverOnDivider
+                if (isDividerHovered xor hoverOnDivider) {
+                    isDividerHovered = hoverOnDivider
+                    drawableStateChanged()
+                    if (a11yEnabled) {
+                        val eventType =
+                            if (hoverOnDivider) {
+                                AccessibilityEvent.TYPE_VIEW_HOVER_ENTER
+                            } else {
+                                AccessibilityEvent.TYPE_VIEW_HOVER_EXIT
+                            }
+                        sendAccessibilityEventForDivider(eventType)
+                    }
                     return true
                 }
             }
             MotionEvent.ACTION_HOVER_EXIT -> {
-                sendAccessibilityEventForDivider(AccessibilityEvent.TYPE_VIEW_HOVER_EXIT)
-                dividerHasA11yHover = false
+                if (isDividerHovered) {
+                    isDividerHovered = false
+                    drawableStateChanged()
+                    if (a11yEnabled) {
+                        sendAccessibilityEventForDivider(AccessibilityEvent.TYPE_VIEW_HOVER_EXIT)
+                    }
+                }
             }
         }
         return super.dispatchHoverEvent(event)
+    }
+
+    @SuppressWarnings("InvalidNullabilityOverride")
+    override fun onResolvePointerIcon(event: MotionEvent?, pointerIndex: Int): PointerIcon? {
+        if (event == null || !isUserResizable || !event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+            return super.onResolvePointerIcon(event, pointerIndex)
+        }
+
+        val x = event.getX(pointerIndex).toInt()
+        val y = event.getY(pointerIndex).toInt()
+        if (Build.VERSION.SDK_INT >= 24 && draggableDividerHandler.dividerBoundsContains(x, y)) {
+            return PointerIcon.getSystemIcon(this.context, PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW)
+        }
+
+        return super.onResolvePointerIcon(event, pointerIndex)
     }
 
     private fun closePane(initialVelocity: Int): Boolean {

@@ -54,6 +54,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.GlanceAppWidgetManager.Companion.SET_WIDGET_PREVIEWS_RESULT_RATE_LIMITED
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.lifecycle.lifecycleScope
 import kotlin.reflect.KClass
@@ -116,7 +117,10 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                         Log.i(TAG, "Skipped updating previews for $receiver")
                         continue
                     }
-                    if (!manager.setWidgetPreviews(receiver)) {
+                    if (
+                        manager.setWidgetPreviews(receiver) ==
+                            SET_WIDGET_PREVIEWS_RESULT_RATE_LIMITED
+                    ) {
                         Log.e(TAG, "Failed to set previews for $receiver, probably rate limited")
                     }
                 }

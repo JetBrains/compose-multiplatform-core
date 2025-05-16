@@ -33,14 +33,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.geometry"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -64,8 +56,10 @@ androidXMultiplatform {
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -95,7 +89,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
         }
     }
 }

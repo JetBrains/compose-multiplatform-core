@@ -18,9 +18,12 @@ package androidx.xr.scenecore
 
 import android.os.Handler
 import android.os.Looper
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
 import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.runtime.internal.Dimensions as RtDimensions
+import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
+import androidx.xr.runtime.internal.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
 import androidx.xr.runtime.internal.InputEvent as RtInputEvent
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo as RtHitInfo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -31,9 +34,13 @@ import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.ResizeEvent as RtResizeEvent
 import androidx.xr.runtime.internal.Space as RtSpace
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
+import androidx.xr.runtime.internal.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RtTextureSampler
 import androidx.xr.runtime.math.Ray
+import androidx.xr.scenecore.ActivityPose.HitTestFilter
+import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import java.util.concurrent.Executor
 
@@ -272,4 +279,48 @@ internal fun TextureSampler.toRtTextureSampler(): RtTextureSampler {
         compareFunc,
         anisotropyLog2,
     )
+}
+
+/** Extension function that converts a [HitTestFilter] to a [RtHitTestFilter]. */
+internal fun Int.toRtHitTestFilter(): Int {
+    var filters: Int = 0
+    if (this and HitTestFilter.OTHER_SCENES != 0) {
+        filters = filters or RtHitTestFilter.OTHER_SCENES
+    }
+    if (this and HitTestFilter.SELF_SCENE != 0) {
+        filters = filters or RtHitTestFilter.SELF_SCENE
+    }
+    return filters
+}
+
+/** Extension function that converts a [RtHitTestSurfaceType] to a [HitTestResult.SurfaceType]. */
+internal fun Int.toHitTestSurfaceType(): Int {
+    return when (this) {
+        RtHitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_UNKNOWN -> SurfaceType.UNKNOWN
+        RtHitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE -> SurfaceType.PLANE
+        RtHitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_OBJECT -> SurfaceType.OBJECT
+        else -> SurfaceType.UNKNOWN
+    }
+}
+
+/** Extension function that converts a [RtHitTestResult] to a [HitTestResult]. */
+internal fun RtHitTestResult.toHitTestResult(): HitTestResult {
+    return HitTestResult(hitPosition, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
+}
+
+@RtSpatialPointerIconType
+internal fun SpatialPointerIcon.toRtSpatialPointerIcon(): Int {
+    return when (this) {
+        SpatialPointerIconNone -> RtSpatialPointerIcon.TYPE_NONE
+        SpatialPointerIconCircle -> RtSpatialPointerIcon.TYPE_CIRCLE
+    }
+}
+
+internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon? {
+    return when (this) {
+        RtSpatialPointerIcon.TYPE_NONE -> SpatialPointerIconNone
+        RtSpatialPointerIcon.TYPE_CIRCLE -> SpatialPointerIconCircle
+        RtSpatialPointerIcon.TYPE_DEFAULT -> null
+        else -> error("Unknown spatial pointer icon type: $this")
+    }
 }

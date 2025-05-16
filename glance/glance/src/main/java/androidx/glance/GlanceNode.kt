@@ -26,7 +26,7 @@ import androidx.compose.runtime.Updater
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-inline fun <T : Emittable> GlanceNode(
+public inline fun <T : Emittable> GlanceNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit
 ) {
@@ -35,7 +35,7 @@ inline fun <T : Emittable> GlanceNode(
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-inline fun <T : Emittable> GlanceNode(
+public inline fun <T : Emittable> GlanceNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
     content: @Composable @GlanceComposable () -> Unit,

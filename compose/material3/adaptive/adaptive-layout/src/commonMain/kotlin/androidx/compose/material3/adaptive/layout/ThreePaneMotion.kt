@@ -109,6 +109,14 @@ internal class ThreePaneScaffoldMotionDataProvider :
     private val secondary = PaneMotionData()
     private val tertiary = PaneMotionData()
 
+    internal var scaffoldState: ThreePaneScaffoldState? = null
+
+    internal val predictiveBackScaleState =
+        PredictiveBackScaleState(
+            scaffoldSize = { scaffoldSize },
+            isPredictiveBackInProgress = { scaffoldState?.isPredictiveBackInProgress ?: false }
+        )
+
     override var scaffoldSize: IntSize = IntSize.Zero
 
     override val count: Int = 3

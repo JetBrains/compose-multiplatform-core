@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -213,7 +214,7 @@ class SwipeToDismissBoxTest {
                     Text(
                         text = "Inner",
                         color = MaterialTheme.colors.onPrimary,
-                        modifier = Modifier.testTag(TEST_TAG)
+                        modifier = Modifier.fillMaxWidth().testTag(TEST_TAG)
                     )
                 }
             }

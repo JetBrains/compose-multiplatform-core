@@ -29,7 +29,6 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
@@ -43,8 +42,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 
@@ -113,62 +112,59 @@ public fun PickerGroup(
             ),
         propagateMinConstraints = propagateMinConstraints
     ) {
-        // When no Picker is selected, provide an empty composable as a placeholder
-        // and tell the HierarchicalFocusCoordinator to clear the focus.
-        HierarchicalFocusCoordinator(
-            requiresFocus = { !pickers.indices.contains(pickerGroupState.selectedIndex) }
-        ) {}
         pickers.forEachIndexed { index, pickerData ->
             val pickerSelected = index == pickerGroupState.selectedIndex
             val flingBehavior = PickerDefaults.flingBehavior(state = pickerData.pickerState)
-            HierarchicalFocusCoordinator(requiresFocus = { pickerSelected }) {
-                val focusRequester = pickerData.focusRequester ?: rememberActiveFocusRequester()
-                Picker(
-                    state = pickerData.pickerState,
-                    contentDescription = pickerData.contentDescription,
-                    readOnly = !pickerSelected,
-                    modifier =
-                        pickerData.modifier
-                            .then(
-                                // If auto center is enabled, apply auto centering modifier on
-                                // selected
-                                // picker to center it
-                                if (pickerSelected && autoCenter) Modifier.autoCenteringTarget()
-                                else Modifier
-                            )
-                            // Do not need focusable as it's already set in ScalingLazyColumn
-                            .focusRequester(focusRequester),
-                    readOnlyLabel = pickerData.readOnlyLabel,
-                    flingBehavior = flingBehavior,
-                    onSelected = pickerData.onSelected,
-                    userScrollEnabled = !touchExplorationServicesEnabled || pickerSelected,
-                    option = { optionIndex ->
-                        with(pickerData) {
-                            Box(
-                                if (touchExplorationServicesEnabled || pickerSelected) {
-                                    Modifier
-                                } else
-                                    Modifier.pointerInput(Unit) {
-                                        coroutineScope {
-                                            // Keep looking for touch events on the picker if it is
-                                            // not
-                                            // selected
-                                            while (true) {
-                                                awaitEachGesture {
-                                                    awaitFirstDown(requireUnconsumed = false)
-                                                    pickerGroupState.selectedIndex = index
-                                                    onSelected(index)
-                                                }
+            Picker(
+                state = pickerData.pickerState,
+                contentDescription = pickerData.contentDescription,
+                readOnly = !pickerSelected,
+                modifier =
+                    pickerData.modifier
+                        .then(
+                            // If auto center is enabled, apply auto centering modifier on
+                            // selected picker to center it
+                            if (pickerSelected && autoCenter) Modifier.autoCenteringTarget()
+                            else Modifier
+                        )
+                        .hierarchicalFocusGroup(pickerSelected)
+                        .then(
+                            // If the user provided a focus requester, we add it here, otherwise,
+                            // we take care of focus using the HFC.
+                            pickerData.focusRequester?.let { Modifier.focusRequester(it) }
+                                ?: Modifier.requestFocusOnHierarchyActive()
+                        ),
+                // Do not need focusable as it's already set in ScalingLazyColumn
+                readOnlyLabel = pickerData.readOnlyLabel,
+                flingBehavior = flingBehavior,
+                onSelected = pickerData.onSelected,
+                userScrollEnabled = !touchExplorationServicesEnabled || pickerSelected,
+                option = { optionIndex ->
+                    with(pickerData) {
+                        Box(
+                            if (touchExplorationServicesEnabled || pickerSelected) {
+                                Modifier
+                            } else
+                                Modifier.pointerInput(Unit) {
+                                    coroutineScope {
+                                        // Keep looking for touch events on the picker if it is
+                                        // not selected
+                                        while (true) {
+                                            awaitEachGesture {
+                                                awaitFirstDown(requireUnconsumed = false)
+                                                pickerGroupState.selectedIndex = index
+                                                onSelected(index)
                                             }
                                         }
                                     }
-                            ) {
-                                option(optionIndex, pickerSelected)
-                            }
+                                }
+                        ) {
+                            option(optionIndex, pickerSelected)
                         }
                     }
-                )
-            }
+                }
+            )
+
             if (index < pickers.size - 1) {
                 separator?.invoke(index)
             }

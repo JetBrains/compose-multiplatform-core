@@ -32,6 +32,10 @@ import kotlinx.serialization.serializer
 /**
  * Decode a serializable object from a [SavedState] with the default deserializer.
  *
+ * **Format not stable:** The internal structure of the given [SavedState] is subject to change in
+ * future releases for optimization. While it is guaranteed to be compatible with
+ * [encodeToSavedState], direct manipulation of its encoded format using keys is not recommended.
+ *
  * @sample androidx.savedstate.decode
  * @param savedState The [SavedState] to decode from.
  * @param configuration The [SavedStateConfiguration] to use. Defaults to
@@ -39,6 +43,7 @@ import kotlinx.serialization.serializer
  * @return The decoded object.
  * @throws SerializationException in case of any decoding-specific error.
  * @throws IllegalArgumentException if the decoded input is not a valid instance of [T].
+ * @see encodeToSavedState
  */
 public inline fun <reified T : Any> decodeFromSavedState(
     savedState: SavedState,
@@ -49,6 +54,10 @@ public inline fun <reified T : Any> decodeFromSavedState(
  * Decodes and deserializes the given [SavedState] to the value of type [T] using the given
  * [deserializer].
  *
+ * **Format not stable:** The internal structure of the given [SavedState] is subject to change in
+ * future releases for optimization. While it is guaranteed to be compatible with
+ * [decodeFromSavedState], direct manipulation of its encoded format using keys is not recommended.
+ *
  * @sample androidx.savedstate.decodeWithExplicitSerializerAndConfig
  * @param deserializer The deserializer to use.
  * @param savedState The [SavedState] to decode from.
@@ -57,6 +66,7 @@ public inline fun <reified T : Any> decodeFromSavedState(
  * @return The deserialized object.
  * @throws SerializationException in case of any decoding-specific error.
  * @throws IllegalArgumentException if the decoded input is not a valid instance of [T].
+ * @see encodeToSavedState
  */
 @JvmOverloads
 public fun <T : Any> decodeFromSavedState(

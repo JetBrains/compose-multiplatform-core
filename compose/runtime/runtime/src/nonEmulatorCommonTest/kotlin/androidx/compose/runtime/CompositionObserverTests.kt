@@ -27,12 +27,14 @@ import androidx.compose.runtime.tooling.observe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.test.IgnoreJsTarget
 
 @Stable
 @OptIn(ExperimentalComposeRuntimeApi::class)
 @Suppress("unused")
 class CompositionObserverTests {
     @Test
+    @IgnoreJsTarget // b/409727436
     fun observeScope() {
         var startCount = 0
         var endCount = 0
@@ -76,6 +78,7 @@ class CompositionObserverTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409727436
     fun observeScope_dispose() {
         var startCount = 0
         var endCount = 0
@@ -127,6 +130,7 @@ class CompositionObserverTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409727436
     fun observeScope_scopeRemoved() {
         var startCount = 0
         var endCount = 0

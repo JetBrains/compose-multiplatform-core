@@ -18,7 +18,6 @@ package androidx.compose.runtime.internal
 
 import java.util.concurrent.atomic.AtomicInteger
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias AtomicReference<V> = java.util.concurrent.atomic.AtomicReference<V>
 
 internal actual class AtomicInt actual constructor(value: Int) : AtomicInteger(value) {

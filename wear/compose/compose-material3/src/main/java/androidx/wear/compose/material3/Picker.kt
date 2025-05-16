@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -65,6 +66,7 @@ import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.scrollToIndex
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -97,11 +99,9 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.PickerGroupSample
  * @param state The state of the component
- * @param contentDescription Text used by accessibility services to describe what the selected
- *   option represents. This text should be localized, such as by using
- *   [androidx.compose.ui.res.stringResource] or similar. Typically, the content description is
- *   inferred via derivedStateOf to avoid unnecessary recompositions, like this: val description by
- *   remember { derivedStateOf { /* expression using state.selectedOption */ } }
+ * @param contentDescription A block which computes text used by accessibility services to describe
+ *   what the selected option represents. This text should be localized, such as by using
+ *   [androidx.compose.ui.res.stringResource] or similar.
  * @param modifier [Modifier] to be applied to the Picker.
  * @param readOnly Determines whether the [Picker] should display other available options for this
  *   field, inviting the user to scroll to change the value. When readOnly = true, only displays the
@@ -133,7 +133,7 @@ import kotlinx.coroutines.launch
 @Composable
 public fun Picker(
     state: PickerState,
-    contentDescription: String?,
+    contentDescription: (() -> String)?,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
@@ -153,6 +153,8 @@ public fun Picker(
     val pickerAlphaAnimationSpec: FiniteAnimationSpec<Float> =
         MaterialTheme.motionScheme.slowEffectsSpec()
     val animatedShimColorAlpha = remember { Animatable(if (readOnly) 1f else 0f) }
+    val latestContentDescription by rememberUpdatedState(contentDescription)
+
     LaunchedEffect(readOnly) {
         val targetAlpha = if (readOnly) 1f else 0f
         if (isReduceMotionEnabled) {
@@ -177,8 +179,8 @@ public fun Picker(
                             }
                             true
                         }
-                        if (!state.isScrollInProgress && contentDescription != null) {
-                            this.contentDescription = contentDescription
+                        if (!state.isScrollInProgress && latestContentDescription != null) {
+                            this.contentDescription = latestContentDescription!!()
                         }
                         focused = !readOnly
                     }
@@ -579,6 +581,8 @@ internal fun pickerTextOption(
             Text(
                 text = indexToText(value),
                 maxLines = 1,
+                overflow = TextOverflow.Visible,
+                softWrap = false,
                 style = textStyle,
                 color =
                     when {

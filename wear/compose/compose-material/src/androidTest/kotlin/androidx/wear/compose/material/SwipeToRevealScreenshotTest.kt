@@ -29,10 +29,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealState
-import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.rememberRevealState
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test

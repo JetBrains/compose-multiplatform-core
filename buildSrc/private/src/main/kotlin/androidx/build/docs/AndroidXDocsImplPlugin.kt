@@ -475,8 +475,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             project.configurations.create("docs-runtime-classpath") {
                 it.setResolveClasspathForUsage(Usage.JAVA_RUNTIME)
             }
-        // TODO: Set to DEFAULT when b/407754247 is fixed
-        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.KOTLIN_1_8.catalogVersion
+        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.LATEST.catalogVersion
         val kotlinLatest = project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
         listOf(docsCompileClasspath, docsRuntimeClasspath).forEach { config ->
             config.resolutionStrategy {
@@ -975,7 +974,12 @@ private fun Project.getExtraCommonDependencies(): FileCollection =
                 getPrebuiltsExternalPath(),
                 "org/jetbrains/kotlinx/atomicfu/0.17.0/atomicfu-0.17.0.jar"
             ),
-            File(getPrebuiltsExternalPath(), "com/squareup/okio/okio-jvm/3.1.0/okio-jvm-3.1.0.jar")
+            File(getPrebuiltsExternalPath(), "com/squareup/okio/okio-jvm/3.1.0/okio-jvm-3.1.0.jar"),
+            // TODO(b/409256436): Remove when KMP classes (.knm) in Kotlin 2.1 can be loaded
+            File(
+                getPrebuiltsExternalPath(),
+                "org/jetbrains/kotlin/kotlin-stdlib/2.0.20/kotlin-stdlib-2.0.20-common.jar"
+            )
         ) +
             PLATFORMS.map {
                 File(

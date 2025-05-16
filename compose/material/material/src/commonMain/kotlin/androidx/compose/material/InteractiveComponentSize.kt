@@ -116,8 +116,6 @@ internal class MinimumInteractiveModifierNode :
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
 @ExperimentalMaterialApi
 val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf {
@@ -132,8 +130,6 @@ val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Bool
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
 @ExperimentalMaterialApi
 @Deprecated(
     message = "Use LocalMinimumInteractiveComponentEnforcement instead.",

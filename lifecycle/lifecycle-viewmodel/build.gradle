@@ -48,7 +48,7 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
             }
@@ -62,7 +62,7 @@ androidXMultiplatform {
             }
         }
 
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
         }
 
@@ -74,7 +74,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.core:core-viewtree:1.0.0")
@@ -98,9 +98,9 @@ androidXMultiplatform {
             }
         }
 
-        desktopMain { dependsOn(jvmCommonMain) }
-        nonJvmCommonMain { dependsOn(commonMain) }
-        nativeMain { dependsOn(nonJvmCommonMain) }
+        desktopMain { dependsOn(jvmMain) }
+        nonJvmMain { dependsOn(commonMain) }
+        nativeMain { dependsOn(nonJvmMain) }
         darwinMain { dependsOn(nativeMain) }
         linuxMain { dependsOn(nativeMain) }
 
@@ -133,5 +133,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
-    metalavaK2UastEnabled = false
 }

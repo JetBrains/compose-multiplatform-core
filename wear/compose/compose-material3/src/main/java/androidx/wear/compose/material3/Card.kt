@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -50,7 +51,6 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.LocalTransformingLazyColumnItemScope
 import androidx.wear.compose.material3.tokens.CardTokens
 import androidx.wear.compose.material3.tokens.ImageCardTokens
 import androidx.wear.compose.material3.tokens.OutlinedCardTokens
@@ -143,6 +143,88 @@ public fun Card(
         }
     }
 }
+
+/**
+ * Wear Material 3 [Card] that takes a container painter for drawing a background image, and offers
+ * a single slot to take any content.
+ *
+ * An image background is a means to reinforce the meaning of information in a Card. Cards should
+ * have a content color that contrasts with the background image and scrim. This [Card] takes
+ * [containerPainter] for the container image background to be drawn (the [CardColors]
+ * containerColor property is ignored). It is recommended to use [CardDefaults.containerPainter] to
+ * create the painter so that a scrim is drawn on top of the container image, ensuring that any
+ * content above the background is legible.
+ *
+ * The [Card] is Rectangle-shaped with rounded corners by default.
+ *
+ * Cards can be enabled or disabled. A disabled card will not respond to click events.
+ *
+ * Example of a [Card] with an image background:
+ *
+ * @sample androidx.wear.compose.material3.samples.ImageCardSample
+ * @param onClick Will be called when the user clicks the card
+ * @param containerPainter The [Painter] to use to draw the container image of the [Card], such as
+ *   returned by [CardDefaults.containerPainter].
+ * @param modifier Modifier to be applied to the card
+ * @param onLongClick Called when this card is long clicked (long-pressed). When this callback is
+ *   set, [onLongClickLabel] should be set as well.
+ * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
+ * @param enabled Controls the enabled state of the card. When false, this card will not be
+ *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
+ *   elevation or alpha differences when not enabled - they are simply not clickable.
+ * @param shape Defines the card's shape. It is strongly recommended to use the default as this
+ *   shape is a key characteristic of the Wear Material Theme
+ * @param colors [CardColors] that will be used to resolve the colors used for this card in
+ *   different states (the containerColor is overridden by containerPainter). See
+ *   [CardDefaults.cardWithContainerPainterColors].
+ * @param border A BorderStroke object which is used for drawing outlines.
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this card. You can use this to change the card's appearance or
+ *   preview the card in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param transformation Transformation to be used when card appears inside a container that needs
+ *   to dynamically change its content separately from the background.
+ * @param content The main slot for a content of this card
+ */
+@Composable
+public fun Card(
+    onClick: () -> Unit,
+    containerPainter: Painter,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    enabled: Boolean = true,
+    shape: Shape = CardDefaults.shape,
+    colors: CardColors = CardDefaults.cardWithContainerPainterColors(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
+    content: @Composable ColumnScope.() -> Unit,
+): Unit =
+    CardImpl(
+        onClick = onClick,
+        containerPainter = containerPainter,
+        modifier = modifier.cardSizeModifier(),
+        onLongClick = onLongClick,
+        onLongClickLabel = onLongClickLabel,
+        enabled = enabled,
+        colors = colors,
+        border = border,
+        interactionSource = interactionSource,
+        contentPadding = contentPadding,
+        shape = shape,
+        transformation = transformation,
+    ) {
+        CompositionLocalProvider(
+            LocalContentColor provides colors.titleColor,
+            LocalTextStyle provides CardTokens.TitleTypography.value,
+        ) {
+            content()
+        }
+    }
 
 /**
  * Opinionated Wear Material 3 [Card] that offers a specific 5 slot layout to show information about
@@ -407,6 +489,107 @@ public fun TitleCard(
     )
 
 /**
+ * This [TitleCard] overload supports an image container background and provides an opinionated Wear
+ * Material 3 [Card] with a specific layout to show interactive information about an application,
+ * similar to [TitleCard].
+ *
+ * An image background is a means to reinforce the meaning of information in a Card. Cards should
+ * have a content color that contrasts with the background image and scrim. This [TitleCard] takes
+ * [containerPainter] for the container image background to be drawn (the [CardColors]
+ * containerColor property is ignored). It is recommended to use [CardDefaults.containerPainter] to
+ * create the painter so that a scrim is drawn on top of the container image, ensuring that any
+ * content above the background is legible.
+ *
+ * The [time], [subtitle] and [content] fields are optional, but it is expected that at least one of
+ * these is provided. The layout will vary according to which fields are supplied - see samples.
+ *
+ * If the [content] is text it can be single or multiple line and is expected to be Top and Start
+ * aligned. When [subtitle] is used [content] shouldn't exceed 2 lines height. Overall the [title],
+ * [content] and [subtitle] text should be no more than 5 rows of text combined.
+ *
+ * If more than one composable is provided in the [content] slot it is the responsibility of the
+ * caller to determine how to layout the contents, e.g. provide either a row or a column.
+ *
+ * Example of a [Card] with a background image:
+ *
+ * @sample androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
+ *
+ * For more information, see the
+ * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
+ *
+ * @param onClick Will be called when the user clicks the card
+ * @param containerPainter The [Painter] to use to draw the container image of the [TitleCard], such
+ *   as returned by [CardDefaults.containerPainter].
+ * @param title A slot for displaying the title of the card, expected to be one or two lines of
+ *   text.
+ * @param modifier Modifier to be applied to the card
+ * @param onLongClick Called when this card is long clicked (long-pressed). When this callback is
+ *   set, [onLongClickLabel] should be set as well.
+ * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
+ * @param time An optional slot for displaying the time relevant to the contents of the card,
+ *   expected to be a short piece of text. Depending on whether we have a [content] or not, can be
+ *   placed at the end of the [title] line or above it.
+ * @param subtitle An optional slot for displaying the subtitle of the card, expected to be one line
+ *   of text.
+ * @param enabled Controls the enabled state of the card. When false, this card will not be
+ *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
+ *   elevation or alpha differences when not enabled - they are simply not clickable.
+ * @param shape Defines the card's shape. It is strongly recommended to use the default as this
+ *   shape is a key characteristic of the Wear Material Theme
+ * @param colors [CardColors] that will be used to resolve the colors used for this card in
+ *   different states (the containerColor is overridden by containerPainter). See
+ *   [CardDefaults.cardWithContainerPainterColors].
+ * @param border A BorderStroke object which is used for drawing outlines.
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this card. You can use this to change the card's appearance or
+ *   preview the card in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param transformation Transformation to be used when card appears inside a container that needs
+ *   to dynamically change its content separately from the background.
+ * @param content The optional body content of the card. If not provided then title and subtitle are
+ *   expected to be provided
+ */
+@Composable
+public fun TitleCard(
+    onClick: () -> Unit,
+    containerPainter: Painter,
+    title: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    time: @Composable (() -> Unit)? = null,
+    subtitle: @Composable (ColumnScope.() -> Unit)? = null,
+    enabled: Boolean = true,
+    shape: Shape = CardDefaults.shape,
+    colors: CardColors = CardDefaults.cardWithContainerPainterColors(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
+    content: @Composable (() -> Unit)? = null,
+): Unit =
+    CardImpl(
+        onClick = onClick,
+        containerPainter = containerPainter,
+        title = title,
+        modifier = modifier,
+        onLongClick = onLongClick,
+        onLongClickLabel = onLongClickLabel,
+        time = time,
+        subtitle = subtitle,
+        enabled = enabled,
+        shape = shape,
+        colors = colors,
+        border = border,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        transformation = transformation,
+        content = content
+    )
+
+/**
  * Outlined Wear Material 3 [Card] that offers a single slot to take any content.
  *
  * Outlined [Card] components that take specific content such as icons, images, titles, subtitles
@@ -486,172 +669,6 @@ public fun OutlinedCard(
     }
 }
 
-/**
- * Wear Material 3 [Card] that takes a container painter for drawing a background image, and offers
- * a single slot to take any content.
- *
- * The [ImageCard] is Rectangle-shaped with rounded corners by default.
- *
- * Cards can be enabled or disabled. A disabled card will not respond to click events.
- *
- * Example of an [ImageCard]:
- *
- * @sample androidx.wear.compose.material3.samples.ImageCardSample
- * @param onClick Will be called when the user clicks the card
- * @param containerPainter The [Painter] to use to draw the container image of the [ImageCard], such
- *   as returned by [CardDefaults.containerPainter].
- * @param modifier Modifier to be applied to the card
- * @param onLongClick Called when this card is long clicked (long-pressed). When this callback is
- *   set, [onLongClickLabel] should be set as well.
- * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
- * @param enabled Controls the enabled state of the card. When false, this card will not be
- *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
- *   elevation or alpha differences when not enabled - they are simply not clickable.
- * @param shape Defines the card's shape. It is strongly recommended to use the default as this
- *   shape is a key characteristic of the Wear Material Theme
- * @param colors [CardColors] that will be used to resolve the colors used for this card in
- *   different states. See [CardDefaults.cardColors].
- * @param border A BorderStroke object which is used for drawing outlines.
- * @param contentPadding The spacing values to apply internally between the container and the
- *   content
- * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this card. You can use this to change the card's appearance or
- *   preview the card in different states. Note that if `null` is provided, interactions will still
- *   happen internally.
- * @param transformation Transformation to be used when card appears inside a container that needs
- *   to dynamically change its content separately from the background.
- * @param content The main slot for a content of this card
- */
-@Composable
-public fun ImageCard(
-    onClick: () -> Unit,
-    containerPainter: Painter,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-    onLongClickLabel: String? = null,
-    enabled: Boolean = true,
-    shape: Shape = CardDefaults.shape,
-    colors: CardColors = CardDefaults.imageCardColors(),
-    border: BorderStroke? = null,
-    contentPadding: PaddingValues = CardDefaults.ImageContentPadding,
-    interactionSource: MutableInteractionSource? = null,
-    transformation: SurfaceTransformation? = null,
-    content: @Composable ColumnScope.() -> Unit,
-): Unit =
-    CardImpl(
-        onClick = onClick,
-        containerPainter = containerPainter,
-        modifier = modifier.cardSizeModifier(),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        colors = colors,
-        border = border,
-        interactionSource = interactionSource,
-        contentPadding = contentPadding,
-        shape = shape,
-        transformation = transformation,
-    ) {
-        CompositionLocalProvider(
-            LocalContentColor provides colors.titleColor,
-            LocalTextStyle provides CardTokens.TitleTypography.value,
-        ) {
-            content()
-        }
-    }
-
-/**
- * This [ImageCard] overload provides an opinionated Wear Material 3 [Card] with a specific layout
- * to show interactive information about an application, similar to [TitleCard].
- *
- * The [time], [subtitle] and [content] fields are optional, but it is expected that at least one of
- * these is provided. The layout will vary according to which fields are supplied - see samples.
- *
- * If the [content] is text it can be single or multiple line and is expected to be Top and Start
- * aligned. When [subtitle] is used [content] shouldn't exceed 2 lines height. Overall the [title],
- * [content] and [subtitle] text should be no more than 5 rows of text combined.
- *
- * If more than one composable is provided in the [content] slot it is the responsibility of the
- * caller to determine how to layout the contents, e.g. provide either a row or a column.
- *
- * Example of a [ImageCard] with a background image:
- *
- * @sample androidx.wear.compose.material3.samples.ImageCardWithTimeAndTitleSample
- *
- * For more information, see the
- * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
- *
- * @param onClick Will be called when the user clicks the card
- * @param containerPainter The [Painter] to use to draw the container image of the [ImageCard], such
- *   as returned by [CardDefaults.containerPainter].
- * @param title A slot for displaying the title of the card, expected to be one or two lines of
- *   text.
- * @param modifier Modifier to be applied to the card
- * @param onLongClick Called when this card is long clicked (long-pressed). When this callback is
- *   set, [onLongClickLabel] should be set as well.
- * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
- * @param time An optional slot for displaying the time relevant to the contents of the card,
- *   expected to be a short piece of text. Depending on whether we have a [content] or not, can be
- *   placed at the end of the [title] line or above it.
- * @param subtitle An optional slot for displaying the subtitle of the card, expected to be one line
- *   of text.
- * @param enabled Controls the enabled state of the card. When false, this card will not be
- *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
- *   elevation or alpha differences when not enabled - they are simply not clickable.
- * @param shape Defines the card's shape. It is strongly recommended to use the default as this
- *   shape is a key characteristic of the Wear Material Theme
- * @param colors [CardColors] that will be used to resolve the colors used for this card in
- *   different states. See [CardDefaults.cardColors].
- * @param border A BorderStroke object which is used for drawing outlines.
- * @param contentPadding The spacing values to apply internally between the container and the
- *   content
- * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this card. You can use this to change the card's appearance or
- *   preview the card in different states. Note that if `null` is provided, interactions will still
- *   happen internally.
- * @param transformation Transformation to be used when card appears inside a container that needs
- *   to dynamically change its content separately from the background.
- * @param content The optional body content of the card. If not provided then title and subtitle are
- *   expected to be provided
- */
-@Composable
-public fun ImageCard(
-    onClick: () -> Unit,
-    containerPainter: Painter,
-    title: @Composable RowScope.() -> Unit,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-    onLongClickLabel: String? = null,
-    time: @Composable (() -> Unit)? = null,
-    subtitle: @Composable (ColumnScope.() -> Unit)? = null,
-    enabled: Boolean = true,
-    shape: Shape = CardDefaults.shape,
-    colors: CardColors = CardDefaults.imageCardColors(),
-    border: BorderStroke? = null,
-    contentPadding: PaddingValues = CardDefaults.ImageContentPadding,
-    interactionSource: MutableInteractionSource? = null,
-    transformation: SurfaceTransformation? = null,
-    content: @Composable (() -> Unit)? = null,
-): Unit =
-    CardImpl(
-        onClick = onClick,
-        containerPainter = containerPainter,
-        title = title,
-        modifier = modifier,
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        time = time,
-        subtitle = subtitle,
-        enabled = enabled,
-        shape = shape,
-        colors = colors,
-        border = border,
-        contentPadding = contentPadding,
-        interactionSource = interactionSource,
-        transformation = transformation,
-        content = content
-    )
-
 /** Contains the default values used by [Card] */
 public object CardDefaults {
     /**
@@ -725,11 +742,12 @@ public object CardDefaults {
         )
 
     /**
-     * Creates a [CardColors] that represents the default container and content colors used in an
-     * [ImageCard].
+     * Creates a [CardColors] that represents the default container and content colors used in a
+     * [Card] with image container painter.
      */
     @Composable
-    public fun imageCardColors(): CardColors = MaterialTheme.colorScheme.defaultImageCardColors
+    public fun cardWithContainerPainterColors(): CardColors =
+        MaterialTheme.colorScheme.defaultCardWithContainerPainterColors
 
     /**
      * Creates a [CardColors] that represents the default container and content colors used in a
@@ -742,14 +760,14 @@ public object CardDefaults {
      * @param subtitleColor the color used for subtitle.
      */
     @Composable
-    public fun imageCardColors(
+    public fun cardWithContainerPainterColors(
         contentColor: Color = Color.Unspecified,
         appNameColor: Color = Color.Unspecified,
         timeColor: Color = Color.Unspecified,
         titleColor: Color = Color.Unspecified,
         subtitleColor: Color = Color.Unspecified
     ): CardColors =
-        MaterialTheme.colorScheme.defaultImageCardColors.copy(
+        MaterialTheme.colorScheme.defaultCardWithContainerPainterColors.copy(
             contentColor = contentColor,
             appNameColor = appNameColor,
             timeColor = timeColor,
@@ -779,20 +797,29 @@ public object CardDefaults {
     @Composable
     public fun containerPainter(
         image: Painter,
-        scrim: Brush = SolidColor(scrimColor),
+        scrim: Brush = scrimBrush(),
         sizeToIntrinsics: Boolean = false,
         alignment: Alignment = Alignment.Center,
         contentScale: ContentScale = ContentScale.Fit,
         alpha: Float = DefaultAlpha,
     ): Painter {
-        return containerPainter(
-            painter = image,
-            scrim = scrim,
-            sizeToIntrinsics = sizeToIntrinsics,
-            alignment = alignment,
-            contentScale = contentScale,
-            alpha = alpha,
-        )
+        return remember(image, scrim, sizeToIntrinsics, alignment, contentScale, alpha) {
+            containerPainter(
+                painter = image,
+                scrim = scrim,
+                sizeToIntrinsics = sizeToIntrinsics,
+                alignment = alignment,
+                contentScale = contentScale,
+                alpha = alpha,
+            )
+        }
+    }
+
+    /** Creates a [Brush] for the recommended scrim drawn on top of image container backgrounds. */
+    @Composable
+    public fun scrimBrush(): Brush {
+        val color = scrimColor
+        return remember(color) { SolidColor(color) }
     }
 
     /**
@@ -835,10 +862,9 @@ public object CardDefaults {
     public val ImageBottomPadding: Dp = 12.dp
 
     /**
-     * ContentPadding for use with an image background in order to show more of the image. Expected
-     * to be used with TitleCard's with an image background
+     * ContentPadding for use cards that have an image background in order to show more of the image
      */
-    public val ImageContentPadding: PaddingValues =
+    public val CardWithContainerPainterContentPadding: PaddingValues =
         PaddingValues(
             start = CardHorizontalPadding,
             top = CardVerticalPadding,
@@ -887,9 +913,9 @@ public object CardDefaults {
                     .also { defaultOutlinedCardColorsCached = it }
         }
 
-    private val ColorScheme.defaultImageCardColors: CardColors
+    private val ColorScheme.defaultCardWithContainerPainterColors: CardColors
         get() {
-            return defaultImageCardColorsCached
+            return defaultCardWithContainerPainterColorsCached
                 ?: CardColors(
                         containerColor = Color.Unspecified,
                         contentColor = fromToken(ImageCardTokens.ContentColor),
@@ -898,7 +924,7 @@ public object CardDefaults {
                         titleColor = fromToken(ImageCardTokens.TitleColor),
                         subtitleColor = fromToken(ImageCardTokens.SubtitleColor)
                     )
-                    .also { defaultOutlinedCardColorsCached = it }
+                    .also { defaultCardWithContainerPainterColorsCached = it }
         }
 }
 
@@ -910,7 +936,8 @@ private fun Modifier.cardSizeModifier(): Modifier = defaultMinSize(minHeight = C
  * color appearance when they are disabled. All colors remain the same in enabled and disabled
  * states.
  *
- * @param containerColor the background color of this [Card].
+ * @param containerColor the background color of this [Card] (overridden by the containerPainter
+ *   parameter on Cards with image backgrounds).
  * @param contentColor the content color of this [Card].
  * @param appNameColor the color used for appName, only applies to [AppCard].
  * @param timeColor the color used for time, applies to [AppCard] and [TitleCard].
@@ -993,7 +1020,7 @@ private fun CardImpl(
     interactionSource: MutableInteractionSource?,
     transformation: SurfaceTransformation?,
     content: @Composable ColumnScope.() -> Unit,
-) {
+) =
     Column(
         modifier =
             modifier
@@ -1014,10 +1041,8 @@ private fun CardImpl(
                     interactionSource = interactionSource,
                 )
                 .padding(contentPadding),
-    ) {
-        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
-    }
-}
+        content = content,
+    )
 
 @Composable
 private fun CardImpl(

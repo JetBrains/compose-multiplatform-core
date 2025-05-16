@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.DialogProperties
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
@@ -57,7 +58,8 @@ fun OpenOnPhoneDialogWithCustomText() {
     OpenOnPhoneDialog(
         visible = visible,
         onDismissRequest = { visible = false },
-        curvedText = { openOnPhoneDialogCurvedText(text = "Custom text", style = curvedTextStyle) }
+        curvedText = { openOnPhoneDialogCurvedText(text = "Custom text", style = curvedTextStyle) },
+        properties = DialogProperties(windowTitle = " ")
     )
 }
 
@@ -87,6 +89,7 @@ fun OpenOnPhoneDialogWithCustomColors() {
             ),
         curvedText = {
             openOnPhoneDialogCurvedText(text = "Custom colors", style = curvedTextStyle)
-        }
+        },
+        properties = DialogProperties(windowTitle = " ")
     )
 }

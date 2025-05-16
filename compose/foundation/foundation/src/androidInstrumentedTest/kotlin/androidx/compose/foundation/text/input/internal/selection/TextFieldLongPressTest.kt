@@ -24,6 +24,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.contextmenu.internal.ProvidePlatformTextContextMenuToolbar
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
+import androidx.compose.foundation.text.contextmenu.test.SpyTextActionModeCallback
+import androidx.compose.foundation.text.contextmenu.test.assertNotNull
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -67,9 +72,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /** Tests for long click interactions on BasicTextField. */
 @LargeTest
+@RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldLongPressTest : FocusedWindowTest {
 
     @get:Rule val rule = createComposeRule()
@@ -153,6 +160,7 @@ class TextFieldLongPressTest : FocusedWindowTest {
         assertThat(state.selection).isEqualTo(TextRange(3))
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun longPressOnEmptyRegion_showsTextToolbar() {
         val state = TextFieldState("abc")
@@ -181,6 +189,31 @@ class TextFieldLongPressTest : FocusedWindowTest {
         }
 
         rule.runOnIdle { assertThat(toolbarShown).isTrue() }
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun longPressOnEmptyRegion_showsTextToolbar_newContextMenu() {
+        val state = TextFieldState("abc")
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+        rule.setTextFieldTestContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                BasicTextField(
+                    state = state,
+                    textStyle = defaultTextStyle,
+                    modifier = Modifier.testTag(TAG).width(100.dp)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TAG).performTouchInput {
+            longClick(Offset(fontSize.toPx() * 5, fontSize.toPx() / 2))
+        }
+
+        rule.waitForIdle()
+        assertNotNull(spyTextActionModeCallback.menu)
     }
 
     @Test
