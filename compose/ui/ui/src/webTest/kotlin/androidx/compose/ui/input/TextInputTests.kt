@@ -128,7 +128,7 @@ abstract class TextInputTests : OnCanvasTests {
         focusRequester.requestFocus()
         awaitIdle()
 
-        // intentionally huge, will never grow over virewport nevertheless
+        // intentionally huge, will never grow over viewport nevertheless
         topState = 10000000.dp
 
         focusRequester.requestFocus()
