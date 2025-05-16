@@ -102,9 +102,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
         // When disconnect is called first
         state.shutdown()
@@ -128,9 +127,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
 
         // When surfaces are configured
@@ -159,9 +157,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
 
         // When surfaces are configured
@@ -196,9 +193,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
         // When surfaces are configured
         state.configureSurfaceMap(mapOf(stream1 to surface1, stream2 to surface2))
@@ -223,9 +219,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
         // When surfaces are configured
         state.configureSurfaceMap(mapOf(stream1 to surface1, stream2 to surface2))
@@ -250,9 +245,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
         // When surfaces are configured
         state.configureSurfaceMap(mapOf(stream1 to surface1, stream2 to surface2))
@@ -279,9 +273,8 @@ class CaptureSessionStateTest {
                 CameraGraph.Flags(
                     closeCaptureSessionOnDisconnect = true,
                 ),
-                fakeThreads.blockingDispatcher,
-                fakeThreads.backgroundDispatcher,
-                this
+                fakeThreads,
+                this,
             )
 
         // When surfaces are configured

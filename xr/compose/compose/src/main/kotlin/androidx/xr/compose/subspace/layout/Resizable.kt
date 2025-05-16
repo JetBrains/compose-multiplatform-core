@@ -29,11 +29,11 @@ import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
+import androidx.xr.runtime.Session
 import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
-import androidx.xr.scenecore.Session
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -49,9 +49,9 @@ import kotlinx.coroutines.asExecutor
  * @param maintainAspectRatio true if the new size should maintain the same aspect ratio as the
  *   existing size.
  * @param onSizeChange a callback to process the size change in pixels during resizing. This will
- *   only be called if [enabled] is true. If the callback returns false the default behavior of
- *   resizing this composable will be executed. If it returns true, it is the responsibility of the
- *   callback to process the event.
+ *   only be called if [enabled] is true. If the callback returns false or isn't specified, the
+ *   default behavior of resizing this composable will be executed. If it returns true, it is the
+ *   responsibility of the callback to process the event.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.resizable(
@@ -195,7 +195,6 @@ internal class ResizableNode(
             coreEntity.removeComponent(component)
             isComponentAttached = false
             userSize = null
-            requestRelayout()
         }
     }
 

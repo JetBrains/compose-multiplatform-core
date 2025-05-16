@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -47,8 +46,6 @@ dependencies {
 androidx {
     name = "AppSearch - Kotlin Extensions"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
-    //TODO(b/407507716): Target Kotlin 2 when support for it is stable in kapt
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = '2021'
     description = 'AndroidX AppSearch - Kotlin Extensions'
 }

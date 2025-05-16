@@ -107,9 +107,7 @@ class SupportedQualitiesVerificationTest(
     companion object {
         private const val VIDEO_TIMEOUT_SEC = 10L
 
-        @JvmStatic
-        private val cameraSelectors =
-            arrayOf(CameraSelector.DEFAULT_BACK_CAMERA, CameraSelector.DEFAULT_FRONT_CAMERA)
+        @JvmStatic private val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
 
         @JvmStatic
         private val dynamicRanges =

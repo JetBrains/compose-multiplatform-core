@@ -114,8 +114,10 @@ class SegmentedButtonTest {
                         disabledActiveBorderColor =
                             OutlineColor.value.copy(alpha = DisabledOutlineOpacity),
                         disabledInactiveContainerColor = Color.Transparent,
-                        disabledInactiveContentColor = DisabledLabelTextColor.value,
-                        disabledInactiveBorderColor = OutlineColor.value,
+                        disabledInactiveContentColor =
+                            DisabledLabelTextColor.value.copy(alpha = DisabledLabelTextOpacity),
+                        disabledInactiveBorderColor =
+                            OutlineColor.value.copy(alpha = DisabledOutlineOpacity),
                     )
                 )
         }

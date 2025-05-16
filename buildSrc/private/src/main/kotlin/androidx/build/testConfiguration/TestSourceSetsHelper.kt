@@ -59,7 +59,9 @@ internal fun Project.getTestSourceSetsForAndroid(variant: Variant?): List<FileCo
     multiplatformExtension
         ?.targets
         ?.filterIsInstance<KotlinAndroidTarget>()
-        ?.mapNotNull { it.compilations.find { it.name == "releaseAndroidTest" } }
+        ?.mapNotNull {
+            it.compilations.find { compilation -> compilation.name == "releaseAndroidTest" }
+        }
         ?.flatMap { it.allKotlinSourceSets }
         ?.mapTo(testSourceFileCollections) { it.kotlin.sourceDirectories }
     return testSourceFileCollections

@@ -59,9 +59,7 @@ abstract class VerifyPlaygroundGradleConfigurationTask : DefaultTask() {
     @TaskAction
     fun checkPlaygroundGradleConfiguration() {
         compareProperties()
-        // TODO: re-enable when https://github.com/gradle/gradle/issues/20778
-        //  is fixed.
-        // compareGradleWrapperVersion()
+        compareGradleWrapperVersion()
         // put the success into an output so that task can be up to date.
         outputFile.get().asFile.writeText("valid", Charsets.UTF_8)
     }

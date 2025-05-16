@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
@@ -1297,6 +1298,69 @@ class ModalBottomSheetTest {
         }
         // Size entirely filled by padding provided by WindowInsetPadding
         rule.onNodeWithTag(sheetTag).onParent().assertHeightIsEqualTo(sheetHeight)
+    }
+
+    @Test
+    fun modalBottomSheetContent_halfScreen_consumesSheetOffsetAsTopInsets() {
+        var consumedTopInsets = 0
+        val providedTopInsets = 10
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            sheetState = rememberModalBottomSheetState()
+            val density = LocalDensity.current
+            ModalBottomSheet(
+                onDismissRequest = {},
+                modifier = Modifier,
+                sheetState = sheetState,
+                contentWindowInsets = { WindowInsets(top = providedTopInsets) }
+            ) {
+                Box(
+                    Modifier.fillMaxSize().onConsumedWindowInsetsChanged {
+                        consumedTopInsets = it.getTop(density)
+                    }
+                )
+            }
+        }
+
+        // wait for layout
+        rule.waitForIdle()
+        assertThat(sheetState.requireOffset()).isGreaterThan(providedTopInsets)
+        // Consumed insets are the larger of the two provided consumed insets, in this case, the
+        // sheets offset as inset 1, and top window insets as inset 2.
+        assertThat(consumedTopInsets).isEqualTo(sheetState.requireOffset().toInt())
+    }
+
+    @Test
+    fun modalBottomSheetContent_fullScreen_consumesOnlyProvidedContentWindowInsets() {
+        var top = 0
+        lateinit var sheetState: SheetState
+        val providedTopInsets = 10
+
+        rule.setContent {
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val density = LocalDensity.current
+            ModalBottomSheet(
+                onDismissRequest = {},
+                modifier = Modifier,
+                contentWindowInsets = { WindowInsets(top = providedTopInsets) },
+                sheetState = sheetState
+            ) {
+                Box(
+                    Modifier.fillMaxSize().onConsumedWindowInsetsChanged {
+                        top = it.getTop(density)
+                    }
+                )
+            }
+        }
+
+        // wait for layout
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.requireOffset()).isLessThan(providedTopInsets)
+        // Consumed insets are the larger of the two provided consumed insets, in this case, the
+        // sheets offset as inset 1, and top window insets as inset 2.
+        assertThat(top).isEqualTo(providedTopInsets)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)

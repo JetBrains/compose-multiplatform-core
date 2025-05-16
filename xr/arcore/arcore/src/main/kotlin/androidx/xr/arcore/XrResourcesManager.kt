@@ -17,6 +17,7 @@
 package androidx.xr.arcore
 
 import android.annotation.SuppressLint
+import androidx.xr.runtime.internal.Earth as RuntimeEarth
 import androidx.xr.runtime.internal.Hand as RuntimeHand
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.Plane as RuntimePlane
@@ -50,6 +51,15 @@ internal class XrResourcesManager {
     val leftHand: Hand? by lazy { _leftRuntimeHand?.let { Hand(it) } }
     val rightHand: Hand? by lazy { _rightRuntimeHand?.let { Hand(it) } }
 
+    /** Geospatial data */
+    private var _earth: Earth? = null
+    val earth: Earth
+        get() = checkNotNull(_earth)
+
+    internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
+        _earth = Earth(runtimeEarth, this)
+    }
+
     internal fun initiateHands(leftRuntimeHand: RuntimeHand?, rightRuntimeHand: RuntimeHand?) {
         _leftRuntimeHand = leftRuntimeHand
         _rightRuntimeHand = rightRuntimeHand
@@ -74,6 +84,13 @@ internal class XrResourcesManager {
 
         for (updatable in updatables) {
             updatable.update()
+        }
+
+        // Earth should always be initialized if a runtime is present. This check should only fail
+        // in
+        // unit tests.
+        if (_earth != null) {
+            earth.update()
         }
     }
 

@@ -21,7 +21,7 @@ import org.gradle.api.UnknownTaskException
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
 
-internal inline fun <reified T : Task?> TaskContainer.maybeRegister(
+internal inline fun <reified T : Task> TaskContainer.maybeRegister(
     vararg nameParts: String,
     noinline configureBlock: ((T) -> (Unit))? = null
 ): TaskProvider<T> {
@@ -35,7 +35,7 @@ internal inline fun <reified T : Task?> TaskContainer.maybeRegister(
     }
 }
 
-internal inline fun <reified T : Task?> TaskContainer.namedOrNull(
+internal inline fun <reified T : Task> TaskContainer.namedOrNull(
     vararg nameParts: String,
     noinline configureBlock: ((T) -> (Unit))? = null
 ): TaskProvider<T>? {

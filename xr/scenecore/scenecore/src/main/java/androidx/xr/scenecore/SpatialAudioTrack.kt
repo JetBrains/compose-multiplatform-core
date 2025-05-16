@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.media.AudioTrack
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 
 @Suppress("ClassShouldBeObject")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -89,7 +90,7 @@ public class SpatialAudioTrack {
          *
          * @param session The current SceneCore [Session] instance.
          * @param track The [AudioTrack] on which to set the [PointSourceParams].
-         * @param pointSourceParams The [PointSourceParams] to be set.
+         * @param params The [PointSourceParams] to be set.
          * @throws IllegalStateException if the [SpatializerConstants.SourceType] of the
          *   [AudioTrack] is [SpatializerConstants.SOUND_FIELD].
          * @throws IllegalArgumentException if the [PointSourceParams] is not able to be set.

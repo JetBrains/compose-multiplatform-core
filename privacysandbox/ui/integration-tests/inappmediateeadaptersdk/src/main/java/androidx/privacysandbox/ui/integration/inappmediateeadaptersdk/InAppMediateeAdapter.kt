@@ -33,8 +33,15 @@ class InAppMediateeAdapter(private val context: Context) : MediateeAdapterInterf
         adFormat: Int,
         adType: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
+        mediationTestCallbackProxy: Bundle
     ): Bundle {
-        return inAppMediateeSdkApi.loadAd(adFormat, adType, waitInsideOnDraw, drawViewability)
+        return inAppMediateeSdkApi.loadAd(
+            adFormat,
+            adType,
+            waitInsideOnDraw,
+            drawViewability,
+            mediationTestCallbackProxy
+        )
     }
 }

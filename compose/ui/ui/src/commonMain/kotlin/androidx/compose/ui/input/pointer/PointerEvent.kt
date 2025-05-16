@@ -92,7 +92,6 @@ abstract class PointerInputFilter {
      * [PointerInputFilter]s on a Layout has [shareWithSiblings] set to `true` then the Layout will
      * share with siblings.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     open val shareWithSiblings: Boolean
         get() = false
 }
@@ -476,7 +475,6 @@ class PointerInputChange(
     // With these experimental annotations, the API can be either cleanly removed or
     // stabilized. It doesn't appear in current.txt; and in experimental_current.txt,
     // it has the same effect as a primary constructor val.
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val historical: List<HistoricalChange>
         get() = _historical ?: listOf()
 

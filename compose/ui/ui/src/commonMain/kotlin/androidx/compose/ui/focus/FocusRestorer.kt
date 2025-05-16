@@ -17,6 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
@@ -107,13 +108,19 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     private var pinnedHandle: PinnedHandle? = null
     private val onExit: FocusEnterExitScope.() -> Unit = {
         saveFocusedChild()
-        pinnedHandle?.release()
-        pinnedHandle = pinFocusedChild()
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = pinFocusedChild()
+        }
     }
 
     private val onEnter: FocusEnterExitScope.() -> Unit = {
-        pinnedHandle?.release()
-        pinnedHandle = null
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = null
+        }
         // Restoring the focused child involved calling requestFocus() and will automatically cancel
         // the current focus change. If restoration fails, we don't need to do anything for the
         // default case, where focus will enter this block. We have to handle the non-default case.
@@ -128,8 +135,11 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     }
 
     override fun onDetach() {
-        pinnedHandle?.release()
-        pinnedHandle = null
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = null
+        }
         super.onDetach()
     }
 }

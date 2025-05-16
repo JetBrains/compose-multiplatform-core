@@ -45,6 +45,11 @@ import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
 import androidx.camera.core.concurrent.CameraCoordinator
+import androidx.camera.core.featurecombination.Feature.Companion.FPS_60
+import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
+import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
+import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
+import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination
 import androidx.camera.core.impl.AdapterCameraControl
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.AdapterCameraInternal
@@ -124,6 +129,7 @@ class CameraUseCaseAdapterTest {
     private lateinit var fakeCameraControl: FakeCameraControl
     private lateinit var fakeCameraInfo: FakeCameraInfoInternal
     private lateinit var adapter: CameraUseCaseAdapter
+    private lateinit var streamSpecsCalculator: StreamSpecsCalculator
     private val imageEffect = GrayscaleImageEffect()
     private val preview = Preview.Builder().build()
     private val video = createFakeVideoCaptureUseCase()
@@ -135,11 +141,13 @@ class CameraUseCaseAdapterTest {
     fun setUp() {
         fakeCameraDeviceSurfaceManager = FakeCameraDeviceSurfaceManager()
         fakeCameraControl = FakeCameraControl()
-        fakeCameraInfo = FakeCameraInfoInternal()
+        useCaseConfigFactory = FakeUseCaseConfigFactory()
+        streamSpecsCalculator =
+            StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager)
+        fakeCameraInfo = FakeCameraInfoInternal(streamSpecsCalculator)
         fakeCamera = FakeCamera(CAMERA_ID, fakeCameraControl, fakeCameraInfo)
         fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo)
         cameraCoordinator = FakeCameraCoordinator()
-        useCaseConfigFactory = FakeUseCaseConfigFactory()
         executor = Executors.newSingleThreadExecutor()
         surfaceProcessorInternal = FakeSurfaceProcessorInternal(mainThreadExecutor())
         previewEffect = FakeSurfaceEffect(PREVIEW, surfaceProcessorInternal)
@@ -249,6 +257,149 @@ class CameraUseCaseAdapterTest {
     }
 
     @Test
+    fun addUseCases_withoutResolvedFeatureCombination_useCaseFeatureCombinationIsNull() {
+        // Arrange & Act.
+        adapter.addUseCases(listOf(preview))
+
+        // Assert: Features not set to Preview.
+        assertThat(preview.featureCombination).isNull()
+    }
+
+    @Test
+    fun addUseCases_withEmptyFeatures_nonNullEmptyFeaturesSet() {
+        // Arrange & Act.
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = emptySet()
+            )
+        )
+
+        // Assert: Features set to Preview as empty.
+        assertThat(preview.featureCombination).isEmpty()
+    }
+
+    @org.robolectric.annotation.Config(minSdk = 34) // UltraHDR is supported from API 34 and onwards
+    @Test
+    fun addUseCases_withSupportedResolvedFeatureCombo_featuresSetToAllUseCasesIncludingOlderOnes() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+        addUltraHdrSupport()
+        adapter.addUseCases(listOf(preview))
+
+        // Act.
+        adapter.addUseCases(
+            listOf(image),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(features)
+        assertThat(image.featureCombination).containsExactlyElementsIn(features)
+    }
+
+    @Test
+    fun addUseCases_useCasesAddedWithoutFeaturesFirstAndThenWithUnsupportedFeature_noFeaturesSet() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+        adapter.addUseCases(listOf(preview))
+
+        // Act: Exception expected as UltraHDR is not supported in the used fakes by default.
+        assertThrows<CameraException> {
+            adapter.addUseCases(
+                listOf(image),
+                ResolvedFeatureCombination(
+                    useCases = emptySet(), // the use cases from feature combination don't matter
+                    features = features
+                )
+            )
+        }
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).isNull()
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun useCasesAddedWithSupportedFeaturesAndThenWithUnsupportedFeature_previousFeaturesStillSet() {
+        // Arrange.
+        val supportedFeatures = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        val unsupportedFeatures = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+
+        // Add Preview use case with supported features first
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = supportedFeatures
+            )
+        )
+
+        // Act: Add ImageCapture use cases with some unsupported features.
+
+        // Exception expected as UltraHDR is not supported in the used fakes by default.
+        assertThrows<CameraException> {
+            adapter.addUseCases(
+                listOf(image),
+                ResolvedFeatureCombination(
+                    useCases = emptySet(), // the use cases from feature combination don't matter
+                    features = unsupportedFeatures
+                )
+            )
+        }
+
+        // Assert: Binding didn't succeed, so previous features still set to Preview while
+        // ImageCapture still has no feature.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(supportedFeatures)
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun addUseCases_withoutFeaturesAfterAddingWithFeatures_allUseCasesHaveNullFeatureCombo() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Act.
+        adapter.addUseCases(listOf(image))
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).isNull()
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun removeUseCases_addedBeforeWithFeatureCombination_featuresRemovedFromOnlyRemovedUseCases() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        adapter.addUseCases(listOf(preview))
+        adapter.addUseCases(
+            listOf(image),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Act.
+        adapter.removeUseCases(listOf(image))
+
+        // Assert: Features set to Preview as it's still attached, VideoCapture no longer has them.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(features)
+        assertThat(video.featureCombination).isNull()
+    }
+
+    @Test
     fun attachUseCases_cameraConfigIsConfigured() {
         // Arrange: Prepare two sets of CameraConfig and CameraUseCaseAdapter.
         val cameraConfig1 = FakeCameraConfig()
@@ -325,8 +476,8 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
 
         // Act: add ImageCapture that sets Ultra HDR.
@@ -355,8 +506,8 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, null),
+                useCaseConfigFactory,
             )
 
         // Act: add ImageCapture that sets Ultra HDR.
@@ -374,12 +525,13 @@ class CameraUseCaseAdapterTest {
         fakeManager.setValidSurfaceCombos(
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, JPEG_R))
         )
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(cameraId),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
         adapter.setEffects(listOf(imageEffect))
 
@@ -399,12 +551,13 @@ class CameraUseCaseAdapterTest {
         fakeManager.setValidSurfaceCombos(
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, RAW_SENSOR))
         )
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(cameraId),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
         adapter.setEffects(listOf(imageEffect))
 
@@ -1394,6 +1547,13 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(frameRate)
     }
 
+    private fun addUltraHdrSupport() {
+        fakeCameraInfo.setSupportedResolutions(JPEG_R, listOf(Size(1920, 1080)))
+        fakeCameraDeviceSurfaceManager.addValidSurfaceCombo(
+            listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, JPEG_R)
+        )
+    }
+
     private fun createFakeVideoCaptureUseCase(): FakeUseCase {
         return FakeUseCaseConfig.Builder()
             .setCaptureType(CaptureType.VIDEO_CAPTURE)
@@ -1472,7 +1632,7 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 cameraCoordinator,
-                fakeCameraDeviceSurfaceManager,
+                streamSpecsCalculator,
                 useCaseConfigFactory
             )
         adaptersToDetach.add(adapter)

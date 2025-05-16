@@ -64,6 +64,7 @@ public final class CameraViewActivityPoseImplTest {
                     mXrExtensions,
                     new EntityManager(),
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mExecutor);
 
     /** Creates a CameraViewActivityPoseImpl. */

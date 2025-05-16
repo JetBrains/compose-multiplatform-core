@@ -16,8 +16,13 @@
 
 package androidx.compose.material3
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.FocusInteraction
@@ -39,6 +44,7 @@ import androidx.compose.material3.internal.widthOrZero
 import androidx.compose.material3.tokens.AssistChipTokens
 import androidx.compose.material3.tokens.FilterChipTokens
 import androidx.compose.material3.tokens.InputChipTokens
+import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.SuggestionChipTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -73,6 +79,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirst
@@ -1997,7 +2004,6 @@ private fun SelectableChip(
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
-    // TODO(b/229794614): Animate transition between unselected and selected.
     Surface(
         selected = selected,
         onClick = onClick,
@@ -2009,7 +2015,9 @@ private fun SelectableChip(
         border = border,
         interactionSource = interactionSource
     ) {
-        ChipContent(
+        // Selectable chips are animating the leading and trailing icons when they change from
+        // `null` to non-`null` values.
+        AnimatingChipContent(
             label = label,
             labelTextStyle = labelTextStyle,
             leadingIcon = leadingIcon,
@@ -2024,6 +2032,12 @@ private fun SelectableChip(
     }
 }
 
+/**
+ * Chip content.
+ *
+ * Use the [AnimatingChipContent] if you wish to animate the leading and trailing icons when they
+ * change from `null` to non-`null` values. Otherwise, use this version for better performance.
+ */
 @Composable
 private fun ChipContent(
     label: @Composable () -> Unit,
@@ -2049,13 +2063,10 @@ private fun ChipContent(
                         modifier = Modifier.layoutId(LeadingIconLayoutId),
                         contentAlignment = Alignment.Center,
                         content = {
-                            if (avatar != null) {
-                                avatar()
-                            } else if (leadingIcon != null) {
-                                CompositionLocalProvider(
-                                    LocalContentColor provides leadingIconColor,
-                                    content = leadingIcon
-                                )
+                            val leadingContent =
+                                leadingContent(avatar, leadingIcon, leadingIconColor)
+                            if (leadingContent != null) {
+                                leadingContent()
                             }
                         }
                     )
@@ -2072,10 +2083,10 @@ private fun ChipContent(
                         modifier = Modifier.layoutId(TrailingIconLayoutId),
                         contentAlignment = Alignment.Center,
                         content = {
-                            CompositionLocalProvider(
-                                LocalContentColor provides trailingIconColor,
-                                content = trailingIcon
-                            )
+                            val trailingContent = trailingContent(trailingIcon, trailingIconColor)
+                            if (trailingContent != null) {
+                                trailingContent()
+                            }
                         }
                     )
                 }
@@ -2083,6 +2094,166 @@ private fun ChipContent(
             measurePolicy = remember { ChipLayoutMeasurePolicy() },
         )
     }
+}
+
+/**
+ * Similar to [ChipContent], but animating the leading and trailing icons when they change from
+ * `null` to non-`null` values.
+ */
+@Composable
+private fun AnimatingChipContent(
+    label: @Composable () -> Unit,
+    labelTextStyle: TextStyle,
+    labelColor: Color,
+    leadingIcon: @Composable (() -> Unit)?,
+    avatar: @Composable (() -> Unit)?,
+    trailingIcon: @Composable (() -> Unit)?,
+    leadingIconColor: Color,
+    trailingIconColor: Color,
+    minHeight: Dp,
+    paddingValues: PaddingValues
+) {
+    CompositionLocalProvider(
+        LocalContentColor provides labelColor,
+        LocalTextStyle provides labelTextStyle
+    ) {
+        // TODO Load the motionScheme tokens from the component tokens file
+        val fadeInSpec = MotionSchemeKeyTokens.SlowEffects.value<Float>()
+        val fadeOutSpec = MotionSchemeKeyTokens.FastEffects.value<Float>()
+        val expandSpec = MotionSchemeKeyTokens.FastSpatial.value<IntSize>()
+        val shrinkSpec = MotionSchemeKeyTokens.DefaultEffects.value<IntSize>()
+        Layout(
+            modifier = Modifier.defaultMinSize(minHeight = minHeight).padding(paddingValues),
+            content = {
+                // Animate the leading content visibility.
+                AnimatedVisibility(
+                    modifier = Modifier.layoutId(LeadingIconLayoutId),
+                    visible = avatar != null || leadingIcon != null,
+                    enter =
+                        expandHorizontally(
+                            animationSpec = expandSpec,
+                            expandFrom = Alignment.Start,
+                        ) + fadeIn(animationSpec = fadeInSpec),
+                    exit =
+                        shrinkHorizontally(
+                            animationSpec = shrinkSpec,
+                            shrinkTowards = Alignment.Start,
+                        ) + fadeOut(animationSpec = fadeOutSpec),
+                ) {
+                    // Retain the leading content. This will ensure that the AnimatedVisibility will
+                    // work correctly when the content lambda changes to null. The retained
+                    // content gets disposed once the AnimatedVisibility finishes exiting.
+                    val leadingContentRetainedState =
+                        rememberRetainedState(
+                            targetValue = leadingContent(avatar, leadingIcon, leadingIconColor)
+                        )
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        content = {
+                            // Read from retained state
+                            leadingContentRetainedState.value?.invoke()
+                        }
+                    )
+                }
+                Row(
+                    modifier =
+                        Modifier.layoutId(LabelLayoutId)
+                            .padding(horizontal = HorizontalElementsPadding),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = { label() }
+                )
+
+                // Animate the trailing content visibility.
+                AnimatedVisibility(
+                    modifier = Modifier.layoutId(TrailingIconLayoutId),
+                    visible = trailingIcon != null,
+                    enter =
+                        expandHorizontally(
+                            animationSpec = expandSpec,
+                            expandFrom = Alignment.End,
+                        ) + fadeIn(animationSpec = fadeInSpec),
+                    exit =
+                        shrinkHorizontally(
+                            animationSpec = shrinkSpec,
+                            shrinkTowards = Alignment.End,
+                        ) + fadeOut(animationSpec = fadeOutSpec),
+                ) {
+                    // Retain the trailing content. This will ensure that the AnimatedVisibility
+                    // will work correctly when the content lambda changes to null. The retained
+                    // content gets disposed once the AnimatedVisibility finishes exiting.
+                    val trailingContentRetainedState =
+                        rememberRetainedState(
+                            targetValue = trailingContent(trailingIcon, trailingIconColor)
+                        )
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        content = {
+                            // Read from retained state
+                            trailingContentRetainedState.value?.invoke()
+                        }
+                    )
+                }
+            },
+            measurePolicy = remember { ChipLayoutMeasurePolicy() },
+        )
+    }
+}
+
+/**
+ * Returns the actual leading content lambda based on priority (avatar > leadingIcon) and applied
+ * with the given content color.
+ */
+@Composable
+private fun leadingContent(
+    avatar: @Composable (() -> Unit)?,
+    leadingIcon: @Composable (() -> Unit)?,
+    leadingIconColor: Color
+): @Composable (() -> Unit)? =
+    when {
+        avatar != null -> avatar // An avatar takes precedence
+        leadingIcon != null -> {
+            @Composable {
+                CompositionLocalProvider(
+                    LocalContentColor provides leadingIconColor,
+                    content = leadingIcon
+                )
+            }
+        }
+        else -> null // Neither exists
+    }
+
+/** Returns the trailing content lambda applied with the given content color. */
+@Composable
+private fun trailingContent(
+    trailingIcon: @Composable (() -> Unit)?,
+    trailingIconColor: Color
+): @Composable (() -> Unit)? =
+    if (trailingIcon != null) {
+        @Composable {
+            CompositionLocalProvider(
+                LocalContentColor provides trailingIconColor,
+                content = trailingIcon
+            )
+        }
+    } else {
+        null
+    }
+
+/**
+ * Remembers the last non-null value emitted by the [targetValue]. When [targetValue] becomes null,
+ * this function continues to return the last non-null value, allowing content to gracefully animate
+ * out.
+ */
+@Composable
+private fun <T> rememberRetainedState(targetValue: T?): State<T?> {
+    val retainedState = remember { mutableStateOf(targetValue) }
+    if (targetValue != null) {
+        retainedState.value = targetValue
+    }
+    return retainedState
 }
 
 private class ChipLayoutMeasurePolicy : MeasurePolicy {

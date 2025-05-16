@@ -138,9 +138,6 @@ public class MacrobenchmarkScope(
     internal var hasClearedRuntimeImage: Boolean = false
         private set
 
-    /** `true` if the app is a system app. */
-    internal val isSystemApp: Boolean = getInstalledPackageInfo(packageName).isSystemApp()
-
     /**
      * Current Macrobenchmark measurement iteration, or null if measurement is not yet enabled.
      *
@@ -518,15 +515,9 @@ public class MacrobenchmarkScope(
             }
         }
         Shell.killProcessesAndWait(packageName, onFailure = onFailure) {
-            val isRooted = Shell.isSessionRooted()
-            Log.d(TAG, "Killing process $packageName")
-            if (isRooted && isSystemApp) {
-                Shell.executeScriptSilent("killall $packageName")
-            } else {
-                // We want to use `am force-stop` for apps that are not system apps
-                // to make sure app components are not automatically restarted by system_server.
-                Shell.executeScriptSilent("am force-stop $packageName")
-            }
+            Log.d(TAG, "Force-stopping process $packageName")
+            Shell.executeScriptSilent("am force-stop $packageName")
+
             // System Apps need an additional Thread.sleep() to ensure that the process is killed.
             @Suppress("BanThreadSleep") Thread.sleep(Arguments.killProcessDelayMillis)
         }

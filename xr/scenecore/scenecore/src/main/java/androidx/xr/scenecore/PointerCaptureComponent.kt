@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PointerCaptureComponent as RtPointerCaptureComponent
@@ -131,7 +132,7 @@ private constructor(
         ): PointerCaptureComponent =
             PointerCaptureComponent(
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 executor,
                 stateListener,
                 inputListener,

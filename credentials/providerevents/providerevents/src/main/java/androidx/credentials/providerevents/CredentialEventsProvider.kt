@@ -17,30 +17,42 @@
 package androidx.credentials.providerevents
 
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.credentials.providerevents.service.CredentialProviderEventsService
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 /**
- * A service interface that feature providers implement in order to provide a specific interface.
- * The feature providers that wish to propagate update events to credential providers must add a
- * class that implements this interface. They must then add the class name as an extra to the intent
- * that they use to bind to the credential provider's service - an instance of
- * [CredentialProviderEventsService]. The onBind method of this base service class reads the class
- * name from the intent extras and instantiates it.
+ * Defines an interface for system components that handle credential event propagation APIs.
+ *
+ * System components implement this interface to return a stub [IBinder] to be used by
+ * [CredentialProviderEventsService].
+ *
+ * **Usage:**
+ * 1. System components implement this interface.
+ * 2. When binding to [CredentialProviderEventsService], the service instantiates and returns the
+ *    implemented class based on the `EVENTS_PROVIDER_KEY` extra in the intent.
+ * 3. The returned [IBinder] allows the feature provider to execute custom logic before calling the
+ *    public endpoints of [CredentialProviderEventsService].
+ *
+ * This mechanism enables system components to manage their own event propagation to credential
+ * providers.
  */
 public interface CredentialEventsProvider {
     /**
-     * Returns the Stub implementation that will be invoked by the feature provider after binding to
-     * an instance of [CredentialProviderEventsService]. The stub implementation will in turn call
-     * the service endpoints using the [service] instance passed into this method.
+     * Returns the [IBinder] stub implementation.
+     *
+     * This stub is invoked by the feature provider after binding to
+     * [CredentialProviderEventsService]. It allows the feature provider to execute custom logic
+     * before interacting with the service.
+     *
+     * @param service The instance of [CredentialProviderEventsService] to interact with.
      */
-    public fun getStubImplementation(service: CredentialProviderEventsService): IBinder? {
-        return null
-    }
+    public fun getStubImplementation(service: CredentialProviderEventsService): IBinder?
 
     public companion object {
-        public const val EVENTS_PROVIDER_KEY: String =
+        /**
+         * The key for the extra in the intent used to bind to the credential provider's service,
+         * specifying the class name that implements [CredentialEventsProvider].
+         */
+        public const val EVENTS_SERVICE_PROVIDER_KEY: String =
             "androidx.credentials.providerevents.service.EVENTS_SERVICE_PROVIDER_KEY"
     }
 }

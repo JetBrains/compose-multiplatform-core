@@ -140,7 +140,7 @@ package androidx.paging {
     method public androidx.paging.LoadState component1();
     method public androidx.paging.LoadState component2();
     method public androidx.paging.LoadState component3();
-    method public androidx.paging.LoadStates copy(androidx.paging.LoadState refresh, androidx.paging.LoadState prepend, androidx.paging.LoadState append);
+    method public androidx.paging.LoadStates copy(optional androidx.paging.LoadState refresh, optional androidx.paging.LoadState prepend, optional androidx.paging.LoadState append);
     method public androidx.paging.LoadState getAppend();
     method public androidx.paging.LoadState getPrepend();
     method public androidx.paging.LoadState getRefresh();
@@ -486,7 +486,7 @@ package androidx.paging {
   public static final class PagingSource.LoadResult.Error<Key, Value> extends androidx.paging.PagingSource.LoadResult<Key,Value> {
     ctor public PagingSource.LoadResult.Error(Throwable throwable);
     method public Throwable component1();
-    method public androidx.paging.PagingSource.LoadResult.Error<Key,Value> copy(Throwable throwable);
+    method public androidx.paging.PagingSource.LoadResult.Error<Key,Value> copy(optional Throwable throwable);
     method public Throwable getThrowable();
     property public Throwable throwable;
   }
@@ -503,7 +503,7 @@ package androidx.paging {
     method public Key? component3();
     method public int component4();
     method public int component5();
-    method public androidx.paging.PagingSource.LoadResult.Page<Key,Value> copy(java.util.List<? extends Value> data, Key? prevKey, Key? nextKey, @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsBefore, @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsAfter);
+    method public androidx.paging.PagingSource.LoadResult.Page<Key,Value> copy(optional java.util.List<? extends Value> data, optional Key? prevKey, optional Key? nextKey, optional @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsBefore, optional @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsAfter);
     method public java.util.List<Value> getData();
     method public int getItemsAfter();
     method public int getItemsBefore();

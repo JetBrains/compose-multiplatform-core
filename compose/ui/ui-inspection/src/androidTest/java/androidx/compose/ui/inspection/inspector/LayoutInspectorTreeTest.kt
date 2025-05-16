@@ -476,7 +476,7 @@ class LayoutInspectorTreeTest {
                 MAX_ITERABLE_SIZE
             )
         assertThat(params).isNotEmpty()
-        val text = params.find { it.name == "text" }
+        val text = params.find { it.name == "$0" }
         assertThat(text?.value).isEqualTo("Some text")
     }
 

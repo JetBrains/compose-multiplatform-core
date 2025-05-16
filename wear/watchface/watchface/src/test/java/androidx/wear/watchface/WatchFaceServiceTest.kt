@@ -3611,6 +3611,92 @@ public class WatchFaceServiceTest {
     }
 
     @Test
+    public fun unnecessaryCacheWritesDueToDoNotPersistElided() {
+        val complicationCache = HashMap<String, ByteArray>()
+        val instanceParams =
+            WallpaperInteractiveWatchFaceInstanceParams(
+                INTERACTIVE_INSTANCE_ID,
+                DeviceConfig(false, false, 0, 0),
+                WatchUiState(false, 0),
+                UserStyle(emptyMap()).toWireFormat(),
+                null,
+                null,
+                null
+            )
+        initWallpaperInteractiveWatchFaceInstance(
+            WatchFaceType.ANALOG,
+            listOf(leftComplication, rightComplication),
+            UserStyleSchema(emptyList()),
+            instanceParams,
+            complicationCache = complicationCache
+        )
+        runPostedTasksFor(2000)
+        testWatchFaceService.writeComplicationDataCacheCount = 0
+
+        // Set some ComplicationData.
+        interactiveWatchFaceInstance.updateComplicationData(
+            listOf(
+                IdAndComplicationDataWireFormat(
+                    LEFT_COMPLICATION_ID,
+                    WireComplicationData.Builder(WireComplicationData.TYPE_LONG_TEXT)
+                        .setLongText(WireComplicationText.plainText("TYPE_LONG_TEXT"))
+                        .setTapAction(
+                            PendingIntent.getActivity(
+                                context,
+                                0,
+                                Intent("LongText"),
+                                PendingIntent.FLAG_IMMUTABLE
+                            )
+                        )
+                        .setPersistencePolicy(ComplicationPersistencePolicies.DO_NOT_PERSIST)
+                        .build()
+                ),
+                IdAndComplicationDataWireFormat(
+                    RIGHT_COMPLICATION_ID,
+                    WireComplicationData.Builder(WireComplicationData.TYPE_SHORT_TEXT)
+                        .setShortText(WireComplicationText.plainText("TYPE_SHORT_TEXT"))
+                        .build()
+                )
+            )
+        )
+
+        // Complication cache writes are deferred for 1s to try and batch up multiple updates.
+        runPostedTasksFor(2000)
+        assertThat(testWatchFaceService.writeComplicationDataCacheCount).isEqualTo(1)
+
+        // Send an update where the DO_NOT_PERSIST complication has changed. This should not result
+        // in a write.
+        interactiveWatchFaceInstance.updateComplicationData(
+            listOf(
+                IdAndComplicationDataWireFormat(
+                    LEFT_COMPLICATION_ID,
+                    WireComplicationData.Builder(WireComplicationData.TYPE_LONG_TEXT)
+                        .setLongText(WireComplicationText.plainText("TYPE_LONG_TEXT2"))
+                        .setTapAction(
+                            PendingIntent.getActivity(
+                                context,
+                                0,
+                                Intent("LongText"),
+                                PendingIntent.FLAG_IMMUTABLE
+                            )
+                        )
+                        .setPersistencePolicy(ComplicationPersistencePolicies.DO_NOT_PERSIST)
+                        .build()
+                ),
+                IdAndComplicationDataWireFormat(
+                    RIGHT_COMPLICATION_ID,
+                    WireComplicationData.Builder(WireComplicationData.TYPE_SHORT_TEXT)
+                        .setShortText(WireComplicationText.plainText("TYPE_SHORT_TEXT"))
+                        .build()
+                )
+            )
+        )
+
+        runPostedTasksFor(2000)
+        assertThat(testWatchFaceService.writeComplicationDataCacheCount).isEqualTo(1)
+    }
+
+    @Test
     @Config(sdk = [Build.VERSION_CODES.O_MR1])
     public fun complicationCache_timeline() {
         val complicationCache = HashMap<String, ByteArray>()
@@ -6786,12 +6872,13 @@ public class WatchFaceServiceTest {
                                 INTERACTIVE_UPDATE_RATE_MS
                             ) {
                             init {
-                                watchfaceColors =
+                                setWatchfaceColors(
                                     WatchFaceColors(
                                         Color.valueOf(1),
                                         Color.valueOf(2),
                                         Color.valueOf(3)
                                     )
+                                )
                             }
 
                             override fun render(
@@ -6870,8 +6957,9 @@ public class WatchFaceServiceTest {
         assertThat(lastWatchFaceColors)
             .isEqualTo(WatchFaceColors(Color.valueOf(1), Color.valueOf(2), Color.valueOf(3)))
 
-        renderer.watchfaceColors =
+        renderer.setWatchfaceColors(
             WatchFaceColors(Color.valueOf(10), Color.valueOf(20), Color.valueOf(30))
+        )
 
         assertThat(lastWatchFaceColors)
             .isEqualTo(WatchFaceColors(Color.valueOf(10), Color.valueOf(20), Color.valueOf(30)))
@@ -6879,8 +6967,9 @@ public class WatchFaceServiceTest {
         interactiveWatchFaceInstance.removeWatchFaceListener(listener)
 
         // This should be ignored.
-        renderer.watchfaceColors =
+        renderer.setWatchfaceColors(
             WatchFaceColors(Color.valueOf(100), Color.valueOf(200), Color.valueOf(300))
+        )
         assertThat(lastWatchFaceColors)
             .isNotEqualTo(
                 WatchFaceColors(Color.valueOf(100), Color.valueOf(200), Color.valueOf(300))

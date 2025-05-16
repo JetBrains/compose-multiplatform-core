@@ -111,6 +111,14 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ false,
                 ),
                 arrayOf(
+                    "external+" + Camera2Config::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
+                    /*forceEnableStreamSharing=*/ false,
+                ),
+                arrayOf(
                     "back+" + Camera2Config::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config.defaultConfig(),
@@ -119,6 +127,14 @@ class VideoRecordingMetadataTest(
                 arrayOf(
                     "front+" + Camera2Config::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
+                    Camera2Config.defaultConfig(),
+                    /*forceEnableStreamSharing=*/ true,
+                ),
+                arrayOf(
+                    "external+" + Camera2Config::class.simpleName + "+streamSharing",
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
                     Camera2Config.defaultConfig(),
                     /*forceEnableStreamSharing=*/ true,
                 ),
@@ -135,6 +151,14 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ false,
                 ),
                 arrayOf(
+                    "external+" + CameraPipeConfig::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    CameraPipeConfig.defaultConfig(),
+                    /*forceEnableStreamSharing=*/ false,
+                ),
+                arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig.defaultConfig(),
@@ -143,6 +167,14 @@ class VideoRecordingMetadataTest(
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
+                    CameraPipeConfig.defaultConfig(),
+                    /*forceEnableStreamSharing=*/ true,
+                ),
+                arrayOf(
+                    "external+" + CameraPipeConfig::class.simpleName + "+streamSharing",
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
                     CameraPipeConfig.defaultConfig(),
                     /*forceEnableStreamSharing=*/ true,
                 ),

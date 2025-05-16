@@ -457,21 +457,24 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
     private fun calculateScaffoldValue(destinationIndex: Int) =
         if (destinationIndex == -1) {
             calculateThreePaneScaffoldValue(
-                scaffoldDirective.maxHorizontalPartitions,
-                adaptStrategies,
-                null
+                maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
+                maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
+                adaptStrategies = adaptStrategies,
+                currentDestination = null
             )
         } else if (isDestinationHistoryAware) {
             calculateThreePaneScaffoldValue(
-                scaffoldDirective.maxHorizontalPartitions,
-                adaptStrategies,
-                destinationHistory.subList(0, destinationIndex + 1)
+                maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
+                maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
+                adaptStrategies = adaptStrategies,
+                destinationHistory = destinationHistory.subList(0, destinationIndex + 1)
             )
         } else {
             calculateThreePaneScaffoldValue(
-                scaffoldDirective.maxHorizontalPartitions,
-                adaptStrategies,
-                destinationHistory[destinationIndex]
+                maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
+                maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
+                adaptStrategies = adaptStrategies,
+                currentDestination = destinationHistory[destinationIndex]
             )
         }
 

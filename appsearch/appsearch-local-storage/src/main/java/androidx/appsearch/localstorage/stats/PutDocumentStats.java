@@ -81,6 +81,15 @@ public final class PutDocumentStats extends BaseStats {
     /** Time used to sort and merge the lite index's hit buffer. */
     private final int mNativeLiteIndexSortLatencyMillis;
 
+    /**
+     * Time used to index all metadata terms in the document, which can only be
+     * added by PropertyExistenceIndexingHandler currently.
+     */
+    private final int mMetadataTermIndexLatencyMillis;
+
+    /**Time used to index all embeddings in the document.*/
+    private final int mEmbeddingIndexLatencyMillis;
+
     PutDocumentStats(@NonNull Builder builder) {
         super(builder);
         mPackageName = builder.mPackageName;
@@ -99,6 +108,8 @@ public final class PutDocumentStats extends BaseStats {
         mNativeIntegerIndexLatencyMillis = builder.mNativeIntegerIndexLatencyMillis;
         mNativeQualifiedIdJoinIndexLatencyMillis = builder.mNativeQualifiedIdJoinIndexLatencyMillis;
         mNativeLiteIndexSortLatencyMillis = builder.mNativeLiteIndexSortLatencyMillis;
+        mMetadataTermIndexLatencyMillis = builder.mMetadataTermIndexLatencyMillis;
+        mEmbeddingIndexLatencyMillis = builder.mEmbeddingIndexLatencyMillis;
     }
 
     /** Returns calling package name. */
@@ -182,6 +193,19 @@ public final class PutDocumentStats extends BaseStats {
         return mNativeLiteIndexSortLatencyMillis;
     }
 
+    /**
+     * Returns time used to index all metadata terms in the document, which can only be
+     * added by PropertyExistenceIndexingHandler currently, in milliseconds.
+     */
+    public int getMetadataTermIndexLatencyMillis() {
+        return mMetadataTermIndexLatencyMillis;
+    }
+
+    /** Returns time used to index all embeddings in the document, in milliseconds. */
+    public int getEmbeddingIndexLatencyMillis() {
+        return mEmbeddingIndexLatencyMillis;
+    }
+
     /** Builder for {@link PutDocumentStats}. */
     public static class Builder extends BaseStats.Builder<PutDocumentStats.Builder> {
         final @NonNull String mPackageName;
@@ -201,6 +225,8 @@ public final class PutDocumentStats extends BaseStats {
         int mNativeIntegerIndexLatencyMillis;
         int mNativeQualifiedIdJoinIndexLatencyMillis;
         int mNativeLiteIndexSortLatencyMillis;
+        int mMetadataTermIndexLatencyMillis;
+        int mEmbeddingIndexLatencyMillis;
 
         /** Builder for {@link PutDocumentStats} */
         public Builder(@NonNull String packageName, @NonNull String database) {
@@ -313,6 +339,22 @@ public final class PutDocumentStats extends BaseStats {
         public @NonNull Builder setNativeLiteIndexSortLatencyMillis(
                 int nativeLiteIndexSortLatencyMillis) {
             mNativeLiteIndexSortLatencyMillis = nativeLiteIndexSortLatencyMillis;
+            return this;
+        }
+
+        /** Sets the native metadata term index latency, in millis. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setMetadataTermIndexLatencyMillis(
+                int metadataTermIndexLatencyMillis) {
+            mMetadataTermIndexLatencyMillis = metadataTermIndexLatencyMillis;
+            return this;
+        }
+
+        /** Sets the native embedding index latency, in millis. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setEmbeddingIndexLatencyMillis(
+                int embeddingIndexLatencyMillis) {
+            mEmbeddingIndexLatencyMillis = embeddingIndexLatencyMillis;
             return this;
         }
 

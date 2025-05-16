@@ -76,10 +76,12 @@ internal sealed interface CompilationInputs {
             }
 
             // Not a multiplatform project, set up standard inputs
+            @Suppress("UnstableApiUsage") // Usage of .kotlin
             val kotlinCollection = project.files(variant.sources.kotlin?.all)
             val javaCollection = project.files(variant.sources.java?.all)
             val sourceCollection = kotlinCollection + javaCollection
 
+            @Suppress("UnstableApiUsage") // Usage of compileClasspath
             return StandardCompilationInputs(
                 sourcePaths = sourceCollection,
                 dependencyClasspath = variant.compileClasspath,

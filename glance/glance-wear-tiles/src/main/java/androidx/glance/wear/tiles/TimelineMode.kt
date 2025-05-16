@@ -48,7 +48,7 @@ public sealed interface TimelineMode {
      *
      * @param timeIntervals Used to build the list of time intervals, the list must not be empty.
      */
-    public class TimeBoundEntries(val timeIntervals: Set<TimeInterval>) : TimelineMode {
+    public class TimeBoundEntries(public val timeIntervals: Set<TimeInterval>) : TimelineMode {
         init {
             require(timeIntervals.isNotEmpty()) { "The set of time intervals cannot be empty" }
         }

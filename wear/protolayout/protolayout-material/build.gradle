@@ -40,8 +40,6 @@ dependencies {
     implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     lintChecks(project(":wear:protolayout:protolayout-lint"))
-    lintPublish(project(":wear:protolayout:protolayout-lint"))
-
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
@@ -54,7 +52,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
@@ -76,4 +73,5 @@ androidx {
     inceptionYear = "2023"
     description = "Material components library for ProtoLayout."
     addGoldenImageAssets()
+    enableRobolectric()
 }

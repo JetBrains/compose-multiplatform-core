@@ -51,7 +51,6 @@ import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.ImageCard
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
 import androidx.wear.compose.material3.MaterialTheme
@@ -270,7 +269,7 @@ fun ImageCardBuilder() {
                     androidx.wear.compose.material3.demos.R.drawable.backgroundsplitimage
                 )
 
-            ImageCard(
+            TitleCard(
                 onClick = { /* Do something */ },
                 title = { Text("Title") },
                 subtitle = { Text("Secondary label") },

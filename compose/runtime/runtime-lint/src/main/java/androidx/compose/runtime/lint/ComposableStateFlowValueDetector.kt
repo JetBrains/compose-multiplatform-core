@@ -35,7 +35,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.parentOfType
 import java.util.EnumSet
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.symbols.KtClassOrObjectSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtClass
@@ -65,9 +65,9 @@ class ComposableStateFlowValueDetector : Detector(), SourceCodeScanner {
                         is KtProperty -> {
                             val thisClass = psiElement.parentOfType<KtClass>() ?: return
                             analyze(thisClass) {
-                                val symbol = thisClass.getSymbol() as KtClassOrObjectSymbol
+                                val symbol = thisClass.symbol as KaClassSymbol
                                 val baseClassId = ClassId.topLevel(FqName(StateFlowName.javaFqn))
-                                val baseClassSymbol = getClassOrObjectSymbolByClassId(baseClassId)
+                                val baseClassSymbol = findClass(baseClassId)
                                 symbol.isSubClassOf(baseClassSymbol ?: return@analyze false)
                             }
                         }

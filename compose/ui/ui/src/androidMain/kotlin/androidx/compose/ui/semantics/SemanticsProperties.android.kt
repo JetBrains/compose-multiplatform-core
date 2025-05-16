@@ -18,7 +18,6 @@ package androidx.compose.ui.semantics
 
 object SemanticsPropertiesAndroid {
     /** @see SemanticsPropertyReceiver.testTagsAsResourceId */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val TestTagsAsResourceId =
         SemanticsPropertyKey<Boolean>(
             name = "TestTagsAsResourceId",
@@ -47,7 +46,6 @@ object SemanticsPropertiesAndroid {
  * semantics node of the app (and no child nodes set it back to false), then every testTag will be
  * mapped.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 var SemanticsPropertyReceiver.testTagsAsResourceId by
     SemanticsPropertiesAndroid.TestTagsAsResourceId
 

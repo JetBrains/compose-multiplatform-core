@@ -37,10 +37,6 @@ import androidx.xr.scenecore.Entity
 @SubspaceComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Volume(modifier: SubspaceModifier = SubspaceModifier, onVolumeEntity: (Entity) -> Unit) {
-    val defaultWidthPx = 400
-    val defaultHeightPx = 400
-    val defaultDepthPx = 400
-
     SubspaceLayout(
         modifier = modifier,
         coreEntity =
@@ -49,10 +45,9 @@ public fun Volume(modifier: SubspaceModifier = SubspaceModifier, onVolumeEntity:
                     .apply(onVolumeEntity)
             },
     ) { _, constraints ->
-        val initialWidth = defaultWidthPx.coerceIn(constraints.minWidth, constraints.maxWidth)
-        val initialHeight = defaultHeightPx.coerceIn(constraints.minHeight, constraints.maxHeight)
-        val initialDepth = defaultDepthPx.coerceIn(constraints.minDepth, constraints.maxDepth)
-
+        val initialWidth = constraints.minWidth.coerceAtLeast(0)
+        val initialHeight = constraints.minHeight.coerceAtLeast(0)
+        val initialDepth = constraints.minDepth.coerceAtLeast(0)
         layout(initialWidth, initialHeight, initialDepth) {}
     }
 }

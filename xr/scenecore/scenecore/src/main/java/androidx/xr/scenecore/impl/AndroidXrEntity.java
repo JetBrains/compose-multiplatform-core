@@ -19,8 +19,10 @@ package androidx.xr.scenecore.impl;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEventListener;
 import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
 import androidx.xr.runtime.internal.PointerCaptureComponent;
@@ -39,13 +41,15 @@ import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.ReformOptions;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Implementation of a RealityCore Entity that wraps an android XR extension Node.
+ * Implementation of a JXR SceneCore Entity that wraps an android XR extension Node.
  *
  * <p>This should not be created on its own but should be inherited by objects that need to wrap an
  * Android extension node.
@@ -277,6 +281,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         }
         getNode()
                 .requestPointerCapture(
+                        executor,
                         (pcState) -> {
                             if (pcState == Node.POINTER_CAPTURE_STATE_PAUSED) {
                                 stateListener.onStateChanged(
@@ -293,8 +298,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                             } else {
                                 Log.e("Runtime", "Invalid state received for pointer capture");
                             }
-                        },
-                        executor);
+                        });
 
         addPointerCaptureInputListener(executor, eventListener);
         return true;
@@ -310,6 +314,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     private void maybeSetupInputListeners() {
         if (mInputEventListenerMap.isEmpty() && mPointerCaptureInputEventListener.isEmpty()) {
             mNode.listenForInput(
+                    mExecutor,
                     (xrInputEvent) -> {
                         if (xrInputEvent.getDispatchFlags()
                                 == InputEvent.DISPATCH_FLAG_CAPTURED_POINTER) {
@@ -334,8 +339,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                                                             xrInputEvent,
                                                                             mEntityManager))));
                         }
-                    },
-                    mExecutor);
+                    });
         }
     }
 
@@ -414,7 +418,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                         consumerExecutor.execute(
                                                 () -> eventConsumer.accept(reformEvent)));
                     };
-            mReformOptions = mExtensions.createReformOptions(reformEventConsumer, mExecutor);
+            mReformOptions = mExtensions.createReformOptions(mExecutor, reformEventConsumer);
         }
         return mReformOptions;
     }
@@ -444,5 +448,20 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
 
     public void removeReformEventConsumer(Consumer<ReformEvent> reformEventConsumer) {
         mReformEventConsumerMap.remove(reformEventConsumer);
+    }
+
+    @Override
+    @NonNull
+    public ListenableFuture<HitTestResult> hitTest(
+            @NonNull Vector3 origin,
+            @NonNull Vector3 direction,
+            @HitTestFilterValue int hitTestFilter) {
+        // Hit tests need to be issued in the activity space then converted to the entity's space.
+        ActivitySpace activitySpace =
+                mEntityManager.getSystemSpaceActivityPoseOfType(ActivitySpace.class).get(0);
+        if (activitySpace == null) {
+            throw new IllegalStateException("ActivitySpace is null");
+        }
+        return activitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this);
     }
 }

@@ -71,7 +71,7 @@ abstract class ReportDependencyAnalysisAdviceTask : AbstractPostProcessingTask()
 
         val baselineAdvice =
             Gson()
-                .fromJson<AndroidxProjectAdvice>(
+                .fromJson(
                     getDependencyAnalysisBaseline()?.readText(),
                     AndroidxProjectAdvice::class.java
                 )
@@ -202,8 +202,7 @@ internal fun Project.configureDependencyAnalysisPlugin() {
             "reportDependencyAnalysisAdvice",
             ReportDependencyAnalysisAdviceTask::class.java
         ) { task ->
-            var baselineFile = layout.projectDirectory.file("dependencyAnalysis-baseline.json")
-            task.baseLineFile.set(baselineFile)
+            task.baseLineFile.set(layout.projectDirectory.file("dependencyAnalysis-baseline.json"))
             task.cacheEvenIfNoOutputs()
             // DAGP currently doesn't support KMP, enable KMP projects when b/394970486 is resolved
             task.onlyIf { !(task.isKMP) && task.isPublishedLibrary }

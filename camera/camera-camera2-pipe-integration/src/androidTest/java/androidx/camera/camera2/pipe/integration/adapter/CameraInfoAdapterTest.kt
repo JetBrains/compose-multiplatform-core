@@ -20,7 +20,7 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.testing.toCameraInfoAdapter
+import androidx.camera.camera2.pipe.integration.testing.toCameraInfoAdapter
 import androidx.camera.core.CameraSelector
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil

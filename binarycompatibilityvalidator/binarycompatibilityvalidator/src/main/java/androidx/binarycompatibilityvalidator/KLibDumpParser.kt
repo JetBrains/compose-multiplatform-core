@@ -73,7 +73,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
 
     /** Parse the klib dump tracked by [cursor] into a map of targets to [LibraryAbi]s */
     fun parse(): Map<String, LibraryAbi> {
-        while (cursor.hasNextRow()) {
+        while (!cursor.isFinished()) {
             parseDeclaration(parentQualifiedName = null)?.let { abiDeclaration ->
                 // Find all the targets the current declaration belongs to
                 currentTargets.forEach {
@@ -81,6 +81,9 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
                     it.declarations.add(abiDeclaration)
                 }
             }
+        }
+        if (abiInfoByTarget.isEmpty()) {
+            throw ParseException("No targets were found")
         }
         return abiInfoByTarget
             .map { (target, abiInfo) ->
@@ -273,6 +276,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         val isSuspend = modifiers.contains("suspend")
         cursor.parseFunctionKind()
         val typeParams = cursor.parseTypeParams() ?: emptyList()
+        val contextParams = cursor.parseContextParams() ?: emptyList()
         val functionReceiver = cursor.parseFunctionReceiver()
         val abiQualifiedName =
             if (isGetterOrSetter) {
@@ -283,19 +287,20 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         val valueParameters =
             cursor.parseValueParameters() ?: throw parseException("Couldn't parse value params")
         val allValueParameters =
-            if (null != functionReceiver) {
-                val functionReceiverAsValueParam =
-                    AbiValueParameterImpl(
-                        type = functionReceiver,
-                        isVararg = false,
-                        hasDefaultArg = false,
-                        isNoinline = false,
-                        isCrossinline = false
-                    )
-                listOf(functionReceiverAsValueParam) + valueParameters
-            } else {
-                valueParameters
-            }
+            contextParams +
+                if (null != functionReceiver) {
+                    val functionReceiverAsValueParam =
+                        AbiValueParameterImpl(
+                            type = functionReceiver,
+                            isVararg = false,
+                            hasDefaultArg = false,
+                            isNoinline = false,
+                            isCrossinline = false
+                        )
+                    listOf(functionReceiverAsValueParam) + valueParameters
+                } else {
+                    valueParameters
+                }
         val returnType = cursor.parseReturnType()
         cursor.nextLine()
         return AbiFunctionImpl(
@@ -307,7 +312,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             isSuspend = isSuspend,
             typeParameters = typeParams,
             hasExtensionReceiverParameter = null != functionReceiver,
-            contextReceiverParametersCount = 0, // TODO
+            contextReceiverParametersCount = contextParams.size,
             valueParameters = allValueParameters,
             returnType = returnType
         )
@@ -344,7 +349,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             if (parentQualifiedName == null) {
                 throw parseException("Failed to parse qName")
             }
-            val identifier = cursor.parseValidIdentifier()
+            val identifier = cursor.parseValidIdentifierAndMaybeTrim()
             val relativeName = parentQualifiedName.relativeName.value + "." + identifier
             return AbiQualifiedName(parentQualifiedName.packageName, AbiCompoundName(relativeName))
         }

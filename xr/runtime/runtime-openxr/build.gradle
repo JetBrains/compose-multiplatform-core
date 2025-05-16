@@ -45,6 +45,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation("androidx.appcompat:appcompat:1.2.0")
     androidTestImplementation(project(":kruth:kruth"))
+    androidTestImplementation(project(":xr:runtime:runtime-testing"))
 }
 
 android {
@@ -55,6 +56,7 @@ android {
     }
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'
+        minSdkVersion 23
     }
     sourceSets.androidTest {
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")

@@ -28,6 +28,7 @@ import androidx.wear.protolayout.material3.Typography.TypographyToken
 import androidx.wear.protolayout.material3.Versions.hasTextOverflowEllipsizeSupport
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.modifiers.semanticsHeading
 import androidx.wear.protolayout.types.LayoutColor
 import androidx.wear.protolayout.types.LayoutString
 
@@ -108,13 +109,22 @@ public fun MaterialScope.text(
                 overflow
             },
         modifier =
-            // Text by default is not important for accessibility. In M3 spec, text in primaryLayout
-            // tileSlot, bottomSlot and labelForBottomSlot should be important for accessibility by
-            // default.
-            if (defaultTextElementStyle.importantForAccessibility) {
-                LayoutModifier.contentDescription(text.staticValue, text.dynamicValue) then modifier
-            } else {
-                modifier
-            },
+            LayoutModifier.let {
+                    if (defaultTextElementStyle.isAccessibilityHeading) {
+                        it.semanticsHeading(true)
+                    } else {
+                        it
+                    }
+                }
+                .let {
+                    // Text by default is not important for accessibility.
+                    // In M3 spec, text in primaryLayout tileSlot, bottomSlot and labelForBottomSlot
+                    // should be important for accessibility by default.
+                    if (defaultTextElementStyle.importantForAccessibility) {
+                        it.contentDescription(text.staticValue, text.dynamicValue)
+                    } else {
+                        it
+                    }
+                } then modifier,
         lineHeight = theme.getLineHeight(typography).value,
     )

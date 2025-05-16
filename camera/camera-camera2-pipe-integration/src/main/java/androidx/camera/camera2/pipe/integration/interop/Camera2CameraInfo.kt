@@ -32,6 +32,8 @@ private constructor(
     private val cameraProperties: CameraProperties,
     private val extensionsSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = null
 ) {
+    @JvmSynthetic @JvmField public val cameraId: String = cameraProperties.cameraId.value
+
     /**
      * Gets a camera characteristic value.
      *
@@ -67,7 +69,7 @@ private constructor(
      * @throws IllegalStateException if the camera info does not contain the camera 2 camera ID
      *   (e.g., if CameraX was not initialized with a [androidx.camera.camera2.Camera2Config]).
      */
-    public fun getCameraId(): String = cameraProperties.cameraId.value
+    public fun getCameraId(): String = cameraId
 
     public companion object {
 

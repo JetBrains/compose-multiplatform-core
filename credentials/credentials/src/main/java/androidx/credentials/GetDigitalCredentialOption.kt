@@ -73,7 +73,7 @@ internal constructor(
     ) : this(
         requestJson = requestJson,
         requestData = toBundle(requestJson),
-        candidateQueryData = toBundle(requestJson),
+        candidateQueryData = Bundle(),
         isSystemProviderRequired = false,
         isAutoSelectAllowed = false,
         allowedProviders = emptySet(),

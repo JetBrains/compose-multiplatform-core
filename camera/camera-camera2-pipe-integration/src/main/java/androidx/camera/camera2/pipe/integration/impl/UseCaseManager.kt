@@ -583,7 +583,7 @@ constructor(
             deferredUseCaseManagerConfig = useCaseManagerConfig
             return
         }
-        val cameraGraph = cameraPipe.create(useCaseManagerConfig.cameraGraphConfig)
+        val cameraGraph = cameraPipe.createCameraGraph(useCaseManagerConfig.cameraGraphConfig)
         beginComponentCreation(useCaseManagerConfig, cameraGraph)
     }
 
@@ -819,12 +819,14 @@ constructor(
                     getCameraMode(),
                     getRequiredMaxBitDepth(attachedSurfaceInfoList),
                     isPreviewStabilizationOn(),
-                    isUltraHdrOn()
+                    isUltraHdrOn(),
+                    // TODO: b/406367951 - Properly pass feature combo info for MeteringRepeating
+                    requiresFeatureComboQuery = false
                 ),
                 mutableListOf<SurfaceConfig>().apply {
                     addAll(sessionSurfacesConfigs)
                     add(createMeteringRepeatingSurfaceConfig())
-                }
+                },
             )
             .also {
                 Log.debug {

@@ -53,9 +53,9 @@ import kotlinx.coroutines.launch
  * super implementation. This means your processing time must be short.
  */
 @OptIn(ExperimentalGlanceApi::class)
-abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
+public abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
 
-    companion object {
+    public companion object {
         private const val TAG = "GlanceAppWidgetReceiver"
 
         /**
@@ -69,14 +69,15 @@ abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
          * root), and has androidx.glance.appwidget.DEBUG_UPDATE in its intent-filter. This should
          * only be done for debug builds and disabled for release.
          */
-        const val ACTION_DEBUG_UPDATE = "androidx.glance.appwidget.action.DEBUG_UPDATE"
+        public const val ACTION_DEBUG_UPDATE: String =
+            "androidx.glance.appwidget.action.DEBUG_UPDATE"
     }
 
     /**
      * Instance of the [GlanceAppWidget] to use to generate the App Widget and send it to the
      * [AppWidgetManager]
      */
-    abstract val glanceAppWidget: GlanceAppWidget
+    public abstract val glanceAppWidget: GlanceAppWidget
 
     /**
      * Override [coroutineContext] to provide custom [CoroutineContext] in which to run update
@@ -85,10 +86,7 @@ abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
      * Note: This does not set the [CoroutineContext] for the GlanceAppWidget, which will always run
      * on the main thread.
      */
-    @get:ExperimentalGlanceApi
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalGlanceApi
-    open val coroutineContext: CoroutineContext = Dispatchers.Default
+    @ExperimentalGlanceApi public open val coroutineContext: CoroutineContext = Dispatchers.Default
 
     @CallSuper
     override fun onUpdate(

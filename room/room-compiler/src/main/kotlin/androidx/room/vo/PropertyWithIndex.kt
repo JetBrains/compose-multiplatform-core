@@ -19,9 +19,8 @@ package androidx.room.vo
 /**
  * A common value object when we need to associate a Property with an Index variable.
  *
- * <p>
- * If we are sure that the property will be there at compile time, we set it to always Exists so
- * that the generated code does not check for -1 column indices.
+ * If we are sure that the property will be there at compile time, then [alwaysExists] is set to
+ * `true` so that the generated code does not check for `-1` column indices.
  */
 data class PropertyWithIndex(
     val property: Property,

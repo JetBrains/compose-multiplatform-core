@@ -56,22 +56,31 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AdaptStrategy
 import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.DockedEdge
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
 import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.Scrim
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
-import androidx.compose.material3.adaptive.layout.defaultDragHandleSemantics
+import androidx.compose.material3.adaptive.layout.rememberDragToResizeState
 import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,6 +95,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -93,6 +103,7 @@ import kotlinx.coroutines.launch
 @Sampled
 @Composable
 fun ListDetailPaneScaffoldSample() {
+    val coroutineScope = rememberCoroutineScope()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<NavItemData>()
     val items = listOf("Item 1", "Item 2", "Item 3")
     val selectedItem = scaffoldNavigator.currentDestination?.contentKey
@@ -108,6 +119,7 @@ fun ListDetailPaneScaffoldSample() {
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
                 )
             }
         },
@@ -117,6 +129,7 @@ fun ListDetailPaneScaffoldSample() {
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
                 )
             }
         }
@@ -128,6 +141,7 @@ fun ListDetailPaneScaffoldSample() {
 @Sampled
 @Composable
 fun ListDetailPaneScaffoldSampleWithExtraPane() {
+    val coroutineScope = rememberCoroutineScope()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<NavItemData>()
     val items = listOf("Item 1", "Item 2", "Item 3")
     val extraItems = listOf("Extra 1", "Extra 2", "Extra 3")
@@ -144,6 +158,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
                 )
             }
         },
@@ -154,6 +169,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
                     hasExtraPane = true,
+                    coroutineScope = coroutineScope
                 )
             }
         },
@@ -163,6 +179,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                     extraItems = extraItems,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
                 )
             }
         },
@@ -171,19 +188,122 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                 keyProvider = scaffoldNavigator.scaffoldValue,
                 anchors = PaneExpansionAnchors
             ),
-        paneExpansionDragHandle = { state ->
-            val interactionSource = remember { MutableInteractionSource() }
-            VerticalDragHandle(
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun SupportingPaneScaffoldSample() {
+    val coroutineScope = rememberCoroutineScope()
+    val scaffoldNavigator = rememberSupportingPaneScaffoldNavigator<NavItemData>()
+    val extraItems = listOf("Extra content")
+    val selectedItem = NavItemData(index = 0, showExtra = true)
+
+    SupportingPaneScaffold(
+        directive = scaffoldNavigator.scaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
+        mainPane = {
+            AnimatedPane {
+                MainPaneContent(
+                    scaffoldNavigator = scaffoldNavigator,
+                    hasExtraPane = true,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        supportingPane = {
+            AnimatedPane(modifier = Modifier.preferredWidth(200.dp)) { SupportingPaneContent() }
+        },
+        extraPane = {
+            AnimatedPane {
+                ExtraPaneContent(
+                    extraItems = extraItems,
+                    selectedItem = selectedItem,
+                    scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        paneExpansionState =
+            rememberPaneExpansionState(
+                keyProvider = scaffoldNavigator.scaffoldValue,
+                anchors = PaneExpansionAnchors
+            ),
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+    )
+}
+
+/**
+ * This sample shows how to create a [SupportingPaneScaffold] that shows the extra pane as a bottom
+ * sheet when it's a single-pane layout and the extra pane is the current destination. The key parts
+ * of this sample are:
+ * 1. [rememberSupportingPaneScaffoldNavigator] with a custom
+ *    [androidx.compose.material3.adaptive.layout.ThreePaneScaffoldAdaptStrategies] that provides
+ *    [AdaptStrategy.Levitate] with [Alignment.BottomCenter] for the extra pane.
+ * 2. The use of [androidx.compose.material3.adaptive.layout.PaneScaffoldScope.dragToResize] with
+ *    [DockedEdge.Bottom] so that the levitated extra pane can be resized by dragging.
+ *
+ * @see levitateAdaptStrategySample for more usage samples of [AdaptStrategy.Levitate].
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet() {
+    val coroutineScope = rememberCoroutineScope()
+    val scaffoldNavigator =
+        rememberSupportingPaneScaffoldNavigator<NavItemData>(
+            adaptStrategies =
+                SupportingPaneScaffoldDefaults.adaptStrategies(
+                    extraPaneAdaptStrategy =
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.BottomCenter,
+                        )
+                )
+        )
+    val extraItems = listOf("Extra content")
+    val selectedItem = NavItemData(index = 0, showExtra = true)
+
+    SupportingPaneScaffold(
+        directive = scaffoldNavigator.scaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
+        mainPane = {
+            AnimatedPane {
+                MainPaneContent(
+                    scaffoldNavigator = scaffoldNavigator,
+                    hasExtraPane = true,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        supportingPane = {
+            AnimatedPane(modifier = Modifier.preferredWidth(200.dp)) { SupportingPaneContent() }
+        },
+        extraPane = {
+            AnimatedPane(
                 modifier =
-                    Modifier.paneExpansionDraggable(
-                        state,
-                        LocalMinimumInteractiveComponentSize.current,
-                        interactionSource,
-                        state.defaultDragHandleSemantics()
-                    ),
-                interactionSource = interactionSource
-            )
-        }
+                    Modifier.preferredWidth(480.dp)
+                        .preferredHeight(412.dp)
+                        .dragToResize(rememberDragToResizeState(dockedEdge = DockedEdge.Bottom))
+            ) {
+                ExtraPaneContent(
+                    extraItems = extraItems,
+                    selectedItem = selectedItem,
+                    scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        paneExpansionState =
+            rememberPaneExpansionState(
+                keyProvider = scaffoldNavigator.scaffoldValue,
+                anchors = PaneExpansionAnchors
+            ),
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
     )
 }
 
@@ -201,10 +321,54 @@ fun ThreePaneScaffoldScope.PaneExpansionDragHandleSample(
                 state,
                 LocalMinimumInteractiveComponentSize.current,
                 interactionSource,
-                state.defaultDragHandleSemantics()
             ),
         interactionSource = interactionSource
     )
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun <T> reflowAdaptStrategySample(): ThreePaneScaffoldNavigator<T> =
+    rememberListDetailPaneScaffoldNavigator<T>(
+        adaptStrategies =
+            ListDetailPaneScaffoldDefaults.adaptStrategies(
+                extraPaneAdaptStrategy =
+                    AdaptStrategy.Reflow(targetPane = ListDetailPaneScaffoldRole.Detail)
+            )
+    )
+
+/**
+ * This sample shows how to create a [ThreePaneScaffoldNavigator] that will show the extra pane as a
+ * modal dialog in a single pane layout when the extra pane is the current destination. The dialog
+ * will be centered in the scaffold, with a scrim that clicking on it will dismiss the dialog.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun <T> levitateAdaptStrategySample(): ThreePaneScaffoldNavigator<T> {
+    val coroutineScope = rememberCoroutineScope()
+    var navigator: ThreePaneScaffoldNavigator<T>? = null
+    navigator =
+        rememberListDetailPaneScaffoldNavigator<T>(
+            adaptStrategies =
+                ListDetailPaneScaffoldDefaults.adaptStrategies(
+                    extraPaneAdaptStrategy =
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.Center,
+                            scrim =
+                                Scrim(
+                                    onClick = {
+                                        coroutineScope.launch { navigator?.navigateBack() }
+                                    }
+                                )
+                        )
+                )
+        )
+    return navigator
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
@@ -214,6 +378,8 @@ fun ThreePaneScaffoldScope.PaneExpansionDragHandleSample(
 fun NavigableListDetailPaneScaffoldSample() {
     val welcomeRoute = "welcome"
     val listDetailRoute = "listdetail"
+
+    val coroutineScope = rememberCoroutineScope()
 
     // `navController` handles navigation outside the ListDetailPaneScaffold,
     // and `scaffoldNavigator` handles navigation within it. The "content" of
@@ -308,6 +474,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             items = items,
                             selectedItem = selectedItem,
                             scaffoldNavigator = scaffoldNavigator,
+                            coroutineScope = coroutineScope
                         )
                     }
                 },
@@ -319,6 +486,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             scaffoldNavigator = scaffoldNavigator,
                             hasExtraPane = true,
                             backBehavior = backBehavior,
+                            coroutineScope = coroutineScope
                         )
                     }
                 },
@@ -329,6 +497,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             selectedItem = selectedItem,
                             scaffoldNavigator = scaffoldNavigator,
                             backBehavior = backBehavior,
+                            coroutineScope = coroutineScope
                         )
                     }
                 },
@@ -391,8 +560,8 @@ private fun ListPaneContent(
     selectedItem: NavItemData?,
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope
 ) {
-    val scope = rememberCoroutineScope()
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -404,7 +573,7 @@ private fun ListPaneContent(
                     index == selectedItem?.index &&
                         scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.Detail),
                 onClick = {
-                    scope.launch {
+                    coroutineScope.launch {
                         scaffoldNavigator.navigateTo(
                             pane = ListDetailPaneScaffoldRole.Detail,
                             contentKey = NavItemData(index),
@@ -424,9 +593,9 @@ private fun DetailPaneContent(
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
     hasExtraPane: Boolean = false,
-    backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange
+    backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange,
+    coroutineScope: CoroutineScope
 ) {
-    val scope = rememberCoroutineScope()
     val title: String
     val description: String
     if (selectedItem == null) {
@@ -445,7 +614,9 @@ private fun DetailPaneContent(
         backButton = {
             BackButton(
                 visible = !scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.List),
-                onClick = { scope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {
@@ -453,7 +624,7 @@ private fun DetailPaneContent(
         if (selectedItem != null && hasExtraPane) {
             Button(
                 onClick = {
-                    scope.launch {
+                    coroutineScope.launch {
                         scaffoldNavigator.navigateTo(
                             pane = ListDetailPaneScaffoldRole.Extra,
                             contentKey = NavItemData(selectedItem.index, showExtra = true),
@@ -469,14 +640,70 @@ private fun DetailPaneContent(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
+private fun MainPaneContent(
+    scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
+    modifier: Modifier = Modifier,
+    hasExtraPane: Boolean = false,
+    coroutineScope: CoroutineScope
+) {
+    val title = "My content"
+    val description =
+        "lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum" +
+            " lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum "
+
+    BasicScreen(
+        modifier = modifier,
+        title = title,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        backButton = {},
+    ) {
+        Text(description)
+        if (hasExtraPane) {
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        scaffoldNavigator.navigateTo(
+                            pane = SupportingPaneScaffoldRole.Extra,
+                            contentKey = NavItemData(0, showExtra = true),
+                        )
+                    }
+                }
+            ) {
+                Text("Show extra")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+private fun SupportingPaneContent(modifier: Modifier = Modifier) {
+    val items = listOf("Item 1", "Item 2", "Item 3")
+    var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEachIndexed { index, item ->
+            ListCard(
+                title = item,
+                highlight = index == selectedIndex,
+                onClick = { selectedIndex = index }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
 private fun ExtraPaneContent(
     extraItems: List<String>,
     selectedItem: NavItemData?,
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
-    backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange
+    backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange,
+    coroutineScope: CoroutineScope
 ) {
-    val scope = rememberCoroutineScope()
     val item =
         if (selectedItem != null && selectedItem.showExtra) extraItems[selectedItem.index] else ""
 
@@ -486,8 +713,10 @@ private fun ExtraPaneContent(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         backButton = {
             BackButton(
-                visible = !scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.Detail),
-                onClick = { scope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                visible = scaffoldNavigator.canNavigateBack(backBehavior),
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {

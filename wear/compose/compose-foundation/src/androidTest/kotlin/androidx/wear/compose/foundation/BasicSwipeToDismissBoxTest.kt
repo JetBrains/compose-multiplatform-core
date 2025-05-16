@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
@@ -39,7 +40,6 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -249,7 +249,7 @@ class BasicSwipeToDismissBoxTest {
                     BasicText(
                         text = "Inner",
                         color = { Color.Red },
-                        modifier = Modifier.testTag(TEST_TAG)
+                        modifier = Modifier.fillMaxWidth().testTag(TEST_TAG)
                     )
                 }
             }
@@ -258,8 +258,8 @@ class BasicSwipeToDismissBoxTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
 
         rule.runOnIdle {
-            assertEquals(true, innerDismissed)
-            assertEquals(false, outerDismissed)
+            assertTrue(innerDismissed)
+            assertFalse(outerDismissed)
         }
     }
 
@@ -446,19 +446,17 @@ class BasicSwipeToDismissBoxTest {
                 modifier = Modifier.testTag(TEST_TAG),
             ) { isBackground ->
                 if (isBackground) {
-                    val focusRequester = rememberActiveFocusRequester()
                     BasicText(
                         BACKGROUND_MESSAGE,
                         Modifier.onFocusChanged { focusedBackground = it.isFocused }
-                            .focusRequester(focusRequester)
+                            .requestFocusOnHierarchyActive()
                             .focusable()
                     )
                 } else {
-                    val focusRequester = rememberActiveFocusRequester()
                     BasicText(
                         CONTENT_MESSAGE,
                         Modifier.onFocusChanged { focusedContent = it.isFocused }
-                            .focusRequester(focusRequester)
+                            .requestFocusOnHierarchyActive()
                             .focusable()
                     )
                 }

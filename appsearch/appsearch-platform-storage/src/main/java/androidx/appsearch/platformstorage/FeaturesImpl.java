@@ -22,6 +22,7 @@ import androidx.annotation.OptIn;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -86,11 +87,13 @@ final class FeaturesImpl implements Features {
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
             // Android V Features
+            case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.V_BASE;
+
             case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
                 // fall through
             case Features.SCHEMA_ADD_PARENT_TYPE:
-                // fall through
-            case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
                 // fall through

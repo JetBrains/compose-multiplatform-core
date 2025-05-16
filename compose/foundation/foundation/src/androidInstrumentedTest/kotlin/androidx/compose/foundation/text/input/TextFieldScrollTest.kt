@@ -25,7 +25,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -74,6 +77,7 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -880,6 +884,117 @@ class TextFieldScrollTest : FocusedWindowTest {
             val maxValue = scrollState.maxValue
             maxValue > 0 && scrollState.value == maxValue
         }
+    }
+
+    @Test
+    fun cursorScrolledIntoView_whenWidthChanges_inHorizontallyScrollableField() {
+        val state = TextFieldState("a".repeat(11))
+        val scrollState = ScrollState(0)
+        var width by mutableStateOf<Dp?>(null)
+        val tag = "field"
+        rule.setContent {
+            BasicTextField(
+                state,
+                scrollState = scrollState,
+                lineLimits = SingleLine,
+                modifier = Modifier.run { width?.let { width(it) } ?: this }.testTag(tag)
+            )
+        }
+
+        rule.onNodeWithTag(tag).performTouchInput { click(centerRight) }
+        rule.waitForIdle()
+
+        assertThat(scrollState.value).isEqualTo(0)
+        assertThat(scrollState.maxValue).isEqualTo(0)
+        val initialMaxScrollValue = scrollState.maxValue
+
+        width =
+            with(rule.density) {
+                rule.onNodeWithTag(tag).fetchSemanticsNode().size.width.toDp() / 2
+            }
+        rule.waitForIdle()
+
+        assertThat(scrollState.maxValue).isGreaterThan(initialMaxScrollValue)
+        assertThat(scrollState.value).isEqualTo(scrollState.maxValue)
+    }
+
+    @Test
+    fun cursorScrolledIntoView_whenHeightChanges_inVerticallyScrollableField() {
+        val state = TextFieldState("a\na\na\na\na")
+        val scrollState = ScrollState(0)
+        var height by mutableStateOf<Dp?>(null)
+        val tag = "field"
+        rule.setContent {
+            BasicTextField(
+                state = state,
+                scrollState = scrollState,
+                modifier = Modifier.run { height?.let { height(it) } ?: this }.testTag(tag)
+            )
+        }
+
+        rule.onNodeWithTag(tag).performTouchInput { click(bottomCenter) }
+        rule.waitForIdle()
+
+        assertThat(scrollState.value).isEqualTo(0)
+        assertThat(scrollState.maxValue).isEqualTo(0)
+        val initialMaxScrollValue = scrollState.maxValue
+
+        height =
+            with(rule.density) {
+                rule.onNodeWithTag(tag).fetchSemanticsNode().size.height.toDp() / 2
+            }
+        rule.waitForIdle()
+
+        assertThat(scrollState.maxValue).isGreaterThan(initialMaxScrollValue)
+        assertThat(scrollState.value).isEqualTo(scrollState.maxValue)
+    }
+
+    @Test
+    fun cursorScrolledIntoView_whenHeightChanges_inVerticallyScrollableField_scrollsButNoBiv() {
+        val state = TextFieldState("a\na\na\na\na")
+        val textFieldScrollState = ScrollState(0)
+        var height by mutableStateOf<Dp?>(null)
+        val tag = "field"
+        val columnScrollState = ScrollState(0)
+        lateinit var coroutineScope: CoroutineScope
+        rule.setContent {
+            coroutineScope = rememberCoroutineScope()
+            Column(Modifier.fillMaxSize().padding(32.dp).verticalScroll(columnScrollState)) {
+                BasicTextField(
+                    state = state,
+                    scrollState = textFieldScrollState,
+                    modifier = Modifier.run { height?.let { height(it) } ?: this }.testTag(tag)
+                )
+                Box(
+                    Modifier.fillMaxWidth()
+                        .height(4000.dp)
+                        .background(
+                            Brush.verticalGradient(0f to Color.LightGray, 1f to Color.Black)
+                        )
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).performTouchInput { click(bottomCenter) }
+        rule.waitForIdle()
+
+        assertThat(textFieldScrollState.value).isEqualTo(0)
+        assertThat(textFieldScrollState.maxValue).isEqualTo(0)
+        assertThat(columnScrollState.value).isEqualTo(0)
+        val initialMaxScrollValue = textFieldScrollState.maxValue
+
+        coroutineScope.launch { columnScrollState.scrollTo(columnScrollState.maxValue) }
+        rule.waitForIdle()
+
+        height =
+            with(rule.density) {
+                rule.onNodeWithTag(tag).fetchSemanticsNode().size.height.toDp() - 1.dp
+            }
+        rule.waitForIdle()
+
+        assertThat(textFieldScrollState.maxValue).isGreaterThan(initialMaxScrollValue)
+        assertThat(textFieldScrollState.value).isEqualTo(textFieldScrollState.maxValue)
+        assertThat(columnScrollState.value).isEqualTo(columnScrollState.maxValue)
     }
 
     @OptIn(ExperimentalTestApi::class)

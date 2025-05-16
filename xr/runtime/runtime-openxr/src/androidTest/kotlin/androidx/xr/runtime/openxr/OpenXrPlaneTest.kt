@@ -21,9 +21,10 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Plane
-import androidx.xr.runtime.internal.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector2
@@ -63,7 +64,12 @@ class OpenXrPlaneTest {
     fun setUp() {
         xrResources = XrResources()
         underTest =
-            OpenXrPlane(planeId, Plane.Type.HorizontalUpwardFacing, OpenXrTimeSource(), xrResources)
+            OpenXrPlane(
+                planeId,
+                Plane.Type.HORIZONTAL_UPWARD_FACING,
+                OpenXrTimeSource(),
+                xrResources
+            )
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -75,23 +81,17 @@ class OpenXrPlaneTest {
 
     @Test
     fun createAnchor_addsAnchor() = initOpenXrManagerAndRunTest {
-        check(xrResources.updatables.size == 3)
+        check(xrResources.updatables.size == 1)
         check(xrResources.updatables.contains(underTest))
 
         val anchor = underTest.createAnchor(Pose())
 
-        assertThat(xrResources.updatables)
-            .containsExactly(
-                underTest,
-                xrResources.leftHand,
-                xrResources.rightHand,
-                anchor as Updatable
-            )
+        assertThat(xrResources.updatables).containsExactly(underTest, anchor as Updatable)
     }
 
     @Test
     fun createAnchor_anchorResourcesExhausted_throwsException() = initOpenXrManagerAndRunTest {
-        check(xrResources.updatables.size == 3)
+        check(xrResources.updatables.size == 1)
         check(xrResources.updatables.contains(underTest))
 
         // Number of calls comes from 'kAnchorResourcesLimit' defined in
@@ -106,24 +106,23 @@ class OpenXrPlaneTest {
     @Test
     fun detachAnchor_removesAnchorWhenItDetaches() = initOpenXrManagerAndRunTest {
         val anchor = underTest.createAnchor(Pose())
-        check(xrResources.updatables.size == 4)
+        check(xrResources.updatables.size == 2)
         check(xrResources.updatables.contains(underTest))
         check(xrResources.updatables.contains(anchor as Updatable))
 
         anchor.detach()
 
-        assertThat(xrResources.updatables)
-            .containsExactly(underTest, xrResources.leftHand, xrResources.rightHand)
+        assertThat(xrResources.updatables).containsExactly(underTest)
     }
 
     @Test
     fun update_updatesTrackingState() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
-        check(underTest.trackingState.equals(TrackingState.Paused))
+        check(underTest.trackingState.equals(TrackingState.PAUSED))
 
         underTest.update(xrTime)
 
-        assertThat(underTest.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
     @Test
@@ -177,7 +176,7 @@ class OpenXrPlaneTest {
         val planeSubsumed: OpenXrPlane =
             OpenXrPlane(
                 planeSubsumedId,
-                Plane.Type.HorizontalUpwardFacing,
+                Plane.Type.HORIZONTAL_UPWARD_FACING,
                 OpenXrTimeSource(),
                 xrResources,
             )
@@ -205,7 +204,7 @@ class OpenXrPlaneTest {
     fun fromOpenXrType_withValidValue_convertsType() {
         val planeType: Plane.Type = Plane.Type.fromOpenXrType(0)
 
-        assertThat(planeType).isEqualTo(Plane.Type.HorizontalDownwardFacing)
+        assertThat(planeType).isEqualTo(Plane.Type.HORIZONTAL_DOWNWARD_FACING)
     }
 
     @Test
@@ -217,7 +216,7 @@ class OpenXrPlaneTest {
     fun fromOpenXrLabel_withValidValue_convertsLabel() {
         val planeLabel: Plane.Label = Plane.Label.fromOpenXrLabel(0)
 
-        assertThat(planeLabel).isEqualTo(Plane.Label.Unknown)
+        assertThat(planeLabel).isEqualTo(Plane.Label.UNKNOWN)
     }
 
     @Test
@@ -232,6 +231,9 @@ class OpenXrPlaneTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
+            openXrManager.configure(
+                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            )
 
             testBody()
 

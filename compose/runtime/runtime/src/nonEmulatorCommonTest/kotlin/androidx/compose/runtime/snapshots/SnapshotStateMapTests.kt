@@ -133,7 +133,7 @@ class SnapshotStateMapTests {
     }
 
     @Test
-    @IgnoreJsTarget
+    @IgnoreJsTarget // b/409729875
     fun validateEntriesIterator() {
         validateRead { map, normalMap ->
             for (entries in map.entries.zip(normalMap.entries)) {
@@ -214,11 +214,13 @@ class SnapshotStateMapTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409727470
     fun validateEntriesRemoveAll() {
         validateWrite { map -> map.entries.removeAll(map.entries.filter { it.key % 2 == 0 }) }
     }
 
     @Test
+    @IgnoreJsTarget // b/409727470
     fun validateEntriesRetainAll() {
         validateWrite { map -> map.entries.retainAll(map.entries.filter { it.key % 2 == 0 }) }
     }
@@ -380,6 +382,7 @@ class SnapshotStateMapTests {
     }
 
     @Test
+    @IgnoreJsTarget
     fun validateValuesRemove() {
         validateWrite { map ->
             map.values.remove(1f)

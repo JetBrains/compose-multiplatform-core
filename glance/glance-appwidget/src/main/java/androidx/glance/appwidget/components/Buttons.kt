@@ -68,7 +68,7 @@ import androidx.glance.unit.ColorProvider
  *   for every exact code location in the composition tree.
  */
 @Composable
-fun FilledButton(
+public fun FilledButton(
     text: String,
     onClick: () -> Unit,
     modifier: GlanceModifier = GlanceModifier,
@@ -77,7 +77,7 @@ fun FilledButton(
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     maxLines: Int = Int.MAX_VALUE,
     key: String? = null
-) =
+): Unit =
     FilledButton(
         text = text,
         onClick = action(block = onClick, key = key),
@@ -102,7 +102,7 @@ fun FilledButton(
  *   If the text exceeds the given number of lines, it will be truncated.
  */
 @Composable
-fun FilledButton(
+public fun FilledButton(
     text: String,
     onClick: Action,
     modifier: GlanceModifier = GlanceModifier,
@@ -110,7 +110,7 @@ fun FilledButton(
     icon: ImageProvider? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     maxLines: Int = Int.MAX_VALUE,
-) =
+): Unit =
     M3TextButton(
         text = text,
         modifier = modifier,
@@ -141,7 +141,7 @@ fun FilledButton(
  *   for every exact code location in the composition tree.
  */
 @Composable
-fun OutlineButton(
+public fun OutlineButton(
     text: String,
     contentColor: ColorProvider,
     onClick: () -> Unit,
@@ -150,7 +150,7 @@ fun OutlineButton(
     icon: ImageProvider? = null,
     maxLines: Int = Int.MAX_VALUE,
     key: String? = null
-) =
+): Unit =
     OutlineButton(
         text = text,
         contentColor = contentColor,
@@ -175,7 +175,7 @@ fun OutlineButton(
  *   If the text exceeds the given number of lines, it will be truncated.
  */
 @Composable
-fun OutlineButton(
+public fun OutlineButton(
     text: String,
     contentColor: ColorProvider,
     onClick: Action,
@@ -218,7 +218,7 @@ fun OutlineButton(
  *   for every exact code location in the composition tree.
  */
 @Composable
-fun SquareIconButton(
+public fun SquareIconButton(
     imageProvider: ImageProvider,
     contentDescription: String?,
     onClick: () -> Unit,
@@ -227,7 +227,7 @@ fun SquareIconButton(
     backgroundColor: ColorProvider = GlanceTheme.colors.primary,
     contentColor: ColorProvider = GlanceTheme.colors.onPrimary,
     key: String? = null
-) =
+): Unit =
     SquareIconButton(
         imageProvider = imageProvider,
         contentDescription = contentDescription,
@@ -252,7 +252,7 @@ fun SquareIconButton(
  * @param contentColor The color to tint the button's icon.
  */
 @Composable
-fun SquareIconButton(
+public fun SquareIconButton(
     imageProvider: ImageProvider,
     contentDescription: String?,
     onClick: Action,
@@ -260,7 +260,7 @@ fun SquareIconButton(
     enabled: Boolean = true,
     backgroundColor: ColorProvider = GlanceTheme.colors.primary,
     contentColor: ColorProvider = GlanceTheme.colors.onPrimary,
-) =
+): Unit =
     M3IconButton(
         imageProvider = imageProvider,
         contentDescription = contentDescription,
@@ -292,7 +292,7 @@ fun SquareIconButton(
  *   for every exact code location in the composition tree.
  */
 @Composable
-fun CircleIconButton(
+public fun CircleIconButton(
     imageProvider: ImageProvider,
     contentDescription: String?,
     onClick: () -> Unit,
@@ -301,7 +301,7 @@ fun CircleIconButton(
     backgroundColor: ColorProvider? = GlanceTheme.colors.background,
     contentColor: ColorProvider = GlanceTheme.colors.onSurface,
     key: String? = null
-) =
+): Unit =
     CircleIconButton(
         imageProvider = imageProvider,
         contentDescription = contentDescription,
@@ -328,7 +328,7 @@ fun CircleIconButton(
  * @param contentColor The color to tint the button's icon.
  */
 @Composable
-fun CircleIconButton(
+public fun CircleIconButton(
     imageProvider: ImageProvider,
     contentDescription: String?,
     onClick: Action,
@@ -336,7 +336,7 @@ fun CircleIconButton(
     enabled: Boolean = true,
     backgroundColor: ColorProvider? = GlanceTheme.colors.background,
     contentColor: ColorProvider = GlanceTheme.colors.onSurface,
-) =
+): Unit =
     M3IconButton(
         imageProvider = imageProvider,
         contentDescription = contentDescription,

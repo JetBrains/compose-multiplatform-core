@@ -39,13 +39,13 @@ import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-abstract class LimitOffsetRxPagingSource<Value : Any>(
+public abstract class LimitOffsetRxPagingSource<Value : Any>(
     private val sourceQuery: RoomSQLiteQuery,
     private val db: RoomDatabase,
     vararg tables: String,
 ) : RxPagingSource<Int, Value>() {
 
-    constructor(
+    public constructor(
         supportSQLiteQuery: SupportSQLiteQuery,
         db: RoomDatabase,
         vararg tables: String
@@ -119,7 +119,7 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
     override val jumpingSupported: Boolean
         get() = true
 
-    companion object {
+    private companion object {
         const val BUG_LINK =
             "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }

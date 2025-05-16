@@ -33,7 +33,7 @@ import kotlin.jvm.JvmName
 
 /** Performs a database operation. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-expect suspend fun <R> performSuspending(
+public expect suspend fun <R> performSuspending(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
@@ -83,7 +83,10 @@ internal expect suspend fun RoomDatabase.getCoroutineContext(
  */
 // TODO(b/309996304): Replace with proper suspending transaction API for common.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-expect suspend fun <R> performInTransactionSuspending(db: RoomDatabase, block: suspend () -> R): R
+public expect suspend fun <R> performInTransactionSuspending(
+    db: RoomDatabase,
+    block: suspend () -> R
+): R
 
 /**
  * Drops all FTS content sync triggers created by Room.
@@ -94,7 +97,7 @@ expect suspend fun <R> performInTransactionSuspending(db: RoomDatabase, block: s
  * @param connection The database connection.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun dropFtsSyncTriggers(connection: SQLiteConnection) {
+public fun dropFtsSyncTriggers(connection: SQLiteConnection) {
     val existingTriggers = buildList {
         connection.prepare("SELECT name FROM sqlite_master WHERE type = 'trigger'").use {
             while (it.step()) {
@@ -112,7 +115,7 @@ fun dropFtsSyncTriggers(connection: SQLiteConnection) {
 
 /** Checks for foreign key violations by executing a PRAGMA foreign_key_check. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun foreignKeyCheck(db: SQLiteConnection, tableName: String) {
+public fun foreignKeyCheck(db: SQLiteConnection, tableName: String) {
     db.prepare("PRAGMA foreign_key_check(`$tableName`)").use { stmt ->
         if (stmt.step()) {
             val errorMsg = processForeignKeyCheckFailure(stmt)

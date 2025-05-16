@@ -22,6 +22,7 @@ package androidx.car.app {
     method public static void checkHasPermission(android.content.Context, String);
     field public static final String ACCESS_SURFACE = "androidx.car.app.ACCESS_SURFACE";
     field public static final String MAP_TEMPLATES = "androidx.car.app.MAP_TEMPLATES";
+    field public static final String MEDIA_TEMPLATES = "androidx.car.app.MEDIA_TEMPLATES";
     field public static final String NAVIGATION_TEMPLATES = "androidx.car.app.NAVIGATION_TEMPLATES";
   }
 
@@ -40,6 +41,7 @@ package androidx.car.app {
     field @Deprecated public static final String CATEGORY_CHARGING_APP = "androidx.car.app.category.CHARGING";
     field @androidx.car.app.annotations.RequiresCarApi(6) public static final String CATEGORY_FEATURE_CLUSTER = "androidx.car.app.category.FEATURE_CLUSTER";
     field @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final String CATEGORY_IOT_APP = "androidx.car.app.category.IOT";
+    field @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final String CATEGORY_MEDIA_APP = "androidx.car.app.category.MEDIA";
     field @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final String CATEGORY_MESSAGING_APP = "androidx.car.app.category.MESSAGING";
     field public static final String CATEGORY_NAVIGATION_APP = "androidx.car.app.category.NAVIGATION";
     field @Deprecated public static final String CATEGORY_PARKING_APP = "androidx.car.app.category.PARKING";
@@ -1363,6 +1365,7 @@ package androidx.car.app.model {
     method public int getItemSize();
     field public static final int ITEM_IMAGE_SHAPE_CIRCLE = 2; // 0x2
     field public static final int ITEM_IMAGE_SHAPE_UNSET = 1; // 0x1
+    field public static final int ITEM_SIZE_EXTRA_LARGE = 4; // 0x4
     field public static final int ITEM_SIZE_LARGE = 3; // 0x3
     field public static final int ITEM_SIZE_MEDIUM = 2; // 0x2
     field public static final int ITEM_SIZE_SMALL = 1; // 0x1

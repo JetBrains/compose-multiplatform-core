@@ -434,8 +434,6 @@ sealed interface androidx.compose.runtime/Composer { // androidx.compose.runtime
     final object Companion { // androidx.compose.runtime/Composer.Companion|null[0]
         final val Empty // androidx.compose.runtime/Composer.Companion.Empty|{}Empty[0]
             final fun <get-Empty>(): kotlin/Any // androidx.compose.runtime/Composer.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
-
-        final fun setDiagnosticStackTraceEnabled(kotlin/Boolean) // androidx.compose.runtime/Composer.Companion.setDiagnosticStackTraceEnabled|setDiagnosticStackTraceEnabled(kotlin.Boolean){}[0]
     }
 }
 

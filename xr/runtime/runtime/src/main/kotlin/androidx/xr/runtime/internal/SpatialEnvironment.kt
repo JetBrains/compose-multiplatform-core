@@ -61,7 +61,7 @@ public interface SpatialEnvironment {
      * <p>If set to null, the passthrough opacity will default to the user preference managed
      * through the system.
      */
-    public val passthroughOpacityPreference: Float?
+    @get:Suppress("AutoBoxing") public val passthroughOpacityPreference: Float?
 
     /**
      * Notifies an application when the passthrough state changes, such as when the application
@@ -133,7 +133,7 @@ public interface SpatialEnvironment {
      * system or user initiated change, [OnPassthroughOpacityChangedListener] will be notified.
      */
     public fun setPassthroughOpacityPreference(
-        passthroughOpacityPreference: Float?
+        @Suppress("AutoBoxing") passthroughOpacityPreference: Float?
     ): @SetPassthroughOpacityPreferenceResult Int
 
     /**

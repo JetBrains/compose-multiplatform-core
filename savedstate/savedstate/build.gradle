@@ -29,8 +29,8 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.8.0")
-                api(androidx.projectOrArtifact(":lifecycle:lifecycle-common"))
+                api("androidx.annotation:annotation:1.9.1")
+                api("androidx.lifecycle:lifecycle-common:2.9.0")
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
             }
@@ -38,7 +38,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation("androidx.lifecycle:lifecycle-runtime:2.9.0")
                 implementation(project(":kruth:kruth"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestCommon)
@@ -68,14 +68,13 @@ androidXMultiplatform {
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
             }
         }
 
         androidInstrumentedTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation("androidx.lifecycle:lifecycle-runtime:2.9.0")
                 implementation(libs.testExtJunit)
                 implementation(libs.testCore)
                 implementation(libs.testRunner)
@@ -169,5 +168,5 @@ androidx {
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    metalavaK2UastEnabled = false
+    enableRobolectric()
 }

@@ -17,16 +17,20 @@
 package androidx.compose.material3
 
 import android.os.Build
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -47,22 +51,23 @@ class ButtonGroupScreenshotTest {
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
     private val wrapperTestTag = "WrapperTestTag"
-    private val aButton = "AButton"
-    private val bButton = "BButton"
-    private val cButton = "CButton"
-    private val dButton = "DButton"
-    private val eButton = "EButton"
+    private val aButton = "A"
+    private val bButton = "B"
+    private val cButton = "C"
+    private val dButton = "D"
+    private val eButton = "E"
+    private val overflowIndicator = "overflowIndicator"
 
     @Test
     fun buttonGroup_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(onClick = {}) { Text("A") }
-                    Button(onClick = {}) { Text("B") }
-                    Button(onClick = {}) { Text("C") }
-                    Button(onClick = {}) { Text("D") }
-                    Button(onClick = {}) { Text("E") }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
@@ -74,12 +79,12 @@ class ButtonGroupScreenshotTest {
     fun buttonGroup_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(onClick = {}) { Text("A") }
-                    Button(onClick = {}) { Text("B") }
-                    Button(onClick = {}) { Text("C") }
-                    Button(onClick = {}) { Text("D") }
-                    Button(onClick = {}) { Text("E") }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
@@ -306,51 +311,20 @@ class ButtonGroupScreenshotTest {
     @Ignore
     @Test
     fun buttonGroup_firstPressed_lightTheme() {
-        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        onClick = {}
-                    ) {
-                        Text("A")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        onClick = {}
-                    ) {
-                        Text("B")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        onClick = {}
-                    ) {
-                        Text("C")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        onClick = {}
-                    ) {
-                        Text("D")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
-                        interactionSource = interactionSources[4],
-                        onClick = {}
-                    ) {
-                        Text("E")
-                    }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag(aButton).performTouchInput { down(center) }
+        rule.onNodeWithText(aButton).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -366,51 +340,20 @@ class ButtonGroupScreenshotTest {
     @Ignore("b/355413615")
     @Test
     fun buttonGroup_secondPressed_lightTheme() {
-        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        onClick = {}
-                    ) {
-                        Text("A")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        onClick = {}
-                    ) {
-                        Text("B")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        onClick = {}
-                    ) {
-                        Text("C")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        onClick = {}
-                    ) {
-                        Text("D")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
-                        interactionSource = interactionSources[4],
-                        onClick = {}
-                    ) {
-                        Text("E")
-                    }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag(bButton).performTouchInput { down(center) }
+        rule.onNodeWithText(bButton).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -426,51 +369,20 @@ class ButtonGroupScreenshotTest {
     @Ignore("b/355413615")
     @Test
     fun buttonGroup_thirdPressed_lightTheme() {
-        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        onClick = {}
-                    ) {
-                        Text("A")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        onClick = {}
-                    ) {
-                        Text("B")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        onClick = {}
-                    ) {
-                        Text("C")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        onClick = {}
-                    ) {
-                        Text("D")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
-                        interactionSource = interactionSources[4],
-                        onClick = {}
-                    ) {
-                        Text("E")
-                    }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag(cButton).performTouchInput { down(center) }
+        rule.onNodeWithText(cButton).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -486,51 +398,20 @@ class ButtonGroupScreenshotTest {
     @Ignore("b/355413615")
     @Test
     fun buttonGroup_fourthPressed_lightTheme() {
-        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        onClick = {}
-                    ) {
-                        Text("A")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        onClick = {}
-                    ) {
-                        Text("B")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        onClick = {}
-                    ) {
-                        Text("C")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        onClick = {}
-                    ) {
-                        Text("D")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
-                        interactionSource = interactionSources[4],
-                        onClick = {}
-                    ) {
-                        Text("E")
-                    }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag(dButton).performTouchInput { down(center) }
+        rule.onNodeWithText(dButton).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -546,51 +427,20 @@ class ButtonGroupScreenshotTest {
     @Ignore("b/355413615")
     @Test
     fun buttonGroup_fifthPressed_lightTheme() {
-        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup {
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        onClick = {}
-                    ) {
-                        Text("A")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        onClick = {}
-                    ) {
-                        Text("B")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        onClick = {}
-                    ) {
-                        Text("C")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        onClick = {}
-                    ) {
-                        Text("D")
-                    }
-                    Button(
-                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
-                        interactionSource = interactionSources[4],
-                        onClick = {}
-                    ) {
-                        Text("E")
-                    }
+                ButtonGroup(overflowIndicator = {}) {
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
+                    clickableItem(onClick = {}, label = "E")
                 }
             }
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag(eButton).performTouchInput { down(center) }
+        rule.onNodeWithText(eButton).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -603,9 +453,159 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_fifthPressed_lightTheme")
     }
 
+    @Test
+    fun buttonGroup_overflowIndicator_lightTheme() {
+        val numButtons = 10
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                ButtonGroup(
+                    overflowIndicator = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    }
+                ) {
+                    for (i in 0 until numButtons) {
+                        clickableItem(onClick = {}, label = "$i")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("buttonGroup_overflowIndicator_lightTheme")
+    }
+
+    @Test
+    fun buttonGroup_overflowIndicator_darkTheme() {
+        val numButtons = 10
+        rule.setMaterialContent(darkColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                ButtonGroup(
+                    overflowIndicator = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    }
+                ) {
+                    for (i in 0 until numButtons) {
+                        clickableItem(onClick = {}, label = "$i")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("buttonGroup_overflowIndicator_darkTheme")
+    }
+
+    @Test
+    fun buttonGroup_overflowMenuExpanded_lightTheme() {
+        val numButtons = 10
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                ButtonGroup(
+                    overflowIndicator = { menuState ->
+                        IconButton(
+                            onClick = {
+                                if (menuState.isExpanded) {
+                                    menuState.dismiss()
+                                } else {
+                                    menuState.show()
+                                }
+                            },
+                            modifier = Modifier.testTag(overflowIndicator)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    }
+                ) {
+                    for (i in 0 until numButtons) {
+                        customItem(
+                            buttonGroupContent = { Button(onClick = {}) { Text("$i") } },
+                            menuContent = {
+                                DropdownMenuItem(
+                                    enabled = true,
+                                    text = { Text("$i") },
+                                    modifier = Modifier.testTag("$i MenuItem"),
+                                    onClick = {}
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag(overflowIndicator).performClick()
+
+        assertMenuAgainstGolden("buttonGroup_overflowMenuExpanded_lightTheme")
+    }
+
+    @Test
+    fun buttonGroup_overflowMenuExpanded_darkTheme() {
+        val numButtons = 10
+        rule.setMaterialContent(darkColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                ButtonGroup(
+                    overflowIndicator = { menuState ->
+                        IconButton(
+                            onClick = {
+                                if (menuState.isExpanded) {
+                                    menuState.dismiss()
+                                } else {
+                                    menuState.show()
+                                }
+                            },
+                            modifier = Modifier.testTag(overflowIndicator)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    }
+                ) {
+                    for (i in 0 until numButtons) {
+                        customItem(
+                            buttonGroupContent = { Button(onClick = {}) { Text("$i") } },
+                            menuContent = {
+                                DropdownMenuItem(
+                                    enabled = true,
+                                    text = { Text("$i") },
+                                    modifier = Modifier.testTag("$i MenuItem"),
+                                    onClick = {}
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag(overflowIndicator).performClick()
+
+        assertMenuAgainstGolden("buttonGroup_overflowMenuExpanded_darkTheme")
+    }
+
     private fun assertAgainstGolden(goldenName: String) {
         rule
             .onNodeWithTag(wrapperTestTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, goldenName)
+    }
+
+    private fun assertMenuAgainstGolden(goldenName: String) {
+        rule
+            .onNodeWithTag("9 MenuItem")
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenName)
     }

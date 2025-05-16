@@ -106,6 +106,13 @@ abstract class PersistentRecordingTestBase(
                     Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
+                    "external+" + Camera2Config::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
+                ),
+                arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig.defaultConfig(),
@@ -113,6 +120,13 @@ abstract class PersistentRecordingTestBase(
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
+                    CameraPipeConfig.defaultConfig(),
+                ),
+                arrayOf(
+                    "external+" + CameraPipeConfig::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
                     CameraPipeConfig.defaultConfig(),
                 ),
             )
@@ -295,6 +309,10 @@ abstract class PersistentRecordingTestBase(
     @Test
     fun updateVideoUsage_whenUseCaseBoundToNewCameraForPersistentRecording(): Unit = runBlocking {
         assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
+        assumeTrue(
+            "No OppositeCamera for test.",
+            CameraUtil.hasCameraWithLensFacing(oppositeCameraSelector.lensFacing!!)
+        )
 
         checkAndBindUseCases(preview, videoCapture)
         val recording =

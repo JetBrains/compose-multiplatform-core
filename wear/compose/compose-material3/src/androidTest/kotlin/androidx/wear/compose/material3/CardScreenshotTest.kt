@@ -65,7 +65,7 @@ class CardScreenshotTest {
 
     @Test
     fun card_image_background() = verifyScreenshot {
-        TestImageCard(
+        TestCardWithContainerPainter(
             image =
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
@@ -76,7 +76,7 @@ class CardScreenshotTest {
 
     @Test
     fun card_image_background_with_intrinsic_size() = verifyScreenshot {
-        TestImageCard(
+        TestCardWithContainerPainter(
             image =
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
@@ -191,7 +191,7 @@ class CardScreenshotTest {
 
     @Test
     fun title_card_image_background() = verifyScreenshot {
-        TestImageTitleCard(
+        TestTitleCardWithContainerPainter(
             image =
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
@@ -256,14 +256,14 @@ class CardScreenshotTest {
     }
 
     @Composable
-    fun TestImageCard(
+    fun TestCardWithContainerPainter(
         image: Painter,
         sizeToIntrinsics: Boolean,
         enabled: Boolean = true,
-        contentPadding: PaddingValues = CardDefaults.ImageContentPadding,
-        colors: CardColors = CardDefaults.imageCardColors()
+        contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
+        colors: CardColors = CardDefaults.cardWithContainerPainterColors()
     ) {
-        ImageCard(
+        Card(
             containerPainter =
                 CardDefaults.containerPainter(image = image, sizeToIntrinsics = sizeToIntrinsics),
             enabled = enabled,
@@ -277,16 +277,16 @@ class CardScreenshotTest {
     }
 
     @Composable
-    fun TestImageTitleCard(
+    fun TestTitleCardWithContainerPainter(
         image: Painter,
         sizeToIntrinsics: Boolean,
         title: String = "TitleCard",
         time: String = "now",
         enabled: Boolean = true,
-        contentPadding: PaddingValues = CardDefaults.ImageContentPadding,
-        colors: CardColors = CardDefaults.imageCardColors()
+        contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
+        colors: CardColors = CardDefaults.cardWithContainerPainterColors()
     ) {
-        ImageCard(
+        TitleCard(
             containerPainter =
                 CardDefaults.containerPainter(image = image, sizeToIntrinsics = sizeToIntrinsics),
             title = { Text(title) },

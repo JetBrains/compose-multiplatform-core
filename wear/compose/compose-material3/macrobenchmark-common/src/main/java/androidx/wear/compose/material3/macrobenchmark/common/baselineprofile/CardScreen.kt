@@ -33,7 +33,6 @@ import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.ImageCard
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedCard
 import androidx.wear.compose.material3.Text
@@ -73,14 +72,14 @@ val CardScreen =
                     ) {
                         Text("AppCard")
                     }
-                    ImageCard(
+                    Card(
                         onClick = {},
                         containerPainter =
                             CardDefaults.containerPainter(
                                 image = painterResource(id = R.drawable.backgroundimage)
                             ),
                         colors =
-                            CardDefaults.imageCardColors(
+                            CardDefaults.cardWithContainerPainterColors(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                                 titleColor = MaterialTheme.colorScheme.onSurface
                             ),
@@ -91,7 +90,7 @@ val CardScreen =
                         onClick = { /* Do something */ },
                         title = { Text("Card title") },
                         time = { Text("now") },
-                        contentPadding = CardDefaults.ImageContentPadding,
+                        contentPadding = CardDefaults.CardWithContainerPainterContentPadding,
                         modifier = Modifier.semantics { contentDescription = "Background image" }
                     ) {
                         Text("Card content")

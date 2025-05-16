@@ -40,6 +40,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.computeSizeForDefaultText
+import androidx.compose.foundation.text.contextmenu.test.FakeToolbarRequester
 import androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList
 import androidx.compose.foundation.text.input.internal.TextLayoutState
 import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
@@ -363,8 +364,7 @@ internal class BasicTextFieldTest {
                 modifier = Modifier.fillMaxSize().testTag(Tag).focusRequester(focusRequester)
             )
         }
-        rule.runOnUiThread { focusRequester.requestFocus() }
-        rule.waitForIdle()
+        rule.runOnIdle { focusRequester.requestFocus() }
         rule.onNodeWithTag(Tag).assertIsFocused()
 
         inputMethodInterceptor.assertNoSessionActive()
@@ -381,8 +381,7 @@ internal class BasicTextFieldTest {
                 modifier = Modifier.fillMaxSize().testTag(Tag).focusRequester(focusRequester)
             )
         }
-        rule.runOnUiThread { focusRequester.requestFocus() }
-        rule.waitForIdle()
+        rule.runOnIdle { focusRequester.requestFocus() }
         rule.onNodeWithTag(Tag).assertIsFocused()
         rule.onNodeWithTag(Tag).performClick()
 
@@ -1322,7 +1321,8 @@ internal class BasicTextFieldTest {
                     enabled = true,
                     readOnly = false,
                     isFocused = false,
-                    isPassword = false
+                    isPassword = false,
+                    toolbarRequester = FakeToolbarRequester(),
                 )
                 .apply { requestAutofillAction = mockLambda }
 
@@ -1534,7 +1534,7 @@ internal class BasicTextFieldTest {
         }
 
         // setTextFieldTestContent puts a focusable box before the content that's set here
-        focusManager.moveFocus(FocusDirection.Previous)
+        rule.runOnUiThread { focusManager.moveFocus(FocusDirection.Previous) }
 
         rule.runOnIdle {
             assertThat(state.text.toString()).isEqualTo("Hello")

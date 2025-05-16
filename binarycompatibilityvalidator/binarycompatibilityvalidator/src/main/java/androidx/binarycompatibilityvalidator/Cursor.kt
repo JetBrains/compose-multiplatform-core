@@ -29,8 +29,6 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     val currentLine: String
         get() = lines[rowIndex].slice(columnIndex until lines[rowIndex].length)
 
-    fun hasNextRow() = rowIndex < (lines.size - 1)
-
     /** Check if we have passed the last line in [lines] and there is nothing left to parse */
     fun isFinished() = rowIndex >= lines.size
 
@@ -66,10 +64,6 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
 
     fun copy() = Cursor(lines, rowIndex, columnIndex)
 
-    private fun hasNextColumn(): Boolean {
-        return columnIndex < lines[rowIndex].length - 1
-    }
-
     private fun setColumn(index: Int) {
         columnIndex = index
     }
@@ -81,5 +75,14 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     }
 }
 
-private val validIdentifierRegex = Regex("^\\$?[a-zA-Z_][a-zA-Z0-9_]+")
+// Match any '=' not followed by '...' because they're valid characters, but we don't want to
+// parse part of the parameter default symbol (=...) by accident. Otherwise match all non-illegal
+// characters
+private val validIdentifierRegex =
+    Regex(
+        """
+    ^((=(?!\s?\.\.\.)|[^.;\[\]/<>:\\(){}?=,])+)
+    """
+            .trimIndent()
+    )
 private val wordRegex = Regex("[a-zA-Z]+")

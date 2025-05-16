@@ -34,8 +34,10 @@ public interface CompositionLocalConsumerSubspaceModifierNode
 public fun <T : Any?> CompositionLocalConsumerSubspaceModifierNode.currentValueOf(
     local: CompositionLocal<T>
 ): T {
-    check(this is SubspaceModifier.Node && isAttached) {
-        "Cannot request composition locals before the node is attached."
+    // TODO(b/405402746): Checking if the node is attached at this point sometimes results in a
+    // runtime exception. We should investigate to see if the node lifecycle is behaving properly.
+    check(this is SubspaceModifier.Node) {
+        "Expected CompositionLocalConsumerSubspaceModifierNode to be a SubspaceModifier.Node"
     }
     val compositionLocalMap =
         checkNotNull(layoutNode?.compositionLocalMap) {

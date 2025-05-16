@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import java.util.concurrent.Executor
@@ -96,7 +97,7 @@ private constructor(
         ): InteractableComponent =
             InteractableComponent.create(
                 session.platformAdapter,
-                session.entityManager,
+                session.scene.entityManager,
                 executor,
                 inputEventListener,
             )

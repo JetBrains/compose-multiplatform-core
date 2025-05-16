@@ -510,5 +510,51 @@ public annotation class ChecksAconfigFlag (
         """
                 )
                 .indented()
+
+        val RequiresAconfigFlag: TestFile =
+            TestFiles.kotlin(
+                    """
+package androidx.annotation
+
+@MustBeDocumented
+@Retention(AnnotationRetention.BINARY)
+@Target(
+    AnnotationTarget.ANNOTATION_CLASS,
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY_GETTER,
+    AnnotationTarget.PROPERTY_SETTER,
+    AnnotationTarget.CONSTRUCTOR,
+    AnnotationTarget.FIELD,
+    AnnotationTarget.FILE,
+)
+public annotation class RequiresAconfigFlag (
+    val value: String
+)
+        """
+                )
+                .indented()
+
+        val Flags: TestFile =
+            TestFiles.kotlin(
+                    """
+package androidx.core.flagging
+
+public class Flags {
+    public companion object {
+        @JvmOverloads
+        @JvmStatic
+        public fun getBooleanFlagValue(
+            packageName: String,
+            flagName: String,
+            defaultValue: Boolean = false,
+        ): Boolean {
+            return defaultValue
+        }
+    }
+}
+        """
+                )
+                .indented()
     }
 }

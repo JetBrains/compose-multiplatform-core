@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_ON
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
@@ -37,6 +38,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStreng
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
@@ -65,6 +67,7 @@ import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.ExposureState
 import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraInfoInternal
@@ -73,6 +76,7 @@ import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
+import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.util.concurrent.Executor
@@ -97,6 +101,7 @@ constructor(
     private val encoderProfilesProvider: EncoderProfilesProvider,
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
     private val cameraFovInfo: CameraFovInfo,
+    private val streamSpecsCalculator: StreamSpecsCalculator
 ) : CameraInfoInternal, UnsafeWrapper {
     init {
         DeviceInfoLogger.logDeviceInfo(cameraProperties)
@@ -306,6 +311,15 @@ constructor(
             .getOrNull() ?: emptyList()
     }
 
+    override fun getSensorRect(): Rect {
+        val sensorRect =
+            cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]
+        if ("robolectric" == Build.FINGERPRINT && sensorRect == null) {
+            return Rect(0, 0, 4000, 3000)
+        }
+        return sensorRect!!
+    }
+
     override fun querySupportedDynamicRanges(
         candidateDynamicRanges: Set<DynamicRange>
     ): Set<DynamicRange> {
@@ -341,6 +355,31 @@ constructor(
         }
 
         return intrinsicZoomRatio
+    }
+
+    override fun isUseCaseCombinationSupported(
+        useCases: List<UseCase>,
+        cameraMode: Int,
+        allowFeatureCombinationResolutions: Boolean,
+        cameraConfig: androidx.camera.core.impl.CameraConfig,
+    ): Boolean {
+        // If the UseCases exceed the resolutions then it will throw an exception
+        try {
+            streamSpecsCalculator.calculateSuggestedStreamSpecs(
+                cameraMode = cameraMode,
+                cameraInfoInternal = this,
+                newUseCases = useCases,
+                cameraConfig = cameraConfig,
+                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions
+            )
+        } catch (e: IllegalArgumentException) {
+            debug(e) {
+                "CameraInfoAdapter#isUseCaseCombinationSupported:" +
+                    " calculateSuggestedStreamSpecs failed"
+            }
+            return false
+        }
+        return true
     }
 
     private fun profileSetToDynamicRangeSet(profileSet: Set<Long>): Set<DynamicRange> {

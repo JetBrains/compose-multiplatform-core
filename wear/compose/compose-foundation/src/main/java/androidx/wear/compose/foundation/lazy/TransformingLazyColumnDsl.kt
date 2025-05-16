@@ -21,14 +21,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.trace
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimateItemElement
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimationSpecsNode
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutIntervalContent
@@ -62,18 +61,6 @@ public sealed interface TransformingLazyColumnItemScope {
         heightProvider:
             (measuredHeight: Int, scrollProgress: TransformingLazyColumnItemScrollProgress) -> Int
     ): Modifier
-
-    /**
-     * Preserves the appearance of some content within an item, by preventing implicit access to the
-     * [TransformingLazyColumnItemScope]. Explicit use of [LocalTransformingLazyColumnItemScope] can
-     * still apply transformations to the item.
-     *
-     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnImplicitSample
-     */
-    @Composable
-    public fun TransformExclusion(content: @Composable TransformingLazyColumnItemScope.() -> Unit) {
-        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
-    }
 
     /**
      * This modifier animates item appearance (fade in), disappearance (fade out) and placement
@@ -212,8 +199,16 @@ internal class TransformingLazyColumnItemScopeImpl(
 
     private val _scrollProgress: TransformingLazyColumnItemScrollProgress
         get() =
-            state.layoutInfo.visibleItems.fastFirstOrNull { it.index == index }?.scrollProgress
-                ?: TransformingLazyColumnItemScrollProgress.Unspecified
+            trace("wear-compose:tlc:scrollProgress") {
+                with(state.layoutInfo.visibleItems) {
+                    val firstItem =
+                        firstOrNull()
+                            ?: return@trace TransformingLazyColumnItemScrollProgress.Unspecified
+                    val delta = index - firstItem.index
+                    if (delta in indices) this[delta].scrollProgress
+                    else TransformingLazyColumnItemScrollProgress.Unspecified
+                }
+            }
 
     override val DrawScope.scrollProgress: TransformingLazyColumnItemScrollProgress
         get() = _scrollProgress

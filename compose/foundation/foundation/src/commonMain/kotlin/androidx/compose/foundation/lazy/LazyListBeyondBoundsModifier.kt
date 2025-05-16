@@ -54,6 +54,7 @@ internal class LazyListBeyondBoundsState(val state: LazyListState, val beyondBou
         if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
         val viewportSize = state.layoutInfo.singleAxisViewportSize
         val averageItemSize = state.layoutInfo.visibleItemsAverageSize()
+        if (averageItemSize == 0) return 1
         return (viewportSize / averageItemSize).coerceAtLeast(1)
     }
 }

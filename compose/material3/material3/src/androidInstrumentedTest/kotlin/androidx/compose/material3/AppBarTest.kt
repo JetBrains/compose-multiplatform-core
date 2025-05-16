@@ -1556,8 +1556,13 @@ class AppBarTest {
             rule.onNodeWithText("Item $trackedItemIndex").getBoundsInRoot().top
 
         // Swipe down to trigger a top app bar expansion without scrolling much the content.
+        // Do a slow swipe so the list doesn't fling.
         rule.onNodeWithTag(LazyListTag).performTouchInput {
-            swipeDown(startY = height - 1000f, endY = height - (1000f - appBarHeightPx / 1.5f))
+            swipeDown(
+                startY = height - 1000f,
+                endY = height - (1000f - appBarHeightPx / 1.5f),
+                durationMillis = 1000L
+            )
         }
         rule.waitForIdle()
 
@@ -2085,6 +2090,30 @@ class AppBarTest {
 
         rule.onNodeWithTag(LazyListTag).performTouchInput { swipeRight() }
         rule.runOnIdle { assertThat(state.firstVisibleItemIndex).isEqualTo(0) }
+    }
+
+    @Test
+    fun bottomAppBar_exitAlways_outOfRangeOffsetHandled() {
+        lateinit var scrollBehavior: BottomAppBarScrollBehavior
+
+        rule.setMaterialContent(lightColorScheme()) {
+            scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+            // Set negative initial height offset to emulate out of range exception.
+            scrollBehavior.state.heightOffset = -1000f
+            Scaffold(
+                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                bottomBar = {
+                    BottomAppBar(
+                        modifier = Modifier.testTag(BottomAppBarTestTag),
+                        scrollBehavior = scrollBehavior
+                    ) {}
+                }
+            ) { contentPadding ->
+                Box(modifier = Modifier.padding(contentPadding))
+            }
+        }
+
+        rule.onNodeWithTag(BottomAppBarTestTag).assertHeightIsEqualTo(0.dp)
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

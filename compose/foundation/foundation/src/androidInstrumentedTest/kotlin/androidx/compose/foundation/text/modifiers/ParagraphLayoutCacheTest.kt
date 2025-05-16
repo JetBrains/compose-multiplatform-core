@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.toIntPx
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -410,6 +411,33 @@ class ParagraphLayoutCacheTest {
         val subject =
             ParagraphLayoutCache(text, style, fontFamilyResolver).also { it.density = density }
         subject.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
+    }
+
+    @Test
+    fun history_isRecorded() {
+        val text = "Hello, World"
+        val subject =
+            ParagraphLayoutCache(
+                    text = text,
+                    style = TextStyle(fontSize = 100.sp),
+                    fontFamilyResolver = fontFamilyResolver,
+                )
+                .also { it.density = density }
+
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.update(
+            text = "Hello again, World",
+            style = TextStyle(fontSize = 100.sp),
+            fontFamilyResolver = fontFamilyResolver,
+            overflow = TextOverflow.Clip,
+            softWrap = true,
+            maxLines = Int.MAX_VALUE,
+            minLines = DefaultMinLines,
+        )
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.density = Density(2f, 3f)
+
+        assertThat(subject.historyFlag).isEqualTo(0b011101101)
     }
 
     private fun createTextStyle(

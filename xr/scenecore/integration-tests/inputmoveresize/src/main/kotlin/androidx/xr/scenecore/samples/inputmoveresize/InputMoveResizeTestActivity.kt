@@ -27,6 +27,8 @@ import android.widget.RadioGroup
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -41,12 +43,12 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
-import androidx.xr.scenecore.Session
+import androidx.xr.scenecore.scene
 import java.util.concurrent.Executors
 
 class InputMoveResizeTestActivity : AppCompatActivity() {
 
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
     private val executor by lazy { Executors.newSingleThreadExecutor() }
     private var interactablePanelActive = false
     private var movablePanelActive = false
@@ -91,15 +93,15 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private val resizeListener =
         object : ResizeListener {
             override fun onResizeStart(entity: Entity, originalSize: Dimensions) {
-                Log.i(TAG, "$entity $originalSize")
+                Log.i(TAG, "$entity Start $originalSize")
             }
 
             override fun onResizeUpdate(entity: Entity, newSize: Dimensions) {
-                Log.i(TAG, "$entity $newSize")
+                Log.i(TAG, "$entity Update $newSize")
             }
 
             override fun onResizeEnd(entity: Entity, finalSize: Dimensions) {
-                Log.i(TAG, "$entity $finalSize")
+                Log.i(TAG, "$entity End $finalSize")
                 (entity as BasePanelEntity<*>).setSize(finalSize)
             }
         }
@@ -133,7 +135,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )
-        panelEntity.setParent(session.activitySpace)
+        panelEntity.setParent(session.scene.activitySpace)
         return panelEntity
     }
 
@@ -150,11 +152,11 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val mainPanelScaleInZ = findViewById<CheckBox>(R.id.scaleInZ)
         mainPanelScaleInZ.isChecked = true
         var mainPanelMovableComponent = MovableComponent.create(session)
-        mainPanelMovableComponent.size = session.mainPanelEntity.getSize()
+        mainPanelMovableComponent.size = session.scene.mainPanelEntity.getSize()
 
         fun updateMainPanelMovableComponent() {
             if (mainPanelMovableActive) {
-                session.mainPanelEntity.removeComponent(mainPanelMovableComponent)
+                session.scene.mainPanelEntity.removeComponent(mainPanelMovableComponent)
             }
             mainPanelMovableComponent =
                 MovableComponent.create(
@@ -174,7 +176,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             CompoundButton.OnCheckedChangeListener { _, _ ->
                 updateMainPanelMovableComponent()
                 mainPanelMovableActive =
-                    session.mainPanelEntity.addComponent(mainPanelMovableComponent)
+                    session.scene.mainPanelEntity.addComponent(mainPanelMovableComponent)
             }
 
         mainPanelSystemMovable.setOnCheckedChangeListener(mainPanelCheckBoxListener)
@@ -182,18 +184,18 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         val mainPanelMovableSwitch = findViewById<Switch>(R.id.movableSwitch)
         mainPanelMovableSwitch.setOnCheckedChangeListener { _, isChecked ->
-            mainPanelMovableComponent.size = session.mainPanelEntity.getSize()
+            mainPanelMovableComponent.size = session.scene.mainPanelEntity.getSize()
             when (isChecked) {
                 true -> {
                     updateMainPanelMovableComponent()
                     mainPanelMovableActive =
-                        session.mainPanelEntity.addComponent(mainPanelMovableComponent)
+                        session.scene.mainPanelEntity.addComponent(mainPanelMovableComponent)
                     mainPanelSystemMovable.visibility = View.VISIBLE
                     mainPanelScaleInZ.visibility = View.VISIBLE
                 }
                 false -> {
                     if (mainPanelMovableActive) {
-                        session.mainPanelEntity.removeComponent(mainPanelMovableComponent)
+                        session.scene.mainPanelEntity.removeComponent(mainPanelMovableComponent)
                     }
                     mainPanelSystemMovable.visibility = View.GONE
                     mainPanelScaleInZ.visibility = View.GONE
@@ -202,7 +204,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         }
 
         val mainPanelResizableComponent = ResizableComponent.create(session)
-        mainPanelResizableComponent.size = session.mainPanelEntity.getSize()
+        mainPanelResizableComponent.size = session.scene.mainPanelEntity.getSize()
         mainPanelResizableComponent.addResizeListener(mainExecutor, resizeListener)
 
         val mainPanelAnyAspectRatioButton = findViewById<RadioButton>(R.id.radioButton1)
@@ -225,14 +227,14 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         val mainPanelResizableSwitch = findViewById<Switch>(R.id.resizableSwitch)
         mainPanelResizableSwitch.setOnCheckedChangeListener { _, isChecked ->
-            mainPanelResizableComponent.size = session.mainPanelEntity.getSize()
+            mainPanelResizableComponent.size = session.scene.mainPanelEntity.getSize()
             when (isChecked) {
                 true ->
                     mainPanelResizableActive =
-                        session.mainPanelEntity.addComponent(mainPanelResizableComponent)
+                        session.scene.mainPanelEntity.addComponent(mainPanelResizableComponent)
                 false ->
                     if (mainPanelResizableActive) {
-                        session.mainPanelEntity.removeComponent(mainPanelResizableComponent)
+                        session.scene.mainPanelEntity.removeComponent(mainPanelResizableComponent)
                     }
             }
             mainPanelAspectRatioRadioGroup.visibility = if (isChecked) View.VISIBLE else View.GONE
@@ -250,7 +252,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val movablePanelView = layoutInflater.inflate(R.layout.panel, null)
         val movablePanelEntity = createPanelEntityWithText("Movable", movablePanelView)
         movablePanelEntity.setPose(Pose(Vector3(-0.8f, 0.2f, 0.1f)))
-        movablePanelEntity.setParent(session.mainPanelEntity)
+        movablePanelEntity.setParent(session.scene.mainPanelEntity)
         // Set the movable panel corner radius to 0.
         movablePanelEntity.setCornerRadius(0.0f)
 
@@ -359,7 +361,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val resizablePanelView = layoutInflater.inflate(R.layout.panel, null)
         val resizablePanelEntity = createPanelEntityWithText("Resizable", resizablePanelView)
         resizablePanelEntity.setPose(Pose(Vector3(0.9f, 0.2f, -0.1f)))
-        resizablePanelEntity.setParent(session.mainPanelEntity)
+        resizablePanelEntity.setParent(session.scene.mainPanelEntity)
         // Set the resizable panel corner radius to 0.
         resizablePanelEntity.setCornerRadius(0.0f)
 

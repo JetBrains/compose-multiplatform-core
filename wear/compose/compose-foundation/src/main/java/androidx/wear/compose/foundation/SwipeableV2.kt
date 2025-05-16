@@ -672,7 +672,7 @@ internal object SwipeableV2Defaults {
      * The default velocity threshold (in dp per second) that the end velocity has to exceed in
      * order to animate to the next state.
      */
-    public val VelocityThreshold: Dp = 125.dp
+    public val VelocityThreshold: Dp = 800.dp
 
     /**
      * The default positional threshold used when calculating the target state while a swipe is in

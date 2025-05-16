@@ -18,12 +18,16 @@ package androidx.wear.compose.foundation.lazy.layout
 
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import androidx.wear.compose.foundation.lazy.MeasurementDirection
 
 internal interface LazyLayoutMeasuredItem {
     val index: Int
     val key: Any
     val isVertical: Boolean
     val mainAxisSizeWithSpacings: Int
+    val measuredHeight: Int
+    val transformedHeight: Int
+    val measurementDirection: MeasurementDirection
     val placeablesCount: Int
     var nonScrollableItem: Boolean
     val constraints: Constraints

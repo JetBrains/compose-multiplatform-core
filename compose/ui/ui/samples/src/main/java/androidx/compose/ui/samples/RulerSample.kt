@@ -25,7 +25,9 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.HorizontalRuler
+import androidx.compose.ui.layout.VerticalRuler
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
 import kotlin.math.roundToInt
 
 val SafeBottomRuler = HorizontalRuler()
@@ -84,4 +86,52 @@ fun RulerConsumerUsage(content: @Composable BoxScope.() -> Unit) {
         },
         content = content
     )
+}
+
+@Sampled
+fun DerivedVerticalRulerUsage() {
+    class PaddedRulers(val ruler: VerticalRuler, val padding: Dp) {
+        val left =
+            VerticalRuler.derived { defaultValue ->
+                val rulerValue = ruler.current(Float.NaN)
+                if (rulerValue.isNaN()) {
+                    defaultValue
+                } else {
+                    rulerValue + padding.toPx()
+                }
+            }
+        val right =
+            VerticalRuler.derived { defaultValue ->
+                val rulerValue = ruler.current(Float.NaN)
+                if (rulerValue.isNaN()) {
+                    defaultValue
+                } else {
+                    rulerValue - padding.toPx()
+                }
+            }
+    }
+}
+
+@Sampled
+fun DerivedHorizontalRulerUsage() {
+    class PaddedRulers(val ruler: HorizontalRuler, val padding: Dp) {
+        val top =
+            HorizontalRuler.derived { defaultValue ->
+                val rulerValue = ruler.current(Float.NaN)
+                if (rulerValue.isNaN()) {
+                    defaultValue
+                } else {
+                    rulerValue + padding.toPx()
+                }
+            }
+        val bottom =
+            HorizontalRuler.derived { defaultValue ->
+                val rulerValue = ruler.current(Float.NaN)
+                if (rulerValue.isNaN()) {
+                    defaultValue
+                } else {
+                    rulerValue - padding.toPx()
+                }
+            }
+    }
 }

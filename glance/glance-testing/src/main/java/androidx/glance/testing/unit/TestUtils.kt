@@ -26,7 +26,7 @@ import androidx.glance.testing.matcherToSelector
 
 // Equivalent to calling GlanceNodeAssertionsProvider.onNode
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun getGlanceNodeAssertionFor(
+public fun getGlanceNodeAssertionFor(
     emittable: Emittable,
     onNodeMatcher: GlanceNodeMatcher<MappedNode>
 ): GlanceNodeAssertion<MappedNode, GlanceMappedNode> {
@@ -40,7 +40,7 @@ fun getGlanceNodeAssertionFor(
 
 // Equivalent to calling GlanceNodeAssertionsProvider.onAllNodes
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun getGlanceNodeAssertionCollectionFor(
+public fun getGlanceNodeAssertionCollectionFor(
     emittable: Emittable,
     onAllNodesMatcher: GlanceNodeMatcher<MappedNode>
 ): GlanceNodeAssertionCollection<MappedNode, GlanceMappedNode> {

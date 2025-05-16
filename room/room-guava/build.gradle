@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -50,6 +52,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Room Guava"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

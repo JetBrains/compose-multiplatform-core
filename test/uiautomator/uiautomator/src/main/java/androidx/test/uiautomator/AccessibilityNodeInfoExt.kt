@@ -227,11 +227,11 @@ internal fun AccessibilityNodeInfo.toUiObject2(): UiObject2? =
     UiObject2.create(uiDevice, BySelector(), this)
 
 /**
- * Returns this node's id without the full resource namespace, i.e. only the portion after the "/"
- * character. If the view id is not specified, then it returns `null`.
+ * Returns this node's view id resource name without the resource namespace, i.e. only the portion
+ * after the "/" character. If the view id is not specified, then it returns `null`.
  */
-public val AccessibilityNodeInfo.id: String?
-    get() = viewIdResourceName?.substringAfter("/")
+public fun AccessibilityNodeInfo.simpleViewResourceName(): String? =
+    viewIdResourceName?.substringAfter("/")
 
 /**
  * Returns this node's text as a string. This should always be preferred to
@@ -240,11 +240,10 @@ public val AccessibilityNodeInfo.id: String?
  *
  * Usage:
  * ```kotlin
- * onView { textAsString == "Some text" }.click()
+ * onView { textAsString() == "Some text" }.click()
  * ```
  */
-public val AccessibilityNodeInfo.textAsString: String?
-    get() = text?.toString()
+public fun AccessibilityNodeInfo.textAsString(): String? = text?.toString()
 
 /**
  * Returns whether this node class name is the same of the given class.

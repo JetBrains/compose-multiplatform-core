@@ -23,7 +23,6 @@ import android.view.Surface
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.BIT_DEPTH_10_BIT
@@ -119,7 +118,6 @@ class VideoCaptureDeviceTest(
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
     private lateinit var cameraInfo: CameraInfoInternal
@@ -133,6 +131,8 @@ class VideoCaptureDeviceTest(
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()
+
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
         cameraInfo = cameraUseCaseAdapter.cameraInfo as CameraInfoInternal

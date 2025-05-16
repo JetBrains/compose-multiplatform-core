@@ -26,6 +26,7 @@ import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
@@ -33,12 +34,14 @@ import androidx.compose.foundation.pager.PagerDefaults as ComposePagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance as ComposePagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -53,8 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.CustomTouchSlopProvider
 import androidx.wear.compose.foundation.DefaultTouchExplorationStateProvider
 import androidx.wear.compose.foundation.GestureInclusion
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.LocalScreenIsActive
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
@@ -117,14 +121,17 @@ public fun HorizontalPager(
     var pagerCoordinates = remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     val originalTouchSlop = LocalViewConfiguration.current.touchSlop
+    val focusRequester = remember { FocusRequester() }
+
     CustomTouchSlopProvider(newTouchSlop = originalTouchSlop * CustomTouchSlopMultiplier) {
         val rotaryModifier =
             if (rotaryScrollableBehavior != null && userScrollEnabled)
-                Modifier.rotaryScrollable(
-                    behavior = rotaryScrollableBehavior,
-                    focusRequester = rememberActiveFocusRequester(),
-                    reverseDirection = reverseLayout
-                )
+                Modifier.requestFocusOnHierarchyActive()
+                    .rotaryScrollable(
+                        behavior = rotaryScrollableBehavior,
+                        focusRequester = focusRequester,
+                        reverseDirection = reverseLayout
+                    )
             else Modifier
 
         HorizontalPager(
@@ -173,12 +180,20 @@ public fun HorizontalPager(
             snapPosition = SnapPosition.Start,
         ) { page ->
             CustomTouchSlopProvider(newTouchSlop = originalTouchSlop) {
-                HierarchicalFocusCoordinator(
-                    requiresFocus = {
-                        rotaryScrollableBehavior == null && state.currentPage == page
-                    },
-                    content = { WearPagerScopeImpl.content(page) }
-                )
+                val parentScreenActive = LocalScreenIsActive.current
+                CompositionLocalProvider(
+                    LocalScreenIsActive provides (state.currentPage == page && parentScreenActive)
+                ) {
+                    Box(
+                        if (rotaryScrollableBehavior == null) {
+                            Modifier.hierarchicalFocusGroup(state.currentPage == page)
+                        } else {
+                            Modifier
+                        }
+                    ) {
+                        WearPagerScopeImpl.content(page)
+                    }
+                }
             }
         }
     }
@@ -236,13 +251,15 @@ public fun VerticalPager(
         RotaryScrollableDefaults.snapBehavior(state),
     content: @Composable PagerScope.(page: Int) -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
     val rotaryModifier =
         if (rotaryScrollableBehavior != null && userScrollEnabled)
-            Modifier.rotaryScrollable(
-                behavior = rotaryScrollableBehavior,
-                focusRequester = rememberActiveFocusRequester(),
-                reverseDirection = reverseLayout
-            )
+            Modifier.requestFocusOnHierarchyActive()
+                .rotaryScrollable(
+                    behavior = rotaryScrollableBehavior,
+                    focusRequester = focusRequester,
+                    reverseDirection = reverseLayout
+                )
         else Modifier
 
     VerticalPager(
@@ -259,10 +276,20 @@ public fun VerticalPager(
         key = key,
         snapPosition = SnapPosition.Start,
     ) { page ->
-        HierarchicalFocusCoordinator(
-            requiresFocus = { rotaryScrollableBehavior == null && state.currentPage == page },
-            content = { WearPagerScopeImpl.content(page) }
-        )
+        val parentScreenActive = LocalScreenIsActive.current
+        CompositionLocalProvider(
+            LocalScreenIsActive provides (state.currentPage == page && parentScreenActive)
+        ) {
+            Box(
+                if (rotaryScrollableBehavior == null) {
+                    Modifier.hierarchicalFocusGroup(state.currentPage == page)
+                } else {
+                    Modifier
+                }
+            ) {
+                WearPagerScopeImpl.content(page)
+            }
+        }
     }
 }
 
@@ -381,4 +408,4 @@ public object PagerDefaults {
     public val BeyondViewportPageCount: Int = 0
 }
 
-internal val CustomTouchSlopMultiplier = 1.10f
+internal const val CustomTouchSlopMultiplier = 1.10f

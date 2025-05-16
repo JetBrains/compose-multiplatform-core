@@ -335,7 +335,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 "coroutinesCore" to "https://kotlinlang.org/api/kotlinx.coroutines/",
                 "android" to "https://developer.android.com/reference",
                 "guava" to "https://guava.dev/releases/18.0/api/docs/",
-                "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/",
+                "kotlin" to "https://kotlinlang.org/api/core/kotlin-stdlib/",
                 "junit" to "https://junit.org/junit4/javadoc/4.12/",
                 "okio" to "https://square.github.io/okio/3.x/okio/",
                 "protobuf" to "https://protobuf.dev/reference/java/api-docs/",

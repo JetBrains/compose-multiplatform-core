@@ -28,7 +28,6 @@ import android.os.SystemClock
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
@@ -121,7 +120,6 @@ class VideoEncoderTest(
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val dynamicRange = DynamicRange.SDR
     private var currentSurface: Surface? = null
     private val encodeStopSemaphore = Semaphore(0)
@@ -140,7 +138,7 @@ class VideoEncoderTest(
 
     @Before
     fun setUp() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         // Skip for b/168175357, b/233661493
         assumeFalse(
             "Skip tests for Cuttlefish MediaCodec issues",

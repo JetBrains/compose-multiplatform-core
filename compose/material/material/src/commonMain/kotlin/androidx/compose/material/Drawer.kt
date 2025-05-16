@@ -196,9 +196,7 @@ class DrawerState(
      * finishes. If an animation is running, this is the target value of that animation. Finally, if
      * no swipe or animation is in progress, this is the same as the [currentValue].
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalMaterialApi
-    @get:ExperimentalMaterialApi
     val targetValue: DrawerValue
         get() = anchoredDraggableState.targetValue
 
@@ -208,9 +206,7 @@ class DrawerState(
      *
      * @see [AnchoredDraggableState.offset] for more information.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalMaterialApi
-    @get:ExperimentalMaterialApi
     val offset: Float
         get() = anchoredDraggableState.offset
 

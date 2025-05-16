@@ -46,28 +46,22 @@ private fun SlowStartReason.toInsight(
 
     val thresholdValue = expected_value.value_!!
 
-    val thresholdString =
-        StringBuilder()
-            .apply {
-                append(" (expected: ")
-                if (thresholdUnit == ThresholdUnit.TRUE_OR_FALSE) {
-                    when (thresholdValue) {
-                        0L -> append("false")
-                        1L -> append("true")
-                        else ->
-                            throw IllegalArgumentException(
-                                "Unexpected boolean value $thresholdValue"
-                            )
-                    }
-                } else {
-                    if (expected_value.higher_expected == true) append("> ")
-                    if (expected_value.higher_expected == false) append("< ")
-                    append(thresholdValue)
-                    append(unitSuffix)
-                }
-                append(")")
+    val thresholdString = buildString {
+        append(" (expected: ")
+        if (thresholdUnit == ThresholdUnit.TRUE_OR_FALSE) {
+            when (thresholdValue) {
+                0L -> append("false")
+                1L -> append("true")
+                else -> throw IllegalArgumentException("Unexpected boolean value $thresholdValue")
             }
-            .toString()
+        } else {
+            if (expected_value.higher_expected == true) append("> ")
+            if (expected_value.higher_expected == false) append("< ")
+            append(thresholdValue)
+            append(unitSuffix)
+        }
+        append(")")
+    }
 
     val category =
         Insight.Category(
@@ -91,8 +85,8 @@ private fun SlowStartReason.toInsight(
                 title = traceLinkTitle,
                 urlParamMap =
                     mapOf(
-                        "AndroidStartup:packageName" to packageName,
-                        "AndroidStartup:slowStartReasonId" to reason_id!!.name
+                        "dev.perfetto.AndroidStartup:packageName" to packageName,
+                        "dev.perfetto.AndroidStartup:slowStartReason" to reason_id!!.name
                     ),
             ),
         category = category,

@@ -259,6 +259,24 @@ public abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
+    @NonNull
+    public <T extends Component> List<T> getComponentsOfType(@NonNull Class<? extends T> type) {
+        List<T> components = new ArrayList<>();
+        for (Component component : mComponentList) {
+            if (type.isInstance(component)) {
+                components.add(type.cast(component));
+            }
+        }
+        return components;
+    }
+
+    @Override
+    @NonNull
+    public List<Component> getComponents() {
+        return mComponentList;
+    }
+
+    @Override
     public void removeComponent(@NonNull Component component) {
         if (mComponentList.contains(component)) {
             component.onDetach(this);

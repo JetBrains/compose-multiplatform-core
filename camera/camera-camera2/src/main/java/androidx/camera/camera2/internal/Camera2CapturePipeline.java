@@ -439,6 +439,8 @@ class Camera2CapturePipeline {
             if (templateToModify != CaptureConfig.TEMPLATE_TYPE_NONE) {
                 configBuilder.setTemplateType(templateToModify);
             }
+
+            Logger.d(TAG, "applyStillCaptureTemplate: templateToModify = " + templateToModify);
         }
 
         @ExecutedBy("mExecutor")

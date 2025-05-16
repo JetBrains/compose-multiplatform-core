@@ -20,29 +20,30 @@ import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.Session
 import androidx.xr.scenecore.SpatialCapabilities
-import androidx.xr.scenecore.getSpatialCapabilities
 import androidx.xr.scenecore.samples.commontestview.CommonTestView
+import androidx.xr.scenecore.scene
 
 const val TAG = "ActivityPanelTest"
 
 class ActivityPanelHostActivity : AppCompatActivity() {
     private lateinit var activityPanelEntity: ActivityPanelEntity
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activityPanelEntity =
             ActivityPanelEntity.create(session, Rect(0, 0, 1280, 800), "test_activity_panel")
         if (
-            session
-                .getSpatialCapabilities()
-                .hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY)
+            session.scene.spatialCapabilities.hasCapability(
+                SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY
+            )
         ) {
             val intent = Intent(this, CounterActivity::class.java)
             activityPanelEntity.launchActivity(intent)

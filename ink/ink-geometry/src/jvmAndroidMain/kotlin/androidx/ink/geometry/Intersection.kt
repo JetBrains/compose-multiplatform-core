@@ -39,36 +39,14 @@ public object Intersection {
      * Returns true when the point (a [Vec]) intersects with a [Segment]. All points on the segment,
      * including endpoints, intersect with the segment.
      */
-    @JvmStatic
-    public fun Vec.intersects(segment: Segment): Boolean {
-        return nativeVecSegmentIntersects(
-            vecX = this.x,
-            vecY = this.y,
-            segmentStartX = segment.start.x,
-            segmentStartY = segment.start.y,
-            segmentEndX = segment.end.x,
-            segmentEndY = segment.end.y,
-        )
-    }
+    @JvmStatic public fun Vec.intersects(segment: Segment): Boolean = segment.intersects(x, y)
 
     /**
      * Returns true when the point (a [Vec]) intersects with a [Triangle]. All points on the
      * boundary of the triangle (including its vertices) and in the interior of the triangle
      * intersect with it.
      */
-    @JvmStatic
-    public fun Vec.intersects(triangle: Triangle): Boolean {
-        return nativeVecTriangleIntersects(
-            vecX = this.x,
-            vecY = this.y,
-            triangleP0X = triangle.p0.x,
-            triangleP0Y = triangle.p0.y,
-            triangleP1X = triangle.p1.x,
-            triangleP1Y = triangle.p1.y,
-            triangleP2X = triangle.p2.x,
-            triangleP2Y = triangle.p2.y,
-        )
-    }
+    @JvmStatic public fun Vec.intersects(triangle: Triangle): Boolean = triangle.intersects(x, y)
 
     /**
      * Returns true when the point (a [Vec]) intersects with a [Parallelogram]. All points on the
@@ -76,34 +54,14 @@ public object Intersection {
      * parallelogram intersect with it.
      */
     @JvmStatic
-    public fun Vec.intersects(parallelogram: Parallelogram): Boolean {
-        return nativeVecParallelogramIntersects(
-            vecX = this.x,
-            vecY = this.y,
-            parallelogramCenterX = parallelogram.center.x,
-            parallelogramCenterY = parallelogram.center.y,
-            parallelogramWidth = parallelogram.width,
-            parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
-        )
-    }
+    public fun Vec.intersects(parallelogram: Parallelogram): Boolean =
+        parallelogram.intersects(x, y)
 
     /**
      * Returns true when the point (a [Vec]) intersects with a [Box]. All points on the boundary of
      * the box (including its vertices) and in the interior of the box intersect with it.
      */
-    @JvmStatic
-    public fun Vec.intersects(box: Box): Boolean {
-        return nativeVecBoxIntersects(
-            vecX = this.x,
-            vecY = this.y,
-            boxXMin = box.xMin,
-            boxYMin = box.yMin,
-            boxXMax = box.xMax,
-            boxYMax = box.yMax,
-        )
-    }
+    @JvmStatic public fun Vec.intersects(box: Box): Boolean = box.intersects(x, y)
 
     /**
      * Returns true when the point (a [Vec]) intersects with [mesh]. [meshToPoint] transforms the
@@ -116,19 +74,8 @@ public object Intersection {
      * intersection of the point in [mesh]’s object coordinates.
      */
     @JvmStatic
-    public fun Vec.intersects(mesh: PartitionedMesh, meshToPoint: AffineTransform): Boolean {
-        return nativeMeshVecIntersects(
-            nativeMeshAddress = mesh.nativePointer,
-            vecX = this.x,
-            vecY = this.y,
-            meshToVecA = meshToPoint.m00,
-            meshToVecB = meshToPoint.m10,
-            meshToVecC = meshToPoint.m20,
-            meshToVecD = meshToPoint.m01,
-            meshToVecE = meshToPoint.m11,
-            meshToVecF = meshToPoint.m21,
-        )
-    }
+    public fun Vec.intersects(mesh: PartitionedMesh, meshToPoint: AffineTransform): Boolean =
+        mesh.intersects(x, y, meshToPoint)
 
     /**
      * Returns true when a [Segment] intersects with another [Segment] --- when this segment has at
@@ -489,14 +436,47 @@ public object Intersection {
      * Returns true when the [Segment] intersects with a point (a [Vec]). All points on the segment,
      * including endpoints, intersect with the segment.
      */
-    @JvmStatic public fun Segment.intersects(point: Vec): Boolean = point.intersects(this)
+    @JvmStatic public fun Segment.intersects(point: Vec): Boolean = intersects(point.x, point.y)
+
+    /**
+     * Returns true when the [Segment] intersects with a point (x, y). All points on the segment,
+     * including endpoints, intersect with the segment.
+     */
+    @JvmStatic
+    public fun Segment.intersects(x: Float, y: Float): Boolean =
+        nativeVecSegmentIntersects(
+            vecX = x,
+            vecY = y,
+            segmentStartX = start.x,
+            segmentStartY = start.y,
+            segmentEndX = end.x,
+            segmentEndY = end.y,
+        )
 
     /**
      * Returns true when the [Triangle] intersects with a point (a [Vec]). All points on the
      * boundary of the triangle (including its vertices) and in the interior of the triangle
      * intersect with it.
      */
-    @JvmStatic public fun Triangle.intersects(point: Vec): Boolean = point.intersects(this)
+    @JvmStatic public fun Triangle.intersects(point: Vec): Boolean = intersects(point.x, point.y)
+
+    /**
+     * Returns true when the [Triangle] intersects with a point (x, y). All points on the boundary
+     * of the triangle (including its vertices) and in the interior of the triangle intersect with
+     * it.
+     */
+    @JvmStatic
+    public fun Triangle.intersects(x: Float, y: Float): Boolean =
+        nativeVecTriangleIntersects(
+            vecX = x,
+            vecY = y,
+            triangleP0X = p0.x,
+            triangleP0Y = p0.y,
+            triangleP1X = p1.x,
+            triangleP1Y = p1.y,
+            triangleP2X = p2.x,
+            triangleP2Y = p2.y,
+        )
 
     /**
      * Returns true when a [Triangle] intersects with a [Segment] --- when the [segment] has at
@@ -509,7 +489,26 @@ public object Intersection {
      * boundary of the parallelogram (including its vertices) and in the interior of the
      * parallelogram intersect with it.
      */
-    @JvmStatic public fun Parallelogram.intersects(point: Vec): Boolean = point.intersects(this)
+    @JvmStatic
+    public fun Parallelogram.intersects(point: Vec): Boolean = intersects(point.x, point.y)
+
+    /**
+     * Returns true when the [Parallelogram] intersects with a point (x, y). All points on the
+     * boundary of the parallelogram (including its vertices) and in the interior of the
+     * parallelogram intersect with it.
+     */
+    @JvmStatic
+    public fun Parallelogram.intersects(x: Float, y: Float): Boolean =
+        nativeVecParallelogramIntersects(
+            vecX = x,
+            vecY = y,
+            parallelogramCenterX = center.x,
+            parallelogramCenterY = center.y,
+            parallelogramWidth = width,
+            parallelogramHeight = height,
+            parallelogramAngleInRadian = rotation,
+            parallelogramShearFactor = shearFactor,
+        )
 
     /**
      * Returns true when a [Parallelogram] intersects with a [Segment] --- when the [segment] has at
@@ -535,7 +534,22 @@ public object Intersection {
      * Returns true when the [Box] intersects with a point (a [Vec]). All points on the boundary of
      * the box (including its vertices) and in the interior of the box intersect with it.
      */
-    @JvmStatic public fun Box.intersects(point: Vec): Boolean = point.intersects(this)
+    @JvmStatic public fun Box.intersects(point: Vec): Boolean = intersects(point.x, point.y)
+
+    /**
+     * Returns true when the [Box] intersects with a point (x, y). All points on the boundary of the
+     * box (including its vertices) and in the interior of the box intersect with it.
+     */
+    @JvmStatic
+    public fun Box.intersects(x: Float, y: Float): Boolean =
+        nativeVecBoxIntersects(
+            vecX = x,
+            vecY = y,
+            boxXMin = xMin,
+            boxYMin = yMin,
+            boxXMax = xMax,
+            boxYMax = yMax,
+        )
 
     /**
      * Returns true when a [Box] intersects with a [Segment] --- when the [segment] has at least one
@@ -557,11 +571,39 @@ public object Intersection {
      *
      * Performance note: it is expensive to apply a transform to a mesh. To avoid unnecessary
      * calculations, the inverse of [meshToPoint] is used to perform the mathematically equivalent
-     * intersection of the point in [mesh]’s object coordinates.
+     * intersection of the point in [mesh]'s object coordinates.
      */
     @JvmStatic
     public fun PartitionedMesh.intersects(point: Vec, meshToPoint: AffineTransform): Boolean =
-        point.intersects(this, meshToPoint)
+        intersects(point.x, point.y, meshToPoint)
+
+    /**
+     * Returns true when the [PartitionedMesh] intersects with the point (x, y). [meshToPoint]
+     * transforms the coordinate space of [mesh] to the coordinate space that the intersection
+     * should be checked in (that of the point). All points along the boundary of the [mesh] and the
+     * [mesh]s interior are considered for intersection.
+     *
+     * Performance note: it is expensive to apply a transform to a mesh. To avoid unnecessary
+     * calculations, the inverse of [meshToPoint] is used to perform the mathematically equivalent
+     * intersection of the point in [mesh]'s object coordinates.
+     */
+    @JvmStatic
+    public fun PartitionedMesh.intersects(
+        x: Float,
+        y: Float,
+        meshToPoint: AffineTransform
+    ): Boolean =
+        nativeMeshVecIntersects(
+            nativeMeshAddress = nativePointer,
+            vecX = x,
+            vecY = y,
+            meshToVecA = meshToPoint.m00,
+            meshToVecB = meshToPoint.m10,
+            meshToVecC = meshToPoint.m20,
+            meshToVecD = meshToPoint.m01,
+            meshToVecE = meshToPoint.m11,
+            meshToVecF = meshToPoint.m21,
+        )
 
     /**
      * Returns true when a [PartitionedMesh] intersects with a [Segment].

@@ -91,7 +91,6 @@ androidx {
     type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "AndroidX Tracing Driver"
-    metalavaK2UastEnabled = false
 }
 
 android {

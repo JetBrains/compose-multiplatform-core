@@ -20,6 +20,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
@@ -29,6 +31,8 @@ import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.internal.SpatialPointerIcon;
+import androidx.xr.runtime.internal.SpatialPointerIconType;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.TextureSampler;
 import androidx.xr.runtime.math.Matrix4;
@@ -37,13 +41,15 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Plane;
 
-import com.android.extensions.xr.VisibilityChangedEvent;
+import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Quatf;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.Vec3;
+import com.android.extensions.xr.space.VisibilityState;
 
 final class RuntimeUtils {
     private RuntimeUtils() {}
@@ -355,22 +361,22 @@ final class RuntimeUtils {
     /**
      * Converts from the Extensions spatial visibility to the runtime spatial visibility.
      *
-     * @param extVisibility a {@link com.android.extensions.xr.VisibilityChangedEvent} instance to
-     *     be converted.
+     * @param extVisibility a {@link com.android.extensions.xr.space.VisibilityState} instance to be
+     *     converted.
      */
-    static SpatialVisibility convertSpatialVisibility(VisibilityChangedEvent extVisibility) {
+    static SpatialVisibility convertSpatialVisibility(VisibilityState extVisibility) {
         int visibility;
         switch (extVisibility.getVisibility()) {
-            case VisibilityChangedEvent.UNKNOWN:
+            case VisibilityState.UNKNOWN:
                 visibility = SpatialVisibility.UNKNOWN;
                 break;
-            case VisibilityChangedEvent.OUTSIDE_OF_FOV:
+            case VisibilityState.NOT_VISIBLE:
                 visibility = SpatialVisibility.OUTSIDE_FOV;
                 break;
-            case VisibilityChangedEvent.PARTIALLY_VISIBLE:
+            case VisibilityState.PARTIALLY_VISIBLE:
                 visibility = SpatialVisibility.PARTIALLY_WITHIN_FOV;
                 break;
-            case VisibilityChangedEvent.VISIBLE:
+            case VisibilityState.FULLY_VISIBLE:
                 visibility = SpatialVisibility.WITHIN_FOV;
                 break;
             default:
@@ -551,5 +557,30 @@ final class RuntimeUtils {
         int surfaceType = getHitTestSurfaceType(hitTestResultExt.getSurfaceType());
         return new HitTestResult(
                 hitPosition, surfaceNormal, surfaceType, hitTestResultExt.getDistance());
+    }
+
+    static int getHitTestFilter(@HitTestFilterValue int hitTestFilter) {
+        int hitTestFilterResult = 0;
+        if ((hitTestFilter & HitTestFilter.SELF_SCENE) != 0) {
+            hitTestFilterResult |= XrExtensions.HIT_TEST_FILTER_INCLUDE_INSIDE_ACTIVITY;
+        }
+        if ((hitTestFilter & HitTestFilter.OTHER_SCENES) != 0) {
+            hitTestFilterResult |= XrExtensions.HIT_TEST_FILTER_INCLUDE_OUTSIDE_ACTIVITY;
+        }
+        return hitTestFilterResult;
+    }
+
+    static int convertSpatialPointerIconType(@SpatialPointerIconType int rtIconType) {
+        switch (rtIconType) {
+            case SpatialPointerIcon.TYPE_NONE:
+                return NodeTransaction.POINTER_ICON_TYPE_NONE;
+            case SpatialPointerIcon.TYPE_DEFAULT:
+                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
+            case SpatialPointerIcon.TYPE_CIRCLE:
+                return NodeTransaction.POINTER_ICON_TYPE_CIRCLE;
+            default:
+                Log.e("RuntimeUtils", "Unknown Spatial Pointer Icon Type: " + rtIconType);
+                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
+        }
     }
 }

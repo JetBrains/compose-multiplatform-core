@@ -18,6 +18,8 @@ package androidx.xr.runtime.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Anchor
+import androidx.xr.runtime.internal.AnchorInvalidUuidException
+import androidx.xr.runtime.internal.Earth
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
@@ -35,6 +37,8 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
 
     override val leftHand: Hand? = FakeRuntimeHand()
     override val rightHand: Hand? = FakeRuntimeHand()
+
+    override val earth: Earth = FakeRuntimeEarth()
 
     private val hitResults = mutableListOf<HitResult>()
     private val anchorUuids = mutableListOf<UUID>()
@@ -54,11 +58,16 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     override fun getPersistedAnchorUuids(): List<UUID> = anchorUuids
 
     override fun loadAnchor(uuid: UUID): Anchor {
-        check(anchorUuids.contains(uuid)) { "Anchor is not persisted." }
+        if (!anchorUuids.contains(uuid)) {
+            throw AnchorInvalidUuidException()
+        }
         return FakeRuntimeAnchor(Pose(), this)
     }
 
     override fun unpersistAnchor(uuid: UUID) {
+        if (!anchorUuids.contains(uuid)) {
+            throw AnchorInvalidUuidException()
+        }
         anchorUuids.remove(uuid)
     }
 

@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -383,40 +384,61 @@ private fun LoadingIndicatorImpl(
     val globalRotation = remember { Animatable(0f) }
     var currentMorphIndex by remember(indicatorPolygons) { mutableIntStateOf(0) }
     LaunchedEffect(indicatorPolygons) {
-        launch {
-            // Note that we up the visibilityThreshold here to 0.1, which is x10 than the default
-            // threshold, and ends the low-damping spring in a shorter time.
-            val morphAnimationSpec =
-                spring(dampingRatio = 0.6f, stiffness = 200f, visibilityThreshold = 0.1f)
-            while (true) {
-                // Async launch of a spring that will finish in less than 650ms
-                // (MorphIntervalMillis). We then delay the entire while loop by 650ms till the next
-                // morph starts.
-                val deferred = async {
-                    val animationResult =
-                        morphProgress.animateTo(
-                            targetValue = 1f,
-                            animationSpec = morphAnimationSpec
-                        )
-                    if (animationResult.endReason == AnimationEndReason.Finished) {
-                        currentMorphIndex = (currentMorphIndex + 1) % morphSequence.size
-                        morphProgress.snapTo(0f)
-                        morphRotationTargetAngle =
-                            (morphRotationTargetAngle + QuarterRotation) % FullRotation
+        val morphAnimationBlock = {
+            launch {
+                // Note that we up the visibilityThreshold here to 0.1, which is x10 than the
+                // default threshold, and ends the low-damping spring in a shorter time.
+                val morphAnimationSpec =
+                    spring(dampingRatio = 0.6f, stiffness = 200f, visibilityThreshold = 0.1f)
+                while (true) {
+                    // Async launch of a spring that will finish in less than 650ms
+                    // (MorphIntervalMillis). We then delay the entire while loop by 650ms till the
+                    // next morph starts.
+                    val deferred = async {
+                        val animationResult =
+                            morphProgress.animateTo(
+                                targetValue = 1f,
+                                animationSpec = morphAnimationSpec
+                            )
+                        if (animationResult.endReason == AnimationEndReason.Finished) {
+                            currentMorphIndex = (currentMorphIndex + 1) % morphSequence.size
+                            morphProgress.snapTo(0f)
+                            morphRotationTargetAngle =
+                                (morphRotationTargetAngle + QuarterRotation) % FullRotation
+                        }
                     }
+                    delay(MorphIntervalMillis)
+                    deferred.await()
                 }
-                delay(MorphIntervalMillis)
-                deferred.await()
             }
         }
-        globalRotation.animateTo(
-            targetValue = FullRotation,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(GlobalRotationDurationMillis, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
+
+        val rotationAnimationBlock = {
+            launch {
+                globalRotation.animateTo(
+                    targetValue = FullRotation,
+                    animationSpec =
+                        infiniteRepeatable(
+                            tween(GlobalRotationDurationMillis, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        )
                 )
-        )
+            }
+        }
+
+        // Possibly skip the infinite animation block when an InfiniteAnimationPolicy is
+        // installed.
+        when (val policy = coroutineContext[InfiniteAnimationPolicy]) {
+            null -> {
+                morphAnimationBlock()
+                rotationAnimationBlock()
+            }
+            else ->
+                policy.onInfiniteOperation {
+                    morphAnimationBlock()
+                    rotationAnimationBlock()
+                }
+        }
     }
 
     val path = remember { Path() }

@@ -30,47 +30,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.AnimatedPage
 import androidx.wear.compose.material3.AppScaffold
-import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.material3.PagerScaffoldDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 
-object HorizontalPagerBenchmark : MacrobenchmarkScreen {
-    override val content: @Composable (BoxScope.() -> Unit)
-        get() = {
-            AppScaffold {
-                val pagerState = rememberPagerState(pageCount = { 10 })
-
-                HorizontalPagerScaffold(
-                    pagerState = pagerState,
-                    modifier =
-                        Modifier.fillMaxWidth().semantics {
-                            contentDescription = CONTENT_DESCRIPTION
-                        }
-                ) {
-                    HorizontalPager(
-                        state = pagerState,
-                        flingBehavior =
-                            PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
-                    ) { page ->
-                        AnimatedPage(pageIndex = page, pagerState = pagerState) {
-                            ScreenScaffold {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("Page $page")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+abstract class PagerBenchmark : MacrobenchmarkScreen {
     override val exercise: MacrobenchmarkScope.() -> Unit
         get() = {
             val horizontalPager = device.findObject(By.desc(CONTENT_DESCRIPTION))
@@ -86,6 +54,38 @@ object HorizontalPagerBenchmark : MacrobenchmarkScreen {
                     device.waitForIdle()
                     SystemClock.sleep(500)
                 }
+            }
+        }
+
+    val pager: @Composable (BoxScope.(pagerState: PagerState) -> Unit)
+        get() = { pagerState ->
+            HorizontalPager(
+                modifier =
+                    Modifier.fillMaxWidth().semantics { contentDescription = CONTENT_DESCRIPTION },
+                state = pagerState,
+                flingBehavior =
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+            ) { page ->
+                AnimatedPage(pageIndex = page, pagerState = pagerState) {
+                    ScreenScaffold {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Page $page")
+                        }
+                    }
+                }
+            }
+        }
+}
+
+object HorizontalPagerBenchmark : PagerBenchmark() {
+    override val content: @Composable (BoxScope.() -> Unit)
+        get() = {
+            AppScaffold {
+                val pagerState = rememberPagerState(pageCount = { 10 })
+                pager(pagerState)
             }
         }
 }

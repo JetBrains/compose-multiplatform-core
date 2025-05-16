@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
- *
- * Please use that script when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
 import androidx.build.SoftwareType
 
 plugins {
@@ -32,8 +25,14 @@ plugins {
 dependencies {
     implementation("androidx.core:core:1.1.0")
     api(libs.kotlinStdlib)
+    api(libs.kotlinCoroutinesGuava)
     // Add dependencies here
     compileOnly files("../../wear_sdk/wear-sdk.jar")
+
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.truth)
 }
 
 android {

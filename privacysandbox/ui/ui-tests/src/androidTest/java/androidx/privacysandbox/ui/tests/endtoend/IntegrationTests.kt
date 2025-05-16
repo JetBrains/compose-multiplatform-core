@@ -28,6 +28,7 @@ import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
+import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
@@ -135,6 +136,21 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         layoutChangeLatch.await(2000, TimeUnit.MILLISECONDS)
         assertTrue(layoutChangeLatch.count == 0.toLong())
         assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+    }
+
+    /**
+     * Ensures that when a SandboxedUiAdapter is sent from a process to another multiple times the
+     * same binder is used.
+     */
+    @Test
+    fun testClientAdapterIsNotReWrapped() {
+        val adapter =
+            TestSandboxedUiAdapter(failToProvideUi = false, placeViewInsideFrameLayout = false)
+        val binderAdapter = sessionManager.getCoreLibInfoFromAdapter(adapter)
+        val adapterFromCoreLibInfo = SandboxedUiAdapterFactory.createFromCoreLibInfo(binderAdapter)
+        // send this back to the SDK and see if the same binder is sent back to the app.
+        val binderAdapter2 = sessionManager.getCoreLibInfoFromAdapter(adapterFromCoreLibInfo)
+        assertThat(binderAdapter).isEqualTo(binderAdapter2)
     }
 
     @Test
@@ -469,7 +485,10 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         assertThat(sessionObserver.sessionObserverContext).isNotNull()
         assertThat(sessionObserver.sessionObserverContext?.view).isEqualTo(adapter.session?.view)
         assertThat(sessionObserver.sessionObserverContext?.supportedSignalOptions)
-            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            .containsExactly(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            )
     }
 
     @Test

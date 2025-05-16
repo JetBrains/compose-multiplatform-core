@@ -30,8 +30,6 @@ import kotlin.math.abs
  * the scroll behavior will pivot around 30% of the container size. For other platforms, the scroll
  * behavior will move the least to bring the requested region into view.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalFoundationApi
 @ExperimentalFoundationApi
 actual val LocalBringIntoViewSpec: ProvidableCompositionLocal<BringIntoViewSpec> =
     compositionLocalWithComputedDefaultOf {

@@ -262,7 +262,7 @@ open class ExampleOpenGLWatchFaceService : SampleWatchFaceService() {
         init {
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 currentUserStyleRepository.userStyle.collect { userStyle ->
-                    watchfaceColors =
+                    setWatchfaceColors(
                         when (userStyle[colorStyleSetting]!!.toString()) {
                             "red_style" ->
                                 WatchFaceColors(
@@ -278,6 +278,7 @@ open class ExampleOpenGLWatchFaceService : SampleWatchFaceService() {
                                 )
                             else -> null
                         }
+                    )
                 }
             }
         }

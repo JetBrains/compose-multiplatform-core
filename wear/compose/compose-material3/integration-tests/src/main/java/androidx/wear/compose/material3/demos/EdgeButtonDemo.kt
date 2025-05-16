@@ -301,7 +301,7 @@ fun EdgeButtonConfigurableDemo() {
             "Disabled" to ButtonDefaults.buttonColors()
         )
     var selectedColor by remember { mutableIntStateOf(0) }
-    val types = listOf("Icon only" to 0, "Text only" to 1)
+    val types = listOf("Icon only" to 0, "Small Text" to 1, "Long Text" to 2)
     var selectedType by remember { mutableIntStateOf(0) }
 
     AdaptiveScreen {
@@ -320,16 +320,21 @@ fun EdgeButtonConfigurableDemo() {
                         else null,
                     enabled = colors[selectedColor].first != "Disabled"
                 ) {
-                    if (selectedType == 0) {
-                        val iconSize = EdgeButtonDefaults.iconSizeFor(sizes[selectedSize].second)
-                        CheckIcon(
-                            modifier =
-                                Modifier.size(iconSize * 2 / 3)
-                                    .wrapContentSize(unbounded = true)
-                                    .size(iconSize)
-                        )
-                    } else {
-                        Text("Ok")
+                    when (selectedType) {
+                        0 -> {
+                            val iconSize =
+                                EdgeButtonDefaults.iconSizeFor(sizes[selectedSize].second)
+                            // Remove extra spacing around the icon so it integrates better into the
+                            // scroll.
+                            CheckIcon(
+                                modifier =
+                                    Modifier.size(iconSize * 2 / 3)
+                                        .wrapContentSize(unbounded = true)
+                                        .size(iconSize)
+                            )
+                        }
+                        1 -> Text("Ok")
+                        else -> Text("Long Text to show max lines and overflow")
                     }
                 }
             }

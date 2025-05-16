@@ -18,10 +18,8 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.graphics.Rect
-import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Pair
 import android.util.Range
@@ -61,15 +59,11 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
-import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assume.assumeFalse
@@ -105,13 +99,13 @@ class ZoomControlDeviceTest(
     @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
+
     private lateinit var camera: Camera
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
-
     private lateinit var cameraControl: CameraControl
     private lateinit var cameraInfo: CameraInfo
-    private lateinit var captureCallback: CaptureCallback
+    private lateinit var captureCallback: Camera2InteropUtil.CaptureCallback
 
     @Before
     fun setUp(): Unit = runBlocking {
@@ -119,7 +113,7 @@ class ZoomControlDeviceTest(
 
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
-        captureCallback = CaptureCallback(200)
+        captureCallback = Camera2InteropUtil.CaptureCallback(_numOfCaptures = 200)
 
         withContext(Dispatchers.Main) {
             fakeLifecycleOwner = FakeLifecycleOwner()
@@ -241,11 +235,9 @@ class ZoomControlDeviceTest(
 
         cameraControl.setZoomRatio(1.0f)[5, TimeUnit.SECONDS]
 
-        captureCallback.verify(
-            { captureRequest, _ ->
-                captureRequest[CaptureRequest.SCALER_CROP_REGION] == getSensorRect()
-            },
-            5000
+        captureCallback.verifyLastCaptureRequest(
+            mapOf(CaptureRequest.SCALER_CROP_REGION to getSensorRect()),
+            200
         )
     }
 
@@ -256,13 +248,10 @@ class ZoomControlDeviceTest(
 
         cameraControl.setZoomRatio(1.0f)[5, TimeUnit.SECONDS]
 
-        captureCallback.verify(
-            { captureRequest, _ ->
-                captureRequest[CaptureRequest.SCALER_CROP_REGION] == getSensorRect() &&
-                    areFloatsEqual(captureRequest[CaptureRequest.CONTROL_ZOOM_RATIO], 1.0f)
-            },
-            5000
-        )
+        captureCallback.verifyFor { captureRequests, _ ->
+            captureRequests.last()[CaptureRequest.SCALER_CROP_REGION] == getSensorRect() &&
+                areFloatsEqual(captureRequests.last()[CaptureRequest.CONTROL_ZOOM_RATIO], 1.0f)
+        }
     }
 
     @Test
@@ -279,9 +268,8 @@ class ZoomControlDeviceTest(
         val cropRect =
             Rect(cropX, cropY, cropX + sensorRect.width() / 2, cropY + sensorRect.height() / 2)
 
-        captureCallback.verify(
-            { captureRequest, _ -> captureRequest[CaptureRequest.SCALER_CROP_REGION] == cropRect },
-            5000
+        captureCallback.verifyLastCaptureRequest(
+            mapOf(CaptureRequest.SCALER_CROP_REGION to cropRect)
         )
     }
 
@@ -292,13 +280,10 @@ class ZoomControlDeviceTest(
 
         cameraControl.setZoomRatio(2.0f)
 
-        captureCallback.verify(
-            { captureRequest, _ ->
-                captureRequest[CaptureRequest.SCALER_CROP_REGION] == getSensorRect() &&
-                    areFloatsEqual(captureRequest[CaptureRequest.CONTROL_ZOOM_RATIO], 2.0f)
-            },
-            5000
-        )
+        captureCallback.verifyFor { captureRequests, _ ->
+            captureRequests.last()[CaptureRequest.SCALER_CROP_REGION] == getSensorRect() &&
+                areFloatsEqual(captureRequests.last()[CaptureRequest.CONTROL_ZOOM_RATIO], 2.0f)
+        }
     }
 
     @Test
@@ -667,24 +652,20 @@ class ZoomControlDeviceTest(
         val cropRegionFromCameraCaptureRef = AtomicReference(Rect(0, 0, 0, 0))
         val cropRegionCallbackCountRef = AtomicReference(10)
 
-        captureCallback.reset()
-
         cameraControl.setLinearZoom(linearZoom)[5, TimeUnit.SECONDS]
-        captureCallback.verify(
-            { captureRequest, _ ->
-                if (captureRequest[CaptureRequest.SCALER_CROP_REGION] == null) {
-                    return@verify false
-                }
 
-                cropRegionFromCameraCaptureRef.set(
-                    captureRequest[CaptureRequest.SCALER_CROP_REGION]!!
-                )
+        captureCallback.verifyFor { captureRequests, _ ->
+            if (captureRequests.last()[CaptureRequest.SCALER_CROP_REGION] == null) {
+                assert(false)
+            }
 
-                cropRegionCallbackCountRef.set(cropRegionCallbackCountRef.get() - 1)
-                return@verify cropRegionCallbackCountRef.get() == 0
-            },
-            5000
-        )
+            cropRegionFromCameraCaptureRef.set(
+                captureRequests.last()[CaptureRequest.SCALER_CROP_REGION]!!
+            )
+
+            cropRegionCallbackCountRef.set(cropRegionCallbackCountRef.get() - 1)
+            cropRegionCallbackCountRef.get() == 0
+        }
 
         return cropRegionFromCameraCaptureRef.get()
     }
@@ -692,26 +673,22 @@ class ZoomControlDeviceTest(
     @RequiresApi(Build.VERSION_CODES.R)
     private suspend fun getZoomRatioFromCameraCapture(linearZoom: Float): Float {
         val zoomRatioFromCameraCaptureRef = AtomicReference(Float.NaN)
-        val cropRegionCallbackCountRef = AtomicReference(10)
-
-        captureCallback.reset()
+        val zoomRatioCallbackCountRef = AtomicReference(10)
 
         cameraControl.setLinearZoom(linearZoom)[5, TimeUnit.SECONDS]
-        captureCallback.verify(
-            { captureRequest, _ ->
-                if (captureRequest[CaptureRequest.CONTROL_ZOOM_RATIO] == null) {
-                    return@verify false
-                }
 
-                zoomRatioFromCameraCaptureRef.set(
-                    captureRequest[CaptureRequest.CONTROL_ZOOM_RATIO]!!
-                )
+        captureCallback.verifyFor { captureRequests, _ ->
+            if (captureRequests.last()[CaptureRequest.CONTROL_ZOOM_RATIO] == null) {
+                assert(false)
+            }
 
-                cropRegionCallbackCountRef.set(cropRegionCallbackCountRef.get() - 1)
-                return@verify cropRegionCallbackCountRef.get() == 0
-            },
-            5000
-        )
+            zoomRatioFromCameraCaptureRef.set(
+                captureRequests.last()[CaptureRequest.CONTROL_ZOOM_RATIO]!!
+            )
+
+            zoomRatioCallbackCountRef.set(zoomRatioCallbackCountRef.get() - 1)
+            zoomRatioCallbackCountRef.get() == 0
+        }
 
         return zoomRatioFromCameraCaptureRef.get()
     }
@@ -969,61 +946,6 @@ class ZoomControlDeviceTest(
         if (num1 == null && num2 == null) return true
         if (num1 == null || num2 == null) return false
         return abs(num1 - num2) < 2.0 * Math.ulp(abs(num1).coerceAtLeast(abs(num2)))
-    }
-
-    class CaptureCallback(private val captureCount: Int) : CameraCaptureSession.CaptureCallback() {
-        private var waitingCount = atomic(captureCount)
-        private val failureException =
-            TimeoutException("Test doesn't complete after waiting for $captureCount frames.")
-
-        @Volatile private var startReceiving = false
-        @Volatile
-        private var _verifyBlock:
-            (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean =
-            { _, _ ->
-                false
-            }
-
-        private var signal = CompletableDeferred<Unit>()
-
-        fun reset() {
-            _verifyBlock = { _, _ -> false }
-            startReceiving = false
-            waitingCount = atomic(captureCount)
-            signal = CompletableDeferred()
-        }
-
-        suspend fun verify(
-            verifyBlock:
-                (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean =
-                { _, _ ->
-                    false
-                },
-            timeout: Long = TimeUnit.SECONDS.toMillis(5),
-        ) {
-            withTimeout(timeout) {
-                _verifyBlock = verifyBlock
-                startReceiving = true
-                signal.await()
-            }
-        }
-
-        override fun onCaptureCompleted(
-            session: CameraCaptureSession,
-            request: CaptureRequest,
-            result: TotalCaptureResult
-        ) {
-            if (!startReceiving) {
-                return
-            }
-            if (waitingCount.decrementAndGet() < 0) {
-                signal.completeExceptionally(failureException)
-                return
-            }
-            if (_verifyBlock(request, result)) {
-                signal.complete(Unit)
-            }
-        }
     }
 
     companion object {

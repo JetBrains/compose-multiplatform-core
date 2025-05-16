@@ -97,7 +97,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 
-import java.time.Duration;
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
@@ -155,15 +154,12 @@ public class MovableComponentImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
         mActivitySpaceImpl = (ActivitySpaceImpl) mFakeRuntime.getActivitySpace();
         mActivitySpaceNode = mActivitySpaceImpl.getNode();
         mPerceptionSpaceActivityPose =
                 (PerceptionSpaceActivityPoseImpl) mFakeRuntime.getPerceptionSpaceActivityPose();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        mFakeExecutor.simulateSleepExecutingAllTasks(
-                Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
     }
 
     @After
@@ -608,9 +604,11 @@ public class MovableComponentImplTest {
         assertThat(entity.addComponent(movableComponent)).isTrue();
         ReformOptions options = mNodeRepository.getReformOptions(getEntityNode(entity));
         MoveEventListener mockMoveEventListener = mock(MoveEventListener.class);
+        MoveEventListener mockMoveEventListener2 = mock(MoveEventListener.class);
         FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
 
         movableComponent.addMoveEventListener(executorService, mockMoveEventListener);
+        movableComponent.addMoveEventListener(directExecutor(), mockMoveEventListener2);
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
 
@@ -622,6 +620,7 @@ public class MovableComponentImplTest {
         assertThat(executorService.hasNext()).isTrue();
         executorService.runAll();
         verify(mockMoveEventListener).onMoveEvent(any());
+        verify(mockMoveEventListener2).onMoveEvent(any());
     }
 
     @Test

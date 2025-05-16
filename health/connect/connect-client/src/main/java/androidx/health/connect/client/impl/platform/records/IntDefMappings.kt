@@ -64,6 +64,7 @@ import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
+import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 
 internal val SDK_TO_PLATFORM_CERVICAL_MUCUS_APPEARANCE: Map<Int, Int> =
@@ -645,6 +646,21 @@ internal val SDK_TO_PLATFORM_MEDICAL_RESOURCE_TYPE: Map<Int, Int> =
             PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VITAL_SIGNS
     )
 
+internal val SDK_TO_PLATFORM_DEVICE_TYPE: Map<Int, Int> =
+    mapOf(
+        Device.TYPE_UNKNOWN to PlatformDevice.DEVICE_TYPE_UNKNOWN,
+        Device.TYPE_WATCH to PlatformDevice.DEVICE_TYPE_WATCH,
+        Device.TYPE_PHONE to PlatformDevice.DEVICE_TYPE_PHONE,
+        Device.TYPE_SCALE to PlatformDevice.DEVICE_TYPE_SCALE,
+        Device.TYPE_RING to PlatformDevice.DEVICE_TYPE_RING,
+        Device.TYPE_HEAD_MOUNTED to PlatformDevice.DEVICE_TYPE_HEAD_MOUNTED,
+        Device.TYPE_FITNESS_BAND to PlatformDevice.DEVICE_TYPE_FITNESS_BAND,
+        Device.TYPE_CHEST_STRAP to PlatformDevice.DEVICE_TYPE_CHEST_STRAP,
+        Device.TYPE_SMART_DISPLAY to PlatformDevice.DEVICE_TYPE_SMART_DISPLAY,
+    )
+
+internal val PLATFORM_TO_SDK_DEVICE_TYPE: Map<Int, Int> = SDK_TO_PLATFORM_DEVICE_TYPE.reversed()
+
 internal val PLATFORM_TO_SDK_MEDICAL_RESOURCE_TYPE: Map<Int, Int> =
     SDK_TO_PLATFORM_MEDICAL_RESOURCE_TYPE.reversed()
 
@@ -848,4 +864,8 @@ internal fun Int.toSdkFhirResourceType(): Int {
 internal fun Int.toSdkMedicalResourceType(): Int {
     return PLATFORM_TO_SDK_MEDICAL_RESOURCE_TYPE[this]
         ?: throw IllegalArgumentException("Platform => SDK: Invalid medical resource type.")
+}
+
+internal fun Int.toSdkDevice(): Int {
+    return PLATFORM_TO_SDK_DEVICE_TYPE[this] ?: Device.TYPE_UNKNOWN
 }

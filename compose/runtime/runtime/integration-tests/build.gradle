@@ -31,17 +31,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.runtime.integrationtests"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-
         compileSdk = 35
-        aarMetadata.minCompileSdk = 35
     }
 
     sourceSets {

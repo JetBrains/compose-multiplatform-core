@@ -49,15 +49,19 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPose
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.Session
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
+import androidx.xr.scenecore.scene
 
 class HeadLockedUiActivity : AppCompatActivity() {
 
@@ -65,7 +69,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     // For now, we want to keep this path around to test the non-split engine path.
     // To test the environment in SE, use the SplitEngineTestActivity.
-    private val mSession by lazy { Session.create(this) }
+    private val mSession by lazy { (Session.create(this) as SessionCreateSuccess).session }
     private var mUserForward: Pose by mutableStateOf(Pose(Vector3(0f, 0.00f, -1.0f)))
     private lateinit var mHeadLockedPanel: PanelEntity
     private lateinit var mHeadLockedPanelView: View
@@ -77,19 +81,21 @@ class HeadLockedUiActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mActivity = this
+        mSession.resume()
+        mSession.configure(Config(headTracking = HeadTrackingMode.ENABLED))
 
         // Set the main panel size and make the main panel movable.
-        mSession.mainPanelEntity.setSizeInPixels(PixelDimensions(width = 1500, height = 1100))
+        mSession.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(width = 1500, height = 1100))
         val movableComponent =
             MovableComponent.create(mSession, systemMovable = true, scaleInZ = false)
-        val unused = mSession.mainPanelEntity.addComponent(movableComponent)
+        val unused = mSession.scene.mainPanelEntity.addComponent(movableComponent)
 
         // Create the debug panel with info on the tracked entity
         mDebugPanel =
             DebugTextPanel(
                 context = this,
                 session = mSession,
-                parent = mSession.activitySpace,
+                parent = mSession.scene.activitySpace,
                 pixelDimensions = PixelDimensions(1500, 1000),
                 name = "DebugPanel",
                 pose = Pose(Vector3(0f, -0.6f, -0.05f)),
@@ -107,7 +113,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 name = "headLockedPanel",
                 pose = Pose(Vector3(0f, 0f, 0f)),
             )
-        this.mHeadLockedPanel.setParent(mSession.activitySpace)
+        this.mHeadLockedPanel.setParent(mSession.scene.activitySpace)
 
         setContent { HeadLockParameterOptions(mSession, mActivity) }
     }
@@ -116,11 +122,15 @@ class HeadLockedUiActivity : AppCompatActivity() {
         if (this.mProjectionSource != null) {
             // Since the panel is parented by the activitySpace, we need to inverse its scale
             // so that the panel stays at a fixed size in the view even when ActivitySpace scales.
-            this.mHeadLockedPanel.setScale(0.5f / mSession.activitySpace.getScale(Space.REAL_WORLD))
-            this.mProjectionSource?.transformPoseTo(mUserForward, mSession.activitySpace)?.let {
-                this.mHeadLockedPanel.setPose(it)
-                if (mIsDebugPanelEnabled) updateDebugPanel(it)
-            }
+            this.mHeadLockedPanel.setScale(
+                0.5f / mSession.scene.activitySpace.getScale(Space.REAL_WORLD)
+            )
+            this.mProjectionSource
+                ?.transformPoseTo(mUserForward, mSession.scene.activitySpace)
+                ?.let {
+                    this.mHeadLockedPanel.setPose(it)
+                    if (mIsDebugPanelEnabled) updateDebugPanel(it)
+                }
         }
         mHeadLockedPanelView.postOnAnimation(this::updateHeadLockedPose)
     }
@@ -128,11 +138,11 @@ class HeadLockedUiActivity : AppCompatActivity() {
     private fun updateDebugPanel(projectedPose: Pose) {
         mDebugPanel.view.setLine(
             "ActivitySpace ActivityPose",
-            mSession.activitySpace.getActivitySpacePose().toString(),
+            mSession.scene.activitySpace.getActivitySpacePose().toString(),
         )
         mDebugPanel.view.setLine(
             "ActivitySpace WorldScale",
-            mSession.activitySpace.getScale(Space.REAL_WORLD).toString(),
+            mSession.scene.activitySpace.getScale(Space.REAL_WORLD).toString(),
         )
         mDebugPanel.view.setLine(
             "Head Locked Panel WorldScale",
@@ -140,15 +150,15 @@ class HeadLockedUiActivity : AppCompatActivity() {
         )
         mDebugPanel.view.setLine(
             "Head ActivityPose",
-            mSession.spatialUser.head?.getActivitySpacePose().toString(),
+            mSession.scene.spatialUser.head?.getActivitySpacePose().toString(),
         )
         mDebugPanel.view.setLine(
             "Left Eye ActivityPose",
-            mSession.spatialUser.getCameraViews()[0].getActivitySpacePose().toString(),
+            mSession.scene.spatialUser.getCameraViews()[0].getActivitySpacePose().toString(),
         )
         mDebugPanel.view.setLine(
             "Right Eye ActivityPose",
-            mSession.spatialUser.getCameraViews()[1].getActivitySpacePose().toString(),
+            mSession.scene.spatialUser.getCameraViews()[1].getActivitySpacePose().toString(),
         )
         mDebugPanel.view.setLine(
             "Projection Source ActivityPose",
@@ -190,9 +200,9 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun setProjectionSource(source: String) {
         when (source) {
-            "LeftEye" -> mProjectionSource = mSession.spatialUser.getCameraViews()[0]
-            "RightEye" -> mProjectionSource = mSession.spatialUser.getCameraViews()[1]
-            "Head" -> mProjectionSource = mSession.spatialUser.head!!
+            "LeftEye" -> mProjectionSource = mSession.scene.spatialUser.getCameraViews()[0]
+            "RightEye" -> mProjectionSource = mSession.scene.spatialUser.getCameraViews()[1]
+            "Head" -> mProjectionSource = mSession.scene.spatialUser.head!!
             else -> Log.e(TAG, "Unknown projection source: $source")
         }
     }
@@ -255,10 +265,10 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 Text(text = text, modifier = Modifier.padding(start = 8.dp))
             }
 
-            Button(onClick = { session.spatialEnvironment.requestFullSpaceMode() }) {
+            Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
                 Text(text = "Request FSM", fontSize = 30.sp)
             }
-            Button(onClick = { session.spatialEnvironment.requestHomeSpaceMode() }) {
+            Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
                 Text(text = "Request HSM", fontSize = 30.sp)
             }
             Button(onClick = { mIsDebugPanelEnabled = !mIsDebugPanelEnabled }) {

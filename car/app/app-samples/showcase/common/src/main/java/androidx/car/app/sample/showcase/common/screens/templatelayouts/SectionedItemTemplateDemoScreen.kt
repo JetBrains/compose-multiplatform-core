@@ -22,6 +22,10 @@ import androidx.car.app.CarToast
 import androidx.car.app.Screen
 import androidx.car.app.annotations.ExperimentalCarApi
 import androidx.car.app.model.Action
+import androidx.car.app.model.CarColor
+import androidx.car.app.model.CarIcon
+import androidx.car.app.model.GridItem
+import androidx.car.app.model.GridSection
 import androidx.car.app.model.Header
 import androidx.car.app.model.Row
 import androidx.car.app.model.RowSection
@@ -29,10 +33,23 @@ import androidx.car.app.model.SectionedItemTemplate
 import androidx.car.app.model.Template
 import androidx.car.app.model.Toggle
 import androidx.car.app.sample.showcase.common.R
+import androidx.core.graphics.drawable.IconCompat
 
 /** Demonstrates the usage of the [SectionedItemTemplate]. */
 @OptIn(ExperimentalCarApi::class)
 class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContext) {
+    companion object {
+        private val imageResources =
+            listOf(
+                R.drawable.ic_baseline_add_alert_24,
+                R.drawable.ic_mic,
+                R.drawable.ic_bug_report_24px,
+                R.drawable.ic_face_24px,
+                R.drawable.baseline_directions_boat_filled_24,
+                R.drawable.ic_explore_white_24dp
+            )
+    }
+
     override fun onGetTemplate(): Template {
         val builder =
             SectionedItemTemplate.Builder()
@@ -56,6 +73,18 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                 .setAsSelectionGroup(1)
                 .build()
         )
+        builder.addSection(
+            createGridSectionBuilder(
+                    sectionTitle =
+                        carContext.getString(
+                            R.string.sectioned_item_template_grid_item_section_title
+                        ),
+                    numberOfGridItems = 6,
+                )
+                .setItemSize(GridSection.ITEM_SIZE_LARGE)
+                .build()
+        )
+
         builder.addSection(
             createRowSectionBuilder(
                     sectionTitle =
@@ -101,6 +130,32 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
             val rowBuilder = Row.Builder().setTitle("Row $i").addText("This is subtext")
             rowBuilderAugment?.invoke(rowBuilder, i)
             builder.addItem(rowBuilder.build())
+        }
+        return builder
+    }
+
+    private fun createGridSectionBuilder(
+        sectionTitle: String,
+        numberOfGridItems: Int,
+        gridBuilderAugment: ((builder: GridItem.Builder, index: Int) -> Unit)? = null,
+    ): GridSection.Builder {
+        val builder = GridSection.Builder().setTitle(sectionTitle)
+        for (i in 0 until numberOfGridItems) {
+            val gridBuilder =
+                GridItem.Builder()
+                    .setTitle("Grid $i")
+                    .setImage(
+                        CarIcon.Builder(
+                                IconCompat.createWithResource(
+                                    carContext,
+                                    imageResources[i % imageResources.size]
+                                )
+                            )
+                            .setTint(CarColor.PRIMARY)
+                            .build()
+                    )
+            gridBuilderAugment?.invoke(gridBuilder, i)
+            builder.addItem(gridBuilder.build())
         }
         return builder
     }

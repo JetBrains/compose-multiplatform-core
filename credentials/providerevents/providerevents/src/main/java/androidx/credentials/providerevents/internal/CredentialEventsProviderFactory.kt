@@ -16,16 +16,14 @@
 
 package androidx.credentials.providerevents.internal
 
-import android.content.Context
 import android.content.Intent
-import androidx.annotation.RestrictTo
 import androidx.credentials.providerevents.CredentialEventsProvider
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class CredentialEventsProviderFactory(public val context: Context) {
+internal class CredentialEventsProviderFactory() {
 
-    public fun getBestAvailableProvider(intent: Intent): CredentialEventsProvider? {
-        val className = intent.extras?.getString(CredentialEventsProvider.EVENTS_PROVIDER_KEY)
+    fun getBestAvailableProvider(intent: Intent): CredentialEventsProvider? {
+        val className =
+            intent.extras?.getString(CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY)
         if (className != null) {
             return instantiateClosedSourceProvider(className)
         }

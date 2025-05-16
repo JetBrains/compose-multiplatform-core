@@ -143,7 +143,7 @@ public class CombinedGlanceCurvedModifier(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-inline fun <reified T> GlanceCurvedModifier.findModifier(): T? =
+public inline fun <reified T> GlanceCurvedModifier.findModifier(): T? =
     this.foldIn<T?>(null) { acc, cur ->
         if (cur is T) {
             cur
@@ -157,7 +157,8 @@ inline fun <reified T> GlanceCurvedModifier.findModifier(): T? =
  * equivalent with the previous one, but without any modifiers of specified type.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-inline fun <reified T> GlanceCurvedModifier.extractModifier(): Pair<T?, GlanceCurvedModifier> =
+public inline fun <reified T> GlanceCurvedModifier.extractModifier():
+    Pair<T?, GlanceCurvedModifier> =
     if (any { it is T }) {
         foldIn<Pair<T?, GlanceCurvedModifier>>(null to GlanceCurvedModifier) { acc, cur ->
             if (cur is T) {

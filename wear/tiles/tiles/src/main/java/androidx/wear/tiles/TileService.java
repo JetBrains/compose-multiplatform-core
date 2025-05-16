@@ -676,11 +676,6 @@ public abstract class TileService extends Service {
         }
 
         @Override
-        public void processRecentInteractionEvents(List<TileInteractionEventData> data) {
-            onRecentInteractionEvents(data, /* callback= */ null);
-        }
-
-        @Override
         @SuppressWarnings("JdkCollectors")
         public void onRecentInteractionEvents(
                 List<TileInteractionEventData> data, InteractionEventsCallback callback) {

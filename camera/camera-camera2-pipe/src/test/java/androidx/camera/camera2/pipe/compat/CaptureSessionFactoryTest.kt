@@ -38,7 +38,7 @@ import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
 import androidx.camera.camera2.pipe.config.CameraGraphScope
-import androidx.camera.camera2.pipe.config.CameraPipeModules
+import androidx.camera.camera2.pipe.config.CameraPipeModule
 import androidx.camera.camera2.pipe.config.SharedCameraGraphModules
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.core.SystemTimeSource
@@ -138,9 +138,8 @@ internal class CaptureSessionFactoryTest {
                             finalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
                             closeCaptureSessionOnDisconnect = false,
                         ),
-                        threads.blockingDispatcher,
-                        threads.backgroundDispatcher,
-                        this
+                        threads,
+                        this,
                     )
             )
 
@@ -171,7 +170,7 @@ internal interface Camera2CaptureSessionTestComponent {
 }
 
 /** Utility module for testing the Dagger generated graph with a a reasonable default config. */
-@Module(includes = [ThreadConfigModule::class, CameraPipeModules::class])
+@Module(includes = [ThreadConfigModule::class, CameraPipeModule::class])
 class FakeCameraPipeModule(
     private val context: Context,
     private val fakeCamera: RobolectricCameras.FakeCamera
@@ -209,6 +208,7 @@ class FakeCameraGraphModule {
 class FakeCamera2Module {
     @Provides
     @Singleton
+    @JvmName("provideFakeCamera2MetadataProvider")
     internal fun provideFakeCamera2MetadataProvider(
         fakeCamera: RobolectricCameras.FakeCamera
     ): Camera2MetadataProvider =

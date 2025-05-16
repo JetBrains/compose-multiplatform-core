@@ -35,6 +35,21 @@ public class SessionCreateSuccess(public val session: Session) : SessionCreateRe
 public class SessionCreatePermissionsNotGranted(public val permissions: List<String>) :
     SessionCreateResult()
 
+/**
+ * Result of an unsuccessful [Session.create] call. The device has a [requiredApk] that is outdated,
+ * was unable to confirm availability, or is not installed.
+ *
+ * @property requiredApk the fully qualified name of the package that is missing or needs to be
+ *   updated.
+ */
+public class SessionCreateApkRequired(public val requiredApk: String) : SessionCreateResult()
+
+/**
+ * Result of an unsuccessful [Session.create] call. The session was not created due to the device
+ * not supporting a required APK or feature.
+ */
+public class SessionCreateUnsupportedDevice() : SessionCreateResult()
+
 /** Result of a [Session.configure] call. */
 public sealed class SessionConfigureResult
 
@@ -50,8 +65,19 @@ public class SessionConfigureConfigurationNotSupported() : SessionConfigureResul
 /**
  * Result of an unsuccessful [Session.configure] call. The session was not configured due to
  * insufficient permissions.
+ *
+ * @property permissions the list of permissions that were not granted.
  */
-public class SessionConfigurePermissionNotGranted() : SessionConfigureResult()
+public class SessionConfigurePermissionsNotGranted(public val permissions: List<String>) :
+    SessionConfigureResult()
+
+/**
+ * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
+ * not linked.
+ */
+@Suppress("MentionsGoogle")
+public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() :
+    SessionConfigureResult()
 
 /** Result of a [Session.resume] call. */
 public sealed class SessionResumeResult

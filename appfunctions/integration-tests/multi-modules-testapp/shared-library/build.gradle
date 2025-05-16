@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import androidx.build.KotlinTarget
-
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
@@ -34,13 +31,7 @@ android {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(project(":appfunctions:appfunctions-common"))
-    implementation(project(":appfunctions:appfunctions-runtime"))
-    implementation(project(":appfunctions:appfunctions-schemas"))
+    implementation(project(":appfunctions:appfunctions"))
+    implementation(project(":appfunctions:appfunctions-service"))
     ksp(project(":appfunctions:appfunctions-compiler"))
-}
-
-androidx {
-    //TODO(b/407632514): Target Kotlin 2. Task :appfunctions:integration-tests:multi-modules-testapp:shared-library:kspReleaseKotlin fails
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

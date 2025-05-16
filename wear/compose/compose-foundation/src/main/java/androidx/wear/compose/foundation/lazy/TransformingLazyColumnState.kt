@@ -194,7 +194,7 @@ internal constructor(
      * If you need to use it in the composition then consider wrapping the calculation into a
      * derived state in order to only have recompositions when the derived value changes:
      *
-     * @sample androidx.wear.compose.foundation.samples.UsingListAnchorItemPositionSample
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
      */
     public var anchorItemIndex: Int by mutableIntStateOf(initialAnchorItemIndex)
         private set
@@ -273,7 +273,7 @@ internal constructor(
     internal val animator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
 
     internal fun applyMeasureResult(measureResult: TransformingLazyColumnMeasureResult) {
-        // TODO(artemiy): Don't consume all scroll.
+        // TODO(b/416503918): The scroll shouldn't be fully consumed during the first touch.
         scrollToBeConsumed = 0f
         anchorItemIndex = measureResult.anchorItemIndex
         anchorItemScrollOffset = measureResult.anchorItemScrollOffset
@@ -338,6 +338,8 @@ internal constructor(
      * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
      * to the anchor point.
      *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
+     *
      * This operation happens instantly without animation.
      *
      * @param index The index of the item to scroll to. Must be non-negative.
@@ -390,6 +392,7 @@ internal constructor(
      * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
      * to the anchor point.
      *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
      * @param index the index to which to scroll. Must be non-negative.
      * @param scrollOffset The offset between the center of the screen and item's center. Positive
      *   offset means the item will be scrolled up.

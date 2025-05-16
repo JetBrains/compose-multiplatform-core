@@ -370,11 +370,25 @@ internal interface Owner : PositionCalculator {
      */
     fun decrementSensitiveComponentCount() {}
 
+    /** Increments count of modifiers requesting to stop the screen from going to sleep */
+    fun incrementKeepScreenOnCount() {}
+
+    /** Decrements count of modifiers requesting to stop the screen from going to sleep */
+    fun decrementKeepScreenOnCount() {}
+
+    /** On Android it is only available when the view is attached. */
     val outOfFrameExecutor: OutOfFrameExecutor?
         get() = null
 
     /** This can be used to Vote for a preferred frame rate. */
     fun voteFrameRate(frameRate: Float) {}
+
+    /**
+     * Dispatches a callback when something in this hierarchy scrolls.
+     *
+     * @param offset Delta scrolled.
+     */
+    fun dispatchOnScrollChanged(delta: Offset) {}
 
     companion object {
         /**

@@ -211,6 +211,11 @@ public class RecorderVideoCapabilities implements VideoCapabilities {
         EncoderProfilesProvider encoderProfilesProvider = cameraInfo.getEncoderProfilesProvider();
 
         if (qualitySource == QUALITY_SOURCE_HIGH_SPEED) {
+
+            if (!cameraInfo.isHighSpeedSupported()) {
+                return EncoderProfilesProvider.EMPTY;
+            }
+
             // TODO(b/399585664): explore high speed quality when video source is
             //  VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
             return encoderProfilesProvider;

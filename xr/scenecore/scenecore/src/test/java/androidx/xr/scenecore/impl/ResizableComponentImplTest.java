@@ -99,6 +99,7 @@ public class ResizableComponentImplTest {
                     mXrExtensions,
                     mEntityManager,
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mFakeExecutor);
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
     private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose =
@@ -127,7 +128,8 @@ public class ResizableComponentImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     @After
@@ -689,10 +691,13 @@ public class ResizableComponentImplTest {
 
         sendResizeEvent(entity.getNode(), endReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
+        // Verify that alpha is not restored until the resize event is processed.
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f);
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
         resizeEvent = resizeEventCaptor.getAllValues().get(2);
         assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
+        // Verify that alpha is restored after the resize event is processed.
         assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
     }
 

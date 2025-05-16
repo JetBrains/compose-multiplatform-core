@@ -375,7 +375,7 @@ private class PlaceholderShimmerElement(
     }
 
     override fun update(node: PlaceholderShimmerModifierNode) {
-        node.placeholderState = placeholderState
+        node.updatePlaceholderState(placeholderState)
         node.color = color
         node.shape = shape
     }
@@ -424,6 +424,12 @@ private class PlaceholderShimmerModifierNode(
     private var lastLayoutDirection: LayoutDirection? = null
     private var lastOutline: Outline? = null
     private var lastShape: Shape? = null
+
+    fun updatePlaceholderState(placeholderState: PlaceholderState) {
+        onDetach()
+        this.placeholderState = placeholderState
+        onAttach()
+    }
 
     override fun onAttach() {
         placeholderState.register()

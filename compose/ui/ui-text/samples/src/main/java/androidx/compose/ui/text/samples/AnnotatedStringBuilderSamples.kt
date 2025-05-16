@@ -20,9 +20,13 @@ import androidx.annotation.Sampled
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.AnnotatedString.Range
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -261,6 +265,42 @@ fun AnnotatedStringMapAnnotationsSamples(text: AnnotatedString, linkColor: Color
                 is LinkAnnotation.Clickable ->
                     (it as Range<LinkAnnotation.Clickable>).copy(it.item.copy(styles = linkStyles))
                 else -> it
+            }
+        }
+    )
+}
+
+@Composable
+@Sampled
+fun AnnotatedStringWithBulletListSample() {
+    BasicText(
+        buildAnnotatedString {
+            append("Not a bullet item")
+            withBulletList {
+                withBulletListItem { append("Item 1") }
+                withBulletList { withBulletListItem { append("Nested item 2") } }
+                withBulletListItem { append("Item 3") }
+            }
+        }
+    )
+}
+
+@Composable
+@Sampled
+fun AnnotatedStringWithBulletListCustomBulletSample() {
+    val bullet1 = Bullet.Default.copy(shape = RectangleShape)
+    val bullet2 = bullet1.copy(drawStyle = Stroke(2f))
+    val bullet3 = bullet1.copy(brush = SolidColor(Color.LightGray))
+    BasicText(
+        buildAnnotatedString {
+            withBulletList(bullet = bullet1) {
+                withBulletListItem { append("Item 1") }
+                withBulletList(bullet = bullet2) {
+                    withBulletListItem { append("Item 2") }
+                    withBulletListItem { append("Item 3") }
+                    withBulletList(bullet = bullet3) { withBulletListItem { append("Item 4") } }
+                }
+                withBulletListItem { append("Item 5") }
             }
         }
     )

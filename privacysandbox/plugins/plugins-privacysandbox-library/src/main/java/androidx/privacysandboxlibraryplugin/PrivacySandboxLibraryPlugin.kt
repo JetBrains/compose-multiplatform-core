@@ -48,11 +48,7 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
                 val frameworkAidlInputs =
                     project.objects.newInstance(FrameworkAidlInputs::class.java)
                 frameworkAidlInputs.frameworkAidl.set(
-                    sdkDirectory.map {
-                        it.dir("platforms")
-                            .dir(libraryExtension.compileSdkVersion!!)
-                            .file("framework.aidl")
-                    }
+                    libraryAndroidComponentsExtension.sdkComponents.aidl.flatMap { it.framework }
                 )
                 frameworkAidlInputs.platformSdk.set(
                     frameworkAidlInputs.frameworkAidl.map { it.asFile.parentFile.absolutePath }
@@ -80,8 +76,8 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
 
             // Add additional dependencies required for KSP outputs
 
-            val toolsVersion = "1.0.0-alpha08"
-            val sdkRuntimeVersion = "1.0.0-alpha13"
+            val toolsVersion = "1.0.0-alpha13"
+            val sdkRuntimeVersion = "1.0.0-alpha17"
             project.dependencies.apply {
                 add("ksp", "androidx.privacysandbox.tools:tools-apicompiler:$toolsVersion")
                 add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")

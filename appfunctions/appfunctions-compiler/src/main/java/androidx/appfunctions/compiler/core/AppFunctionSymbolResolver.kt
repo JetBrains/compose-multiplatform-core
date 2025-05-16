@@ -19,6 +19,7 @@ package androidx.appfunctions.compiler.core
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionComponentRegistryAnnotation
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableProxyAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.SERIALIZABLE_PROXY_PACKAGE_NAME
@@ -29,6 +30,24 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
+
+    /** Resolves symbols annotated with @AppFunctionSchemaDefinition. */
+    fun resolveAnnotatedAppFunctionSchemaDefinitions(): List<AnnotatedAppFunctionSchemaDefinition> {
+        return resolver
+            .getSymbolsWithAnnotation(
+                AppFunctionSchemaDefinitionAnnotation.CLASS_NAME.canonicalName
+            )
+            .map { declaration ->
+                if (declaration !is KSClassDeclaration) {
+                    throw ProcessingException(
+                        "Only class can be annotated with @AppFunctionSchemaDefinition",
+                        declaration
+                    )
+                }
+                AnnotatedAppFunctionSchemaDefinition(declaration)
+            }
+            .toList()
+    }
 
     /** Resolves valid functions annotated with @AppFunction annotation. */
     fun resolveAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
@@ -193,6 +212,23 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         "Unable to find KSClassDeclaration for ${ksName.asString()}",
                         null
                     )
+            }
+    }
+
+    /** Gets all @AppFunctionSchemaDefinition from all modules. */
+    fun getAppFunctionSchemaDefinitionFromAllModules(): List<AnnotatedAppFunctionSchemaDefinition> {
+        return filterAppFunctionComponentQualifiedNames(
+                AppFunctionComponentRegistryAnnotation.Category.SCHEMA_DEFINITION
+            )
+            .map { componentName ->
+                val ksName = resolver.getKSNameFromString(componentName)
+                val classDeclaration =
+                    resolver.getClassDeclarationByName(ksName)
+                        ?: throw ProcessingException(
+                            "Unable to find KSClassDeclaration for ${ksName.asString()}",
+                            null
+                        )
+                AnnotatedAppFunctionSchemaDefinition(classDeclaration)
             }
     }
 

@@ -34,7 +34,8 @@ import androidx.wear.compose.foundation.samples.CurvedWeight
 import androidx.wear.compose.foundation.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.foundation.samples.ExpandableTextSample
 import androidx.wear.compose.foundation.samples.ExpandableWithItemsSample
-import androidx.wear.compose.foundation.samples.HierarchicalFocusCoordinatorSample
+import androidx.wear.compose.foundation.samples.HierarchicalFocus2Levels
+import androidx.wear.compose.foundation.samples.HierarchicalFocusSample
 import androidx.wear.compose.foundation.samples.OversizeComposable
 import androidx.wear.compose.foundation.samples.RotaryScrollSample
 import androidx.wear.compose.foundation.samples.RotaryScrollWithOverscrollSample
@@ -177,7 +178,9 @@ val WearFoundationDemos =
                     )
                 )
             ),
-            ComposableDemo("Focus Sample") { HierarchicalFocusCoordinatorSample() },
+            ComposableDemo("Focus Sample") { HierarchicalFocusSample() },
+            ComposableDemo("Nested Focus Sample") { HierarchicalFocus2Levels() },
+            ComposableDemo("Hierarchical Focus Demo") { HierarchicalFocusDemo() },
             DemoCategory(
                 "Scaling Lazy Column",
                 listOf(

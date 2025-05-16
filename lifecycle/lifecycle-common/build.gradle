@@ -42,7 +42,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
@@ -61,7 +61,7 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain {
+        nonJvmMain {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.atomicFu)
@@ -71,7 +71,7 @@ androidXMultiplatform {
         targets.configureEach { target ->
             if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
                 target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonJvmCommonMain)
+                    dependsOn(nonJvmMain)
                 }
             }
         }

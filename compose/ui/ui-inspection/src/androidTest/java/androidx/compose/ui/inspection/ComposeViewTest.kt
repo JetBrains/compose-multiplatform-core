@@ -91,7 +91,7 @@ class ComposeViewTest {
                     )
                     .getParametersResponse
             val strings = params.stringsList.toMap()
-            val param = params.parameterGroup.parameterList.single { strings[it.name] == "text" }
+            val param = params.parameterGroup.parameterList.single { strings[it.name] == "$0" }
             strings[param.int32Value]
         }
 }

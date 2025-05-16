@@ -31,6 +31,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth
 import org.junit.Test
@@ -196,7 +197,8 @@ class CameraSelectionOptimizerTest {
                         Handler(Looper.getMainLooper())
                     ),
                     cameraSelector,
-                    -1L
+                    -1L,
+                    NO_OP_STREAM_SPECS_CALCULATOR
                 )
 
         cameraFactory = Mockito.spy(actualCameraFactory)

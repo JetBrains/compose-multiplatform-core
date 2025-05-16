@@ -260,7 +260,7 @@ class FocusTargetAttachDetachTest {
 
         // Arrange.
         val item0 = FocusRequester()
-        var item1FocusStates = mutableListOf<FocusState>()
+        val item1FocusStates = mutableListOf<FocusState>()
         lateinit var lazyColumnFocusState: FocusState
         lateinit var focusManager: FocusManager
         lateinit var view: View
@@ -297,7 +297,7 @@ class FocusTargetAttachDetachTest {
 
             // In touch mode we clear focus from the view.
             // https://developer.android.com/about/versions/pie/android-9.0-changes-28#focus
-            if (view.isInTouchMode && SDK_INT > 28) {
+            if (view.isInTouchMode && SDK_INT >= 28) {
                 assertThat(view.hasFocus()).isFalse()
             } else {
                 assertThat(view.hasFocus()).isTrue()
@@ -879,7 +879,7 @@ class FocusTargetAttachDetachTest {
                 }
             ) {
                 Box(
-                    Modifier.thenIf(addFocusTarget1) {
+                    Modifier.thenIf(addFocusTarget2) {
                         Modifier.onFocusChanged { focusState2 = it }.focusTarget()
                     }
                 ) {

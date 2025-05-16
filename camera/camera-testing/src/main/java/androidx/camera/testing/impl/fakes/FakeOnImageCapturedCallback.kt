@@ -24,11 +24,11 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.utils.Exif
+import androidx.camera.testing.impl.CountdownDeferred
 import com.google.common.truth.Truth
 import java.io.ByteArrayInputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -121,27 +121,6 @@ public class FakeOnImageCapturedCallback(
         Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
         Truth.assertThat(results.size).isEqualTo(capturedImagesCount)
         Truth.assertThat(errors.size).isEqualTo(errorsCount)
-    }
-
-    private class CountdownDeferred(val count: Int) {
-
-        private val deferredItems =
-            mutableListOf<CompletableDeferred<Unit>>().apply {
-                repeat(count) { add(CompletableDeferred()) }
-            }
-        private var index = 0
-
-        fun countDown() {
-            if (index < count) {
-                deferredItems[index++].complete(Unit)
-            } else {
-                throw IllegalStateException("Countdown already finished")
-            }
-        }
-
-        suspend fun await() {
-            deferredItems.forEach { it.await() }
-        }
     }
 
     public companion object {

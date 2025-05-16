@@ -155,8 +155,8 @@ internal class ConnectionPoolImpl : ConnectionPool {
                     usedConnection.delegate.markReleased()
                     pool.recycle(usedConnection.delegate)
                 }
-            } catch (error: Throwable) {
-                exception?.addSuppressed(error)
+            } catch (recycleException: Throwable) {
+                exception?.addSuppressed(recycleException) ?: throw recycleException
             }
         }
         return result
@@ -350,21 +350,15 @@ private class PooledConnectionImpl(
     ): R = withStateCheck { transaction(type, block) }
 
     override suspend fun inTransaction(): Boolean = withStateCheck {
-        return transactionStack.isNotEmpty()
+        return transactionStack.isNotEmpty() || delegate.inTransaction()
     }
 
     fun markRecycled() {
         if (_isRecycled.compareAndSet(expect = false, update = true)) {
             // Perform a rollback in case there is an active transaction so that the connection
-            // is in a clean state when it is recycled. We don't know for sure if there is an
-            // unfinished transaction, hence we always try the rollback.
-            // TODO(b/319627988): Try to *really* check if there is an active transaction with the
-            //     C APIs sqlite3_txn_state or sqlite3_get_autocommit and possibly throw an error
-            //     if there is an unfinished transaction.
-            try {
+            // is in a clean state when it is recycled.
+            if (delegate.inTransaction()) {
                 delegate.execSQL("ROLLBACK TRANSACTION")
-            } catch (_: SQLiteException) {
-                // ignored
             }
         }
     }

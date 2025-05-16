@@ -18,12 +18,16 @@ package androidx.xr.scenecore.impl;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.HeadActivityPose;
+import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.common.BaseActivityPose;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * An ActivityPose representing the head of the user. This can be used to determine the location of
@@ -31,6 +35,7 @@ import androidx.xr.scenecore.impl.perception.Session;
  */
 class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose {
     private final PerceptionLibrary mPerceptionLibrary;
+    private final ActivitySpaceImpl mActivitySpace;
     private final OpenXrActivityPoseHelper mOpenXrActivityPoseHelper;
     // Default the pose to null. A null pose indicates that the head is not ready yet.
     private Pose mLastOpenXrPose = null;
@@ -39,6 +44,7 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
             ActivitySpaceImpl activitySpace,
             AndroidXrEntity activitySpaceRoot,
             PerceptionLibrary perceptionLibrary) {
+        this.mActivitySpace = activitySpace;
         mPerceptionLibrary = perceptionLibrary;
         mOpenXrActivityPoseHelper = new OpenXrActivityPoseHelper(activitySpace, activitySpaceRoot);
     }
@@ -59,6 +65,15 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
     public Vector3 getActivitySpaceScale() {
         // This WorldPose is assumed to always have a scale of 1.0f in the OpenXR reference space.
         return mOpenXrActivityPoseHelper.getActivitySpaceScale(new Vector3(1f, 1f, 1f));
+    }
+
+    @NonNull
+    @Override
+    public ListenableFuture<HitTestResult> hitTest(
+            @NonNull Vector3 origin,
+            @NonNull Vector3 direction,
+            @HitTestFilterValue int hitTestFilter) {
+        return mActivitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this);
     }
 
     /** Gets the pose in the OpenXR reference space. Can be null if it is not yet ready. */

@@ -76,6 +76,8 @@ internal class AndroidComposeSpatialElement :
      */
     private var isLayoutInProgress = false
 
+    internal var rootVolumeConstraints: VolumeConstraints = VolumeConstraints()
+
     init {
         root.attach(this)
     }
@@ -158,7 +160,7 @@ internal class AndroidComposeSpatialElement :
         isLayoutInProgress = true
 
         snapshotStateObserver.observeReads(this, onLayoutStateValueChanged) {
-            val measureResults = root.measurableLayout.measure(VolumeConstraints.Unbounded)
+            val measureResults = root.measurableLayout.measure(rootVolumeConstraints)
             (measureResults as SubspaceLayoutNode.MeasurableLayout).placeAt(Pose.Identity)
         }
 

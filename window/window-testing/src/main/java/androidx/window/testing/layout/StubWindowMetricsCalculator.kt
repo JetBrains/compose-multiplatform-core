@@ -63,7 +63,7 @@ internal class StubWindowMetricsCalculator : WindowMetricsCalculator {
     // WindowManager#getDefaultDisplay is deprecated but we have this for compatibility with
     // older versions.
     @Suppress("DEPRECATION")
-    override fun computeCurrentWindowMetrics(@UiContext context: Context): WindowMetrics {
+    override fun computeCurrentWindowMetrics(context: Context): WindowMetrics {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val density = context.resources.displayMetrics.density
 
@@ -84,7 +84,7 @@ internal class StubWindowMetricsCalculator : WindowMetricsCalculator {
         }
     }
 
-    override fun computeMaximumWindowMetrics(@UiContext context: Context): WindowMetrics {
+    override fun computeMaximumWindowMetrics(context: Context): WindowMetrics {
         return computeCurrentWindowMetrics(context)
     }
 

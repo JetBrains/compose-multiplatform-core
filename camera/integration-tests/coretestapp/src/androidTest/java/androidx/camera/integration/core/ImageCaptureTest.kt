@@ -31,6 +31,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.util.Pair
 import android.util.Rational
 import android.util.Size
@@ -80,6 +81,7 @@ import androidx.camera.testing.impl.CameraAvailabilityUtil.assumeDeviceHasFrontC
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.CountdownDeferred
 import androidx.camera.testing.impl.ExtensionsUtil
 import androidx.camera.testing.impl.InternalTestConvenience.ignoreTestForCameraPipe
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect
@@ -130,6 +132,7 @@ private val FRONT_SELECTOR = CameraSelector.DEFAULT_FRONT_CAMERA
 private const val BACK_LENS_FACING = CameraSelector.LENS_FACING_BACK
 private val CAPTURE_TIMEOUT = 15.seconds
 private const val TOLERANCE = 1e-3f
+private const val TAG = "ImageCaptureTest"
 private val EXIF_GAINMAP_PATTERNS =
     listOf(
         "xmlns:hdrgm=\"http://ns.adobe.com/hdr-gain-map/",
@@ -2234,6 +2237,53 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         assertThat(errors).isNull()
     }
 
+    @Test
+    fun captureImageImmediatelyAfterStartPreviewCycling() = runBlocking {
+        val capturedImagesCount = 3
+        val imageCapture = ImageCapture.Builder().build()
+        lateinit var preview: Preview
+
+        // Initial setup and binding of use cases
+        withContext(Dispatchers.Main) {
+            preview =
+                Preview.Builder().build().apply {
+                    surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+                }
+
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, BACK_SELECTOR, imageCapture, preview)
+        }
+
+        for (i in 0 until 10) {
+            Log.d(TAG, "Iteration ${i + 1}/10: Setting new preview surface.")
+            // Each iteration re-sets/replaces the surface provider for Preview.
+            // This tests capturing after Preview's surface is potentially changed/restarted.
+            withContext(Dispatchers.Main) {
+                preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+            }
+
+            Log.d(TAG, "Iteration ${i + 1}: Submitting $capturedImagesCount captures.")
+            val callback = FakeOnImageCapturedCallback(captureCount = capturedImagesCount)
+
+            repeat(capturedImagesCount) { captureIndex ->
+                Log.v(
+                    TAG,
+                    "Iteration ${i + 1}: Taking picture ${captureIndex + 1}/$capturedImagesCount."
+                )
+                imageCapture.takePicture(mainExecutor, callback)
+            }
+
+            // Wait for all images in this batch to be captured and processed by the callback.
+            callback.awaitCapturesAndAssert(capturedImagesCount = capturedImagesCount)
+            Log.d(
+                TAG,
+                "Iteration ${i + 1}: All $capturedImagesCount captures successfully completed."
+            )
+
+            // Detach the surface provider, stopping the preview stream for this iteration.
+            withContext(Dispatchers.Main) { preview.surfaceProvider = null }
+        }
+    }
+
     /**
      * This util function is only used to detect the unnecessary zero padding data after EOI. It
      * will directly return false when it fails to parse the JPEG byte array data.
@@ -2321,23 +2371,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
             assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
             assertThat(results.size).isEqualTo(savedImagesCount)
             assertThat(errors.size).isEqualTo(errorsCount)
-        }
-    }
-
-    private class CountdownDeferred(count: Int) {
-
-        private val deferredItems =
-            mutableListOf<CompletableDeferred<Unit>>().apply {
-                repeat(count) { add(CompletableDeferred()) }
-            }
-        private var index = 0
-
-        fun countDown() {
-            deferredItems[index++].complete(Unit)
-        }
-
-        suspend fun await() {
-            deferredItems.forEach { it.await() }
         }
     }
 

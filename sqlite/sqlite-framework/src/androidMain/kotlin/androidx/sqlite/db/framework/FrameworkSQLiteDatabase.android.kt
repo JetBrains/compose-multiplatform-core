@@ -317,7 +317,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
     }
 
     /** Checks if this object delegates to the same given database reference. */
-    fun isDelegate(sqLiteDatabase: SQLiteDatabase): Boolean {
+    internal fun isDelegate(sqLiteDatabase: SQLiteDatabase): Boolean {
         return delegate == sqLiteDatabase
     }
 
@@ -332,7 +332,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         }
     }
 
-    companion object {
+    private companion object {
         private val CONFLICT_VALUES =
             arrayOf("", " OR ROLLBACK ", " OR ABORT ", " OR FAIL ", " OR IGNORE ", " OR REPLACE ")
         private val EMPTY_STRING_ARRAY = arrayOfNulls<String>(0)

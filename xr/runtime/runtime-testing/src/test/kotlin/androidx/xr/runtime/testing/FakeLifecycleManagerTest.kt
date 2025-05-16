@@ -16,7 +16,7 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.xr.runtime.internal.Config
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -74,6 +74,13 @@ class FakeLifecycleManagerTest {
         underTest.stop()
 
         assertFailsWith<IllegalStateException> { underTest.create() }
+    }
+
+    @Test
+    fun create_hasMissingPermission_throwsPermissionNotGrantedException() {
+        underTest.hasCreatePermission = false
+
+        assertFailsWith<PermissionNotGrantedException> { underTest.create() }
     }
 
     @Test

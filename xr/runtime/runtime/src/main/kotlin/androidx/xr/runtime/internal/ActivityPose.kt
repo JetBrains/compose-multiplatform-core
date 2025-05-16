@@ -56,32 +56,21 @@ public interface ActivityPose {
      */
     public fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose
 
-    @IntDef(
-        HitTestRange.HIT_TEST_RANGE_ALL_SCENES,
-        HitTestRange.HIT_TEST_RANGE_OTHER_SCENES,
-        HitTestRange.HIT_TEST_RANGE_SELF_SCENES,
-    )
+    /** A filter for which Scenes to hit test with ActivityPose.hitTest */
+    public object HitTestFilter {
+        /** Register hit tests for the scene which this Activity pose belongs to. */
+        public const val SELF_SCENE: Int = 1 shl 0
+        /**
+         * Register hit tests only for other scenes. An Application will only have access to other
+         * scenes if it has the com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE permission.
+         */
+        public const val OTHER_SCENES: Int = 1 shl 1
+    }
+
     @Retention(AnnotationRetention.SOURCE)
     @Suppress("PublicTypedef")
-    public annotation class HitTestRangeValue
-
-    /** Specifies Range of entities to hit test with ActivityPose.hitTest */
-    public object HitTestRange {
-        /**
-         * Register hit tests for all Scenes. If the app does not have the
-         * android.permission.ACCESS_OVERLAY_SPACE perminssion a hit test will only register hit
-         * tests for your own scene.
-         */
-        public const val HIT_TEST_RANGE_ALL_SCENES: Int = 0
-        /**
-         * Register hit tests only for other scenes. If the app does not have the
-         * android.permission.ACCESS_OVERLAY_SPACE perminssion, a hit test will throw an
-         * IllegalStateException.
-         */
-        public const val HIT_TEST_RANGE_OTHER_SCENES: Int = 1
-        /** Register hit tests for the scene which this Activity pose belongs to. */
-        public const val HIT_TEST_RANGE_SELF_SCENES: Int = 2
-    }
+    @IntDef(flag = true, value = [HitTestFilter.SELF_SCENE, HitTestFilter.OTHER_SCENES])
+    public annotation class HitTestFilterValue
 
     /**
      * Creates a hit test at the from the specified origin in the specified direction into the
@@ -89,14 +78,15 @@ public interface ActivityPose {
      *
      * @param origin The translation of the origin of the hit test relative to this ActivityPose.
      * @param direction The direction for the hit test ray from the ActivityPose.
-     * @param hitTestRange The scenes that will be in range for the hit test.
+     * @param hitTestFilter The scenes that will be in range for the hit test.
      * @return a {@code ListenableFuture<HitResult>}. The HitResult describes if it hit something
      *   and where relative to this [ActivityPose]. Listeners will be called on the main thread if
      *   Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun hitTest(
         origin: Vector3,
         direction: Vector3,
-        @HitTestRangeValue hitTestRange: Int,
+        @HitTestFilterValue hitTestFilter: Int,
     ): ListenableFuture<HitTestResult>
 }

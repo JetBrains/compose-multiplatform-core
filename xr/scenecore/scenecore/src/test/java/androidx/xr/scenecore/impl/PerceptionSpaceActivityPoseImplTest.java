@@ -45,8 +45,6 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
-import java.time.Duration;
-
 @RunWith(RobolectricTestRunner.class)
 public final class PerceptionSpaceActivityPoseImplTest {
 
@@ -63,6 +61,7 @@ public final class PerceptionSpaceActivityPoseImplTest {
                     mXrExtensions,
                     mEntityManager,
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mExecutor);
     private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =
@@ -107,10 +106,6 @@ public final class PerceptionSpaceActivityPoseImplTest {
     public void setUp() {
         mPerceptionSpaceActivityPose =
                 new PerceptionSpaceActivityPoseImpl(mActivitySpace, mActivitySpaceRoot);
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        mExecutor.simulateSleepExecutingAllTasks(
-                Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
     }
 
     @Test

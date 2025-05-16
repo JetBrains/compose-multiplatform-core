@@ -16,7 +16,14 @@
 
 package androidx.xr.scenecore
 
+import android.app.Activity
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -24,19 +31,34 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.anyInt
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SpatialUserTest {
 
+    private val fakeRuntimeFactory = FakeRuntimeFactory()
     private val mockRuntime = mock<JxrPlatformAdapter>()
+    private val mockActivitySpace = mock<RtActivitySpace>()
+    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private lateinit var session: Session
     lateinit var spatialUser: SpatialUser
 
     @Before
     fun setUp() {
+        whenever(mockRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mockActivitySpace)
+        whenever(mockRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
         whenever(mockRuntime.headActivityPose).thenReturn(mock())
         whenever(mockRuntime.getCameraViewActivityPose(anyInt())).thenReturn(mock())
-        spatialUser = SpatialUser.create(mockRuntime)
+        whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
+        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        spatialUser = SpatialUser.create(session.runtime.lifecycleManager, mockRuntime)
     }
 
     @Test
@@ -135,7 +157,8 @@ class SpatialUserTest {
         val mockRuntimeNoCamera = mock<JxrPlatformAdapter>()
         whenever(mockRuntimeNoCamera.headActivityPose).thenReturn(mock())
         whenever(mockRuntimeNoCamera.getCameraViewActivityPose(anyInt())).thenReturn(null)
-        val spatialUserNoCamera = SpatialUser.create(mockRuntimeNoCamera)
+        val spatialUserNoCamera =
+            SpatialUser.create(session.runtime.lifecycleManager, mockRuntimeNoCamera)
 
         val cameraViews = spatialUserNoCamera.getCameraViews()
 

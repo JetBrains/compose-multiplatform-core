@@ -22,10 +22,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setSubspaceContent
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -38,8 +39,14 @@ class AlphaTest {
 
     @Test
     fun alpha_shouldBeAppliedToEntity() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(0.5f)) { Text(text = "Panel") }
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(0.5f)) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
         }
 
         assertThat(
@@ -54,9 +61,13 @@ class AlphaTest {
 
     @Test
     fun alpha_multiple_shouldBeMultipliedThenAppliedToEntity() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(0.5f).alpha(0.5f)) {
-                Text(text = "Panel")
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(0.5f).alpha(0.5f)) {
+                        Text(text = "Panel")
+                    }
+                }
             }
         }
 
@@ -72,8 +83,14 @@ class AlphaTest {
 
     @Test
     fun alpha_negative_shouldBeClampedToZero() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(-1f)) { Text(text = "Panel") }
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(-1f)) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
         }
 
         assertThat(
@@ -88,8 +105,14 @@ class AlphaTest {
 
     @Test
     fun alpha_greaterThanOne_shouldBeClampedToOne() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(1.1f)) { Text(text = "Panel") }
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(1.1f)) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
         }
 
         assertThat(
@@ -105,8 +128,15 @@ class AlphaTest {
     @Test
     fun alpha_updatesWhenValueChanges() {
         var alpha by mutableStateOf(0.1f)
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(alpha)) { Text(text = "Panel") }
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(alpha)) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
         }
 
         assertThat(
@@ -132,9 +162,13 @@ class AlphaTest {
 
     @Test
     fun alpha_multiple_valuesShouldBeClampedThenMultiplied() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").alpha(3f).alpha(0.1f)) {
-                Text(text = "Panel")
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel").alpha(3f).alpha(0.1f)) {
+                        Text(text = "Panel")
+                    }
+                }
             }
         }
 

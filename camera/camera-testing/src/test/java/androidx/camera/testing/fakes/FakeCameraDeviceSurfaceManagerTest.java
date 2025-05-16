@@ -99,7 +99,7 @@ public class FakeCameraDeviceSurfaceManagerTest {
                 emptyList(),
                 createConfigOutputSizesMap(preview, analysis),
                 false,
-                false);
+                false, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -120,7 +120,7 @@ public class FakeCameraDeviceSurfaceManagerTest {
                 FAKE_CAMERA_ID0,
                 singletonList(analysis), createConfigOutputSizesMap(preview, video),
                 false,
-                false);
+                false, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -133,7 +133,7 @@ public class FakeCameraDeviceSurfaceManagerTest {
                 FAKE_CAMERA_ID0,
                 Collections.emptyList(), createConfigOutputSizesMap(preview, video, analysis),
                 false,
-                false);
+                false, false);
     }
 
     @Test
@@ -144,14 +144,14 @@ public class FakeCameraDeviceSurfaceManagerTest {
                         FAKE_CAMERA_ID0,
                         emptyList(), createConfigOutputSizesMap(mFakeUseCaseConfig),
                         false,
-                        false).first;
+                        false, false).first;
         Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecCamera1 =
                 mFakeCameraDeviceSurfaceManager.getSuggestedStreamSpecs(
                         CameraMode.DEFAULT,
                         FAKE_CAMERA_ID1,
                         emptyList(), createConfigOutputSizesMap(mFakeUseCaseConfig),
                         false,
-                        false).first;
+                        false, false).first;
 
         assertThat(suggestedStreamSpecsCamera0.get(mFakeUseCaseConfig)).isEqualTo(
                 StreamSpec.builder(new Size(FAKE_WIDTH0, FAKE_HEIGHT0)).build());

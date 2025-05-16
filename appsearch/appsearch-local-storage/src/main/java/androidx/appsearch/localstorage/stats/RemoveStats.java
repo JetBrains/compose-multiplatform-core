@@ -78,6 +78,13 @@ public final class RemoveStats extends BaseStats {
     @DeleteType
     private final int mNativeDeleteType;
     private final int mNativeNumDocumentsDeleted;
+    private final int mQueryLength;
+    private final int mNumTerms;
+    private final int mNumNamespacesFiltered;
+    private final int mNumSchemaTypesFiltered;
+    private final int mParseQueryLatencyMillis;
+    private final int mDocumentRemovalLatencyMillis;
+
 
     RemoveStats(@NonNull Builder builder) {
         super(builder);
@@ -88,6 +95,12 @@ public final class RemoveStats extends BaseStats {
         mNativeLatencyMillis = builder.mNativeLatencyMillis;
         mNativeDeleteType = builder.mNativeDeleteType;
         mNativeNumDocumentsDeleted = builder.mNativeNumDocumentsDeleted;
+        mQueryLength = builder.mQueryLength;
+        mNumTerms = builder.mNumTerms;
+        mNumNamespacesFiltered = builder.mNumNamespacesFiltered;
+        mNumSchemaTypesFiltered = builder.mNumSchemaTypesFiltered;
+        mParseQueryLatencyMillis = builder.mParseQueryLatencyMillis;
+        mDocumentRemovalLatencyMillis = builder.mDocumentRemovalLatencyMillis;
     }
 
     /** Returns calling package name. */
@@ -127,6 +140,39 @@ public final class RemoveStats extends BaseStats {
         return mNativeNumDocumentsDeleted;
     }
 
+    /** The UTF-8 length of the query string. */
+    public int getQueryLength() {
+        return mQueryLength;
+    }
+
+    /** Number of terms in the query string. */
+    public int getNumTerms() {
+        return mNumTerms;
+    }
+
+    /** Number of namespaces filtered. */
+    public int getNumNamespacesFiltered() {
+        return mNumNamespacesFiltered;
+    }
+
+    /** Number of schema types filtered.. */
+    public int getNumSchemaTypesFiltered() {
+        return mNumSchemaTypesFiltered;
+    }
+
+    /**
+     *  Returns the time used to parse the query, including 2 parts: tokenizing and transforming
+     *  tokens into an iterator tree.
+     */
+    public int getParseQueryLatencyMillis() {
+        return mParseQueryLatencyMillis;
+    }
+
+    /** Returns the time used to delete each document */
+    public int getDocumentRemovalLatencyMillis() {
+        return mDocumentRemovalLatencyMillis;
+    }
+
     /** Builder for {@link RemoveStats}. */
     public static class Builder extends BaseStats.Builder<RemoveStats.Builder> {
         final @NonNull String mPackageName;
@@ -138,6 +184,12 @@ public final class RemoveStats extends BaseStats {
         @DeleteType
         int mNativeDeleteType;
         int mNativeNumDocumentsDeleted;
+        int mQueryLength;
+        int mNumTerms;
+        int mNumNamespacesFiltered;
+        int mNumSchemaTypesFiltered;
+        int mParseQueryLatencyMillis;
+        int mDocumentRemovalLatencyMillis;
 
         /** Constructor for the {@link Builder}. */
         public Builder(@NonNull String packageName, @NonNull String database) {
@@ -177,6 +229,51 @@ public final class RemoveStats extends BaseStats {
         @CanIgnoreReturnValue
         public @NonNull Builder setDeletedDocumentCount(int nativeNumDocumentsDeleted) {
             mNativeNumDocumentsDeleted = nativeNumDocumentsDeleted;
+            return this;
+        }
+
+        /** Sets the UTF-8 length of the query string. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setQueryLength(int queryLength) {
+            mQueryLength = queryLength;
+            return this;
+        }
+
+        /** Sets number of terms in the query string. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumTerms(int numTerms) {
+            mNumTerms = numTerms;
+            return this;
+        }
+
+        /** Sets number of namespaces filtered. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumNamespacesFiltered(int numNamespacesFiltered) {
+            mNumNamespacesFiltered = numNamespacesFiltered;
+            return this;
+        }
+
+        /** Sets number of schema types filtered. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumSchemaTypesFiltered(int numSchemaTypesFiltered) {
+            mNumSchemaTypesFiltered = numSchemaTypesFiltered;
+            return this;
+        }
+
+        /**
+         * Sets time used to parse the query, including 2 parts: tokenizing and transforming tokens
+         * into an iterator tree.
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setParseQueryLatencyMillis(int parseQueryLatencyMillis) {
+            mParseQueryLatencyMillis = parseQueryLatencyMillis;
+            return this;
+        }
+
+        /** Sets Time used to delete each document. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setDocumentRemovalLatencyMillis(int documentRemovalLatencyMillis) {
+            mDocumentRemovalLatencyMillis = documentRemovalLatencyMillis;
             return this;
         }
 

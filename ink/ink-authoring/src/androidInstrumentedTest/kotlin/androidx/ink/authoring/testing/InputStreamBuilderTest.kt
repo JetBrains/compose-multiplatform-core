@@ -88,16 +88,16 @@ class InputStreamBuilderTest {
     fun stylusLine_pointerPositionsFollowSegment() {
         val builder = InputStreamBuilder.stylusLine(0F, 0F, 100F, 200F)
         builder.runWithDownEvent { event ->
-            assertThat(event.getX()).isEqualTo(0F)
-            assertThat(event.getY()).isEqualTo(0F)
+            assertThat(event.x).isEqualTo(0F)
+            assertThat(event.y).isEqualTo(0F)
         }
         builder.runWithMoveEvent { event ->
-            assertThat(event.getX()).isEqualTo(50F)
-            assertThat(event.getY()).isEqualTo(100F)
+            assertThat(event.x).isEqualTo(50F)
+            assertThat(event.y).isEqualTo(100F)
         }
         builder.runWithUpEvent { event ->
-            assertThat(event.getX()).isEqualTo(100F)
-            assertThat(event.getY()).isEqualTo(200F)
+            assertThat(event.x).isEqualTo(100F)
+            assertThat(event.y).isEqualTo(200F)
         }
     }
 

@@ -33,7 +33,7 @@ import kotlin.jvm.JvmName
  * @param fetchBlock - A lambda for calling the generated _fetchRelationship function.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <K : Any, V> recursiveFetchMap(
+public fun <K : Any, V> recursiveFetchMap(
     map: MutableMap<K, V>,
     isRelationCollection: Boolean,
     fetchBlock: (MutableMap<K, V>) -> Unit
@@ -73,7 +73,7 @@ fun <K : Any, V> recursiveFetchMap(
 
 /** Same as [recursiveFetchMap] but for [LongSparseArray]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <V> recursiveFetchLongSparseArray(
+public fun <V> recursiveFetchLongSparseArray(
     map: LongSparseArray<V>,
     isRelationCollection: Boolean,
     fetchBlock: (LongSparseArray<V>) -> Unit

@@ -24,17 +24,10 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.runtime.testutils"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
     jvmStubs()
     linuxX64Stubs()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -69,6 +62,12 @@ androidXMultiplatform {
         }
         linuxx64StubsMain {
             dependsOn(commonStubsMain)
+        }
+        wasmJsMain {
+            dependsOn(commonStubsMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
         }
     }
 }

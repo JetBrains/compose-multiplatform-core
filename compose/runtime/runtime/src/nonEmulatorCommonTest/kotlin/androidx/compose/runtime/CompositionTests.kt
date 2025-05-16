@@ -72,6 +72,7 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.test.IgnoreJsTarget
 
 @Composable fun Container(content: @Composable () -> Unit) = content()
 
@@ -2565,6 +2566,7 @@ class CompositionTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409728274
     fun testRememberObserver_Abandon_Recompose() {
         val abandonedObjects = mutableListOf<RememberObserver>()
         val observed =
@@ -4436,24 +4438,24 @@ class CompositionTests {
         compose {
             composers += currentComposer
             if (rememberValue) {
-                remember { value }
+                // <Any> prevents implicit coercion to Unit from inline lambda
+                // https://youtrack.jetbrains.com/issue/KT-76579
+                remember<Any> { value }
             }
         }
 
-        validate { assertFalse(value in composition!!.getSlots()) }
+        assertFalse(value in composition!!.getSlots())
 
         rememberValue = true
         expectChanges()
 
-        validate { assertTrue(value in composition!!.getSlots()) }
+        assertTrue(value in composition!!.getSlots())
 
         rememberValue = false
         expectChanges()
 
-        validate {
-            assertFalse(value in composition!!.getSlots())
-            assertFalse(composers.any { value in it.getInsertTableSlots() })
-        }
+        assertFalse(value in composition!!.getSlots())
+        assertFalse(composers.any { value in it.getInsertTableSlots() })
     }
 
     @Stable

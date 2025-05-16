@@ -120,18 +120,22 @@ internal class DepthSortedSet(private val extraAssertions: Boolean) {
 
 internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
     /**
-     * [outOfLookaheadScopeSet] contains nodes that are out of lookaheadScope.
+     * [lookaheadAndAncestorMeasureSet] contains nodes that are in lookaheadScope as well as nodes
+     * that are ancestors of LookaheadScope or simply outside lookahead scope.
      *
-     * The invalidation order is always: [outOfLookaheadScopeSet] then [lookaheadSet] before
+     * // TODO: Check how this works with measure in parent placement The invalidation order is
+     * always: [lookaheadAndAncestorMeasureSet] then [lookaheadAndAncestorPlaceSet] before
      * [approachSet].
      *
-     * When no LookaheadScope is present in the tree, the latter two sets will be empty, all the
-     * invalidations will come from nodes in the [outOfLookaheadScopeSet].
+     * When no LookaheadScope is present in the tree, [approachSet] will be empty.
      */
-    private val outOfLookaheadScopeSet = DepthSortedSet(extraAssertions)
+    private val lookaheadAndAncestorMeasureSet = DepthSortedSet(extraAssertions)
 
-    /** [lookaheadSet] contains nodes that require lookahead invalidation */
-    private val lookaheadSet = DepthSortedSet(extraAssertions)
+    /**
+     * [lookaheadAndAncestorPlaceSet] contains nodes that require lookahead placement invalidation
+     * or nodes outside lookaheadScope that could affect the placement of lookahead scope.
+     */
+    private val lookaheadAndAncestorPlaceSet = DepthSortedSet(extraAssertions)
 
     /**
      * [approachSet] contains nodes that only requires approach invalidations. Only nodes in a
@@ -144,20 +148,21 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
      * [affectsLookahead].
      */
     fun contains(node: LayoutNode, affectsLookahead: Boolean): Boolean {
-        val constainsInLookahead = lookaheadSet.contains(node)
+        val isAncestor = node.lookaheadRoot == null
+        val containedInLookaheadAndAncestors =
+            lookaheadAndAncestorMeasureSet.contains(node) ||
+                lookaheadAndAncestorPlaceSet.contains(node)
         return if (affectsLookahead) {
-            constainsInLookahead
+            !isAncestor && containedInLookaheadAndAncestors
         } else {
-            constainsInLookahead ||
-                outOfLookaheadScopeSet.contains(node) ||
-                approachSet.contains(node)
+            (isAncestor && containedInLookaheadAndAncestors) || approachSet.contains(node)
         }
     }
 
     /** Checks if the node exists in either set. */
     fun contains(node: LayoutNode): Boolean =
-        outOfLookaheadScopeSet.contains(node) ||
-            lookaheadSet.contains(node) ||
+        lookaheadAndAncestorMeasureSet.contains(node) ||
+            lookaheadAndAncestorPlaceSet.contains(node) ||
             approachSet.contains(node)
 
     /**
@@ -168,62 +173,83 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
      * triggered as needed (i.e. if the FooPending flag is dirty). Otherwise, lookahead
      * remeasurement/relayout will be skipped.
      */
-    fun add(node: LayoutNode, affectsLookahead: Boolean) {
-        if (affectsLookahead) {
-            lookaheadSet.add(node)
-            approachSet.add(node)
-        } else {
-            if (node.lookaheadRoot != null) {
-                // In a lookahead scope && the invalidation doesn't affect lookahead, therefore
-                // the node needs to be added to approachSet.
+    fun add(node: LayoutNode, invalidation: Invalidation) {
+        when (invalidation) {
+            Invalidation.LookaheadMeasurement -> {
+                lookaheadAndAncestorMeasureSet.add(node)
                 approachSet.add(node)
-            } else {
-                // Not in a lookahead scope
-                outOfLookaheadScopeSet.add(node)
+            }
+            Invalidation.LookaheadPlacement -> {
+                lookaheadAndAncestorPlaceSet.add(node)
+                approachSet.add(node)
+            }
+            Invalidation.Measurement -> {
+                if (node.lookaheadRoot != null) {
+                    approachSet.add(node)
+                } else {
+                    lookaheadAndAncestorMeasureSet.add(node)
+                }
+            }
+            Invalidation.Placement -> {
+                if (node.lookaheadRoot != null) {
+                    approachSet.add(node)
+                } else {
+                    lookaheadAndAncestorPlaceSet.add(node)
+                }
             }
         }
     }
 
     /** Remove the [node] from all the sets. */
     fun remove(node: LayoutNode): Boolean {
-        val removedFromNonLookaheadSet = outOfLookaheadScopeSet.remove(node)
-        val removedFromLookaheadSet = lookaheadSet.remove(node)
-        return approachSet.remove(node) || removedFromLookaheadSet || removedFromNonLookaheadSet
+        val removedFromLookaheadMeasureSet = lookaheadAndAncestorMeasureSet.remove(node)
+        val removedFromLookaheadPlaceSet = lookaheadAndAncestorPlaceSet.remove(node)
+        return approachSet.remove(node) ||
+            removedFromLookaheadMeasureSet ||
+            removedFromLookaheadPlaceSet
     }
 
     /**
      * Pops nodes that require lookahead remeasurement/replacement first until the lookaheadSet is
      * empty, before handling nodes that only require invalidation for the main pass.
      */
-    inline fun popEach(crossinline block: (node: LayoutNode, affectsLookahead: Boolean) -> Unit) {
-        // Sequence for invalidation: outOfLookaheadScopeSet, lookaheadSet, approachSet
+    inline fun popEach(
+        crossinline block:
+            (node: LayoutNode, affectsLookahead: Boolean, relayoutNeeded: Boolean) -> Unit
+    ) {
+        // Sequence for invalidation: lookaheadAndAncestorMeasureSet, lookaheadAndAncestorPlaceSet,
+        // approachSet
         while (true) {
             val affectsLookahead: Boolean
-            val node =
-                if (outOfLookaheadScopeSet.isNotEmpty()) {
+            val relayoutNeeded: Boolean
+            val node: LayoutNode
+            if (lookaheadAndAncestorMeasureSet.isNotEmpty()) {
+                relayoutNeeded = false
+                node = lookaheadAndAncestorMeasureSet.pop()
+                affectsLookahead = node.lookaheadRoot != null
+            } else {
+                if (lookaheadAndAncestorPlaceSet.isNotEmpty()) {
+                    relayoutNeeded = true
+                    node = lookaheadAndAncestorPlaceSet.pop()
+                    affectsLookahead = node.lookaheadRoot != null
+                } else if (approachSet.isNotEmpty()) {
                     affectsLookahead = false
-                    outOfLookaheadScopeSet.pop()
+                    node = approachSet.pop()
+                    relayoutNeeded = true
                 } else {
-                    if (lookaheadSet.isNotEmpty()) {
-                        affectsLookahead = true
-                        lookaheadSet.pop()
-                    } else if (approachSet.isNotEmpty()) {
-                        affectsLookahead = false
-                        approachSet.pop()
-                    } else {
-                        break
-                    }
+                    break
                 }
-            block(node, affectsLookahead)
+            }
+            block(node, affectsLookahead, relayoutNeeded)
         }
     }
 
     fun isEmpty(): Boolean =
-        outOfLookaheadScopeSet.isEmpty() && approachSet.isEmpty() && lookaheadSet.isEmpty()
+        lookaheadAndAncestorMeasureSet.isEmpty() &&
+            approachSet.isEmpty() &&
+            lookaheadAndAncestorPlaceSet.isEmpty()
 
-    fun isEmpty(affectsLookahead: Boolean): Boolean =
-        if (affectsLookahead) lookaheadSet.isEmpty()
-        else outOfLookaheadScopeSet.isEmpty() && approachSet.isEmpty()
+    val affectsLookaheadMeasure: Boolean = !lookaheadAndAncestorMeasureSet.isEmpty()
 
     fun isNotEmpty(): Boolean = !isEmpty()
 }

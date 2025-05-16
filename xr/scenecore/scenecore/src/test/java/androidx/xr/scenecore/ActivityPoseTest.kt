@@ -16,13 +16,18 @@
 
 package androidx.xr.scenecore
 
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
 import androidx.xr.runtime.internal.HeadActivityPose as RtHeadActivityPose
+import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.ActivityPose.HitTestFilter
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.Futures
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -120,6 +125,92 @@ class ActivityPoseTest {
         verify(mockHeadActivityPose).activitySpacePose
         verify(mockCameraViewActivityPose).activitySpacePose
         verify(mockPerceptionSpaceActivityPose).activitySpacePose
+    }
+
+    @Test
+    fun hitTestAsync_callsRuntimeHitTest() {
+        val origin = Vector3(1f, 2f, 3f)
+        val direction = Vector3(4f, 5f, 6f)
+        val hitTestFilter = HitTestFilter.SELF_SCENE
+
+        val hitPosition = Vector3(7f, 8f, 9f)
+        val surfaceNormal = Vector3(10f, 11f, 12f)
+        val distance = 7f
+        val surfaceType = RtHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE
+        val expectedHitTestResult =
+            HitTestResult(hitPosition, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
+        whenever(mockHeadActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+        whenever(mockCameraViewActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+        whenever(mockPerceptionSpaceActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+
+        assertThat(head!!.hitTestAsync(origin, direction, hitTestFilter).get())
+            .isEqualTo(expectedHitTestResult)
+        assertThat(camera!!.hitTestAsync(origin, direction, hitTestFilter).get())
+            .isEqualTo(expectedHitTestResult)
+        assertThat(perceptionSpace.hitTestAsync(origin, direction, hitTestFilter).get())
+            .isEqualTo(expectedHitTestResult)
+
+        verify(mockHeadActivityPose).hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
+        verify(mockCameraViewActivityPose)
+            .hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
+        verify(mockPerceptionSpaceActivityPose)
+            .hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
+    }
+
+    @Test
+    fun hitTestAsync_withDefaultHitTestFilter_callsRuntimeHitTest() {
+        val origin = Vector3(1f, 2f, 3f)
+        val direction = Vector3(4f, 5f, 6f)
+
+        val hitPosition = Vector3(7f, 8f, 9f)
+        val surfaceNormal = Vector3(10f, 11f, 12f)
+        val distance = 7f
+        val surfaceType = RtHitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE
+        val expectedHitTestResult =
+            HitTestResult(hitPosition, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
+        whenever(mockHeadActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+        whenever(mockCameraViewActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+        whenever(mockPerceptionSpaceActivityPose.hitTest(any(), any(), any()))
+            .thenReturn(
+                Futures.immediateFuture(
+                    RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
+                )
+            )
+
+        assertThat(head!!.hitTestAsync(origin, direction).get()).isEqualTo(expectedHitTestResult)
+        assertThat(camera!!.hitTestAsync(origin, direction).get()).isEqualTo(expectedHitTestResult)
+        assertThat(perceptionSpace.hitTestAsync(origin, direction).get())
+            .isEqualTo(expectedHitTestResult)
+
+        verify(mockHeadActivityPose).hitTest(origin, direction, RtHitTestFilter.SELF_SCENE)
+        verify(mockCameraViewActivityPose).hitTest(origin, direction, RtHitTestFilter.SELF_SCENE)
+        verify(mockPerceptionSpaceActivityPose)
+            .hitTest(origin, direction, RtHitTestFilter.SELF_SCENE)
     }
 
     @Test

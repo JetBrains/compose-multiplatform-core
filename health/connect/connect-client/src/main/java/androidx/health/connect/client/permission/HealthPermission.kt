@@ -417,7 +417,7 @@ public class HealthPermission internal constructor() {
 
         // Read permissions for WELLNESS
         @ExperimentalMindfulnessSessionApi
-        internal const val READ_MINDFULNESS_SESSION = PERMISSION_PREFIX + "READ_MINDFULNESS_SESSION"
+        internal const val READ_MINDFULNESS_SESSION = PERMISSION_PREFIX + "READ_MINDFULNESS"
 
         // Read permissions for NUTRITION.
         internal const val READ_HYDRATION = PERMISSION_PREFIX + "READ_HYDRATION"
@@ -482,8 +482,7 @@ public class HealthPermission internal constructor() {
 
         // Write permissions for WELLNESS
         @ExperimentalMindfulnessSessionApi
-        internal const val WRITE_MINDFULNESS_SESSION =
-            PERMISSION_PREFIX + "WRITE_MINDFULNESS_SESSION"
+        internal const val WRITE_MINDFULNESS_SESSION = PERMISSION_PREFIX + "WRITE_MINDFULNESS"
 
         // Write permissions for SLEEP.
         internal const val WRITE_SLEEP = PERMISSION_PREFIX + "WRITE_SLEEP"

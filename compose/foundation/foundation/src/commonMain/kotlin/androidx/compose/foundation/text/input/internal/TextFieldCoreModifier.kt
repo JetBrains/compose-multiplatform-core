@@ -19,7 +19,11 @@ package androidx.compose.foundation.text.input.internal
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.contextmenu.modifier.TextContextMenuToolbarHandlerNode
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
+import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
 import androidx.compose.foundation.text.input.TextHighlightType
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.textFieldMagnifierNode
@@ -86,6 +90,7 @@ internal data class TextFieldCoreModifier(
     private val writeable: Boolean,
     private val scrollState: ScrollState,
     private val orientation: Orientation,
+    private val toolbarRequester: ToolbarRequester,
 ) : ModifierNodeElement<TextFieldCoreModifierNode>() {
 
     override fun create(): TextFieldCoreModifierNode =
@@ -99,6 +104,7 @@ internal data class TextFieldCoreModifier(
             writeable = writeable,
             scrollState = scrollState,
             orientation = orientation,
+            toolbarRequester = toolbarRequester,
         )
 
     override fun update(node: TextFieldCoreModifierNode) {
@@ -112,6 +118,7 @@ internal data class TextFieldCoreModifier(
             writeable = writeable,
             scrollState = scrollState,
             orientation = orientation,
+            toolbarRequester = toolbarRequester,
         )
     }
 
@@ -132,6 +139,7 @@ internal class TextFieldCoreModifierNode(
     private var writeable: Boolean,
     private var scrollState: ScrollState,
     private var orientation: Orientation,
+    private var toolbarRequester: ToolbarRequester,
 ) :
     DelegatingNode(),
     LayoutModifierNode,
@@ -176,6 +184,7 @@ internal class TextFieldCoreModifierNode(
     private var previousSelection: TextRange? = null
     private var previousCursorRect: Rect = Rect(-1f, -1f, -1f, -1f)
     private var previousTextLayoutSize: Int = 0
+    private var previousContainerSize: Int = 0
 
     private val textFieldMagnifierNode =
         delegate(
@@ -186,6 +195,30 @@ internal class TextFieldCoreModifierNode(
                 visible = isFocused || isDragHovered
             )
         )
+
+    init {
+        delegate(
+            TextContextMenuToolbarHandlerNode(
+                requester = toolbarRequester,
+                onShow = {
+                    textFieldSelectionState.updateClipboardEntry()
+                    textFieldSelectionState.textToolbarShown = true
+                },
+                onHide = { textFieldSelectionState.textToolbarShown = false },
+                computeContentBounds = { destinationCoordinates ->
+                    val rootBounds =
+                        textFieldSelectionState.derivedVisibleContentBounds ?: Rect.Zero
+                    val localCoordinates =
+                        checkPreconditionNotNull(textLayoutState.textLayoutNodeCoordinates)
+                    translateRootToDestination(
+                        rootContentBounds = rootBounds,
+                        localCoordinates = localCoordinates,
+                        destinationCoordinates = destinationCoordinates,
+                    )
+                }
+            )
+        )
+    }
 
     override fun onAttach() {
         // if the attributes are right during onAttach, start the cursor job immediately.
@@ -207,6 +240,7 @@ internal class TextFieldCoreModifierNode(
         writeable: Boolean,
         scrollState: ScrollState,
         orientation: Orientation,
+        toolbarRequester: ToolbarRequester,
     ) {
         val previousShowCursor = this.showCursor
         val wasFocused = this.isFocused
@@ -224,6 +258,7 @@ internal class TextFieldCoreModifierNode(
         this.writeable = writeable
         this.scrollState = scrollState
         this.orientation = orientation
+        this.toolbarRequester = toolbarRequester
 
         textFieldMagnifierNode.update(
             textFieldState = textFieldState,
@@ -327,11 +362,16 @@ internal class TextFieldCoreModifierNode(
     }
 
     /** Returns which offset to follow to bring into view. */
-    private fun calculateOffsetToFollow(currSelection: TextRange, currTextLayoutSize: Int): Int {
+    private fun calculateOffsetToFollow(
+        currSelection: TextRange,
+        currContainerSize: Int,
+        currTextLayoutSize: Int
+    ): Int {
         return when {
             currSelection.end != previousSelection?.end -> currSelection.end
             currSelection.start != previousSelection?.start -> currSelection.start
-            currTextLayoutSize != previousTextLayoutSize -> currSelection.start
+            currTextLayoutSize != previousTextLayoutSize ||
+                currContainerSize != previousContainerSize -> currSelection.start
             else -> -1
         }
     }
@@ -361,7 +401,7 @@ internal class TextFieldCoreModifierNode(
         scrollState.maxValue = difference
 
         // figure out if and which offset is going to be scrolled into view
-        val offsetToFollow = calculateOffsetToFollow(currSelection, textLayoutSize)
+        val offsetToFollow = calculateOffsetToFollow(currSelection, containerSize, textLayoutSize)
 
         // if the cursor is not showing or there's no offset to be followed, we can return early.
         if (offsetToFollow < 0 || !showCursor) return
@@ -379,12 +419,13 @@ internal class TextFieldCoreModifierNode(
                 textLayoutSize = textLayoutSize
             )
 
-        // Check if cursor's location or text layout size was changed compared to the previous run.
-        if (
+        val shouldBringIntoView =
             cursorRect.left != previousCursorRect.left ||
                 cursorRect.top != previousCursorRect.top ||
                 textLayoutSize != previousTextLayoutSize
-        ) {
+
+        // Check if cursor's location or text layout size was changed compared to the previous run.
+        if (shouldBringIntoView || containerSize != previousContainerSize) {
             val vertical = orientation == Orientation.Vertical
             val cursorStart = if (vertical) cursorRect.top else cursorRect.left
             val cursorEnd = if (vertical) cursorRect.bottom else cursorRect.right
@@ -441,6 +482,7 @@ internal class TextFieldCoreModifierNode(
 
             previousSelection = currSelection
             previousCursorRect = cursorRect
+            previousContainerSize = containerSize
             previousTextLayoutSize = textLayoutSize
 
             // this call will respect the earlier set [scrollState.maxValue]
@@ -448,9 +490,13 @@ internal class TextFieldCoreModifierNode(
             // prefer to use immediate dispatch instead of suspending scroll calls
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 scrollState.scrollBy(offsetDifference.roundToNext())
-                // make sure to use the cursor rect from text layout since bringIntoView does its
-                // own checks for RTL layouts.
-                textLayoutState.bringIntoViewRequester.bringIntoView(rawCursorRect)
+                // Don't bring into view if only the container size changed to avoid
+                // unexpected scrolls
+                if (shouldBringIntoView) {
+                    // make sure to use the cursor rect from text layout since bringIntoView does
+                    // its own checks for RTL layouts.
+                    textLayoutState.bringIntoViewRequester.bringIntoView(rawCursorRect)
+                }
             }
         }
     }

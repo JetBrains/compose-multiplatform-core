@@ -123,6 +123,7 @@ public class WebViewFeature {
             NAVIGATION_CALLBACK_BASIC,
             CACHE_PROVIDER,
             PAYMENT_REQUEST,
+            WEBVIEW_BUILDER,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -713,6 +714,17 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#getHasEnrolledInstrumentEnabled(WebSettings)},
      */
     public static final String PAYMENT_REQUEST = "PAYMENT_REQUEST";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers:
+     * {@link WebViewBuilder#build(Context)},
+     * {@link WebViewBuilder#build(Context, AttributeSet)},
+     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
+     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

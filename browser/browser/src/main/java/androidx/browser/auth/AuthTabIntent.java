@@ -104,7 +104,6 @@ import java.lang.annotation.RetentionPolicy;
  * <p> Note: The constants below are public for the browser implementation's benefit. You are
  * strongly encouraged to use {@link AuthTabIntent.Builder}.
  */
-@ExperimentalAuthTab
 public class AuthTabIntent {
     /** Boolean extra that triggers an Auth Tab launch. */
     public static final String EXTRA_LAUNCH_AUTH_TAB =

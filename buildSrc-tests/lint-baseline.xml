@@ -1,5 +1,122 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha02)" variant="all" version="8.11.0-alpha02">
+<issues format="6" by="lint 8.11.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha05)" variant="all" version="8.11.0-alpha05">
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(COMPILER_PLUGIN_CONFIGURATION) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;docs&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;docsWithoutApiSince&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;kmpDocs&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;samples&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;stubs&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;docs-sources&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;multiplatform-docs-sources&quot;) { configuration ->"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;samples-sources&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;library-version-metadata&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;docs-compile-classpath&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;docs-runtime-classpath&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;dackka&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
 
     <issue
         id="EagerGradleConfiguration"
@@ -8,6 +125,42 @@
         errorLine2="                      ~~~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            val constraintConfiguration = project.configurations.create(&quot;groupConstraints&quot;)"
+        errorLine2="                                                                 ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            .create(&quot;ReleaseApiDependencies&quot;) {"
+        errorLine2="             ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/checkapi/ApiTasks.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="            configurations.create(CONFIGURATION_NAME) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*3}/androidx/build/BundleInsideHelper.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="        ?: configurations.create(ERROR_PRONE_CONFIGURATION).apply {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/ErrorProneConfiguration.kt"/>
     </issue>
 
     <issue
@@ -57,6 +210,15 @@
 
     <issue
         id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="    configurations.create(sbomEmptyConfiguration) { emptyConfiguration ->"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/sbom/Sbom.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
         message="Use configureEach instead of whenObjectAdded"
         errorLine1="    configurations.whenObjectAdded {"
         errorLine2="                   ~~~~~~~~~~~~~~~">
@@ -75,9 +237,27 @@
 
     <issue
         id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="    configurations.create(configurationName) { gradleVariant ->"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/sources/SourceJarTaskHelper.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
         message="Avoid using method findByName"
         errorLine1="            .findByName(FINALIZE_TEST_CONFIGS_WITH_APKS_TASK)!!"
         errorLine2="             ~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/testConfiguration/TestSuiteConfiguration.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="                configurations.create(&quot;${variant.name}TestedApks&quot;) { config ->"
+        errorLine2="                               ~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/testConfiguration/TestSuiteConfiguration.kt"/>
     </issue>
@@ -193,7 +373,7 @@
     <issue
         id="GradleProjectIsolation"
         message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="    rootProject.extensions.findByType(YarnRootExtension::class.java)?.let { yarn ->"
+        errorLine1="    rootProject.extensions.findByType(YarnRootEnvSpec::class.java)?.let {"
         errorLine2="    ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
@@ -515,6 +695,33 @@
     </issue>
 
     <issue
+        id="InternalAgpApiUsage"
+        message="Avoid using internal Android Gradle Plugin APIs (method getJavaDirectories from com.android.build.gradle.internal.lint.SourceProviderInput)"
+        errorLine1="            sourceProvider.javaDirectories.withChangesAllowed {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
+    </issue>
+
+    <issue
+        id="InternalAgpApiUsage"
+        message="Avoid using internal Android Gradle Plugin APIs (method getVariantInputs from com.android.build.gradle.internal.lint.AndroidLintAnalysisTask)"
+        errorLine1="        it.variantInputs.addSourceSets()"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
+    </issue>
+
+    <issue
+        id="InternalAgpApiUsage"
+        message="Avoid using internal Android Gradle Plugin APIs (method getVariantInputs from com.android.build.gradle.internal.lint.LintModelWriterTask)"
+        errorLine1="    project.tasks.withType&lt;LintModelWriterTask>().configureEach { it.variantInputs.addSourceSets() }"
+        errorLine2="                                                                  ~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
+    </issue>
+
+    <issue
         id="InternalGradleApiUsage"
         message="Avoid using internal Gradle APIs"
         errorLine1="import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency"
@@ -561,6 +768,51 @@
 
     <issue
         id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method isAlias from org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectComponentPublication)"
+        errorLine1="                if (!mavenPub.isAlias) {"
+        errorLine2="                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/buildInfo/CreateLibraryBuildInfoFileTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getComponent from org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectComponentPublication)"
+        errorLine1="                    pub.component.map { component ->"
+        errorLine2="                    ~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/buildInfo/CreateLibraryBuildInfoFileTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getUsages from org.gradle.api.internal.component.SoftwareComponentInternal)"
+        errorLine1="                            component.usages.orEmpty().flatMap { it.dependencies }"
+        errorLine2="                            ~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/buildInfo/CreateLibraryBuildInfoFileTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getComponent from org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectComponentPublication)"
+        errorLine1="                    pub.component.map { component ->"
+        errorLine2="                    ~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/buildInfo/CreateLibraryBuildInfoFileTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getUsages from org.gradle.api.internal.component.SoftwareComponentInternal)"
+        errorLine1="                        component.usages.orEmpty().flatMap { it.dependencyConstraints }"
+        errorLine2="                        ~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/buildInfo/CreateLibraryBuildInfoFileTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
         message="Avoid using internal Gradle APIs"
         errorLine1="import org.gradle.internal.logging.slf4j.OutputEventListenerBackedLogger"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -582,6 +834,24 @@
         message="Avoid using internal Gradle APIs"
         errorLine1="import org.gradle.internal.time.Clock"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/FileLogger.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setLevel from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="                            it.level = LogLevel.DEBUG"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/FileLogger.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setOutputEventListener from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="                            it.setOutputEventListener { file.appendText(it.toString() + &quot;\n&quot;) }"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/FileLogger.kt"/>
     </issue>
@@ -624,6 +894,42 @@
 
     <issue
         id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method publishWithOriginalFileName from org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal)"
+        errorLine1="                    (this as MavenPublicationInternal).publishWithOriginalFileName()"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/MavenUploadHelper.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getUsages from org.gradle.api.internal.component.SoftwareComponentInternal)"
+        errorLine1="                                return (sourcesComponents.flatMap { it.usages } +"
+        errorLine2="                                                                    ~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/MavenUploadHelper.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method getUsages from org.gradle.api.internal.component.SoftwareComponentInternal)"
+        errorLine1="                                        kotlinComponent.usages)"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/MavenUploadHelper.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setAlias from org.gradle.api.publish.internal.PublicationInternal)"
+        errorLine1="                    it.isAlias = true"
+        errorLine2="                    ~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/MavenUploadHelper.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
         message="Avoid using internal Gradle APIs"
         errorLine1="import org.gradle.api.internal.artifacts.ivyservice.TypedResolveException"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -645,6 +951,24 @@
         message="Avoid using internal Gradle APIs"
         errorLine1="import org.gradle.internal.service.ServiceRegistry"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method get from org.gradle.internal.service.ServiceRegistry)"
+        errorLine1="            val userInput = services.get(UserInputHandler::class.java)"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method askYesNoQuestion from org.gradle.api.internal.tasks.userinput.UserInputHandler)"
+        errorLine1="                    userInput.askYesNoQuestion("
+        errorLine2="                    ^">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
     </issue>
@@ -677,6 +1001,42 @@
     </issue>
 
     <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setLevel from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="            it.level = LogLevel.DEBUG"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/ToStringLogger.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setLevel from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="            it.level = LogLevel.DEBUG"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/ToStringLogger.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setOutputEventListener from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="            it.setOutputEventListener { stringBuilder.append(it.toString() + &quot;\n&quot;) }"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/ToStringLogger.kt"/>
+    </issue>
+
+    <issue
+        id="InternalGradleApiUsage"
+        message="Avoid using internal Gradle APIs (method setOutputEventListener from org.gradle.internal.logging.slf4j.OutputEventListenerBackedLoggerContext)"
+        errorLine1="            it.setOutputEventListener { stringBuilder.append(it.toString() + &quot;\n&quot;) }"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/dependencyTracker/ToStringLogger.kt"/>
+    </issue>
+
+    <issue
         id="WithPluginClasspathUsage"
         message="Avoid usage of GradleRunner#withPluginClasspath, which is broken. Instead use something like https://github.com/autonomousapps/dependency-analysis-gradle-plugin/tree/main/testkit#gradle-testkit-support-plugin"
         errorLine1="                .withPluginClasspath()"
@@ -690,15 +1050,6 @@
         message="Avoid passing a closure to withType, use withType().configureEach instead"
         errorLine1="        project.tasks.withType(AbstractTestTask::class.java) { task ->"
         errorLine2="                      ~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="WithTypeWithoutConfigureEach"
-        message="Avoid passing a closure to withType, use withType().configureEach instead"
-        errorLine1="                targets.withType&lt;KotlinAndroidTarget> {"
-        errorLine2="                        ~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXImplPlugin.kt"/>
     </issue>

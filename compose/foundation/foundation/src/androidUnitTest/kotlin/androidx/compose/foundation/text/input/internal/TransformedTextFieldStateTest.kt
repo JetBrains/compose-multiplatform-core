@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldCharSequence
@@ -66,6 +67,37 @@ class TransformedTextFieldStateTest {
             .setComposingText(text = "hello", newCursorPosition = 1, annotations = annotations)
 
         assertThat(transformedState.visualText.composingAnnotations).isEqualTo(annotations)
+    }
+
+    @Test
+    fun annotatedOutputTransformation_noChanges_emptyOutputAnnotations() {
+        val state = TextFieldState()
+        val outputTransformation = AnnotatedOutputTransformation {}
+        val transformedState =
+            TransformedTextFieldState(
+                textFieldState = state,
+                outputTransformation = outputTransformation
+            )
+        assertThat(transformedState.outputText.outputAnnotations).isNull()
+        assertThat(transformedState.outputText.composingAnnotations).isNull()
+    }
+
+    @Test
+    fun annotatedOutputTransformation_addingAnnotation_showsOutputAnnotations() {
+        val state = TextFieldState("Hello")
+        val outputTransformation = AnnotatedOutputTransformation {
+            addAnnotation(SpanStyle(Color.Red), 0, 3)
+        }
+        val transformedState =
+            TransformedTextFieldState(
+                textFieldState = state,
+                outputTransformation = outputTransformation
+            )
+        assertThat(transformedState.outputText.outputAnnotations).hasSize(1)
+        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.item)
+            .isEqualTo(SpanStyle(Color.Red))
+        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.start).isEqualTo(0)
+        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.end).isEqualTo(3)
     }
 
     @Test

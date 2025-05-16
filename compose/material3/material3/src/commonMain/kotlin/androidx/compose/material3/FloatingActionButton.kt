@@ -996,10 +996,7 @@ object FloatingActionButtonDefaults {
     internal val ShowHideTargetScale = 0.2f
 
     /** The recommended size of the icon inside a [MediumFloatingActionButton]. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val MediumIconSize = FabMediumTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val MediumIconSize = FabMediumTokens.IconSize
 
     /** The recommended size of the icon inside a [LargeFloatingActionButton]. */
     val LargeIconSize = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
@@ -1013,8 +1010,6 @@ object FloatingActionButtonDefaults {
         @Composable get() = FabSmallTokens.ContainerShape.value
 
     /** Default shape for a medium floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val mediumShape: Shape
         @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
@@ -1028,22 +1023,16 @@ object FloatingActionButtonDefaults {
         @Composable get() = ExtendedFabPrimaryTokens.ContainerShape.value
 
     /** Default shape for a small extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val smallExtendedFabShape: Shape
         @Composable get() = ExtendedFabSmallTokens.ContainerShape.value
 
     /** Default shape for a medium extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val mediumExtendedFabShape: Shape
         @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
 
     /** Default shape for a large extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val largeExtendedFabShape: Shape
         @Composable get() = ExtendedFabLargeTokens.ContainerShape.value
@@ -1253,7 +1242,8 @@ internal class FabVisibleNode(
             scaleAnimatable.animateTo(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
-                    scaleAnimationSpec ?: currentValueOf(LocalMotionScheme).fastSpatialSpec()
+                    scaleAnimationSpec
+                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastSpatialSpec()
             )
         }
 
@@ -1262,7 +1252,8 @@ internal class FabVisibleNode(
             alphaAnimatable.animateTo(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
-                    alphaAnimationSpec ?: currentValueOf(LocalMotionScheme).fastEffectsSpec()
+                    alphaAnimationSpec
+                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastEffectsSpec()
             )
         }
     }

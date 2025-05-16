@@ -18,6 +18,7 @@ package androidx.compose.material3.adaptive.layout
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Transition
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -122,17 +123,32 @@ sealed interface PaneScaffoldScope {
      *   scaffold
      * @param minTouchTargetSize the minimum touch target size of the drag handle
      * @param interactionSource the [MutableInteractionSource] to address user interactions
-     * @param semanticsProperties the semantics setup working with accessibility services
+     * @param semanticsProperties the optional semantics setup working with accessibility services;
+     *   a default implementation will be used if nothing is provided.
      */
-    @ExperimentalMaterial3AdaptiveApi
-    // TODO(conradchen): Change this to a composable function with default semantics after
-    //  b/165812010 is fixed
     fun Modifier.paneExpansionDraggable(
         state: PaneExpansionState,
         minTouchTargetSize: Dp,
         interactionSource: MutableInteractionSource,
-        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)
+        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)? = null
     ): Modifier
+
+    /**
+     * A [Modifier] that enables dragging to resize a pane. Note that this modifier will only take
+     * effect when a pane is [PaneAdaptedValue.Levitated].
+     *
+     * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
+     * @param state The [DragToResizeState] which controls the resizing behavior.
+     */
+    fun Modifier.dragToResize(state: DragToResizeState): Modifier =
+        this.draggable(state = state, orientation = state.orientation)
+            .then(DragToResizeElement(state))
+
+    /**
+     * The saveable state holder to save pane states across their visibility life-cycles. The
+     * default pane implementations like [AnimatedPane] are supposed to use it to store states.
+     */
+    val saveableStateHolder: SaveableStateHolder
 }
 
 /**
@@ -173,8 +189,7 @@ sealed interface PaneScaffoldPaneScope<Role> {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal abstract class PaneScaffoldScopeImpl(
-    // TODO(conradchen): Add it to PaneScaffoldScope API in 1.2
-    val saveableStateHolder: SaveableStateHolder
+    override val saveableStateHolder: SaveableStateHolder
 ) : PaneScaffoldScope {
     override fun Modifier.preferredWidth(width: Dp): Modifier {
         require(width == Dp.Unspecified || width > 0.dp) { "invalid width" }
@@ -183,7 +198,7 @@ internal abstract class PaneScaffoldScopeImpl(
 
     override fun Modifier.preferredHeight(height: Dp): Modifier {
         require(height == Dp.Unspecified || height > 0.dp) { "invalid height" }
-        return this.then(PreferredWidthElement(height))
+        return this.then(PreferredHeightElement(height))
     }
 }
 
@@ -259,7 +274,7 @@ private class PreferredHeightElement(
 private class PreferredHeightNode(var height: Dp) : ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
         ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
-            it.preferredWidth = height
+            it.preferredHeight = height
         }
 }
 
@@ -296,6 +311,43 @@ private class AnimatedPaneNode : ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
         ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
             it.isAnimatedPane = true
+        }
+}
+
+private class DragToResizeElement(
+    val state: DragToResizeState,
+) : ModifierNodeElement<DragToResizeNode>() {
+    override fun create(): DragToResizeNode = DragToResizeNode(state)
+
+    override fun update(node: DragToResizeNode) {
+        node.state = state
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "dragToResize"
+        properties["state"] = state
+    }
+
+    override fun hashCode(): Int {
+        return state.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DragToResizeElement) return false
+
+        if (state != other.state) return false
+
+        return true
+    }
+}
+
+private class DragToResizeNode(
+    var state: DragToResizeState,
+) : ParentDataModifierNode, Modifier.Node() {
+    override fun Density.modifyParentData(parentData: Any?) =
+        ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
+            it.dragToResizeState = state
         }
 }
 
@@ -339,6 +391,14 @@ sealed interface PaneScaffoldParentData {
      * take effect on pane composables with the default scaffold implementations.
      */
     val minTouchTargetSize: Dp
+
+    /**
+     * The [DragToResizeState] used to control the resize behavior of a levitated pane. Note that
+     * this won't take effect on non-levitated panes.
+     *
+     * @see PaneScaffoldScope.dragToResize
+     */
+    val dragToResizeState: DragToResizeState?
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -347,5 +407,6 @@ internal data class PaneScaffoldParentDataImpl(
     override var preferredHeight: Dp = Dp.Unspecified,
     var paneMargins: PaneMargins = PaneMargins.Unspecified,
     override var isAnimatedPane: Boolean = false,
-    override var minTouchTargetSize: Dp = Dp.Unspecified
+    override var minTouchTargetSize: Dp = Dp.Unspecified,
+    override var dragToResizeState: DragToResizeState? = null,
 ) : PaneScaffoldParentData

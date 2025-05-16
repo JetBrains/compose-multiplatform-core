@@ -459,12 +459,8 @@ annotation class ExperimentalTapGestureDetectorBehaviorApi
     )
 )
 @OptIn(ExperimentalFoundationApi::class)
-// This lint does not translate well to top-level declarations
-@get:Suppress("GetterSetterNames")
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET", "DEPRECATION")
+@Suppress("DEPRECATION", "GetterSetterNames")
 @ExperimentalTapGestureDetectorBehaviorApi
-@get:ExperimentalTapGestureDetectorBehaviorApi
-@set:ExperimentalTapGestureDetectorBehaviorApi
 var DetectTapGesturesEnableNewDispatchingBehavior: Boolean
     set(value) {
         isDetectTapGesturesImmediateCoroutineDispatchEnabled = value

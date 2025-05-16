@@ -48,12 +48,12 @@ import org.junit.runners.Parameterized.Parameters
 
 @MediumTest
 @RunWith(Parameterized::class)
-class BooksDaoTest(useBundledSQLite: Boolean) : TestDatabaseTest(useBundledSQLite) {
+class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
     private companion object {
         @JvmStatic
-        @Parameters(name = "useBundledSQLite={0}")
-        fun parameters() = arrayOf(false, true)
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = UseDriver.entries.toTypedArray()
     }
 
     @Test
@@ -290,6 +290,21 @@ class BooksDaoTest(useBundledSQLite: Boolean) : TestDatabaseTest(useBundledSQLit
             database
                 .booksDao()
                 .getBooksMultiLineQuery(arrayListOf(TestUtil.BOOK_1.bookId, TestUtil.BOOK_2.bookId))
+        assertThat(books, `is`(listOf(TestUtil.BOOK_2, TestUtil.BOOK_1)))
+    }
+
+    @Test
+    fun findBooksInMultiLineQueryWithComment() {
+        booksDao.addPublishers(TestUtil.PUBLISHER)
+        booksDao.addBooks(TestUtil.BOOK_1)
+        booksDao.addBooks(TestUtil.BOOK_2)
+
+        val books =
+            database
+                .booksDao()
+                .getBooksMultiLineQueryWithComment(
+                    arrayListOf(TestUtil.BOOK_1.bookId, TestUtil.BOOK_2.bookId)
+                )
         assertThat(books, `is`(listOf(TestUtil.BOOK_2, TestUtil.BOOK_1)))
     }
 

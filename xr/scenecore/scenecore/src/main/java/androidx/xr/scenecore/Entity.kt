@@ -130,6 +130,7 @@ public interface Entity : ActivityPose {
      * This value will affect the rendering of this Entity's children. Children of this node will
      * have their alpha levels multiplied by this value and any alpha of this entity's ancestors.
      *
+     * @param alpha Alpha transparency level for the Entity.
      * @param relativeTo Sets alpha relative to given Space. Default value is the parent space.
      */
     public fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int = Space.PARENT)

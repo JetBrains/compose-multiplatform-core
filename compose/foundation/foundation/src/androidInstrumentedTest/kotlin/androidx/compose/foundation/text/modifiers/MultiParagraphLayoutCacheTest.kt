@@ -1110,6 +1110,35 @@ class MultiParagraphLayoutCacheTest {
         subject.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
     }
 
+    @Test
+    fun history_isRecorded() {
+        val text = "Hello, World"
+        val subject =
+            MultiParagraphLayoutCache(
+                    text = AnnotatedString(text),
+                    style = TextStyle(fontSize = 100.sp),
+                    fontFamilyResolver = fontFamilyResolver,
+                )
+                .also { it.density = density }
+
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.update(
+            text = AnnotatedString("Hello again, World"),
+            style = TextStyle(fontSize = 100.sp),
+            fontFamilyResolver = fontFamilyResolver,
+            overflow = TextOverflow.Clip,
+            softWrap = true,
+            maxLines = Int.MAX_VALUE,
+            minLines = DefaultMinLines,
+            placeholders = null,
+            autoSize = null
+        )
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.density = Density(2f, 3f)
+
+        assertThat(subject.historyFlag).isEqualTo(0b011101101)
+    }
+
     private fun MultiParagraphLayoutCache.updateAutoSize(
         text: String,
         fontSize: TextUnit,

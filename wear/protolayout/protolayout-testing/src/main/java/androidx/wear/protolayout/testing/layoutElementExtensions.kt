@@ -69,6 +69,14 @@ internal fun LayoutElement.getText(
     return dynamicValue?.evaluate(injectedData) ?: staticValue
 }
 
+internal fun LayoutElement.getContentDescription(injectedData: DynamicDataMap? = null): String? {
+    val dynamicValue = this.contentDescription?.dynamicValue
+    val staticValue = this.contentDescription?.value
+    // Falls back to  use the static text when the dynamic data evaluation fails due to lack of
+    // data in the pipeline.
+    return dynamicValue?.evaluate(injectedData) ?: staticValue
+}
+
 internal val LayoutElement.children: List<LayoutElement>
     get() =
         when (this) {

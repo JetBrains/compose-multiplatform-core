@@ -51,7 +51,7 @@ import kotlin.math.sqrt
  * @param data the data that defines the widget
  */
 @Composable
-fun GalleryTemplate(data: GalleryTemplateData) {
+public fun GalleryTemplate(data: GalleryTemplateData) {
     when (LocalTemplateMode.current) {
         TemplateMode.Collapsed -> WidgetLayoutCollapsed(data)
         TemplateMode.Vertical -> WidgetLayoutVertical(data)

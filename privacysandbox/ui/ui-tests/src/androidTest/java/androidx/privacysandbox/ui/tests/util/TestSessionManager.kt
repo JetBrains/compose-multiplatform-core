@@ -34,6 +34,7 @@ import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverContext
 import androidx.privacysandbox.ui.core.SessionObserverFactory
+import androidx.privacysandbox.ui.core.test.TestProtocolConstants
 import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
@@ -52,7 +53,6 @@ class TestSessionManager(
 ) {
 
     companion object {
-        const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
         const val TIMEOUT = 1000.toLong()
         const val SDK_VIEW_COLOR = Color.YELLOW
     }
@@ -479,7 +479,10 @@ class TestSessionManager(
 
     fun getCoreLibInfoFromAdapter(sdkAdapter: SandboxedUiAdapter): Bundle {
         val bundle = sdkAdapter.toCoreLibInfo(SdkContext(context))
-        bundle.putBoolean(TEST_ONLY_USE_REMOTE_ADAPTER, !invokeBackwardsCompatFlow)
+        bundle.putBoolean(
+            TestProtocolConstants.testOnlyUseRemoteAdapterKey,
+            !invokeBackwardsCompatFlow
+        )
         return bundle
     }
 }

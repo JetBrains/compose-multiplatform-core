@@ -19,7 +19,6 @@ package androidx.wear.compose.material3.demos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,12 +29,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,11 +46,13 @@ import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ButtonGroup
-import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.lazy.scrollTransform
+import androidx.wear.compose.material3.TitleCard
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.material3.samples.AppCardSample
 import androidx.wear.compose.material3.samples.AppCardWithIconSample
 import androidx.wear.compose.material3.samples.AppCardWithImageSample
@@ -84,25 +85,24 @@ import androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSampl
 fun TransformingLazyColumnNotificationsDemo() {
     MaterialTheme {
         Box(modifier = Modifier.aspectRatio(1f).background(Color.Black)) {
+            val transformationSpec = rememberTransformationSpec()
             TransformingLazyColumn(
                 modifier = Modifier.padding(horizontal = 10.dp),
             ) {
                 item { ListHeader { Text("Notifications") } }
                 items(notificationList) { notification ->
-                    Column(
-                        modifier =
-                            Modifier.scrollTransform(
-                                    this@items,
-                                    backgroundColor = Color.DarkGray,
-                                    shape = RoundedCornerShape(20.dp)
-                                )
-                                .padding(10.dp)
+                    TitleCard(
+                        modifier = Modifier.transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
+                        onClick = { /* Do something */ },
+                        title = {
+                            Text(
+                                notification.title,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
                     ) {
-                        Text(
-                            notification.title,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelLarge,
-                        )
                         Text(notification.body)
                     }
                 }
@@ -114,6 +114,7 @@ fun TransformingLazyColumnNotificationsDemo() {
 @Composable
 fun TransformingLazyColumnButtons() {
     val state = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
     TransformingLazyColumn(
         state = state,
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 50.dp),
@@ -143,37 +144,37 @@ fun TransformingLazyColumnButtons() {
         item { ButtonBackgroundImage(painterResource(R.drawable.backgroundimage), enabled = false) }
         item { ListHeader { Text("Complex Buttons") } }
         item {
-            Row(Modifier.scrollTransform(this@item)) {
-                TransformExclusion {
-                    SimpleButtonSample(Modifier.weight(1f))
-                    Spacer(Modifier.width(4.dp))
-                    SimpleButtonSample(Modifier.weight(1f))
+            Row(
+                Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
+                    with(transformationSpec) { applyContainerTransformation(scrollProgress) }
                 }
+            ) {
+                SimpleButtonSample(Modifier.weight(1f))
+                Spacer(Modifier.width(4.dp))
+                SimpleButtonSample(Modifier.weight(1f))
             }
         }
         item {
-            TransformExclusion {
-                val interactionSource1 = remember { MutableInteractionSource() }
-                val interactionSource2 = remember { MutableInteractionSource() }
-                ButtonGroup(Modifier.scrollTransform(this@item)) {
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource1),
-                        interactionSource = interactionSource1
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("L")
-                        }
-                    }
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource2),
-                        interactionSource = interactionSource2
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("R")
-                        }
-                    }
+            val interactionSource1 = remember { MutableInteractionSource() }
+            val interactionSource2 = remember { MutableInteractionSource() }
+            ButtonGroup(
+                Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
+                    with(transformationSpec) { applyContainerTransformation(scrollProgress) }
+                }
+            ) {
+                Button(
+                    onClick = {},
+                    Modifier.animateWidth(interactionSource1),
+                    interactionSource = interactionSource1
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("L") }
+                }
+                Button(
+                    onClick = {},
+                    Modifier.animateWidth(interactionSource2),
+                    interactionSource = interactionSource2
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("R") }
                 }
             }
         }
@@ -235,7 +236,7 @@ private fun CardWithButtons() {
 
 @Composable
 private fun ButtonBackgroundImage(painter: Painter, enabled: Boolean) =
-    ImageButton(
+    Button(
         modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
         containerPainter = ButtonDefaults.containerPainter(painter),
         onClick = { /* Do something */ },

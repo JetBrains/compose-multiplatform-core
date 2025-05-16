@@ -31,16 +31,20 @@ plugins {
 }
 
 dependencies {
+    def compose_version = "1.7.8"
+
     api(libs.kotlinStdlib)
-    api("androidx.compose.foundation:foundation:1.7.8")
-    api("androidx.compose.ui:ui:1.7.8")
-    api("androidx.compose.runtime:runtime-saveable:1.7.8")
+    api("androidx.compose.ui:ui:$compose_version")
+    api("androidx.compose.runtime:runtime-annotation:1.9.0-alpha02")
     api(project(":pdf:pdf-viewer"))
 
-    implementation("androidx.compose.runtime:runtime:1.7.8")
+    implementation("androidx.compose.foundation:foundation:$compose_version")
+    implementation("androidx.core:core-ktx:1.1.0")
+    implementation("androidx.compose.runtime:runtime:$compose_version")
+    implementation("androidx.compose.runtime:runtime-saveable:$compose_version")
 
-    androidTestImplementation(project(":compose:ui:ui-test"))
-    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation("androidx.compose.ui:ui-test:$compose_version")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.junit)

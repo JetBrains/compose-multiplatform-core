@@ -155,7 +155,7 @@ class ConfigBuilder {
         sb.append(APK_INSTALL_OPTION.replace("APK_NAME", testApkName))
         appApksModel?.apkGroups?.forEach { group ->
             if (group.isUsingApkSplits()) {
-                val apkList = group.apks.map(ApkFile::name).joinToString(",")
+                val apkList = group.apks.joinToString(",", transform = ApkFile::name)
                 sb.append(APK_WITH_SPLITS_INSTALL_OPTION.replace("APK_LIST", apkList))
             } else {
                 sb.append(APK_INSTALL_OPTION.replace("APK_NAME", group.apks.single().name))

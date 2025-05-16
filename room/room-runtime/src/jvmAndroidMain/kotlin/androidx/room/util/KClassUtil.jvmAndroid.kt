@@ -26,7 +26,7 @@ import androidx.annotation.RestrictTo
  * `@Database` annotated type.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String = "_Impl"): T {
+public fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String = "_Impl"): T {
     val fullPackage: String = klass.getPackage()?.name ?: ""
     val name: String = klass.canonicalName!!
     val postPackageName =

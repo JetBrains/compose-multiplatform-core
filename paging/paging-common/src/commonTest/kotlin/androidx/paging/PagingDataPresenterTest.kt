@@ -22,6 +22,7 @@ import androidx.paging.LoadState.NotLoading
 import androidx.paging.LoadType.PREPEND
 import androidx.paging.PageEvent.Drop
 import androidx.paging.PagingSource.LoadResult
+import kotlin.collections.removeFirst as removeFirstKt
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -2679,7 +2680,7 @@ private class HintReceiverFake : HintReceiver {
     val hints: List<ViewportHint>
         get() {
             val result = _hints.toList()
-            @OptIn(ExperimentalStdlibApi::class) repeat(result.size) { _hints.removeFirst() }
+            @OptIn(ExperimentalStdlibApi::class) repeat(result.size) { _hints.removeFirstKt() }
             return result
         }
 
@@ -2712,7 +2713,7 @@ private class TrackableHintReceiverWrapper(
     val hints: List<ViewportHint>
         get() {
             val result = _hints.toList()
-            @OptIn(ExperimentalStdlibApi::class) repeat(result.size) { _hints.removeFirst() }
+            @OptIn(ExperimentalStdlibApi::class) repeat(result.size) { _hints.removeFirstKt() }
             return result
         }
 

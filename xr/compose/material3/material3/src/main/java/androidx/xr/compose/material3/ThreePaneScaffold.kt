@@ -129,7 +129,13 @@ private fun Panel(
 
     SpatialPanel(SubspaceModifier.width(defaultPreferredWidth).fillMaxHeight()) {
         Layout(content) { measurables, constraints ->
-            val measurable = measurables[0]
+            val measurable = measurables.getOrNull(0)
+            if (measurable == null) {
+                return@Layout layout(
+                    defaultPreferredWidth.toPx().roundToInt(),
+                    constraints.maxHeight
+                ) {}
+            }
             val parentData = measurable.parentData as? PaneScaffoldParentData
             val widthFloat = parentData?.preferredWidth ?: defaultPreferredWidth
             val width = widthFloat.toPx().roundToInt()

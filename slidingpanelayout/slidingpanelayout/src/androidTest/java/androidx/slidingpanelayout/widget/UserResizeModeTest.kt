@@ -26,6 +26,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Parcelable
 import android.util.SparseArray
+import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.MeasureSpec
@@ -39,6 +40,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -597,6 +599,84 @@ class UserResizeModeTest {
         assertWithMessage("left child width").that(left.width).isEqualTo(0)
         assertWithMessage("right child width").that(right.width).isEqualTo(100)
     }
+
+    @SdkSuppress(minSdkVersion = 24)
+    @Test
+    fun onResolvePointerIcon_mouseHoverOnDivider_returnsPointerIcon() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = createTestSpl(context)
+        spl.measureAndLayoutForTest(width = 500)
+
+        val x = spl.visualDividerPosition
+        val y = spl.height / 2
+
+        // horizontal cursor is returned for mouse hover.
+        val mouseEvent = mouseEvent(MotionEvent.ACTION_HOVER_ENTER, x, y)
+        assertThat(spl.onResolvePointerIcon(mouseEvent, pointerIndex = 0)).isNotNull()
+
+        // No pointer icon is returned for stylus hover.
+        val stylusEvent = stylusEvent(MotionEvent.ACTION_HOVER_ENTER, x, y)
+        assertThat(spl.onResolvePointerIcon(stylusEvent, pointerIndex = 0)).isNull()
+
+        // Create a hover event that's not in divider's touch bounds, and spl.onResolvePointerIcon
+        // should return null.
+        // Note that divider has the minimal touch bounds equals to 48.dp x 48.dp.
+        val x1 = spl.visualDividerPosition - 200
+        val outOfBoundsMouseEvent = mouseEvent(MotionEvent.ACTION_HOVER_ENTER, x1, y)
+        assertThat(spl.onResolvePointerIcon(outOfBoundsMouseEvent, pointerIndex = 0)).isNull()
+    }
+
+    @Test
+    fun userResizingDrawable_hoverEventUpdatesDrawableState() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = createTestSpl(context)
+        spl.measureAndLayoutForTest(width = 500)
+
+        val testDrawable =
+            object : Drawable() {
+                var drawableState: IntArray = intArrayOf()
+
+                override fun draw(canvas: Canvas) {}
+
+                override fun setAlpha(alpha: Int) {}
+
+                override fun setColorFilter(colorFilter: ColorFilter?) {}
+
+                override fun getOpacity(): Int = 0
+
+                override fun onStateChange(state: IntArray): Boolean {
+                    drawableState = state
+                    return super.onStateChange(state)
+                }
+
+                override fun isStateful(): Boolean = true
+            }
+
+        spl.setUserResizingDividerDrawable(testDrawable)
+
+        val x = spl.visualDividerPosition
+        val y = spl.height / 2
+
+        // Update the drawable state when mouse is hovered on divider
+        spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_HOVER_ENTER, x, y))
+        assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isTrue()
+
+        // Move away from divider
+        spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_HOVER_MOVE, x - 100, y))
+        assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isFalse()
+
+        // Move back on divider
+        spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_HOVER_MOVE, x, y))
+        assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isTrue()
+
+        // Exit hover
+        spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_HOVER_EXIT, x, y))
+        assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isFalse()
+
+        // mouse down, it's not hovered
+        spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_DOWN, x, y))
+        assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isFalse()
+    }
 }
 
 private fun SlidingPaneLayout.leftAndRightViews(): Pair<View, View> {
@@ -743,3 +823,36 @@ private fun moveEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_MOVE,
 private fun upEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_UP, x, y)
 
 private fun cancelEvent() = motionEvent(MotionEvent.ACTION_CANCEL, 0f, 0f)
+
+private fun motionEvent(action: Int, x: Int, y: Int, source: Int, toolType: Int): MotionEvent {
+    val properties = arrayOf(MotionEvent.PointerProperties())
+    properties[0].toolType = toolType
+    properties[0].id = 1
+    val coords = arrayOf(MotionEvent.PointerCoords())
+    coords[0].x = x.toFloat()
+    coords[0].y = y.toFloat()
+    coords[0].pressure = 1.0f
+
+    return MotionEvent.obtain(
+        /*downTime=*/ 0,
+        /*eventTime=*/ 0,
+        action,
+        /*pointerCount=*/ 1,
+        properties,
+        coords,
+        /*metaState=*/ 0,
+        /*buttonState=*/ 0,
+        /*xPrecision=*/ 1.0f,
+        /*yPrecision=*/ 1.0f,
+        /*deviceId=*/ 0,
+        /*edgeFlags=*/ 0,
+        source,
+        /*flags=*/ 0
+    )
+}
+
+private fun mouseEvent(action: Int, x: Int, y: Int) =
+    motionEvent(action, x, y, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE)
+
+private fun stylusEvent(action: Int, x: Int, y: Int) =
+    motionEvent(action, x, y, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS)

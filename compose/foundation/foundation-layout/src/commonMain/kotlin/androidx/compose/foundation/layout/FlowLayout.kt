@@ -22,6 +22,7 @@ import androidx.annotation.FloatRange
 import androidx.collection.IntIntPair
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
+import androidx.collection.mutableIntSetOf
 import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -1286,6 +1287,7 @@ internal fun MeasureScope.breakDownItems(
     var startBreakLineIndex = 0
     val endBreakLineList = mutableIntListOf()
     val crossAxisSizes = mutableIntListOf()
+    val crossAxisFillEnabledLines = mutableIntSetOf()
 
     val buildingBlocks =
         FlowLayoutBuildingBlocks(
@@ -1329,6 +1331,7 @@ internal fun MeasureScope.breakDownItems(
     var crossAxisTotalSize = 0
     var currentLineMainAxisSize = 0
     var currentLineCrossAxisSize = 0
+    var currentLineCrossAxisFillEnabled = false
     while (!wrapInfo.isLastItemInContainer && measurable != null) {
         val itemMainAxisSize = nextMainAxisSize!!
         val itemCrossAxisSize = nextCrossAxisSize!!
@@ -1338,6 +1341,13 @@ internal fun MeasureScope.breakDownItems(
         overflow.itemShown = index + 1
         measurables.add(measurable!!)
         placeables[index] = placeableItem
+        if (
+            (measurable.parentData as? RowColumnParentData)
+                ?.flowLayoutData
+                ?.fillCrossAxisFraction != null
+        ) {
+            currentLineCrossAxisFillEnabled = true
+        }
 
         val nextIndexInLine = (index + 1) - startBreakLineIndex
         val willFitLine = nextIndexInLine < maxItemsInMainAxis
@@ -1401,6 +1411,8 @@ internal fun MeasureScope.breakDownItems(
                     (index + 1) - startBreakLineIndex
                 )
             crossAxisSizes.add(currentLineCrossAxisSize)
+            if (currentLineCrossAxisFillEnabled) crossAxisFillEnabledLines += lineIndex
+            currentLineCrossAxisFillEnabled = false
             leftOver = mainAxisMax
             leftOverCrossAxis = crossAxisMax - crossAxisTotalSize - crossAxisSpacing
             startBreakLineIndex = index + 1
@@ -1438,12 +1450,18 @@ internal fun MeasureScope.breakDownItems(
     var startIndex = 0
     endBreakLineList.forEachIndexed { currentLineIndex, endIndex ->
         var crossAxisSize = crossAxisSizes[currentLineIndex]
+        val crossAxisMaxSize =
+            when {
+                crossAxisFillEnabledLines.contains(currentLineIndex) -> crossAxisSize
+                subsetConstraints.crossAxisMax == Constraints.Infinity -> Constraints.Infinity
+                else -> subsetConstraints.crossAxisMax - crossAxisTotalSize
+            }
         val result =
             measurePolicy.measure(
                 mainAxisMin = mainAxisTotalSize,
                 crossAxisMin = subsetConstraints.crossAxisMin,
                 mainAxisMax = subsetConstraints.mainAxisMax,
-                crossAxisMax = crossAxisSize,
+                crossAxisMax = crossAxisMaxSize,
                 spacing,
                 this,
                 measurables,

@@ -151,6 +151,11 @@ public class Highlight(public val area: PdfRect, @ColorInt public val color: Int
     override fun toString(): String {
         return "Highlight: area $area color $color"
     }
+
+    /** Deeply copies this [androidx.pdf.view.Highlight] */
+    internal fun copy(): Highlight {
+        return Highlight(PdfRect(area.pageNum, RectF(area.pageRect)), color)
+    }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)

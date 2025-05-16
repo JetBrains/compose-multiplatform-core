@@ -16,14 +16,17 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor
+import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.Trackable
-import androidx.xr.runtime.internal.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
+import java.util.UUID
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +73,7 @@ class FakePerceptionManagerTest {
     fun createAnchor_returnsAnchorWithTrackingStateTracking() {
         val anchor = underTest.createAnchor(Pose())
 
-        assertThat(anchor.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(anchor.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
     @Test
@@ -141,6 +144,14 @@ class FakePerceptionManagerTest {
     }
 
     @Test
+    fun loadAnchor_invalidUuid_throwsAnchorInvalidUuidException() {
+        assertThrows(AnchorInvalidUuidException::class.java) {
+            underTest.loadAnchor(UUID.randomUUID())
+        }
+        assertThrows(AnchorInvalidUuidException::class.java) { underTest.loadAnchor(UUID(0L, 0L)) }
+    }
+
+    @Test
     fun unpersistAnchor_removesAnchorFromAnchorUuids() {
         val anchor = underTest.createAnchor(Pose())
         anchor.persist()
@@ -149,6 +160,16 @@ class FakePerceptionManagerTest {
         underTest.unpersistAnchor(anchor.uuid!!)
 
         assertThat(underTest.getPersistedAnchorUuids()).isEmpty()
+    }
+
+    @Test
+    fun unpersistAnchor_invalidUuid_throwsAnchorInvalidUuidException() {
+        assertThrows(AnchorInvalidUuidException::class.java) {
+            underTest.unpersistAnchor(UUID.randomUUID())
+        }
+        assertThrows(AnchorInvalidUuidException::class.java) {
+            underTest.unpersistAnchor(UUID(0L, 0L))
+        }
     }
 
     private fun createStubTrackable() =
@@ -163,6 +184,6 @@ class FakePerceptionManagerTest {
                 underTest.persistAnchor(anchor)
             }
 
-            override val trackingState = TrackingState.Tracking
+            override val trackingState = TrackingState.TRACKING
         }
 }

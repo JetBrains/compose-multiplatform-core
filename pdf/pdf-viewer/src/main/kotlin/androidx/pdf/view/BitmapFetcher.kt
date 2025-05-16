@@ -27,6 +27,11 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.pdf.PdfDocument
+import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.PAGE_BITMAP_REQUEST_NAME
+import androidx.pdf.util.PAGE_BITMAP_TILE_REQUEST_NAME
+import androidx.pdf.util.PAGE_RELEASE_REQUEST_NAME
 import androidx.pdf.util.RectUtils
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +59,7 @@ import kotlinx.coroutines.launch
  */
 @MainThread
 internal class BitmapFetcher(
-    pageNum: Int,
+    private val pageNum: Int,
     private val pageSize: Point,
     pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
@@ -190,7 +195,22 @@ internal class BitmapFetcher(
         pageBitmaps = null
         fetchingWorkHandle?.cancel()
         fetchingWorkHandle = null
-        bitmapSource.close()
+        try {
+            bitmapSource.close()
+        } catch (e: DeadObjectException) {
+            val exception =
+                RequestFailedException(
+                    requestMetadata =
+                        RequestMetadata(
+                            requestName = PAGE_RELEASE_REQUEST_NAME,
+                            pageRange = pageNum..pageNum
+                        ),
+                    throwable = e,
+                    // Release page is a fire-and-forget request, no need to show error on UI
+                    showError = false
+                )
+            errorFlow.tryEmit(exception)
+        }
     }
 
     /** Fetch a [FullPageBitmap] */
@@ -249,7 +269,16 @@ internal class BitmapFetcher(
                 ensureActive()
                 onReady(bitmap)
             } catch (e: DeadObjectException) {
-                errorFlow.emit(e)
+                val exception =
+                    RequestFailedException(
+                        requestMetadata =
+                            RequestMetadata(
+                                requestName = PAGE_BITMAP_REQUEST_NAME,
+                                pageRange = pageNum..pageNum
+                            ),
+                        throwable = e
+                    )
+                errorFlow.emit(exception)
             }
         }
     }
@@ -278,12 +307,21 @@ internal class BitmapFetcher(
                         )
                     ensureActive()
                     tile.bitmap = bitmap
+                    onPageUpdate()
                 } catch (e: DeadObjectException) {
                     // Service was disconnected.
-                    errorFlow.emit(e)
+                    val exception =
+                        RequestFailedException(
+                            requestMetadata =
+                                RequestMetadata(
+                                    requestName = PAGE_BITMAP_TILE_REQUEST_NAME,
+                                    pageRange = pageNum..pageNum
+                                ),
+                            throwable = e,
+                        )
+                    errorFlow.emit(exception)
                     return@launch
                 }
-                onPageUpdate()
             }
         return job
     }
@@ -362,6 +400,8 @@ internal sealed interface PageContents {
     val bitmapScale: Float
 
     val needsWhiteBackground: Boolean
+
+    val isFullyRendered: Boolean
 }
 
 /** A singular [Bitmap] depicting the full page, when full page rendering is used */
@@ -371,6 +411,8 @@ internal class FullPageBitmap(val bitmap: Bitmap, override val bitmapScale: Floa
      * [Bitmap] covering the whole page
      */
     override val needsWhiteBackground: Boolean = false
+
+    override val isFullyRendered: Boolean = true
 }
 
 /**
@@ -403,6 +445,9 @@ internal class TileBoard(
      */
     override val needsWhiteBackground: Boolean
         get() = fullPageBitmap == null
+
+    override val isFullyRendered: Boolean
+        get() = tiles.all { it.bitmap != null }
 
     /** An individual [Tile] in this [TileBoard] */
     inner class Tile(val index: Int) {

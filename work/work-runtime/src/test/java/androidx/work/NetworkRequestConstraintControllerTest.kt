@@ -18,6 +18,7 @@ package androidx.work
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Handler
 import androidx.annotation.RequiresApi
@@ -40,18 +41,20 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implements
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowConnectivityManager
+import org.robolectric.shadows.ShadowNetworkCapabilities
 
 @Config(
     manifest = Config.NONE,
-    maxSdk = 32,
+    maxSdk = 30, // On APIs 31+ the Robolectric impl of canBeSatisfiedBy is broken.
     minSdk = 28,
     shadows = [ExtendedShadowConnectivityManager::class]
-) // Robolectric uses wrong maxSdk by default b/285714232
+)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class NetworkRequestConstraintControllerTest {
@@ -67,10 +70,19 @@ class NetworkRequestConstraintControllerTest {
                 as ConnectivityManager
         val connManagerShadow =
             Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
 
         val controller = NetworkRequestConstraintController(connectivityManager)
-        // doesn't bother to set it up, because it is ignored by shadow anyway.
-        val request = NetworkRequest.Builder().build()
+        val request =
+            NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
         val constraints =
             Constraints.Builder().setRequiredNetworkRequest(request, NetworkType.CONNECTED).build()
         runBlocking {
@@ -140,6 +152,16 @@ class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
         handler: Handler?
     ) {
         super.registerNetworkCallback(request, networkCallback, handler)
+        val network = activeNetwork ?: return
+
+        networkCallback?.onAvailable(network)
+        networkCallback?.onCapabilitiesChanged(network, getNetworkCapabilities(network))
+    }
+
+    override fun registerDefaultNetworkCallback(
+        networkCallback: ConnectivityManager.NetworkCallback?
+    ) {
+        super.registerDefaultNetworkCallback(networkCallback)
         val network = activeNetwork ?: return
 
         networkCallback?.onAvailable(network)

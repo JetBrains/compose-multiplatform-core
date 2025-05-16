@@ -55,7 +55,7 @@ import kotlinx.coroutines.withContext
  * @property timeSource The time source for measuring progress towards timeouts.
  */
 @RestrictTo(LIBRARY_GROUP)
-data class TimeoutOptions(
+public data class TimeoutOptions(
     val initialTimeout: Duration = 45.seconds,
     val additionalTime: Duration = 5.seconds,
     val idleTimeout: Duration = 5.seconds,
@@ -71,7 +71,7 @@ data class TimeoutOptions(
  * composition, the worker blocks on [Session.receiveEvents] until [Session.close] is called.
  */
 @RestrictTo(LIBRARY_GROUP)
-class SessionWorker(
+public class SessionWorker(
     appContext: Context,
     private val params: WorkerParameters,
     private val sessionManager: SessionManager = GlanceSessionManager,
@@ -80,7 +80,7 @@ class SessionWorker(
     override val coroutineContext: CoroutineDispatcher = Dispatchers.Main
 ) : CoroutineWorker(appContext, params) {
     // This constructor is required by WorkManager's default WorkerFactory.
-    constructor(
+    public constructor(
         appContext: Context,
         params: WorkerParameters
     ) : this(
@@ -89,7 +89,7 @@ class SessionWorker(
         GlanceSessionManager,
     )
 
-    companion object {
+    public companion object {
         internal const val TAG = "GlanceSessionWorker"
         internal const val DEBUG = false
         internal const val TimeoutExitReason = "TIMEOUT_EXIT_REASON"
@@ -101,7 +101,7 @@ class SessionWorker(
 
     @VisibleForTesting internal var effectJob: Job? = null
 
-    override suspend fun doWork() =
+    override suspend fun doWork(): Result =
         withTimerOrNull(timeouts.timeSource) {
             observeIdleEvents(
                 applicationContext,
@@ -258,6 +258,6 @@ private suspend fun TimerScope.runSession(
  * [GlanceSessionManager], i.e. without starting a worker.
  */
 @RestrictTo(LIBRARY_GROUP)
-suspend fun Session.runSession(context: Context) {
+public suspend fun Session.runSession(context: Context) {
     noopTimer { runSession(context, this@runSession, TimeoutOptions()) }
 }

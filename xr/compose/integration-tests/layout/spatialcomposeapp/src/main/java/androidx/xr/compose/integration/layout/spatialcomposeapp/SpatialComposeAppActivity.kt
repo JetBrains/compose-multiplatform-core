@@ -27,8 +27,8 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +58,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -93,7 +91,7 @@ import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.resizable
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.runtime.math.Pose
@@ -125,7 +123,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
 
             // 3D Content
             Subspace {
-                PanelGrid()
+                PanelGrid(SubspaceModifier.fillMaxWidth(0.85f).fillMaxHeight(0.9f))
                 XyzArrows(
                     SubspaceModifier.width(.5.meters.toDp())
                         .height(0.5.meters.toDp())
@@ -140,7 +138,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
 
     @Composable
     fun MainPanelContent() {
-        PanelContent {
+        PanelContent(modifier = Modifier.fillMaxSize()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -168,24 +166,30 @@ class SpatialComposeAppActivity : ComponentActivity() {
                 ) {
                     Text("Launch Video Player")
                 }
+                Button(
+                    onClick = {
+                        val intent =
+                            Intent(
+                                this@SpatialComposeAppActivity,
+                                WindowManagerJxrTestActivity::class.java
+                            )
+                        startActivity(intent)
+                    }
+                ) {
+                    Text("Launch Window Manager JXR Test")
+                }
             }
         }
     }
 
     @Composable
     @SubspaceComposable
-    fun PanelGrid() {
-        val sidePanelModifier = SubspaceModifier.fillMaxWidth().height(200.dp)
+    fun PanelGrid(modifier: SubspaceModifier = SubspaceModifier) {
+        val sidePanelModifier = SubspaceModifier
         val curveRadius = 1025.dp
-        SpatialColumn(SubspaceModifier.testTag("PanelGridColumn")) {
-            SpatialCurvedRow(
-                modifier = SubspaceModifier.width(2000.dp).height(1200.dp).testTag("PanelGridRow"),
-                alignment = SpatialAlignment.BottomCenter,
-                curveRadius = curveRadius,
-            ) {
-                SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("LeftColumn")
-                ) {
+        SpatialColumn(modifier) {
+            SpatialCurvedRow(alignment = SpatialAlignment.BottomCenter, curveRadius = curveRadius) {
+                SpatialColumn(modifier = SubspaceModifier.weight(0.2f).fillMaxHeight()) {
                     Orbiter(
                         position = OrbiterEdge.Start,
                         offset = inner(8.dp),
@@ -208,23 +212,17 @@ class SpatialComposeAppActivity : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(800.dp)
-                            .fillMaxHeight()
-                            .padding(horizontal = 20.dp)
-                            .testTag("CenterColumn"),
+                        SubspaceModifier.weight(0.6f).fillMaxHeight().padding(horizontal = 20.dp),
                     alignment = SpatialAlignment.TopCenter,
                 ) {
-                    MainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
+                    MainPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth())
                     SpatialPanel(
-                        modifier =
-                            SubspaceModifier.fillMaxWidth().height(400.dp).testTag("ActivityPanel"),
+                        modifier = SubspaceModifier.height(400.dp).fillMaxWidth(),
                         intent =
                             Intent(this@SpatialComposeAppActivity, AnotherActivity::class.java),
                     )
                 }
-                SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("RightColumn")
-                ) {
+                SpatialColumn(modifier = SubspaceModifier.weight(0.2f).fillMaxHeight()) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     AppPanel(modifier = sidePanelModifier, text = "Panel Bottom Right")
@@ -238,14 +236,43 @@ class SpatialComposeAppActivity : ComponentActivity() {
     @Composable
     fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         var moveResizeLocked by remember { mutableStateOf(true) }
+        var showArrows by remember { mutableStateOf(false) }
         SpatialPanel(
             modifier =
-                modifier
-                    .testTag(text)
-                    .movable(enabled = !moveResizeLocked)
-                    .resizable(enabled = !moveResizeLocked)
+                modifier.movable(enabled = !moveResizeLocked).resizable(enabled = !moveResizeLocked)
         ) {
-            PanelContent { Text(text) }
+            PanelContent {
+                Text(text)
+
+                if (showArrows) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("Arrows are now shown here!")
+                        // TODO(b/405111476): Remove this Box once flickering is fixed.
+                        Box(Modifier.size(100.dp)) {
+                            Subspace { XyzArrows(modifier = SubspaceModifier.size(100.dp)) }
+                        }
+                    }
+                }
+            }
+
+            Orbiter(
+                position = OrbiterEdge.End,
+                offset = 24.dp,
+                shape = SpatialRoundedCornerShape(size = CornerSize(50)),
+                settings = OrbiterSettings(shouldRenderInNonSpatial = false),
+                elevation = SpatialElevationLevel.Level2,
+            ) {
+                IconButton(
+                    onClick = { showArrows = !showArrows },
+                    modifier = Modifier.background(Color.Gray),
+                ) {
+                    Icon(imageVector = Icons.Filled.Check, contentDescription = "Add highlight")
+                }
+            }
 
             Orbiter(
                 position = OrbiterEdge.Bottom,
@@ -269,40 +296,30 @@ class SpatialComposeAppActivity : ComponentActivity() {
 
     @UiComposable
     @Composable
-    fun PanelContent(content: @Composable () -> Unit) {
-        var showArrows by remember { mutableStateOf(false) }
-        var addHighlight by remember { mutableStateOf(false) }
-        val borderWidth by remember { derivedStateOf { if (addHighlight) 3.dp else 0.dp } }
+    fun PanelContent(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         var showDialog by remember { mutableStateOf(false) }
+
         Column(
-            modifier =
-                Modifier.background(Color.LightGray)
-                    .fillMaxSize()
-                    .border(width = borderWidth, color = Color.Cyan),
+            modifier = modifier.fillMaxSize().background(Color.LightGray).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            if (showArrows) {
-                Subspace { XyzArrows() }
-            }
             content()
+
             Orbiter(
                 position = OrbiterEdge.End,
                 offset = 24.dp,
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
                 settings = OrbiterSettings(shouldRenderInNonSpatial = false),
+                elevation = SpatialElevationLevel.Level2,
             ) {
-                IconButton(
-                    onClick = {
-                        addHighlight = !addHighlight
-                        showArrows = !showArrows
-                    },
-                    modifier = Modifier.background(Color.Gray),
-                ) {
+                IconButton(onClick = {}, modifier = Modifier.background(Color.Gray)) {
                     Icon(imageVector = Icons.Filled.Check, contentDescription = "Add highlight")
                 }
             }
+
             Spacer(modifier = Modifier.size(20.dp))
+
             Button(onClick = { showDialog = true }) { Text("show dialog") }
             if (showDialog) {
                 SpatialDialog(
@@ -332,18 +349,19 @@ class SpatialComposeAppActivity : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        val context = LocalContext.current
-        val textView = remember {
-            TextView(context).apply {
-                setText(text)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                setBackgroundColor(LTGRAY)
-                setTextColor(BLACK)
-                setGravity(Gravity.CENTER)
-            }
-        }
-
-        SpatialPanel(view = textView, modifier = modifier)
+        SpatialPanel(
+            factory = { context ->
+                TextView(context).apply {
+                    setPadding(16, 16, 16, 16)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                    setBackgroundColor(LTGRAY)
+                    setTextColor(BLACK)
+                    gravity = Gravity.CENTER
+                }
+            },
+            update = { it.text = text },
+            modifier = modifier,
+        )
     }
 
     @SubspaceComposable

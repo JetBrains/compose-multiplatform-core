@@ -1172,7 +1172,8 @@ private fun NodeInfo.getProperties(): Map<String, Any?> = buildMap {
     setIfSpecified("isTextSelectable", node.isTextSelectable)
     setIfSpecified("isVisibleToUser", node.isVisibleToUser, unspecifiedValue = true)
     setIfSpecified("labelFor", node.labelFor)
-    setIfSpecified("labeledBy", node.labeledBy)
+    // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+    @Suppress("DEPRECATION") setIfSpecified("labeledBy", node.labeledBy)
     setIfSpecified("liveRegion", node.liveRegion)
     setIfSpecified("maxTextLength", node.maxTextLength, unspecifiedValue = -1)
     setIfSpecified("movementGranularities", node.movementGranularities)

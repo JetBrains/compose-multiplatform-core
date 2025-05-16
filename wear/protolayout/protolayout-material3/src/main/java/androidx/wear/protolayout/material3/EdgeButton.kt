@@ -22,6 +22,7 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.VerticalAlignment
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
@@ -107,14 +108,15 @@ public fun MaterialScope.iconEdgeButton(
 
     return edgeButton(onClick = onClick, modifier = modifier, colors = colors, style = style) {
         withStyle(
-                defaultIconStyle =
-                    IconStyle(
-                        width = style.iconSizeDp.dp,
-                        height = style.iconSizeDp.dp,
-                        tintColor = colors.iconColor
-                    )
-            )
-            .iconContent()
+            defaultIconStyle =
+                IconStyle(
+                    width = style.iconSizeDp.dp,
+                    height = style.iconSizeDp.dp,
+                    tintColor = colors.iconColor
+                )
+        ) {
+            iconContent()
+        }
     }
 }
 
@@ -152,29 +154,42 @@ public fun MaterialScope.textEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    labelContent: (MaterialScope.() -> LayoutElement)
-): LayoutElement =
-    edgeButton(
+    labelContent: (MaterialScope.() -> LayoutElement),
+): LayoutElement {
+    val content =
+        withStyle(
+            defaultTextElementStyle =
+                TextElementStyle(
+                    typography = Typography.LABEL_MEDIUM,
+                    color = colors.labelColor,
+                    scalable = false
+                )
+        ) {
+            labelContent()
+        }
+
+    val modifierWithContentDescription =
+        (content as? Text)?.text?.let {
+            LayoutModifier.contentDescription(
+                staticValue = it.value,
+                dynamicValue = it.dynamicValue
+            ) then modifier
+        } ?: modifier
+
+    return edgeButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifierWithContentDescription,
         colors = colors,
         style =
             if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
                 TEXT
             } else {
                 TEXT_FALLBACK
-            }
+            },
     ) {
-        withStyle(
-                defaultTextElementStyle =
-                    TextElementStyle(
-                        typography = Typography.LABEL_MEDIUM,
-                        color = colors.labelColor,
-                        scalable = false
-                    )
-            )
-            .labelContent()
+        content
     }
+}
 
 /**
  * ProtoLayout Material3 component edge button that offers a single slot to take any content.

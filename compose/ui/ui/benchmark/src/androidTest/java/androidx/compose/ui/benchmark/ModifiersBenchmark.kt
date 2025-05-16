@@ -28,10 +28,12 @@ import androidx.compose.foundation.gestures.DragScope
 import androidx.compose.foundation.gestures.Draggable2DState
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.Scrollable2DState
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.draggable2D
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.gestures.scrollable2D
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.InteractionSource
@@ -140,6 +142,9 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
                         if (it) Orientation.Vertical else Orientation.Horizontal
                     )
                 },
+                *modifier("scrollable2D") {
+                    Modifier.scrollable2D(scrollable2DState, enabled = it)
+                },
                 *modifier("toggleable") { Modifier.toggleable(it) { capture(it) } },
                 *modifier("onFocusEvent") { Modifier.onFocusEvent { capture(it) } },
                 *modifier("selectable") { Modifier.selectable(it) { capture(it) } },
@@ -210,6 +215,7 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
                 override fun dispatchRawDelta(delta: Offset) {}
             }
         private val scrollableState = ScrollableState { it }
+        private val scrollable2DState = Scrollable2DState { it }
 
         fun modifier(
             name: String,

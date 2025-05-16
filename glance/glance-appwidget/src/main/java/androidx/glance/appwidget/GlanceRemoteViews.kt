@@ -38,7 +38,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /** Object containing the result from composition of [GlanceRemoteViews]. */
-@ExperimentalGlanceRemoteViewsApi class RemoteViewsCompositionResult(val remoteViews: RemoteViews)
+@ExperimentalGlanceRemoteViewsApi
+public class RemoteViewsCompositionResult(public val remoteViews: RemoteViews)
 
 /**
  * Maximum depth for a composition. Although there is no hard limit, this should avoid deep
@@ -54,7 +55,7 @@ private val REMOTE_VIEWS_ID = object : GlanceId {}
  * reused to compose layouts for a host view.
  */
 @ExperimentalGlanceRemoteViewsApi
-class GlanceRemoteViews {
+public class GlanceRemoteViews {
     private val mutex = Mutex()
     private var layoutConfiguration: LayoutConfiguration? = null
 
@@ -69,7 +70,7 @@ class GlanceRemoteViews {
      * @param content Definition of the UI.
      * @return Composition result containing the [RemoteViews].
      */
-    suspend fun compose(
+    public suspend fun compose(
         context: Context,
         size: DpSize,
         state: Any? = null,

@@ -1,6 +1,5 @@
 package com.testdata
 
-import androidx.appfunctions.`internal`.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
@@ -11,6 +10,7 @@ import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -130,94 +130,9 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
             isNullable = true
         )
 
-    private val ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP_URISTRING:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
-            isNullable = false
-        )
-
-    private val ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-      "uriString" to ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP_URISTRING,
-    )
-
-    private val ANDROID_NET_URI_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> = listOf(
-      "uriString",
-    )
-
-    private val ANDROID_NET_URI_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
-        AppFunctionObjectTypeMetadata(
-            properties = ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = ANDROID_NET_URI_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "android.net.Uri",
-            isNullable = true
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "java.time.LocalDateTime",
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "java.time.LocalDateTime",
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST:
-        AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
-            itemType = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE,
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURI:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "android.net.Uri",
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST_REFERENCE_ITEM_TYPE:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "android.net.Uri",
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST:
-        AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
-            itemType = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST_REFERENCE_ITEM_TYPE,
-            isNullable = false
-        )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-      "localDateTime" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME,
-      "localDateTimeList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST,
-      "androidUri" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURI,
-      "androidUriList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST,
-    )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
-        List<String> = listOf(
-      "localDateTime",
-      "localDateTimeList",
-      "androidUri",
-      "androidUriList",
-    )
-
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE:
-        AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
-            properties = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "com.testdata.SerializableWithProxyType",
-            isNullable = true
-        )
-
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
         mapOf(
       "java.time.LocalDateTime" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE,
-      "android.net.Uri" to ANDROID_NET_URI_OBJECT_DATA_TYPE,
-      "com.testdata.SerializableWithProxyType" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE,
       )
 
     private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
@@ -378,10 +293,10 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
             isNullable = false
         )
 
-    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURI:
+    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMENULLABLE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "android.net.Uri",
-            isNullable = false
+            referenceDataType = "java.time.LocalDateTime",
+            isNullable = true
         )
 
     private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST_REFERENCE_ITEM_TYPE:
@@ -396,20 +311,34 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
             isNullable = false
         )
 
+    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE_REFERENCE_ITEM_TYPE:
+        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+            referenceDataType = "android.net.Uri",
+            isNullable = false
+        )
+
+    private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE:
+        AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
+            itemType = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE_REFERENCE_ITEM_TYPE,
+            isNullable = true
+        )
+
     private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
         Map<String, AppFunctionDataTypeMetadata> = mapOf(
       "localDateTime" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME,
       "localDateTimeList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST,
-      "androidUri" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURI,
+      "localDateTimeNullable" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMENULLABLE,
       "androidUriList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST,
+      "androidUriNullable" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE,
     )
 
     private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
         List<String> = listOf(
       "localDateTime",
       "localDateTimeList",
-      "androidUri",
+      "localDateTimeNullable",
       "androidUriList",
+      "androidUriNullable",
     )
 
     private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE:

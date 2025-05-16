@@ -16,8 +16,6 @@
 
 package androidx.xr.scenecore.impl;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -33,7 +31,6 @@ import com.android.extensions.xr.node.Node;
 import java.io.Closeable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * A parentless system-controlled JXRCore Entity that defines its own coordinate space.
@@ -48,9 +45,6 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     Closeable mNodeTransformCloseable;
     private OnSpaceUpdatedListener mSpaceUpdatedListener;
     private Executor mSpaceUpdatedExecutor;
-    // TODO: b/377554103 - Remove delay once the subscription API are in sync with the node
-    // creation.
-    static final int SUBSCRIPTION_DELAY_MS = 30; // milliseconds
 
     SystemSpaceEntityImpl(
             Node node,
@@ -125,19 +119,12 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      * @param executor The executor to run the callback on.
      */
     private void subscribeToNodeTransform(Node node, ScheduledExecutorService executor) {
-        // Ensure that the subscription is created after the node is created in SpF.
-        ScheduledFuture<?> unused =
-                executor.schedule(
-                        () ->
-                                mNodeTransformCloseable =
-                                        node.subscribeToTransform(
-                                                (transform) ->
-                                                        setOpenXrReferenceSpacePose(
-                                                                RuntimeUtils.getMatrix(
-                                                                        transform.getTransform())),
-                                                executor),
-                        SUBSCRIPTION_DELAY_MS,
-                        MILLISECONDS);
+        mNodeTransformCloseable =
+                node.subscribeToTransform(
+                        executor,
+                        (transform) ->
+                                setOpenXrReferenceSpacePose(
+                                        RuntimeUtils.getMatrix(transform.getTransform())));
     }
 
     @NonNull

@@ -23,9 +23,11 @@ import androidx.room.compiler.codegen.java.JavaCodeBlock
 import androidx.room.compiler.codegen.kotlin.KotlinCodeBlock
 
 internal class XCodeBlockImpl(
-    val java: JavaCodeBlock,
-    val kotlin: KotlinCodeBlock,
-) : XSpec(), XCodeBlock {
+    override val java: JavaCodeBlock,
+    override val kotlin: KotlinCodeBlock,
+) : ImplSpec<JavaCodeBlock, KotlinCodeBlock>(), XCodeBlock {
+
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
 
     internal class Builder(
         val java: JavaCodeBlock.Builder,

@@ -125,7 +125,7 @@ internal abstract class ComposeStackTraceBuilder {
                 if (!found && !sourceInformation.closed) {
                     // We found an incomplete group, very likely crash happened exactly
                     // at that location.
-                    appendTraceFrame(sourceInformation, childData)
+                    appendTraceFrame(sourceInformation, null)
                 }
             }
         }
@@ -152,7 +152,7 @@ internal abstract class ComposeStackTraceBuilder {
                     target in slotStart until slotEnd ||
                         (slotStart == slotEnd && slotStart == target)
                 if (found) {
-                    appendTraceFrame(sourceInformation, target)
+                    appendTraceFrame(sourceInformation, null)
                 }
                 return found
             }

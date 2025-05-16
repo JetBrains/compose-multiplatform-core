@@ -20,6 +20,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -94,12 +95,14 @@ object SemanticsProperties {
     /** @see SemanticsPropertyReceiver.isTraversalGroup */
     val IsTraversalGroup = SemanticsPropertyKey<Boolean>("IsTraversalGroup")
 
+    /** @see SemanticsPropertyReceiver.IsSensitiveData */
+    val IsSensitiveData = SemanticsPropertyKey<Boolean>("IsSensitiveData")
+
     /** @see SemanticsPropertyReceiver.invisibleToUser */
     @Deprecated(
         "Use `hideFromAccessibility` instead.",
         replaceWith = ReplaceWith("HideFromAccessibility")
     )
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     // Retain for binary compatibility with aosp/3341487 in 1.7
     val InvisibleToUser =
         SemanticsPropertyKey<Unit>(
@@ -255,6 +258,17 @@ object SemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.maxTextLength */
     val MaxTextLength = SemanticsPropertyKey<Int>("MaxTextLength")
+
+    /** @see SemanticsPropertyReceiver.shape */
+    val Shape =
+        SemanticsPropertyKey<Shape>(
+            name = "Shape",
+            isImportantForAccessibility = false,
+            mergePolicy = { parentValue, _ ->
+                // Never merge shapes
+                parentValue
+            }
+        )
 }
 
 /**
@@ -883,6 +897,23 @@ var SemanticsPropertyReceiver.isContainer by SemanticsProperties.IsContainer
 var SemanticsPropertyReceiver.isTraversalGroup by SemanticsProperties.IsTraversalGroup
 
 /**
+ * Whether this semantics node should only allow interactions from
+ * [android.accessibilityservice.AccessibilityService]s with the
+ * [android.accessibilityservice.AccessibilityServiceInfo.isAccessibilityTool] property set to true.
+ *
+ * This property allows the node to remain visible and interactive to Accessibility Services
+ * declared as accessibility tools that assist users with disabilities, while simultaneously hiding
+ * this node and its generated AccessibilityEvents from other Accessibility Services that are not
+ * declared as accessibility tools.
+ *
+ * If looking for a way to hide the node from all Accessibility Services then consider
+ * [SemanticsProperties.HideFromAccessibility] instead.
+ *
+ * @see SemanticsProperties.IsSensitiveData
+ */
+var SemanticsPropertyReceiver.isSensitiveData by SemanticsProperties.IsSensitiveData
+
+/**
  * Whether this node is specially known to be invisible to the user.
  *
  * For example, if the node is currently occluded by a dark semitransparent pane above it, then for
@@ -1118,6 +1149,9 @@ fun SemanticsPropertyReceiver.indexForKey(mapping: (Any) -> Int) {
  * this value is -1, signifying there is no maximum text length limit.
  */
 var SemanticsPropertyReceiver.maxTextLength by SemanticsProperties.MaxTextLength
+
+/** The shape of the UI element if it's different from the bounding rectangle. */
+var SemanticsPropertyReceiver.shape by SemanticsProperties.Shape
 
 /**
  * The node is marked as a collection of horizontally or vertically stacked selectable elements.

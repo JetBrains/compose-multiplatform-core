@@ -25,12 +25,13 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CoreContentlessEntity
-import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
+import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
 import androidx.xr.compose.subspace.layout.SpatialShape
+import androidx.xr.runtime.Session
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.Session
+import androidx.xr.scenecore.SurfaceEntity
 
 /**
  * Creates a [CoreContentlessEntity] that is automatically disposed of when it leaves the
@@ -51,7 +52,6 @@ internal fun rememberCoreContentlessEntity(
 /** Creates a [CorePanelEntity] that is automatically disposed of when it leaves the composition. */
 @Composable
 internal inline fun rememberCorePanelEntity(
-    crossinline onCoreEntityCreated: @DisallowComposableCalls (CorePanelEntity) -> Unit = {},
     shape: SpatialShape = SpatialPanelDefaults.shape,
     crossinline entityFactory: @DisallowComposableCalls Session.() -> PanelEntity,
 ): CorePanelEntity {
@@ -59,9 +59,7 @@ internal inline fun rememberCorePanelEntity(
     val density = LocalDensity.current
     val coreEntity by remember {
         disposableValueOf(
-            CorePanelEntity(session.entityFactory(), density)
-                .also { it.shape = shape }
-                .also(onCoreEntityCreated)
+            CorePanelEntity(session.entityFactory(), density).also { it.shape = shape }
         ) {
             it.dispose()
         }
@@ -71,20 +69,17 @@ internal inline fun rememberCorePanelEntity(
 }
 
 /**
- * Creates a [CoreMainPanelEntity] that is automatically disposed of when it leaves the composition.
+ * Creates a [CoreSurfaceEntity] that is automatically disposed of when it leaves the composition.
  */
 @Composable
-internal fun rememberCoreMainPanelEntity(
-    shape: SpatialShape = SpatialPanelDefaults.shape
-): CoreMainPanelEntity {
+internal inline fun rememberCoreSurfaceEntity(
+    crossinline entityFactory: @DisallowComposableCalls Session.() -> SurfaceEntity
+): CoreSurfaceEntity {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
     val coreEntity by remember {
-        disposableValueOf(CoreMainPanelEntity(session, density).also { it.shape = shape }) {
-            it.dispose()
-        }
+        disposableValueOf(CoreSurfaceEntity(session.entityFactory(), density)) { it.dispose() }
     }
-    LaunchedEffect(shape) { coreEntity.shape = shape }
     return coreEntity
 }
 

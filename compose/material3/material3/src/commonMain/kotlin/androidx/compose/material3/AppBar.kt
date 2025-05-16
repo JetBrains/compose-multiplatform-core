@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBarState.Companion.Saver
+import androidx.compose.material3.DefaultSingleRowTopAppBarOverride.SingleRowTopAppBar
 import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride.TwoRowsTopAppBar
 import androidx.compose.material3.TopAppBarState.Companion.Saver
 import androidx.compose.material3.internal.FloatProducer
@@ -129,8 +130,14 @@ import kotlin.math.roundToInt
  * A simple top app bar looks like:
  *
  * @sample androidx.compose.material3.samples.SimpleTopAppBar A top app bar that uses a
+ *
+ * A simple sample with an [AppBarRow], that varies the number of actions shown.
+ *
+ * @sample androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
+ *
  *   [scrollBehavior] to customize its nested scrolling behavior when working in conjunction with a
  *   scrolling content looks like:
+ *
  * @sample androidx.compose.material3.samples.PinnedTopAppBar
  * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBar
  * @param title the title to be displayed in the top app bar
@@ -1308,6 +1315,7 @@ fun BottomAppBar(
  * customize its nested scrolling behavior when working in conjunction with a scrolling content
  * looks like:
  *
+ * @sample androidx.compose.material3.samples.BottomAppBarWithOverflow
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedAround
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedBetween
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedEvenly
@@ -1427,7 +1435,8 @@ private fun BottomAppBarLayout(
                     activeScrollBehavior?.state?.heightOffsetLimit = -placeable.height.toFloat()
 
                     val height =
-                        placeable.height + (activeScrollBehavior?.state?.heightOffset ?: 0f)
+                        (placeable.height + (activeScrollBehavior?.state?.heightOffset ?: 0f))
+                            .coerceAtLeast(0f)
                     layout(placeable.width, height.roundToInt()) { placeable.place(0, 0) }
                 }
                 .then(appBarDragModifier),
@@ -2213,8 +2222,6 @@ object BottomAppBarDefaults {
     val bottomAppBarFabColor: Color
         @Composable get() = FabSecondaryContainerTokens.ContainerColor.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default padding used for [FlexibleBottomAppBar]. */
     val FlexibleContentPadding =
@@ -2227,22 +2234,16 @@ object BottomAppBarDefaults {
      * Default height of a flexible [FlexibleBottomAppBar]. The height here represents the height of
      * the bottom app bar in its expanded state.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleBottomAppBarHeight = DockedToolbarTokens.ContainerHeight
 
     /** A default [Arrangement] that will be used to space a [FlexibleBottomAppBar]'s content. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleHorizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
 
     /**
      * An [Arrangement] that will be used to space [FlexibleBottomAppBar]'s with a fixed spacing.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleFixedHorizontalArrangement: Arrangement.Horizontal =
         Arrangement.spacedBy(DockedToolbarTokens.ContainerMaxSpacing, Alignment.CenterHorizontally)
@@ -2743,10 +2744,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [SingleRowTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
 @OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalSingleRowTopAppBarOverride: ProvidableCompositionLocal<SingleRowTopAppBarOverride> =
     compositionLocalOf {
@@ -3014,10 +3012,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [TwoRowsTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
 @OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalTwoRowsTopAppBarOverride: ProvidableCompositionLocal<TwoRowsTopAppBarOverride> =
     compositionLocalOf {

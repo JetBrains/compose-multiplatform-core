@@ -20,6 +20,6 @@ package androidx.room.concurrent
 
 import androidx.annotation.RestrictTo
 
-actual typealias AtomicInt = java.util.concurrent.atomic.AtomicInteger
+public actual typealias AtomicInt = java.util.concurrent.atomic.AtomicInteger
 
-actual typealias AtomicBoolean = java.util.concurrent.atomic.AtomicBoolean
+public actual typealias AtomicBoolean = java.util.concurrent.atomic.AtomicBoolean

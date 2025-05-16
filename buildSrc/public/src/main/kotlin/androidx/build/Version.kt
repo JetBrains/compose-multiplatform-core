@@ -16,7 +16,6 @@
 
 package androidx.build
 
-import java.io.File
 import java.util.Locale
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -35,8 +34,6 @@ data class Version(val major: Int, val minor: Int, val patch: Int, val extra: St
         if (checkedMatcher(versionString).groupCount() == 4) checkedMatcher(versionString).group(4)
         else null
     )
-
-    fun isPatch(): Boolean = patch != 0
 
     fun isSnapshot(): Boolean = "-SNAPSHOT" == extra
 
@@ -86,12 +83,6 @@ data class Version(val major: Int, val minor: Int, val patch: Int, val extra: St
         }
 
         /** @return Version or null, if a name of the given file doesn't match */
-        fun parseOrNull(file: File): Version? {
-            if (!file.isFile) return null
-            return parseFilenameOrNull(file.name)
-        }
-
-        /** @return Version or null, if a name of the given file doesn't match */
         fun parseFilenameOrNull(filename: String): Version? {
             val matcher = VERSION_FILE_REGEX.matcher(filename)
             return if (matcher.matches()) parseOrNull(matcher.group(2)) else null
@@ -119,8 +110,6 @@ data class Version(val major: Int, val minor: Int, val patch: Int, val extra: St
         }
     }
 }
-
-fun Project.isVersionSet() = project.version is Version
 
 fun Project.version(): Version {
     return if (project.version is Version) {

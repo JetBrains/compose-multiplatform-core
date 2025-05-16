@@ -116,14 +116,15 @@ public fun MaterialScope.iconButton(
         contentPadding = contentPadding,
         content = {
             withStyle(
-                    defaultIconStyle =
-                        IconStyle(
-                            width = dp(style.iconSize),
-                            height = dp(style.iconSize),
-                            tintColor = colors.iconColor
-                        )
-                )
-                .iconContent()
+                defaultIconStyle =
+                    IconStyle(
+                        width = dp(style.iconSize),
+                        height = dp(style.iconSize),
+                        tintColor = colors.iconColor
+                    )
+            ) {
+                iconContent()
+            }
         }
     )
 
@@ -188,13 +189,11 @@ public fun MaterialScope.textButton(
         contentPadding = contentPadding,
         content = {
             withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.labelTypography,
-                            color = colors.labelColor
-                        )
-                )
-                .labelContent()
+                defaultTextElementStyle =
+                    TextElementStyle(typography = style.labelTypography, color = colors.labelColor)
+            ) {
+                labelContent()
+            }
         }
     )
 
@@ -281,37 +280,40 @@ public fun MaterialScope.button(
             buildContentForPillShapeButton(
                 label =
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.labelTypography,
-                                    color = colors.labelColor,
-                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .labelContent(),
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.labelTypography,
+                                color = colors.labelColor,
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                            )
+                    ) {
+                        labelContent()
+                    },
                 secondaryLabel =
                     secondaryLabelContent?.let {
                         withStyle(
-                                defaultTextElementStyle =
-                                    TextElementStyle(
-                                        typography = style.secondaryLabelTypography,
-                                        color = colors.secondaryLabelColor,
-                                        alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                    )
-                            )
-                            .secondaryLabelContent()
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.secondaryLabelTypography,
+                                    color = colors.secondaryLabelColor,
+                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                                )
+                        ) {
+                            secondaryLabelContent()
+                        }
                     },
                 icon =
                     iconContent?.let {
                         withStyle(
-                                defaultIconStyle =
-                                    IconStyle(
-                                        width = dp(style.iconSize),
-                                        height = dp(style.iconSize),
-                                        tintColor = colors.iconColor
-                                    )
-                            )
-                            .iconContent()
+                            defaultIconStyle =
+                                IconStyle(
+                                    width = dp(style.iconSize),
+                                    height = dp(style.iconSize),
+                                    tintColor = colors.iconColor
+                                )
+                        ) {
+                            iconContent()
+                        }
                     },
                 horizontalAlignment = horizontalAlignment,
                 style = style,
@@ -398,42 +400,44 @@ public fun MaterialScope.avatarButton(
             buildContentForAvatarButton(
                 label =
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.labelTypography,
-                                    color = colors.labelColor,
-                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .labelContent(),
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.labelTypography,
+                                color = colors.labelColor,
+                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                            )
+                    ) {
+                        labelContent()
+                    },
                 secondaryLabel =
                     secondaryLabelContent?.let {
                         withStyle(
-                                defaultTextElementStyle =
-                                    TextElementStyle(
-                                        typography = style.secondaryLabelTypography,
-                                        color = colors.secondaryLabelColor,
-                                        alignment =
-                                            HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                                    )
-                            )
-                            .secondaryLabelContent()
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.secondaryLabelTypography,
+                                    color = colors.secondaryLabelColor,
+                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                                )
+                        ) {
+                            secondaryLabelContent()
+                        }
                     },
                 avatar =
                     withStyle(
-                            defaultAvatarImageStyle =
-                                AvatarImageStyle(
-                                    width = expand(),
-                                    // We want height to be same as the calculated width
-                                    height =
-                                        DimensionBuilders.ProportionalDimensionProp.Builder()
-                                            .setAspectRatioWidth(1)
-                                            .setAspectRatioHeight(1)
-                                            .build(),
-                                    contentScaleMode = LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
-                                )
-                        )
-                        .avatarContent(),
+                        defaultAvatarImageStyle =
+                            AvatarImageStyle(
+                                width = expand(),
+                                // We want height to be same as the calculated width
+                                height =
+                                    DimensionBuilders.ProportionalDimensionProp.Builder()
+                                        .setAspectRatioWidth(1)
+                                        .setAspectRatioHeight(1)
+                                        .build(),
+                                contentScaleMode = LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
+                            )
+                    ) {
+                        avatarContent()
+                    },
                 horizontalAlignment = correctHorizontalAlignment,
                 style = style,
                 height = height
@@ -563,15 +567,16 @@ public fun MaterialScope.compactButton(
                         label =
                             labelContent?.let {
                                 withStyle(
-                                        defaultTextElementStyle =
-                                            TextElementStyle(
-                                                typography = COMPACT_BUTTON_LABEL_TYPOGRAPHY,
-                                                color = colors.labelColor,
-                                                alignment =
-                                                    horizontalAlignment.horizontalAlignToTextAlign()
-                                            )
-                                    )
-                                    .labelContent()
+                                    defaultTextElementStyle =
+                                        TextElementStyle(
+                                            typography = COMPACT_BUTTON_LABEL_TYPOGRAPHY,
+                                            color = colors.labelColor,
+                                            alignment =
+                                                horizontalAlignment.horizontalAlignToTextAlign()
+                                        )
+                                ) {
+                                    labelContent()
+                                }
                             },
                         icon =
                             iconContent?.let {
@@ -584,14 +589,15 @@ public fun MaterialScope.compactButton(
                                         }
                                     )
                                 withStyle(
-                                        defaultIconStyle =
-                                            IconStyle(
-                                                width = iconSize,
-                                                height = iconSize,
-                                                tintColor = colors.iconColor
-                                            )
-                                    )
-                                    .iconContent()
+                                    defaultIconStyle =
+                                        IconStyle(
+                                            width = iconSize,
+                                            height = iconSize,
+                                            tintColor = colors.iconColor
+                                        )
+                                ) {
+                                    iconContent()
+                                }
                             },
                         horizontalAlignment = horizontalAlignment,
                     )

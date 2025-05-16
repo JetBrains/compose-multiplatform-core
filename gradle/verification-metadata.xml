@@ -366,6 +366,7 @@
             <trusting group="org.jetbrains.kotlinx"/>
             <trusting group="^org[.]jetbrains($|([.].*))" regex="true"/>
          </trusted-key>
+         <trusted-key id="87581FAE204D94248E212DD2D7662013FA1A5596" group="com.github.skydoves"/>
          <trusted-key id="87DFB6E009B27CA622B9204EC730DCAEF653215C" group="com.ibm.icu"/>
          <trusted-key id="8858D45BE9B276802318155B96FB9DB219F3338D" group="kr.motd.maven"/>
          <trusted-key id="88CD390855DF292E2172DA9742575E0CCD6BA16A" group="org.xerial"/>
@@ -494,6 +495,7 @@
          <trusted-key id="CA62ED130E4053944406DF640181B45EA58677BC" group="org.apache.logging"/>
          <trusted-key id="CACFBD4755A2FC78709BDD92BE096E29EDB8D141" group="net.sf.proguard"/>
          <trusted-key id="CB3190CA7842439E57F3712E44CE7BF2825EA2CD" group="com.ibm.icu"/>
+         <trusted-key id="CB532AD12776B66B93F46C6A75F64D893DDB3931" group="com.facebook.shimmer" name="shimmer" version="0.5.0"/>
          <trusted-key id="CC4483CD6A3EB2939B948667A1B4460D8BA7B9AF" group="org.mockito"/>
          <trusted-key id="CD5464315F0B98C77E6E8ECD9DAADC1C9FCC82D0">
             <trusting group="commons-cli"/>

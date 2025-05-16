@@ -143,27 +143,6 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
         return surfaceConfig;
     }
 
-    /**
-     * Retrieves a map of suggested stream specifications for the given list of use cases.
-     *
-     * @param cameraMode                        the working camera mode.
-     * @param cameraId                          the camera id of the camera device used by the
-     *                                          use cases
-     * @param existingSurfaces                  list of surfaces already configured and used by
-     *                                          the camera. The stream specifications for these
-     *                                          surface can not change.
-     * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
-     *                                          supported sizes list that will be given a
-     *                                          suggested stream specification
-     * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
-     * @param hasVideoCapture                   whether the use cases has video capture.
-     * @return map of suggested stream specifications for given use cases
-     * @throws IllegalStateException    if not initialized
-     * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
-     *                                  there isn't a supported combination of surfaces
-     *                                  available, or if the {@code cameraId}
-     *                                  is not a valid id.
-     */
     @Override
     public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
@@ -172,7 +151,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
-            boolean hasVideoCapture) {
+            boolean hasVideoCapture,
+            boolean allowFeatureCombinationResolutions) {
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
 
@@ -189,6 +169,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                 existingSurfaces,
                 newUseCaseConfigsSupportedSizeMap,
                 isPreviewStabilizationOn,
-                hasVideoCapture);
+                hasVideoCapture,
+                allowFeatureCombinationResolutions);
     }
 }

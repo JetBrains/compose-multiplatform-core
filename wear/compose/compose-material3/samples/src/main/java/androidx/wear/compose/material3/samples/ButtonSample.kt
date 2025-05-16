@@ -42,7 +42,6 @@ import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.Text
 
@@ -120,7 +119,7 @@ fun ButtonExtraLargeIconSample(
 @Sampled
 @Composable
 fun ButtonWithImageSample(modifier: Modifier = Modifier.fillMaxWidth(), enabled: Boolean = true) {
-    ImageButton(
+    Button(
         onClick = { /* Do something */ },
         containerPainter =
             ButtonDefaults.containerPainter(

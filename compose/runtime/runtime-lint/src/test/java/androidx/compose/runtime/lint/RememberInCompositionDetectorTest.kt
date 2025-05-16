@@ -25,7 +25,6 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -528,7 +527,6 @@ src/androidx/compose/runtime/foo/{.kt:98: Error: Calling a @RememberInCompositio
             )
     }
 
-    @Ignore("b/381406389 - the API we need is not currently handled by Lint's bytecode remapping")
     @Test
     fun notRemembered_getterInheritanceHierarchy() {
         lint()
@@ -559,10 +557,10 @@ src/androidx/compose/runtime/foo/{.kt:98: Error: Calling a @RememberInCompositio
             .run()
             .expect(
                 """
-src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+src/androidx/compose/runtime/foo/test.kt:13: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
                     innerLevel.value
                                ~~~~~
-src/androidx/compose/runtime/foo/test.kt:15: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
                     lowerLevel.value
                                ~~~~~
 2 errors, 0 warnings

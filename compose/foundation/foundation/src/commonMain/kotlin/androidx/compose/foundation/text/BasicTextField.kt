@@ -19,7 +19,6 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.scrollable
@@ -29,8 +28,8 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
@@ -143,10 +142,10 @@ private object BasicTextFieldDefaults {
  * @param keyboardOptions Software keyboard options that contain configurations such as
  *   [KeyboardType] and [ImeAction].
  * @param onKeyboardAction Called when the user presses the action button in the input method editor
- *   (IME), or by pressing the enter key on a hardware keyboard. By default this parameter is null,
- *   and would execute the default behavior for a received IME Action e.g., [ImeAction.Done] would
- *   close the keyboard, [ImeAction.Next] would switch the focus to the next focusable item on the
- *   screen.
+ *   (IME), or by pressing the enter key on a hardware keyboard if the [lineLimits] is configured as
+ *   [TextFieldLineLimits.SingleLine]. By default this parameter is null, and would execute the
+ *   default behavior for a received IME Action e.g., [ImeAction.Done] would close the keyboard,
+ *   [ImeAction.Next] would switch the focus to the next focusable item on the screen.
  * @param lineLimits Whether the text field should be [SingleLine], scroll horizontally, and ignore
  *   newlines; or [MultiLine] and grow and scroll vertically. If [SingleLine] is passed, all newline
  *   characters ('\n') within the text will be replaced with regular whitespace (' '), ensuring that
@@ -290,6 +289,7 @@ internal fun BasicTextField(
     val resolvedKeyboardOptions =
         keyboardOptions.fillUnspecifiedValuesWith(inputTransformation?.keyboardOptions)
 
+    val toolbarRequester = remember { ToolbarRequesterImpl() }
     val textFieldSelectionState =
         remember(transformedState) {
             TextFieldSelectionState(
@@ -300,6 +300,7 @@ internal fun BasicTextField(
                 readOnly = readOnly,
                 isFocused = isWindowAndTextFieldFocused,
                 isPassword = isPassword,
+                toolbarRequester = toolbarRequester,
             )
         }
     val coroutineScope = rememberCoroutineScope()
@@ -377,23 +378,6 @@ internal fun BasicTextField(
             keyboardOptions.keyboardType != KeyboardType.NumberPassword
     val decorationModifiers =
         modifier
-            .then(
-                // semantics + some focus + input session + touch to focus
-                TextFieldDecoratorModifier(
-                    textFieldState = transformedState,
-                    textLayoutState = textLayoutState,
-                    textFieldSelectionState = textFieldSelectionState,
-                    filter = inputTransformation,
-                    enabled = enabled,
-                    readOnly = readOnly,
-                    keyboardOptions = resolvedKeyboardOptions,
-                    keyboardActionHandler = onKeyboardAction,
-                    singleLine = singleLine,
-                    interactionSource = interactionSource,
-                    isPassword = isPassword,
-                    stylusHandwritingTrigger = stylusHandwritingTrigger
-                )
-            )
             .stylusHandwriting(enabled, handwritingEnabled) {
                 // If this is a password field, we can't trigger handwriting.
                 // The expected behavior is 1) request focus 2) show software keyboard.
@@ -415,13 +399,28 @@ internal fun BasicTextField(
                     stylusHandwritingTrigger.tryEmit(Unit)
                 }
             }
-            .focusable(interactionSource = interactionSource, enabled = enabled)
+            .then(
+                // semantics + some focus + input session + touch to focus
+                TextFieldDecoratorModifier(
+                    textFieldState = transformedState,
+                    textLayoutState = textLayoutState,
+                    textFieldSelectionState = textFieldSelectionState,
+                    filter = inputTransformation,
+                    enabled = enabled,
+                    readOnly = readOnly,
+                    keyboardOptions = resolvedKeyboardOptions,
+                    keyboardActionHandler = onKeyboardAction,
+                    singleLine = singleLine,
+                    interactionSource = interactionSource,
+                    isPassword = isPassword,
+                    stylusHandwritingTrigger = stylusHandwritingTrigger
+                )
+            )
             .scrollable(
                 state = scrollState,
                 orientation = orientation,
                 // Disable scrolling when textField is disabled or another dragging gesture is
-                // taking
-                // place
+                // taking place
                 enabled =
                     enabled && textFieldSelectionState.directDragGestureInitiator == InputType.None,
                 reverseDirection =
@@ -470,23 +469,21 @@ internal fun BasicTextField(
                                     cursorBrush = cursorBrush,
                                     writeable = enabled && !readOnly,
                                     scrollState = scrollState,
-                                    orientation = orientation
+                                    orientation = orientation,
+                                    toolbarRequester = toolbarRequester,
                                 )
                             )
                 ) {
                     Box(
                         modifier =
-                            Modifier.bringIntoViewRequester(textLayoutState.bringIntoViewRequester)
-                                .then(
-                                    TextFieldTextLayoutModifier(
-                                        textLayoutState = textLayoutState,
-                                        textFieldState = transformedState,
-                                        textStyle = textStyle,
-                                        singleLine = singleLine,
-                                        onTextLayout = onTextLayout,
-                                        keyboardOptions = resolvedKeyboardOptions,
-                                    )
-                                )
+                            TextFieldTextLayoutModifier(
+                                textLayoutState = textLayoutState,
+                                textFieldState = transformedState,
+                                textStyle = textStyle,
+                                singleLine = singleLine,
+                                onTextLayout = onTextLayout,
+                                keyboardOptions = resolvedKeyboardOptions,
+                            )
                     )
 
                     if (

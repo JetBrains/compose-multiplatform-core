@@ -67,4 +67,5 @@ androidx {
 
 android {
     namespace = "androidx.lifecycle.extensions"
+    testOptions.unitTests.returnDefaultValues = true
 }

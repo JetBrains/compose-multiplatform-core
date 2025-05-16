@@ -32,11 +32,11 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import java.util.EnumSet
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.calls.KtSimpleVariableAccess
-import org.jetbrains.kotlin.analysis.api.calls.KtSimpleVariableAccessCall
-import org.jetbrains.kotlin.analysis.api.calls.singleVariableAccessCall
-import org.jetbrains.kotlin.analysis.api.calls.symbol
-import org.jetbrains.kotlin.analysis.api.symbols.KtPropertySymbol
+import org.jetbrains.kotlin.analysis.api.resolution.KaSimpleVariableAccess
+import org.jetbrains.kotlin.analysis.api.resolution.KaSimpleVariableAccessCall
+import org.jetbrains.kotlin.analysis.api.resolution.singleVariableAccessCall
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -184,31 +184,25 @@ internal fun getterOrSuperDeclarationsHaveAnnotation(
     var annotated = false
     // Need to use analysis APIs because of b/381898394
     analyze(source) {
-        (source.resolveCall()?.singleVariableAccessCall() as? KtSimpleVariableAccessCall)?.let {
+        (source.resolveToCall()?.singleVariableAccessCall() as? KaSimpleVariableAccessCall)?.let {
             variableAccessCall ->
-            val propertySymbol = variableAccessCall.symbol as? KtPropertySymbol ?: return false
+            val propertySymbol = variableAccessCall.symbol as? KaPropertySymbol ?: return false
             val getter =
                 when (variableAccessCall.simpleAccess) {
-                    is KtSimpleVariableAccess.Read -> propertySymbol.getter
+                    is KaSimpleVariableAccess.Read -> propertySymbol.getter ?: return false
                     // We don't track property setters
-                    is KtSimpleVariableAccess.Write -> return false
+                    is KaSimpleVariableAccess.Write -> return false
                 }
 
-            if (getter != null) {
-                // TODO: b/381406389 this should use
-                //  getter.getAllOverriddenSymbols()
-                //  to check intermediate super classes as well, but this isn't
-                //  currently handled by Lint's bytecode remapping.
-                // Check if any super symbol is annotated as well
-                val symbolsToCheck = listOf(getter.unwrapFakeOverrides, getter)
-                symbolsToCheck.forEach { symbol ->
-                    if (
-                        symbol.annotationsList.annotationInfos.any {
-                            it.classId?.asFqNameString() == annotationName.javaFqn
-                        }
-                    ) {
-                        annotated = true
+            // Check if any super symbol is annotated as well
+            val symbolsToCheck = getter.allOverriddenSymbols + getter
+            symbolsToCheck.forEach { symbol ->
+                if (
+                    symbol.annotations.any {
+                        it.classId?.asFqNameString() == annotationName.javaFqn
                     }
+                ) {
+                    annotated = true
                 }
             }
         }

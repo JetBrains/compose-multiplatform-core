@@ -37,8 +37,10 @@ import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController
 import androidx.credentials.playservices.controllers.CredentialProviderController
 import androidx.credentials.playservices.controllers.identityauth.HiddenActivity
+import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SavePasswordRequest
 import com.google.android.gms.auth.api.identity.SignInPassword
+import com.google.android.gms.common.api.ApiException
 import java.util.concurrent.Executor
 
 /** A controller to handle the CreatePassword flow with play services. */
@@ -98,20 +100,46 @@ internal class CredentialProviderCreatePasswordController(private val context: C
         }
 
         val convertedRequest: SavePasswordRequest = this.convertRequestToPlayServices(request)
-        val hiddenIntent = Intent(context, HiddenActivity::class.java)
-        hiddenIntent.putExtra(REQUEST_TAG, convertedRequest)
-        generateHiddenActivityIntent(resultReceiver, hiddenIntent, CREATE_PASSWORD_TAG)
-        try {
-            context.startActivity(hiddenIntent)
-        } catch (e: Exception) {
-            cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                this.executor.execute {
-                    this.callback.onError(
-                        CreateCredentialUnknownException(ERROR_MESSAGE_START_ACTIVITY_FAILED)
-                    )
+        Identity.getCredentialSavingClient(context)
+            .savePassword(convertedRequest)
+            .addOnSuccessListener { result ->
+                if (CredentialProviderPlayServicesImpl.cancellationReviewer(cancellationSignal)) {
+                    return@addOnSuccessListener
+                }
+                val hiddenIntent = Intent(context, HiddenActivity::class.java)
+                generateHiddenActivityIntent(resultReceiver, hiddenIntent, CREATE_PASSWORD_TAG)
+                hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result.pendingIntent)
+                try {
+                    context.startActivity(hiddenIntent)
+                } catch (_: Exception) {
+                    cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                        this.executor.execute {
+                            this.callback.onError(
+                                CreateCredentialUnknownException(
+                                    ERROR_MESSAGE_START_ACTIVITY_FAILED
+                                )
+                            )
+                        }
+                    }
                 }
             }
+            .addOnFailureListener { e ->
+                val createException = fromGmsException(e)
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    this.executor.execute { this.callback.onError(createException) }
+                }
+            }
+    }
+
+    private fun fromGmsException(e: Throwable): CreateCredentialException {
+        var errName = CREATE_UNKNOWN
+        if (e is ApiException && e.statusCode in retryables) {
+            errName = CREATE_INTERRUPTED
         }
+        return createCredentialExceptionTypeToException(
+            errName,
+            "During save password, found " + "password failure response from one tap ${e.message}"
+        )
     }
 
     internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int) {

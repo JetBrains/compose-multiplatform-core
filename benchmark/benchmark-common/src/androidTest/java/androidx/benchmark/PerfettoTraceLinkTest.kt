@@ -75,6 +75,6 @@ class PerfettoTraceLinkTest {
         assertThat(link.benchmarkMarkdownLink(LinkFormat.V2))
             .isEqualTo("[bar](file://foo.perfetto-trace)")
         assertThat(link.benchmarkMarkdownLink(LinkFormat.V3))
-            .isEqualTo("[bar](uri://foo.perfetto-trace?foo%3Abar=baz)")
+            .isEqualTo("[bar](uri://foo.perfetto-trace?foo:bar=baz)")
     }
 }

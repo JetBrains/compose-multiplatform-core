@@ -64,12 +64,12 @@ internal interface TransformingLazyColumnMeasurementStrategy {
 }
 
 internal fun MeasuredItemProvider.downwardMeasuredItem(index: Int, offset: Int, maxHeight: Int) =
-    measuredItem(index, offset) { height ->
+    measuredItem(index, offset, MeasurementDirection.DOWNWARD) { height ->
         bottomItemScrollProgress(offset = offset, height = height, containerHeight = maxHeight)
     }
 
 internal fun MeasuredItemProvider.upwardMeasuredItem(index: Int, offset: Int, maxHeight: Int) =
-    measuredItem(index, offset) { height ->
+    measuredItem(index, offset, MeasurementDirection.UPWARD) { height ->
             topItemScrollProgress(offset = offset, height = height, containerHeight = maxHeight)
         }
         .also { it.offset -= it.transformedHeight }

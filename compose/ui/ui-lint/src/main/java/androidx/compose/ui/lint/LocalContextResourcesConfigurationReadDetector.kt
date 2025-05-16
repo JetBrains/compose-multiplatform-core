@@ -16,9 +16,11 @@
 
 package androidx.compose.ui.lint
 
+import androidx.compose.lint.Names
 import androidx.compose.lint.Names.Ui.Platform.LocalConfiguration
 import androidx.compose.lint.Names.Ui.Platform.LocalResources
 import androidx.compose.lint.Package
+import androidx.compose.lint.PackageName
 import androidx.compose.lint.isInPackageName
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
@@ -140,7 +142,12 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 // Fast path for whole configuration string - note the later logic would catch
                 // this (and variants that use method calls such as getResources() instead), but
                 // we want a fast path so we can suggest a replacement.
-                if (node.matchesQualified(LocalContextCurrentResourcesConfiguration)) {
+                if (
+                    node.matchesQualifiedWithOrWithoutFqn(
+                        LocalContextCurrentResourcesConfiguration,
+                        Names.Ui.Platform.PackageName
+                    )
+                ) {
                     fullyQualifiedConfigurationCalls += node
                     context.report(
                         LocalContextConfigurationRead,
@@ -164,7 +171,12 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 // string as well, and in that case we only want to report the configuration error.
                 // So after we check the file, we only report the resource string if it was not
                 // inside a configuration string.
-                if (node.matchesQualified(LocalContextCurrentResources)) {
+                if (
+                    node.matchesQualifiedWithOrWithoutFqn(
+                        LocalContextCurrentResources,
+                        Names.Ui.Platform.PackageName
+                    )
+                ) {
                     fullyQualifiedResourceCalls += node
                     return
                 }
@@ -214,7 +226,12 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                         else -> return
                     }
 
-                if (contextSource.matchesQualified("LocalContext.current")) {
+                if (
+                    contextSource.matchesQualifiedWithOrWithoutFqn(
+                        LocalContextCurrent,
+                        Names.Ui.Platform.PackageName
+                    )
+                ) {
                     // We can be here from two cases, either we were analyzing a call to
                     // context.resources, or a call to resources.configuration. Since calls to
                     // resources.configuration imply a previous call to context.resources, we only
@@ -285,7 +302,20 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
         return resolved.name == "getResources" && resolved.isInPackageName(ContentPackage)
     }
 
+    /**
+     * [matchesQualified] but also checks for if this [fqName] is fully qualified with [packageName]
+     * prepended.
+     */
+    private fun UExpression.matchesQualifiedWithOrWithoutFqn(
+        fqName: String,
+        packageName: PackageName
+    ): Boolean {
+        return matchesQualified(fqName) ||
+            matchesQualified(packageName.javaPackageName + "." + fqName)
+    }
+
     companion object {
+        private const val LocalContextCurrent = "LocalContext.current"
         private const val LocalContextCurrentResources = "LocalContext.current.resources"
         private const val LocalContextCurrentResourcesConfiguration =
             "LocalContext.current.resources.configuration"

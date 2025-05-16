@@ -29,14 +29,11 @@ import com.android.build.api.artifact.Artifacts
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApkOutputProviders
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasDeviceTests
-import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.TestAndroidComponentsExtension
 import com.android.build.api.variant.Variant
@@ -378,10 +375,7 @@ private fun Project.addAppApksToPrivacySandboxTestConfigsGeneration(
     }
 }
 
-fun Project.configureTestConfigGeneration(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-    projectIsolationEnabled: Boolean,
-) {
+fun Project.configureTestConfigGeneration(projectIsolationEnabled: Boolean) {
     extensions.getByType(AndroidComponentsExtension::class.java).apply {
         onVariants { variant ->
             when {
@@ -390,8 +384,8 @@ fun Project.configureTestConfigGeneration(
                         createTestConfigurationGenerationTask(
                             deviceTest.name,
                             deviceTest.artifacts,
-                            // replace minSdk after b/328495232 is fixed
-                            commonExtension.defaultConfig.minSdk!!,
+                            @Suppress("UnstableApiUsage") // b/409617582
+                            deviceTest.minSdk.apiLevel,
                             deviceTest.instrumentationRunner,
                             deviceTest.instrumentationRunnerArguments,
                             variant,
@@ -400,43 +394,18 @@ fun Project.configureTestConfigGeneration(
                     }
                 }
                 project.plugins.hasPlugin("com.android.test") -> {
+                    val testExtension = project.extensions.getByType<TestExtension>()
                     createTestConfigurationGenerationTask(
                         variant.name,
                         variant.artifacts,
-                        // replace minSdk after b/328495232 is fixed
-                        commonExtension.defaultConfig.minSdk!!,
-                        provider { commonExtension.defaultConfig.testInstrumentationRunner!! },
-                        provider {
-                            commonExtension.defaultConfig.testInstrumentationRunnerArguments
-                        },
+                        variant.minSdk.apiLevel,
+                        provider { testExtension.defaultConfig.testInstrumentationRunner!! },
+                        provider { testExtension.defaultConfig.testInstrumentationRunnerArguments },
                         variant,
                         projectIsolationEnabled,
                     )
                 }
             }
-        }
-    }
-}
-
-// KotlinMultiplatformAndroidComponentsExtension is @Incubating b/393137152
-@Suppress("UnstableApiUsage")
-fun Project.configureTestConfigGeneration(
-    kotlinMultiplatformAndroidTarget: KotlinMultiplatformAndroidLibraryTarget,
-    componentsExtension: KotlinMultiplatformAndroidComponentsExtension,
-    projectIsolationEnabled: Boolean,
-) {
-    componentsExtension.onVariant { variant ->
-        variant.deviceTests.forEach { (_, deviceTest) ->
-            createTestConfigurationGenerationTask(
-                deviceTest.name,
-                deviceTest.artifacts,
-                // replace minSdk after b/328495232 is fixed
-                kotlinMultiplatformAndroidTarget.minSdk!!,
-                deviceTest.instrumentationRunner,
-                deviceTest.instrumentationRunnerArguments,
-                null,
-                projectIsolationEnabled,
-            )
         }
     }
 }

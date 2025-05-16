@@ -84,6 +84,9 @@ internal fun TransformingLazyColumnSemanticState(
                         if (!canScrollForward) {
                             return@with maxScrollOffset
                         }
+                        if (!canScrollBackward) {
+                            return@with 0f
+                        }
                         visibleItemsAverageHeight * anchorItemIndex +
                             anchorItemScrollOffset +
                             itemSpacing * (anchorItemIndex - 1)

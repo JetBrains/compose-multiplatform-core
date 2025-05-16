@@ -39,6 +39,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AlertDialog;
+import androidx.biometric.utils.AuthenticatorUtils;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.Observer;

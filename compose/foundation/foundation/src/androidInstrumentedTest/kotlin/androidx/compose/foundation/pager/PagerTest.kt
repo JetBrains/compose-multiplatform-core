@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
@@ -51,6 +52,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -234,6 +236,8 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     @Test
     fun pageCount_canBeMaxInt() {
         // Arrange
+        // pageCount and beyondViewportPageCount both being large is not a supported use case
+        Assume.assumeFalse(config.beyondViewportPageCount == Int.MAX_VALUE)
 
         // Act
         createPager(modifier = Modifier.fillMaxSize(), pageCount = { Int.MAX_VALUE })
@@ -242,6 +246,34 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
         rule.runOnIdle { scope.launch { pagerState.scrollToPage(Int.MAX_VALUE) } }
         rule.waitForIdle()
         rule.onNodeWithTag("${Int.MAX_VALUE - 1}").assertIsDisplayed()
+    }
+
+    @Test
+    fun beyondViewportPageCount_canBeMaxInt() {
+        // Arrange
+        val pageCount = DefaultPageCount
+
+        // Act
+        val composingPages = mutableSetOf<Int>()
+        createPager(
+            // Start at a page > 0 to introduce potential overflow
+            // when adding currentPage to beyondViewportPageCount
+            initialPage = 1,
+            pageCount = { pageCount },
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = Int.MAX_VALUE,
+            pageContent = { index ->
+                this@PagerTest.Page(index = index)
+                DisposableEffect(index) {
+                    composingPages += index
+                    onDispose { composingPages -= index }
+                }
+            }
+        )
+        rule.waitForIdle()
+
+        // Assert
+        assertThat(composingPages).isEqualTo((0..<pageCount).toSet())
     }
 
     @Test
@@ -519,7 +551,11 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun params() = AllOrientationsParams + ParamConfig(TestOrientation[0], useLookahead = true)
+        fun params() = buildList {
+            addAll(AllOrientationsParams)
+            add(ParamConfig(TestOrientation[0], useLookahead = true))
+            add(ParamConfig(TestOrientation[0], beyondViewportPageCount = Int.MAX_VALUE))
+        }
     }
 
     private class TestOverscrollEffect : OverscrollEffect {

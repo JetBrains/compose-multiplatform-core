@@ -40,6 +40,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExifUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.SurfaceTextureProvider.SurfaceTextureCallback
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
@@ -109,6 +110,7 @@ class ImageCaptureTest(
         assumeTrue(
             ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(lensFacing, extensionMode)
         )
+        assumePcsSupportedForImageCapture(context)
 
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]

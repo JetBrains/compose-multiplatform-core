@@ -21,6 +21,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.util.Range
 import android.util.SparseArray
+import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
@@ -44,9 +45,9 @@ internal class PageManager(
      * threshold for tiled rendering
      */
     private val maxBitmapSizePx: Point,
-    private val isTouchExplorationEnabled: Boolean,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
-    private val errorFlow: MutableSharedFlow<Throwable>
+    private val errorFlow: MutableSharedFlow<Throwable>,
+    isAccessibilityEnabled: Boolean
 ) {
     /**
      * Replay at least 1 value in case of an invalidation signal issued while [PdfView] is not
@@ -70,6 +71,19 @@ internal class PageManager(
     val pageTextReadyFlow: SharedFlow<Int>
         get() = _pageTextReadyFlow
 
+    internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
+        set(value) {
+            field = value
+            for (page in pages.valueIterator()) {
+                page.isAccessibilityEnabled = value
+            }
+        }
+
+    internal fun areAllVisiblePagesFullyRendered(visiblePageRange: Range<Int>): Boolean =
+        (visiblePageRange.lower..visiblePageRange.upper).all { pageNum ->
+            pages[pageNum]?.isFullyRendered() ?: false
+        }
+
     /**
      * [Highlight]s supplied by the developer to be drawn along with the pages they belong to
      *
@@ -84,18 +98,23 @@ internal class PageManager(
      * @param visiblePageAreas the visible area of each visible page, in page coordinates
      * @param currentZoomLevel the current zoom level
      * @param stablePosition true if we don't believe our position is actively changing
+     * @param pauseBitmapFetch true if we should avoid fetching Bitmaps, regardless of current
+     *   visibility
      */
     fun updatePageVisibilities(
         visiblePageAreas: SparseArray<Rect>,
         currentZoomLevel: Float,
-        stablePosition: Boolean
+        stablePosition: Boolean,
+        pauseBitmapFetch: Boolean,
     ) {
+        if (visiblePageAreas.isEmpty()) return
         // Start preparing UI for visible pages
         visiblePageAreas.keyIterator().forEach { pageNum ->
             pages[pageNum]?.setVisible(
                 currentZoomLevel,
                 visiblePageAreas.get(pageNum),
-                stablePosition
+                stablePosition,
+                pauseBitmapFetch,
             )
         }
 
@@ -127,7 +146,8 @@ internal class PageManager(
         size: Point,
         currentZoomLevel: Float,
         stablePosition: Boolean,
-        viewArea: Rect? = null
+        viewArea: Rect? = null,
+        pauseBitmapFetch: Boolean,
     ) {
         if (pages.contains(pageNum)) return
         val page =
@@ -137,15 +157,15 @@ internal class PageManager(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
-                    isTouchExplorationEnabled,
                     onPageUpdate = { _invalidationSignalFlow.tryEmit(Unit) },
                     onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
-                    errorFlow = errorFlow
+                    errorFlow = errorFlow,
+                    isAccessibilityEnabled = isAccessibilityEnabled
                 )
                 .apply {
                     // If the page is visible, let it know
                     if (viewArea != null) {
-                        setVisible(currentZoomLevel, viewArea, stablePosition)
+                        setVisible(currentZoomLevel, viewArea, stablePosition, pauseBitmapFetch)
                     }
                 }
         pages.put(pageNum, page)

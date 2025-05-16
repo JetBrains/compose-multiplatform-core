@@ -87,7 +87,7 @@ import org.junit.runner.Description
  * @param autoMigrationSpecs The list of [androidx.room.ProvidedAutoMigrationSpec] instances for
  *   [androidx.room.AutoMigration]s that require them.
  */
-actual class MigrationTestHelper(
+public actual class MigrationTestHelper(
     private val schemaDirectoryPath: Path,
     private val databasePath: Path,
     private val driver: SQLiteDriver,
@@ -108,7 +108,7 @@ actual class MigrationTestHelper(
      * @return A database connection of the newly created database.
      * @throws IllegalStateException If a new database was not created.
      */
-    actual fun createDatabase(version: Int): SQLiteConnection {
+    public actual fun createDatabase(version: Int): SQLiteConnection {
         val schemaBundle = loadSchema(version)
         val connection =
             createDatabaseCommon(
@@ -135,7 +135,7 @@ actual class MigrationTestHelper(
      * @param migrations The list of migrations used to attempt the database migration.
      * @throws IllegalStateException If the schema validation fails.
      */
-    actual fun runMigrationsAndValidate(
+    public actual fun runMigrationsAndValidate(
         version: Int,
         migrations: List<Migration>,
     ): SQLiteConnection {

@@ -29,6 +29,8 @@ interface XTypeSpec {
 
     val name: XName?
 
+    fun toBuilder(): Builder
+
     interface Builder {
         fun superclass(typeName: XTypeName): Builder
 

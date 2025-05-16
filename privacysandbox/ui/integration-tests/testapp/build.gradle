@@ -79,4 +79,6 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.espressoCore)
 }

@@ -32,18 +32,19 @@ import static org.mockito.Mockito.when;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.IBinder;
 import android.os.SystemClock;
 
 import androidx.test.rule.GrantPermissionRule;
+import androidx.xr.runtime.TrackingState;
 import androidx.xr.runtime.internal.Anchor.PersistenceState;
 import androidx.xr.runtime.internal.AnchorEntity.OnStateChangedListener;
 import androidx.xr.runtime.internal.AnchorEntity.State;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
-import androidx.xr.runtime.internal.TrackingState;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -77,6 +78,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 @RunWith(RobolectricTestRunner.class)
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private static class FakeExportableAnchor implements ExportableAnchor {
         private final long mNativePointer;
@@ -180,6 +182,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         mXrExtensions,
                         mEntityManager,
                         () -> mXrExtensions.getSpatialState(activity),
+                        /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis);
 
@@ -1064,8 +1067,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1083,8 +1086,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1109,8 +1112,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         null,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 

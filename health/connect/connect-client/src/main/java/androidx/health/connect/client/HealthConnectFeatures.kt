@@ -50,12 +50,12 @@ interface HealthConnectFeatures {
         const val FEATURE_READ_HEALTH_DATA_HISTORY = 4
 
         /** Feature constant for mindfulness session. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) const val FEATURE_MINDFULNESS_SESSION = 5
+        @ExperimentalMindfulnessSessionApi const val FEATURE_MINDFULNESS_SESSION = 5
 
         /** Feature constant for Personal Health Records APIs. */
         @ExperimentalPersonalHealthRecordApi const val FEATURE_PERSONAL_HEALTH_RECORD = 6
 
-        @OptIn(ExperimentalPersonalHealthRecordApi::class)
+        @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             value =

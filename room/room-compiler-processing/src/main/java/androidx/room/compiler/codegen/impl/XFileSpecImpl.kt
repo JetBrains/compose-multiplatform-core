@@ -24,9 +24,9 @@ import androidx.room.compiler.codegen.kotlin.KotlinFileSpec
 import androidx.room.compiler.processing.XFiler
 
 internal class XFileSpecImpl(
-    internal val java: JavaFileSpec,
-    internal val kotlin: KotlinFileSpec,
-) : XFileSpec {
+    override val java: JavaFileSpec,
+    override val kotlin: KotlinFileSpec,
+) : ImplSpec<JavaFileSpec, KotlinFileSpec>(), XFileSpec {
 
     override fun writeTo(language: CodeLanguage, generator: XFiler, mode: XFiler.Mode) {
         when (language) {
@@ -34,6 +34,8 @@ internal class XFileSpecImpl(
             CodeLanguage.KOTLIN -> kotlin.writeTo(language, generator, mode)
         }
     }
+
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
 
     internal class Builder(
         val java: JavaFileSpec.Builder,

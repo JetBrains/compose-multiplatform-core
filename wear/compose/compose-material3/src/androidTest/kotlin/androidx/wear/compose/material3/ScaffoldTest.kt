@@ -449,6 +449,7 @@ class ScaffoldTest {
         scrollIndicatorColor: Color,
         timeTextColor: Color,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
+        @Suppress("ComposableLambdaParameterNaming")
         edgeButton: @Composable BoxScope.() -> Unit = {
             EdgeButton(onClick = {}) { Text("Edge Button") }
         }
@@ -564,6 +565,7 @@ class ScaffoldTest {
         scrollIndicatorColor: Color,
         timeTextColor: Color,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
+        @Suppress("ComposableLambdaParameterNaming")
         edgeButton: @Composable BoxScope.() -> Unit = {
             EdgeButton(onClick = {}) { Text("Edge Button") }
         }
@@ -605,6 +607,7 @@ class ScaffoldTest {
     private fun TestEdgeButtonLazyColumn(
         verticalPadding: Dp = 0.dp,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
+        @Suppress("ComposableLambdaParameterNaming")
         edgeButton: @Composable BoxScope.() -> Unit = {}
     ) {
         AppScaffold {

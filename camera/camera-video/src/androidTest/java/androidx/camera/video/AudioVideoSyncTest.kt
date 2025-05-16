@@ -23,7 +23,6 @@ import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
@@ -89,7 +88,6 @@ class AudioVideoSyncTest(
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     @Suppress("UNCHECKED_CAST")
     private val videoRecordEventListener =
@@ -108,7 +106,7 @@ class AudioVideoSyncTest(
             Build.VERSION.SDK_INT == 30 && isEmulator()
         )
 
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         // Skip for b/168175357, b/233661493
         Assume.assumeFalse(
             "Skip tests for Cuttlefish MediaCodec issues",

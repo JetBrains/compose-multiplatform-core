@@ -27,7 +27,7 @@ import android.util.SizeF
 import android.util.SparseArray
 import androidx.core.os.bundleOf
 import androidx.kruth.assertThat
-import androidx.savedstate.SavedStateCodecTestUtils.encodeDecode
+import androidx.savedstate.serialization.SavedStateCodecTestUtils.encodeDecode
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
 import androidx.savedstate.serialization.serializers.JavaSerializableSerializer

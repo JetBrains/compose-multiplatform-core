@@ -1227,7 +1227,7 @@ internal abstract class LazyStaggeredGridMeasureProvider(
     private val itemProvider: LazyStaggeredGridItemProvider,
     private val measureScope: LazyLayoutMeasureScope,
     private val resolvedSlots: LazyStaggeredGridSlots
-) : LazyLayoutMeasuredItemProvider<LazyStaggeredGridMeasuredItem> {
+) : LazyLayoutMeasuredItemProvider<LazyStaggeredGridMeasuredItem>() {
     private fun childConstraints(slot: Int, span: Int): Constraints {
         // resolved slots contain [offset, size] pair per each slot.
         val crossAxisSize =
@@ -1256,7 +1256,7 @@ internal abstract class LazyStaggeredGridMeasureProvider(
         val spanSize = span.size.coerceAtMost(slotCount - spanStart)
 
         val constraints = childConstraints(spanStart, spanSize)
-        val placeables = measureScope.measure(index, constraints)
+        val placeables = measureScope.getPlaceables(index, constraints)
         return createItem(index, spanStart, spanSize, key, contentType, placeables, constraints)
     }
 
@@ -1269,7 +1269,7 @@ internal abstract class LazyStaggeredGridMeasureProvider(
         val key = itemProvider.getKey(index)
         val contentType = itemProvider.getContentType(index)
 
-        val placeables = measureScope.measure(index, constraints)
+        val placeables = measureScope.getPlaceables(index, constraints)
         return createItem(index, lane, span, key, contentType, placeables, constraints)
     }
 

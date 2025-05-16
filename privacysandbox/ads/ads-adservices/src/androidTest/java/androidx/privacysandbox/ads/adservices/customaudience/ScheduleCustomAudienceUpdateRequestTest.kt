@@ -78,6 +78,7 @@ class ScheduleCustomAudienceUpdateRequestTest {
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 14)
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 14)
+    @Suppress("deprecation") // Suppress deprecated Builder
     @Test
     fun testConvertToAdServices() {
         /* API is not available */

@@ -36,6 +36,7 @@ import androidx.annotation.RestrictTo;
 import androidx.core.graphics.Insets;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+import androidx.core.view.RoundedCornerCompat.Position;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
 
 import org.jspecify.annotations.NonNull;
@@ -88,10 +89,10 @@ public class WindowInsetsCompat {
 
     @RequiresApi(20)
     private WindowInsetsCompat(@NonNull WindowInsets insets) {
-        if (SDK_INT >= 36) {
-            mImpl = new Impl36(this, insets);
-        } else if (SDK_INT >= 34) {
+        if (SDK_INT >= 34) {
             mImpl = new Impl34(this, insets);
+        } else if (SDK_INT >= 31) {
+            mImpl = new Impl31(this, insets);
         } else if (SDK_INT >= 30) {
             mImpl = new Impl30(this, insets);
         } else if (SDK_INT >= 29) {
@@ -118,6 +119,8 @@ public class WindowInsetsCompat {
             final Impl srcImpl = src.mImpl;
             if (SDK_INT >= 34 && srcImpl instanceof Impl34) {
                 mImpl = new Impl34(this, (Impl34) srcImpl);
+            } else if (SDK_INT >= 31 && srcImpl instanceof Impl31) {
+                mImpl = new Impl31(this, (Impl31) srcImpl);
             } else if (SDK_INT >= 30 && srcImpl instanceof Impl30) {
                 mImpl = new Impl30(this, (Impl30) srcImpl);
             } else if (SDK_INT >= 29 && srcImpl instanceof Impl29) {
@@ -708,6 +711,22 @@ public class WindowInsetsCompat {
         return mImpl.isVisible(typeMask);
     }
 
+    /**
+     * Returns the {@link RoundedCornerCompat} of the given position if there is one.
+     *
+     * @param position the position of the rounded corner on the display. The value should be one of
+     *                 the following:
+     *                 {@link RoundedCornerCompat#POSITION_TOP_LEFT},
+     *                 {@link RoundedCornerCompat#POSITION_TOP_RIGHT},
+     *                 {@link RoundedCornerCompat#POSITION_BOTTOM_RIGHT},
+     *                 {@link RoundedCornerCompat#POSITION_BOTTOM_LEFT}.
+     * @return the rounded corner of the given position. Returns {@code null} if there is none or
+     *         the rounded corner area is not inside the bounds of the window.
+     */
+    public @Nullable RoundedCornerCompat getRoundedCorner(@Position int position) {
+        return mImpl.getRoundedCorner(position);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -813,6 +832,10 @@ public class WindowInsetsCompat {
 
         boolean isVisible(@InsetsType int typeMask) {
             return true;
+        }
+
+        @Nullable RoundedCornerCompat getRoundedCorner(@Position int position) {
+            return null;
         }
 
         @Override
@@ -1311,22 +1334,7 @@ public class WindowInsetsCompat {
 
         @Override
         @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
-            final WindowInsetsCompat newInsets =
-                    toWindowInsetsCompat(mPlatformInsets.inset(left, top, right, bottom));
-
-            // WindowInsets#insetInsets of API 29 has a bug, so here uses our own implementation.
-            final WindowInsetsCompat.Builder builder = new WindowInsetsCompat.Builder(newInsets);
-            builder.setSystemWindowInsets(
-                    insetInsets(getSystemWindowInsets(), left, top, right, bottom));
-            builder.setStableInsets(
-                    insetInsets(getStableInsets(), left, top, right, bottom));
-            builder.setSystemGestureInsets(
-                    insetInsets(getSystemGestureInsets(), left, top, right, bottom));
-            builder.setMandatorySystemGestureInsets(
-                    insetInsets(getMandatorySystemGestureInsets(), left, top, right, bottom));
-            builder.setTappableElementInsets(
-                    insetInsets(getTappableElementInsets(), left, top, right, bottom));
-            return builder.build();
+            return toWindowInsetsCompat(mPlatformInsets.inset(left, top, right, bottom));
         }
 
         @Override
@@ -1340,8 +1348,7 @@ public class WindowInsetsCompat {
         int newTop = Math.max(0, insets.top - top);
         int newRight = Math.max(0, insets.right - right);
         int newBottom = Math.max(0, insets.bottom - bottom);
-        if (newLeft == insets.left && newTop == insets.top
-                && newRight == insets.right && newBottom == insets.bottom) {
+        if (newLeft == left && newTop == top && newRight == right && newBottom == bottom) {
             return insets;
         }
         return Insets.of(newLeft, newTop, newRight, newBottom);
@@ -1386,29 +1393,27 @@ public class WindowInsetsCompat {
             // Overriding this avoid to go through the code path to get the visible insets via
             // reflection.
         }
+    }
 
-        @SuppressLint("WrongConstant")
-        @Override
-        @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
-            final WindowInsetsCompat newInsets =
-                    toWindowInsetsCompat(mPlatformInsets.inset(left, top, right, bottom));
+    @RequiresApi(31)
+    private static class Impl31 extends Impl30 {
 
-            // WindowInsets#insetInsets of API 30-35 has a bug, so here uses our own implementation.
-            final WindowInsetsCompat.Builder builder = new WindowInsetsCompat.Builder(newInsets);
-            for (int i = Type.FIRST; i <= Type.LAST; i = i << 1) {
-                builder.setInsets(i, insetInsets(getInsets(i), left, top, right, bottom));
-                if ((i & Type.IME) == 0) {
-                    builder.setInsetsIgnoringVisibility(
-                            i,
-                            insetInsets(getInsetsIgnoringVisibility(i), left, top, right, bottom));
-                }
-            }
-            return builder.build();
+        Impl31(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
+            super(host, insets);
+        }
+
+        Impl31(@NonNull WindowInsetsCompat host, @NonNull Impl31 other) {
+            super(host, other);
+        }
+
+        @Nullable RoundedCornerCompat getRoundedCorner(@Position int position) {
+            return RoundedCornerCompat.toRoundedCornerCompat(
+                    mPlatformInsets.getRoundedCorner(position));
         }
     }
 
     @RequiresApi(34)
-    private static class Impl34 extends Impl30 {
+    private static class Impl34 extends Impl31 {
         static final @NonNull WindowInsetsCompat CONSUMED =
                 toWindowInsetsCompat(WindowInsets.CONSUMED);
 
@@ -1440,24 +1445,6 @@ public class WindowInsetsCompat {
         }
     }
 
-    @RequiresApi(36)
-    private static class Impl36 extends Impl34 {
-
-        Impl36(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
-            super(host, insets);
-        }
-
-        Impl36(@NonNull WindowInsetsCompat host, @NonNull Impl36 other) {
-            super(host, other);
-        }
-
-        @Override
-        @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
-            return toWindowInsetsCompat(mPlatformInsets.inset(left, top, right, bottom));
-        }
-
-    }
-
     /**
      * Builder for {@link WindowInsetsCompat}.
      */
@@ -1470,6 +1457,8 @@ public class WindowInsetsCompat {
         public Builder() {
             if (SDK_INT >= 34) {
                 mImpl = new BuilderImpl34();
+            } else if (SDK_INT >= 31) {
+                mImpl = new BuilderImpl31();
             } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30();
             } else if (SDK_INT >= 29) {
@@ -1489,6 +1478,8 @@ public class WindowInsetsCompat {
         public Builder(@NonNull WindowInsetsCompat insets) {
             if (SDK_INT >= 34) {
                 mImpl = new BuilderImpl34(insets);
+            } else if (SDK_INT >= 31) {
+                mImpl = new BuilderImpl31(insets);
             } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30(insets);
             } else if (SDK_INT >= 29) {
@@ -1670,6 +1661,20 @@ public class WindowInsetsCompat {
         }
 
         /**
+         * Sets the rounded corner of given position.
+         *
+         * @see #getRoundedCorner(int)
+         * @param position the position of this rounded corner
+         * @param roundedCorner the rounded corner or null if there is none
+         * @return itself
+         */
+        public @NonNull Builder setRoundedCorner(
+                @Position int position, @Nullable RoundedCornerCompat roundedCorner) {
+            mImpl.setRoundedCorner(position, roundedCorner);
+            return this;
+        }
+
+        /**
          * Builds a {@link WindowInsetsCompat} instance.
          *
          * @return the {@link WindowInsetsCompat} instance.
@@ -1727,6 +1732,9 @@ public class WindowInsetsCompat {
         }
 
         void setVisible(int typeMask, boolean visible) {}
+
+        void setRoundedCorner(@Position int position, @Nullable RoundedCornerCompat roundedCorner) {
+        }
 
         /**
          * This method tries to apply any insets set via {@link #setInsets(int, Insets)} to
@@ -1955,8 +1963,26 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(31)
+    private static class BuilderImpl31 extends BuilderImpl30 {
+        BuilderImpl31() {
+            super();
+        }
+
+        BuilderImpl31(@NonNull WindowInsetsCompat insets) {
+            super(insets);
+        }
+
+        @Override
+        void setRoundedCorner(@Position int position, RoundedCornerCompat roundedCorner) {
+            mPlatBuilder.setRoundedCorner(
+                    RoundedCornerCompat.toPlatformPosition(position),
+                    RoundedCornerCompat.toPlatformRoundedCorner(roundedCorner));
+        }
+    }
+
     @RequiresApi(34)
-    private static class BuilderImpl34 extends BuilderImpl30 {
+    private static class BuilderImpl34 extends BuilderImpl31 {
         BuilderImpl34() {
             super();
         }

@@ -223,7 +223,7 @@ class LazyLayoutPrefetchState(
      * A scope for [schedulePrefetch] callbacks. The scope provides additional information about a
      * prefetched item.
      */
-    interface LazyLayoutPrefetchResultScope {
+    sealed interface LazyLayoutPrefetchResultScope {
 
         /** The amount of placeables composed into this item. */
         val placeablesCount: Int
@@ -535,12 +535,15 @@ internal class PrefetchHandleProvider(
         private var pausedPrecomposition: SubcomposeLayoutState.PausedPrecomposition? = null
         private var isMeasured = false
         private var isCanceled = false
-        private var isComposed = false
+        private var isApplied = false
         private var keyUsedForComposition: Any? = null
 
         private var hasResolvedNestedPrefetches = false
         private var nestedPrefetchController: NestedPrefetchController? = null
         private var isUrgent = false
+
+        private val isComposed
+            get() = isApplied || pausedPrecomposition?.isComplete == true
 
         override fun cancel() {
             if (!isCanceled) {
@@ -781,8 +784,6 @@ internal class PrefetchHandleProvider(
             } else {
                 averages.saveResumeTimeNanos(elapsedTimeNanos)
             }
-
-            isComposed = composition.isComplete
         }
 
         private fun performFullComposition(key: Any, contentType: Any?) {
@@ -790,13 +791,14 @@ internal class PrefetchHandleProvider(
             val content = itemContentFactory.getContent(index, key, contentType)
             keyUsedForComposition = key
             precomposeHandle = subcomposeLayoutState.precompose(key, content)
-            isComposed = true
+            isApplied = true
         }
 
         private fun performApply() {
             val precomposition = requireNotNull(pausedPrecomposition) { "Nothing to apply!" }
             precomposeHandle = precomposition.apply()
             pausedPrecomposition = null
+            isApplied = true
         }
 
         private fun performMeasure(constraints: Constraints) {

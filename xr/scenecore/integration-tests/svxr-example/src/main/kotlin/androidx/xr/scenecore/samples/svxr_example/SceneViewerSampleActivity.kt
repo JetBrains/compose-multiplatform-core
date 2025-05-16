@@ -16,10 +16,12 @@
 
 package androidx.xr.scenecore.samples.svxr_example
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 @Suppress("GlobalCoroutineDispatchers")
@@ -38,14 +40,22 @@ class SceneViewerSampleActivity : AppCompatActivity() {
                     .buildUpon()
                     .appendQueryParameter("file", THREED_MODEL_URL)
                     .build()
-            sceneViewerIntent.setDataAndType(intentUri, MIME_TYPE)
-            startActivity(sceneViewerIntent)
+            sceneViewerIntent.setData(intentUri)
+            try {
+                startActivity(sceneViewerIntent)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(
+                        this,
+                        "Failed to load the 3D model. No activity could handle the intent.",
+                        Toast.LENGTH_LONG,
+                    )
+                    .show()
+            }
         }
     }
 
     private companion object {
         const val THREED_MODEL_URL =
             "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF/FlightHelmet.gltf"
-        const val MIME_TYPE = "model/gltf-binary"
     }
 }

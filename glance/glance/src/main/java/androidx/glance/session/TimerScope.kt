@@ -40,12 +40,12 @@ internal class TimeoutCancellationException(
 
 /** This interface is similar to [kotlin.time.TimeSource], which is still marked experimental. */
 @RestrictTo(LIBRARY_GROUP)
-fun interface TimeSource {
+public fun interface TimeSource {
     /** Current time in milliseconds. */
-    fun markNow(): Long
+    public fun markNow(): Long
 
-    companion object {
-        val Monotonic = TimeSource { System.currentTimeMillis() }
+    public companion object {
+        public val Monotonic: TimeSource = TimeSource { System.currentTimeMillis() }
     }
 }
 

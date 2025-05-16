@@ -116,6 +116,12 @@ package androidx.compose.foundation.layout {
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier weight(androidx.compose.ui.Modifier, @FloatRange(from=0.0, fromInclusive=false) float weight, optional boolean fill);
   }
 
+  @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ComposeFoundationLayoutFlags {
+    property public boolean isWindowInsetsDefaultPassThroughEnabled;
+    field public static final androidx.compose.foundation.layout.ComposeFoundationLayoutFlags INSTANCE;
+    field public static boolean isWindowInsetsDefaultPassThroughEnabled;
+  }
+
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ContextualFlowColumnOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {
     field @Deprecated public static final androidx.compose.foundation.layout.ContextualFlowColumnOverflow.Companion Companion;
   }
@@ -194,8 +200,8 @@ package androidx.compose.foundation.layout {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi @androidx.compose.foundation.layout.LayoutScopeMarker @androidx.compose.runtime.Stable public interface FlowColumnOverflowScope extends androidx.compose.foundation.layout.FlowColumnScope {
-    method public int getShownItemCount();
-    method public int getTotalItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getShownItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getTotalItemCount();
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int shownItemCount;
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int totalItemCount;
   }
@@ -230,8 +236,8 @@ package androidx.compose.foundation.layout {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi @androidx.compose.foundation.layout.LayoutScopeMarker @androidx.compose.runtime.Stable public interface FlowRowOverflowScope extends androidx.compose.foundation.layout.FlowRowScope {
-    method public int getShownItemCount();
-    method public int getTotalItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getShownItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getTotalItemCount();
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int shownItemCount;
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int totalItemCount;
   }
@@ -322,6 +328,11 @@ package androidx.compose.foundation.layout {
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier alignBy(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.Measured,java.lang.Integer> alignmentLineBlock);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier alignByBaseline(androidx.compose.ui.Modifier);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier weight(androidx.compose.ui.Modifier, @FloatRange(from=0.0, fromInclusive=false) float weight, optional boolean fill);
+  }
+
+  public final class RulerAlignmentKt {
+    method public static androidx.compose.ui.Modifier fitInside(androidx.compose.ui.Modifier, androidx.compose.ui.layout.RectRulers rulers);
+    method public static androidx.compose.ui.Modifier fitOutside(androidx.compose.ui.Modifier, androidx.compose.ui.layout.RectRulers rulers);
   }
 
   public final class SizeKt {

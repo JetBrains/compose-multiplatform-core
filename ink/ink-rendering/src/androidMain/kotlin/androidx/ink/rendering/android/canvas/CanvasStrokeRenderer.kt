@@ -21,9 +21,9 @@ import android.graphics.Matrix
 import androidx.annotation.Px
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.nativeloader.NativeLoader
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.internal.CanvasPathRenderer
 import androidx.ink.rendering.android.canvas.internal.CanvasStrokeUnifiedRenderer
 import androidx.ink.strokes.InProgressStroke

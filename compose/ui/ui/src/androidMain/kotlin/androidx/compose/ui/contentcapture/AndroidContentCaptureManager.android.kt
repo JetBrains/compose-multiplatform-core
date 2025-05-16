@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.util.trace
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -130,23 +131,28 @@ internal class AndroidContentCaptureManager(
     private val contentCaptureChangeChecker = Runnable {
         if (!isEnabled) return@Runnable
 
-        // TODO(mnuzen): there might be a case where `view.measureAndLayout()` is called twice --
-        // once by the CC checker and once by the a11y checker.
-        view.measureAndLayout()
+        trace("ContentCapture:changeChecker") {
+            // TODO(mnuzen): there might be a case where `view.measureAndLayout()` is called twice
+            // --
+            // once by the CC checker and once by the a11y checker.
+            view.measureAndLayout()
 
-        // Semantics structural change
-        // Always send disappear event first.
-        sendContentCaptureDisappearEvents()
-        sendContentCaptureAppearEvents(
-            view.semanticsOwner.unmergedRootSemanticsNode,
-            previousSemanticsRoot
-        )
+            // Semantics structural change
+            // Always send disappear event first.
+            sendContentCaptureDisappearEvents()
+            trace("ContentCapture:sendAppearEvents") {
+                sendContentCaptureAppearEvents(
+                    view.semanticsOwner.unmergedRootSemanticsNode,
+                    previousSemanticsRoot
+                )
+            }
 
-        // Property change
-        checkForContentCapturePropertyChanges(currentSemanticsNodes)
-        updateSemanticsCopy()
+            // Property change
+            checkForContentCapturePropertyChanges(currentSemanticsNodes)
+            updateSemanticsCopy()
 
-        checkingForSemanticsChanges = false
+            checkingForSemanticsChanges = false
+        }
     }
 
     override fun onViewAttachedToWindow(v: View) {}

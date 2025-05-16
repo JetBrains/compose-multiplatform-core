@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreEntity
+import androidx.xr.compose.unit.VolumeConstraints
 
 /**
  * Base class for custom [SpatialElement]s implemented using Jetpack Compose UI.
@@ -181,9 +182,11 @@ internal class SpatialComposeElement(
     scene: SpatialComposeScene,
     compositionContext: CompositionContext? = null,
     rootCoreEntity: CoreEntity? = null,
+    rootVolumeConstraints: VolumeConstraints,
 ) : AbstractComposeElement(compositionContext, rootCoreEntity) {
     init {
         spatialComposeScene = scene
+        compositionOwner.rootVolumeConstraints = rootVolumeConstraints
     }
 
     private val content = mutableStateOf<(@Composable @SubspaceComposable () -> Unit)?>(null)

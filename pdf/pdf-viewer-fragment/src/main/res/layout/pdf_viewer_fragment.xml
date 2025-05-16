@@ -25,12 +25,11 @@
         android:layout_height="0dp"
         android:paddingStart="@dimen/pdf_horizontal_padding"
         android:paddingEnd="@dimen/pdf_horizontal_padding"
-        app:layout_constraintBottom_toTopOf="@+id/pdfSearchView"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:fastScrollVerticalThumbDrawable="@drawable/fast_scroll_vertical_thumb_drawable"
-        app:fastScrollVerticalTrackDrawable="@drawable/drag_indicator"
+        app:fastScrollVerticalThumbDrawable="@drawable/fast_scroll_thumb_drawable"
         app:fastScrollPageIndicatorBackgroundDrawable="@drawable/page_indicator_background" />
 
     <!-- ProgressBar for loading -->

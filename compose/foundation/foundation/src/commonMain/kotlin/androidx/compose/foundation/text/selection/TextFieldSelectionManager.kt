@@ -16,6 +16,10 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.hasText
 import androidx.compose.foundation.internal.readAnnotatedString
 import androidx.compose.foundation.internal.toClipEntry
@@ -29,6 +33,11 @@ import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.UndoManager
 import androidx.compose.foundation.text.ValidatingEmptyOffsetMappingIdentity
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
+import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
+import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuToolbarHandler
+import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
 import androidx.compose.foundation.text.getLineHeight
 import androidx.compose.foundation.text.isPositionInsideSelection
@@ -177,6 +186,32 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
     //  That could possibly be used so that this doesn't have to be updated manually.
     /** The current clip entry. Updated via [updateClipboardEntry]. */
     private var clipEntry: ClipEntry? by mutableStateOf(null)
+
+    @VisibleForTesting internal var toolbarRequester: ToolbarRequester = ToolbarRequesterImpl()
+
+    val contextMenuAreaModifier
+        get() =
+            if (!enabled) Modifier
+            else
+                Modifier.textContextMenuGestures(onPreShowContextMenu = { updateClipboardEntry() })
+                    .textContextMenuToolbarHandler(
+                        requester = toolbarRequester,
+                        onShow = {
+                            updateClipboardEntry()
+                            textToolbarShownViaProvider = true
+                        },
+                        onHide = { textToolbarShownViaProvider = false },
+                        computeContentBounds = { destinationCoordinates ->
+                            val rootBounds = getContentRect()
+                            val localCoordinates =
+                                checkPreconditionNotNull(state?.layoutCoordinates)
+                            translateRootToDestination(
+                                rootContentBounds = rootBounds,
+                                localCoordinates = localCoordinates,
+                                destinationCoordinates = destinationCoordinates,
+                            )
+                        }
+                    )
 
     /** [TextDragObserver] for long press and drag to select in TextField. */
     internal val touchSelectionObserver =
@@ -614,8 +649,16 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
         state?.selectionPreviewHighlightRange = TextRange.Zero
     }
 
+    internal var textToolbarShownViaProvider = false
+
+    @OptIn(ExperimentalFoundationApi::class)
     internal val textToolbarShown
-        get() = textToolbar?.status == TextToolbarStatus.Shown
+        get() =
+            if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+                textToolbarShownViaProvider
+            } else {
+                textToolbar?.status == TextToolbarStatus.Shown
+            }
 
     private val isPassword: Boolean
         get() = visualTransformation is PasswordVisualTransformation
@@ -783,18 +826,30 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
         if (show) showSelectionToolbar() else hideSelectionToolbar()
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
+    internal fun showSelectionToolbar() {
+        // Because this is called once in CoreTextField composition,
+        // disable read observation to avoid reading states and landing in a composition loop.
+        Snapshot.withoutReadObservation { if (!enabled || state?.isInTouchMode == false) return }
+
+        if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+            toolbarRequester.show()
+        } else {
+            showSelectionToolbarViaTextToolbar()
+        }
+    }
+
     /**
      * This function get the selected region as a Rectangle region, and pass it to [TextToolbar] to
      * make the FloatingToolbar show up in the proper place. In addition, this function passes the
      * copy, paste and cut method as callbacks when "copy", "cut" or "paste" is clicked.
      */
-    internal fun showSelectionToolbar() =
+    private fun showSelectionToolbarViaTextToolbar() =
         coroutineScope?.launch(start = CoroutineStart.UNDISPATCHED) {
             // Because this is undispatched and the above is called once in CoreTextField
             // composition, disable read observation to avoid reading many states and landing
             // in a composition loop.
             Snapshot.withoutReadObservation {
-                if (!enabled || state?.isInTouchMode == false) return@launch
                 val copy: (() -> Unit)? =
                     if (canCopy()) {
                         {
@@ -841,9 +896,14 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
             }
         }
 
+    @OptIn(ExperimentalFoundationApi::class)
     internal fun hideSelectionToolbar() {
-        if (textToolbar?.status == TextToolbarStatus.Shown) {
-            textToolbar?.hide()
+        if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+            toolbarRequester.hide()
+        } else {
+            if (textToolbar?.status == TextToolbarStatus.Shown) {
+                textToolbar?.hide()
+            }
         }
     }
 

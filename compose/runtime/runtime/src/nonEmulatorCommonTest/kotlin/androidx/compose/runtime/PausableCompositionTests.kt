@@ -29,6 +29,7 @@ import kotlin.coroutines.resume
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellableContinuation
@@ -356,36 +357,108 @@ class PausableCompositionTests {
         )
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun pausableComposition_throwInResume() = runTest {
-        val recomposer = Recomposer(coroutineContext)
-        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+    @Test // b/404058957
+    fun pausableComposition_reuseDeactivateOrder_100() = compositionTest {
+        val awaiter = Awaiter()
+        var active by mutableStateOf(true)
+        var text by mutableStateOf("Value")
+        val workFlow = workflow {
+            setContent()
 
-        try {
-            val handle = pausableComposition.setPausableContent { error("Test error") }
-            handle.resume { false }
-            handle.apply()
-        } finally {
-            recomposer.cancel()
-            recomposer.close()
+            resumeTillComplete { true }
+
+            repeat(100) {
+                active = false
+                advance()
+
+                resumeTillComplete { true }
+
+                active = true
+                advance()
+
+                resumeTillComplete { true }
+            }
+
+            apply()
+
+            text = "Changed Value"
+            advance()
+
+            awaiter.done()
+        }
+
+        compose { PausableContent(workFlow) { ReusableContentHost(active) { Text(text) } } }
+
+        awaiter.await()
+    }
+
+    @Test // b/404058957
+    fun pausableComposition_reuseDeactivateOrder() = compositionTest {
+        val awaiter = Awaiter()
+        var active by mutableStateOf(true)
+        var text by mutableStateOf("Value")
+        val workFlow = workflow {
+            setContent()
+
+            resumeTillComplete { true }
+
+            active = false
+            advance()
+
+            resumeTillComplete { true }
+
+            active = true
+            advance()
+
+            resumeTillComplete { true }
+
+            apply()
+
+            text = "Changed Value"
+            advance()
+
+            awaiter.done()
+        }
+
+        compose { PausableContent(workFlow) { ReusableContentHost(active) { Text(text) } } }
+
+        awaiter.await()
+    }
+
+    @Test
+    fun pausableComposition_throwInResume() = runTest {
+        assertFailsWith<IllegalStateException> {
+            val recomposer = Recomposer(coroutineContext)
+            val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+
+            try {
+                val handle = pausableComposition.setPausableContent { error("Test error") }
+                handle.resume { false }
+                handle.apply()
+            } finally {
+                recomposer.cancel()
+                recomposer.close()
+            }
         }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun pausableComposition_throwInApply() = runTest {
-        val recomposer = Recomposer(coroutineContext)
-        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+        assertFailsWith<IllegalStateException> {
+            val recomposer = Recomposer(coroutineContext)
+            val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
 
-        try {
-            val handle =
-                pausableComposition.setPausableContent {
-                    DisposableEffect(Unit) { throw IllegalStateException("test") }
-                }
-            handle.resume { false }
-            handle.apply()
-        } finally {
-            recomposer.cancel()
-            recomposer.close()
+            try {
+                val handle =
+                    pausableComposition.setPausableContent {
+                        DisposableEffect(Unit) { throw IllegalStateException("test") }
+                    }
+                handle.resume { false }
+                handle.apply()
+            } finally {
+                recomposer.cancel()
+                recomposer.close()
+            }
         }
     }
 }

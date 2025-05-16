@@ -111,4 +111,24 @@ object ComposeFoundationFlags {
      * parameter - this flag can be disabled as a temporary migration aid.
      */
     @Suppress("MutableBareField") @JvmField var isNonComposedClickableEnabled = true
+
+    /**
+     * Enables Compose trigger for calling
+     * [androidx.compose.ui.node.DelegatableNode.dispatchOnScrollChanged] callbacks during scroll
+     * events.
+     */
+    @Suppress("MutableBareField") @JvmField var isOnScrollChangedCallbackEnabled: Boolean = true
+
+    /**
+     * With this flag on, any dragging movement is offset by the container position offset before it
+     * is added to the [androidx.compose.ui.input.pointer.util.VelocityTracker]. Pointer Input
+     * positions are relative to a container's position. If the container changes positions with the
+     * movement this can cause problems because the VT doesn't know about changes in the container
+     * position. We should correct the Pointer Input position by offsetting it by the container
+     * position offset before sending the events to the VT. We will use the new
+     * [androidx.compose.ui.input.pointer.PointerInputChange] API.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled: Boolean = true
 }

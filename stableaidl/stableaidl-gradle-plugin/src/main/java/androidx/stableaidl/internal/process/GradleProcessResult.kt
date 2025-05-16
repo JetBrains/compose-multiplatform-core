@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION") // Usage of ExecException b/412771528
+
 package androidx.stableaidl.internal.process
 
 import com.android.ide.common.process.ProcessException

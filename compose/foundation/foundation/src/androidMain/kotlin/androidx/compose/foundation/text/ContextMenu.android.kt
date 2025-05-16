@@ -25,9 +25,10 @@ import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.contextmenu.close
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
-import androidx.compose.foundation.text.contextmenu.internal.ProvideDefaultTextContextMenuDropdown
+import androidx.compose.foundation.text.contextmenu.internal.ProvideDefaultPlatformTextContextMenuProviders
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.contextMenuBuilder
@@ -51,15 +52,7 @@ internal actual fun ContextMenuArea(
     content: @Composable () -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
-        val modifier =
-            if (manager.enabled) {
-                Modifier.textContextMenuGestures(
-                    onPreShowContextMenu = { manager.updateClipboardEntry() }
-                )
-            } else {
-                Modifier
-            }
-        ProvideDefaultTextContextMenuDropdown(modifier, content)
+        ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {
         val state = remember { ContextMenuState() }
         val coroutineScope = rememberCoroutineScope()
@@ -96,7 +89,7 @@ internal actual fun ContextMenuArea(
             } else {
                 Modifier
             }
-        ProvideDefaultTextContextMenuDropdown(modifier, content)
+        ProvideDefaultPlatformTextContextMenuProviders(modifier, content)
     } else {
         val state = remember { ContextMenuState() }
         val coroutineScope = rememberCoroutineScope()
@@ -137,7 +130,7 @@ internal actual fun ContextMenuArea(
 @Composable
 internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composable () -> Unit) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
-        ProvideDefaultTextContextMenuDropdown(Modifier.textContextMenuGestures(), content)
+        ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {
         val state = remember { ContextMenuState() }
         androidx.compose.foundation.contextmenu.ContextMenuArea(
@@ -154,7 +147,7 @@ internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composa
  *
  * @param stringId The android [android.R.string] id for the label of this item
  */
-internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val drawableId: Int?) {
+internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val drawableId: Int) {
     Cut(
         key = TextContextMenuKeys.CutKey,
         stringId = android.R.string.cut,
@@ -184,7 +177,7 @@ internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val dr
                 android.R.string.autofill
             },
         // Platform also doesn't have an icon for the autofill item.
-        drawableId = null
+        drawableId = Resources.ID_NULL
     );
 
     @ReadOnlyComposable @Composable fun resolvedString(): String = stringResource(stringId)
@@ -211,14 +204,17 @@ internal inline fun ContextMenuScope.TextItem(
 internal fun TextContextMenuBuilderScope.textItem(
     resources: Resources,
     item: TextContextMenuItems,
+    enabled: Boolean,
     onClick: TextContextMenuSession.() -> Unit
 ) {
-    item(
-        key = item.key,
-        label = item.resolveString(resources),
-        leadingIcon = item.drawableId,
-        onClick = onClick
-    )
+    if (enabled) {
+        item(
+            key = item.key,
+            label = item.resolveString(resources),
+            leadingIcon = item.drawableId,
+            onClick = onClick
+        )
+    }
 }
 
 internal suspend fun TextFieldSelectionState.getContextMenuItemsAvailability():

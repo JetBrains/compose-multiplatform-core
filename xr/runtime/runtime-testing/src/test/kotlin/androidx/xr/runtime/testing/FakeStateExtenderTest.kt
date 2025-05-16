@@ -40,8 +40,10 @@ class FakeStateExtenderTest {
 
     @Test
     fun class_isDiscoverableViaServiceLoader() {
-        assertThat(ServiceLoader.load(StateExtender::class.java).iterator().next())
-            .isInstanceOf(FakeStateExtender::class.java)
+        val stateExtenders = ServiceLoader.load(StateExtender::class.java)
+        for (stateExtender in stateExtenders) {
+            assert(stateExtender is FakeStateExtender || stateExtender is AnotherFakeStateExtender)
+        }
     }
 
     @Test

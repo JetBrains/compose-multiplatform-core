@@ -28,6 +28,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
@@ -82,7 +83,9 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class VideoCaptureDeviceTest(
     private val initialQuality: TargetQuality,
-    private val nextQuality: TargetQuality
+    private val nextQuality: TargetQuality,
+    private val cameraSelector: CameraSelector,
+    private val lensFacing: Int,
 ) {
 
     /**
@@ -134,16 +137,19 @@ class VideoCaptureDeviceTest(
         }
 
         @JvmStatic
-        @Parameterized.Parameters(name = "initialQuality={0}, nextQuality={1}")
+        @Parameterized.Parameters(name = "initialQuality={0}, nextQuality={1}, lensFacing={3}")
         fun data() =
-            mutableListOf<Array<TargetQuality>>().apply {
-                add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD))
-                add(arrayOf(TargetQuality.FHD, TargetQuality.HD))
-                add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST))
-                add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST))
-                add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD))
-                add(arrayOf(TargetQuality.SD, TargetQuality.UHD))
-                add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED))
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD, selector, lens))
+                    add(arrayOf(TargetQuality.FHD, TargetQuality.HD, selector, lens))
+                    add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST, selector, lens))
+                    add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST, selector, lens))
+                    add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD, selector, lens))
+                    add(arrayOf(TargetQuality.SD, TargetQuality.UHD, selector, lens))
+                    add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED, selector, lens))
+                }
             }
     }
 
@@ -546,6 +552,7 @@ class VideoCaptureDeviceTest(
             if (initialQuality != TargetQuality.NOT_SPECIFIED) {
                 cameraController.videoCaptureQualitySelector = initialQuality.getSelector()
             }
+            cameraController.cameraSelector = cameraSelector
 
             //  If the PreviewView is not attached, the enabled use cases will not be applied.
             previewView.controller = cameraController

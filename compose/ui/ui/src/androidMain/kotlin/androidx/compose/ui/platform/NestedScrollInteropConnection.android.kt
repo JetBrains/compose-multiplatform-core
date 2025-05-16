@@ -21,6 +21,8 @@ package androidx.compose.ui.platform
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ComposeUiFlags.isNestedScrollInteropPostFlingFixEnabled
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -42,7 +44,11 @@ import kotlin.math.floor
  * 2) [NestedScrollingChildHelper] by implementing this interface it should be able to receive
  *    deltas from dispatching children on the Compose side.
  */
-internal class NestedScrollInteropConnection(private val view: View) : NestedScrollConnection {
+@OptIn(ExperimentalComposeUiApi::class)
+internal class NestedScrollInteropConnection(
+    private val view: View,
+    private val minFlingVelocity: Float
+) : NestedScrollConnection {
 
     private val nestedScrollChildHelper =
         NestedScrollingChildHelper(view).apply { isNestedScrollingEnabled = true }
@@ -101,13 +107,22 @@ internal class NestedScrollInteropConnection(private val view: View) : NestedScr
     }
 
     override suspend fun onPreFling(available: Velocity): Velocity {
+        // verify existence of parent. Calling startNestedScroll will enable nested scrolling to
+        // propagate in the view world
+        val verifyNestedScrollingParentExists =
+            if (isNestedScrollInteropPostFlingFixEnabled) {
+                nestedScrollChildHelper.startNestedScroll(available.scrollAxes(minFlingVelocity))
+            } else {
+                true
+            }
 
         val result =
             if (
-                nestedScrollChildHelper.dispatchNestedPreFling(
-                    available.x.toViewVelocity(),
-                    available.y.toViewVelocity(),
-                )
+                verifyNestedScrollingParentExists &&
+                    nestedScrollChildHelper.dispatchNestedPreFling(
+                        available.x.toViewVelocity(),
+                        available.y.toViewVelocity(),
+                    )
             ) {
                 available
             } else {
@@ -120,19 +135,29 @@ internal class NestedScrollInteropConnection(private val view: View) : NestedScr
     }
 
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+        // verify existence of parent. Calling startNestedScroll will enable nested scrolling to
+        // propagate in the view world
+        val verifyNestedScrollingParentExists =
+            if (isNestedScrollInteropPostFlingFixEnabled) {
+                nestedScrollChildHelper.startNestedScroll(available.scrollAxes(minFlingVelocity))
+            } else {
+                true
+            }
         val result =
             if (
-                nestedScrollChildHelper.dispatchNestedFling(
-                    available.x.toViewVelocity(),
-                    available.y.toViewVelocity(),
-                    true
-                )
+                verifyNestedScrollingParentExists &&
+                    nestedScrollChildHelper.dispatchNestedFling(
+                        available.x.toViewVelocity(),
+                        available.y.toViewVelocity(),
+                        true
+                    )
             ) {
                 available
             } else {
                 Velocity.Zero
             }
 
+        // finalize fling process by declaring the end of nested scrolling.
         interruptOngoingScrolls()
 
         return result
@@ -209,6 +234,18 @@ private val Offset.scrollAxes: Int
         return axes
     }
 
+/** Make an assumption that the scrolling axes is determined by a min fling velocity */
+private fun Velocity.scrollAxes(minFlingVelocity: Float): Int {
+    var axes = ViewCompat.SCROLL_AXIS_NONE
+    if (x.absoluteValue >= minFlingVelocity) {
+        axes = axes or ViewCompat.SCROLL_AXIS_HORIZONTAL
+    }
+    if (y.absoluteValue >= minFlingVelocity) {
+        axes = axes or ViewCompat.SCROLL_AXIS_VERTICAL
+    }
+    return axes
+}
+
 /**
  * Create and [remember] the [NestedScrollConnection] that enables Nested Scroll Interop between a
  * View parent that implements [androidx.core.view.NestedScrollingParent3] and a Compose child. This
@@ -229,4 +266,9 @@ private val Offset.scrollAxes: Int
 @Composable
 fun rememberNestedScrollInteropConnection(
     hostView: View = LocalView.current
-): NestedScrollConnection = remember(hostView) { NestedScrollInteropConnection(hostView) }
+): NestedScrollConnection {
+    val viewConfiguration = LocalViewConfiguration.current
+    return remember(hostView, viewConfiguration) {
+        NestedScrollInteropConnection(hostView, viewConfiguration.minimumFlingVelocity)
+    }
+}

@@ -15,6 +15,7 @@
  */
 package androidx.annotation
 
+import java.lang.annotation.ElementType.ANNOTATION_TYPE
 import java.lang.annotation.ElementType.CONSTRUCTOR
 import java.lang.annotation.ElementType.FIELD
 import java.lang.annotation.ElementType.METHOD
@@ -52,7 +53,7 @@ import java.lang.annotation.ElementType.TYPE
 // Needed due to Kotlin's lack of PACKAGE annotation target
 // https://youtrack.jetbrains.com/issue/KT-45921
 @Suppress("DEPRECATED_JAVA_ANNOTATION", "SupportAnnotationUsage")
-@java.lang.annotation.Target(TYPE, METHOD, CONSTRUCTOR, FIELD, PACKAGE)
+@java.lang.annotation.Target(ANNOTATION_TYPE, TYPE, METHOD, CONSTRUCTOR, FIELD, PACKAGE)
 @Repeatable
 public annotation class RequiresExtension(
     /**

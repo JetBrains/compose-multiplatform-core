@@ -289,4 +289,35 @@ class AppFunctionSerializableProcessorTest {
             goldenFileName = "${'$'}UpdateNoteParamsFactory.KT"
         )
     }
+
+    @Test
+    fun testProcessor_serializableWithEmptyConstructor_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithEmptySerializable.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}EmptyFactory.kt",
+            goldenFileName = "${'$'}EmptyFactory.KT"
+        )
+    }
+
+    @Test
+    fun testProcessor_multiLevelSerializable_success() {
+        val report =
+            compilationTestHelper.compileAll(sourceFileNames = listOf("MultiLevelSerializable.KT"))
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}MyNoteFactory.kt",
+            goldenFileName = "${'$'}MyNoteFactory.KT"
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}ResponseFactory.kt",
+            goldenFileName = "${'$'}ResponseFactory.KT"
+        )
+    }
 }

@@ -32,7 +32,7 @@ import kotlinx.coroutines.runBlocking
  * [RemoteViewsService] to be connected to for a remote adapter that returns RemoteViews for lazy
  * lists / grids.
  */
-open class GlanceRemoteViewsService : RemoteViewsService() {
+public open class GlanceRemoteViewsService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent?): RemoteViewsFactory {
         requireNotNull(intent) { "Intent is null" }
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)

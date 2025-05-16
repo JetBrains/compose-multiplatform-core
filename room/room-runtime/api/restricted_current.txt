@@ -161,7 +161,7 @@ package androidx.room {
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public InvalidationTracker(androidx.room.RoomDatabase database, java.util.Map<java.lang.String,java.lang.String> shadowTablesMap, java.util.Map<java.lang.String,java.util.Set<java.lang.String>> viewTables, java.lang.String... tableNames);
     method @WorkerThread public void addObserver(androidx.room.InvalidationTracker.Observer observer);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @WorkerThread public void addWeakObserver(androidx.room.InvalidationTracker.Observer observer);
-    method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(String[] tables);
+    method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(java.lang.String... tables);
     method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(String[] tables, optional boolean emitInitialState);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public <T> androidx.lifecycle.LiveData<T> createLiveData(String[] tableNames, boolean inTransaction, java.util.concurrent.Callable<T?> computeFunction);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final <T> androidx.lifecycle.LiveData<T> createLiveData(String[] tableNames, boolean inTransaction, kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteConnection,? extends T?> computeFunction);

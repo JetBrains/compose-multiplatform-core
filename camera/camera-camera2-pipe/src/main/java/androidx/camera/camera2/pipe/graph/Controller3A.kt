@@ -355,8 +355,8 @@ internal class Controller3A(
             if (aeLockValue != null || awbLockValue != null) {
                 debug { "lock3A - setting aeLock=$aeLockValue, awbLock=$awbLockValue" }
                 graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
-                graphProcessor.update3AParameters(graphState3A.readState())
             }
+            graphProcessor.update3AParameters(graphState3A.readState())
 
             debug {
                 "lock3A - waiting for" +
@@ -441,8 +441,8 @@ internal class Controller3A(
         if (aeLockValue != null || awbLockValue != null) {
             debug { "unlock3A - updating graph state, aeLock=$aeLockValue, awbLock=$awbLockValue" }
             graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
-            graphProcessor.update3AParameters(graphState3A.readState())
         }
+        graphProcessor.update3AParameters(graphState3A.readState())
         return listener.result
     }
 

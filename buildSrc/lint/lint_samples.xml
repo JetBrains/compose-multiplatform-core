@@ -23,9 +23,13 @@
     <issue id="LintBaseline" severity="ignore">
         <ignore regexp=".* filtered out because .* listed in the baseline file.*"/>
     </issue>
-    <!-- Disable all lint checks in non-sample projects. -->
+    <!--
+      Disable all lint checks in non-sample projects. The regex is checked against both the file
+      path and the error message, so it is designed to only match file paths (containing "/src/").
+      It matches any path which does not contain "samples".
+      -->
     <issue id="all">
-        <ignore regexp="^((?!samples).)*$" />
+        <ignore regexp="^((?!samples).)*\/src\/.*$" />
     </issue>
     <!-- Re-enable sampled lint checks for all projects. -->
     <issue id="InvalidSamplesLocation" severity="fatal" />

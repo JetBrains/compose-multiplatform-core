@@ -25,12 +25,15 @@ import static org.junit.Assert.assertThrows;
 
 import android.util.Log;
 
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEvent;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.internal.SpatialPointerIcon;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -38,13 +41,15 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Plane;
 
-import com.android.extensions.xr.VisibilityChangedEvent;
+import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
+import com.android.extensions.xr.space.VisibilityState;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -531,26 +536,58 @@ public final class RuntimeUtilsTest {
     }
 
     @Test
+    public void getHitTestFilter_convertsToExtensionHitTestFilter_noFilter() {
+        @HitTestFilterValue int hitTestFilter = 0;
+        int expectedHitTestFilter = 0;
+
+        int extensionsHitTestFilter = RuntimeUtils.getHitTestFilter(hitTestFilter);
+
+        assertThat(extensionsHitTestFilter).isEqualTo(expectedHitTestFilter);
+    }
+
+    @Test
+    public void getHitTestFilter_convertsToExtensionHitTestFilter_oneFilter() {
+        @HitTestFilterValue int hitTestFilter = HitTestFilter.OTHER_SCENES;
+        int expectedHitTestFilter = XrExtensions.HIT_TEST_FILTER_INCLUDE_OUTSIDE_ACTIVITY;
+
+        int extensionsHitTestFilter = RuntimeUtils.getHitTestFilter(hitTestFilter);
+
+        assertThat(extensionsHitTestFilter).isEqualTo(expectedHitTestFilter);
+    }
+
+    @Test
+    public void getHitTestFilter_convertsToExtensionHitTestFilter_multipleFilters() {
+        @HitTestFilterValue
+        int hitTestFilter = HitTestFilter.SELF_SCENE | HitTestFilter.OTHER_SCENES;
+        int expectedHitTestFilter =
+                XrExtensions.HIT_TEST_FILTER_INCLUDE_INSIDE_ACTIVITY
+                        | XrExtensions.HIT_TEST_FILTER_INCLUDE_OUTSIDE_ACTIVITY;
+
+        int extensionsHitTestFilter = RuntimeUtils.getHitTestFilter(hitTestFilter);
+
+        assertThat(extensionsHitTestFilter).isEqualTo(expectedHitTestFilter);
+    }
+
+    @Test
     public void convertSpatialVisibility_convertsFromExtensionVisibility() {
         assertThat(
                         RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityChangedEvent(VisibilityChangedEvent.VISIBLE)))
+                                new VisibilityState(VisibilityState.FULLY_VISIBLE)))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
 
         assertThat(
                         RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityChangedEvent(
-                                        VisibilityChangedEvent.PARTIALLY_VISIBLE)))
+                                new VisibilityState(VisibilityState.PARTIALLY_VISIBLE)))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.PARTIALLY_WITHIN_FOV));
 
         assertThat(
                         RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityChangedEvent(VisibilityChangedEvent.OUTSIDE_OF_FOV)))
+                                new VisibilityState(VisibilityState.NOT_VISIBLE)))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV));
 
         assertThat(
                         RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityChangedEvent(VisibilityChangedEvent.UNKNOWN)))
+                                new VisibilityState(VisibilityState.UNKNOWN)))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.UNKNOWN));
     }
 
@@ -558,6 +595,16 @@ public final class RuntimeUtilsTest {
     public void convertSpatialVisibility_throwsExceptionForInvalidValue() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> RuntimeUtils.convertSpatialVisibility(new VisibilityChangedEvent(100)));
+                () -> RuntimeUtils.convertSpatialVisibility(new VisibilityState(100)));
+    }
+
+    @Test
+    public void convertSpatialPointerIconType_convertsFromRuntimeIconType() {
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_NONE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_NONE);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_DEFAULT))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_DEFAULT);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_CIRCLE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_CIRCLE);
     }
 }

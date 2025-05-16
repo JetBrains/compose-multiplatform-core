@@ -21,18 +21,27 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionManagerCompat
+import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
-import androidx.appfunctions.integration.testapp.library.TestFunctions2Ids
+import androidx.appfunctions.integration.tests.AppSearchMetadataHelper.isDynamicIndexerAvailable
 import androidx.appfunctions.integration.tests.TestUtil.doBlocking
 import androidx.appfunctions.integration.tests.TestUtil.retryAssert
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDateTime
 import kotlin.test.assertIs
+import kotlinx.coroutines.flow.first
 import org.junit.After
+import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeNotNull
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -74,7 +83,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.ADD_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#add",
                         AppFunctionData.Builder("").setLong("num1", 1).setLong("num2", 2).build()
                     )
             )
@@ -89,13 +98,33 @@ class IntegrationTest {
     }
 
     @Test
+    fun searchAllAppFunctions_returnsAllAppFunction_withDynamicIndexer() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val appFunctions = appFunctionManager.observeAppFunctions(searchFunctionSpec).first()
+
+        assertThat(appFunctions).hasSize(13)
+    }
+
+    @Test
+    fun searchAllAppFunctions_returnsAllSchemaAppFunction_withLegacyIndexer() = doBlocking {
+        assumeFalse(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val appFunctions = appFunctionManager.observeAppFunctions(searchFunctionSpec).first()
+
+        assertThat(appFunctions).hasSize(1)
+    }
+
+    @Test
     fun executeAppFunction_voidReturnType_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.VOID_FUNCTION_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#voidFunction",
                         AppFunctionData.Builder("").build()
                     )
             )
@@ -112,7 +141,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFactoryIds.IS_CREATED_BY_FACTORY_ID,
+                        "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory",
                         AppFunctionData.Builder("").build()
                     )
             )
@@ -135,7 +164,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctions2Ids.CONCAT_ID,
+                        "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat",
                         AppFunctionData.Builder("")
                             .setString("str1", "log")
                             .setString("str2", "cat")
@@ -159,7 +188,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        "androidx.appfunctions.integration.testapp.TestFunctions#notExist",
+                        "androidx.appfunctions.integration.tests.TestFunctions#notExist",
                         AppFunctionData.Builder("").build()
                     )
             )
@@ -176,7 +205,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.DO_THROW_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#doThrow",
                         AppFunctionData.Builder("").build()
                     )
             )
@@ -194,7 +223,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.CREATE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#createNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "createNoteParams",
@@ -236,7 +265,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.GET_OPENABLE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "createNoteParams",
@@ -278,7 +307,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.GET_OPENABLE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "createNoteParams",
@@ -327,7 +356,8 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         targetPackageName = context.packageName,
-                        functionIdentifier = TestFunctionsIds.LOG_LOCAL_DATE_TIME_ID,
+                        functionIdentifier =
+                            "androidx.appfunctions.integration.tests.TestFunctions#logLocalDateTime",
                         functionParameters =
                             AppFunctionData.Builder("")
                                 .setAppFunctionData(
@@ -352,7 +382,8 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         targetPackageName = context.packageName,
-                        functionIdentifier = TestFunctions2Ids.LOG_URI_ID,
+                        functionIdentifier =
+                            "androidx.appfunctions.integration.testapp.library.TestFunctions2#logUri",
                         functionParameters =
                             AppFunctionData.Builder("")
                                 .setAppFunctionData(
@@ -373,7 +404,8 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         targetPackageName = context.packageName,
-                        functionIdentifier = TestFunctionsIds.GET_LOCAL_DATE_ID,
+                        functionIdentifier =
+                            "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate",
                         functionParameters = AppFunctionData.Builder("").build()
                     )
             )
@@ -395,7 +427,8 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         targetPackageName = context.packageName,
-                        functionIdentifier = TestFunctions2Ids.GET_URI_ID,
+                        functionIdentifier =
+                            "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri",
                         functionParameters = AppFunctionData.Builder("").build()
                     )
             )
@@ -418,7 +451,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.UPDATE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "updateNoteParams",
@@ -459,7 +492,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.UPDATE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "updateNoteParams",
@@ -500,7 +533,7 @@ class IntegrationTest {
                 request =
                     ExecuteAppFunctionRequest(
                         context.packageName,
-                        TestFunctionsIds.UPDATE_NOTE_ID,
+                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
                         AppFunctionData.Builder("")
                             .setAppFunctionData(
                                 "updateNoteParams",
@@ -529,6 +562,157 @@ class IntegrationTest {
             .isEqualTo(expectedNote)
     }
 
+    @Test
+    fun executeAppFunction_schemaCreateNote_success() = doBlocking {
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(
+                        packageNames = setOf(context.packageName),
+                        schemaCategory = "myNotes",
+                        schemaName = "createNote",
+                        minSchemaVersion = 2,
+                    )
+                )
+                .first()
+                .single()
+        val request =
+            ExecuteAppFunctionRequest(
+                functionIdentifier = createNoteMetadata.id,
+                targetPackageName = createNoteMetadata.packageName,
+                functionParameters =
+                    AppFunctionData.Builder(
+                            createNoteMetadata.parameters,
+                            createNoteMetadata.components
+                        )
+                        .setAppFunctionData(
+                            "parameters",
+                            AppFunctionData.Builder(
+                                    requireTargetObjectTypeMetadata(
+                                        "parameters",
+                                        createNoteMetadata.parameters,
+                                        createNoteMetadata.components
+                                    ),
+                                    createNoteMetadata.components
+                                )
+                                .setString("title", "Test Title")
+                                .build()
+                        )
+                        .build()
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val resultNote =
+            response.returnValue
+                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                ?.getAppFunctionData("createdNote")
+        assertThat(resultNote?.getString("id")).isEqualTo("testId")
+        assertThat(resultNote?.getString("title")).isEqualTo("Test Title")
+    }
+
+    @Test
+    fun prepareAppFunctionData_wrongTopLevelParameterName_fail() = doBlocking {
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(
+                        packageNames = setOf(context.packageName),
+                        schemaCategory = "myNotes",
+                        schemaName = "createNote",
+                        minSchemaVersion = 2,
+                    )
+                )
+                .first()
+                .single()
+
+        val innerData =
+            AppFunctionData.Builder(
+                    requireTargetObjectTypeMetadata(
+                        "parameters",
+                        createNoteMetadata.parameters,
+                        createNoteMetadata.components
+                    ),
+                    createNoteMetadata.components
+                )
+                .setString("title", "Test Title")
+                .build()
+        assertThrows(IllegalArgumentException::class.java) {
+            AppFunctionData.Builder(createNoteMetadata.parameters, createNoteMetadata.components)
+                .setAppFunctionData(
+                    "wrongParameters",
+                    innerData,
+                )
+        }
+    }
+
+    @Test
+    fun prepareAppFunctionData_wrongNestedParameterName_fail() = doBlocking {
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(
+                        packageNames = setOf(context.packageName),
+                        schemaCategory = "myNotes",
+                        schemaName = "createNote",
+                        minSchemaVersion = 2,
+                    )
+                )
+                .first()
+                .single()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            AppFunctionData.Builder(
+                    requireTargetObjectTypeMetadata(
+                        "parameters",
+                        createNoteMetadata.parameters,
+                        createNoteMetadata.components
+                    ),
+                    createNoteMetadata.components
+                )
+                .setString("wrongTitle", "Test Title")
+                .build()
+        }
+    }
+
+    /**
+     * Requires that [parameters] contains the [AppFunctionObjectTypeMetadata] under
+     * [parameterName].
+     *
+     * @throws IllegalArgumentException If unable to find the target
+     *   [AppFunctionObjectTypeMetadata].
+     */
+    private fun requireTargetObjectTypeMetadata(
+        parameterName: String,
+        parameters: List<AppFunctionParameterMetadata>,
+        components: AppFunctionComponentsMetadata
+    ): AppFunctionObjectTypeMetadata {
+        val targetParameterMetadata =
+            parameters.find { it.name == parameterName }
+                ?: throw IllegalArgumentException(
+                    "Unable to find parameter metadata with name $parameterName"
+                )
+        val parameterDataTypeMetadata = targetParameterMetadata.dataType
+        return when (parameterDataTypeMetadata) {
+            is AppFunctionObjectTypeMetadata -> {
+                parameterDataTypeMetadata
+            }
+            is AppFunctionReferenceTypeMetadata -> {
+                components.dataTypes[parameterDataTypeMetadata.referenceDataType]
+                    as? AppFunctionObjectTypeMetadata
+                    ?: throw IllegalArgumentException(
+                        "Unable to find object metadata with reference name ${parameterDataTypeMetadata.referenceDataType}"
+                    )
+            }
+            else -> {
+                throw IllegalArgumentException(
+                    "The parameter metadata of $parameterName is not an object type."
+                )
+            }
+        }
+    }
+
     private suspend fun awaitAppFunctionsIndexed(expectedFunctionIds: Set<String>) {
         retryAssert {
             val functionIds = AppSearchMetadataHelper.collectSelfFunctionIds(context)
@@ -540,19 +724,19 @@ class IntegrationTest {
         const val TEST_APP_FUNCTION_DOC_SIZE_LIMIT = 512 * 1024 // 512kb
 
         val FUNCTION_IDS =
-            setOf(
-                TestFunctionsIds.ADD_ID,
-                TestFunctionsIds.DO_THROW_ID,
-                TestFunctionsIds.VOID_FUNCTION_ID,
-                TestFunctionsIds.CREATE_NOTE_ID,
-                TestFunctionsIds.UPDATE_NOTE_ID,
-                TestFunctionsIds.LOG_LOCAL_DATE_TIME_ID,
-                TestFunctionsIds.GET_LOCAL_DATE_ID,
-                TestFunctionsIds.GET_OPENABLE_NOTE_ID,
-                TestFactoryIds.IS_CREATED_BY_FACTORY_ID,
-                TestFunctions2Ids.CONCAT_ID,
-                TestFunctions2Ids.LOG_URI_ID,
-                TestFunctions2Ids.GET_URI_ID,
+            setOf<String>(
+                "androidx.appfunctions.integration.tests.TestFunctions#add",
+                "androidx.appfunctions.integration.tests.TestFunctions#doThrow",
+                "androidx.appfunctions.integration.tests.TestFunctions#voidFunction",
+                "androidx.appfunctions.integration.tests.TestFunctions#createNote",
+                "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
+                "androidx.appfunctions.integration.tests.TestFunctions#logLocalDateTime",
+                "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate",
+                "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote",
+                "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory",
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat",
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#logUri",
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri",
             )
     }
 }

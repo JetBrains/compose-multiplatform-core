@@ -21,8 +21,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.CoreState
-import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.HitResult as RuntimeHitResult
@@ -93,7 +93,7 @@ class InteractionTest {
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = createTestSessionAndRunTest {
         runTest {
-            session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
+            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }

@@ -50,10 +50,13 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.ui:ui:1.7.5")
     implementation("androidx.compose.ui:ui-unit:1.7.5")
+    implementation("androidx.compose.ui:ui-util:1.6.0-beta01")
 
+    testImplementation(libs.espressoCore)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
-    testImplementation(libs.robolectric)
+    testImplementation(libs.mockitoKotlin)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
@@ -83,4 +86,5 @@ androidx {
     optOutJSpecify = true
     // b/384785925
     metalavaK2UastEnabled = false
+    enableRobolectric()
 }

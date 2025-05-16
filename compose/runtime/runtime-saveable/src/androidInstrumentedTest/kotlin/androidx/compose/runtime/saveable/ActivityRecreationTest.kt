@@ -316,11 +316,11 @@ class RecreationTest3Activity : BaseRestorableActivity() {
 
         child1.setContent {
             arrayOf<Any?>()
-            array1 = rememberSaveable(key = "key") { intArrayOf(0) }
+            array1 = rememberSaveable { intArrayOf(0) }
         }
         child2.setContent {
             arrayOf<Any?>()
-            array2 = rememberSaveable(key = "key") { intArrayOf(0) }
+            array2 = rememberSaveable { intArrayOf(0) }
         }
     }
 }
@@ -480,7 +480,7 @@ class TestFragment : Fragment() {
         ComposeView(requireContext()).apply {
             setContent {
                 arrayOf<Any?>()
-                array = rememberSaveable(key = "key") { intArrayOf(0) }
+                array = rememberSaveable { intArrayOf(0) }
             }
         }
 }

@@ -239,11 +239,13 @@ public class StreamUseCaseTest {
     public void shouldUseStreamUseCase_cameraModeNotSupported() {
         FeatureSettings featureSettings = FeatureSettings.of(
                 CameraMode.CONCURRENT_CAMERA,
+                /*hasVideoCapture=*/ false,
                 BIT_DEPTH_8_BIT,
                 /*isPreviewStabilizationOn=*/false,
                 /*isUltraHdrOn=*/ false,
-                /*isHighSpeedOn=*/ false
-        );
+                /*isHighSpeedOn=*/ false,
+                /*requiresFeatureComboQuery=*/ false,
+                /*targetFpsRange=*/ null);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -251,11 +253,13 @@ public class StreamUseCaseTest {
     public void shouldUseStreamUseCase_bitDepthNotSupported() {
         FeatureSettings featureSettings = FeatureSettings.of(
                 CameraMode.DEFAULT,
+                /*hasVideoCapture=*/ false,
                 BIT_DEPTH_10_BIT,
                 /*isPreviewStabilizationOn=*/false,
                 /*isUltraHdrOn=*/ false,
-                /*isHighSpeedOn=*/ false
-        );
+                /*isHighSpeedOn=*/ false,
+                /*requiresFeatureComboQuery=*/ false,
+                /*targetFpsRange=*/ null);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 

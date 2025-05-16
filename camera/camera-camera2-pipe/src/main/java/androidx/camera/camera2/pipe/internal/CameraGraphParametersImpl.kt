@@ -18,8 +18,8 @@ package androidx.camera.camera2.pipe.internal
 
 import android.hardware.camera2.CaptureRequest
 import androidx.annotation.GuardedBy
-import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.config.ForCameraGraph
 import androidx.camera.camera2.pipe.core.Log.warn
@@ -35,7 +35,7 @@ internal constructor(
     private val sessionLock: SessionLock,
     private val graphProcessor: GraphProcessor,
     @ForCameraGraph private val graphScope: CoroutineScope
-) : CameraGraph.Parameters {
+) : Parameters {
     private val lock = Any()
 
     @GuardedBy("lock") private val parameters = mutableMapOf<Any, Any?>()

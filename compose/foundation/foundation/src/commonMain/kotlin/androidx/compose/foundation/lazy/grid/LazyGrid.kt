@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.LazyLayout
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.foundation.lazy.layout.lazyLayoutBeyondBoundsModifier
@@ -41,7 +41,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsContext
-import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
@@ -179,7 +178,7 @@ private fun rememberLazyGridMeasurePolicy(
     /** Configures the placement of sticky items */
     stickyItemsScrollBehavior: StickyItemsPlacement?
 ) =
-    remember<LazyLayoutMeasureScope.(Constraints) -> MeasureResult>(
+    remember(
         state,
         slots,
         contentPadding,
@@ -189,7 +188,7 @@ private fun rememberLazyGridMeasurePolicy(
         verticalArrangement,
         graphicsContext
     ) {
-        { containerConstraints ->
+        LazyLayoutMeasurePolicy { containerConstraints ->
             state.measurementScopeInvalidator.attachToScope()
             // Tracks if the lookahead pass has occurred
             val isInLookaheadScope = state.hasLookaheadOccurred || isLookingAhead

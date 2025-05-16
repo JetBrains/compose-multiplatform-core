@@ -41,8 +41,6 @@ import com.android.extensions.xr.node.ShadowNodeTransform;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.time.Duration;
-
 /**
  * Abstract test class for {@link SystemSpaceEntityImpl} implementations.
  *
@@ -67,11 +65,6 @@ public abstract class SystemSpaceEntityImplTest {
     public void systemSpaceEntityImplConstructor_setsNodeTransformSubscription() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
         FakeScheduledExecutorService fakeExecutor = getDefaultFakeExecutor();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         ShadowNode node = ShadowNode.extract(systemSpaceEntity.getNode());
         assertThat(node.getTransformListener()).isNotNull();
         assertThat(node.getTransformExecutor()).isEqualTo(fakeExecutor);
@@ -81,11 +74,6 @@ public abstract class SystemSpaceEntityImplTest {
     @Test
     public void dispose_closesNodeTransformSubscription() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         FakeCloseable nodeTransformCloseable =
                 (FakeCloseable) systemSpaceEntity.mNodeTransformCloseable;
         assertThat(nodeTransformCloseable.isClosed()).isFalse();
@@ -168,11 +156,6 @@ public abstract class SystemSpaceEntityImplTest {
     @Test
     public void getPoseInOpenXrReferenceSpace_returnsPoseFromSubscribeToNodeTransform() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         Mat4f mat4f =
                 new Mat4f( // --                Column major, right handed 4x4 Transformation Matrix
                         // with
@@ -206,11 +189,6 @@ public abstract class SystemSpaceEntityImplTest {
     @Test
     public void setOnSpaceUpdatedListener_callsListenerOnNodeTransformEvent() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         Mat4f mat4f = new Mat4f(Matrix4.Identity.getData());
         NodeTransform nodeTransformEvent = ShadowNodeTransform.create(mat4f);
 
@@ -232,10 +210,6 @@ public abstract class SystemSpaceEntityImplTest {
             setOnSpaceUpdatedListener_multipleListeners_callsLastListenerOnNodeTransformEvent() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
         FakeScheduledExecutorService fakeExecutor = getDefaultFakeExecutor();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        fakeExecutor.simulateSleepExecutingAllTasks(
-                Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         Mat4f mat4f = new Mat4f(Matrix4.Identity.getData());
         NodeTransform nodeTransformEvent = ShadowNodeTransform.create(mat4f);
 
@@ -258,11 +232,6 @@ public abstract class SystemSpaceEntityImplTest {
     public void
             setOnSpaceUpdatedListener_withNullExecutor_callsListenerOnNodeTransformEventExecutor() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         Mat4f mat4f = new Mat4f(Matrix4.Identity.getData());
         NodeTransform nodeTransformEvent = ShadowNodeTransform.create(mat4f);
 
@@ -278,11 +247,6 @@ public abstract class SystemSpaceEntityImplTest {
     @Test
     public void setOnSpaceUpdatedListener_withNullListener_noListenerCalledOnNodeTransformEvent() {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        // TODO: b/377554103 - Remove delay once the subscription API are synced with the node
-        // creation.
-        getDefaultFakeExecutor()
-                .simulateSleepExecutingAllTasks(
-                        Duration.ofMillis(SystemSpaceEntityImpl.SUBSCRIPTION_DELAY_MS));
         Mat4f mat4f = new Mat4f(Matrix4.Identity.getData());
         NodeTransform nodeTransformEvent = ShadowNodeTransform.create(mat4f);
 

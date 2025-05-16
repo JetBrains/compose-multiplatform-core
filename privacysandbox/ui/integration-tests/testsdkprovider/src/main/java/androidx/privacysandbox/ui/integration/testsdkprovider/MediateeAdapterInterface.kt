@@ -34,6 +34,7 @@ interface MediateeAdapterInterface {
         adFormat: Int,
         adType: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
+        mediationTestCallbackProxy: Bundle
     ): Bundle
 }

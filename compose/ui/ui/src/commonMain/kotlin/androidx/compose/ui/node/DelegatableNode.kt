@@ -19,6 +19,7 @@ package androidx.compose.ui.node
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
@@ -387,6 +388,18 @@ fun DelegatableNode.invalidateSubtree() {
         requireLayoutNode().invalidateSubtree()
     }
 }
+
+/**
+ * Call this function whenever a scroll chang happened in the LayoutNode that this [DelegatableNode]
+ * is attached to to let the underlying platform know that a scroll event happened in this
+ * [LayoutNode].
+ *
+ * On Android this will trigger a ViewTreeObserver onScrollChanged callback.
+ *
+ * @param delta The scroll delta that was consumed by this node.
+ */
+fun DelegatableNode.dispatchOnScrollChanged(delta: Offset) =
+    requireOwner().dispatchOnScrollChanged(delta)
 
 // It is safe to do this for LayoutModifierNode because we enforce only a single delegate is
 // a LayoutModifierNode, however for other NodeKinds that is not true. As a result, this function

@@ -85,12 +85,14 @@ import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.SpatialPopup
-import androidx.xr.scenecore.Session
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.scene
 import kotlinx.coroutines.launch
 
 class ManualTestXrSpatialElevationActivity : ComponentActivity() {
 
-    val session by lazy { Session.create(this) }
+    val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(android.R.style.Theme_Translucent_NoTitleBar)
@@ -195,11 +197,15 @@ private fun App() {
                     }
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                        Button(onClick = { session.spatialEnvironment.requestHomeSpaceMode() }) {
+                        Button(
+                            onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }
+                        ) {
                             Text("Enter Home Space Mode")
                         }
                     } else {
-                        Button(onClick = { session.spatialEnvironment.requestFullSpaceMode() }) {
+                        Button(
+                            onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }
+                        ) {
                             Text("Enter Full Space Mode")
                         }
                     }

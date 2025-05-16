@@ -36,7 +36,7 @@ interface ISdkApi {
         mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallback: IAutomatedTestCallback
+        automatedTestCallbackBundle: Bundle
     ): Bundle
 
     fun requestResize(width: Int, height: Int)

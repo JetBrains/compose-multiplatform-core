@@ -330,7 +330,7 @@ class FrameRateTest {
 
         Button(onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f }) {
             Text(
-                text = "Click Me for alpha change $frameRate",
+                text = "Click for $frameRate fps",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
                 modifier = Modifier.requestedFrameRate(frameRate)
             )

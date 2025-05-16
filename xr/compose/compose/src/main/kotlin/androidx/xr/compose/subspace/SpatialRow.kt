@@ -52,10 +52,11 @@ public fun SpatialRow(
  *
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param alignment The default alignment for child elements within the row.
- * @param curveRadius The radial distance (in Dp) of the polar coordinate system of this row. It is
- *   a positive value. Setting this value to Dp.Infinity or a non-positive value will flatten the
- *   row. When a row is curved, its elements will be oriented so that they lie tangent to the curved
- *   row.
+ * @param curveRadius Defines the curve of the row by specifying its radius in Dp. A larger radius
+ *   creates a gentler curve (less curvature), while a smaller positive radius results in a sharper
+ *   curve (more curvature). Using [Dp.Infinity] or a non-positive value (zero or negative) makes
+ *   the row straight. When curved, row items are angled to follow the curve's path. This value is
+ *   the radial distance in the polar coordinate system.
  * @param content The composable content to be laid out horizontally in the row.
  */
 @Composable
@@ -76,10 +77,11 @@ public fun SpatialCurvedRow(
  *
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param alignment The default alignment for child elements within the row.
- * @param curveRadius The radial distance (in Dp) of the polar coordinate system of this row. It is
- *   a positive value. Setting this value to Dp.Infinity or a non-positive value will flatten the
- *   row. When a row is curved, its elements will be oriented so that they lie tangent to the curved
- *   row.
+ * @param curveRadius Defines the curve of the row by specifying its radius in Dp. A larger radius
+ *   creates a gentler curve (less curvature), while a smaller positive radius results in a sharper
+ *   curve (more curvature). Using [Dp.Infinity] or a non-positive value (zero or negative) makes
+ *   the row straight. When curved, row items are angled to follow the curve's path. This value is
+ *   the radial distance in the polar coordinate system.
  * @param content The composable content to be laid out horizontally in the row.
  */
 @Composable

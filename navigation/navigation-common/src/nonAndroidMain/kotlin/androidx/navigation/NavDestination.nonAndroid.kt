@@ -36,7 +36,7 @@ actual constructor(public actual val navigatorName: String) {
 
     private val impl = NavDestinationImpl(this)
 
-    public actual constructor(navigator: Navigator<out NavDestination>) : this("")
+    public actual constructor(navigator: Navigator<out NavDestination>) : this(navigator.name)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual class DeepLinkMatch
@@ -68,7 +68,7 @@ actual constructor(public actual val navigatorName: String) {
             return true
         }
 
-        override fun compareTo(other: DeepLinkMatch): Int {
+        actual override fun compareTo(other: DeepLinkMatch): Int {
             // Prefer exact deep links
             if (isExactDeepLink && !other.isExactDeepLink) {
                 return 1

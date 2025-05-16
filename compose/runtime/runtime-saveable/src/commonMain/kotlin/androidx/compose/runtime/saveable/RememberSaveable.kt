@@ -26,9 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.serialization.serializableSaver
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.runtime.toString
+import androidx.savedstate.serialization.SavedStateConfiguration
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 
 /**
  * Remember the value produced by [init].
@@ -63,6 +67,14 @@ import androidx.compose.runtime.toString
  *   location in the composition tree
  * @param init A factory function to create the initial value of this state
  */
+@Deprecated(
+    message =
+        " 'rememberSaveable' with a custom 'key' is no longer supported. It bypasses " +
+            "positional scoping, leading to state bugs and inconsistent behavior (e.g., " +
+            "unintentional state sharing or loss, issues in nested LazyLayouts). Please remove the " +
+            "'key' parameter to use positional scoping for consistent, locally-scoped state. " +
+            "See https://r.android.com/3610053 for details.",
+)
 @Composable
 fun <T : Any> rememberSaveable(
     vararg inputs: Any?,
@@ -102,6 +114,145 @@ fun <T : Any> rememberSaveable(
  * recreation using the saved instance state mechanism (for example it happens when the screen is
  * rotated in the Android application).
  *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveable
+ *
+ * If you use it with types which can be stored inside the Bundle then it will be saved and restored
+ * automatically using [autoSaver], otherwise you will need to provide a custom [Saver]
+ * implementation via the [saver] param.
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableCustomSaver
+ *
+ * You can use it with a value stored inside [androidx.compose.runtime.mutableStateOf].
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithMutableState
+ *
+ * If the value inside the MutableState can be stored inside the Bundle it would be saved and
+ * restored automatically, otherwise you will need to provide a custom [Saver] implementation via an
+ * overload with which has `stateSaver` param.
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithMutableStateAndCustomSaver
+ * @param inputs A set of inputs such that, when any of them have changed, will cause the state to
+ *   reset and [init] to be rerun. Note that state restoration DOES NOT validate against inputs
+ *   provided before value was saved.
+ * @param init A factory function to create the initial value of this state
+ */
+@Composable
+inline fun <reified T : Any> rememberSaveable(vararg inputs: Any?, noinline init: () -> T): T {
+    val saver = serializableSaver {
+        SavedStateConfiguration.DEFAULT.serializersModule.serializer<T>()
+    }
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = saver, key = null, init = init)
+}
+
+/**
+ * Remember the value produced by [init].
+ *
+ * It behaves similarly to [remember], but the stored value will survive the activity or process
+ * recreation using the saved instance state mechanism (for example it happens when the screen is
+ * rotated in the Android application).
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveable
+ *
+ * If you use it with types which can be stored inside the Bundle then it will be saved and restored
+ * automatically using [autoSaver], otherwise you will need to provide a custom [Saver]
+ * implementation via the [saver] param.
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableCustomSaver
+ *
+ * You can use it with a value stored inside [androidx.compose.runtime.mutableStateOf].
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithMutableState
+ *
+ * If the value inside the MutableState can be stored inside the Bundle it would be saved and
+ * restored automatically, otherwise you will need to provide a custom [Saver] implementation via an
+ * overload with which has `stateSaver` param.
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithMutableStateAndCustomSaver
+ * @param inputs A set of inputs such that, when any of them have changed, will cause the state to
+ *   reset and [init] to be rerun. Note that state restoration DOES NOT validate against inputs
+ *   provided before value was saved.
+ * @param saver The [Saver] object which defines how the state is saved and restored.
+ * @param init A factory function to create the initial value of this state
+ */
+@Composable
+fun <T : Any> rememberSaveable(vararg inputs: Any?, saver: Saver<T, out Any>, init: () -> T): T {
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = saver, key = null, init = init)
+}
+
+/**
+ * Remember the value produced by [init], and persist it across activity or process recreation using
+ * a [KSerializer] for saving and restoring via the saved instance state mechanism.
+ *
+ * This behaves similarly to [remember], but will survive configuration changes (such as screen
+ * rotations) and process death by saving the value into the instance state using a serializer from
+ * Kotlinx Serialization.
+ *
+ * The value will be serialized using the provided [serializer], and the way it's saved can be
+ * customized using [configuration].
+ *
+ * If the type cannot be automatically handled by a default [Saver], this overload provides a
+ * simpler and type-safe way to persist complex or custom types using Kotlinx Serialization.
+ *
+ * @param inputs A set of inputs which, when changed, will cause the stored state to reset and
+ *   [init] to be re-executed. Note that previously saved values are not validated against these
+ *   inputs during restoration.
+ * @param serializer A [KSerializer] used to serialize and deserialize the value.
+ * @param configuration Optional [SavedStateConfiguration] to customize how the serialized data is
+ *   stored and restored. Defaults to [SavedStateConfiguration.DEFAULT].
+ * @param init A factory function used to provide the initial value when no previously saved value
+ *   exists.
+ * @return The remembered and possibly restored value.
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithSerializer
+ */
+@Composable
+fun <T : Any> rememberSaveable(
+    vararg inputs: Any?,
+    serializer: KSerializer<T>,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+    init: () -> T
+): T {
+    val saver = serializableSaver(serializer, configuration)
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = saver, key = null, init = init)
+}
+
+/**
+ * Remember the value produced by [init].
+ *
+ * It behaves similarly to [remember], but the stored value will survive the activity or process
+ * recreation using the saved instance state mechanism (for example it happens when the screen is
+ * rotated in the Android application).
+ *
+ * Use this overload if you remember a mutable state with a type which can't be stored in the Bundle
+ * so you have to provide a custom saver object.
+ *
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithMutableStateAndCustomSaver
+ * @param inputs A set of inputs such that, when any of them have changed, will cause the state to
+ *   reset and [init] to be rerun. Note that state restoration DOES NOT validate against inputs
+ *   provided before value was saved.
+ * @param stateSaver The [Saver] object which defines how the value inside the MutableState is saved
+ *   and restored.
+ * @param init A factory function to create the initial value of this state
+ */
+@Composable
+fun <T> rememberSaveable(
+    vararg inputs: Any?,
+    stateSaver: Saver<T, out Any>,
+    init: () -> MutableState<T>
+): MutableState<T> {
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = mutableStateSaver(stateSaver), key = null, init = init)
+}
+
+/**
+ * Remember the value produced by [init].
+ *
+ * It behaves similarly to [remember], but the stored value will survive the activity or process
+ * recreation using the saved instance state mechanism (for example it happens when the screen is
+ * rotated in the Android application).
+ *
  * Use this overload if you remember a mutable state with a type which can't be stored in the Bundle
  * so you have to provide a custom saver object.
  *
@@ -116,14 +267,58 @@ fun <T : Any> rememberSaveable(
  *   location in the composition tree
  * @param init A factory function to create the initial value of this state
  */
+@Deprecated(
+    message =
+        " 'rememberSaveable' with a custom 'key' is no longer supported. It bypasses " +
+            "positional scoping, leading to state bugs and inconsistent behavior (e.g., " +
+            "unintentional state sharing or loss, issues in nested LazyLayouts). Please remove the " +
+            "'key' parameter to use positional scoping for consistent, locally-scoped state. " +
+            "See https://r.android.com/3610053 for details.",
+)
 @Composable
 fun <T> rememberSaveable(
     vararg inputs: Any?,
     stateSaver: Saver<T, out Any>,
     key: String? = null,
+    init: () -> MutableState<T>,
+): MutableState<T> {
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = mutableStateSaver(stateSaver), key = key, init = init)
+}
+
+/**
+ * Remember the value produced by [init], and save it across activity or process recreation using a
+ * [KSerializer] from kotlinx.serialization.
+ *
+ * This behaves similarly to [remember], but the value will survive configuration changes (like
+ * screen rotations) and process recreation by saving it in the instance state using a
+ * serialization-based mechanism.
+ *
+ * This overload is intended for cases where the state type cannot be stored directly in a Bundle,
+ * but can be serialized with [kotlinx.serialization]. This is particularly useful for custom or
+ * complex data types that are `@Serializable`.
+ *
+ * @param inputs A set of inputs such that, when any of them have changed, the state will reset and
+ *   [init] will be rerun. Note: state restoration does NOT validate against inputs used before the
+ *   value was saved.
+ * @param stateSerializer A [KSerializer] used to serialize and deserialize the state value. The
+ *   value must be a non-nullable type marked with `@Serializable`.
+ * @param configuration Optional [SavedStateConfiguration] to customize how the serialization is
+ *   handled, such as specifying a custom format (e.g. JSON).
+ * @param init A factory function to produce the initial value to be remembered and saved.
+ * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithSerializerAndMutableState
+ */
+@Composable
+fun <T : Any> rememberSaveable(
+    vararg inputs: Any?,
+    stateSerializer: KSerializer<T>,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
     init: () -> MutableState<T>
-): MutableState<T> =
-    rememberSaveable(*inputs, saver = mutableStateSaver(stateSaver), key = key, init = init)
+): MutableState<T> {
+    val saver = mutableStateSaver(inner = serializableSaver(stateSerializer, configuration))
+    @Suppress("DEPRECATION")
+    return rememberSaveable(*inputs, saver = saver, key = null, init = init)
+}
 
 private class SaveableHolder<T>(
     private var saver: Saver<T, Any>,

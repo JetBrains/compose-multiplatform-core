@@ -57,7 +57,6 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledTonalButton
-import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
 import androidx.wear.compose.material3.MaterialTheme
@@ -684,7 +683,7 @@ fun ButtonBackgroundImageDemo() {
         item { ButtonBackgroundImage(painterResource(R.drawable.card_background), enabled = false) }
         item { ListHeader { Text("2 Slot Button") } }
         item {
-            ImageButton(
+            Button(
                 modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
                 containerPainter =
                     ButtonDefaults.containerPainter(painterResource(R.drawable.card_background)),
@@ -694,7 +693,7 @@ fun ButtonBackgroundImageDemo() {
             )
         }
         item {
-            ImageButton(
+            Button(
                 modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
                 containerPainter =
                     ButtonDefaults.containerPainter(painterResource(R.drawable.card_background)),
@@ -797,7 +796,7 @@ fun ImageButtonBuilder() {
             val painter =
                 painterResource(androidx.wear.compose.material3.samples.R.drawable.backgroundimage)
 
-            ImageButton(
+            Button(
                 modifier = Modifier.fillMaxWidth(),
                 containerPainter =
                     ButtonDefaults.containerPainter(
@@ -916,7 +915,7 @@ private fun Multiline3SlotButton(
 
 @Composable
 private fun ButtonBackgroundImage(painter: Painter, enabled: Boolean) =
-    ImageButton(
+    Button(
         modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
         containerPainter = ButtonDefaults.containerPainter(painter),
         onClick = { /* Do something */ },

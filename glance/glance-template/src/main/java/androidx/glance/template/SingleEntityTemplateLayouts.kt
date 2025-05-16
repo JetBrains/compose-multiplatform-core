@@ -44,7 +44,7 @@ import androidx.glance.template.GlanceTemplateAppWidget.Companion.sizeS
  * @param data the data that defines the widget
  */
 @Composable
-fun SingleEntityTemplate(data: SingleEntityTemplateData) {
+public fun SingleEntityTemplate(data: SingleEntityTemplateData) {
     when (LocalTemplateMode.current) {
         TemplateMode.Collapsed -> WidgetLayoutCollapsed(data)
         TemplateMode.Vertical -> WidgetLayoutVertical(data)

@@ -22,7 +22,6 @@ import android.view.MotionEvent
 import android.view.SurfaceView
 import android.view.animation.AnimationUtils
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
-import androidx.privacysandbox.ui.core.IRemoteSessionController
 
 /**
  * Custom implementation of the [android.view.SurfaceView] that holds the

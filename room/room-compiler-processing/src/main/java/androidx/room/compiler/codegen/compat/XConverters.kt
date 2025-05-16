@@ -373,8 +373,12 @@ object XConverters {
         )
 
     @JvmStatic
-    fun toXPoet(jFunSpec: JFunSpec, kFunSpec: KFunSpec): XFunSpec =
-        XFunSpecImpl(JavaFunSpec(jFunSpec), KotlinFunSpec(kFunSpec))
+    fun toXPoet(
+        addJavaNullabilityAnnotation: Boolean,
+        jFunSpec: JFunSpec,
+        kFunSpec: KFunSpec
+    ): XFunSpec =
+        XFunSpecImpl(JavaFunSpec(addJavaNullabilityAnnotation, jFunSpec), KotlinFunSpec(kFunSpec))
 
     @JvmStatic
     fun toXPoet(

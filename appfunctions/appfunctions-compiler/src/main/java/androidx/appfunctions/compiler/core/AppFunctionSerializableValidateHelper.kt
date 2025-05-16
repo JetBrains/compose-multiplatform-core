@@ -21,6 +21,8 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.is
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Visibility
 
 /** A helper to validate an AppFunctionSerializable declaration. */
@@ -38,12 +40,6 @@ class AppFunctionSerializableValidateHelper(
             )
         }
         val primaryConstructorDeclaration = checkNotNull(primaryConstructor)
-        if (primaryConstructorDeclaration.parameters.isEmpty()) {
-            throw ProcessingException(
-                "A valid AppFunctionSerializable must have a non-empty primary constructor.",
-                annotatedSerializable.attributeNode
-            )
-        }
 
         if (primaryConstructorDeclaration.getVisibility() != Visibility.PUBLIC) {
             throw ProcessingException(
@@ -53,7 +49,7 @@ class AppFunctionSerializableValidateHelper(
         }
 
         for (parameter in primaryConstructorDeclaration.parameters) {
-            if (!parameter.isVal) {
+            if (!checkHasGetter(parameter)) {
                 throw ProcessingException(
                     "All parameters in @AppFunctionSerializable primary constructor must have getters",
                     parameter
@@ -62,14 +58,49 @@ class AppFunctionSerializableValidateHelper(
         }
     }
 
-    /** Validate if the parameters are valid. */
-    fun validateParameters() {
+    private fun checkHasGetter(parameter: KSValueParameter): Boolean {
+        val parameterName = parameter.name?.asString() ?: return false
+
+        val matchedProperty =
+            annotatedSerializable.declarations
+                .filterIsInstance<KSPropertyDeclaration>()
+                .singleOrNull { propertyDeclaration ->
+                    val propertyName = propertyDeclaration.simpleName.asString()
+                    propertyName == parameterName && propertyDeclaration.getter != null
+                }
+        return matchedProperty != null
+    }
+
+    /**
+     * Validate if the parameters are valid.
+     *
+     * @param allowSerializableInterfaceTypes Whether to allow the serializable to use serializable
+     *   interface types. The @AppFunctionSerializableInterface should only be considered as a
+     *   supported type when processing schema definitions.
+     */
+    fun validateParameters(allowSerializableInterfaceTypes: Boolean) {
         val parametersToValidate =
             annotatedSerializable
                 .getProperties()
                 .associateBy { checkNotNull(it.name) }
                 .toMutableMap()
 
+        if (annotatedSerializable !is AnnotatedAppFunctionSerializableInterface) {
+            validateSuperTypes(parametersToValidate, allowSerializableInterfaceTypes)
+        }
+
+        // Validate the remaining parameters
+        if (parametersToValidate.isNotEmpty()) {
+            for ((_, parameterToValidate) in parametersToValidate) {
+                validateSerializableParameter(parameterToValidate, allowSerializableInterfaceTypes)
+            }
+        }
+    }
+
+    private fun validateSuperTypes(
+        parametersToValidate: MutableMap<String, AppFunctionPropertyDeclaration>,
+        allowSerializableInterfaceTypes: Boolean,
+    ) {
         val superTypesWithSerializableAnnotation =
             annotatedSerializable.findSuperTypesWithSerializableAnnotation()
         val superTypesWithCapabilityAnnotation =
@@ -78,7 +109,8 @@ class AppFunctionSerializableValidateHelper(
 
         for (superType in superTypesWithSerializableAnnotation) {
             val superTypeAnnotatedSerializable =
-                AnnotatedAppFunctionSerializable(superType).validate()
+                AnnotatedAppFunctionSerializable(superType)
+                    .validate(allowSerializableInterfaceTypes)
             for (superTypeProperty in superTypeAnnotatedSerializable.getProperties()) {
                 // Parameter has now been visited
                 val parameterInSuperType = parametersToValidate.remove(superTypeProperty.name)
@@ -89,7 +121,7 @@ class AppFunctionSerializableValidateHelper(
                         superTypeProperty.type
                     )
                 }
-                validateSerializableParameter(parameterInSuperType)
+                validateSerializableParameter(parameterInSuperType, allowSerializableInterfaceTypes)
             }
         }
 
@@ -107,14 +139,7 @@ class AppFunctionSerializableValidateHelper(
                         superTypeProperty
                     )
                 }
-                validateSerializableParameter(parameterInSuperType)
-            }
-        }
-
-        // Validate the remaining parameters
-        if (parametersToValidate.isNotEmpty()) {
-            for ((_, parameterToValidate) in parametersToValidate) {
-                validateSerializableParameter(parameterToValidate)
+                validateSerializableParameter(parameterInSuperType, allowSerializableInterfaceTypes)
             }
         }
     }
@@ -149,13 +174,16 @@ class AppFunctionSerializableValidateHelper(
         }
     }
 
-    private fun validateSerializableParameter(propertyDeclaration: AppFunctionPropertyDeclaration) {
+    private fun validateSerializableParameter(
+        propertyDeclaration: AppFunctionPropertyDeclaration,
+        allowSerializableInterfaceTypes: Boolean,
+    ) {
         if (propertyDeclaration.isGenericType) {
             // Don't validate a generic type. Whether a generic type is valid or not would be
             // validated when it is parameterized.
             return
         }
-        if (!isSupportedType(propertyDeclaration.type)) {
+        if (!isSupportedType(propertyDeclaration.type, allowSerializableInterfaceTypes)) {
             throw ProcessingException(
                 "AppFunctionSerializable properties must be one of the following types:\n" +
                     SUPPORTED_TYPES_STRING +

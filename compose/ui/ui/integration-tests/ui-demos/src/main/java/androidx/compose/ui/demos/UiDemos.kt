@@ -52,6 +52,7 @@ import androidx.compose.ui.demos.focus.FocusInDialogDemo
 import androidx.compose.ui.demos.focus.FocusInPopupDemo
 import androidx.compose.ui.demos.focus.FocusManagerMoveFocusDemo
 import androidx.compose.ui.demos.focus.FocusRestorationDemo
+import androidx.compose.ui.demos.focus.FocusRestorationInLazyListDemo
 import androidx.compose.ui.demos.focus.FocusableDemo
 import androidx.compose.ui.demos.focus.LazyListChildFocusDemos
 import androidx.compose.ui.demos.focus.NestedLazyListFocusSearchDemo
@@ -204,6 +205,7 @@ private val FocusDemos =
             ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() },
             ComposableDemo("Capture/Free Focus") { CaptureFocusDemo() },
             ComposableDemo("Focus Restoration") { FocusRestorationDemo() },
+            ComposableDemo("Focus Restoration in LazyLists") { FocusRestorationInLazyListDemo() },
             ComposableDemo("Focus In Scrollable Row") { ScrollableRowFocusDemo() },
             ComposableDemo("Focus in Lazy Row") { ScrollableLazyRowFocusDemo() },
             ComposableDemo("LazyList Child Focusability") { LazyListChildFocusDemos() },

@@ -20,6 +20,7 @@ package androidx.xr.scenecore
 
 import android.media.SoundPool
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 
 /** Provides spatial audio extensions on the framework [SoundPool] class. */
 @Suppress("ClassShouldBeObject")

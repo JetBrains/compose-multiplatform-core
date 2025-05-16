@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.semanticsId
@@ -601,6 +602,59 @@ class SubcomposeLayoutTest {
             "state was used after reattaching view",
             stateUsedLatch.await(1, TimeUnit.SECONDS)
         )
+    }
+
+    @Test
+    fun deactivatingOnDetachedView() {
+        val scenario = rule.activityRule.scenario
+
+        lateinit var container1: FrameLayout
+        lateinit var container2: ComposeView
+        lateinit var remeasurement: Remeasurement
+        var emitChild = true
+        var composed = false
+
+        scenario.onActivity {
+            container1 = FrameLayout(it)
+            container2 = ComposeView(it)
+            container2.setViewCompositionStrategy(
+                ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+            )
+            it.setContentView(container1)
+            container1.addView(container2)
+            val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+            container2.setContent {
+                SubcomposeLayout(
+                    state,
+                    object : RemeasurementModifier {
+                        override fun onRemeasurementAvailable(param: Remeasurement) {
+                            remeasurement = param
+                        }
+                    }
+                ) { constraints ->
+                    if (emitChild) {
+                        subcompose(Unit) {
+                            DisposableEffect(Unit) {
+                                composed = true
+                                onDispose { composed = false }
+                            }
+                        }
+                    }
+                    layout(10, 10) {}
+                }
+            }
+        }
+
+        rule.runOnIdle { container1.removeView(container2) }
+
+        rule.runOnIdle {
+            assertThat(composed).isTrue()
+
+            emitChild = false
+            remeasurement.forceRemeasure()
+        }
+
+        rule.runOnIdle { assertThat(composed).isFalse() }
     }
 
     @Test

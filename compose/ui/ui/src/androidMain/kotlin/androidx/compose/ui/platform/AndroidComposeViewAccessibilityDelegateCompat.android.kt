@@ -19,7 +19,9 @@ package androidx.compose.ui.platform
 import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Rect as AndroidRect
 import android.graphics.RectF
+import android.graphics.Region
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -48,6 +50,7 @@ import androidx.collection.MutableObjectIntMap
 import androidx.collection.SparseArrayCompat
 import androidx.collection.intListOf
 import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntIntMapOf
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
@@ -59,6 +62,9 @@ import androidx.compose.ui.contentcapture.ContentCaptureManager
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.positionInRoot
@@ -87,6 +93,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.IsSensitiveData
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
@@ -112,6 +119,7 @@ import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_ASSERTIVE
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE
 import androidx.core.view.accessibility.AccessibilityEventCompat
+import androidx.core.view.accessibility.AccessibilityManagerCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_ACCESSIBILITY
@@ -155,6 +163,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         const val LogTag = "AccessibilityDelegate"
         const val ExtraDataTestTagKey = "androidx.compose.ui.semantics.testTag"
         const val ExtraDataIdKey = "androidx.compose.ui.semantics.id"
+        const val ExtraDataShapeTypeKey = "androidx.compose.ui.semantics.shapeType"
+        const val ExtraDataShapeTypeRectangle = 0
+        const val ExtraDataShapeTypeRounded = 1
+        const val ExtraDataShapeTypeGeneric = 2
+        const val ExtraDataShapeRectKey = "androidx.compose.ui.semantics.shapeRect"
+        const val ExtraDataShapeRectCornersKey = "androidx.compose.ui.semantics.shapeCorners"
+        const val ExtraDataShapeRegionKey = "androidx.compose.ui.semantics.shapeRegion"
 
         /**
          * Intent size limitations prevent sending over a megabyte of data. Limit text length to
@@ -275,6 +290,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             accessibilityForceEnabledForTesting ||
                 (accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled)
 
+    internal var requestFromAccessibilityToolForTesting: Boolean? = null
     private val handler = Handler(Looper.getMainLooper())
     private var nodeProvider = ComposeAccessibilityNodeProvider()
 
@@ -354,6 +370,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     private var previousSemanticsRoot =
         SemanticsNodeCopy(view.semanticsOwner.unmergedRootSemanticsNode, intObjectMapOf())
     private var checkingForSemanticsChanges = false
+
+    // A mapping from semantics node IDs to the local drawing order (among the children of a single
+    // parent) of the corresponding layout nodes.
+    private val drawingOrder = mutableIntIntMapOf()
 
     init {
         // Remove callbacks that rely on view being attached to a window when we become detached.
@@ -450,6 +470,17 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         return foundNode
     }
 
+    private fun isRequestFromAccessibilityTool(): Boolean {
+        when (requestFromAccessibilityToolForTesting) {
+            true -> return true
+            false -> return false
+            else ->
+                return AccessibilityManagerCompat.isRequestFromAccessibilityTool(
+                    accessibilityManager
+                )
+        }
+    }
+
     private fun createNodeInfo(virtualViewId: Int): AccessibilityNodeInfoCompat? {
         if (
             view.viewTreeOwners?.lifecycleOwner?.lifecycle?.currentState ==
@@ -460,7 +491,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val semanticsNodeWithAdjustedBounds =
             currentSemanticsNodes[virtualViewId] ?: return emptyNodeInfoOrNull()
         val semanticsNode: SemanticsNode = semanticsNodeWithAdjustedBounds.semanticsNode
+        val isSensitiveData = semanticsNode.config.getOrNull(IsSensitiveData) == true
+        if (isSensitiveData && !isRequestFromAccessibilityTool()) {
+            return null
+        }
         val info: AccessibilityNodeInfoCompat = AccessibilityNodeInfoCompat.obtain()
+        info.setAccessibilityDataSensitive(isSensitiveData)
         if (virtualViewId == AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
             info.setParent(view.getParentForAccessibility() as? View)
         } else {
@@ -569,6 +605,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         //   and the root of the SemanticsNode tree.
         info.isImportantForAccessibility = semanticsNode.isImportantForAccessibility()
 
+        val isRequestFromAccessibilityTool = isRequestFromAccessibilityTool()
+        var childDrawingOrder = 0
         semanticsNode.replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
                 val holder = view.androidViewsHandler.layoutNodeToHolder[child.layoutNode]
@@ -579,8 +617,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (holder != null) {
                     info.addChild(holder)
                 } else {
-                    info.addChild(view, child.id)
+                    val childHasSensitiveData =
+                        currentSemanticsNodes[child.id]
+                            ?.semanticsNode
+                            ?.config
+                            ?.getOrNull(IsSensitiveData) == true
+                    // If the child has isSensitiveData=true then the node request must come
+                    // from an accessibility tool in order for the child to be included.
+                    if (isRequestFromAccessibilityTool || !childHasSensitiveData) {
+                        info.addChild(view, child.id)
+                    }
                 }
+                // The children are already ordered by the drawing order at this point.
+                drawingOrder.put(child.id, childDrawingOrder)
+                childDrawingOrder++
             }
         }
 
@@ -658,6 +708,21 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.Heading)?.let {
             info.isHeading = true
         }
+
+        // Drawing order is not applicable for the root node.
+        if (virtualViewId != AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
+            val drawingOrderForNode = drawingOrder.getOrDefault(semanticsNode.id, -1)
+            if (drawingOrderForNode != -1) {
+                info.drawingOrder = drawingOrderForNode
+            } else {
+                Log.w(
+                    LogTag,
+                    "Drawing order is not available, was AccessibilityNodeInfo requested " +
+                        "for a child node before its parent?"
+                )
+            }
+        }
+
         info.isPassword = semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
         info.isEditable = semanticsNode.unmergedConfig.contains(SemanticsProperties.IsEditable)
         info.maxTextLength =
@@ -801,6 +866,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
             if (semanticsNode.unmergedConfig.contains(SemanticsProperties.TestTag)) {
                 extraDataKeys.add(ExtraDataTestTagKey)
+            }
+            if (semanticsNode.unmergedConfig.contains(SemanticsProperties.Shape)) {
+                extraDataKeys.add(ExtraDataShapeTypeKey)
+                extraDataKeys.add(ExtraDataShapeRectKey)
+                extraDataKeys.add(ExtraDataShapeRectCornersKey)
+                extraDataKeys.add(ExtraDataShapeRegionKey)
             }
 
             info.availableExtraData = extraDataKeys
@@ -1208,6 +1279,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             currentSemanticsNodes[virtualViewId]?.let {
                 event.isPassword =
                     it.semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
+                AccessibilityEventCompat.setAccessibilityDataSensitive(
+                    event,
+                    it.semanticsNode.unmergedConfig.getOrNull(IsSensitiveData) == true
+                )
             }
         }
 
@@ -1252,6 +1327,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun performActionHelper(virtualViewId: Int, action: Int, arguments: Bundle?): Boolean {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return false
+
+        if (
+            node.unmergedConfig.getOrNull(IsSensitiveData) == true &&
+                !isRequestFromAccessibilityTool()
+        ) {
+            return false
+        }
 
         // Actions can be performed when disabled.
         when (action) {
@@ -1689,6 +1771,49 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
         } else if (extraDataKey == ExtraDataIdKey) {
             info.extras.putInt(extraDataKey, node.id)
+        } else if (extraDataKey == ExtraDataShapeTypeKey) {
+            node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
+                val outline = shape.createOutline(node)
+                // We set not only the shape type but also the shape data itself, as an
+                // optimization, since we already need to create an Outline to get the shape type
+                // and to avoid another request for the shape data.
+                when (outline) {
+                    is Outline.Rectangle -> {
+                        info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRectangle)
+                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                    }
+                    is Outline.Rounded -> {
+                        info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRounded)
+                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                        info.extras.putFloatArray(
+                            ExtraDataShapeRectCornersKey,
+                            outline.toCornerArray()
+                        )
+                    }
+                    is Outline.Generic -> {
+                        info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeGeneric)
+                        info.extras.putParcelable(ExtraDataShapeRegionKey, outline.toRegion())
+                    }
+                }
+            }
+        } else if (extraDataKey == ExtraDataShapeRectKey) {
+            node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
+                shape.createOutline(node).toAndroidRect()?.let { rect ->
+                    info.extras.putParcelable(ExtraDataShapeRectKey, rect)
+                }
+            }
+        } else if (extraDataKey == ExtraDataShapeRectCornersKey) {
+            node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
+                shape.createOutline(node).toCornerArray()?.let { corners ->
+                    info.extras.putFloatArray(ExtraDataShapeRectCornersKey, corners)
+                }
+            }
+        } else if (extraDataKey == ExtraDataShapeRegionKey) {
+            node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
+                shape.createOutline(node).toRegion()?.let { region ->
+                    info.extras.putParcelable(ExtraDataShapeRegionKey, region)
+                }
+            }
         }
     }
 
@@ -1721,6 +1846,39 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             null
         }
     }
+
+    private fun Shape.createOutline(node: SemanticsNode) =
+        createOutline(node.size.toSize(), node.layoutInfo.layoutDirection, view.density)
+
+    private fun Outline.toAndroidRect(): AndroidRect? =
+        if (this is Outline.Rectangle || this is Outline.Rounded) bounds.toAndroidRect() else null
+
+    /**
+     * Returns a radii array for each corner (top-left, top-right, bottom-right, bottom-left) if the
+     * outline represents a rounded-corner rectangle, otherwise returns null.
+     */
+    private fun Outline.toCornerArray(): FloatArray? =
+        if (this is Outline.Rounded) {
+            floatArrayOf(
+                roundRect.topLeftCornerRadius.x,
+                roundRect.topLeftCornerRadius.y,
+                roundRect.topRightCornerRadius.x,
+                roundRect.topRightCornerRadius.y,
+                roundRect.bottomRightCornerRadius.x,
+                roundRect.bottomRightCornerRadius.y,
+                roundRect.bottomLeftCornerRadius.x,
+                roundRect.bottomLeftCornerRadius.y
+            )
+        } else null
+
+    private fun Outline.toRegion(): Region? =
+        if (this is Outline.Generic) {
+            val boundingRectangle = Region(bounds.toAndroidRect())
+            Region().apply { setPath(path.asAndroidPath(), boundingRectangle) }
+        } else null
+
+    private fun Rect.toAndroidRect(): AndroidRect =
+        AndroidRect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
 
     /**
      * Dispatches hover {@link android.view.MotionEvent}s to the virtual view hierarchy when the
@@ -3157,10 +3315,7 @@ private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {
         ),
     level = DeprecationLevel.WARNING
 )
-@Suppress("GetterSetterNames", "OPT_IN_MARKER_ON_WRONG_TARGET", "NullAnnotationGroup")
-@get:Suppress("GetterSetterNames")
-@get:ExperimentalComposeUiApi
-@set:ExperimentalComposeUiApi
+@Suppress("GetterSetterNames", "NullAnnotationGroup")
 @ExperimentalComposeUiApi
 var DisableContentCapture: Boolean
     get() = ContentCaptureManager.isEnabled

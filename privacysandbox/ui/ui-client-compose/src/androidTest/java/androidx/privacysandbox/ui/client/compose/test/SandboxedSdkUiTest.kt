@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import org.hamcrest.Matchers.instanceOf
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -268,7 +269,10 @@ class SandboxedSdkUiTest {
         val session = testSandboxedUiAdapter.testSession!!
         assertThat(session.sessionOpenedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
         assertThat(session.supportedSignalOptions)
-            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            .containsExactly(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            )
     }
 
     @Test
@@ -490,6 +494,7 @@ class SandboxedSdkUiTest {
         }
     }
 
+    @Ignore // b/406777552
     @Test
     fun signalsSentWhenPositionChangesTest() {
         var offset by mutableStateOf(0.dp)

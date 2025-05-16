@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.math.Pose
@@ -54,6 +55,11 @@ private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
         @JvmOverloads
         @JvmStatic
         public fun create(session: Session, name: String, pose: Pose = Pose.Identity): Entity =
-            ContentlessEntity.create(session.platformAdapter, session.entityManager, name, pose)
+            ContentlessEntity.create(
+                session.platformAdapter,
+                session.scene.entityManager,
+                name,
+                pose
+            )
     }
 }

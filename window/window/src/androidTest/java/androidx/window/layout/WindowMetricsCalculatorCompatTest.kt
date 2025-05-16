@@ -82,6 +82,24 @@ class WindowMetricsCalculatorCompatTest {
     }
 
     @Test
+    fun testGetCurrentWindowMetrics_nonUiContext() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            val calculator = WindowMetricsCalculator.getOrCreate()
+
+            val applicationMetrics =
+                calculator.computeCurrentWindowMetrics(activity.applicationContext)
+            val activityMetrics = calculator.computeCurrentWindowMetrics(activity)
+
+            val applicationMaxMetrics =
+                calculator.computeMaximumWindowMetrics(activity.applicationContext)
+            val activityMaxMetrics = calculator.computeMaximumWindowMetrics(activity)
+
+            assertEquals(activityMetrics, applicationMetrics)
+            assertEquals(activityMaxMetrics, applicationMaxMetrics)
+        }
+    }
+
+    @Test
     fun testGetCurrentWindowBounds_fixedWindowSize_avoidCutouts_preR() {
         assumePlatformBeforeR()
         assumeNotMultiWindow()

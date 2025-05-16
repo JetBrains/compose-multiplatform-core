@@ -18,11 +18,15 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.media.MediaPlayer
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper as RtMediaPlayerExtensionsWrapper
 import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
 import androidx.xr.runtime.internal.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,11 +44,13 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SpatialMediaPlayerTest {
 
+    private val fakeRuntimeFactory = FakeRuntimeFactory()
     private var mockRuntime: JxrPlatformAdapter = mock()
     private var mockRtMediaPlayerExtensions: RtMediaPlayerExtensionsWrapper = mock()
 
     private val mockContentlessEntity = mock<RtEntity>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val mockActivitySpace = mock<RtActivitySpace>()
 
     private lateinit var session: Session
 
@@ -52,17 +58,18 @@ class SpatialMediaPlayerTest {
     fun setUp() {
         mockRuntime.stub {
             on { spatialEnvironment } doReturn mock()
-            on { activitySpace } doReturn mock()
-            on { activitySpaceRootImpl } doReturn mock()
+            on { activitySpace } doReturn mockActivitySpace
+            on { activitySpaceRootImpl } doReturn mockActivitySpace
             on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
             on { createEntity(any(), any(), any()) } doReturn mockContentlessEntity
+            on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
         mockRtMediaPlayerExtensions = mock()
         whenever(mockRuntime.mediaPlayerExtensionsWrapper).thenReturn(mockRtMediaPlayerExtensions)
-        session = Session.create(activity, mockRuntime)
+        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
     @Test

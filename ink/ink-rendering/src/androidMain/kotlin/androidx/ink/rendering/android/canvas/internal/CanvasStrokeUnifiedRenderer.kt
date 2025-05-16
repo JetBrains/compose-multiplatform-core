@@ -20,8 +20,8 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.os.Build
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke

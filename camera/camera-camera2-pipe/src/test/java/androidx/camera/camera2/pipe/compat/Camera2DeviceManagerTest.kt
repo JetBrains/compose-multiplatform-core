@@ -917,7 +917,7 @@ internal class PruningCamera2DeviceManagerImplTest {
         graphListener: GraphListener,
         isPrewarm: Boolean = false,
     ): RequestOpen {
-        val virtualCamera = VirtualCameraState(cameraId, graphListener, fakeThreads.globalScope)
+        val virtualCamera = VirtualCameraState(cameraId, graphListener, fakeThreads.cameraPipeScope)
         return RequestOpen(virtualCamera, sharedCameraIds, graphListener, isPrewarm, { true })
     }
 
@@ -943,7 +943,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                 fakeAudioRestrictionController,
             )
         val fakeActiveCamera =
-            ActiveCamera(fakeAndroidCameraState, allCameraIds, fakeThreads.globalScope) {}
+            ActiveCamera(fakeAndroidCameraState, allCameraIds, fakeThreads.cameraPipeScope) {}
         return RequestClose(fakeActiveCamera)
     }
 }

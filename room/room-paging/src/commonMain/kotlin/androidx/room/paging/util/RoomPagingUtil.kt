@@ -28,9 +28,9 @@ import androidx.paging.PagingSource.LoadResult
 import androidx.paging.PagingState
 import androidx.room.RoomDatabase
 import androidx.room.RoomRawQuery
-import androidx.room.useReaderConnection
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import kotlinx.coroutines.withContext
 
 /** The default itemCount value */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val INITIAL_ITEM_COUNT: Int = -1
@@ -155,13 +155,16 @@ public suspend fun <Value : Any> queryDatabase(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public suspend fun queryItemCount(sourceQuery: RoomRawQuery, db: RoomDatabase): Int {
     val countQuery = "SELECT COUNT(*) FROM ( ${sourceQuery.sql} )"
-    return db.useReaderConnection { connection ->
-        connection.usePrepared(countQuery) { stmt ->
-            sourceQuery.getBindingFunction().invoke(stmt)
-            if (stmt.step()) {
-                stmt.getInt(0)
-            } else {
-                0
+    // Query in the database's coroutine context since useConnection is unconfined.
+    return withContext(db.getCoroutineScope().coroutineContext) {
+        db.useConnection(isReadOnly = true) { connection ->
+            connection.usePrepared(countQuery) { stmt ->
+                sourceQuery.getBindingFunction().invoke(stmt)
+                if (stmt.step()) {
+                    stmt.getInt(0)
+                } else {
+                    0
+                }
             }
         }
     }

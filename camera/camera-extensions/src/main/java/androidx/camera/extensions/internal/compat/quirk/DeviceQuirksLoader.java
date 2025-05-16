@@ -63,6 +63,12 @@ public class DeviceQuirksLoader {
             quirks.add(new CaptureOutputSurfaceOccupiedQuirk());
         }
 
+        if (quirkSettings.shouldEnableQuirk(
+                EnsurePostviewFormatEquivalenceQuirk.class,
+                EnsurePostviewFormatEquivalenceQuirk.load())) {
+            quirks.add(new EnsurePostviewFormatEquivalenceQuirk());
+        }
+
         return quirks;
     }
 }

@@ -168,7 +168,7 @@ class DateRangeInputTest {
                         initialDisplayMode = DisplayMode.Input
                     ),
                 // Prevent the focus from being requested.
-                requestFocus = false
+                focusRequester = null
             )
             // Although a focus request is not made, apply a delay to ensure that the test checks
             // for focus after that delay.

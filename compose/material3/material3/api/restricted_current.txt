@@ -35,6 +35,13 @@ package androidx.compose.material3 {
     method @androidx.compose.runtime.Composable public static void DropdownMenuItem(kotlin.jvm.functions.Function0<kotlin.Unit> text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional boolean enabled, optional androidx.compose.material3.MenuItemColors colors, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
   }
 
+  public final class AppBarColumnKt {
+    method @androidx.compose.runtime.Composable public static void AppBarColumn(kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, optional int maxItemCount, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarColumnScope,kotlin.Unit> content);
+  }
+
+  public interface AppBarColumnScope extends androidx.compose.material3.AppBarScope {
+  }
+
   public final class AppBarKt {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void BottomAppBar(optional androidx.compose.ui.Modifier modifier, optional long containerColor, optional long contentColor, optional float tonalElevation, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.layout.WindowInsets windowInsets, optional androidx.compose.material3.BottomAppBarScrollBehavior? scrollBehavior, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @androidx.compose.runtime.Composable public static void BottomAppBar(optional androidx.compose.ui.Modifier modifier, optional long containerColor, optional long contentColor, optional float tonalElevation, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.layout.WindowInsets windowInsets, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
@@ -60,6 +67,27 @@ package androidx.compose.material3 {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.TopAppBarState rememberTopAppBarState(optional float initialHeightOffsetLimit, optional float initialHeightOffset, optional float initialContentOffset);
     property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.SingleRowTopAppBarOverride> LocalSingleRowTopAppBarOverride;
     property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.TwoRowsTopAppBarOverride> LocalTwoRowsTopAppBarOverride;
+  }
+
+  public final class AppBarMenuState {
+    ctor public AppBarMenuState();
+    method public void dismiss();
+    method public boolean isExpanded();
+    method public void show();
+    property public boolean isExpanded;
+  }
+
+  public final class AppBarRowKt {
+    method @androidx.compose.runtime.Composable public static void AppBarRow(kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, optional int maxItemCount, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarRowScope,kotlin.Unit> content);
+  }
+
+  public interface AppBarRowScope extends androidx.compose.material3.AppBarScope {
+  }
+
+  public sealed interface AppBarScope {
+    method public void clickableItem(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function0<kotlin.Unit> icon, String label, optional boolean enabled);
+    method public void customItem(kotlin.jvm.functions.Function0<kotlin.Unit> appbarContent, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> menuContent);
+    method public void toggleableItem(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onCheckedChange, kotlin.jvm.functions.Function0<kotlin.Unit> icon, String label, optional boolean enabled);
   }
 
   public final class AssistChipDefaults {
@@ -225,12 +253,12 @@ package androidx.compose.material3 {
     method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
     method @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getElevatedShape();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraLargeContainerHeight();
-    method public androidx.compose.foundation.layout.PaddingValues getExtraLargeContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraLargeContentPadding();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraLargeIconSize();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraLargeIconSpacing();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getExtraLargePressedShape();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraSmallContainerHeight();
-    method public androidx.compose.foundation.layout.PaddingValues getExtraSmallContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraSmallContentPadding();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraSmallIconSize();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraSmallIconSpacing();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getExtraSmallPressedShape();
@@ -238,12 +266,12 @@ package androidx.compose.material3 {
     method public float getIconSize();
     method public float getIconSpacing();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getLargeContainerHeight();
-    method public androidx.compose.foundation.layout.PaddingValues getLargeContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getLargeContentPadding();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getLargeIconSize();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getLargeIconSpacing();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getLargePressedShape();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getMediumContainerHeight();
-    method public androidx.compose.foundation.layout.PaddingValues getMediumContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getMediumContentPadding();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getMediumIconSize();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getMediumIconSpacing();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getMediumPressedShape();
@@ -253,8 +281,8 @@ package androidx.compose.material3 {
     method @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getOutlinedShape();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getPressedShape();
     method @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getShape();
-    method @Deprecated public androidx.compose.foundation.layout.PaddingValues getSmallButtonContentPadding();
-    method public androidx.compose.foundation.layout.PaddingValues getSmallContentPadding();
+    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getSmallButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getSmallContentPadding();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getSmallIconSize();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getSquareShape();
     method public androidx.compose.foundation.layout.PaddingValues getTextButtonContentPadding();
@@ -342,11 +370,24 @@ package androidx.compose.material3 {
   }
 
   public final class ButtonGroupKt {
-    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public static void ButtonGroup(optional androidx.compose.ui.Modifier modifier, optional @FloatRange(from=0.0) float expandedRatio, optional androidx.compose.foundation.layout.Arrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<? super androidx.compose.material3.ButtonGroupScope,kotlin.Unit> content);
+    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public static void ButtonGroup(optional androidx.compose.ui.Modifier modifier, optional @FloatRange(from=0.0) float expandedRatio, optional androidx.compose.foundation.layout.Arrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<? super androidx.compose.material3.ButtonGroupScope,kotlin.Unit> content);
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public static void ButtonGroup(kotlin.jvm.functions.Function1<? super androidx.compose.material3.ButtonGroupMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, optional @FloatRange(from=0.0) float expandedRatio, optional androidx.compose.foundation.layout.Arrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<? super androidx.compose.material3.ButtonGroupScope,kotlin.Unit> content);
+  }
+
+  public final class ButtonGroupMenuState {
+    ctor public ButtonGroupMenuState();
+    ctor public ButtonGroupMenuState(optional boolean initialIsExpanded);
+    method public void dismiss();
+    method public boolean isExpanded();
+    method public void show();
+    property public boolean isExpanded;
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public interface ButtonGroupScope {
     method public androidx.compose.ui.Modifier animateWidth(androidx.compose.ui.Modifier, androidx.compose.foundation.interaction.InteractionSource interactionSource);
+    method public void clickableItem(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, String label, optional kotlin.jvm.functions.Function0<kotlin.Unit>? icon, optional float weight, optional boolean enabled);
+    method public void customItem(kotlin.jvm.functions.Function0<kotlin.Unit> buttonGroupContent, kotlin.jvm.functions.Function1<? super androidx.compose.material3.ButtonGroupMenuState,kotlin.Unit> menuContent);
+    method public void toggleableItem(boolean checked, String label, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onCheckedChange, optional kotlin.jvm.functions.Function0<kotlin.Unit>? icon, optional float weight, optional boolean enabled);
     method public androidx.compose.ui.Modifier weight(androidx.compose.ui.Modifier, @FloatRange(from=0.0, fromInclusive=false) float weight);
     method @Deprecated public androidx.compose.ui.Modifier weight(androidx.compose.ui.Modifier, @FloatRange(from=0.0, fromInclusive=false) float weight, optional boolean fill);
   }
@@ -518,9 +559,11 @@ package androidx.compose.material3 {
 
   @androidx.compose.runtime.Immutable public final class ColorScheme {
     ctor @Deprecated public ColorScheme(long primary, long onPrimary, long primaryContainer, long onPrimaryContainer, long inversePrimary, long secondary, long onSecondary, long secondaryContainer, long onSecondaryContainer, long tertiary, long onTertiary, long tertiaryContainer, long onTertiaryContainer, long background, long onBackground, long surface, long onSurface, long surfaceVariant, long onSurfaceVariant, long surfaceTint, long inverseSurface, long inverseOnSurface, long error, long onError, long errorContainer, long onErrorContainer, long outline, long outlineVariant, long scrim);
-    ctor public ColorScheme(long primary, long onPrimary, long primaryContainer, long onPrimaryContainer, long inversePrimary, long secondary, long onSecondary, long secondaryContainer, long onSecondaryContainer, long tertiary, long onTertiary, long tertiaryContainer, long onTertiaryContainer, long background, long onBackground, long surface, long onSurface, long surfaceVariant, long onSurfaceVariant, long surfaceTint, long inverseSurface, long inverseOnSurface, long error, long onError, long errorContainer, long onErrorContainer, long outline, long outlineVariant, long scrim, long surfaceBright, long surfaceDim, long surfaceContainer, long surfaceContainerHigh, long surfaceContainerHighest, long surfaceContainerLow, long surfaceContainerLowest);
+    ctor @Deprecated public ColorScheme(long primary, long onPrimary, long primaryContainer, long onPrimaryContainer, long inversePrimary, long secondary, long onSecondary, long secondaryContainer, long onSecondaryContainer, long tertiary, long onTertiary, long tertiaryContainer, long onTertiaryContainer, long background, long onBackground, long surface, long onSurface, long surfaceVariant, long onSurfaceVariant, long surfaceTint, long inverseSurface, long inverseOnSurface, long error, long onError, long errorContainer, long onErrorContainer, long outline, long outlineVariant, long scrim, long surfaceBright, long surfaceDim, long surfaceContainer, long surfaceContainerHigh, long surfaceContainerHighest, long surfaceContainerLow, long surfaceContainerLowest);
+    ctor public ColorScheme(long primary, long onPrimary, long primaryContainer, long onPrimaryContainer, long inversePrimary, long secondary, long onSecondary, long secondaryContainer, long onSecondaryContainer, long tertiary, long onTertiary, long tertiaryContainer, long onTertiaryContainer, long background, long onBackground, long surface, long onSurface, long surfaceVariant, long onSurfaceVariant, long surfaceTint, long inverseSurface, long inverseOnSurface, long error, long onError, long errorContainer, long onErrorContainer, long outline, long outlineVariant, long scrim, long surfaceBright, long surfaceDim, long surfaceContainer, long surfaceContainerHigh, long surfaceContainerHighest, long surfaceContainerLow, long surfaceContainerLowest, long primaryFixed, long primaryFixedDim, long onPrimaryFixed, long onPrimaryFixedVariant, long secondaryFixed, long secondaryFixedDim, long onSecondaryFixed, long onSecondaryFixedVariant, long tertiaryFixed, long tertiaryFixedDim, long onTertiaryFixed, long onTertiaryFixedVariant);
     method @Deprecated public androidx.compose.material3.ColorScheme copy(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim);
-    method public androidx.compose.material3.ColorScheme copy(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceDim, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest);
+    method @Deprecated public androidx.compose.material3.ColorScheme copy(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceDim, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest);
+    method public androidx.compose.material3.ColorScheme copy(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceDim, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long primaryFixed, optional long primaryFixedDim, optional long onPrimaryFixed, optional long onPrimaryFixedVariant, optional long secondaryFixed, optional long secondaryFixedDim, optional long onSecondaryFixed, optional long onSecondaryFixedVariant, optional long tertiaryFixed, optional long tertiaryFixedDim, optional long onTertiaryFixed, optional long onTertiaryFixedVariant);
     method public long getBackground();
     method public long getError();
     method public long getErrorContainer();
@@ -532,19 +575,29 @@ package androidx.compose.material3 {
     method public long getOnErrorContainer();
     method public long getOnPrimary();
     method public long getOnPrimaryContainer();
+    method public long getOnPrimaryFixed();
+    method public long getOnPrimaryFixedVariant();
     method public long getOnSecondary();
     method public long getOnSecondaryContainer();
+    method public long getOnSecondaryFixed();
+    method public long getOnSecondaryFixedVariant();
     method public long getOnSurface();
     method public long getOnSurfaceVariant();
     method public long getOnTertiary();
     method public long getOnTertiaryContainer();
+    method public long getOnTertiaryFixed();
+    method public long getOnTertiaryFixedVariant();
     method public long getOutline();
     method public long getOutlineVariant();
     method public long getPrimary();
     method public long getPrimaryContainer();
+    method public long getPrimaryFixed();
+    method public long getPrimaryFixedDim();
     method public long getScrim();
     method public long getSecondary();
     method public long getSecondaryContainer();
+    method public long getSecondaryFixed();
+    method public long getSecondaryFixedDim();
     method public long getSurface();
     method public long getSurfaceBright();
     method public long getSurfaceContainer();
@@ -557,6 +610,8 @@ package androidx.compose.material3 {
     method public long getSurfaceVariant();
     method public long getTertiary();
     method public long getTertiaryContainer();
+    method public long getTertiaryFixed();
+    method public long getTertiaryFixedDim();
     property public long background;
     property public long error;
     property public long errorContainer;
@@ -568,19 +623,29 @@ package androidx.compose.material3 {
     property public long onErrorContainer;
     property public long onPrimary;
     property public long onPrimaryContainer;
+    property public long onPrimaryFixed;
+    property public long onPrimaryFixedVariant;
     property public long onSecondary;
     property public long onSecondaryContainer;
+    property public long onSecondaryFixed;
+    property public long onSecondaryFixedVariant;
     property public long onSurface;
     property public long onSurfaceVariant;
     property public long onTertiary;
     property public long onTertiaryContainer;
+    property public long onTertiaryFixed;
+    property public long onTertiaryFixedVariant;
     property public long outline;
     property public long outlineVariant;
     property public long primary;
     property public long primaryContainer;
+    property public long primaryFixed;
+    property public long primaryFixedDim;
     property public long scrim;
     property public long secondary;
     property public long secondaryContainer;
+    property public long secondaryFixed;
+    property public long secondaryFixedDim;
     property public long surface;
     property public long surfaceBright;
     property public long surfaceContainer;
@@ -593,17 +658,21 @@ package androidx.compose.material3 {
     property public long surfaceVariant;
     property public long tertiary;
     property public long tertiaryContainer;
+    property public long tertiaryFixed;
+    property public long tertiaryFixedDim;
   }
 
   public final class ColorSchemeKt {
     method @androidx.compose.runtime.Stable public static long contentColorFor(androidx.compose.material3.ColorScheme, long backgroundColor);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public static long contentColorFor(long backgroundColor);
     method @Deprecated public static androidx.compose.material3.ColorScheme darkColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim);
-    method public static androidx.compose.material3.ColorScheme darkColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim);
+    method @Deprecated public static androidx.compose.material3.ColorScheme darkColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim);
+    method public static androidx.compose.material3.ColorScheme darkColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim, optional long primaryFixed, optional long primaryFixedDim, optional long onPrimaryFixed, optional long onPrimaryFixedVariant, optional long secondaryFixed, optional long secondaryFixedDim, optional long onSecondaryFixed, optional long onSecondaryFixedVariant, optional long tertiaryFixed, optional long tertiaryFixedDim, optional long onTertiaryFixed, optional long onTertiaryFixedVariant);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static androidx.compose.material3.ColorScheme expressiveLightColorScheme();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean> getLocalTonalElevationEnabled();
     method @Deprecated public static androidx.compose.material3.ColorScheme lightColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim);
-    method public static androidx.compose.material3.ColorScheme lightColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim);
+    method @Deprecated public static androidx.compose.material3.ColorScheme lightColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim);
+    method public static androidx.compose.material3.ColorScheme lightColorScheme(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long outline, optional long outlineVariant, optional long scrim, optional long surfaceBright, optional long surfaceContainer, optional long surfaceContainerHigh, optional long surfaceContainerHighest, optional long surfaceContainerLow, optional long surfaceContainerLowest, optional long surfaceDim, optional long primaryFixed, optional long primaryFixedDim, optional long onPrimaryFixed, optional long onPrimaryFixedVariant, optional long secondaryFixed, optional long secondaryFixedDim, optional long onSecondaryFixed, optional long onSecondaryFixedVariant, optional long tertiaryFixed, optional long tertiaryFixedDim, optional long onTertiaryFixed, optional long onTertiaryFixedVariant);
     method @androidx.compose.runtime.Stable public static long surfaceColorAtElevation(androidx.compose.material3.ColorScheme, float elevation);
     property public static androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean> LocalTonalElevationEnabled;
   }
@@ -703,8 +772,8 @@ package androidx.compose.material3 {
   }
 
   public final class DatePickerKt {
-    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DatePicker(androidx.compose.material3.DatePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional boolean requestFocus);
-    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DatePicker(androidx.compose.material3.DatePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional androidx.compose.material3.DatePickerColors colors);
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DatePicker(androidx.compose.material3.DatePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional androidx.compose.ui.focus.FocusRequester? focusRequester);
+    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DatePicker(androidx.compose.material3.DatePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional boolean requestFocus);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DatePickerState DatePickerState(java.util.Locale locale, optional Long? initialSelectedDateMillis, optional Long? initialDisplayedMonthMillis, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DatePickerState rememberDatePickerState(optional Long? initialSelectedDateMillis, optional Long? initialDisplayedMonthMillis, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
   }
@@ -727,6 +796,22 @@ package androidx.compose.material3 {
     property public abstract kotlin.ranges.IntRange yearRange;
   }
 
+  public final class DatePicker_androidKt {
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DatePickerState DatePickerState(java.util.Locale locale, java.time.LocalDate? initialSelectedDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DateRangePickerState DateRangePickerState(java.util.Locale locale, java.time.LocalDate? initialSelectedStartDate, optional java.time.LocalDate? initialSelectedEndDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.YearMonth? getDisplayedMonth(androidx.compose.material3.DatePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.YearMonth? getDisplayedMonth(androidx.compose.material3.DateRangePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedDate(androidx.compose.material3.DatePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedEndDate(androidx.compose.material3.DateRangePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedStartDate(androidx.compose.material3.DateRangePickerState);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DatePickerState rememberDatePickerState(java.time.LocalDate? initialSelectedDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DateRangePickerState rememberDateRangePickerState(java.time.LocalDate? initialSelectedStartDate, optional java.time.LocalDate? initialSelectedEndDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setDisplayedMonth(androidx.compose.material3.DatePickerState, java.time.YearMonth yearMonth);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setDisplayedMonth(androidx.compose.material3.DateRangePickerState, java.time.YearMonth yearMonth);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setSelectedDate(androidx.compose.material3.DatePickerState, java.time.LocalDate? date);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setSelection(androidx.compose.material3.DateRangePickerState, java.time.LocalDate? startDate, java.time.LocalDate? endDate);
+  }
+
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Stable public final class DateRangePickerDefaults {
     method @Deprecated @androidx.compose.runtime.Composable public void DateRangePickerHeadline(Long? selectedStartDateMillis, Long? selectedEndDateMillis, int displayMode, androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.ui.Modifier modifier);
     method @androidx.compose.runtime.Composable public void DateRangePickerHeadline(Long? selectedStartDateMillis, Long? selectedEndDateMillis, int displayMode, androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.ui.Modifier modifier, optional long contentColor);
@@ -736,8 +821,8 @@ package androidx.compose.material3 {
   }
 
   public final class DateRangePickerKt {
-    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DateRangePicker(androidx.compose.material3.DateRangePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional boolean requestFocus);
-    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DateRangePicker(androidx.compose.material3.DateRangePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional androidx.compose.material3.DatePickerColors colors);
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DateRangePicker(androidx.compose.material3.DateRangePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional androidx.compose.ui.focus.FocusRequester? focusRequester);
+    method @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void DateRangePicker(androidx.compose.material3.DateRangePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.DatePickerFormatter dateFormatter, optional androidx.compose.material3.DatePickerColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? title, optional kotlin.jvm.functions.Function0<kotlin.Unit>? headline, optional boolean showModeToggle, optional boolean requestFocus);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DateRangePickerState DateRangePickerState(java.util.Locale locale, optional Long? initialSelectedStartDateMillis, optional Long? initialSelectedEndDateMillis, optional Long? initialDisplayedMonthMillis, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DateRangePickerState rememberDateRangePickerState(optional Long? initialSelectedStartDateMillis, optional Long? initialSelectedEndDateMillis, optional Long? initialDisplayedMonthMillis, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
   }
@@ -922,13 +1007,13 @@ package androidx.compose.material3 {
     property public androidx.compose.material3.FloatingToolbarState state;
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material API is experimental and is likely to change or to be removed in" + " the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3Api {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material API is experimental and is likely to change or to be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3Api {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material3 API is experimental and is likely to change or to be removed in the" + " future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3ComponentOverrideApi {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material3 API is experimental and is likely to change or to be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3ComponentOverrideApi {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material3 API is experimental and is likely to change or to be removed in the" + " future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3ExpressiveApi {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This material3 API is experimental and is likely to change or to be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3ExpressiveApi {
   }
 
   @kotlin.jvm.JvmInline public final value class ExposedDropdownMenuAnchorType {
@@ -1565,9 +1650,11 @@ package androidx.compose.material3 {
 
   public final class MaterialTheme {
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.ColorScheme getColorScheme();
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.MotionScheme getMotionScheme();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.runtime.CompositionLocal<androidx.compose.material3.MotionScheme> getLocalMotionScheme();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.MotionScheme getMotionScheme();
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.Shapes getShapes();
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.Typography getTypography();
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.runtime.CompositionLocal<androidx.compose.material3.MotionScheme> LocalMotionScheme;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.ColorScheme colorScheme;
     property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.MotionScheme motionScheme;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.material3.Shapes shapes;
@@ -1631,8 +1718,8 @@ package androidx.compose.material3 {
     ctor public ModalBottomSheetProperties();
     ctor public ModalBottomSheetProperties(optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean shouldDismissOnBackPress);
     ctor @Deprecated public ModalBottomSheetProperties(androidx.compose.ui.window.SecureFlagPolicy securePolicy, boolean isFocusable, boolean shouldDismissOnBackPress);
-    ctor @Deprecated public ModalBottomSheetProperties(optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean shouldDismissOnBackPress, optional boolean isAppearanceLightStatusBars, optional boolean isAppearanceLightNavigationBars);
     ctor public ModalBottomSheetProperties(optional boolean shouldDismissOnBackPress);
+    ctor public ModalBottomSheetProperties(boolean isAppearanceLightStatusBars, boolean isAppearanceLightNavigationBars, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean shouldDismissOnBackPress);
     method public androidx.compose.ui.window.SecureFlagPolicy getSecurePolicy();
     method public boolean getShouldDismissOnBackPress();
     property public androidx.compose.ui.window.SecureFlagPolicy securePolicy;
@@ -2379,6 +2466,7 @@ package androidx.compose.material3 {
   }
 
   @androidx.compose.runtime.Stable public final class SliderDefaults {
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void CenteredTrack(androidx.compose.material3.SliderState sliderState, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.material3.SliderColors colors, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.graphics.drawscope.DrawScope,? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? drawStopIndicator, optional kotlin.jvm.functions.Function3<? super androidx.compose.ui.graphics.drawscope.DrawScope,? super androidx.compose.ui.geometry.Offset,? super androidx.compose.ui.graphics.Color,kotlin.Unit> drawTick, optional float thumbTrackGapSize, optional float trackInsideCornerSize, optional float trackCornerSize);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void Thumb(androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, androidx.compose.material3.SliderState sliderState, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled, optional long thumbSize);
     method @androidx.compose.runtime.Composable public void Thumb(androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled, optional long thumbSize);
     method @Deprecated @androidx.compose.runtime.Composable public void Track(androidx.compose.material3.RangeSliderState rangeSliderState, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled);
@@ -2522,21 +2610,87 @@ package androidx.compose.material3 {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void TonalTrailingButton(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.material3.SplitButtonShapes shapes, optional androidx.compose.material3.ButtonColors colors, optional androidx.compose.material3.ButtonElevation? elevation, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void TrailingButton(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.material3.SplitButtonShapes shapes, optional androidx.compose.material3.ButtonColors colors, optional androidx.compose.material3.ButtonElevation? elevation, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void TrailingButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.material3.SplitButtonShapes shapes, optional androidx.compose.material3.ButtonColors colors, optional androidx.compose.material3.ButtonElevation? elevation, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
-    method public androidx.compose.foundation.shape.CornerSize getInnerCornerSize();
-    method public androidx.compose.foundation.layout.PaddingValues getLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraLargeContainerHeight();
+    method public androidx.compose.foundation.shape.CornerSize getExtraLargeInnerCornerSize();
+    method public androidx.compose.foundation.shape.CornerSize getExtraLargeInnerCornerSizePressed();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraLargeLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraLargeTrailingButtonContentPadding();
+    method public float getExtraLargeTrailingButtonIconSize();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getExtraSmallContainerHeight();
+    method public androidx.compose.foundation.shape.CornerSize getExtraSmallInnerCornerSize();
+    method public androidx.compose.foundation.shape.CornerSize getExtraSmallInnerCornerSizePressed();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraSmallLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getExtraSmallTrailingButtonContentPadding();
+    method public float getExtraSmallTrailingButtonIconSize();
+    method @Deprecated public androidx.compose.foundation.shape.CornerSize getInnerCornerSize();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getLargeContainerHeight();
+    method public androidx.compose.foundation.shape.CornerSize getLargeInnerCornerSize();
+    method public androidx.compose.foundation.shape.CornerSize getLargeInnerCornerSizePressed();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getLargeLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getLargeTrailingButtonContentPadding();
+    method public float getLargeTrailingButtonIconSize();
+    method @Deprecated public androidx.compose.foundation.layout.PaddingValues getLeadingButtonContentPadding();
     method public float getLeadingIconSize();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float getMediumContainerHeight();
+    method public androidx.compose.foundation.shape.CornerSize getMediumInnerCornerSize();
+    method public androidx.compose.foundation.shape.CornerSize getMediumInnerCornerSizePressed();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getMediumLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getMediumTrailingButtonContentPadding();
+    method public float getMediumTrailingButtonIconSize();
     method public androidx.compose.foundation.shape.CornerSize getOuterCornerSize();
+    method public float getSmallContainerHeight();
+    method public androidx.compose.foundation.shape.CornerSize getSmallInnerCornerSize();
+    method public androidx.compose.foundation.shape.CornerSize getSmallInnerCornerSizePressed();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getSmallLeadingButtonContentPadding();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues getSmallTrailingButtonContentPadding();
+    method public float getSmallTrailingButtonIconSize();
     method public float getSpacing();
-    method public androidx.compose.foundation.layout.PaddingValues getTrailingButtonContentPadding();
+    method @Deprecated public androidx.compose.foundation.layout.PaddingValues getTrailingButtonContentPadding();
     method public float getTrailingIconSize();
-    method public androidx.compose.material3.SplitButtonShapes leadingButtonShapes(optional androidx.compose.foundation.shape.CornerSize endCornerSize);
-    method public androidx.compose.material3.SplitButtonShapes trailingButtonShapes(optional androidx.compose.foundation.shape.CornerSize startCornerSize);
-    property public androidx.compose.foundation.shape.CornerSize InnerCornerSize;
-    property public androidx.compose.foundation.layout.PaddingValues LeadingButtonContentPadding;
+    method public androidx.compose.foundation.layout.PaddingValues leadingButtonContentPaddingFor(float buttonHeight);
+    method public float leadingButtonIconSizeFor(float buttonHeight);
+    method @Deprecated public androidx.compose.material3.SplitButtonShapes leadingButtonShapes(optional androidx.compose.foundation.shape.CornerSize endCornerSize);
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.material3.SplitButtonShapes leadingButtonShapesFor(float buttonHeight);
+    method public androidx.compose.foundation.layout.PaddingValues trailingButtonContentPaddingFor(float buttonHeight);
+    method public float trailingButtonIconSizeFor(float buttonHeight);
+    method @Deprecated public androidx.compose.material3.SplitButtonShapes trailingButtonShapes(optional androidx.compose.foundation.shape.CornerSize startCornerSize);
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public androidx.compose.material3.SplitButtonShapes trailingButtonShapesFor(float buttonHeight);
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float ExtraLargeContainerHeight;
+    property public androidx.compose.foundation.shape.CornerSize ExtraLargeInnerCornerSize;
+    property public androidx.compose.foundation.shape.CornerSize ExtraLargeInnerCornerSizePressed;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues ExtraLargeLeadingButtonContentPadding;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues ExtraLargeTrailingButtonContentPadding;
+    property public float ExtraLargeTrailingButtonIconSize;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float ExtraSmallContainerHeight;
+    property public androidx.compose.foundation.shape.CornerSize ExtraSmallInnerCornerSize;
+    property public androidx.compose.foundation.shape.CornerSize ExtraSmallInnerCornerSizePressed;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues ExtraSmallLeadingButtonContentPadding;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues ExtraSmallTrailingButtonContentPadding;
+    property public float ExtraSmallTrailingButtonIconSize;
+    property @Deprecated public androidx.compose.foundation.shape.CornerSize InnerCornerSize;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float LargeContainerHeight;
+    property public androidx.compose.foundation.shape.CornerSize LargeInnerCornerSize;
+    property public androidx.compose.foundation.shape.CornerSize LargeInnerCornerSizePressed;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues LargeLeadingButtonContentPadding;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues LargeTrailingButtonContentPadding;
+    property public float LargeTrailingButtonIconSize;
+    property @Deprecated public androidx.compose.foundation.layout.PaddingValues LeadingButtonContentPadding;
     property public float LeadingIconSize;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public float MediumContainerHeight;
+    property public androidx.compose.foundation.shape.CornerSize MediumInnerCornerSize;
+    property public androidx.compose.foundation.shape.CornerSize MediumInnerCornerSizePressed;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues MediumLeadingButtonContentPadding;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues MediumTrailingButtonContentPadding;
+    property public float MediumTrailingButtonIconSize;
     property public androidx.compose.foundation.shape.CornerSize OuterCornerSize;
+    property public float SmallContainerHeight;
+    property public androidx.compose.foundation.shape.CornerSize SmallInnerCornerSize;
+    property public androidx.compose.foundation.shape.CornerSize SmallInnerCornerSizePressed;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues SmallLeadingButtonContentPadding;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.foundation.layout.PaddingValues SmallTrailingButtonContentPadding;
+    property public float SmallTrailingButtonIconSize;
     property public float Spacing;
-    property public androidx.compose.foundation.layout.PaddingValues TrailingButtonContentPadding;
+    property @Deprecated public androidx.compose.foundation.layout.PaddingValues TrailingButtonContentPadding;
     property public float TrailingIconSize;
     field public static final androidx.compose.material3.SplitButtonDefaults INSTANCE;
   }
@@ -2886,9 +3040,11 @@ package androidx.compose.material3 {
 
   public final class TextKt {
     method @androidx.compose.runtime.Composable public static void ProvideTextStyle(androidx.compose.ui.text.TextStyle value, kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method @androidx.compose.runtime.Composable public static void Text(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent> inlineContent, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
+    method @androidx.compose.runtime.Composable public static void Text(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.Modifier modifier, optional long color, optional androidx.compose.foundation.text.TextAutoSize? autoSize, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent> inlineContent, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
+    method @Deprecated @androidx.compose.runtime.Composable public static void Text(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent> inlineContent, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
     method @Deprecated @androidx.compose.runtime.Composable public static void Text(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent> inlineContent, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
-    method @androidx.compose.runtime.Composable public static void Text(String text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit>? onTextLayout, optional androidx.compose.ui.text.TextStyle style);
+    method @androidx.compose.runtime.Composable public static void Text(String text, optional androidx.compose.ui.Modifier modifier, optional long color, optional androidx.compose.foundation.text.TextAutoSize? autoSize, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit>? onTextLayout, optional androidx.compose.ui.text.TextStyle style);
+    method @Deprecated @androidx.compose.runtime.Composable public static void Text(String text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit>? onTextLayout, optional androidx.compose.ui.text.TextStyle style);
     method @Deprecated @androidx.compose.runtime.Composable public static void Text(String text, optional androidx.compose.ui.Modifier modifier, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional long letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional long lineHeight, optional int overflow, optional boolean softWrap, optional int maxLines, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.TextStyle> getLocalTextStyle();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.TextStyle> LocalTextStyle;
@@ -3158,7 +3314,8 @@ package androidx.compose.material3 {
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public sealed interface TooltipScope {
-    method public androidx.compose.ui.Modifier drawCaret(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.draw.CacheDrawScope,? super androidx.compose.ui.layout.LayoutCoordinates?,androidx.compose.ui.draw.DrawResult> draw);
+    method @Deprecated public androidx.compose.ui.Modifier drawCaret(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.draw.CacheDrawScope,? super androidx.compose.ui.layout.LayoutCoordinates?,androidx.compose.ui.draw.DrawResult> draw);
+    method public androidx.compose.ui.layout.LayoutCoordinates? obtainAnchorBounds(androidx.compose.ui.layout.MeasureScope);
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public interface TooltipState {
@@ -3567,8 +3724,8 @@ package androidx.compose.material3.pulltorefresh {
     method @Deprecated @androidx.compose.runtime.Composable public long getContainerColor();
     method public float getElevation();
     method @Deprecated @androidx.compose.runtime.Composable public long getIndicatorColor();
-    method @androidx.compose.runtime.Composable public long getLoadingIndicatorColor();
-    method @androidx.compose.runtime.Composable public long getLoadingIndicatorContainerColor();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public long getLoadingIndicatorColor();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public long getLoadingIndicatorContainerColor();
     method public float getLoadingIndicatorElevation();
     method public float getPositionalThreshold();
     method public androidx.compose.ui.graphics.Shape getShape();

@@ -56,4 +56,7 @@ public interface PerceptionManager {
 
     /** Hand tracking information for the right [Hand]. Only available on supported platforms. */
     public val rightHand: Hand?
+
+    /** [Earth] tracking information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val earth: Earth
 }

@@ -74,7 +74,9 @@ class FrameDistributorTest {
     private val fakeFrameBuffer = FakeFrameBuffer()
     private val frameCaptureQueue = FrameCaptureQueue()
     private val frameDistributor =
-        FrameDistributor(imageSimulator.imageSources, frameCaptureQueue, fakeFrameBuffer)
+        FrameDistributor(imageSimulator.imageSources, frameCaptureQueue).also {
+            it.frameStartedListener = fakeFrameBuffer
+        }
 
     @Test
     fun frameDistributorSetupVerification() {

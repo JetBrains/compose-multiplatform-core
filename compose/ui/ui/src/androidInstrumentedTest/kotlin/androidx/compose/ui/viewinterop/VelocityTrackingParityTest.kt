@@ -148,8 +148,6 @@ class VelocityTrackingParityTest {
             draggableView.visibility = View.GONE
         }
 
-        rule.waitForIdle()
-
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)
 
@@ -216,8 +214,6 @@ class VelocityTrackingParityTest {
             composeView.visibility = View.VISIBLE
             draggableView.visibility = View.GONE
         }
-
-        rule.waitForIdle()
 
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)
@@ -351,8 +347,6 @@ class VelocityTrackingParityTest {
             composeView.visibility = View.VISIBLE
             draggableView.visibility = View.GONE
         }
-
-        rule.waitForIdle()
 
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)

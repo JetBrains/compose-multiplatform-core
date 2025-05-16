@@ -30,12 +30,12 @@ import android.widget.TextView
 import androidx.core.graphics.withMatrix
 import androidx.core.graphics.withTranslation
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.BoxAccumulator
 import androidx.ink.geometry.ImmutableAffineTransform
 import androidx.ink.geometry.ImmutableBox
 import androidx.ink.geometry.ImmutableVec
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.test.R
 import androidx.ink.strokes.InProgressStroke
 

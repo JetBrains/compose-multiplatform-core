@@ -52,11 +52,8 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (pdfViewerFragment == null) {
-            pdfViewerFragment =
-                childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG)
-                    as PdfViewerFragmentV1?
-        }
+        pdfViewerFragment =
+            childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragmentV1?
     }
 
     override fun onCreateView(

@@ -21,15 +21,18 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandJointType
+import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.HandJointType
-import androidx.xr.runtime.internal.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
+import kotlin.test.assertFailsWith
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -107,10 +110,38 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
+    fun updatePlanes_addsIdentityPlane() = initOpenXrManagerAndRunTest {
+        // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
+        // and a
+        // fake perception library can be used mock trackables.
+        underTest.updatePlanes(XR_TIME)
+
+        assertThat(underTest.trackables).hasSize(1)
+        // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
+        // they
+        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        assertThat((underTest.trackables.first() as OpenXrPlane).centerPose)
+            .isEqualTo(Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
+    }
+
+    @Test
+    fun updatePlanes_planeTrackingDisabled_doesNotAddPlane() = initOpenXrManagerAndRunTest {
+        // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
+        // and
+        // a fake perception library can be used mock trackables.
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.DISABLED))
+
+        underTest.updatePlanes(XR_TIME)
+
+        assertThat(underTest.trackables).hasSize(0)
+    }
+
+    @Test
     fun update_updatesTrackables() = initOpenXrManagerAndRunTest {
         // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
         // and a
         // fake perception library can be used mock trackables.
+        underTest.updatePlanes(XR_TIME)
         underTest.update(XR_TIME)
 
         assertThat(underTest.trackables).hasSize(1)
@@ -124,8 +155,8 @@ class OpenXrPerceptionManagerTest {
     @Test
     fun update_updatesHands() = initOpenXrManagerAndRunTest {
         check(underTest.xrResources.updatables.size == 2)
-        check(underTest.leftHand.trackingState != TrackingState.Tracking)
-        check(underTest.rightHand.trackingState != TrackingState.Tracking)
+        check(underTest.leftHand.trackingState != TrackingState.TRACKING)
+        check(underTest.rightHand.trackingState != TrackingState.TRACKING)
 
         underTest.update(XR_TIME)
 
@@ -133,7 +164,7 @@ class OpenXrPerceptionManagerTest {
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         val leftHandJoints = underTest.leftHand.handJoints
-        assertThat(underTest.leftHand.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.leftHand.trackingState).isEqualTo(TrackingState.TRACKING)
         assertThat(leftHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
@@ -153,7 +184,7 @@ class OpenXrPerceptionManagerTest {
         }
 
         val rightHandJoints = underTest.rightHand.handJoints
-        assertThat(underTest.rightHand.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.rightHand.trackingState).isEqualTo(TrackingState.TRACKING)
         assertThat(rightHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
@@ -175,6 +206,7 @@ class OpenXrPerceptionManagerTest {
 
     @Test
     fun hitTest_returnsHitResults() = initOpenXrManagerAndRunTest {
+        underTest.updatePlanes(XR_TIME)
         underTest.update(XR_TIME)
         check(underTest.trackables.isNotEmpty())
         val trackable = underTest.trackables.first() as OpenXrPlane
@@ -195,12 +227,28 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
+    fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.DISABLED))
+        underTest.updatePlanes(XR_TIME)
+        underTest.update(XR_TIME)
+
+        assertFailsWith<IllegalStateException> {
+            underTest.hitTest(Ray(Vector3(4f, 3f, 2f), Vector3(2f, 1f, 0f)))
+        }
+    }
+
+    @Test
     fun getPersistedAnchorUuids_returnsStubUuid() = initOpenXrManagerAndRunTest {
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
         // they
         // come from `kUuid` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         assertThat(underTest.getPersistedAnchorUuids())
             .containsExactly(UUID.fromString("01020304-0506-0708-090a-0b0c0d0e0f10"))
+    }
+
+    @Test
+    fun loadAnchor_invalidUuid_throwsException() = initOpenXrManagerAndRunTest {
+        assertThrows(AnchorInvalidUuidException::class.java) { underTest.loadAnchor(UUID(0L, 0L)) }
     }
 
     @Test
@@ -251,6 +299,7 @@ class OpenXrPerceptionManagerTest {
 
     @Test
     fun clear_clearXrResources() = initOpenXrManagerAndRunTest {
+        underTest.updatePlanes(XR_TIME)
         underTest.update(XR_TIME)
         underTest.createAnchor(Pose())
         check(underTest.trackables.isNotEmpty())
@@ -270,6 +319,12 @@ class OpenXrPerceptionManagerTest {
             openXrManager = OpenXrManager(it, underTest, timeSource)
             openXrManager.create()
             openXrManager.resume()
+            openXrManager.configure(
+                Config(
+                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    handTracking = Config.HandTrackingMode.ENABLED,
+                )
+            )
 
             testBody()
 

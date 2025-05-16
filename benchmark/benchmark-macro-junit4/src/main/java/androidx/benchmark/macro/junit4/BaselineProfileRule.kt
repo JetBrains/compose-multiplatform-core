@@ -18,6 +18,7 @@ package androidx.benchmark.macro.junit4
 
 import androidx.annotation.RequiresApi
 import androidx.benchmark.Arguments
+import androidx.benchmark.macro.BaselineProfileConfig
 import androidx.benchmark.macro.BaselineProfileResult
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.collect
@@ -147,6 +148,45 @@ class BaselineProfileRule : TestRule {
             strictStability = strictStability,
             filterPredicate = filterPredicate,
             profileBlock = profileBlock
+        )
+    }
+
+    /**
+     * Collects baseline profiles for a critical user journey, while ensuring that the generated
+     * profiles are stable.
+     *
+     * @param config which is used to manage the collection of Baseline Profiles.
+     * @return [BaselineProfileResult] which can be used to determine the absolute paths of the
+     *   collected baseline profiles.
+     * @see [configBuilder] to construct an instance of [BaselineProfileConfig].
+     */
+    public fun collectWithResults(config: BaselineProfileConfig): BaselineProfileResult {
+        return collect(
+            uniqueName = config.getOutputFilePrefix(),
+            packageName = config.getPackageName(),
+            stableIterations = config.getStableIterations(),
+            maxIterations = config.getMaxIterations(),
+            includeInStartupProfile = config.isIncludeInStartupProfile(),
+            strictStability = config.isStrictStability(),
+            filterPredicate = config.getFilterPredicate(),
+            profileBlock = config.getProfileBlock()
+        )
+    }
+
+    /**
+     * @return An instance of [BaselineProfileConfig.Builder] that can be used to manage collection
+     *   of Baseline profiles.
+     */
+    @JvmOverloads
+    public fun configBuilder(
+        packageName: String,
+        outputFilePrefix: String? = null,
+        profileBlock: MacrobenchmarkScope.() -> Unit
+    ): BaselineProfileConfig.Builder {
+        return BaselineProfileConfig.Builder(
+            outputFilePrefix ?: currentDescription.toUniqueName(),
+            packageName,
+            profileBlock
         )
     }
 

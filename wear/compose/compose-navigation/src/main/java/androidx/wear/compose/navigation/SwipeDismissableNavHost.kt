@@ -46,10 +46,10 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  * background. BackgroundScrimColor and ContentScrimColor of it are taken from
  * [LocalSwipeToDismissBackgroundScrimColor] and [LocalSwipeToDismissContentScrimColor].
  *
- * Below API level 35, content of the current navigation level is displayed within a
+ * Below API level 36, content of the current navigation level is displayed within a
  * [BasicSwipeToDismissBox] to detect swipe back gestures.
  *
- * API level 35 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
+ * API level 36 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
  * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection.
  *
  * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
@@ -64,7 +64,7 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  * @param modifier The modifier to be applied to the layout
  * @param userSwipeEnabled [Boolean] Whether swipe-to-dismiss gesture is enabled.
  * @param state State containing information about ongoing swipe and animation. This parameter is
- *   unused API level 35 onwards, because the platform supports predictive back and
+ *   unused API level 36 onwards, because the platform supports predictive back and
  *   [SwipeDismissableNavHost] uses platform gestures to detect the back gestures.
  * @param route The route for the graph
  * @param builder The builder used to construct the graph
@@ -103,10 +103,10 @@ public fun SwipeDismissableNavHost(
  * background. BackgroundScrimColor and ContentScrimColor of it are taken from
  * [LocalSwipeToDismissBackgroundScrimColor] and [LocalSwipeToDismissContentScrimColor].
  *
- * Below API level 35, content of the current navigation level is displayed within a
+ * Below API level 36, content of the current navigation level is displayed within a
  * [BasicSwipeToDismissBox] to detect swipe back gestures.
  *
- * API level 35 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
+ * API level 36 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
  * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection.
  *
  * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
@@ -121,7 +121,7 @@ public fun SwipeDismissableNavHost(
  * @param modifier [Modifier] to be applied to the layout
  * @param userSwipeEnabled [Boolean] Whether swipe-to-dismiss gesture is enabled.
  * @param state State containing information about ongoing swipe and animation. This parameter is
- *   unused API level 35 onwards, because the platform supports predictive back and
+ *   unused API level 36 onwards, because the platform supports predictive back and
  *   [SwipeDismissableNavHost] uses platform gestures to detect the back gestures.
  * @throws IllegalArgumentException if no WearNavigation.Destination is on the navigation backstack.
  */
@@ -278,7 +278,7 @@ public class SwipeDismissableNavHostState(
  *
  * @param swipeToDismissBoxState State for [BasicSwipeToDismissBox], which is used to support the
  *   swipe-to-dismiss gesture in [SwipeDismissableNavHost] and can also be used to support
- *   edge-swiping, using [edgeSwipeToDismiss]. This parameter is unused after API 35, because the
+ *   edge-swiping, using [edgeSwipeToDismiss]. This parameter is unused after API 36, because the
  *   platform supports edge-swiping via predictive back gesture, and [SwipeDismissableNavHost] drops
  *   the use of [BasicSwipeToDismissBox] in favour of predictive back based navigation.
  */

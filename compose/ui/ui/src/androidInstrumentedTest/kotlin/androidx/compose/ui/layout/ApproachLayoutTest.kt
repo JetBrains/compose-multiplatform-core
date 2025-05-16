@@ -881,6 +881,12 @@ class ApproachLayoutTest {
 
         override val parentLayoutDirection: LayoutDirection
             get() = TODO("Not yet implemented")
+
+        override val density: Float
+            get() = TODO("Not yet implemented")
+
+        override val fontScale: Float
+            get() = TODO("Not yet implemented")
     }
 
     private data class TestApproachElement(var approachNode: TestApproachLayoutModifierNode) :

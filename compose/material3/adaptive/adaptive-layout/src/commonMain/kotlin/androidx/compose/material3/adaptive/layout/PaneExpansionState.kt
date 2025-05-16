@@ -48,6 +48,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -194,7 +195,6 @@ fun rememberPaneExpansionState(
  * [PaneExpansionState] to store and manage dragging and anchoring of the handle, and thus the pane
  * expansion state.
  */
-@ExperimentalMaterial3AdaptiveApi
 @Stable
 class PaneExpansionState
 internal constructor(
@@ -574,7 +574,6 @@ internal class PaneExpansionStateData(
  * dragging. Setting up anchors when create [PaneExpansionState] will force user dragging to snap to
  * the set anchors after user releases the drag.
  */
-@ExperimentalMaterial3AdaptiveApi
 sealed class PaneExpansionAnchor {
     internal abstract fun positionIn(totalSizePx: Int, density: Density): Int
 
@@ -585,6 +584,8 @@ sealed class PaneExpansionAnchor {
      * [androidx.compose.ui.semantics.SemanticsProperties] like accessibility services.
      */
     @get:Composable abstract val description: String
+
+    internal abstract val CompositionLocalConsumerModifierNode.description: String
 
     /**
      * [PaneExpansionAnchor] implementation that specifies the anchor position in the proportion of
@@ -600,6 +601,13 @@ sealed class PaneExpansionAnchor {
 
         override val description
             @Composable
+            get() =
+                getString(
+                    Strings.defaultPaneExpansionProportionAnchorDescription,
+                    (proportion * 100).toInt()
+                )
+
+        override val CompositionLocalConsumerModifierNode.description: String
             get() =
                 getString(
                     Strings.defaultPaneExpansionProportionAnchorDescription,
@@ -675,6 +683,13 @@ sealed class PaneExpansionAnchor {
                         offset.value.toInt()
                     )
 
+            override val CompositionLocalConsumerModifierNode.description
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionStartOffsetAnchorDescription,
+                        offset.value.toInt()
+                    )
+
             override fun positionIn(totalSizePx: Int, density: Density) =
                 with(density) { offset.roundToPx() }
         }
@@ -682,6 +697,13 @@ sealed class PaneExpansionAnchor {
         private class EndOffset(offset: Dp) : Offset(offset, OffsetFromEndType) {
             override val description
                 @Composable
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionEndOffsetAnchorDescription,
+                        offset.value.toInt()
+                    )
+
+            override val CompositionLocalConsumerModifierNode.description
                 get() =
                     getString(
                         Strings.defaultPaneExpansionEndOffsetAnchorDescription,

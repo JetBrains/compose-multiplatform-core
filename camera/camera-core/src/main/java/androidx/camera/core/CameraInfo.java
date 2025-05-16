@@ -27,6 +27,8 @@ import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
+import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
+import androidx.camera.core.featurecombination.Feature;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.internal.compat.MediaActionSoundCompat;
@@ -512,5 +514,27 @@ public interface CameraInfo {
      */
     default @NonNull LiveData<Integer> getLowLightBoostState() {
         return new MutableLiveData<>(LowLightBoostState.OFF);
+    }
+
+    /**
+     * Returns if the combination of provided {@link UseCase} lists and {@link Feature} lists is
+     * supported.
+     *
+     * @param useCases The set of use cases.
+     * @param features The set of features.
+     * @return Whether a feature combination is supported or not.
+     * @throws IllegalArgumentException If some features conflict with each other by having
+     *   different values for the same feature type and can thus never be supported together.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: Expose the API for public release.
+    @ExperimentalFeatureCombination
+    default boolean isFeatureCombinationSupported(@NonNull Set<@NonNull UseCase> useCases,
+            @NonNull Set<@NonNull Feature> features) {
+        // TODO: Consider taking something like a UseCaseGroup or SessionConfig of
+        //  FeatureCombination that may accept functionalities like ViewPort, CameraEffect etc too.
+        //  We can just take the whole FeatureCombination as parameter then and add extra listener
+        //  function to know the exact features selected. But this is still TBD.
+
+        return false;
     }
 }

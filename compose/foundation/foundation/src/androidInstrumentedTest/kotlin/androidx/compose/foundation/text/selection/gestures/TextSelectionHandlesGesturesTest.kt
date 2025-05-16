@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.HandlePressedScope
 import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -49,7 +48,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
-@ContextMenuFlagSuppress(suppressedFlagValue = true)
 internal class TextSelectionHandlesGesturesTest : AbstractSelectionGesturesTest() {
 
     override val pointerAreaTag = "selectionContainer"

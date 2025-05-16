@@ -24,28 +24,29 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.Session
 import androidx.xr.scenecore.SpatialCapabilities
-import androidx.xr.scenecore.addSpatialCapabilitiesChangedListener
 import androidx.xr.scenecore.samples.commontestview.CommonTestView
+import androidx.xr.scenecore.scene
 
 const val TAG = "MainPanelActivity"
 
 class MainPanelActivity : AppCompatActivity() {
     private var activityPanelEntity: ActivityPanelEntity? = null
     private lateinit var panelEntity: PanelEntity
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
     var activityPanelCreated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session.addSpatialCapabilitiesChangedListener() { capabilities ->
+        session.scene.addSpatialCapabilitiesChangedListener() { capabilities ->
             if (
                 capabilities.hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY) &&
                     !activityPanelCreated
@@ -70,18 +71,18 @@ class MainPanelActivity : AppCompatActivity() {
                 "panel_entity",
                 Pose(Vector3(0f, 0f, 0.0f)),
             )
-        session.mainPanelEntity.setPose(Pose(Vector3(-0.75f, 0.0f, 0.0f)))
+        session.scene.mainPanelEntity.setPose(Pose(Vector3(-0.75f, 0.0f, 0.0f)))
 
         val mainPanelSwitch = panelEntityView.findViewById<Switch>(R.id.main_panel_switch)
         mainPanelSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             if (isChecked) {
-                session.mainPanelEntity.setCornerRadius(0.0f)
+                session.scene.mainPanelEntity.setCornerRadius(0.0f)
             } else {
-                session.mainPanelEntity.setCornerRadius(
-                    calculateCornerRadiusInMeters(session.mainPanelEntity, 32f)
+                session.scene.mainPanelEntity.setCornerRadius(
+                    calculateCornerRadiusInMeters(session.scene.mainPanelEntity, 32f)
                 )
             }
-            session.mainPanelEntity.setPose(session.mainPanelEntity.getPose())
+            session.scene.mainPanelEntity.setPose(session.scene.mainPanelEntity.getPose())
         }
         val activityPanelSwitch = panelEntityView.findViewById<Switch>(R.id.activity_panel_switch)
         activityPanelSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->

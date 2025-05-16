@@ -29,6 +29,7 @@ import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.Stack
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.runtime.debugRuntimeCheck
 import androidx.compose.runtime.tooling.CompositionErrorContext
 
 /**
@@ -61,6 +62,7 @@ internal class RememberEventDispatcher() : RememberManager {
     private var abandoning: MutableSet<RememberObserver>? = null
     private var traceContext: CompositionErrorContext? = null
     private val remembering = mutableVectorOf<RememberObserverHolder>()
+    private val rememberSet = mutableScatterSetOf<RememberObserverHolder>()
     private var currentRememberingList = remembering
     private val leaving = mutableVectorOf<Any>()
     private val sideEffects = mutableVectorOf<() -> Unit>()
@@ -102,6 +104,7 @@ internal class RememberEventDispatcher() : RememberManager {
         this.abandoning = null
         this.traceContext = null
         this.remembering.clear()
+        this.rememberSet.clear()
         this.currentRememberingList = remembering
         this.leaving.clear()
         this.sideEffects.clear()
@@ -115,6 +118,7 @@ internal class RememberEventDispatcher() : RememberManager {
 
     override fun remembering(instance: RememberObserverHolder) {
         currentRememberingList.add(instance)
+        rememberSet.add(instance)
     }
 
     override fun forgetting(
@@ -123,6 +127,31 @@ internal class RememberEventDispatcher() : RememberManager {
         priority: Int,
         endRelativeAfter: Int
     ) {
+        if (instance in rememberSet) {
+            rememberSet.remove(instance)
+            val removed = currentRememberingList.remove(instance) || remembering.remove(instance)
+            if (!removed) {
+                // The instance must be in a nested paused composition.
+                fun removeFrom(vector: MutableVector<RememberObserverHolder>): Boolean {
+                    vector.forEach { holder ->
+                        val nested = holder.wrapped
+                        if (nested is PausedCompositionRemembers) {
+                            val remembers = nested.pausedRemembers
+                            if (remembers.remove(instance)) return true
+                            if (removeFrom(remembers)) return true
+                        }
+                    }
+                    return false
+                }
+                val result = removeFrom(remembering)
+                debugRuntimeCheck(result) {
+                    "The instance $instance(${instance.wrapped} is in the current remember set " +
+                        " but it could not be found to be removed"
+                }
+            }
+            val abandoning = abandoning ?: return
+            abandoning.add(instance.wrapped)
+        }
         recordLeaving(instance, endRelativeOrder, priority, endRelativeAfter)
     }
 
@@ -218,6 +247,13 @@ internal class RememberEventDispatcher() : RememberManager {
         // Send remembers
         if (remembering.isNotEmpty()) {
             trace("Compose:onRemembered") { dispatchRememberList(remembering) }
+        }
+    }
+
+    fun dispatchOnDeactivateIfNecessary(instance: ComposeNodeLifecycleCallback) {
+        val removed = leaving.remove(instance)
+        if (removed) {
+            instance.onDeactivate()
         }
     }
 

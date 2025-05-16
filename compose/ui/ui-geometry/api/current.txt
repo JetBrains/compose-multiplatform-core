@@ -145,7 +145,7 @@ package androidx.compose.ui.geometry {
     method public float component3();
     method public float component4();
     method public operator boolean contains(long offset);
-    method public androidx.compose.ui.geometry.Rect copy(float left, float top, float right, float bottom);
+    method public androidx.compose.ui.geometry.Rect copy(optional float left, optional float top, optional float right, optional float bottom);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect deflate(float delta);
     method public float getBottom();
     method public long getBottomCenter();

@@ -23,7 +23,6 @@ import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.internal.CameraUseCaseAdapter
@@ -93,7 +92,6 @@ class AudioSettingsAudioProfileResolverTest(
         )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val defaultAudioSpec = AudioSpec.builder().build()
 
     private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
@@ -113,7 +111,8 @@ class AudioSettingsAudioProfileResolverTest(
             Build.VERSION.SDK_INT == 26 && isEmulator()
         )
 
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
         // Skip for b/168175357
         Assume.assumeTrue(AudioUtil.canStartAudioRecord(MediaRecorder.AudioSource.CAMCORDER))
 

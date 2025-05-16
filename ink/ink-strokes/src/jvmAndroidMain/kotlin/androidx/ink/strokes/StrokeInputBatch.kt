@@ -187,16 +187,18 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
     public fun clear(): Unit = MutableStrokeInputBatchNative.clear(nativePointer)
 
     /**
-     * Validates and appends an [input]. Invalid [input] will result in no change. An exception will
-     * be thrown for invalid additions.
+     * Validates and appends an [input]. Invalid [input] will result in no change.
+     *
+     * Inputs are invalid if they contain values out of the valid range, duplicate a previous input,
+     * have an elapsed time before a previous input, or have a different tool type than the inputs
+     * already in the batch.
+     *
+     * Throws an appopriate subclass of [RuntimeException] if the input is invalid.
      */
     public fun addOrThrow(input: StrokeInput): MutableStrokeInputBatch =
         add(input, throwOnError = true)
 
-    /**
-     * Validates and appends an input. Invalid input will result in no change. An exception will be
-     * thrown for invalid additions.
-     */
+    /** Variant of [addOrThrow] that takes individual parameters instead of a [StrokeInput]. */
     @JvmOverloads
     public fun addOrThrow(
         type: InputToolType,
@@ -221,16 +223,14 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
         )
 
     /**
-     * Validates and appends an [input]. Invalid [input] will result in no change. No exception will
-     * be thrown for invalid additions.
+     * Validates and appends an [input]. Will ignore an invalid input, skipping the exception thrown
+     * by [addOrThrow]. Use this method when skipping invalid inputs (e.g. out of order or duplicate
+     * inputs) is the desired behavior.
      */
     public fun addOrIgnore(input: StrokeInput): MutableStrokeInputBatch =
         add(input, throwOnError = false)
 
-    /**
-     * Validates and appends an input. Invalid input will result in no change. No exception will be
-     * thrown for invalid additions.
-     */
+    /** Variant of [addOrIgnore] that takes individual parameters instead of a [StrokeInput]. */
     @JvmOverloads
     public fun addOrIgnore(
         type: InputToolType,
@@ -287,7 +287,7 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
         orientationRadians: Float,
         throwOnError: Boolean,
     ): MutableStrokeInputBatch {
-        val errorMessage =
+        val success =
             MutableStrokeInputBatchNative.appendSingle(
                 nativePointer,
                 type.value,
@@ -298,10 +298,9 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
                 pressure,
                 tiltRadians,
                 orientationRadians,
+                throwOnError,
             )
-        if (throwOnError) {
-            require(errorMessage == null) { errorMessage!! }
-        }
+        require(success || !throwOnError) { "Should have thrown an exception if add failed." }
         return this
     }
 
@@ -325,11 +324,13 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
      * additions.
      */
     private fun add(inputBatchNativePointer: Long, throwOnError: Boolean): MutableStrokeInputBatch {
-        val errorMessage =
-            MutableStrokeInputBatchNative.appendBatch(nativePointer, inputBatchNativePointer)
-        if (throwOnError) {
-            require(errorMessage == null) { errorMessage!! }
-        }
+        val success =
+            MutableStrokeInputBatchNative.appendBatch(
+                nativePointer,
+                inputBatchNativePointer,
+                throwOnError,
+            )
+        check(success || !throwOnError) { "Should have thrown an exception if add failed." }
         return this
     }
 
@@ -356,14 +357,12 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
         throwOnError: Boolean = false,
     ): MutableStrokeInputBatch {
         val tempBatchBuilder = MutableStrokeInputBatch()
-        var errorMessage: String?
 
         // Confirm all inputs are valid by first adding them to their own StrokeInputBatch in order
         // to
-        // perform a group add operation to *this*
-        // batch.
+        // perform a group add operation to *this* batch.
         for (input in inputs) {
-            errorMessage =
+            val success =
                 MutableStrokeInputBatchNative.appendSingle(
                     tempBatchBuilder.nativePointer,
                     input.toolType.value,
@@ -374,16 +373,17 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
                     input.pressure,
                     input.tiltRadians,
                     input.orientationRadians,
+                    throwOnError,
                 )
-            if (throwOnError) {
-                require(errorMessage == null) { errorMessage!! }
-            }
+            require(success || !throwOnError) { "Should have thrown an exception if add failed." }
         }
-        errorMessage =
-            MutableStrokeInputBatchNative.appendBatch(nativePointer, tempBatchBuilder.nativePointer)
-        if (throwOnError) {
-            require(errorMessage == null) { errorMessage!! }
-        }
+        val success =
+            MutableStrokeInputBatchNative.appendBatch(
+                nativePointer,
+                tempBatchBuilder.nativePointer,
+                throwOnError,
+            )
+        require(success || !throwOnError) { "Should have thrown an exception if add failed." }
         return this
     }
 
@@ -460,6 +460,7 @@ private object MutableStrokeInputBatchNative {
 
     @UsedByNative external fun clear(nativePointer: Long)
 
+    /** Returns whether the input was successfully added. */
     @UsedByNative
     external fun appendSingle(
         nativePointer: Long,
@@ -471,9 +472,16 @@ private object MutableStrokeInputBatchNative {
         pressure: Float,
         tilt: Float,
         orientation: Float,
-    ): String?
+        throwOnError: Boolean,
+    ): Boolean
 
-    @UsedByNative external fun appendBatch(nativePointer: Long, addedNativePointer: Long): String?
+    /** Returns whether the inputs were successfully added. */
+    @UsedByNative
+    external fun appendBatch(
+        nativePointer: Long,
+        addedNativePointer: Long,
+        throwOnError: Boolean,
+    ): Boolean
 
     @UsedByNative external fun newCopy(nativePointer: Long): Long
 

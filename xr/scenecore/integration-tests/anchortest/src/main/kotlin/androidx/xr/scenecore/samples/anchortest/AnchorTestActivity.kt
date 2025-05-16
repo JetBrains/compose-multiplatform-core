@@ -19,16 +19,19 @@ package androidx.xr.scenecore.samples.anchortest
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.PermissionHelper
 import androidx.xr.scenecore.PlaneSemantic
 import androidx.xr.scenecore.PlaneType
-import androidx.xr.scenecore.Session
+import androidx.xr.scenecore.scene
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.TimeSource
@@ -36,20 +39,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class AnchorTestActivity : AppCompatActivity() {
-    private val session by lazy { Session.create(this) }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.anchortest_activity)
-        if (
-            !PermissionHelper.hasPermission(this, PermissionHelper.SCENE_UNDERSTANDING_PERMISSION)
-        ) {
-            PermissionHelper.requestPermission(
-                this,
-                PermissionHelper.SCENE_UNDERSTANDING_PERMISSION,
-                PermissionHelper.SCENE_UNDERSTANDING_PERMISSION_CODE,
-            )
-        }
+        session.resume()
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         // Create a transform widget model and assign it to an Anchor
         val transformWidgetModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
         transformWidgetModelFuture.addListener(
@@ -88,7 +84,7 @@ class AnchorTestActivity : AppCompatActivity() {
 
                 val pos = Vector3(sin(angle), cos(angle), 0F)
                 // Moving the activity space should not move the anchor.
-                session.activitySpace.setPose(Pose(pos))
+                session.scene.activitySpace.setPose(Pose(pos))
             }
         }
     }

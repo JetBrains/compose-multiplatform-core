@@ -128,7 +128,8 @@ internal open class InspectableNestedScrollConnection() : NestedScrollConnection
 
 internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet) :
     CoordinatorLayout(context, attrs) {
-
+    var nestedPreFlingCalled = false
+    var nestedFlingCalled = false
     private val unconsumed = IntArray(2)
     val unconsumedOffset: Offset
         get() = unconsumed.toReversedOffset()
@@ -152,8 +153,10 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
     }
 
     override fun onStartNestedScroll(child: View, target: View, axes: Int, type: Int): Boolean {
-        unconsumed.fill(0)
-        offeredToParent.fill(0)
+        if (axes != ViewCompat.SCROLL_AXIS_NONE) {
+            unconsumed.fill(0)
+            offeredToParent.fill(0)
+        }
         return super.onStartNestedScroll(child, target, axes, type)
     }
 
@@ -182,6 +185,7 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
     override fun onNestedPreFling(target: View, velocityX: Float, velocityY: Float): Boolean {
         velocityOfferedToParent[0] += velocityX
         velocityOfferedToParent[1] += velocityY
+        nestedPreFlingCalled = true
         return super.onNestedPreFling(target, velocityX, velocityY)
     }
 
@@ -192,7 +196,8 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
         consumed: Boolean
     ): Boolean {
         velocityUnconsumed[0] += velocityX
-        velocityUnconsumed[0] += velocityY
+        velocityUnconsumed[1] += velocityY
+        nestedFlingCalled = true
         return super.onNestedFling(target, velocityX, velocityY, consumed)
     }
 }

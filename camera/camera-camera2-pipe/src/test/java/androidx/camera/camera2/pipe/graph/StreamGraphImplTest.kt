@@ -33,6 +33,7 @@ import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -74,13 +75,15 @@ internal class StreamGraphImplTest {
             streams = listOf(stream1Config, stream2Config),
         )
     private val threads = FakeThreads.fromTestScope(testScope)
+    private val cameraPipeLifetime = CameraPipeLifetime()
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(
             defaultBackendId = backend.id,
             cameraBackends = mapOf(backend.id to CameraBackendFactory { backend }),
             context,
-            threads
+            threads,
+            cameraPipeLifetime,
         )
     private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
     private val cameraController =

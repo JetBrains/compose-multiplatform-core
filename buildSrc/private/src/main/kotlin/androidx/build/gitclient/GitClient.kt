@@ -16,7 +16,6 @@
 
 package androidx.build.gitclient
 
-import androidx.build.gitclient.GitHeadShaSource.Parameters
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.Charset
@@ -42,7 +41,7 @@ fun Project.getChangedFilesProvider(
     val changeInfoPath = System.getenv("CHANGE_INFO")
     val manifestPath = System.getenv("MANIFEST")
     return if (changeInfoPath != null && manifestPath != null) {
-        if (baseCommitOverride.isPresent())
+        if (baseCommitOverride.isPresent)
             throw GradleException(
                 "Overriding base commit is not supported when using CHANGE_INFO and MANIFEST"
             )
@@ -98,7 +97,7 @@ internal abstract class GitChangedFilesSource :
     ValueSource<List<String>, GitChangedFilesSource.Parameters> {
     interface Parameters : ValueSourceParameters {
         val workingDir: DirectoryProperty
-        val baseCommitOverride: Property<String?>
+        val baseCommitOverride: Property<String>
     }
 
     @get:Inject abstract val execOperations: ExecOperations

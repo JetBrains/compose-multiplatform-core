@@ -25,6 +25,9 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +63,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.tests.R
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -79,6 +83,7 @@ import androidx.test.filters.SmallTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlin.test.assertNotEquals
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -484,6 +489,29 @@ class ComposeViewTest {
 
         assertTrue(latch.await(1, TimeUnit.SECONDS))
         assertEquals(IntSize(100, 100), size)
+    }
+
+    @Test
+    fun composeHierarchyScrollsViewTreeCallbackIsInvoked() {
+        var countCalls = 0
+        rule.activityRule.scenario.onActivity { activity ->
+            val composeView = ComposeView(activity)
+            activity.setContentView(composeView)
+            composeView.setContent {
+                Box(
+                    Modifier.size(400.dp)
+                        .testTag("SCROLLABLE")
+                        .scrollable(
+                            state = rememberScrollableState { 0f },
+                            orientation = Orientation.Vertical
+                        )
+                )
+            }
+            composeView.viewTreeObserver.addOnScrollChangedListener { countCalls += 1 }
+        }
+
+        rule.onNodeWithTag("SCROLLABLE").performTouchInput { swipeUp() }
+        assertNotEquals(countCalls, 0)
     }
 
     @Test

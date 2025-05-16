@@ -113,7 +113,8 @@ public class EntityManagerTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ true);
+                        /* useSplitEngine= */ true,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
         Node taskNode = mXrExtensions.createNode();
         mActivitySpace =
                 new ActivitySpaceImpl(
@@ -122,6 +123,7 @@ public class EntityManagerTest {
                         mXrExtensions,
                         mEntityManager,
                         () -> mXrExtensions.getSpatialState(mActivity),
+                        /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
         long currentTimeMillis = 1000000000L;
         SystemClock.setCurrentTimeMillis(currentTimeMillis);

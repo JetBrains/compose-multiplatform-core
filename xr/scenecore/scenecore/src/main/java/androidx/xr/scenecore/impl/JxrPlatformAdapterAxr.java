@@ -62,6 +62,7 @@ import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpatialCapabilities;
 import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
@@ -80,6 +81,7 @@ import com.android.extensions.xr.space.ActivityPanelLaunchParameters;
 import com.android.extensions.xr.space.SpatialState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.apibindings.ImpressApi;
 import com.google.ar.imp.apibindings.ImpressApiImpl;
 import com.google.ar.imp.apibindings.Texture;
@@ -88,7 +90,6 @@ import com.google.ar.imp.view.splitengine.ImpSplitEngine;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.io.Closeable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -107,6 +108,7 @@ import java.util.function.Supplier;
 /** Implementation of JxrPlatformAdapter for AndroidXR. */
 // TODO: b/322550407 - Use the Android Fluent Logger
 // TODO(b/373435470): Remove "deprecation" and "UnnecessarilyFullyQualified"
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings({"UnnecessarilyFullyQualified", "BanSynchronizedMethods", "BanConcurrentHashMap"})
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
@@ -134,12 +136,6 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     private final ImpressApi mImpressApi;
     private final Map<Consumer<SpatialCapabilities>, Executor>
             mSpatialCapabilitiesChangedListeners = new ConcurrentHashMap<>();
-    @VisibleForTesting Closeable mSpatialVisibilityChangedListenerCloseable;
-
-    @Nullable private Activity mActivity;
-    private SplitEngineSubspaceManager mSplitEngineSubspaceManager;
-    private ImpSplitEngineRenderer mSplitEngineRenderer;
-    private boolean mFrameLoopStarted;
 
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
@@ -148,6 +144,12 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // Returns the currently-known spatial state, or fetches it from the extensions if it has never
     // been set. The spatial state is kept updated in the SpatialStateCallback.
     private final Supplier<SpatialState> mLazySpatialStateProvider;
+
+    @Nullable private Activity mActivity;
+    private SplitEngineSubspaceManager mSplitEngineSubspaceManager;
+    private ImpSplitEngineRenderer mSplitEngineRenderer;
+    private boolean mFrameLoopStarted;
+    private boolean mIsDisposed;
 
     private JxrPlatformAdapterAxr(
             Activity activity,
@@ -158,9 +160,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             PerceptionLibrary perceptionLibrary,
             @Nullable SplitEngineSubspaceManager subspaceManager,
             @Nullable ImpSplitEngineRenderer renderer,
-            Node rootSceneNode,
+            Node sceneRootNode,
             Node taskWindowLeashNode,
-            boolean useSplitEngine) {
+            boolean useSplitEngine,
+            boolean unscaledGravityAlignedActivitySpace) {
         mActivity = activity;
         mExecutor = executor;
         mExtensions = extensions;
@@ -193,16 +196,17 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                 new SpatialEnvironmentImpl(
                         activity,
                         extensions,
-                        rootSceneNode,
+                        sceneRootNode,
                         mLazySpatialStateProvider,
                         useSplitEngine);
         mActivitySpace =
                 new ActivitySpaceImpl(
-                        rootSceneNode,
+                        sceneRootNode,
                         activity,
                         extensions,
                         entityManager,
                         mLazySpatialStateProvider,
+                        unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
         mHeadActivityPose =
@@ -256,7 +260,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                     new SplitEngineSubspaceManager(
                             mSplitEngineRenderer,
                             extensions,
-                            rootSceneNode,
+                            sceneRootNode,
                             taskWindowLeashNode,
                             SPLIT_ENGINE_LIBRARY_NAME);
             mImpressApi.setup(mSplitEngineRenderer.getView());
@@ -267,17 +271,20 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     /** Create a new @c JxrPlatformAdapterAxr. */
     @NonNull
     public static JxrPlatformAdapterAxr create(
-            @NonNull Activity activity, @NonNull ScheduledExecutorService executor) {
+            @NonNull Activity activity,
+            boolean unscaledGravityAlignedActivitySpace,
+            @NonNull ScheduledExecutorService executor) {
         return create(
                 activity,
                 executor,
-                XrExtensionsProvider.getXrExtensions(),
+                Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 null,
                 new EntityManager(),
                 new PerceptionLibrary(),
                 null,
                 null,
-                /* useSplitEngine= */ true);
+                /* useSplitEngine= */ true,
+                unscaledGravityAlignedActivitySpace);
     }
 
     /** Create a new @c JxrPlatformAdapterAxr. */
@@ -289,13 +296,14 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         return create(
                 activity,
                 executor,
-                XrExtensionsProvider.getXrExtensions(),
+                Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 null,
                 new EntityManager(),
                 new PerceptionLibrary(),
                 null,
                 null,
-                useSplitEngine);
+                useSplitEngine,
+                /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     /** Create a new @c JxrPlatformAdapterAxr. */
@@ -304,20 +312,21 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public static JxrPlatformAdapterAxr create(
             @NonNull Activity activity,
             @NonNull ScheduledExecutorService executor,
-            @NonNull Node rootSceneNode,
+            @NonNull Node sceneRootNode,
             @NonNull Node taskWindowLeashNode) {
         return create(
                 activity,
                 executor,
-                XrExtensionsProvider.getXrExtensions(),
+                Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 null,
                 new EntityManager(),
                 new PerceptionLibrary(),
                 null,
                 null,
-                rootSceneNode,
+                sceneRootNode,
                 taskWindowLeashNode,
-                /* useSplitEngine= */ false);
+                /* useSplitEngine= */ false,
+                /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     /** Create a new @c JxrPlatformAdapterAxr. */
@@ -340,7 +349,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                 perceptionLibrary,
                 splitEngineSubspaceManager,
                 splitEngineRenderer,
-                /* useSplitEngine= */ false);
+                /* useSplitEngine= */ false,
+                /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     static JxrPlatformAdapterAxr create(
@@ -352,20 +362,23 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             PerceptionLibrary perceptionLibrary,
             SplitEngineSubspaceManager splitEngineSubspaceManager,
             ImpSplitEngineRenderer splitEngineRenderer,
-            boolean useSplitEngine) {
-        Node rootSceneNode = extensions.createNode();
-        try (NodeTransaction transaction = extensions.createNodeTransaction()) {
-            transaction.setName(rootSceneNode, "RootSceneNode").apply();
-        }
-        Log.i(TAG, "Impl Node for task $activity.taskId is root scene node: " + rootSceneNode);
+            boolean useSplitEngine,
+            boolean unscaledGravityAlignedActivitySpace) {
+        Node sceneRootNode = extensions.createNode();
+        Log.i(TAG, "Impl Node for task $activity.taskId is root scene node: " + sceneRootNode);
         Node taskWindowLeashNode = extensions.createNode();
         // TODO: b/376934871 - Check async results.
         extensions.attachSpatialScene(
-                activity, rootSceneNode, taskWindowLeashNode, (result) -> {}, Runnable::run);
+                activity,
+                sceneRootNode,
+                taskWindowLeashNode,
+                executor,
+                (result) -> Log.i(TAG, "attachSpatialScene result: " + result));
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
             transaction
-                    .setParent(taskWindowLeashNode, rootSceneNode)
-                    .setName(taskWindowLeashNode, "TaskWindowLeashNode")
+                    .setName(sceneRootNode, "SpatialSceneAndActivitySpaceRootNode")
+                    .setParent(taskWindowLeashNode, sceneRootNode)
+                    .setName(taskWindowLeashNode, "MainPanelAndTaskWindowLeashNode")
                     .apply();
         }
         return create(
@@ -377,9 +390,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                 perceptionLibrary,
                 splitEngineSubspaceManager,
                 splitEngineRenderer,
-                rootSceneNode,
+                sceneRootNode,
                 taskWindowLeashNode,
-                useSplitEngine);
+                useSplitEngine,
+                unscaledGravityAlignedActivitySpace);
     }
 
     static JxrPlatformAdapterAxr create(
@@ -391,9 +405,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             @NonNull PerceptionLibrary perceptionLibrary,
             @Nullable SplitEngineSubspaceManager splitEngineSubspaceManager,
             @Nullable ImpSplitEngineRenderer splitEngineRenderer,
-            @NonNull Node rootSceneNode,
+            @NonNull Node sceneRootNode,
             @NonNull Node taskWindowLeashNode,
-            boolean useSplitEngine) {
+            boolean useSplitEngine,
+            boolean unscaledGravityAlignedActivitySpace) {
         JxrPlatformAdapterAxr runtime =
                 new JxrPlatformAdapterAxr(
                         activity,
@@ -404,9 +419,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         perceptionLibrary,
                         splitEngineSubspaceManager,
                         splitEngineRenderer,
-                        rootSceneNode,
+                        sceneRootNode,
                         taskWindowLeashNode,
-                        useSplitEngine);
+                        useSplitEngine,
+                        unscaledGravityAlignedActivitySpace);
 
         Log.i(TAG, "Initing perception library soon");
         runtime.initPerceptionLibrary();
@@ -458,12 +474,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         // Fire the state change events only after all the states have been updated.
         if (environmentVisibilityChanged) {
-            mEnvironment.fireOnSpatialEnvironmentChangedEvent(
-                    mEnvironment.isSpatialEnvironmentPreferenceActive());
+            mEnvironment.fireOnSpatialEnvironmentChangedEvent();
         }
         if (passthroughVisibilityChanged) {
-            mEnvironment.firePassthroughOpacityChangedEvent(
-                    mEnvironment.getCurrentPassthroughOpacity());
+            mEnvironment.firePassthroughOpacityChangedEvent();
         }
 
         if (spatialCapabilitiesChanged) {
@@ -479,12 +493,22 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         if (hasBoundsChanged) {
             mActivitySpace.onBoundsChanged(newSpatialState.getBounds());
         }
+
+        // Get the scene parent transform and update the activity space.
+        Log.i(
+                TAG,
+                "newSpatialState.getSceneParentTransform: "
+                        + newSpatialState.getSceneParentTransform());
+        if (newSpatialState.getSceneParentTransform() != null) {
+            mActivitySpace.handleOriginUpdate(
+                    RuntimeUtils.getMatrix(newSpatialState.getSceneParentTransform()));
+        }
     }
 
     private void setSpatialStateCallback() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mExtensions.setSpatialStateCallback(
-                mActivity, this::onSpatialStateChanged, mainHandler::post);
+                mActivity, mainHandler::post, this::onSpatialStateChanged);
     }
 
     private synchronized void initPerceptionLibrary() {
@@ -520,6 +544,11 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     }
 
     @Override
+    public void enablePanelDepthTest(boolean enabled) {
+        mExtensions.enablePanelDepthTest(mActivity, enabled);
+    }
+
+    @Override
     public void addSpatialCapabilitiesChangedListener(
             @NonNull Executor executor, @NonNull Consumer<SpatialCapabilities> listener) {
         mSpatialCapabilitiesChangedListeners.put(listener, executor);
@@ -535,18 +564,16 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public void setSpatialVisibilityChangedListener(
             @NonNull Executor callbackExecutor, @NonNull Consumer<SpatialVisibility> listener) {
         try {
-            mSpatialVisibilityChangedListenerCloseable =
-                    mExtensions.subscribeToVisibility(
-                            mActivity,
-                            (spatialVisibilityEvent) ->
-                                    listener.accept(
-                                            RuntimeUtils.convertSpatialVisibility(
-                                                    spatialVisibilityEvent)),
-                            callbackExecutor);
+            mExtensions.setVisibilityStateCallback(
+                    mActivity,
+                    callbackExecutor,
+                    (spatialVisibilityEvent) ->
+                            listener.accept(
+                                    RuntimeUtils.convertSpatialVisibility(spatialVisibilityEvent)));
         } catch (RuntimeException e) {
             Log.e(
                     TAG,
-                    "Could not subscribe to Scene Spatial Visibility callbacks due to error: "
+                    "Could not set Scene Spatial Visibility callbacks due to error: "
                             + e.getMessage());
         }
     }
@@ -554,13 +581,11 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     @Override
     public void clearSpatialVisibilityChangedListener() {
         try {
-            if (mSpatialVisibilityChangedListenerCloseable != null) {
-                mSpatialVisibilityChangedListenerCloseable.close();
-            }
-        } catch (Exception e) {
-            Log.w(
+            mExtensions.clearVisibilityStateCallback(mActivity);
+        } catch (RuntimeException e) {
+            Log.e(
                     TAG,
-                    "Could not close Scene Spatial Visibility subscription with error: "
+                    "Could not clear Scene Spatial Visibility callbacks due to error: "
                             + e.getMessage());
         }
     }
@@ -661,14 +686,14 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public void requestFullSpaceMode() {
         // TODO: b/376934871 - Check async results.
         mExtensions.requestFullSpaceMode(
-                mActivity, /* requestEnter= */ true, (result) -> {}, Runnable::run);
+                mActivity, /* requestEnter= */ true, Runnable::run, (result) -> {});
     }
 
     @Override
     public void requestHomeSpaceMode() {
         // TODO: b/376934871 - Check async results.
         mExtensions.requestFullSpaceMode(
-                mActivity, /* requestEnter= */ false, (result) -> {}, Runnable::run);
+                mActivity, /* requestEnter= */ false, Runnable::run, (result) -> {});
     }
 
     // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
@@ -883,8 +908,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     }
 
     @Override
-    public void setReflectionCube(
-            @NonNull MaterialResource material, @NonNull TextureResource reflectionCube) {
+    public void setReflectionMap(
+            @NonNull MaterialResource material, @NonNull TextureResource reflectionMap) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Setting material parameters is not supported without SplitEngine.");
@@ -892,12 +917,12 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
-        if (!(reflectionCube instanceof TextureResourceImpl)) {
+        if (!(reflectionMap instanceof TextureResourceImpl)) {
             throw new IllegalArgumentException("TextureResource is not a TextureResourceImpl");
         }
-        mImpressApi.setReflectionCubeOnWaterMaterial(
+        mImpressApi.setReflectionMapOnWaterMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) reflectionCube).getTextureToken());
+                ((TextureResourceImpl) reflectionMap).getTextureToken());
     }
 
     @Override
@@ -1033,14 +1058,16 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     @NonNull
     public SurfaceEntity createSurfaceEntity(
             @SurfaceEntity.StereoMode int stereoMode,
-            @NonNull SurfaceEntity.CanvasShape canvasShape,
             @NonNull Pose pose,
+            @NonNull SurfaceEntity.CanvasShape canvasShape,
+            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
             @NonNull Entity parentEntity) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "SurfaceEntity is not supported without SplitEngine.");
         } else {
-            return createSurfaceEntitySplitEngine(stereoMode, canvasShape, pose, parentEntity);
+            return createSurfaceEntitySplitEngine(
+                    stereoMode, canvasShape, contentSecurityLevel, pose, parentEntity);
         }
     }
 
@@ -1167,6 +1194,12 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     @NonNull
+    public SpatialPointerComponent createSpatialPointerComponent() {
+        return new SpatialPointerComponentImpl(mExtensions);
+    }
+
+    @Override
+    @NonNull
     public ActivityPanelEntity createActivityPanelEntity(
             @NonNull Pose pose,
             @NonNull PixelDimensions windowBoundsPx,
@@ -1280,7 +1313,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public void setPreferredAspectRatio(@NonNull Activity activity, float preferredRatio) {
         // TODO: b/376934871 - Check async results.
         mExtensions.setPreferredAspectRatio(
-                activity, preferredRatio, (result) -> {}, Runnable::run);
+                activity, preferredRatio, Runnable::run, (result) -> {});
     }
 
     @Override
@@ -1303,12 +1336,18 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void dispose() {
+        // TODO(b/413711724): Further limit what this class does once it's disposed.
+        if (mIsDisposed) {
+            Log.i(TAG, "Ignoring repeated disposes");
+            return;
+        }
+
         Log.i(TAG, "Disposing resources");
         mEnvironment.dispose();
         mExtensions.clearSpatialStateCallback(mActivity);
         clearSpatialVisibilityChangedListener();
         // TODO: b/376934871 - Check async results.
-        mExtensions.detachSpatialScene(mActivity, (result) -> {}, Runnable::run);
+        mExtensions.detachSpatialScene(mActivity, Runnable::run, (result) -> {});
         mActivity = null;
         mEntityManager.getAllEntities().forEach(Entity::dispose);
         mEntityManager.clear();
@@ -1316,6 +1355,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             mSplitEngineSubspaceManager.destroy();
             mSplitEngineRenderer.destroy();
         }
+        mIsDisposed = true;
     }
 
     public void setSplitEngineSubspaceManager(
@@ -1392,6 +1432,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     private SurfaceEntity createSurfaceEntitySplitEngine(
             @SurfaceEntity.StereoMode int stereoMode,
             SurfaceEntity.CanvasShape canvasShape,
+            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
             Pose pose,
             @NonNull Entity parentEntity) {
 
@@ -1408,7 +1449,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         mEntityManager,
                         mExecutor,
                         stereoMode,
-                        canvasShape);
+                        canvasShape,
+                        contentSecurityLevel);
         entity.setPose(pose, Space.PARENT);
         return entity;
     }
@@ -1517,5 +1559,20 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                 mActivity::runOnUiThread);
 
         return exrImageResourceFuture;
+    }
+
+    @Override
+    @NonNull
+    public SubspaceNodeEntityImpl createSubspaceNodeEntity(
+            @NonNull SubspaceNode subspaceNode, @NonNull Dimensions size) {
+        SubspaceNodeEntityImpl subspaceNodeEntity =
+                new SubspaceNodeEntityImpl(
+                        mExtensions,
+                        mEntityManager,
+                        mExecutor,
+                        subspaceNode.getSubspaceNode(),
+                        size);
+        subspaceNodeEntity.setParent(mActivitySpace);
+        return subspaceNodeEntity;
     }
 }

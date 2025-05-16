@@ -83,6 +83,13 @@ class ModifiersTest {
     }
 
     @Test
+    fun semanticsHeading_toModifier() {
+        val modifiers = LayoutModifier.semanticsHeading(true).toProtoLayoutModifiers()
+
+        assertThat(modifiers.semantics?.isHeading).isTrue()
+    }
+
+    @Test
     fun clearSemantics_fromModifier() {
         val modifiers =
             LayoutModifier.contentDescription(
@@ -90,6 +97,7 @@ class ModifiersTest {
                     DYNAMIC_CONTENT_DESCRIPTION
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
+                .semanticsHeading(true)
                 .clearSemantics()
                 .toProtoLayoutModifiers()
 

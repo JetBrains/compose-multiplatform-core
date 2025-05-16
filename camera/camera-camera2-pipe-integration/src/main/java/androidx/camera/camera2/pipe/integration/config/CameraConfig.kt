@@ -59,7 +59,9 @@ import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.Quirks
+import androidx.camera.core.internal.StreamSpecsCalculator
 import dagger.Binds
+import dagger.BindsInstance
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
@@ -212,6 +214,9 @@ public interface CameraComponent {
     @Subcomponent.Builder
     public interface Builder {
         public fun config(config: CameraConfig): Builder
+
+        @BindsInstance
+        public fun streamSpecsCalculator(streamSpecsCalculator: StreamSpecsCalculator): Builder
 
         public fun build(): CameraComponent
     }

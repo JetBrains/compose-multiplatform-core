@@ -600,6 +600,8 @@ public final class Preview extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
+                + ", secondaryStreamSpec " + secondaryStreamSpec);
         updateConfigAndOutput((PreviewConfig) getCurrentConfig(), primaryStreamSpec);
         return primaryStreamSpec;
     }

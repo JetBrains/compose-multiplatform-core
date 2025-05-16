@@ -44,6 +44,7 @@ val NetworkRequest.transportTypesCompat: IntArray
                     NetworkCapabilities.TRANSPORT_CELLULAR,
                     NetworkCapabilities.TRANSPORT_ETHERNET,
                     NetworkCapabilities.TRANSPORT_LOWPAN,
+                    NetworkCapabilities.TRANSPORT_SATELLITE,
                     NetworkCapabilities.TRANSPORT_THREAD,
                     NetworkCapabilities.TRANSPORT_USB,
                     NetworkCapabilities.TRANSPORT_VPN,
@@ -72,6 +73,7 @@ val NetworkRequest.capabilitiesCompat: IntArray
                     NetworkCapabilities.NET_CAPABILITY_IA,
                     NetworkCapabilities.NET_CAPABILITY_IMS,
                     NetworkCapabilities.NET_CAPABILITY_INTERNET,
+                    NetworkCapabilities.NET_CAPABILITY_LOCAL_NETWORK,
                     NetworkCapabilities.NET_CAPABILITY_MCX,
                     NetworkCapabilities.NET_CAPABILITY_MMS,
                     NetworkCapabilities.NET_CAPABILITY_MMTEL,
@@ -94,6 +96,15 @@ val NetworkRequest.capabilitiesCompat: IntArray
                 .filter { NetworkRequest28.hasCapability(this, it) }
                 .toIntArray()
         }
+
+// List of default capabilities that are set when a network request is constructed.
+// https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Connectivity/framework/src/android/net/NetworkCapabilities.java;?q=DEFAULT_CAPABILITIES
+private val defaultCapabilities =
+    intArrayOf(
+        NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED,
+        NetworkCapabilities.NET_CAPABILITY_NOT_VPN,
+        NetworkCapabilities.NET_CAPABILITY_TRUSTED,
+    )
 
 @RequiresApi(28)
 object NetworkRequest28 {
@@ -119,6 +130,27 @@ object NetworkRequest28 {
                     .warning(NetworkRequestCompat.TAG, "Ignoring adding capability '$it'", ex)
             }
         }
+        // b/409716532 - There is a list of capabilities that are set by default when the network
+        // request is constructed and must be explicitly removed if they were not persisted as
+        // otherwise the request to exclude those capabilities will be lost between
+        // encoding and decoding.
+        defaultCapabilities.forEach {
+            if (!capabilities.contains(it)) {
+                try {
+                    networkRequest.removeCapability(it)
+                } catch (ex: IllegalArgumentException) {
+                    // Ignoring the IAE that removeCapability() can throw in the case that default
+                    // capabilities changes across OS versions.
+                    Logger.get()
+                        .warning(
+                            NetworkRequestCompat.TAG,
+                            "Ignoring removing default capability '$it'",
+                            ex
+                        )
+                }
+            }
+        }
+
         transports.forEach { networkRequest.addTransportType(it) }
         return networkRequest.build()
     }

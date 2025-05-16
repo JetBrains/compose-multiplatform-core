@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text.selection.gestures
 
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.onNodeWithTag
@@ -30,7 +29,6 @@ private val rtlWord = RtlChar.repeat(5)
 
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
-@ContextMenuFlagSuppress(suppressedFlagValue = true)
 internal class TextField2SelectionGesturesRtlTest :
     TextField2SelectionGesturesTest(
         initialText = "$rtlWord\n$rtlWord $rtlWord $rtlWord\n$rtlWord",
