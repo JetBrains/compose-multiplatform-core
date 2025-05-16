@@ -14,7 +14,7 @@ package androidx.compose.runtime.saveable {
     method @Deprecated @androidx.compose.runtime.Composable public static <T> T rememberSaveable(Object?[] inputs, optional androidx.compose.runtime.saveable.Saver<T,?> saver, optional String? key, kotlin.jvm.functions.Function0<? extends T> init);
     method @androidx.compose.runtime.Composable public static <T> androidx.compose.runtime.MutableState<T> rememberSaveable(Object?[] inputs, androidx.compose.runtime.saveable.Saver<T,?> stateSaver, kotlin.jvm.functions.Function0<? extends androidx.compose.runtime.MutableState<T>> init);
     method @androidx.compose.runtime.Composable public static <T> T rememberSaveable(Object?[] inputs, androidx.compose.runtime.saveable.Saver<T,?> saver, kotlin.jvm.functions.Function0<? extends T> init);
-    method @androidx.compose.runtime.Composable public static inline <reified T> T rememberSaveable(Object?[] inputs, kotlin.jvm.functions.Function0<? extends T> init);
+    method @androidx.compose.runtime.Composable public static <T> T rememberSaveable(Object?[] inputs, kotlin.jvm.functions.Function0<? extends T> init);
     method @androidx.compose.runtime.Composable public static <T> androidx.compose.runtime.MutableState<T> rememberSaveable(Object?[] inputs, kotlinx.serialization.KSerializer<T> stateSerializer, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends androidx.compose.runtime.MutableState<T>> init);
     method @androidx.compose.runtime.Composable public static <T> T rememberSaveable(Object?[] inputs, kotlinx.serialization.KSerializer<T> serializer, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends T> init);
   }
