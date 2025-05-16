@@ -101,7 +101,7 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
     ) {
         val newRect = getNewGeometryForBackingInput(innerTextFieldBounds)
         backingDomInput?.updateHtmlInputPosition(Offset(newRect.left.value, newRect.top.value))
-        backingDomInput?.updateHtmlInputGeometry(newRect.width.value.toInt(), newRect.height.value.toInt())
+        backingDomInput?.updateHtmlInputGeometry(newRect.width.value, newRect.height.value)
     }
 
 }

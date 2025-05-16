@@ -16,11 +16,15 @@
 
 package androidx.compose.ui.input
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.TestInputState
@@ -31,10 +35,15 @@ import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import kotlin.math.absoluteValue
 import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -86,7 +95,54 @@ abstract class TextInputTests : OnCanvasTests {
     }
 
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-8094
+    fun positionInput() = runApplicationTest {
+        val focusRequester = FocusRequester()
+        val inputHolder = createTestInputState()
+
+        var leftState by mutableStateOf(0.dp)
+        var topState by mutableStateOf(0.dp)
+
+        createComposeWindow {
+            Box(modifier = Modifier.padding(horizontal = leftState, vertical = topState)) {
+                inputHolder.createBasicTextField(focusRequester)
+            }
+        }
+
+        focusRequester.requestFocus()
+        waitForHtmlInput()
+
+        sendToHtmlInput(keyEvent("a"), keyEvent("b"), keyEvent("c"))
+
+        inputHolder.awaitAndAssertTextEquals("abc")
+
+        val clientRectInitial = currentHtmlInput().getBoundingClientRect()
+
+        leftState = 50.dp
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        val clientRectUpdated = currentHtmlInput().getBoundingClientRect()
+
+        assertEquals(50.0, clientRectUpdated.left - clientRectInitial.left, "left position updated")
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        // intentionally huge, will never grow over virewport nevertheless
+        topState = 10000000.dp
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        val clientRectSticky= currentHtmlInput().getBoundingClientRect()
+        val expectedTopValue = window.innerHeight - clientRectSticky.height
+
+        // TODO: In Firefox there's a 0.5 delta - may be this can be accounted precisely somehow
+        assertTrue((clientRectSticky.top - expectedTopValue).absoluteValue < 1.0, "top position sticky")
+    }
+
+
+    @Test
     fun regularInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
 
