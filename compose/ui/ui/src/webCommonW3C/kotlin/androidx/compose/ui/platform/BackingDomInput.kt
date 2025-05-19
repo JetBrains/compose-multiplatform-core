@@ -31,7 +31,10 @@ internal interface ComposeCommandCommunicator {
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
-private fun setGlobalCssProperty(property: String, value: Float): Unit = js("document.documentElement.style.setProperty(property, value)")
+private fun setBackingInputLeft(value: Float): Unit = js("document.documentElement.style.setProperty(\"--compose-internal-web-backing-input-left\", value)")
+private fun setBackingInputTop(value: Float): Unit = js("document.documentElement.style.setProperty(\"--compose-internal-web-backing-input-top\", value)")
+private fun setBackingInputWidth(value: Float): Unit = js("document.documentElement.style.setProperty(\"--compose-internal-web-backing-input-width\", value)")
+private fun setBackingInputHeight(value: Float): Unit = js("document.documentElement.style.setProperty(\"--compose-internal-web-backing-input-height\", value)")
 
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
@@ -48,17 +51,11 @@ internal class BackingDomInput(
     )
 
     private companion object {
-        private const val leftPropertyName = "--compose-internal-web-backing-input-left"
-        private const val topPropertyName = "--compose-internal-web-backing-input-top"
-        private const val widthPropertyName = "--compose-internal-web-backing-input-width"
-        private const val heightPropertyName = "--compose-internal-web-backing-input-height"
-
-
         init {
-            setGlobalCssProperty(leftPropertyName, 0f)
-            setGlobalCssProperty(topPropertyName, 0f)
-            setGlobalCssProperty(widthPropertyName, 0f)
-            setGlobalCssProperty(heightPropertyName, 0f)
+            setBackingInputLeft(0f)
+            setBackingInputTop(0f)
+            setBackingInputWidth(0f)
+            setBackingInputHeight(0f)
         }
     }
 
@@ -85,13 +82,13 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputPosition(offset: Offset) {
-        setGlobalCssProperty(leftPropertyName, offset.x)
-        setGlobalCssProperty(topPropertyName, offset.y)
+        setBackingInputLeft(offset.x)
+        setBackingInputTop(offset.y)
     }
 
     fun updateHtmlInputGeometry(width: Float, height: Float) {
-        setGlobalCssProperty(widthPropertyName, width)
-        setGlobalCssProperty(heightPropertyName, height)
+        setBackingInputWidth(width)
+        setBackingInputHeight(height)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
