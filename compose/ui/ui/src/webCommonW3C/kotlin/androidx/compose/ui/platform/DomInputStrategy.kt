@@ -230,7 +230,7 @@ private fun ImeOptions.createDomElement(): HTMLElement {
         setProperty("white-space", "pre-wrap")
         setProperty("align-content", "center")
         setProperty("top", "calc(min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px))")
-        setProperty("left", "calc(var(--compose-internal-web-backing-input-left) * 1px")
+        setProperty("left", "calc(min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px))")
         setProperty("width", "calc(var(--compose-internal-web-backing-input-width) * 1px")
         setProperty("height", "calc(var(--compose-internal-web-backing-input-height) * 1px")
         setProperty("padding", "0")

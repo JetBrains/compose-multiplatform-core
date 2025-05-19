@@ -134,11 +134,23 @@ abstract class TextInputTests : OnCanvasTests {
         focusRequester.requestFocus()
         awaitIdle()
 
-        val clientRectSticky= currentHtmlInput().getBoundingClientRect()
+        var clientRectSticky= currentHtmlInput().getBoundingClientRect()
         val expectedTopValue = window.innerHeight - clientRectSticky.height
 
         // TODO: In Firefox there's a 0.5 delta - may be this can be accounted precisely somehow
-        assertTrue((clientRectSticky.top - expectedTopValue).absoluteValue < 1.0, "top position sticky")
+        val topDelta = clientRectSticky.top - expectedTopValue
+        assertTrue(topDelta.absoluteValue < 1.0, "top position sticky $topDelta")
+
+        // intentionally huge, will never grow over viewport nevertheless
+        leftState = 10000000.dp
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        clientRectSticky= currentHtmlInput().getBoundingClientRect()
+        val expectedLeftValue = window.innerWidth - clientRectSticky.width
+        val leftDelta = clientRectSticky.left - expectedLeftValue
+        assertTrue(leftDelta.absoluteValue < 1.0, "left position sticky $leftDelta")
     }
 
 
