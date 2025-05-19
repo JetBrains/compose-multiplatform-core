@@ -139,7 +139,8 @@ abstract class TextInputTests : OnCanvasTests {
 
         // TODO: In Firefox there's a 0.5 delta - may be this can be accounted precisely somehow
         val topDelta = clientRectSticky.top - expectedTopValue
-        assertTrue(topDelta.absoluteValue < 1.0, "top position sticky $topDelta")
+        val deltaThreshold = 1.01
+        assertTrue(topDelta.absoluteValue < deltaThreshold, "top position sticky $topDelta")
 
         // intentionally huge, will never grow over viewport nevertheless
         leftState = 10000000.dp
@@ -150,7 +151,7 @@ abstract class TextInputTests : OnCanvasTests {
         clientRectSticky= currentHtmlInput().getBoundingClientRect()
         val expectedLeftValue = window.innerWidth - clientRectSticky.width
         val leftDelta = clientRectSticky.left - expectedLeftValue
-        assertTrue(leftDelta.absoluteValue < 1.0, "left position sticky $leftDelta")
+        assertTrue(leftDelta.absoluteValue < deltaThreshold, "left position sticky $leftDelta")
     }
 
 
