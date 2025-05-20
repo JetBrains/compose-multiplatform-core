@@ -21,6 +21,13 @@ public final class androidx/compose/material3/AlertDialog_skikoKt {
 	public static final synthetic fun BasicAlertDialog (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/window/DialogProperties;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 }
 
+public final class androidx/compose/material3/AppBarColumnKt {
+	public static final fun AppBarColumn (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;ILkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class androidx/compose/material3/AppBarColumnScope : androidx/compose/material3/AppBarScope {
+}
+
 public final class androidx/compose/material3/AppBarKt {
 	public static final fun BottomAppBar-1oL4kX8 (Landroidx/compose/ui/Modifier;JJFLandroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/layout/WindowInsets;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 	public static final fun BottomAppBar-Snr_uVM (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;JJFLandroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/layout/WindowInsets;Landroidx/compose/runtime/Composer;II)V
@@ -46,11 +53,7 @@ public final class androidx/compose/material3/AppBarKt {
 	public static final fun rememberTopAppBarState (FFFLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/TopAppBarState;
 }
 
-public final class androidx/compose/material3/AppBarRowKt {
-	public static final fun AppBarRow (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-}
-
-public final class androidx/compose/material3/AppBarRowMenuState {
+public final class androidx/compose/material3/AppBarMenuState {
 	public static final field $stable I
 	public fun <init> ()V
 	public final fun dismiss ()V
@@ -58,12 +61,19 @@ public final class androidx/compose/material3/AppBarRowMenuState {
 	public final fun show ()V
 }
 
-public abstract interface class androidx/compose/material3/AppBarRowScope {
+public final class androidx/compose/material3/AppBarRowKt {
+	public static final fun AppBarRow (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;ILkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class androidx/compose/material3/AppBarRowScope : androidx/compose/material3/AppBarScope {
+}
+
+public abstract interface class androidx/compose/material3/AppBarScope {
 	public abstract fun clickableItem (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Ljava/lang/String;Z)V
-	public static synthetic fun clickableItem$default (Landroidx/compose/material3/AppBarRowScope;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
+	public static synthetic fun clickableItem$default (Landroidx/compose/material3/AppBarScope;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
 	public abstract fun customItem (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)V
 	public abstract fun toggleableItem (ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/String;Z)V
-	public static synthetic fun toggleableItem$default (Landroidx/compose/material3/AppBarRowScope;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
+	public static synthetic fun toggleableItem$default (Landroidx/compose/material3/AppBarScope;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
 }
 
 public final class androidx/compose/material3/AssistChipDefaults {
@@ -2232,6 +2242,7 @@ public final class androidx/compose/material3/SliderColors {
 public final class androidx/compose/material3/SliderDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/material3/SliderDefaults;
+	public final fun CenteredTrack-7LSsfP0 (Landroidx/compose/material3/SliderState;Landroidx/compose/ui/Modifier;ZLandroidx/compose/material3/SliderColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;FFFLandroidx/compose/runtime/Composer;II)V
 	public final fun Thumb-9LiSoMs (Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/SliderColors;ZJLandroidx/compose/runtime/Composer;II)V
 	public final fun Thumb-HwbPF3A (Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/material3/SliderState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/SliderColors;ZJLandroidx/compose/runtime/Composer;II)V
 	public final synthetic fun Track (Landroidx/compose/material3/RangeSliderState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/SliderColors;ZLandroidx/compose/runtime/Composer;II)V
@@ -2923,7 +2934,8 @@ public final class androidx/compose/material3/TooltipKt {
 }
 
 public abstract interface class androidx/compose/material3/TooltipScope {
-	public abstract fun drawCaret (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/Modifier;
+	public abstract synthetic fun drawCaret (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/Modifier;
+	public abstract fun obtainAnchorBounds (Landroidx/compose/ui/layout/MeasureScope;)Landroidx/compose/ui/layout/LayoutCoordinates;
 }
 
 public abstract interface class androidx/compose/material3/TooltipState {

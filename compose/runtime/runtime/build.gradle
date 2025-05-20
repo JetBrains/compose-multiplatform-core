@@ -164,6 +164,7 @@ androidXMultiplatform {
         }
 
         jsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
         }
 
@@ -175,6 +176,7 @@ androidXMultiplatform {
         }
 
         wasmJsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
             dependencies {
                 implementation(libs.kotlinXw3c)

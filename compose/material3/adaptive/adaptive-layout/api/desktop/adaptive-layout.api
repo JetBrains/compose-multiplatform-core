@@ -7,6 +7,35 @@ public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Comp
 	public final fun getHide ()Landroidx/compose/material3/adaptive/layout/AdaptStrategy;
 }
 
+public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate : androidx/compose/material3/adaptive/layout/AdaptStrategy {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Landroidx/compose/ui/Alignment;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Landroidx/compose/ui/Alignment;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlignment ()Landroidx/compose/ui/Alignment;
+	public final fun getStrategy-H_H46_c ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate$Strategy {
+	public static final field Companion Landroidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate$Strategy$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate$Strategy;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate$Strategy$Companion {
+	public final fun getAlways-H_H46_c ()Ljava/lang/String;
+	public final fun getSinglePaneOnly-H_H46_c ()Ljava/lang/String;
+}
+
 public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Reflow : androidx/compose/material3/adaptive/layout/AdaptStrategy {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/Object;)V
@@ -111,6 +140,15 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneA
 public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$Companion {
 	public final fun getExpanded ()Landroidx/compose/material3/adaptive/layout/PaneAdaptedValue;
 	public final fun getHidden ()Landroidx/compose/material3/adaptive/layout/PaneAdaptedValue;
+}
+
+public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$Levitated : androidx/compose/material3/adaptive/layout/PaneAdaptedValue {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/Alignment;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlignment ()Landroidx/compose/ui/Alignment;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$Reflowed : androidx/compose/material3/adaptive/layout/PaneAdaptedValue {
@@ -218,11 +256,13 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneM
 
 public final class androidx/compose/material3/adaptive/layout/PaneMotion$Companion {
 	public final fun getAnimateBounds ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
+	public final fun getEnterAsModal ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getEnterFromLeft ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getEnterFromLeftDelayed ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getEnterFromRight ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getEnterFromRightDelayed ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getEnterWithExpand ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
+	public final fun getExitAsModal ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getExitToLeft ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getExitToRight ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public final fun getExitWithShrink ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
@@ -245,7 +285,9 @@ public final class androidx/compose/material3/adaptive/layout/PaneMotion$Type {
 
 public final class androidx/compose/material3/adaptive/layout/PaneMotion$Type$Companion {
 	public final fun getEntering-havYhsk ()I
+	public final fun getEnteringModal-havYhsk ()I
 	public final fun getExiting-havYhsk ()I
+	public final fun getExitingModal-havYhsk ()I
 	public final fun getHidden-havYhsk ()I
 	public final fun getShown-havYhsk ()I
 }
@@ -268,6 +310,7 @@ public final class androidx/compose/material3/adaptive/layout/PaneMotionDefaults
 	public final fun getDelayedSizeAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
 	public final fun getOffsetAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
 	public final fun getSizeAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public final fun getVisibilityAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
 }
 
 public final class androidx/compose/material3/adaptive/layout/PaneMotionKt {

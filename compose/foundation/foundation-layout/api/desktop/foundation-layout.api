@@ -115,6 +115,12 @@ public final class androidx/compose/foundation/layout/ColumnScope$DefaultImpls {
 	public static synthetic fun weight$default (Landroidx/compose/foundation/layout/ColumnScope;Landroidx/compose/ui/Modifier;FZILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
+public final class androidx/compose/foundation/layout/ComposeFoundationLayoutFlags {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/foundation/layout/ComposeFoundationLayoutFlags;
+	public static field isWindowInsetsDefaultPassThroughEnabled Z
+}
+
 public final class androidx/compose/foundation/layout/ContextualFlowColumnOverflow : androidx/compose/foundation/layout/FlowLayoutOverflow {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/foundation/layout/ContextualFlowColumnOverflow$Companion;

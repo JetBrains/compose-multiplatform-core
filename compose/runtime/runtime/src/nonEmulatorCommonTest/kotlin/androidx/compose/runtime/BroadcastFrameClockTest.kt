@@ -36,6 +36,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @ExperimentalCoroutinesApi
 class BroadcastFrameClockTest {
@@ -91,6 +92,7 @@ class BroadcastFrameClockTest {
     //
     // Remove this annotation if JS adds proper multithreading support, then flee the area quickly.
     @IgnoreJsTarget
+    @IgnoreWasmTarget
     @OptIn(InternalCoroutinesApi::class)
     @Test
     fun locklessCancellation() =

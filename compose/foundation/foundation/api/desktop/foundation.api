@@ -104,6 +104,7 @@ public final class androidx/compose/foundation/ComposeFoundationFlags {
 	public static final field $stable I
 	public static field DragGesturePickUpEnabled Z
 	public static final field INSTANCE Landroidx/compose/foundation/ComposeFoundationFlags;
+	public static field isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled Z
 	public static field isAutomaticNestedPrefetchEnabled Z
 	public static field isDetectTapGesturesImmediateCoroutineDispatchEnabled Z
 	public static field isNonComposedClickableEnabled Z
@@ -629,10 +630,12 @@ public abstract interface class androidx/compose/foundation/gestures/Drag2DScope
 public final class androidx/compose/foundation/gestures/DragGestureDetectorKt {
 	public static final fun awaitDragOrCancellation-rnUCldI (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitHorizontalDragOrCancellation-rnUCldI (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitHorizontalPointerSlopOrCancellation-gDDlDlE (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitHorizontalTouchSlopOrCancellation-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitLongPressOrCancellation-rnUCldI (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitTouchSlopOrCancellation-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitVerticalDragOrCancellation-rnUCldI (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitVerticalPointerSlopOrCancellation-gDDlDlE (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitVerticalTouchSlopOrCancellation-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun detectDragGestures (Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun detectDragGestures$default (Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;

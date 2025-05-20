@@ -144,6 +144,7 @@ public final class androidx/compose/ui/ComposeUiFlags {
 	public static field isFocusActionExitsTouchModeEnabled Z
 	public static field isNoPinningInFocusRestorationEnabled Z
 	public static field isOutOfFrameDeactivationEnabled Z
+	public static field isPointerInteropFilterDispatchingFixEnabled Z
 	public static field isRectTrackingEnabled Z
 	public static field isRemoveFocusedViewFixEnabled Z
 	public static field isSemanticAutofillEnabled Z
@@ -2439,6 +2440,7 @@ public final class androidx/compose/ui/input/pointer/util/VelocityTracker1D {
 
 public final class androidx/compose/ui/input/pointer/util/VelocityTrackerKt {
 	public static final fun addPointerInputChange (Landroidx/compose/ui/input/pointer/util/VelocityTracker;Landroidx/compose/ui/input/pointer/PointerInputChange;)V
+	public static final fun addPointerInputChange-0AR0LA0 (Landroidx/compose/ui/input/pointer/util/VelocityTracker;Landroidx/compose/ui/input/pointer/PointerInputChange;J)V
 	public static final fun getVelocityTrackerAddPointsFix ()Z
 	public static final fun getVelocityTrackerStrategyUseImpulse ()Z
 	public static final fun setVelocityTrackerAddPointsFix (Z)V
@@ -4202,6 +4204,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getIsDialog ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsEditable ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsPopup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getIsSensitiveData ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsShowingTextSubstitution ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsTraversalGroup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getLinkTestMarker ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4278,6 +4281,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun invisibleToUser (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
 	public static final fun isContainer (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isEditable (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
+	public static final fun isSensitiveData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isShowingTextSubstitution (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isTraversalGroup (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun onAutofillText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
@@ -4333,6 +4337,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun setSelected (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setSelection (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)V
 	public static synthetic fun setSelection$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static final fun setSensitiveData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setShape (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/graphics/Shape;)V
 	public static final fun setShowingTextSubstitution (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setStateDescription (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V

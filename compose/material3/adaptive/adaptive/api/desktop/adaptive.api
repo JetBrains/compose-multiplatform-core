@@ -48,6 +48,11 @@ public final class androidx/compose/material3/adaptive/WindowAdaptiveInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class androidx/compose/material3/adaptive/WindowAdaptiveInfoKt {
+	public static final fun currentWindowDpSize (Landroidx/compose/runtime/Composer;I)J
+	public static final fun currentWindowSize (Landroidx/compose/runtime/Composer;I)J
+}
+
 public final class androidx/compose/material3/adaptive/WindowAdaptiveInfo_skikoKt {
 	public static final fun currentWindowAdaptiveInfo (Landroidx/compose/runtime/Composer;I)Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;
 }

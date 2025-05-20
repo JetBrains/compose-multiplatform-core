@@ -18,10 +18,13 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpRect
@@ -88,8 +91,15 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
         backingDomInput?.updateState(newValue)
     }
 
-    override fun notifyFocusedRect(rect: Rect) {
-        val newRect = getNewGeometryForBackingInput(rect)
+    override fun updateTextLayoutResult(
+        textFieldValue: TextFieldValue,
+        offsetMapping: OffsetMapping,
+        textLayoutResult: TextLayoutResult,
+        textFieldToRootTransform: (Matrix) -> Unit,
+        innerTextFieldBounds: Rect,
+        decorationBoxBounds: Rect
+    ) {
+        val newRect = getNewGeometryForBackingInput(innerTextFieldBounds)
         backingDomInput?.updateHtmlInputPosition(Offset(newRect.left.value, newRect.top.value))
         backingDomInput?.updateHtmlInputGeometry(newRect.width.value.toInt(), newRect.height.value.toInt())
     }
