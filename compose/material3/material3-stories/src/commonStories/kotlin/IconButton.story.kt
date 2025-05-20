@@ -98,7 +98,8 @@ val `IconButton Story` by story {
         Icon(
             imageVector = icon,
             contentDescription = iconContentDescription,
-            modifier = Modifier.size(iconSizeFloat.dp)
+            modifier = Modifier.size(iconSizeFloat.dp),
+            tint = if (useCustomColors) customContentColor else MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -154,7 +155,10 @@ val `IconToggleButton Story` by story {
         Icon(
             imageVector = icon,
             contentDescription = iconContentDescription,
-            modifier = Modifier.size(iconSizeFloat.dp)
+            modifier = Modifier.size(iconSizeFloat.dp),
+            tint = if (useCustomColors) {
+                if (checked) checkedContentColor else contentColor
+            } else MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -182,7 +186,7 @@ val `FilledIconToggleButton Story` by story {
     val contentColor by parameter(Color(0xFF6750A4))
     val checkedContainerColor by parameter(Color(0xFF6750A4))
     val checkedContentColor by parameter(Color.White)
-    
+
     // Only show parameters for disabled states if the button can be disabled
     val disabledContainerColor = if (enabled) Color.Gray.copy(alpha = 0.12f) else Color.Gray.copy(alpha = 0.12f)
     val disabledContentColor = if (enabled) Color.Gray.copy(alpha = 0.38f) else Color.Gray.copy(alpha = 0.38f)
@@ -230,7 +234,10 @@ val `FilledIconToggleButton Story` by story {
         Icon(
             imageVector = icon,
             contentDescription = iconContentDescription,
-            modifier = Modifier.size(iconSizeFloat.dp)
+            modifier = Modifier.size(iconSizeFloat.dp),
+            tint = if (useCustomColors) {
+                if (checked) checkedContentColor else contentColor
+            } else MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -292,7 +299,6 @@ val `FilledIconButton Story` by story {
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
         Surface(
-            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.padding(16.dp)
         ) {
             Column(
@@ -310,10 +316,11 @@ val `FilledIconButton Story` by story {
                     Icon(
                         imageVector = icon,
                         contentDescription = iconContentDescription,
-                        modifier = Modifier.size(iconSizeFloat.dp)
+                        modifier = Modifier.size(iconSizeFloat.dp),
+                        tint = if (useCustomColors) contentColor else MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
+
                 // Always show click counter
                 Text(
                     text = "Clicked: $clickCount",
@@ -382,7 +389,6 @@ val `FilledTonalIconButton Story` by story {
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
         Surface(
-            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.padding(16.dp)
         ) {
             Column(
@@ -400,10 +406,11 @@ val `FilledTonalIconButton Story` by story {
                     Icon(
                         imageVector = icon,
                         contentDescription = iconContentDescription,
-                        modifier = Modifier.size(iconSizeFloat.dp)
+                        modifier = Modifier.size(iconSizeFloat.dp),
+                        tint = if (useCustomColors) contentColor else MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
+
                 // Always show click counter
                 Text(
                     text = "Clicked: $clickCount",
@@ -495,15 +502,19 @@ val `FilledTonalIconToggleButton Story` by story {
                 Icon(
                     imageVector = if (checked) checkedIcon else uncheckedIcon,
                     contentDescription = iconContentDescription,
-                    modifier = Modifier.size(iconSizeFloat.dp)
+                    modifier = Modifier.size(iconSizeFloat.dp),
+                    tint = if (useCustomColors) {
+                        if (checked) checkedContentColor else contentColor
+                    } else MaterialTheme.colorScheme.onSurface
                 )
             }
-            
+
             // Simple status indication
             Text(
                 text = if (checked) "Checked" else "Unchecked",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -531,7 +542,7 @@ val `OutlinedIconButton Story` by story {
     val disabledContentColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
 
     // Border
-    val useCustomBorder by parameter(false)
+    val useCustomBorder by parameter(true)
     val borderWidth by parameter(1f)
     val borderColor by parameter(MaterialTheme.colorScheme.primary)
     val disabledBorderColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
@@ -580,7 +591,6 @@ val `OutlinedIconButton Story` by story {
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
         Surface(
-            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.padding(16.dp)
         ) {
             OutlinedIconButton(
@@ -595,7 +605,8 @@ val `OutlinedIconButton Story` by story {
                 Icon(
                     imageVector = icon,
                     contentDescription = iconContentDescription,
-                    modifier = Modifier.size(iconSize.dp)
+                    modifier = Modifier.size(iconSize.dp),
+                    tint = if (useCustomColors) contentColor else MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -612,7 +623,7 @@ val `OutlinedIconToggleButton Story` by story {
     val iconType by parameter(iconOptions, 0)
     val iconContentDescription by parameter("Outlined Icon Toggle Button")
     val iconSize by parameter(24f)
-    
+
     // Show different icons for different states
     val useDifferentIcons by parameter(false)
 
@@ -630,7 +641,7 @@ val `OutlinedIconToggleButton Story` by story {
     val disabledContentColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
 
     // Border
-    val useCustomBorder by parameter(false)
+    val useCustomBorder by parameter(true)
     val borderWidth by parameter(1f)
     val borderColor by parameter(MaterialTheme.colorScheme.primary)
     val checkedBorderColor by parameter(MaterialTheme.colorScheme.primary)
@@ -646,7 +657,7 @@ val `OutlinedIconToggleButton Story` by story {
         2 -> Icons.Filled.Star
         else -> Icons.Filled.Favorite
     }
-    
+
     val uncheckedIcon = if (useDifferentIcons) {
         when (iconOptions.indexOf(iconType)) {
             1 -> Icons.Outlined.Settings
@@ -702,7 +713,6 @@ val `OutlinedIconToggleButton Story` by story {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Surface(
-                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.padding(16.dp)
             ) {
                 OutlinedIconToggleButton(
@@ -718,13 +728,16 @@ val `OutlinedIconToggleButton Story` by story {
                     Icon(
                         imageVector = if (checked) checkedIcon else uncheckedIcon,
                         contentDescription = iconContentDescription,
-                        modifier = Modifier.size(iconSize.dp)
+                        modifier = Modifier.size(iconSize.dp),
+                        tint = if (useCustomColors) {
+                            if (checked) checkedContentColor else contentColor
+                        } else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Display button state
             Text(
                 text = if (checked) "Selected" else "Not selected",

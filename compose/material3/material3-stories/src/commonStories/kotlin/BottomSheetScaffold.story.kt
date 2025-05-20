@@ -104,6 +104,7 @@ val `BottomSheetScaffold Story` by story {
                     Text(
                         text = "Bottom Sheet Content",
                         style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
@@ -115,9 +116,9 @@ val `BottomSheetScaffold Story` by story {
             // Sheet parameters
             sheetPeekHeight = sheetPeekHeightDp.dp,
             sheetMaxWidth = sheetMaxWidthDp.dp,
-            sheetContainerColor = if (customSheetColors) sheetContainerColor else BottomSheetDefaults.ContainerColor,
-            sheetContentColor = if (customSheetColors) sheetContentColor else contentColorFor(sheetContainerColor),
-            sheetShadowElevation = BottomSheetDefaults.Elevation,
+            sheetContainerColor = if (customSheetColors) sheetContainerColor else MaterialTheme.colorScheme.surfaceContainerHigh, // Using surfaceContainerHigh for better contrast in dark theme
+            sheetContentColor = if (customSheetColors) sheetContentColor else MaterialTheme.colorScheme.onSurface, // Using onSurface for better visibility of content in dark theme
+            sheetShadowElevation = 8.dp, // Increased from BottomSheetDefaults.Elevation for better visibility in dark theme
             sheetDragHandle = if (showDragHandle) {
                 { BottomSheetDefaults.DragHandle() }
             } else {
@@ -128,7 +129,7 @@ val `BottomSheetScaffold Story` by story {
             topBar = if (showTopBar) {
                 {
                     TopAppBar(
-                        title = { Text("BottomSheetScaffold") },
+                        title = { Text("BottomSheetScaffold", color = MaterialTheme.colorScheme.onSurface) },
                         navigationIcon = {
                             IconButton(onClick = {}) {
                                 Icon(Icons.Default.Menu, contentDescription = "Menu")
@@ -138,7 +139,7 @@ val `BottomSheetScaffold Story` by story {
                             containerColor = if (customScaffoldColors)
                                 scaffoldContainerColor
                             else
-                                MaterialTheme.colorScheme.surface
+                                TopAppBarDefaults.topAppBarColors().containerColor
                         )
                     )
                 }
@@ -152,8 +153,8 @@ val `BottomSheetScaffold Story` by story {
             },
 
             // Scaffold colors
-            containerColor = if (customScaffoldColors) scaffoldContainerColor else MaterialTheme.colorScheme.surface,
-            contentColor = if (customScaffoldColors) scaffoldContentColor else contentColorFor(scaffoldContainerColor),
+            containerColor = if (customScaffoldColors) scaffoldContainerColor else MaterialTheme.colorScheme.surface, // Using surface for better contrast with the bottom sheet
+            contentColor = if (customScaffoldColors) scaffoldContentColor else MaterialTheme.colorScheme.onSurface, // Using onSurface for better visibility of content in dark theme
 
             // Main content
             content = { paddingValues ->
@@ -165,7 +166,8 @@ val `BottomSheetScaffold Story` by story {
                 ) {
                     Text(
                         text = "Main Content Area",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             },

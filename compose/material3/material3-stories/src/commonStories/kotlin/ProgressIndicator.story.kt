@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import org.jetbrains.compose.storytale.story
 
 
@@ -76,7 +77,7 @@ val `CircularProgressIndicator Story` by story {
             )
 
             Spacer(Modifier.height(16.dp))
-            Text("Progress: ${(progress * 100).toInt()}%")
+            Text("Progress: ${(progress * 100).toInt()}%", color = MaterialTheme.colorScheme.onSurface)
             Slider(
                 modifier = Modifier.width(300.dp),
                 value = progress,
@@ -130,7 +131,7 @@ val `LinearProgressIndicator Story` by story {
             )
 
             Spacer(Modifier.height(16.dp))
-            Text("Progress: ${(progress * 100).toInt()}%")
+            Text("Progress: ${(progress * 100).toInt()}%", color = MaterialTheme.colorScheme.onSurface)
             Slider(
                 modifier = Modifier.width(280.dp),
                 value = progress,

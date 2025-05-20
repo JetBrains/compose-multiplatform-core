@@ -50,7 +50,8 @@ val `Switch Story` by story {
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = if (checked) "ON" else "OFF",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

@@ -248,7 +248,8 @@ val `PrimaryTabRow Story` by story {
                 )
                 Text(
                     text = "${tabs[selectedTabIndex].first} Content",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -396,11 +397,12 @@ val `ScrollableTabRow Story` by story {
                     imageVector = tabs[selectedTabIndex].second,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
                     text = "${tabs[selectedTabIndex].first} Content",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -538,7 +540,8 @@ val `SecondaryTabRow Story` by story {
                 )
                 Text(
                     text = "${tabs[selectedTabIndex].first} Content",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -691,7 +694,8 @@ val `SecondaryScrollableTabRow Story` by story {
                 )
                 Text(
                     text = "${tabs[selectedTabIndex].first} Content",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -847,7 +851,8 @@ val `PrimaryScrollableTabRow Story` by story {
                 )
                 Text(
                     text = "${tabs[selectedTabIndex].first} Content",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

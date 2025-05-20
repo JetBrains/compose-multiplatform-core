@@ -158,8 +158,8 @@ val `OutlinedTextField Story` by story {
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
-                    placeholder = { Text(placeholder) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
+                    placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = if (showLeadingIcon) { 
                         { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
                     } else null,

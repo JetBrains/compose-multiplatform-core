@@ -45,18 +45,18 @@ val `DatePickerDialog Story` by story {
 
     // State to store the selected date
     var selectedDate by remember { mutableStateOf<Long?>(null) }
-    
+
     // Simple function to convert timestamp to readable format
     fun formatDate(timestamp: Long?): String {
         if (timestamp == null) return "No date selected"
-        
+
         // Calculate days since epoch (Jan 1, 1970)
         val daysSinceEpoch = timestamp / (1000 * 60 * 60 * 24)
-        
+
         // Calculate year, month and day
         var remainingDays = daysSinceEpoch
         var year = 1970
-        
+
         // Account for leap years
         while (true) {
             val daysInYear = if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) 366 else 365
@@ -64,42 +64,43 @@ val `DatePickerDialog Story` by story {
             remainingDays -= daysInYear
             year++
         }
-        
+
         // Determine month and day
         val daysInMonth = arrayOf(31, if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
         var month = 0
-        
+
         while (month < 12) {
             if (remainingDays < daysInMonth[month]) break
             remainingDays -= daysInMonth[month]
             month++
         }
-        
+
         val day = remainingDays.toInt() + 1
         month += 1  // Adjust month to be 1-based
-        
+
         // Month names
         val monthNames = arrayOf("January", "February", "March", "April", "May", "June", 
                                 "July", "August", "September", "October", "November", "December")
-        
+
         return "${monthNames[month-1]} $day, $year"
     }
 
     Surface(
-        modifier = Modifier.width(400.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(400.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "DatePickerDialog Demo",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "The DatePickerDialog component displays a DatePicker in a modal dialog.",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -109,7 +110,7 @@ val `DatePickerDialog Story` by story {
                 onClick = { showDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Show Date Picker Dialog")
+                Text("Show Date Picker Dialog", color = MaterialTheme.colorScheme.onSurface)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -117,7 +118,8 @@ val `DatePickerDialog Story` by story {
             // Display the selected date in a human-readable format
             Text(
                 text = "Selected date: ${formatDate(selectedDate)}",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // Show the DatePickerDialog when showDialog is true
@@ -133,14 +135,14 @@ val `DatePickerDialog Story` by story {
                                 showDialog = false
                             }
                         ) {
-                            Text("OK")
+                            Text("OK", color = MaterialTheme.colorScheme.primary)
                         }
                     },
                     dismissButton = {
                         TextButton(
                             onClick = { showDialog = false }
                         ) {
-                            Text("Cancel")
+                            Text("Cancel", color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 ) {

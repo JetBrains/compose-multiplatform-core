@@ -59,7 +59,8 @@ val `RadioButton Story` by story {
         Text(
             text = if (selected) "Selected" else "Not selected",
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.width(120.dp) // Fixed width to prevent movement
+            modifier = Modifier.width(120.dp), // Fixed width to prevent movement
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

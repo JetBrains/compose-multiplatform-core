@@ -66,7 +66,10 @@ val `BasicAlertDialog Story` by story {
     val showIcon by parameter(true)
 
     // Surface parameters
-    val surfaceColor by parameter(Color.White)
+    val surfaceColor by parameter(MaterialTheme.colorScheme.surface)
+
+    // Color parameters
+    val textColor by parameter(AlertDialogDefaults.textContentColor)
 
     // State to control dialog visibility
     var showDialog by remember { mutableStateOf(false) }
@@ -102,7 +105,7 @@ val `BasicAlertDialog Story` by story {
                             imageVector = Icons.Filled.Info,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = textColor
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -110,7 +113,8 @@ val `BasicAlertDialog Story` by story {
                     Text(
                         text = dialogText,
                         style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        color = textColor
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -124,17 +128,17 @@ val `BasicAlertDialog Story` by story {
                             TextButton(
                                 onClick = { showDialog = false }
                             ) {
-                                Text(dismissButtonText)
+                                Text(dismissButtonText, color = textColor)
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
 
                             TextButton(
-                                onClick = { 
+                                onClick = {
                                     showDialog = false
                                 }
                             ) {
-                                Text(confirmButtonText)
+                                Text(confirmButtonText, color = textColor)
                             }
                         }
                     }
@@ -194,7 +198,7 @@ val `AlertDialog Story` by story {
                 TextButton(
                     onClick = { showDialog = false }
                 ) {
-                    Text(confirmButtonText)
+                    Text(confirmButtonText, color = textContentColor)
                 }
             },
             dismissButton = if (showDismissButton) {
@@ -202,7 +206,7 @@ val `AlertDialog Story` by story {
                     TextButton(
                         onClick = { showDialog = false }
                     ) {
-                        Text(dismissButtonText)
+                        Text(dismissButtonText, color = textContentColor)
                     }
                 }
             } else null,
@@ -213,12 +217,13 @@ val `AlertDialog Story` by story {
                             IconType.Info -> Icons.Filled.Info
                             IconType.Warning -> Icons.Filled.Warning
                         },
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = iconContentColor
                     )
                 }
             } else null,
-            title = { Text(title) },
-            text = { Text(text) },
+            title = { Text(title, color = titleContentColor) },
+            text = { Text(text, color = textContentColor) },
             shape = MaterialTheme.shapes.large,
             containerColor = containerColor,
             iconContentColor = iconContentColor,

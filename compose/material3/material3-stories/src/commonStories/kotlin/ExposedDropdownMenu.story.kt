@@ -47,13 +47,13 @@ val `ExposedDropdownMenuBox Story` by story {
     val options = listOf("Option 1", "Option 2", "Option 3", "Option 4", "Option 5")
 
     Surface(
-        modifier = Modifier.width(400.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(400.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Exposed Dropdown Menu",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -82,7 +82,7 @@ val `ExposedDropdownMenuBox Story` by story {
                 ) {
                     options.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option) },
+                            text = { Text(option, color = MaterialTheme.colorScheme.onSurface) },
                             onClick = {
                                 selectedOption = option
                                 expanded = false

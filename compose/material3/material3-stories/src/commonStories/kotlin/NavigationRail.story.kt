@@ -63,7 +63,7 @@ val `NavigationRail Story` by story {
     val useCustomColors by parameter(false)
     val containerColor by parameter(MaterialTheme.colorScheme.surface)
     val contentColor by parameter(MaterialTheme.colorScheme.onSurface)
-    
+
     // Item color parameters
     val useCustomItemColors by parameter(false)
     val selectedIconColor by parameter(MaterialTheme.colorScheme.primary)
@@ -73,14 +73,14 @@ val `NavigationRail Story` by story {
 
     // State
     var selectedItem by remember { mutableIntStateOf(0) }
-    
+
     // Define items based on the selected count
     val items = when (itemCount) {
         "Five" -> listOf("Home", "Messages", "Favorites", "Profile", "Settings")
         "Four" -> listOf("Home", "Messages", "Favorites", "Profile")
         else -> listOf("Home", "Favorites", "Profile")
     }
-    
+
     // Define selected icons
     val selectedIcons = listOf(
         Icons.Filled.Home,
@@ -89,7 +89,7 @@ val `NavigationRail Story` by story {
         Icons.Filled.Person,
         Icons.Filled.Settings
     )
-    
+
     // Define unselected icons (used only if useDifferentIconsForStates is true)
     val unselectedIcons = listOf(
         Icons.Outlined.Home,
@@ -98,7 +98,7 @@ val `NavigationRail Story` by story {
         Icons.Outlined.Person,
         Icons.Outlined.Settings
     )
-    
+
     Box(
         modifier = Modifier.width(380.dp)
     ) {
@@ -140,7 +140,7 @@ val `NavigationRail Story` by story {
                     )
                 }
             }
-            
+
             // Content area to show the NavigationRail in context
             Box(
                 modifier = Modifier
@@ -152,6 +152,7 @@ val `NavigationRail Story` by story {
                     Text(
                         text = "Context area",
                         style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Icon(
                         imageVector = selectedIcons[selectedItem.coerceIn(0, selectedIcons.size - 1)],
@@ -173,11 +174,11 @@ val `NavigationRailItem Story` by story {
     // Icon parameters
     val iconOptions = listOf("Home", "Messages", "Favorites", "Profile", "Settings")
     val iconType by parameter(iconOptions, 0)
-    
+
     // Label parameters
     val showLabel by parameter(true)
     val labelText by parameter("Home")
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val selectedIconColor by parameter(MaterialTheme.colorScheme.primary)
@@ -187,13 +188,13 @@ val `NavigationRailItem Story` by story {
     val unselectedTextColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
     val disabledIconColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
     val disabledTextColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
-    
+
     // Size
     val iconSize by parameter(24f)
-    
+
     // Interaction source for showing interaction states
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     // Get the appropriate icon
     val icon = when (iconOptions.indexOf(iconType)) {
         1 -> Icons.Filled.Email
@@ -202,7 +203,7 @@ val `NavigationRailItem Story` by story {
         4 -> Icons.Filled.Settings
         else -> Icons.Filled.Home
     }
-    
+
     // Create colors
     val colors = if (useCustomColors) {
         NavigationRailItemDefaults.colors(
@@ -217,14 +218,14 @@ val `NavigationRailItem Story` by story {
     } else {
         NavigationRailItemDefaults.colors()
     }
-    
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp,
+            tonalElevation = 6.dp,
             modifier = Modifier.width(72.dp)
         ) {
             Column(

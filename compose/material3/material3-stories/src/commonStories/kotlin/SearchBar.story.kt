@@ -91,7 +91,7 @@ val `DockedSearchBar Story` by story {
                             expanded = true
                         }
                     },
-                    placeholder = { Text(placeholder) },
+                    placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -136,13 +136,13 @@ val `DockedSearchBar Story` by story {
                     if (filteredResults.isEmpty() && query.isNotEmpty()) {
                         item {
                             ListItem(
-                                headlineContent = { Text("No results found for \"$query\"") }
+                                headlineContent = { Text("No results found for \"$query\"", color = MaterialTheme.colorScheme.onSurface) }
                             )
                         }
                     } else {
                         items(filteredResults) { result ->
                             ListItem(
-                                headlineContent = { Text(result) },
+                                headlineContent = { Text(result, color = MaterialTheme.colorScheme.onSurface) },
                                 leadingContent = {
                                     Icon(
                                         Icons.Default.Search,
@@ -164,7 +164,8 @@ val `DockedSearchBar Story` by story {
         ) {
             Text(
                 text = "Search for something",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -214,7 +215,7 @@ val `SearchBar Story` by story {
                             expanded = true
                         }
                     },
-                    placeholder = { Text(placeholder) },
+                    placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -260,13 +261,13 @@ val `SearchBar Story` by story {
                     if (filteredResults.isEmpty() && query.isNotEmpty()) {
                         item {
                             ListItem(
-                                headlineContent = { Text("No results found for \"$query\"") }
+                                headlineContent = { Text("No results found for \"$query\"", color = MaterialTheme.colorScheme.onSurface) }
                             )
                         }
                     } else {
                         items(filteredResults) { result ->
                             ListItem(
-                                headlineContent = { Text(result) },
+                                headlineContent = { Text(result, color = MaterialTheme.colorScheme.onSurface) },
                                 leadingContent = {
                                     Icon(
                                         Icons.Default.Search,
@@ -288,7 +289,8 @@ val `SearchBar Story` by story {
         ) {
             Text(
                 text = "Search for something",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

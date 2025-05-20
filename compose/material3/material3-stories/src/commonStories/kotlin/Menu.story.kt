@@ -51,14 +51,13 @@ val `DropdownMenu Story` by story {
     // Menu customization parameters
     val numItems by parameter(4) // Values between 1-4
     val menuWidth by parameter(180f)
-    val useLightBackground by parameter(false)
-    
+    val useHighlightedBackground by parameter(false)
+
     // State to control menu visibility
     var showMenu by remember { mutableStateOf(false) }
-    
+
     Surface(
-        modifier = Modifier.padding(16.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.padding(16.dp)
     ) {
         Column(
             modifier = Modifier
@@ -70,9 +69,9 @@ val `DropdownMenu Story` by story {
                 "DropdownMenu Demo",
                 style = MaterialTheme.typography.titleMedium
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Container with fixed height that holds both the button and menu
             Box(
                 modifier = Modifier.height(300.dp),
@@ -87,7 +86,7 @@ val `DropdownMenu Story` by story {
                         contentDescription = "Menu"
                     )
                 }
-                
+
                 // Custom menu implementation using ElevatedCard
                 if (showMenu) {
                     ElevatedCard(
@@ -95,11 +94,15 @@ val `DropdownMenu Story` by story {
                             .padding(top = 40.dp)
                             .width(menuWidth.dp),
                         shape = RoundedCornerShape(4.dp),
+                        elevation = CardDefaults.elevatedCardElevation(
+                            defaultElevation = 8.dp, // Increased elevation for better visibility in dark theme
+                            pressedElevation = 12.dp
+                        ),
                         colors = CardDefaults.elevatedCardColors(
-                            containerColor = if (useLightBackground) 
+                            containerColor = if (useHighlightedBackground)
                                 MaterialTheme.colorScheme.surfaceContainerLow
                             else 
-                                MaterialTheme.colorScheme.surface
+                                MaterialTheme.colorScheme.surfaceContainerHigh // Using surfaceContainerHigh for better contrast in dark theme
                         )
                     ) {
                         Column(
@@ -108,63 +111,87 @@ val `DropdownMenu Story` by story {
                             // Menu items - show based on numItems parameter (values 1-4)
                             if (numItems >= 1) {
                                 DropdownMenuItem(
-                                    text = { Text("Create New Item") },
+                                    text = { Text("Create New Item", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = { showMenu = false },
                                     leadingIcon = { 
                                         Icon(
                                             imageVector = Icons.Filled.Add,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
-                                    }
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface,
+                                        leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                                        trailingIconColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
-                            
+
                             if (numItems >= 2) {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Profile") },
+                                    text = { Text("Edit Profile", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = { showMenu = false },
                                     leadingIcon = { 
                                         Icon(
                                             imageVector = Icons.Filled.Person,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
-                                    }
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface,
+                                        leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                                        trailingIconColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
-                            
+
                             if (numItems >= 3) {
                                 DropdownMenuItem(
-                                    text = { Text("Add to Favorites") },
+                                    text = { Text("Add to Favorites", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = { showMenu = false },
                                     leadingIcon = { 
                                         Icon(
                                             imageVector = Icons.Filled.Favorite,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
-                                    }
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface,
+                                        leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                                        trailingIconColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
-                            
+
                             if (numItems >= 4) {
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 DropdownMenuItem(
-                                    text = { Text("Share with Friends") },
+                                    text = { Text("Share with Friends", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = { showMenu = false },
                                     leadingIcon = { 
                                         Icon(
                                             imageVector = Icons.Filled.Share,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
-                                    }
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface,
+                                        leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                                        trailingIconColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
                         }
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 "Click the Menu button to open the dropdown. " +
                     "Valid values for the numItems parameter " +
@@ -185,14 +212,15 @@ val `DropdownMenuItem Story` by story {
     MenuDefaults.DropdownMenuItemContentPadding
 
     DropdownMenuItem(
-        text = { Text(itemText) },
+        text = { Text(itemText, color = MaterialTheme.colorScheme.onSurface) },
         onClick = { /* Action on click */ },
         modifier = Modifier.width(200.dp),
         leadingIcon = if (showLeadingIcon) {
             {
                 Icon(
                     Icons.Filled.Favorite,
-                    contentDescription = "Add to favorites"
+                    contentDescription = "Add to favorites",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         } else null,
@@ -200,10 +228,19 @@ val `DropdownMenuItem Story` by story {
             {
                 Icon(
                     Icons.Filled.Check,
-                    contentDescription = "Selected"
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         } else null,
-        enabled = enabled
+        enabled = enabled,
+        colors = MenuDefaults.itemColors(
+            textColor = MaterialTheme.colorScheme.onSurface,
+            leadingIconColor = MaterialTheme.colorScheme.onSurface,
+            trailingIconColor = MaterialTheme.colorScheme.onSurface,
+            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        )
     )
 }

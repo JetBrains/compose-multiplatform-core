@@ -64,8 +64,8 @@ val `PermanentNavigationDrawer Story` by story {
         Icons.Default.Home,
         Icons.Default.Email,
         Icons.Default.Favorite,
-        Icons.Default.Settings,
-        Icons.Default.Face
+        Icons.Default.Face,
+        Icons.Default.Settings
     ).take(numItems)
 
     PermanentNavigationDrawer(
@@ -103,10 +103,11 @@ val `PermanentNavigationDrawer Story` by story {
             ) {
                 Text(
                     contentTitle,
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.height(20.dp))
-                Text("Selected: ${items[selectedItem]}")
+                Text("Selected: ${items[selectedItem]}", color = MaterialTheme.colorScheme.primary)
             }
         }
     )

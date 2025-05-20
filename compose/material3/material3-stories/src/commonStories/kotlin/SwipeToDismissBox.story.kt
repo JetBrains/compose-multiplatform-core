@@ -75,7 +75,8 @@ val `SwipeToDismissBox Story` by story {
     ) {
         Text(
             "SwipeToDismissBox Demonstration",
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
         )
 
         // Status display
@@ -90,7 +91,8 @@ val `SwipeToDismissBox Story` by story {
         Box(modifier = Modifier.height(24.dp)) {
             Text(
                 "Current state: $directionText",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -109,7 +111,7 @@ val `SwipeToDismissBox Story` by story {
                         // Use Card to match the main content's styling
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                             colors = CardDefaults.cardColors(containerColor = startToEndColor)
                         ) {
                             Row(
@@ -136,7 +138,7 @@ val `SwipeToDismissBox Story` by story {
                         // Use Card to match the main content's styling for EndToStart direction
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                             colors = CardDefaults.cardColors(containerColor = endToStartColor)
                         ) {
                             Row(
@@ -175,7 +177,7 @@ val `SwipeToDismissBox Story` by story {
                 content = {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -227,15 +229,18 @@ val `SwipeToDismissBox Story` by story {
         ) {
             Text(
                 "Configuration:",
-                style = MaterialTheme.typography.titleSmall
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 "Start to End: ${if (dismissFromStartToEnd) "Enabled" else "Disabled"}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 "End to Start: ${if (dismissFromEndToStart) "Enabled" else "Disabled"}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

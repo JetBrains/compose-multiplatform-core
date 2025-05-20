@@ -46,7 +46,7 @@ val `Slider Story` by story {
     // Parameters for customization
     var sliderValue by parameter(0.5f)
     val enabled by parameter(true)
-    val useCustomColors by parameter(true)
+    val useCustomColors by parameter(false)
     val activeTrackColor by parameter(Color.Black)
     val inactiveTrackColor by parameter(Color.LightGray)
     val thumbColor by parameter(Color.Blue)
@@ -74,7 +74,8 @@ val `Slider Story` by story {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Current value: ${(sliderValue * 100).toInt()}%",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
@@ -100,7 +101,8 @@ val `RangeSlider Story` by story {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Selected range: ${(sliderPosition.start * 100).toInt()}% - ${(sliderPosition.endInclusive * 100).toInt()}%",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

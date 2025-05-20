@@ -137,7 +137,7 @@ val `Snackbar Story` by story {
                         action = if (showActionButton && data.visuals.actionLabel != null) {
                             {
                                 TextButton(onClick = { data.performAction() }) {
-                                    Text(data.visuals.actionLabel ?: "")
+                                    Text(data.visuals.actionLabel ?: "", color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         } else null,

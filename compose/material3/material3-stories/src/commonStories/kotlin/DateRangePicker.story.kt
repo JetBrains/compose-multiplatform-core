@@ -42,8 +42,7 @@ val `DateRangePicker Story` by story {
 
     Row(modifier = Modifier.sizeIn(maxWidth = 450.dp)) {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.background
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -51,7 +50,8 @@ val `DateRangePicker Story` by story {
             ) {
                 Text(
                     text = "DateRangePicker with Selectable Dates",
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -63,6 +63,7 @@ val `DateRangePicker Story` by story {
                         "Allows today and future dates."
                     },
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth()
                 )
 

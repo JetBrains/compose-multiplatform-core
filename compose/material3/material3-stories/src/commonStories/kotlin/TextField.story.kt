@@ -25,6 +25,7 @@ import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.getValue
@@ -32,7 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -157,7 +159,8 @@ val `TextField Story` by story {
                 "With Prefix and Suffix" -> "Use common parameters and prefix/suffix parameters (prefix, suffix) for this variant."
                 else -> ""
             },
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         when (variant) {
@@ -166,8 +169,8 @@ val `TextField Story` by story {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
-                    placeholder = { Text(placeholder) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
+                    placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurface) },
                     enabled = enabled,
                     readOnly = readOnly,
                     modifier = Modifier.padding(8.dp)
@@ -178,7 +181,7 @@ val `TextField Story` by story {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = if (showLeadingIcon) { 
                         { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
                     } else null,
@@ -204,7 +207,7 @@ val `TextField Story` by story {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
                     visualTransformation = if (passwordVisible || !hidePassword) 
                         VisualTransformation.None 
                     else 
@@ -238,7 +241,7 @@ val `TextField Story` by story {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
                     isError = isError,
                     supportingText = {
                         if (isError) {
@@ -258,9 +261,9 @@ val `TextField Story` by story {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
-                    prefix = { Text(prefix) },
-                    suffix = { Text(suffix) },
+                    label = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
+                    prefix = { Text(prefix, color = MaterialTheme.colorScheme.onSurface) },
+                    suffix = { Text(suffix, color = MaterialTheme.colorScheme.onSurface) },
                     enabled = enabled,
                     readOnly = readOnly,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

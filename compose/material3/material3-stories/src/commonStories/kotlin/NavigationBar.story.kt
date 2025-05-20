@@ -104,7 +104,6 @@ val `NavigationBar Story` by story {
     )
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
         modifier = Modifier.width(400.dp).height(500.dp)
     ) {
         Column(
@@ -135,8 +134,7 @@ val `NavigationBar Story` by story {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Selected item: ${selectedItem + 1} of ${items.size}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -246,8 +244,7 @@ val `NavigationBarItem Story` by story {
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp,
+            tonalElevation = 6.dp,
             modifier = Modifier.width(400.dp)
         ) {
             Column(
@@ -264,14 +261,12 @@ val `NavigationBarItem Story` by story {
                 Text(
                     text = "State: ${if (enabled) "Enabled" else "Disabled"}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
                 // The NavigationBar with a single item
                 NavigationBar(
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     // Single NavigationBarItem in a RowScope
                     NavigationBarItem(

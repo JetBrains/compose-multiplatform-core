@@ -49,7 +49,8 @@ val `Text Story` by story {
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
             text = text,
-            fontSize = fontSize.sp
+            fontSize = fontSize.sp,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

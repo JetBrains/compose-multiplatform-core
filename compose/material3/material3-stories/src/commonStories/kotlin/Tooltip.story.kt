@@ -77,7 +77,8 @@ val `PlainTooltip Story` by story {
                 Icon(
                     imageVector = Icons.Filled.Favorite,
                     contentDescription = "Favorite",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -120,7 +121,8 @@ val `TooltipBox Story` by story {
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = "Show Tooltip",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -166,7 +168,8 @@ val `RichTooltip Story` by story {
                 Icon(
                     imageVector = Icons.Filled.Info,
                     contentDescription = "Information",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

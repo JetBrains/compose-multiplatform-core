@@ -54,41 +54,41 @@ val `FloatingActionButton Story` by story {
     val iconOptions = listOf("Add", "Edit", "Home")
     val iconType by parameter(iconOptions, 0)
     val iconContentDescription by parameter("Action")
-    
+
     // Shape parameters
     val useCustomShape by parameter(false)
     val cornerRadius by parameter(16f)
-    
+
     // Size parameters
     val fabSize by parameter(56f)
     val iconSize by parameter(24f)
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val containerColor by parameter(Color(0xFF6200EE))
     val contentColor by parameter(Color.White)
-    
+
     // Elevation parameters
     val useCustomElevation by parameter(false)
     val defaultElevation by parameter(3f)
     val pressedElevation by parameter(6f)
     val focusedElevation by parameter(6f)
     val hoveredElevation by parameter(8f)
-    
+
     // Determine which icon to use based on the parameter
     val icon = when (iconOptions.indexOf(iconType)) {
         1 -> Icons.Filled.Edit
         2 -> Icons.Filled.Home
         else -> Icons.Filled.Add
     }
-    
+
     // Create shape
     val shape: Shape = if (useCustomShape) {
         RoundedCornerShape(cornerRadius.dp)
     } else {
         FloatingActionButtonDefaults.shape
     }
-    
+
     // Create elevation
     val elevation = if (useCustomElevation) {
         FloatingActionButtonDefaults.elevation(
@@ -100,12 +100,11 @@ val `FloatingActionButton Story` by story {
     } else {
         FloatingActionButtonDefaults.elevation()
     }
-    
+
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     Surface(
-        modifier = Modifier.width(380.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(380.dp)
     ) {
         Box(
             modifier = Modifier.padding(14.dp),
@@ -135,40 +134,40 @@ val `LargeFloatingActionButton Story` by story {
     val iconOptions = listOf("Add", "Edit", "Home")
     val iconType by parameter(iconOptions, 0)
     val iconContentDescription by parameter("Action")
-    
+
     // Shape parameters
     val useCustomShape by parameter(false)
     val cornerRadius by parameter(16f)
-    
+
     // Size parameters
     val iconSize by parameter(36f)
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val containerColor by parameter(Color(0xFF6200EE))
     val contentColor by parameter(Color.White)
-    
+
     // Elevation parameters
     val useCustomElevation by parameter(false)
     val defaultElevation by parameter(6f)
     val pressedElevation by parameter(12f)
     val focusedElevation by parameter(10f)
     val hoveredElevation by parameter(8f)
-    
+
     // Determine which icon to use based on the parameter
     val icon = when (iconOptions.indexOf(iconType)) {
         1 -> Icons.Filled.Edit
         2 -> Icons.Filled.Home
         else -> Icons.Filled.Add
     }
-    
+
     // Create shape
     val shape: Shape = if (useCustomShape) {
         RoundedCornerShape(cornerRadius.dp)
     } else {
         FloatingActionButtonDefaults.largeShape
     }
-    
+
     // Create elevation
     val elevation = if (useCustomElevation) {
         FloatingActionButtonDefaults.elevation(
@@ -180,12 +179,11 @@ val `LargeFloatingActionButton Story` by story {
     } else {
         FloatingActionButtonDefaults.elevation()
     }
-    
+
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     Surface(
-        modifier = Modifier.width(380.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(380.dp)
     ) {
         Box(
             modifier = Modifier.padding(16.dp),
@@ -213,15 +211,14 @@ val `ExtendedFloatingActionButton Story` by story {
     // Basic parameters
     val buttonText by parameter("Extended")
     val showIcon by parameter(true)
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val containerColor by parameter(Color(0xFF6200EE))
     val contentColor by parameter(Color.White)
-    
+
     Surface(
-        modifier = Modifier.width(380.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(380.dp)
     ) {
         Box(
             modifier = Modifier.padding(16.dp),
@@ -253,40 +250,40 @@ val `SmallFloatingActionButton Story` by story {
     val iconOptions = listOf("Add", "Edit", "Home")
     val iconType by parameter(iconOptions, 0)
     val iconContentDescription by parameter("Action")
-    
+
     // Shape parameters
     val useCustomShape by parameter(false)
     val cornerRadius by parameter(16f)
-    
+
     // Size parameters
     val iconSize by parameter(16f)
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val containerColor by parameter(Color(0xFF6200EE))
     val contentColor by parameter(Color.White)
-    
+
     // Elevation parameters
     val useCustomElevation by parameter(false)
     val defaultElevation by parameter(3f)
     val pressedElevation by parameter(6f)
     val focusedElevation by parameter(6f)
     val hoveredElevation by parameter(8f)
-    
+
     // Determine which icon to use based on the parameter
     val icon = when (iconOptions.indexOf(iconType)) {
         1 -> Icons.Filled.Edit
         2 -> Icons.Filled.Home
         else -> Icons.Filled.Add
     }
-    
+
     // Create shape
     val shape: Shape = if (useCustomShape) {
         RoundedCornerShape(cornerRadius.dp)
     } else {
         FloatingActionButtonDefaults.smallShape
     }
-    
+
     // Create elevation
     val elevation = if (useCustomElevation) {
         FloatingActionButtonDefaults.elevation(
@@ -298,12 +295,11 @@ val `SmallFloatingActionButton Story` by story {
     } else {
         FloatingActionButtonDefaults.elevation()
     }
-    
+
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     Surface(
-        modifier = Modifier.width(380.dp),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.width(380.dp)
     ) {
         Box(
             modifier = Modifier.padding(16.dp),

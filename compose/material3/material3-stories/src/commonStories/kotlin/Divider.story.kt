@@ -28,16 +28,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 import org.jetbrains.compose.storytale.story
 
 val `HorizontalDivider Story` by story {
     // Parameters for customization
     val thickness by parameter(1f)
-    val useCustomColor by parameter(false)
-    val customColor by parameter(Color.Red)
+    val useCustomColor by parameter(true)
+    val customColor by parameter<Color>(MaterialTheme.colorScheme.primary)
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Content above divider")
+        Text("Content above divider", color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.height(16.dp))
 
         HorizontalDivider(
@@ -47,21 +48,21 @@ val `HorizontalDivider Story` by story {
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Content below divider")
+        Text("Content below divider", color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
 val `VerticalDivider Story` by story {
     // Parameters for customization
     val thickness by parameter(1f)
-    val useCustomColor by parameter(false)
+    val useCustomColor by parameter(true)
     val customColor by parameter(Color.Blue)
 
     Row(
         modifier = Modifier.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Left content")
+        Text("Left content", color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.width(16.dp))
 
         VerticalDivider(
@@ -71,6 +72,6 @@ val `VerticalDivider Story` by story {
         )
 
         Spacer(modifier = Modifier.width(16.dp))
-        Text("Right content")
+        Text("Right content", color = MaterialTheme.colorScheme.onSurface)
     }
 }

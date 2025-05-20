@@ -94,7 +94,10 @@ val `Button Story` by story {
             disabledContentColor = disabledContentColor
         )
     } else {
-        ButtonDefaults.buttonColors()
+        ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF6200EE),
+            contentColor = Color.White
+        )
     }
 
     val elevation = if (useCustomElevation) {
@@ -152,7 +155,7 @@ val `Button Story` by story {
                     modifier = Modifier.size(18.dp).padding(end = 8.dp)
                 )
             }
-            Text(buttonText)
+            Text(buttonText, color = if (useCustomColors) contentColor else Color.White)
             if (showIcon && iconPosition == "end") {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -207,7 +210,10 @@ val `ElevatedButton Story` by story {
             disabledContentColor = disabledContentColor
         )
     } else {
-        ButtonDefaults.elevatedButtonColors()
+        ButtonDefaults.elevatedButtonColors(
+            containerColor = Color(0xFF7E57C2),
+            contentColor = Color.White
+        )
     }
 
     val elevation = if (useCustomElevation) {
@@ -246,7 +252,7 @@ val `ElevatedButton Story` by story {
                     modifier = Modifier.size(18.dp).padding(end = 8.dp)
                 )
             }
-            Text(buttonText)
+            Text(buttonText, color = if (useCustomColors) contentColor else Color.White)
             if (showIcon && iconPosition == "end") {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -304,7 +310,10 @@ val `OutlinedButton Story` by story {
             disabledContentColor = disabledContentColor
         )
     } else {
-        ButtonDefaults.outlinedButtonColors()
+        ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = Color(0xFF6200EE)
+        )
     }
 
     val border = if (useCustomBorder) {
@@ -314,7 +323,7 @@ val `OutlinedButton Story` by story {
             BorderStroke(width = borderWidth.dp, color = disabledBorderColor)
         }
     } else {
-        ButtonDefaults.outlinedButtonBorder(enabled)
+        BorderStroke(width = 1.dp, color = Color(0xFF6200EE))
     }
 
     val contentPadding = if (useCustomPadding) {
@@ -353,7 +362,7 @@ val `OutlinedButton Story` by story {
                     modifier = Modifier.size(18.dp).padding(end = 8.dp)
                 )
             }
-            Text(buttonText)
+            Text(buttonText, color = if (useCustomColors) contentColor else Color(0xFF6200EE))
             if (showIcon && iconPosition == "end") {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -418,7 +427,10 @@ val `FilledTonalButton Story` by story {
             disabledContentColor = disabledContentColor
         )
     } else {
-        ButtonDefaults.filledTonalButtonColors()
+        ButtonDefaults.filledTonalButtonColors(
+            containerColor = Color(0xFFE8DEF8),
+            contentColor = Color(0xFF6200EE)
+        )
     }
 
     val elevation = if (useCustomElevation) {
@@ -476,7 +488,7 @@ val `FilledTonalButton Story` by story {
                     modifier = Modifier.size(18.dp).padding(end = 8.dp)
                 )
             }
-            Text(buttonText)
+            Text(buttonText, color = if (useCustomColors) contentColor else Color(0xFF6200EE))
             if (showIcon && iconPosition == "end") {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -533,7 +545,10 @@ val `TextButton Story` by story {
             disabledContentColor = disabledContentColor
         )
     } else {
-        ButtonDefaults.textButtonColors()
+        ButtonDefaults.textButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = Color(0xFF6200EE)
+        )
     }
 
     val border = if (useCustomBorder) {
@@ -578,7 +593,7 @@ val `TextButton Story` by story {
                     modifier = Modifier.size(18.dp).padding(end = 8.dp)
                 )
             }
-            Text(buttonText)
+            Text(buttonText, color = if (useCustomColors) contentColor else Color(0xFF6200EE))
             if (showIcon && iconPosition == "end") {
                 Icon(
                     imageVector = Icons.Filled.Add,

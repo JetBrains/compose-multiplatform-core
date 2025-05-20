@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -92,7 +93,8 @@ val `SegmentedButton Story` by story {
                         Icon(
                             imageVector = icon,
                             contentDescription = iconContentDescription,
-                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize),
+                            tint = if (useCustomColors) customContentColor else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -174,7 +176,8 @@ val `MultiChoiceSegmentedButtonRow Story` by story {
                             Icon(
                                 imageVector = icons[index],
                                 contentDescription = null,
-                                modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                                modifier = Modifier.size(SegmentedButtonDefaults.IconSize),
+                                tint = if (useCustomColors) customContentColor else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
