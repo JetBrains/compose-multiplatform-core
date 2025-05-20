@@ -23,12 +23,16 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
+import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
+import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.Runtime
 import androidx.xr.runtime.internal.RuntimeFactory
+import androidx.xr.runtime.internal.UnsupportedDeviceException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.TimeSource
@@ -105,6 +109,29 @@ public constructor(
         public fun create(
             activity: Activity,
             coroutineContext: CoroutineContext = CoroutineContexts.Lightweight,
+        ): SessionCreateResult = create(activity, coroutineContext, false)
+
+        /**
+         * Creates a new [Session].
+         *
+         * @param activity the [Activity] that owns the session.
+         * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
+         *   coroutines.
+         * @param unscaledGravityAlignedActivitySpace whether to use the unscaled gravity aligned
+         *   activity space for the session. When true, causes ActivitySpace for this Session to
+         *   always be gravity aligned and to have a scale of [1 unit = 1 Meter]. Note that this
+         *   might result in visual inconsistencies between Homespace Mode and Fullspace Mode.
+         *   Defaults to False.
+         * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
+         *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
+         *   permissions haven't been granted.
+         */
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            activity: Activity,
+            coroutineContext: CoroutineContext = CoroutineContexts.Lightweight,
+            unscaledGravityAlignedActivitySpace: Boolean = false,
         ): SessionCreateResult {
             if (activitySessionMap.containsKey(activity)) {
                 return SessionCreateSuccess(activitySessionMap[activity]!!)
@@ -122,6 +149,14 @@ public constructor(
                 runtime?.lifecycleManager?.create()
             } catch (e: PermissionNotGrantedException) {
                 return SessionCreatePermissionsNotGranted(e.permissions)
+            } catch (e: ApkNotInstalledException) {
+                return SessionCreateApkRequired(e.requiredApk)
+            } catch (e: UnsupportedDeviceException) {
+                return SessionCreateUnsupportedDevice()
+            } catch (e: ApkCheckAvailabilityInProgressException) {
+                return SessionCreateApkRequired(e.requiredApk)
+            } catch (e: ApkCheckAvailabilityErrorException) {
+                return SessionCreateApkRequired(e.requiredApk)
             }
 
             val jxrPlatformAdapterFactory =
@@ -132,7 +167,11 @@ public constructor(
                     ),
                     features,
                 )
-            val jxrPlatformAdapter = jxrPlatformAdapterFactory?.createPlatformAdapter(activity)
+            val jxrPlatformAdapter =
+                jxrPlatformAdapterFactory?.createPlatformAdapter(
+                    activity,
+                    unscaledGravityAlignedActivitySpace,
+                )
 
             check(runtime != null || jxrPlatformAdapter != null) {
                 "Neither ARCore nor SceneCore are available. Did you forget to add a dependency?"

@@ -148,7 +148,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
 
     private final boolean mAdaptiveUpdateRatesEnabled;
     private boolean mWasFullyVisibleBefore;
-    private final boolean mAllowLayoutChangingBindsWithoutDefault;
 
     /** This keeps track of the current inflated parent for the layout. */
     private @Nullable ViewGroup mInflateParent = null;
@@ -377,7 +376,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         private final boolean mUpdatesEnabled;
         private final boolean mAdaptiveUpdateRatesEnabled;
         private final boolean mIsViewFullyVisible;
-        private final boolean mAllowLayoutChangingBindsWithoutDefault;
 
         Config(
                 @NonNull Context uiContext,
@@ -397,8 +395,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 int runningAnimationsLimit,
                 boolean updatesEnabled,
                 boolean adaptiveUpdateRatesEnabled,
-                boolean isViewFullyVisible,
-                boolean allowLayoutChangingBindsWithoutDefault) {
+                boolean isViewFullyVisible) {
             this.mUiContext = uiContext;
             this.mRendererResources = rendererResources;
             this.mResourceResolversProvider = resourceResolversProvider;
@@ -417,7 +414,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             this.mUpdatesEnabled = updatesEnabled;
             this.mAdaptiveUpdateRatesEnabled = adaptiveUpdateRatesEnabled;
             this.mIsViewFullyVisible = isViewFullyVisible;
-            this.mAllowLayoutChangingBindsWithoutDefault = allowLayoutChangingBindsWithoutDefault;
         }
 
         /** Returns UI Context used for interacting with the UI. */
@@ -521,18 +517,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             return mIsViewFullyVisible;
         }
 
-        /**
-         * Sets whether a "layout changing" data bind can be applied without the "value_for_layout"
-         * field being filled in, or being set to zero / empty. Defaults to false.
-         *
-         * <p>This is to support legacy apps which use layout-changing data bind before the full
-         * support was built.
-         */
-        @RestrictTo(Scope.LIBRARY)
-        public boolean getAllowLayoutChangingBindsWithoutDefault() {
-            return mAllowLayoutChangingBindsWithoutDefault;
-        }
-
         /** Builder for {@link Config}. */
         @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
         public static final class Builder {
@@ -558,7 +542,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             private boolean mUpdatesEnabled = true;
             private boolean mAdaptiveUpdateRatesEnabled = true;
             private boolean mIsViewFullyVisible = true;
-            private boolean mAllowLayoutChangingBindsWithoutDefault = false;
 
             /**
              * Builder for the {@link Config} class.
@@ -696,22 +679,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 return this;
             }
 
-            /**
-             * Sets whether a "layout changing" data bind can be applied without the
-             * "value_for_layout" field being filled in, or being set to zero / empty. Defaults to
-             * false.
-             *
-             * <p>This is to support legacy apps which use layout-changing data bind before the full
-             * support was built.
-             */
-            @RestrictTo(Scope.LIBRARY)
-            public @NonNull Builder setAllowLayoutChangingBindsWithoutDefault(
-                    boolean allowLayoutChangingBindsWithoutDefault) {
-                this.mAllowLayoutChangingBindsWithoutDefault =
-                        allowLayoutChangingBindsWithoutDefault;
-                return this;
-            }
-
             /** Builds {@link Config} object. */
             public @NonNull Config build() {
                 LoadActionListener loadActionListener = mLoadActionListener;
@@ -758,8 +725,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                         mRunningAnimationsLimit,
                         mUpdatesEnabled,
                         mAdaptiveUpdateRatesEnabled,
-                        mIsViewFullyVisible,
-                        mAllowLayoutChangingBindsWithoutDefault);
+                        mIsViewFullyVisible);
             }
         }
     }
@@ -778,8 +744,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         this.mLoggingUtils = config.getLoggingUtils();
         this.mAdaptiveUpdateRatesEnabled = config.getAdaptiveUpdateRatesEnabled();
         this.mWasFullyVisibleBefore = false;
-        this.mAllowLayoutChangingBindsWithoutDefault =
-                config.getAllowLayoutChangingBindsWithoutDefault();
         this.mProviderStatsLogger = config.getProviderStatsLogger();
 
         StateStore stateStore = config.getStateStore();
@@ -866,8 +830,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                         .setProtoLayoutTheme(mProtoLayoutTheme)
                         .setAnimationEnabled(mAnimationEnabled)
                         .setClickableIdExtra(mClickableIdExtra)
-                        .setAllowLayoutChangingBindsWithoutDefault(
-                                mAllowLayoutChangingBindsWithoutDefault)
                         .setInflaterStatsLogger(inflaterStatsLogger)
                         .setApplyFontVariantBodyAsDefault(true);
         if (mDataPipeline != null) {

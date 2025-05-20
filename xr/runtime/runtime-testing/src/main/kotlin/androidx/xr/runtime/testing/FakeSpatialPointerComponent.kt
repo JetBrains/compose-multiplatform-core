@@ -16,11 +16,13 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SpatialPointerComponent
 import androidx.xr.runtime.internal.SpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialPointerIconType
 
 /** Test-only implementation of [SpatialPointerComponent] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSpatialPointerComponent : SpatialPointerComponent, FakeComponent() {
 
     @SpatialPointerIconType private var spatialPointerIcon: Int = SpatialPointerIcon.TYPE_DEFAULT

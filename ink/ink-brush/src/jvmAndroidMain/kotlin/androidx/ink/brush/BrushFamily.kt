@@ -71,7 +71,6 @@ private constructor(
         @Suppress("UNUSED_PARAMETER") inputModel: InputModel = DEFAULT_INPUT_MODEL,
     ) : this(
         BrushFamilyNative.create(
-            useLegacySpringModel = false,
             coats.map { it.nativePointer }.toLongArray(),
             clientBrushFamilyId,
         ),
@@ -254,7 +253,10 @@ private constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
         @ExperimentalInkCustomBrushApi
         @JvmField
-        public val SPRING_MODEL: InputModel = SpringModel
+        public val SPRING_MODEL: InputModel =
+            object : InputModel() {
+                override fun toString(): String = "SpringModel"
+            }
 
         /** The default [InputModel] that will be used by a [BrushFamily] when none is specified. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
@@ -272,10 +274,6 @@ private constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @ExperimentalInkCustomBrushApi
     public abstract class InputModel internal constructor() {}
-
-    internal object SpringModel : InputModel() {
-        override fun toString(): String = "SpringModel"
-    }
 }
 
 /** Singleton wrapper around native JNI calls. */
@@ -287,24 +285,21 @@ private object BrushFamilyNative {
 
     /** Create underlying native object and return reference for all subsequent native calls. */
     @UsedByNative
-    public external fun create(
-        useLegacySpringModel: Boolean,
+    external fun create(
         coatNativePointers: LongArray,
         clientBrushFamilyId: String,
     ): Long
 
     /** Release the underlying memory allocated in [create]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
-    @UsedByNative public external fun getClientBrushFamilyId(nativePointer: Long): String
+    @UsedByNative external fun getClientBrushFamilyId(nativePointer: Long): String
 
-    @UsedByNative public external fun usesLegacySpringModel(nativePointer: Long): Boolean
-
-    @UsedByNative public external fun getBrushCoatCount(nativePointer: Long): Int
+    @UsedByNative external fun getBrushCoatCount(nativePointer: Long): Int
 
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushCoat` at index for the
      * pointed-at native `BrushFamily`.
      */
-    @UsedByNative public external fun newCopyOfBrushCoat(nativePointer: Long, index: Int): Long
+    @UsedByNative external fun newCopyOfBrushCoat(nativePointer: Long, index: Int): Long
 }

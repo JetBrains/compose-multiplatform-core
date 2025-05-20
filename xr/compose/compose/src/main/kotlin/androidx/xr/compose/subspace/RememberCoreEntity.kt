@@ -25,7 +25,6 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CoreContentlessEntity
-import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
 import androidx.xr.compose.subspace.layout.SpatialShape
@@ -62,24 +61,6 @@ internal inline fun rememberCorePanelEntity(
         disposableValueOf(
             CorePanelEntity(session.entityFactory(), density).also { it.shape = shape }
         ) {
-            it.dispose()
-        }
-    }
-    LaunchedEffect(shape) { coreEntity.shape = shape }
-    return coreEntity
-}
-
-/**
- * Creates a [CoreMainPanelEntity] that is automatically disposed of when it leaves the composition.
- */
-@Composable
-internal fun rememberCoreMainPanelEntity(
-    shape: SpatialShape = SpatialPanelDefaults.shape
-): CoreMainPanelEntity {
-    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val density = LocalDensity.current
-    val coreEntity by remember {
-        disposableValueOf(CoreMainPanelEntity(session, density).also { it.shape = shape }) {
             it.dispose()
         }
     }

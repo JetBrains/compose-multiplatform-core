@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +47,8 @@ import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.pager.PagerDefaults
 import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.material3.PagerScaffoldDefaults.snapWithSpringFlingBehavior
+import androidx.wear.compose.materialcore.screenHeightDp
+import androidx.wear.compose.materialcore.screenWidthDp
 import kotlin.math.absoluteValue
 
 /**
@@ -158,14 +162,26 @@ public fun AnimatedPage(
 ) {
     val isReduceMotionEnabled = LocalReduceMotion.current
     val isRtlEnabled = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val orientation = remember(pagerState) { pagerState.layoutInfo.orientation }
+    val numberOfIntervals =
+        (if (orientation == Orientation.Horizontal) screenWidthDp() else screenHeightDp()) / 2
+
+    val currentPageOffsetFraction by
+        remember(pagerState) {
+            derivedStateOf {
+                (pagerState.currentPageOffsetFraction * numberOfIntervals).toInt() /
+                    numberOfIntervals.toFloat()
+            }
+        }
+
     val graphicsLayerModifier =
         if (isReduceMotionEnabled) Modifier
         else
             Modifier.graphicsLayer {
                 val direction = if (isRtlEnabled) -1 else 1
-                val currentPageOffsetFraction = pagerState.currentPageOffsetFraction
-                val isSwipingRightToLeft = direction * currentPageOffsetFraction > 0
-                val isSwipingLeftToRight = direction * currentPageOffsetFraction < 0
+                val offsetFraction = currentPageOffsetFraction
+                val isSwipingRightToLeft = direction * offsetFraction > 0
+                val isSwipingLeftToRight = direction * offsetFraction < 0
                 val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
                 val shouldAnchorRight =
                     (isSwipingRightToLeft && isCurrentPage) ||
@@ -179,7 +195,7 @@ public fun AnimatedPage(
                         TransformOrigin(0.5f, pivotFractionX)
                     }
                 val pageTransitionFraction =
-                    getPageTransitionFraction(isCurrentPage, currentPageOffsetFraction)
+                    getPageTransitionFraction(isCurrentPage, offsetFraction)
                 val scale = lerp(start = 1f, stop = 0.55f, fraction = pageTransitionFraction)
                 scaleX = scale
                 scaleY = scale
@@ -193,10 +209,7 @@ public fun AnimatedPage(
                         val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
 
                         val pageTransitionFraction =
-                            getPageTransitionFraction(
-                                isCurrentPage,
-                                pagerState.currentPageOffsetFraction
-                            )
+                            getPageTransitionFraction(isCurrentPage, currentPageOffsetFraction)
                         val color =
                             contentScrimColor.copy(
                                 alpha =

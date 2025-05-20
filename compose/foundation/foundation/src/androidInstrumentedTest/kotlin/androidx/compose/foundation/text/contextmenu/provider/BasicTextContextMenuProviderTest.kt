@@ -391,13 +391,5 @@ private fun testDataProvider(vararg itemNumbers: Int): TextContextMenuDataProvid
             position(destinationCoordinates).let { Rect(it, it) }
 
         override fun data(): TextContextMenuData =
-            TextContextMenuData(
-                itemNumbers.map {
-                    TextContextMenuItem(
-                        key = it,
-                        label = "$it",
-                        onClick = fun TextContextMenuSession.() {}
-                    )
-                }
-            )
+            TextContextMenuData(itemNumbers.map { TextContextMenuItem(key = it, label = "$it") {} })
     }

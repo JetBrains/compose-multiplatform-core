@@ -51,6 +51,7 @@ import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.RangeSliderState.Companion.Saver
 import androidx.compose.material3.SliderState.Companion.Saver
 import androidx.compose.material3.internal.IncreaseHorizontalSemanticsBounds
+import androidx.compose.material3.internal.IncreaseVerticalSemanticsBounds
 import androidx.compose.material3.internal.Strings
 import androidx.compose.material3.internal.awaitHorizontalPointerSlopOrCancellation
 import androidx.compose.material3.internal.getString
@@ -107,6 +108,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -2151,6 +2153,7 @@ private fun calcFraction(a: Float, b: Float, pos: Float) =
 private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modifier {
     return semantics {
             if (!enabled) disabled()
+            stateDescription = state.value.formatForSemantics()
             setProgress(
                 action = { targetValue ->
                     var newValue =
@@ -2194,7 +2197,13 @@ private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modi
                 }
             )
         }
-        .then(IncreaseHorizontalSemanticsBounds)
+        .then(
+            if (state.orientation == Vertical) {
+                IncreaseVerticalSemanticsBounds
+            } else {
+                IncreaseHorizontalSemanticsBounds
+            }
+        )
         .progressSemantics(
             state.value,
             state.valueRange.start..state.valueRange.endInclusive,
@@ -2208,9 +2217,9 @@ private fun Modifier.rangeSliderStartThumbSemantics(
     enabled: Boolean
 ): Modifier {
     val valueRange = state.valueRange.start..state.activeRangeEnd
-
     return semantics {
             if (!enabled) disabled()
+            stateDescription = state.activeRangeStart.formatForSemantics()
             setProgress(
                 action = { targetValue ->
                     var newValue = targetValue.coerceIn(valueRange.start, valueRange.endInclusive)
@@ -2266,10 +2275,9 @@ private fun Modifier.rangeSliderEndThumbSemantics(
     enabled: Boolean
 ): Modifier {
     val valueRange = state.activeRangeStart..state.valueRange.endInclusive
-
     return semantics {
             if (!enabled) disabled()
-
+            stateDescription = state.activeRangeEnd.formatForSemantics()
             setProgress(
                 action = { targetValue ->
                     var newValue = targetValue.coerceIn(valueRange.start, valueRange.endInclusive)
@@ -2318,6 +2326,8 @@ private fun Modifier.rangeSliderEndThumbSemantics(
         .then(IncreaseHorizontalSemanticsBounds)
         .progressSemantics(state.activeRangeEnd, valueRange, state.endSteps)
 }
+
+private fun Float.formatForSemantics() = "${(this * 100).roundToInt() / 100f}"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Stable

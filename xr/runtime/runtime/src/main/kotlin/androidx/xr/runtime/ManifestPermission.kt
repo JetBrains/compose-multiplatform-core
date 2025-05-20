@@ -21,28 +21,36 @@ package androidx.xr.runtime
 /**
  * Allows an application to get approximate eye gaze.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.EYE_TRACKING_COARSE"
  */
 @JvmField public val EYE_TRACKING_COARSE: String = "android.permission.EYE_TRACKING_COARSE"
 
 /**
  * Allows an application to get face tracking data.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.FACE_TRACKING"
  */
 @JvmField public val FACE_TRACKING: String = "android.permission.FACE_TRACKING"
 
 /**
  * Allows an application to get hand tracking data.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.HAND_TRACKING"
  */
 @JvmField public val HAND_TRACKING: String = "android.permission.HAND_TRACKING"
 
 /**
  * Allows an application to get data derived by sensing the user's environment.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.SCENE_UNDERSTANDING_COARSE"
  */
 @JvmField
 public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERSTANDING_COARSE"
@@ -50,7 +58,9 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
 /**
  * Allows an application to get precise eye gaze data.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.EYE_TRACKING_FINE"
  */
 @JvmField public val EYE_TRACKING_FINE: String = "android.permission.EYE_TRACKING_FINE"
 
@@ -63,7 +73,9 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
  * {@see
  * https://developer.android.com/develop/xr/get-started#property_activity_xr_start_mode_property}
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.HEAD_TRACKING"
  */
 @JvmField public val HEAD_TRACKING: String = "android.permission.HEAD_TRACKING"
 
@@ -71,7 +83,9 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
  * Allows an application to get highly precise data derived by sensing the user's environment, such
  * as a depth map.
  *
- * <p>Protection level: dangerous
+ * Protection level: dangerous
+ *
+ * Constant Value: "android.permission.SCENE_UNDERSTANDING_FINE"
  */
 @JvmField
 public val SCENE_UNDERSTANDING_FINE: String = "android.permission.SCENE_UNDERSTANDING_FINE"

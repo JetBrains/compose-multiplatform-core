@@ -419,7 +419,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
-        Logger.d(TAG, "onSuggestedStreamSpecUpdated: " + primaryStreamSpec);
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
+                + ", secondaryStreamSpec " + secondaryStreamSpec);
         VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) getCurrentConfig();
         List<Size> customOrderedResolutions = config.getCustomOrderedResolutions(null);
         if (customOrderedResolutions != null

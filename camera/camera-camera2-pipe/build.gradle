@@ -47,7 +47,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.mockitoCore4)
@@ -73,8 +72,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.camera2.pipe"
 }
 
@@ -86,10 +83,9 @@ ksp {
 androidx {
     name = "Camera2 Pipe"
     type = SoftwareType.PUBLISHED_LIBRARY
-    //TODO(b/407634709): Task :camera:camera-camera2-pipe:kspReleaseUnitTestKotlin fails when targeting Kotlin 2
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = "2020"
     description = "A set of opinionated camera interfaces and implementations on top of Camera2 " +
             "that will form a flexible shim layer to power Frameserver and CameraX."
     doNotDocumentReason = "Not shipped externally"
+    enableRobolectric()
 }

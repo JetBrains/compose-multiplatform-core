@@ -263,9 +263,6 @@ internal class AndroidTextContextMenuToolbarProvider(
                         }
                     }
                     is TextContextMenuSeparator -> currentGroupId++
-                    else -> {
-                        // Ignore unknown items
-                    }
                 }
             }
 

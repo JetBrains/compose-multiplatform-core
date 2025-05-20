@@ -39,6 +39,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -54,6 +55,7 @@ import androidx.camera.core.impl.Identifier
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
 import androidx.camera.core.internal.utils.ImageUtil
@@ -62,6 +64,9 @@ import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.ExtensionsUtil
+import androidx.camera.testing.impl.GarbageCollectionUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
@@ -77,11 +82,17 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
+import androidx.lifecycle.LifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import java.lang.ref.PhantomReference
+import java.lang.ref.ReferenceQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -124,6 +135,7 @@ class ProcessCameraProviderTest(
             )
     }
 
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val lifecycleOwner0 = FakeLifecycleOwner()
     private val lifecycleOwner1 = FakeLifecycleOwner()
@@ -275,6 +287,285 @@ class ProcessCameraProviderTest(
     }
 
     @Test
+    fun canRebindSessionConfigWithDuplicatedPreview() = runBlocking {
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val preview = Preview.Builder().build()
+        val imageAnalysis = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider = PreviewSurfaceProvider()
+        val sessionConfig1 = SessionConfig(useCases = listOf(preview))
+        val sessionConfig2 = SessionConfig(useCases = listOf(preview, imageAnalysis))
+        lifecycleOwner0.startAndResume()
+
+        withContext(Dispatchers.Main) {
+            preview.surfaceProvider = previewSurfaceProvider
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig1)
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+
+        val analyisLatch = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            imageAnalysis.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig2)
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch.await(5, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(provider.isBound(sessionConfig1)).isFalse()
+        assertThat(provider.isBound(sessionConfig2)).isTrue()
+        assertThat(provider.isBound(preview)).isTrue()
+        assertThat(provider.isBound(imageAnalysis)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    @Test
+    fun canRebindSessionConfigWithDifferentUseCases() = runBlocking {
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val preview1 = Preview.Builder().build()
+        val imageAnalysis1 = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider1 = PreviewSurfaceProvider()
+        val preview2 = Preview.Builder().build()
+        val imageAnalysis2 = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider2 = PreviewSurfaceProvider()
+        val sessionConfig1 = SessionConfig(useCases = listOf(preview1, imageAnalysis1))
+        val sessionConfig2 = SessionConfig(useCases = listOf(preview2, imageAnalysis2))
+        lifecycleOwner0.startAndResume()
+
+        val analyisLatch1 = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            preview1.surfaceProvider = previewSurfaceProvider1
+            imageAnalysis1.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch1.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig1)
+        }
+        previewSurfaceProvider1.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+
+        val analyisLatch2 = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            preview2.surfaceProvider = previewSurfaceProvider2
+            imageAnalysis2.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch2.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig2)
+        }
+        previewSurfaceProvider2.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(provider.isBound(sessionConfig1)).isFalse()
+        assertThat(provider.isBound(sessionConfig2)).isTrue()
+        assertThat(provider.isBound(preview1)).isFalse()
+        assertThat(provider.isBound(imageAnalysis1)).isFalse()
+        assertThat(provider.isBound(preview2)).isTrue()
+        assertThat(provider.isBound(imageAnalysis2)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    @Test
+    fun canRebindSessionConfig_sameLifecycleOwnerWithDifferentCamera() = runBlocking {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val preview1 = Preview.Builder().build()
+        val imageAnalysis1 = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider1 = PreviewSurfaceProvider()
+        val preview2 = Preview.Builder().build()
+        val imageAnalysis2 = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider2 = PreviewSurfaceProvider()
+        val sessionConfig1 = SessionConfig(useCases = listOf(preview1, imageAnalysis1))
+        val sessionConfig2 = SessionConfig(useCases = listOf(preview2, imageAnalysis2))
+        lifecycleOwner0.startAndResume()
+
+        val analyisLatch1 = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            preview1.surfaceProvider = previewSurfaceProvider1
+            imageAnalysis1.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch1.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(
+                lifecycleOwner0,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                sessionConfig1
+            )
+        }
+        previewSurfaceProvider1.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+
+        val analyisLatch2 = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            preview2.surfaceProvider = previewSurfaceProvider2
+            imageAnalysis2.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch2.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(
+                lifecycleOwner0,
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                sessionConfig2
+            )
+        }
+        previewSurfaceProvider2.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(provider.isBound(sessionConfig1)).isFalse()
+        assertThat(provider.isBound(sessionConfig2)).isTrue()
+        assertThat(provider.isBound(preview1)).isFalse()
+        assertThat(provider.isBound(imageAnalysis1)).isFalse()
+        assertThat(provider.isBound(preview2)).isTrue()
+        assertThat(provider.isBound(imageAnalysis2)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    @Test
+    fun canRebindSameSessionConfig_sameLifecycleOwnerWithDifferentCamera() = runBlocking {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val preview = Preview.Builder().build()
+        val imageAnalysis = ImageAnalysis.Builder().build()
+        val previewSurfaceProvider = PreviewSurfaceProvider()
+        val sessionConfig = SessionConfig(useCases = listOf(preview, imageAnalysis))
+        lifecycleOwner0.startAndResume()
+
+        var analyisLatch1 = CountDownLatch(1)
+        withContext(Dispatchers.Main) {
+            preview.surfaceProvider = previewSurfaceProvider
+            imageAnalysis.setAnalyzer(CameraXExecutors.directExecutor()) {
+                analyisLatch1.countDown()
+                it.close()
+            }
+            provider.bindToLifecycle(
+                lifecycleOwner0,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                sessionConfig
+            )
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+
+        withContext(Dispatchers.Main) {
+            provider.bindToLifecycle(
+                lifecycleOwner0,
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                sessionConfig
+            )
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+        analyisLatch1 = CountDownLatch(1)
+        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(provider.isBound(sessionConfig)).isTrue()
+        assertThat(provider.isBound(imageAnalysis)).isTrue()
+        assertThat(provider.isBound(preview)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    fun canRebindSessionConfigToSameLifecycleOwner_withExtensionsEnabled() = runBlocking {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
+        ProcessCameraProvider.configureInstance(cameraConfig)
+
+        val previewSurfaceProvider0 = PreviewSurfaceProvider()
+        val previewSurfaceProvider1 = PreviewSurfaceProvider()
+
+        provider = ProcessCameraProvider.getInstance(context).await()
+
+        val useCase0 = Preview.Builder().build()
+        val useCase1 = Preview.Builder().build()
+        val sessionConfig0 = SessionConfig(useCases = listOf(useCase0))
+        val sessionConfig1 = SessionConfig(useCases = listOf(useCase1))
+        lifecycleOwner0.startAndResume()
+        withContext(Dispatchers.Main) {
+            useCase0.surfaceProvider = previewSurfaceProvider0
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig0)
+        }
+        previewSurfaceProvider0.assertFramesReceivedAfterSurfaceRequested()
+
+        withContext(Dispatchers.Main) {
+            useCase1.surfaceProvider = previewSurfaceProvider1
+            val sessionProcessor = FakeSessionProcessor()
+            val extensionsSelector =
+                ExtensionsUtil.getCameraSelectorWithSessionProcessor(
+                    provider,
+                    cameraSelector,
+                    sessionProcessor
+                )
+            provider.bindToLifecycle(lifecycleOwner0, extensionsSelector, sessionConfig1)
+        }
+        previewSurfaceProvider1.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(provider.isBound(sessionConfig0)).isFalse()
+        assertThat(provider.isBound(useCase0)).isFalse()
+        assertThat(provider.isBound(sessionConfig1)).isTrue()
+        assertThat(provider.isBound(useCase1)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    fun canRebindSameSessionConfigToSameLifecycleOwner_withExtensionsEnabled() = runBlocking {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
+        ProcessCameraProvider.configureInstance(cameraConfig)
+
+        val previewSurfaceProvider = PreviewSurfaceProvider()
+        provider = ProcessCameraProvider.getInstance(context).await()
+
+        val useCase = Preview.Builder().build()
+        val sessionConfig = SessionConfig(useCases = listOf(useCase))
+        lifecycleOwner0.startAndResume()
+        withContext(Dispatchers.Main) {
+            useCase.surfaceProvider = previewSurfaceProvider
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig)
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+
+        withContext(Dispatchers.Main) {
+            val sessionProcessor = FakeSessionProcessor()
+            val extensionsSelector =
+                ExtensionsUtil.getCameraSelectorWithSessionProcessor(
+                    provider,
+                    cameraSelector,
+                    sessionProcessor
+                )
+            provider.bindToLifecycle(lifecycleOwner0, extensionsSelector, sessionConfig)
+        }
+        previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
+        assertThat(provider.isBound(sessionConfig)).isTrue()
+        assertThat(provider.isBound(useCase)).isTrue()
+        assertThat(provider.isConcurrentCameraModeOn).isFalse()
+    }
+
+    class PreviewSurfaceProvider : Preview.SurfaceProvider {
+        var surfaceRequestLatch = CountDownLatch(1)
+        var frameLatch: CountDownLatch? = null
+        val surfaceProviderImpl =
+            SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+                frameLatch?.countDown()
+            }
+
+        override fun onSurfaceRequested(request: SurfaceRequest) {
+            surfaceProviderImpl.onSurfaceRequested(request)
+            frameLatch = CountDownLatch(1)
+            surfaceRequestLatch.countDown()
+        }
+
+        fun assertFramesReceivedAfterSurfaceRequested() {
+            assertThat(surfaceRequestLatch?.await(5, TimeUnit.SECONDS)).isTrue()
+            assertThat(frameLatch?.await(5, TimeUnit.SECONDS)).isTrue()
+            frameLatch = null
+            surfaceRequestLatch = CountDownLatch(1)
+        }
+    }
+
+    @Test
     fun isUseCaseNotBound_afterOnDestroyed() = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
 
@@ -311,6 +602,49 @@ class ProcessCameraProviderTest(
             assertThat(provider.isBound(useCase)).isFalse()
             assertThat(provider.isBound(sessionConfig)).isFalse()
             assertThat(provider.isConcurrentCameraModeOn).isFalse()
+        }
+    }
+
+    @Test
+    fun lifecycleOwner_dereferencedAfterDestroyed() = runBlocking {
+        // Arrange.
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        provider = ProcessCameraProvider.awaitInstance(context)
+        var lifecycleOwner: FakeLifecycleOwner? = FakeLifecycleOwner()
+        val referenceQueue = ReferenceQueue<LifecycleOwner>()
+        val phantomReference = PhantomReference(lifecycleOwner, referenceQueue)
+        val frameLatch = CountDownLatch(1)
+        val preview = Preview.Builder().build()
+
+        instrumentation.runOnMainSync {
+            preview.surfaceProvider =
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+                    frameLatch.countDown()
+                }
+            lifecycleOwner!!.startAndResume()
+            val sessionConfig = SessionConfig(useCases = listOf(preview))
+            provider.bindToLifecycle(lifecycleOwner!!, cameraSelector, sessionConfig)
+        }
+        // Wait for the preview to start running.
+        assertThat(frameLatch.await(5, TimeUnit.SECONDS)).isTrue()
+
+        instrumentation.runOnMainSync {
+            lifecycleOwner!!.pauseAndStop()
+            // Assert: trigger onDestroy, which should release the references to the lifecycleOwner.
+            lifecycleOwner!!.destroy()
+        }
+        // Wait for the event to be processed.
+        instrumentation.waitForIdleSync()
+
+        try {
+            // Nullify the strong reference to the lifecycleOwner.
+            lifecycleOwner = null
+            // Trigger the garbage collection.
+            GarbageCollectionUtil.runFinalization()
+            // Assert: the reference should become phantom reachable.
+            assertThat(referenceQueue.poll()).isNotNull()
+        } finally {
+            phantomReference.clear()
         }
     }
 
@@ -491,26 +825,6 @@ class ProcessCameraProviderTest(
     }
 
     @Test
-    fun bindMultipleSessionConfigsToSameLifecycleOwner_throwExceptions(): Unit = runBlocking {
-        ProcessCameraProvider.configureInstance(cameraConfig)
-
-        withContext(Dispatchers.Main) {
-            provider = ProcessCameraProvider.getInstance(context).await()
-
-            val useCase0 = Preview.Builder().build()
-            val useCase1 = Preview.Builder().build()
-            val sessionConfig0 = SessionConfig(useCases = listOf(useCase0))
-            val sessionConfig1 = SessionConfig(useCases = listOf(useCase1))
-
-            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig0)
-
-            assertThrows<IllegalStateException> {
-                provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig1)
-            }
-        }
-    }
-
-    @Test
     fun bind_createsDifferentLifecycleCameras_forDifferentLifecycles() = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
 
@@ -596,33 +910,6 @@ class ProcessCameraProviderTest(
             assertThat(provider.isConcurrentCameraModeOn).isFalse()
         }
     }
-
-    @Test
-    fun bindSessionConfig_withDifferentLensFacingButSameLifecycleOwner_throwExceptions() =
-        runBlocking {
-            assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
-            ProcessCameraProvider.configureInstance(cameraConfig)
-
-            withContext(Dispatchers.Main) {
-                provider = ProcessCameraProvider.getInstance(context).await()
-
-                val useCase0 = Preview.Builder().build()
-                val useCase1 = Preview.Builder().build()
-                val sessionConfig0 = SessionConfig(useCases = listOf(useCase0))
-                val sessionConfig1 = SessionConfig(useCases = listOf(useCase1))
-
-                provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig0)
-
-                assertThrows<IllegalArgumentException> {
-                    provider.bindToLifecycle(
-                        lifecycleOwner0,
-                        CameraSelector.DEFAULT_FRONT_CAMERA,
-                        sessionConfig1
-                    )
-                }
-                assertThat(provider.isConcurrentCameraModeOn).isFalse()
-            }
-        }
 
     @Test
     fun bindUseCases_withDifferentLensFacingAndLifecycle() = runBlocking {

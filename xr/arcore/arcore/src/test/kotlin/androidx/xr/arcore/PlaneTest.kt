@@ -83,34 +83,34 @@ class PlaneTest {
     fun constructor_convertsRuntimePlaneType() {
         val plane1 =
             Plane(
-                FakeRuntimePlane(type = RuntimePlane.Type.HorizontalUpwardFacing),
+                FakeRuntimePlane(type = RuntimePlane.Type.HORIZONTAL_UPWARD_FACING),
                 xrResourcesManager
             )
         val plane2 =
             Plane(
-                FakeRuntimePlane(type = RuntimePlane.Type.HorizontalDownwardFacing),
+                FakeRuntimePlane(type = RuntimePlane.Type.HORIZONTAL_DOWNWARD_FACING),
                 xrResourcesManager
             )
-        val plane3 = Plane(FakeRuntimePlane(type = RuntimePlane.Type.Vertical), xrResourcesManager)
+        val plane3 = Plane(FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL), xrResourcesManager)
 
-        assertThat(plane1.type).isEqualTo(Plane.Type.HorizontalUpwardFacing)
-        assertThat(plane2.type).isEqualTo(Plane.Type.HorizontalDownwardFacing)
-        assertThat(plane3.type).isEqualTo(Plane.Type.Vertical)
+        assertThat(plane1.type).isEqualTo(Plane.Type.HORIZONTAL_UPWARD_FACING)
+        assertThat(plane2.type).isEqualTo(Plane.Type.HORIZONTAL_DOWNWARD_FACING)
+        assertThat(plane3.type).isEqualTo(Plane.Type.VERTICAL)
     }
 
     @Test
     fun constructor_convertsRuntimePlaneLabel() {
-        val plane1 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.Unknown), xrResourcesManager)
-        val plane2 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.Wall), xrResourcesManager)
-        val plane3 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.Floor), xrResourcesManager)
-        val plane4 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.Ceiling), xrResourcesManager)
-        val plane5 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.Table), xrResourcesManager)
+        val plane1 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.UNKNOWN), xrResourcesManager)
+        val plane2 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.WALL), xrResourcesManager)
+        val plane3 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.FLOOR), xrResourcesManager)
+        val plane4 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.CEILING), xrResourcesManager)
+        val plane5 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.TABLE), xrResourcesManager)
 
-        assertThat(plane1.state.value.label).isEqualTo(Plane.Label.Unknown)
-        assertThat(plane2.state.value.label).isEqualTo(Plane.Label.Wall)
-        assertThat(plane3.state.value.label).isEqualTo(Plane.Label.Floor)
-        assertThat(plane4.state.value.label).isEqualTo(Plane.Label.Ceiling)
-        assertThat(plane5.state.value.label).isEqualTo(Plane.Label.Table)
+        assertThat(plane1.state.value.label).isEqualTo(Plane.Label.UNKNOWN)
+        assertThat(plane2.state.value.label).isEqualTo(Plane.Label.WALL)
+        assertThat(plane3.state.value.label).isEqualTo(Plane.Label.FLOOR)
+        assertThat(plane4.state.value.label).isEqualTo(Plane.Label.CEILING)
+        assertThat(plane5.state.value.label).isEqualTo(Plane.Label.TABLE)
     }
 
     @Test
@@ -136,7 +136,7 @@ class PlaneTest {
     fun subscribe_planeTrackingDisabled_throwsIllegalStateException() =
         createTestSessionAndRunTest(testDispatcher) {
             runTest(testDispatcher) {
-                session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
+                session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
                 assertFailsWith<IllegalStateException> { Plane.subscribe(session) }
             }
@@ -173,7 +173,7 @@ class PlaneTest {
             val runtimePlane = FakeRuntimePlane()
             xrResourcesManager.syncTrackables(listOf(runtimePlane))
             val underTest = xrResourcesManager.trackablesMap.values.first() as Plane
-            session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
+            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { underTest.createAnchor(Pose()) }
         }
@@ -182,17 +182,17 @@ class PlaneTest {
     fun update_trackingStateMatchesRuntime() = runBlocking {
         // arrange
         val runtimePlane = FakeRuntimePlane()
-        runtimePlane.trackingState = TrackingState.Stopped
+        runtimePlane.trackingState = TrackingState.STOPPED
         xrResourcesManager.syncTrackables(listOf(runtimePlane))
         val underTest = xrResourcesManager.trackablesMap.values.first() as Plane
-        check(underTest.state.value.trackingState == TrackingState.Stopped)
+        check(underTest.state.value.trackingState == TrackingState.STOPPED)
 
         // act
-        runtimePlane.trackingState = TrackingState.Tracking
+        runtimePlane.trackingState = TrackingState.TRACKING
         underTest.update()
 
         // assert
-        assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
     @Test
@@ -275,19 +275,20 @@ class PlaneTest {
 
     @Test
     fun labelToString_returnsCorrectString() {
-        assertThat(Plane.Label.Wall.toString()).isEqualTo("Wall")
-        assertThat(Plane.Label.Floor.toString()).isEqualTo("Floor")
-        assertThat(Plane.Label.Ceiling.toString()).isEqualTo("Ceiling")
-        assertThat(Plane.Label.Table.toString()).isEqualTo("Table")
-        assertThat(Plane.Label.Unknown.toString()).isEqualTo("Unknown")
+        assertThat(Plane.Label.WALL.toString()).isEqualTo("WALL")
+        assertThat(Plane.Label.FLOOR.toString()).isEqualTo("FLOOR")
+        assertThat(Plane.Label.CEILING.toString()).isEqualTo("CEILING")
+        assertThat(Plane.Label.TABLE.toString()).isEqualTo("TABLE")
+        assertThat(Plane.Label.UNKNOWN.toString()).isEqualTo("UNKNOWN")
     }
 
     @Test
     fun typeToString_returnsCorrectString() {
-        assertThat(Plane.Type.HorizontalUpwardFacing.toString()).isEqualTo("HorizontalUpwardFacing")
-        assertThat(Plane.Type.HorizontalDownwardFacing.toString())
-            .isEqualTo("HorizontalDownwardFacing")
-        assertThat(Plane.Type.Vertical.toString()).isEqualTo("Vertical")
+        assertThat(Plane.Type.HORIZONTAL_UPWARD_FACING.toString())
+            .isEqualTo("HORIZONTAL_UPWARD_FACING")
+        assertThat(Plane.Type.HORIZONTAL_DOWNWARD_FACING.toString())
+            .isEqualTo("HORIZONTAL_DOWNWARD_FACING")
+        assertThat(Plane.Type.VERTICAL.toString()).isEqualTo("VERTICAL")
     }
 
     private fun createTestSessionAndRunTest(

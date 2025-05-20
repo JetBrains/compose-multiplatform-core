@@ -22,6 +22,9 @@ import androidx.test.espresso.action.ViewActions.captureToBitmap
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
+import androidx.test.screenshot.matchers.MSSIMMatcher
+
+private const val MATCHING_SIMILARITY_THRESHOLD = 0.99
 
 /**
  * Assert screenshot captured while executing test to available golden.
@@ -31,5 +34,13 @@ import androidx.test.screenshot.assertAgainstGolden
  */
 internal fun assertScreenshot(screenshotRule: AndroidXScreenshotTestRule, filename: String) {
     onView(withId(R.id.test_fragment_container))
-        .perform(captureToBitmap() { it.assertAgainstGolden(screenshotRule, filename) })
+        .perform(
+            captureToBitmap() {
+                it.assertAgainstGolden(
+                    screenshotRule,
+                    filename,
+                    MSSIMMatcher(MATCHING_SIMILARITY_THRESHOLD)
+                )
+            }
+        )
 }

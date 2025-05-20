@@ -153,8 +153,6 @@ internal object XrNavigationRailOverride : NavigationRailOverride {
  * The default [VerticalOrbiterProperties] used by [NavigationRail] if none is specified in
  * [LocalNavigationRailOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultNavigationRailOrbiterProperties: VerticalOrbiterProperties =
     VerticalOrbiterProperties(
@@ -166,8 +164,6 @@ public val DefaultNavigationRailOrbiterProperties: VerticalOrbiterProperties =
     )
 
 /** The [VerticalOrbiterProperties] used by [NavigationRail]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalNavigationRailOrbiterProperties:
     ProvidableCompositionLocal<VerticalOrbiterProperties> =

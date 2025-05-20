@@ -290,9 +290,8 @@ internal class AutoClosingRoomOpenHelper(
 
         override val isOpen: Boolean
             get() {
-                // Get the db without incrementing the reference cause we don't want to open
-                // the db for an isOpen call.
-                return autoCloser.delegateDatabase?.isOpen ?: return false
+                // Database is considered open unless explicitly closed
+                return autoCloser.isActive
             }
 
         override fun needUpgrade(newVersion: Int): Boolean {

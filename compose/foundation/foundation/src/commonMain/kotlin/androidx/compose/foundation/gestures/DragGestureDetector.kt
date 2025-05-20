@@ -149,7 +149,8 @@ suspend fun AwaitPointerEventScope.awaitDragOrCancellation(
  * Gesture detector that waits for pointer down and touch slop in any direction and then calls
  * [onDrag] for each drag event. It follows the touch slop detection of
  * [awaitTouchSlopOrCancellation] but will consume the position change automatically once the touch
- * slop has been crossed.
+ * slop has been crossed. @see [detectDragGestures] with orientation lock for a fuller set of
+ * capabilities.
  *
  * [onDragStart] called when the touch slop has been passed and includes an [Offset] representing
  * the last known pointer position relative to the containing element. The [Offset] can be outside
@@ -201,6 +202,14 @@ suspend fun PointerInputScope.detectDragGestures(
  * [onDragEnd] is called after all pointers are up with the event change of the up event and
  * [onDragCancel] is called if another gesture has consumed pointer input, canceling this gesture.
  *
+ * @param orientationLock Optionally locks detection to this orientation, this means, when this is
+ *   provided, touch slop detection and drag event detection will be conditioned to the given
+ *   orientation axis. [onDrag] will still dispatch events on with information in both axis, but if
+ *   orientation lock is provided, only events that happen on the given orientation will be
+ *   considered. This also means that if no event in the orientation is detected we will not
+ *   dispatch [onDrag] calls. If no value is provided (i.e. null) touch slop and drag detection will
+ *   happen on an "any" orientation basis, that is, touch slop will be detected if crossed in either
+ *   direction and drag events will be dispatched if present in either direction.
  * @param onDragStart A lambda to be called when the drag gesture starts, it contains information
  *   about the last known [PointerInputChange] relative to the containing element and the post slop
  *   delta, slopTriggerChange. It also contains information about the down event where this gesture
@@ -210,13 +219,6 @@ suspend fun PointerInputScope.detectDragGestures(
  * @param onDragCancel A lambda to be called when the gesture is cancelled either by an error or
  *   when it was consumed.
  * @param shouldAwaitTouchSlop Indicates if touch slop detection should be skipped.
- * @param orientationLock Optionally locks detection to this orientation, this means, when this is
- *   provided, touch slop detection and drag event detection will be conditioned to the given
- *   orientation axis. [onDrag] will still dispatch events on with information in both axis, but if
- *   orientation lock is provided, only events that happen on the given orientation will be
- *   considered. If no value is provided (i.e. null) touch slop and drag detection will happen on an
- *   "any" orientation basis, that is, touch slop will be detected if crossed in either direction
- *   and drag events will be dispatched if present in either direction.
  * @param onDrag A lambda to be called for each delta event in the gesture. It contains information
  *   about the [PointerInputChange] and the movement offset.
  *
@@ -228,15 +230,17 @@ suspend fun PointerInputScope.detectDragGestures(
  * @see detectDragGesturesAfterLongPress to detect gestures after long press
  */
 @OptIn(ExperimentalFoundationApi::class)
-internal suspend fun PointerInputScope.detectDragGestures(
+suspend fun PointerInputScope.detectDragGestures(
+    orientationLock: Orientation?,
     onDragStart:
         (
             down: PointerInputChange, slopTriggerChange: PointerInputChange, overSlopOffset: Offset
-        ) -> Unit,
-    onDragEnd: (change: PointerInputChange) -> Unit,
-    onDragCancel: () -> Unit,
-    shouldAwaitTouchSlop: () -> Boolean,
-    orientationLock: Orientation?,
+        ) -> Unit =
+        { _, _, _ ->
+        },
+    onDragEnd: (change: PointerInputChange) -> Unit = {},
+    onDragCancel: () -> Unit = {},
+    shouldAwaitTouchSlop: () -> Boolean = { true },
     onDrag: (change: PointerInputChange, dragAmount: Offset) -> Unit
 ) {
     var overSlop: Offset

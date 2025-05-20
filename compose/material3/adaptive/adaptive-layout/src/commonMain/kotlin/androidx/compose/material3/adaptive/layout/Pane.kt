@@ -25,13 +25,16 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
 import androidx.compose.material3.adaptive.layout.DefaultAnimatedPaneOverride.AnimatedPane
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 
@@ -87,8 +90,14 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
     @Composable
     override fun <S, T : PaneScaffoldValue<S>> AnimatedPaneOverrideScope<S, T>.AnimatedPane() {
         with(scope) {
+            val scaleConversion = { offset: IntOffset ->
+                (motionDataProvider as? ThreePaneScaffoldMotionDataProvider)?.run {
+                    predictiveBackScaleState.convert(offset)
+                } ?: offset
+            }
             val animatingBounds = paneMotion == PaneMotion.AnimateBounds
             val motionProgress = { motionProgress }
+            val paneValue = scaffoldStateTransition.targetState[paneRole]
             scaffoldStateTransition.AnimatedVisibility(
                 visible = { value: T -> value[paneRole] != PaneAdaptedValue.Hidden },
                 modifier =
@@ -97,17 +106,17 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                         .animateBounds(
                             animateFraction = motionProgress,
                             animationSpec = boundsAnimationSpec,
+                            scaleConversion = scaleConversion,
                             lookaheadScope = this,
                             enabled = animatingBounds
                         )
                         .semantics { isTraversalGroup = true }
                         .then(
-                            if (
-                                scaffoldStateTransition.targetState[paneRole]
-                                    is PaneAdaptedValue.Levitated
-                            )
+                            if (paneValue is PaneAdaptedValue.Levitated) {
                                 Modifier.shadow(AnimatedPaneDefaults.ShadowElevation)
-                            else Modifier
+                            } else {
+                                Modifier
+                            }
                         )
                         .then(if (animatingBounds) Modifier else Modifier.clipToBounds()),
                 enter = enterTransition,
@@ -115,6 +124,23 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
             ) {
                 scope.saveableStateHolder.SaveableStateProvider(paneRole.toString()) {
                     AnimatedPaneScope.create(this).content()
+                }
+            }
+
+            class ScrimHolder(var scrim: Scrim? = null)
+            val scrimHolder = remember { ScrimHolder() }
+            (paneValue as? PaneAdaptedValue.Levitated)?.apply { scrimHolder.scrim = scrim }
+            scrimHolder.scrim?.apply {
+                // Display a scrim when the pane gets levitated
+                scaffoldStateTransition.AnimatedVisibility(
+                    visible = { value: T -> value[paneRole] != PaneAdaptedValue.Hidden },
+                    enter = enterTransition,
+                    exit = exitTransition
+                ) {
+                    Content(
+                        defaultColor = ThreePaneScaffoldDefaults.ScrimColor,
+                        enabled = paneValue is PaneAdaptedValue.Levitated
+                    )
                 }
             }
         }
@@ -162,6 +188,7 @@ interface AnimatedPaneOverride {
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @ExperimentalMaterial3AdaptiveComponentOverrideApi
+@Immutable
 class AnimatedPaneOverrideScope<S, T : PaneScaffoldValue<S>>
 internal constructor(
     val scope: ExtendedPaneScaffoldPaneScope<S, T>,
@@ -173,8 +200,6 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [AnimatedPaneOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3AdaptiveComponentOverrideApi
 @ExperimentalMaterial3AdaptiveComponentOverrideApi
 val LocalAnimatedPaneOverride: ProvidableCompositionLocal<AnimatedPaneOverride> =
     compositionLocalOf {

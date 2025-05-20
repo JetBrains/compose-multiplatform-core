@@ -18,6 +18,7 @@ package androidx.lifecycle
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.internal.SavedStateHandleImpl
 import androidx.lifecycle.internal.isAcceptableType
 import androidx.savedstate.SavedState
@@ -32,10 +33,12 @@ public actual class SavedStateHandle {
 
     private var impl: SavedStateHandleImpl
 
+    @VisibleForTesting
     public actual constructor(initialState: Map<String, Any?>) {
         impl = SavedStateHandleImpl(initialState)
     }
 
+    @VisibleForTesting
     public actual constructor() {
         impl = SavedStateHandleImpl()
     }

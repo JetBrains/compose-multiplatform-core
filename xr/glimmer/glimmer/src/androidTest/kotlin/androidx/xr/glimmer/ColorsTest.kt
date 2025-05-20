@@ -38,7 +38,7 @@ class ColorsTest {
     @Test
     fun themeUpdatesWithNewColors() {
         val colors = Colors()
-        val customColors = Colors(primary = Color.Magenta, onPrimary = Color.White)
+        val customColors = Colors(primary = Color.Magenta)
         val colorsState = mutableStateOf(colors)
         var currentColors: Colors? = null
         rule.setContent { GlimmerTheme(colorsState.value) { currentColors = GlimmerTheme.colors } }
@@ -51,21 +51,31 @@ class ColorsTest {
         rule.runOnIdle { assertThat(currentColors).isEqualTo(customColors) }
     }
 
+    /**
+     * Test to ensure that the baseline theme colors have acceptable contrast with the calculated
+     * content colors. Note that primarily surface should be used to fill surfaces - other colors
+     * such as primary should be used very rarely, if ever.
+     */
     @Test
     fun baselineContentContrast() {
         val expectedContrastValue = 3 // Minimum 3:1 contrast ratio
         val colors = Colors()
 
         with(colors) {
-            assertThat(calculateContrastRatio(onPrimary, primary)).isAtLeast(expectedContrastValue)
-            assertThat(calculateContrastRatio(onSecondary, secondary))
+            val primaryContentColor = calculateContentColor(primary)
+            val secondaryContentColor = calculateContentColor(secondary)
+            val positiveContentColor = calculateContentColor(positive)
+            val negativeContentColor = calculateContentColor(negative)
+            val surfaceContentColor = calculateContentColor(surface)
+            assertThat(calculateContrastRatio(primaryContentColor, primary))
                 .isAtLeast(expectedContrastValue)
-            assertThat(calculateContrastRatio(onPositive, positive))
+            assertThat(calculateContrastRatio(secondaryContentColor, secondary))
                 .isAtLeast(expectedContrastValue)
-            assertThat(calculateContrastRatio(onNegative, negative))
+            assertThat(calculateContrastRatio(positiveContentColor, positive))
                 .isAtLeast(expectedContrastValue)
-            assertThat(calculateContrastRatio(onSurface, surface)).isAtLeast(expectedContrastValue)
-            assertThat(calculateContrastRatio(onSurface, surfaceLow))
+            assertThat(calculateContrastRatio(negativeContentColor, negative))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(surfaceContentColor, surface))
                 .isAtLeast(expectedContrastValue)
         }
     }

@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
@@ -25,6 +26,7 @@ import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
  * Component that modifies the pointer icon. Adding or removing this component sets the entity's
  * pointer to use the default, system-determined icon.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialPointerComponent
 private constructor(private val platformAdapter: JxrPlatformAdapter) : Component {
     private val TAG = "SpatialPointerComponent"

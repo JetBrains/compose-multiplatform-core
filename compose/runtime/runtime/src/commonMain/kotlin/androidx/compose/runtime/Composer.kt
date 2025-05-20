@@ -1269,6 +1269,7 @@ sealed interface Composer {
          * - Compose ships with a minifier config that removes source information from the release
          *   builds. Enabling this flag in minified builds will have no effect.
          */
+        @ExperimentalComposeRuntimeApi
         fun setDiagnosticStackTraceEnabled(enabled: Boolean) {
             composeStackTraceEnabled = enabled
         }
@@ -2894,7 +2895,10 @@ internal class ComposerImpl(
 
                 // Invoke the scope's composition function
                 val shouldRestartReusing = !reusing && firstInRange.scope.reusing
-                if (shouldRestartReusing) reusing = true
+                if (shouldRestartReusing) {
+                    reusing = true
+                    firstInRange.scope.reusing = false
+                }
                 firstInRange.scope.compose(this)
                 if (shouldRestartReusing) reusing = false
 
@@ -4131,9 +4135,7 @@ internal class ComposerImpl(
         override val effectCoroutineContext: CoroutineContext
             get() = parentContext.effectCoroutineContext
 
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @OptIn(ExperimentalComposeApi::class)
-        @get:OptIn(ExperimentalComposeApi::class)
         override val recomposeCoroutineContext: CoroutineContext
             get() = this@ComposerImpl.composition.recomposeCoroutineContext
 

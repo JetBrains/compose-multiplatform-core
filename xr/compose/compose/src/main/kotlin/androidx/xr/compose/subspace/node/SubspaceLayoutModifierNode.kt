@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.node
 
+import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.layout.Measurable
 import androidx.xr.compose.subspace.layout.MeasureResult
 import androidx.xr.compose.subspace.layout.MeasureScope
@@ -28,6 +29,7 @@ import androidx.xr.compose.unit.VolumeConstraints
  *
  * Based on [androidx.compose.ui.node.LayoutModifierNode].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SubspaceLayoutModifierNode {
 
     /**
@@ -51,6 +53,7 @@ public interface SubspaceLayoutModifierNode {
  * This is used to request a relayout in stateful layout modifiers that are impacted by events that
  * don't trigger a recomposition. *Do not* call this from [SubspaceLayoutModifierNode.measure].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceLayoutModifierNode.requestRelayout() {
     requireCoordinator().layoutNode?.requestRelayout()
 }

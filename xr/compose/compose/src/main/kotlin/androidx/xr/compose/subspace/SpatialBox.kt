@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace
 
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.util.fastForEachIndexed
@@ -55,6 +56,7 @@ import kotlin.math.max
  */
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialBox(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
@@ -117,6 +119,7 @@ internal class SpatialBoxMeasurePolicy(
 
 /** Scope for the children of [SpatialBox]. */
 @LayoutScopeMarker
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialBoxScope {
     /**
      * Positions the content element at a specific [SpatialAlignment] within the [SpatialBox]. This

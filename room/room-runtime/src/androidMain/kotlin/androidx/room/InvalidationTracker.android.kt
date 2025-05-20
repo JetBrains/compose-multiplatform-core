@@ -46,7 +46,7 @@ import kotlinx.coroutines.flow.merge
  * [Flow] was created from, then such table is considered 'invalidated' and the [Flow] will emit a
  * new value.
  */
-actual open class InvalidationTracker
+public actual open class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     internal val database: RoomDatabase,
@@ -92,7 +92,7 @@ actual constructor(
 
     @Deprecated("No longer called by generated implementation")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    constructor(
+    public constructor(
         database: RoomDatabase,
         vararg tableNames: String
     ) : this(
@@ -145,9 +145,6 @@ actual constructor(
      * @see refreshAsync
      */
     internal actual suspend fun sync() {
-        if (database.inCompatibilityMode() && !database.isOpenInternal) {
-            return
-        }
         implementation.syncTriggers()
     }
 
@@ -164,7 +161,7 @@ actual constructor(
      * database via another connection or through [RoomDatabase.useConnection] you might need to
      * invoke this function to trigger invalidation.
      */
-    actual fun refreshAsync() {
+    public actual fun refreshAsync() {
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -176,7 +173,7 @@ actual constructor(
      * invalidations, if so causing this function to return true.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    actual suspend fun refresh(vararg tables: String): Boolean {
+    public actual suspend fun refresh(vararg tables: String): Boolean {
         return implementation.refreshInvalidation(tables, onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -218,7 +215,10 @@ actual constructor(
      *   `true`.
      */
     @JvmOverloads
-    actual fun createFlow(vararg tables: String, emitInitialState: Boolean): Flow<Set<String>> {
+    public actual fun createFlow(
+        vararg tables: String,
+        emitInitialState: Boolean
+    ): Flow<Set<String>> {
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
         val multiInstanceFlow = multiInstanceInvalidationClient?.createFlow(resolvedTableNames)
@@ -247,7 +247,7 @@ actual constructor(
      * @param observer The observer which listens the database for changes.
      */
     @WorkerThread
-    open fun addObserver(observer: Observer) {
+    public open fun addObserver(observer: Observer) {
         val shouldSync = addObserverOnly(observer)
         if (shouldSync) {
             runBlockingUninterruptible { implementation.syncTriggers() }
@@ -291,7 +291,7 @@ actual constructor(
      */
     @WorkerThread
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun addWeakObserver(observer: Observer) {
+    public open fun addWeakObserver(observer: Observer) {
         addObserver(WeakObserver(this, observer))
     }
 
@@ -304,7 +304,7 @@ actual constructor(
      * @param observer The observer to remove.
      */
     @WorkerThread
-    open fun removeObserver(observer: Observer): Unit {
+    public open fun removeObserver(observer: Observer): Unit {
         val shouldSync = removeObserverOnly(observer)
         if (shouldSync) {
             runBlockingUninterruptible { implementation.syncTriggers() }
@@ -330,7 +330,7 @@ actual constructor(
      *
      * @see refreshAsync
      */
-    open fun refreshVersionsAsync() {
+    public open fun refreshVersionsAsync() {
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -341,7 +341,7 @@ actual constructor(
      */
     @WorkerThread
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun refreshVersionsSync(): Unit = runBlockingUninterruptible {
+    public open fun refreshVersionsSync(): Unit = runBlockingUninterruptible {
         implementation.refreshInvalidation(emptyArray(), onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -386,7 +386,7 @@ actual constructor(
         message = "Replaced with overload that takes 'inTransaction 'parameter.",
         replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction")
     )
-    open fun <T> createLiveData(
+    public open fun <T> createLiveData(
         tableNames: Array<out String>,
         computeFunction: Callable<T?>
     ): LiveData<T> {
@@ -408,7 +408,7 @@ actual constructor(
      *   invalidates.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun <T> createLiveData(
+    public open fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
         computeFunction: Callable<T?>
@@ -434,7 +434,7 @@ actual constructor(
      *   invalidates.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    fun <T> createLiveData(
+    public fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
         computeFunction: (SQLiteConnection) -> T?
@@ -467,7 +467,7 @@ actual constructor(
      * @param tables The names of the tables this observer is interested in getting notified if they
      *   are modified.
      */
-    abstract class Observer(internal val tables: Array<out String>) {
+    public abstract class Observer(internal val tables: Array<out String>) {
         /**
          * Creates an observer for the given tables and views.
          *
@@ -487,7 +487,7 @@ actual constructor(
          *   invalidated. When observing a database view the names of underlying tables will be in
          *   the set instead of the view name.
          */
-        abstract fun onInvalidated(tables: Set<String>)
+        public abstract fun onInvalidated(tables: Set<String>)
 
         internal open val isRemote: Boolean
             get() = false
@@ -501,7 +501,7 @@ actual constructor(
     )
 
     // Kept for binary compatibility even if empty. :(
-    companion object
+    public companion object
 }
 
 /**

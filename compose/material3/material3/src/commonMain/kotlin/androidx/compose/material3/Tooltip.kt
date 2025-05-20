@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.DrawResult
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -879,6 +880,34 @@ internal fun Modifier.animateTooltip(transition: Transition<Boolean>): Modifier 
         this.graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)
     }
 
+internal fun caretX(tooltipWidth: Float, screenWidthPx: Int, anchorBounds: Rect): Float {
+    val anchorLeft = anchorBounds.left
+    val anchorRight = anchorBounds.right
+    val anchorMid = (anchorLeft + anchorRight) / 2
+    return if (tooltipWidth >= screenWidthPx) {
+        // Tooltip is greater than or equal to the width of the screen
+        // The horizontal placement just needs to be in the center of the anchor
+        anchorMid
+    } else if (anchorMid - tooltipWidth / 2 < 0) {
+        // The tooltip needs to be start aligned if it would
+        // collide with the left side of screen when attempting to center.
+        // We have a horizontal correction for the caret if the tooltip will
+        // also collide with the right edge of the screen when start aligned
+        val horizontalCorrection = maxOf(tooltipWidth - screenWidthPx, -anchorLeft)
+        anchorMid + horizontalCorrection
+    } else if (anchorMid + tooltipWidth / 2 > screenWidthPx) {
+        // The tooltip needs to be end aligned if it would
+        // collide with the right side of the screen when attempting to center.
+        // We have a horizontal correction for the caret if the tooltip will
+        // also collide with the left edge of the screen when end aligned
+        val horizontalCorrection = minOf(tooltipWidth - anchorRight, 0f)
+        anchorMid + horizontalCorrection
+    } else {
+        // Tooltip can centered neatly without colliding with screen edge
+        tooltipWidth / 2
+    }
+}
+
 private fun Modifier.layoutCaret(
     caretPath: MutableState<Path>,
     density: Density,
@@ -908,14 +937,10 @@ private fun Modifier.layoutCaret(
                 tooltipAnchorSpacing = SpacingBetweenTooltipAndAnchor.roundToPx()
             }
             val anchorBounds = anchorLayoutCoordinates.boundsInWindow()
-            val anchorLeft = anchorBounds.left
-            val anchorRight = anchorBounds.right
             val anchorTop = anchorBounds.top
-            val anchorMid = (anchorRight + anchorLeft) / 2
-            val anchorWidth = anchorRight - anchorLeft
             val isCaretTop = anchorTop - tooltipHeight - tooltipAnchorSpacing < 0
-            val tooltipWidth: Float = tooltipWidth.toFloat()
-            val tooltipHeight: Float = tooltipHeight.toFloat()
+            val tooltipWidth: Float = tooltipWidth
+            val tooltipHeight: Float = tooltipHeight
             val caretY =
                 if (isCaretTop) {
                     0f
@@ -923,29 +948,7 @@ private fun Modifier.layoutCaret(
                     tooltipHeight
                 }
 
-            // Default the caret to be in the middle
-            // caret might need to be offset depending on where
-            // the tooltip is placed relative to the anchor
-            var position: Offset =
-                if (anchorLeft - tooltipWidth / 2 + anchorWidth / 2 <= 0) {
-                    Offset(x = anchorMid, y = caretY)
-                } else if (anchorRight + tooltipWidth / 2 - anchorWidth / 2 >= screenWidthPx) {
-                    val anchorMidFromRightScreenEdge = screenWidthPx - anchorMid
-                    val caretX = tooltipWidth - anchorMidFromRightScreenEdge
-                    Offset(x = caretX, y = caretY)
-                } else {
-                    Offset(x = tooltipWidth / 2, y = caretY)
-                }
-            if (anchorMid - tooltipWidth / 2 < 0) {
-                // The tooltip needs to be start aligned if it would collide with the left side of
-                // screen.
-                position = Offset(x = anchorMid - anchorLeft, y = caretY)
-            } else if (anchorMid + tooltipWidth / 2 > screenWidthPx) {
-                // The tooltip needs to be end aligned if it would collide with the right side of
-                // the
-                // screen.
-                position = Offset(x = anchorMid - (anchorRight - tooltipWidth), y = caretY)
-            }
+            val position = Offset(x = caretX(tooltipWidth, screenWidthPx, anchorBounds), y = caretY)
 
             if (isCaretTop) {
                 path.apply {

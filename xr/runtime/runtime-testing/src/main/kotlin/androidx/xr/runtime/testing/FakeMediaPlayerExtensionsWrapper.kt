@@ -17,12 +17,14 @@
 package androidx.xr.runtime.testing
 
 import android.media.MediaPlayer
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper
 import androidx.xr.runtime.internal.PointSourceParams
 import androidx.xr.runtime.internal.SoundFieldAttributes
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [MediaPlayerExtensionsWrapper] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
     override fun setPointSourceParams(mediaPlayer: MediaPlayer, params: PointSourceParams) {}
 

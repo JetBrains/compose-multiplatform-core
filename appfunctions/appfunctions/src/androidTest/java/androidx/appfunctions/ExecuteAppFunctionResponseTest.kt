@@ -23,9 +23,9 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.AssumptionViolatedException
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class ExecuteAppFunctionResponseTest {
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun toPlatformExtensionClass_success() {
         assumeAppFunctionExtensionLibraryAvailable()
         val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
@@ -48,7 +48,30 @@ class ExecuteAppFunctionResponseTest {
     }
 
     @Test
-    fun fromPlatformClass_success() {
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    fun toPlatformClass_success() {
+        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val response = ExecuteAppFunctionResponse.Success(appFunctionData)
+        val platformResponse = response.toPlatformClass()
+
+        assertThat(platformResponse.resultDocument).isEqualTo(appFunctionData.genericDocument)
+        assertThat(platformResponse.extras.isEmpty()).isTrue()
+
+        // Test with extras set
+        val bundle = Bundle()
+        bundle.putLong("longKey", 123L)
+        val appFunctionDataWithExtras = AppFunctionData(appFunctionData.genericDocument, bundle)
+        val responseWithExtras = ExecuteAppFunctionResponse.Success(appFunctionDataWithExtras)
+        val platformResponseWithExtras = responseWithExtras.toPlatformClass()
+
+        assertThat(platformResponseWithExtras.resultDocument)
+            .isEqualTo(appFunctionData.genericDocument)
+        assertThat(platformResponseWithExtras.extras).isEqualTo(bundle)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    fun fromPlatformExtensionClass_success() {
         assumeAppFunctionExtensionLibraryAvailable()
         val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
         val platformResponse =
@@ -57,6 +80,18 @@ class ExecuteAppFunctionResponseTest {
             )
         val response =
             ExecuteAppFunctionResponse.Success.fromPlatformExtensionClass(platformResponse)
+
+        assertThat(response.returnValue.genericDocument).isEqualTo(appFunctionData.genericDocument)
+        assertThat(response.returnValue.extras.isEmpty).isTrue()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    fun fromPlatformClass_success() {
+        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val platformResponse =
+            android.app.appfunctions.ExecuteAppFunctionResponse(appFunctionData.genericDocument)
+        val response = ExecuteAppFunctionResponse.Success.fromPlatformClass(platformResponse)
 
         assertThat(response.returnValue.genericDocument).isEqualTo(appFunctionData.genericDocument)
         assertThat(response.returnValue.extras.isEmpty).isTrue()

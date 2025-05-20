@@ -171,6 +171,8 @@ private fun FloatingActionButtonMenuItemColumn(
     content: @Composable FloatingActionButtonMenuScope.() -> Unit
 ) {
     var itemCount by remember { mutableIntStateOf(0) }
+    var itemsNeedVerticalScroll by remember { mutableStateOf(false) }
+    var originalConstraints: Constraints? = null
     var staggerAnim by remember { mutableStateOf<Animatable<Int, AnimationVector1D>?>(null) }
     val coroutineScope = rememberCoroutineScope()
     // TODO Load the motionScheme tokens from the component tokens file
@@ -192,7 +194,19 @@ private fun FloatingActionButtonMenuItemColumn(
                     isTraversalGroup = true
                     traversalIndex = -0.9f
                 }
-                .verticalScroll(state = rememberScrollState(), enabled = expanded),
+                .layout { measurable, constraints ->
+                    // Use a layout modifier before the verticalScroll to get the original
+                    // constraints from the parent, since verticalScroll will cause the constraints
+                    // max height to be infinity.
+                    originalConstraints = constraints
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+                .then(
+                    if (itemsNeedVerticalScroll)
+                        Modifier.verticalScroll(state = rememberScrollState(), enabled = expanded)
+                    else Modifier
+                ),
         content = {
             val scope =
                 remember(horizontalAlignment) {
@@ -246,6 +260,9 @@ private fun FloatingActionButtonMenuItemColumn(
         }
 
         val finalHeight = if (placeables.fastAny { item -> item.isVisible }) height else 0
+
+        itemsNeedVerticalScroll = finalHeight > originalConstraints!!.maxHeight
+
         layout(width, finalHeight, rulers = { MenuItemRuler provides height - visibleHeight }) {
             var y = 0
             placeables.fastForEachIndexed { index, placeable ->

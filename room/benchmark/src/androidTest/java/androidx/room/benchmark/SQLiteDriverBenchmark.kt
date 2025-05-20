@@ -18,8 +18,8 @@ package androidx.room.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
+import androidx.room.benchmark.RoomDriverBenchmark.Companion.UseDriver
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
@@ -38,7 +38,7 @@ import org.junit.runners.Parameterized.Parameters
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 23)
-class SQLiteDriverBenchmark(private val driver: SQLiteDriver) {
+class SQLiteDriverBenchmark(private val useDriver: UseDriver) {
 
     @get:Rule val benchmarkRule = BenchmarkRule()
 
@@ -50,6 +50,11 @@ class SQLiteDriverBenchmark(private val driver: SQLiteDriver) {
     fun setup() {
         context.deleteDatabase("test.db")
         val databaseFilePath = context.getDatabasePath("test.db").path
+        val driver =
+            when (useDriver) {
+                UseDriver.ANDROID -> AndroidSQLiteDriver()
+                UseDriver.BUNDLED -> BundledSQLiteDriver()
+            }
         connection = driver.open(databaseFilePath)
         // Use WAL mode in these benchmark as that is the most common and recommended journal
         // mode configuration.
@@ -112,9 +117,12 @@ class SQLiteDriverBenchmark(private val driver: SQLiteDriver) {
     }
 
     companion object {
-        @JvmStatic
-        @Parameters(name = "driver = {0}")
-        fun drivers() = arrayOf(BundledSQLiteDriver(), AndroidSQLiteDriver())
+        @JvmStatic @Parameters(name = "driver = {0}") fun drivers() = UseDriver.entries
+
+        enum class UseDriver {
+            ANDROID,
+            BUNDLED,
+        }
 
         const val SMALL_AMOUNT = 25
         const val LARGE_AMOUNT = 1000

@@ -45,6 +45,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaReceiverParameterSymbol
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtFunction
@@ -89,6 +90,10 @@ class ModifierDeclarationDetector : Detector(), SourceCodeScanner {
                 if (returnType.inheritsFrom(Names.Ui.Layout.ParentDataModifier)) return
 
                 val source = node.sourcePsi
+
+                // If this node is constructor or synthetic member whose source PSI is constructor,
+                // e.g., data class copy (https://youtrack.jetbrains.com/issue/KT-72722), ignore it.
+                if (source is KtConstructor<*>) return
 
                 // If this node is a property that is a constructor parameter, ignore it.
                 if (source is KtParameter) return

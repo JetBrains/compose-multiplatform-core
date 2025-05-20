@@ -74,9 +74,12 @@ sealed interface AdaptStrategy {
     }
 
     /**
-     * Indicate the associated pane should be levitated when certain conditions are met. With the
-     * default calculation functions [calculateThreePaneScaffoldValue] we provide. A pane with a
-     * levitate strategy will be adapted to either:
+     * Indicate the associated pane should be levitated when certain conditions are met. A levitated
+     * pane will be rendered above other panes in the pane scaffold like a pop-up, may or may not
+     * cast a scrim to block interaction with the underlying panes.
+     *
+     * With the default calculation functions [calculateThreePaneScaffoldValue] we provide. A pane
+     * with a levitate strategy will be adapted to either:
      * 1. [PaneAdaptedValue.Levitated] with specified [alignment], when the levitated pane is the
      *    current destination, and the provided [Strategy] is [Strategy.Always] or it's a
      *    single-pane layout;
@@ -85,30 +88,38 @@ sealed interface AdaptStrategy {
      *    single-pane layout; or
      * 3. [PaneAdaptedValue.Hidden] otherwise.
      *
+     * @sample androidx.compose.material3.adaptive.samples.levitateAdaptStrategySample
+     * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
      * @param strategy the strategy that specifies when the associated pane should be levitated; see
      *   [Strategy] for more detailed descriptions.
      * @param alignment the alignment of the associated pane when it's levitated, relatively to the
      *   pane scaffold.
+     * @param scrim the scrim to show when the pane is levitated to block user interaction with the
+     *   underlying layout and emphasize the levitated pane; by default it will be `null` and no
+     *   scrim will show.
      */
-    // TODO(conradchen): Add usage samples.
     @Immutable
     class Levitate(
         val strategy: Strategy = Strategy.Always,
-        val alignment: Alignment = Alignment.Center
+        val alignment: Alignment = Alignment.Center,
+        val scrim: Scrim? = null
     ) : AdaptStrategy {
-        override fun toString() = "AdaptStrategy[Levitate, type=$strategy, alignment=$alignment)]"
+        override fun toString() =
+            "AdaptStrategy[Levitate, type=$strategy, alignment=$alignment, scrim=$scrim]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Levitate) return false
             if (strategy != other.strategy) return false
             if (alignment != other.alignment) return false
+            if (scrim != other.scrim) return false
             return true
         }
 
         override fun hashCode(): Int {
             var result = strategy.hashCode()
             result = 31 * result + alignment.hashCode()
+            result = 31 * result + scrim.hashCode()
             return result
         }
 
@@ -125,14 +136,15 @@ sealed interface AdaptStrategy {
 
             companion object {
                 /**
-                 * Specifies that the associated pane should always be levitated when the navigation
-                 * conditions meet, no matter it's a single-pane or multi-pane layout.
+                 * Specifies that the associated pane should always be levitated when it's the
+                 * current navigation destination, no matter it's a single-pane or multi-pane
+                 * layout.
                  */
                 val Always = Strategy("Always")
 
                 /**
-                 * Specifies that the associated pane should only be levitated when the navigation
-                 * conditions meet and it's a single-pane layout.
+                 * Specifies that the associated pane should only be levitated when it's a
+                 * single-pane layout and the associated pane is the current navigation destination.
                  */
                 val SinglePaneOnly = Strategy("SinglePaneOnly")
             }

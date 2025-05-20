@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
 import androidx.xr.runtime.internal.PerceptionManager
@@ -41,6 +42,7 @@ internal class PerceptionStateExtender : StateExtender {
         perceptionManager = runtime.perceptionManager
         xrResourcesManager.lifecycleManager = runtime.lifecycleManager
         xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
+        xrResourcesManager.initiateEarth(perceptionManager.earth)
     }
 
     override suspend fun extend(coreState: CoreState) {
@@ -83,5 +85,6 @@ internal class PerceptionStateExtender : StateExtender {
 }
 
 /** The state of the perception system. */
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public val CoreState.perceptionState: PerceptionState?
     get() = PerceptionStateExtender.perceptionStateMap[this.timeMark]

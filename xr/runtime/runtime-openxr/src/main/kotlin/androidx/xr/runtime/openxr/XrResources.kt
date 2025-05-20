@@ -35,6 +35,9 @@ internal class XrResources {
     val leftHand: OpenXrHand
     val rightHand: OpenXrHand
 
+    /** The data of the Earth */
+    val earth: OpenXrEarth = OpenXrEarth(this)
+
     init {
         this.leftHand = OpenXrHand(isLeftHand = true)
         this.rightHand = OpenXrHand(isLeftHand = false)

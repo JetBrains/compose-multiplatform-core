@@ -17,9 +17,11 @@
 package androidx.xr.scenecore
 
 import android.media.MediaPlayer
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 
 @Suppress("ClassShouldBeObject")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialMediaPlayer {
 
     public companion object {

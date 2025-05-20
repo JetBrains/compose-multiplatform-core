@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.annotation.FloatRange
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
@@ -29,10 +30,12 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 
 /** Declare the preferred size of the content to be exactly [width] dp along the x dimension. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.width(width: Dp): SubspaceModifier =
     this.then(SizeElement(minWidth = width, maxWidth = width, enforceIncoming = true))
 
 /** Declare the preferred size of the content to be exactly [height] dp along the y dimension. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.height(height: Dp): SubspaceModifier =
     this.then(SizeElement(minHeight = height, maxHeight = height, enforceIncoming = true))
 
@@ -40,6 +43,7 @@ public fun SubspaceModifier.height(height: Dp): SubspaceModifier =
  * Declare the preferred size of the content to be exactly [depth] dp along the z dimension. Panels
  * have 0 depth and ignore this modifier.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.depth(depth: Dp): SubspaceModifier =
     this.then(SizeElement(minDepth = depth, maxDepth = depth, enforceIncoming = true))
 
@@ -47,6 +51,7 @@ public fun SubspaceModifier.depth(depth: Dp): SubspaceModifier =
  * Declare the preferred size of the content to be exactly a [size] dp cube. When applied to a
  * Panel, the preferred size will be a [size] dp square instead.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
     this.then(
         SizeElement(
@@ -64,6 +69,7 @@ public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
  * Declare the preferred size of the content to be exactly [size] in each of the three dimensions.
  * Panels have 0 depth and ignore the z-component of this modifier.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.size(size: DpVolumeSize): SubspaceModifier =
     this.then(
         SizeElement(
@@ -78,10 +84,12 @@ public fun SubspaceModifier.size(size: DpVolumeSize): SubspaceModifier =
     )
 
 /** Declare the size of the content to be exactly [width] dp along the x dimension. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.requiredWidth(width: Dp): SubspaceModifier =
     this.then(SizeElement(minWidth = width, maxWidth = width, enforceIncoming = false))
 
 /** Declare the size of the content to be exactly [height] dp along the y dimension. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.requiredHeight(height: Dp): SubspaceModifier =
     this.then(SizeElement(minHeight = height, maxHeight = height, enforceIncoming = false))
 
@@ -89,6 +97,7 @@ public fun SubspaceModifier.requiredHeight(height: Dp): SubspaceModifier =
  * Declare the size of the content to be exactly [depth] dp along the z dimension. Panels have 0
  * depth and ignore this modifier.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.requiredDepth(depth: Dp): SubspaceModifier =
     this.then(SizeElement(minDepth = depth, maxDepth = depth, enforceIncoming = false))
 
@@ -96,6 +105,7 @@ public fun SubspaceModifier.requiredDepth(depth: Dp): SubspaceModifier =
  * Declare the size of the content to be exactly a [size] dp cube. When applied to a Panel, the size
  * will be a [size] dp square instead.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.requiredSize(size: Dp): SubspaceModifier =
     this.then(
         SizeElement(
@@ -113,6 +123,7 @@ public fun SubspaceModifier.requiredSize(size: Dp): SubspaceModifier =
  * Declare the size of the content to be exactly [size] in each of the three dimensions. Panels have
  * 0 depth and ignore the z-component of this modifier.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.requiredSize(size: DpVolumeSize): SubspaceModifier =
     this.then(
         SizeElement(
@@ -136,6 +147,7 @@ public fun SubspaceModifier.requiredSize(size: DpVolumeSize): SubspaceModifier =
  *
  * @param fraction The fraction of the maximum width to use, between `0` and `1`, inclusive.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.fillMaxWidth(
     @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
 ): SubspaceModifier =
@@ -153,6 +165,7 @@ private val FillWholeMaxWidth = FillElement.width(1f)
  *
  * @param fraction The fraction of the maximum height to use, between `0` and `1`, inclusive.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.fillMaxHeight(
     @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
 ): SubspaceModifier =
@@ -170,6 +183,7 @@ private val FillWholeMaxHeight = FillElement.height(1f)
  *
  * @param fraction The fraction of the maximum height to use, between `0` and `1`, inclusive.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.fillMaxDepth(
     @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
 ): SubspaceModifier =
@@ -188,6 +202,7 @@ private val FillWholeMaxDepth = FillElement.depth(1f)
  *
  * @param fraction The fraction of the maximum size to use, between `0` and `1`, inclusive.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.fillMaxSize(
     @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
 ): SubspaceModifier =

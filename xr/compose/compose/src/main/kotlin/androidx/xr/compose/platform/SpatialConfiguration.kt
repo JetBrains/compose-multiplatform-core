@@ -17,6 +17,7 @@
 package androidx.xr.compose.platform
 
 import android.content.Context
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
@@ -31,17 +32,21 @@ import androidx.xr.runtime.FEATURE_XR_API_SPATIAL
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.scene
 
-/**
- * The name of the system feature that indicates whether the system supports XR Spatial features.
- */
-internal const val XR_IMMERSIVE_FEATURE = "android.software.xr.immersive"
-
 /** CompositionLocal indicating whether the system XR Spatial feature is enabled. */
+// TODO(b/417276392): Consider removing this composition local.
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public val LocalHasXrSpatialFeature: ProvidableCompositionLocal<Boolean> =
     compositionLocalWithComputedDefaultOf {
         SpatialConfiguration.hasXrSpatialFeature(LocalContext.currentValue)
     }
 
+/**
+ * Provides the current `SpatialConfiguration`.
+ *
+ * The behavior of the configuration object will depend on whether the system XR Spatial feature is
+ * enabled. For example, if the feature is not enabled, attempting to request different mode types
+ * cause an exception.
+ */
 public val LocalSpatialConfiguration: CompositionLocal<SpatialConfiguration> =
     compositionLocalWithComputedDefaultOf {
         if (LocalHasXrSpatialFeature.currentValue) {
@@ -57,7 +62,7 @@ public val LocalSpatialConfiguration: CompositionLocal<SpatialConfiguration> =
 /**
  * Provides information and functionality related to the spatial configuration of the application.
  */
-public interface SpatialConfiguration {
+public sealed interface SpatialConfiguration {
     /**
      * A volume whose width, height, and depth represent the space available to the application.
      *
@@ -91,6 +96,8 @@ public interface SpatialConfiguration {
      *
      * In home space, the visible space may be shared with other applications; however, applications
      * in home space will have their spatial capabilities and physical bounds limited.
+     *
+     * See [modes in XR](https://developer.android.com/design/ui/xr/guides/foundations#modes).
      */
     public fun requestHomeSpaceMode() {
         throw UnsupportedOperationException(
@@ -106,6 +113,8 @@ public interface SpatialConfiguration {
      * In full space, this application will be the only application in the visible space, its
      * spatial capabilities will be expanded, and its physical bounds will expand to fill the entire
      * virtual space.
+     *
+     * See [modes in XR](https://developer.android.com/design/ui/xr/guides/foundations#modes).
      */
     public fun requestFullSpaceMode() {
         throw UnsupportedOperationException(
@@ -116,21 +125,16 @@ public interface SpatialConfiguration {
     public companion object {
         /**
          * XR Spatial APIs are supported for this system. This is equivalent to
-         * PackageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL) or
-         * PackageManager.hasSystemFeature(XR_IMMERSIVE_FEATURE). When one of these features is
-         * available, it is safe to assume we are in an XR environment.
+         * PackageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL). When this feature is available,
+         * it is safe to assume we are in an XR environment.
          */
         public fun hasXrSpatialFeature(context: Context): Boolean {
-            // TODO(b/398957058): Remove the XR_IMMERSIVE_FEATURE check once the google play team
-            // logic
-            // is updated.
-            return (context.packageManager.hasSystemFeature(XR_IMMERSIVE_FEATURE) ||
-                context.packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL))
+            return context.packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)
         }
 
         private val sessionInstances: MutableMap<Session, SpatialConfiguration> = mutableMapOf()
 
-        public fun getOrCreate(
+        internal fun getOrCreate(
             session: Session,
             hasXrSpatialFeature: Boolean
         ): SpatialConfiguration =

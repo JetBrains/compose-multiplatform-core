@@ -53,6 +53,7 @@ import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.getImageCaptureSupportedResolutions
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
@@ -162,6 +163,7 @@ class AdvancedExtenderValidation(
      */
     // Test
     fun validatePostviewSupport_sinceVersion_1_4() {
+        assumePcsSupportedForImageCapture(context)
         // Runs the test only when the vendor library implementation is 1.4 or above
         assumeTrue(ExtensionVersion.getRuntimeVersion()!! >= Version.VERSION_1_4)
 

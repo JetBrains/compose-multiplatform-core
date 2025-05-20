@@ -28,10 +28,11 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.PdfView.OnScrollStateChangedListener
+import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import androidx.pdf.viewer.fragment.test.R
-import androidx.pdf.viewer.idlingresource.PdfIdlingResource
+import androidx.pdf.viewer.idlingresource.PdfCountingIdlingResource
+import androidx.pdf.viewer.idlingresource.PdfLambdaIdlingResource
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.UUID
 
@@ -40,19 +41,28 @@ import java.util.UUID
  * while loading pdf document.
  */
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
-internal class TestPdfViewerFragment : PdfViewerFragment() {
+internal class TestPdfViewerFragment : PdfViewerFragment {
 
-    val pdfLoadingIdlingResource = PdfIdlingResource(PDF_LOAD_RESOURCE_NAME)
-    val pdfScrollIdlingResource = PdfIdlingResource(PDF_SCROLL_RESOURCE_NAME)
-    val pdfSearchFocusIdlingResource = PdfIdlingResource(PDF_SEARCH_FOCUS_RESOURCE_NAME)
+    constructor() : super()
+
+    constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
+
+    val pdfLoadingIdlingResource = PdfCountingIdlingResource(PDF_LOAD_RESOURCE_NAME)
+    val pdfScrollIdlingResource = PdfCountingIdlingResource(PDF_SCROLL_RESOURCE_NAME)
+    val pdfSearchFocusIdlingResource = PdfCountingIdlingResource(PDF_SEARCH_FOCUS_RESOURCE_NAME)
     val pdfSearchViewVisibleIdlingResource =
-        PdfIdlingResource(PDF_SEARCH_VIEW_VISIBLE_RESOURCE_NAME)
-
+        PdfCountingIdlingResource(PDF_SEARCH_VIEW_VISIBLE_RESOURCE_NAME)
+    val pdfPagesFullyRenderedIdlingResource =
+        PdfLambdaIdlingResource(PDF_PAGES_FULLY_RENDERED_RESOURCE_NAME) {
+            pdfView.arePagesFullyRendered()
+        }
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
 
     var documentLoaded = false
     var documentError: Throwable? = null
+
+    private var gestureStateChangedListener: PdfView.OnGestureStateChangedListener? = null
 
     fun getPdfViewInstance(): PdfView = pdfView
 
@@ -85,20 +95,20 @@ internal class TestPdfViewerFragment : PdfViewerFragment() {
             isTextSearchActive = true
         }
 
-        pdfView.scrollStateChangedListener =
-            object : OnScrollStateChangedListener {
-                override fun onScrollStateChanged(x: Int, y: Int, isStable: Boolean) {
-                    if (isStable) {
-                        pdfScrollIdlingResource.decrement()
+        gestureStateChangedListener =
+            object : PdfView.OnGestureStateChangedListener {
+                    override fun onGestureStateChanged(newState: Int) {
+                        if (newState == PdfView.GESTURE_STATE_IDLE) {
+                            pdfScrollIdlingResource.decrement()
+                        }
                     }
                 }
-            }
+                .also { pdfView.addOnGestureStateChangedListener(it) }
+
         pdfSearchView.searchQueryBox.onFocusChangeListener =
-            object : View.OnFocusChangeListener {
-                override fun onFocusChange(v: View?, hasFocus: Boolean) {
-                    if (!hasFocus) {
-                        pdfSearchFocusIdlingResource.decrement()
-                    }
+            View.OnFocusChangeListener { v, hasFocus ->
+                if (!hasFocus) {
+                    pdfSearchFocusIdlingResource.decrement()
                 }
             }
 
@@ -116,14 +126,30 @@ internal class TestPdfViewerFragment : PdfViewerFragment() {
             )
     }
 
+    fun setIsAnnotationIntentResolvable(value: Boolean) {
+        setAnnotationIntentResolvability(value)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        gestureStateChangedListener?.let { pdfView.removeOnGestureStateChangedListener(it) }
+    }
+
     override fun onRequestImmersiveMode(enterImmersive: Boolean) {
         super.onRequestImmersiveMode(enterImmersive)
-        if (!enterImmersive) search?.show() else search?.hide()
+        if (!enterImmersive) {
+            isToolboxVisible = true
+            search?.show()
+        } else {
+            isToolboxVisible = false
+            search?.hide()
+        }
     }
 
     override fun onLoadDocumentSuccess() {
         documentLoaded = true
         pdfLoadingIdlingResource.decrement()
+        pdfPagesFullyRenderedIdlingResource.startPolling()
     }
 
     override fun onLoadDocumentError(error: Throwable) {
@@ -138,6 +164,8 @@ internal class TestPdfViewerFragment : PdfViewerFragment() {
         private val PDF_SEARCH_FOCUS_RESOURCE_NAME = "PdfSearchFocus-${UUID.randomUUID()}"
         private val PDF_SEARCH_VIEW_VISIBLE_RESOURCE_NAME =
             "PdfSearchViewVisible-${UUID.randomUUID()}"
+        private val PDF_PAGES_FULLY_RENDERED_RESOURCE_NAME =
+            "PdfPagesFullyRendered-${UUID.randomUUID()}"
 
         fun handleInsets(hostView: View) {
             ViewCompat.setOnApplyWindowInsetsListener(hostView) { view, insets ->

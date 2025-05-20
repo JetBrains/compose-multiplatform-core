@@ -61,6 +61,7 @@ public final class PerceptionSpaceActivityPoseImplTest {
                     mXrExtensions,
                     mEntityManager,
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mExecutor);
     private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =

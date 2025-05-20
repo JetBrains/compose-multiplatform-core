@@ -57,19 +57,30 @@ public fun UiDevice.waitForRootInActiveWindow(
 ): AccessibilityNodeInfo {
 
     val clock = TimeoutClock(timeoutMs = timeoutMs, sleepIntervalMs = sleepIntervalMs)
-    while (
-        uiAutomation.rootInActiveWindow == null || uiAutomation.rootInActiveWindow.window == null
-    ) {
+    var node: AccessibilityNodeInfo? = null
+    var window: AccessibilityWindowInfo? = null
+
+    while (true) {
+
+        // Check if both root node and window for it exist
+        if (node != null && window != null) {
+            return node
+        }
 
         // Clear accessibility cache: some nodes are cached and may not get updated.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && clearCache) {
             uiAutomation.clearCache()
         }
+
+        // If this was a timeout, throw exception
         if (clock.isTimeoutOrSleep()) {
             throw IllegalStateException("Cannot acquire root view in active window.")
         }
+
+        // Otherwise try again to retrieve node and window
+        node = uiAutomation.rootInActiveWindow
+        window = node?.window
     }
-    return uiAutomation.rootInActiveWindow
 }
 
 /**

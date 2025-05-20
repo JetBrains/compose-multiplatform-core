@@ -84,7 +84,13 @@ class ResizableComponentImpl implements ResizableComponent {
         // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
         if (entity instanceof PanelEntityImpl && mCurrentSize == null) {
             mCurrentSize = ((PanelEntityImpl) entity).getSize();
-            // TODO: b/350563642 - Add checks that size is within minsize and maxsize.
+            if (mCurrentSize.width < mMinSize.width
+                    || mCurrentSize.width > mMaxSize.width
+                    || mCurrentSize.height < mMinSize.height
+                    || mCurrentSize.height > mMaxSize.height) {
+                Log.e(TAG, "Size of attached panel entity is not within minsize and maxsize.");
+                return false;
+            }
         }
         if (mCurrentSize != null) {
             unused =

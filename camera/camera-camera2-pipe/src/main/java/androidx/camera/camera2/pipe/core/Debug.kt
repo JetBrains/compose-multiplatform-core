@@ -108,6 +108,25 @@ public object Debug {
         }
     }
 
+    /**
+     * Format a map of parameters as a line separated list.
+     *
+     * Example: `[<\n>abc.xyz=1,<\n>abc.zyx=something<\n>]`
+     */
+    public fun formatParameterMapToLineSeparatedList(
+        parameters: Map<*, Any?>,
+        limit: Int = -1,
+    ): String {
+        return parametersToSortedStringPairs(parameters).joinToString(
+            separator = ",\n",
+            prefix = "{\n",
+            postfix = "\n}",
+            limit = limit,
+        ) {
+            "${it.first}=${it.second}"
+        }
+    }
+
     private fun parametersToSortedStringPairs(
         parameters: Map<*, Any?>
     ): List<Pair<String, String>> =

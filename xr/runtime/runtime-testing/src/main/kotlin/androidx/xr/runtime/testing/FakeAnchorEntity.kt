@@ -16,10 +16,12 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.AnchorEntity
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [AnchorEntity] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeAnchorEntity : AnchorEntity, FakeSystemSpaceEntity() {
     override val state: @AnchorEntity.State Int = AnchorEntity.State.UNANCHORED
 

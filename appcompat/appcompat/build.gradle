@@ -70,7 +70,6 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
 
     lintPublish(project(":appcompat:appcompat-lint"))
 }
@@ -87,10 +86,6 @@ android {
 
     testOptions {
         animationsDisabled = true
-
-        unitTests {
-            includeAndroidResources = true
-        }
     }
 
     buildTypes.configureEach {
@@ -111,4 +106,5 @@ androidx {
     description = "Provides backwards-compatible implementations of UI-related Android SDK " +
             "functionality, including dark mode and Material theming."
     failOnDeprecationWarnings = false
+    enableRobolectric()
 }

@@ -308,4 +308,9 @@ public class GlobalSearchSessionLocalCtsTest extends GlobalSearchSessionCtsTestB
         assertThat(logger.mQueryStats.getRequestedPageSize()).isEqualTo(resultCountPerPage);
         assertThat(logger.mQueryStats.getCurrentPageReturnedResultCount()).isEqualTo(1);
     }
+
+    // LocalStorage does not support registering observers for packages besides the local package
+    @Override
+    @Test
+    public void testRemoveObserver_multiplePackages() throws Exception {}
 }

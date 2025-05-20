@@ -34,6 +34,7 @@ import androidx.xr.arcore.apps.whitebox.common.TrackablesList
 import androidx.xr.arcore.apps.whitebox.helloar.rendering.AnchorRenderer
 import androidx.xr.arcore.apps.whitebox.helloar.rendering.PlaneRenderer
 import androidx.xr.arcore.perceptionState
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 
 /** Sample that demonstrates fundamental ARCore for Android XR usage. */
@@ -52,6 +53,10 @@ class HelloArActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
+                Config(
+                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    headTracking = Config.HeadTrackingMode.ENABLED,
+                ),
                 onSessionAvailable = { session ->
                     this.session = session
 

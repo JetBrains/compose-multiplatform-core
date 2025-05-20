@@ -97,12 +97,10 @@ package androidx.privacysandbox.ads.adservices.adselection {
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller);
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller, optional android.net.Uri? coordinatorOriginUri);
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller, optional android.net.Uri? coordinatorOriginUri, optional androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? sellerConfiguration);
-    method public android.net.Uri? getCoordinatorOriginUri();
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn public android.net.Uri? getCoordinatorOriginUri();
     method public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier getSeller();
-    method public androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? getSellerConfiguration();
-    property @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn public android.net.Uri? coordinatorOriginUri;
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn public androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? getSellerConfiguration();
     property public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller;
-    property @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? sellerConfiguration;
   }
 
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public final class PerBuyerConfiguration {
@@ -131,12 +129,11 @@ package androidx.privacysandbox.ads.adservices.adselection {
     method public long getAdSelectionId();
     method public String getEventData();
     method public String getEventKey();
-    method public android.view.InputEvent? getInputEvent();
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public android.view.InputEvent? getInputEvent();
     method public int getReportingDestinations();
     property public long adSelectionId;
     property public String eventData;
     property public String eventKey;
-    property @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public android.view.InputEvent? inputEvent;
     property public int reportingDestinations;
     field public static final androidx.privacysandbox.ads.adservices.adselection.ReportEventRequest.Companion Companion;
     field public static final int FLAG_REPORTING_DESTINATION_BUYER = 2; // 0x2
@@ -323,25 +320,23 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext16OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer, String name, android.net.Uri dailyUpdateUri, android.net.Uri biddingLogicUri, java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals, optional androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals, optional int auctionServerRequestFlags, optional double priority, optional java.util.List<androidx.privacysandbox.ads.adservices.common.ComponentAdData> componentAds);
     method public java.time.Instant? getActivationTime();
     method public java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> getAds();
-    method public int getAuctionServerRequestFlags();
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public int getAuctionServerRequestFlags();
     method public android.net.Uri getBiddingLogicUri();
     method public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier getBuyer();
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext16OptIn public java.util.List<androidx.privacysandbox.ads.adservices.common.ComponentAdData> getComponentAds();
     method public android.net.Uri getDailyUpdateUri();
     method public java.time.Instant? getExpirationTime();
     method public String getName();
-    method public double getPriority();
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public double getPriority();
     method public androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? getTrustedBiddingSignals();
     method public androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? getUserBiddingSignals();
     property public java.time.Instant? activationTime;
     property public java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads;
-    property @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public int auctionServerRequestFlags;
     property public android.net.Uri biddingLogicUri;
     property public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer;
     property public android.net.Uri dailyUpdateUri;
     property public java.time.Instant? expirationTime;
     property public String name;
-    property @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public double priority;
     property public androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals;
     property public androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals;
     field public static final androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion Companion;

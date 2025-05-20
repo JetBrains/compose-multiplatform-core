@@ -139,7 +139,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
     fun testApiGating_fromFiles() {
         lint()
             .files(
-                javaSample("flaggedapi.FlaggedApiContainer"),
+                javaSample("android.flagging.FlaggedApiContainer"),
                 ktSample("flaggedapi.FlaggedUsageInOutline"),
                 Stubs.FlaggedApi,
                 Stubs.RequiresAconfigFlag,
@@ -148,12 +148,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/flaggedapi/FlaggedUsageInOutline.kt:31: Error: Class FlagFlaggedApiImpl is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
-                        FlagFlaggedApiImpl.flaggedApi()
+                src/flaggedapi/FlaggedUsageInOutline.kt:32: Error: Class FlagFlaggedApiImpl is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
+                        FlagFlaggedApiImpl.innerApi()
                         ~~~~~~~~~~~~~~~~~~
-                src/flaggedapi/FlaggedUsageInOutline.kt:31: Error: Method flaggedApi() is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
-                        FlagFlaggedApiImpl.flaggedApi()
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                src/flaggedapi/FlaggedUsageInOutline.kt:32: Error: Method innerApi() is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
+                        FlagFlaggedApiImpl.innerApi()
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 2 errors
                 """
                     .trimIndent()
@@ -261,6 +261,15 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 """
                     .trimIndent()
             )
+            .expectFixDiffs(
+                """
+                Fix for src/test/pkg/JavaTest.java line 16: Wrap with flag check:
+                @@ -16 +16
+                -             return Build.flaggedApi();
+                +             if (androidx.core.flagging.Flags.getBooleanFlagValue("android.os", "flaggedApi")) { return Build.flaggedApi(); } else { throw new RuntimeException("TODO: Implement fallback behavior"); }
+                """
+                    .trimIndent()
+            )
     }
 
     fun testApiGating_withOutliningWrongRequires_raisesError() {
@@ -317,6 +326,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                             return Build.flaggedApi();
                                    ~~~~~~~~~~~~~~~~~~
                 2 errors
+                """
+                    .trimIndent()
+            )
+            .expectFixDiffs(
+                """
+                Fix for src/test/pkg/JavaTest.java line 10: Wrap with flag check:
+                @@ -10 +10
+                -             FlagFlaggedApiImpl.flaggedApi();
+                +             if (androidx.core.flagging.Flags.getBooleanFlagValue("android.os", "otherFlaggedApi")) { FlagFlaggedApiImpl.flaggedApi(); } else { throw new RuntimeException("TODO: Implement fallback behavior"); }
+                Fix for src/test/pkg/JavaTest.java line 17: Wrap with flag check:
+                @@ -17 +17
+                -             return Build.flaggedApi();
+                +             if (androidx.core.flagging.Flags.getBooleanFlagValue("android.os", "flaggedApi")) { return Build.flaggedApi(); } else { throw new RuntimeException("TODO: Implement fallback behavior"); }
                 """
                     .trimIndent()
             )
@@ -460,6 +482,15 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         1 error
         """
             )
+            .expectFixDiffs(
+                """
+                Fix for src/test/pkg/KotlinTest.kt line 17: Wrap with flag check:
+                @@ -17 +17
+                -                 FlaggedApiContainer.flaggedApi()
+                +                 if (androidx.core.flagging.Flags.getBooleanFlagValue("test.pkg", "myFlag")) { FlaggedApiContainer.flaggedApi() } else { TODO("Implement fallback behavior") }
+                """
+                    .trimIndent()
+            )
     }
 
     fun testChecksAconfigFlagGating_javaCheckForWrongFlag_raisesError() {
@@ -511,6 +542,15 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         1 error
         """
             )
+            .expectFixDiffs(
+                """
+                Fix for src/test/pkg/JavaTest.java line 14: Wrap with flag check:
+                @@ -14 +14
+                -            FlaggedApiContainer.flaggedApi();
+                +            if (androidx.core.flagging.Flags.getBooleanFlagValue("test.pkg", "myFlag")) { FlaggedApiContainer.flaggedApi(); } else { throw new RuntimeException("TODO: Implement fallback behavior"); }
+                """
+                    .trimIndent()
+            )
     }
 
     fun testChecksAconfigFlagGating_kotlinCheckForWrongFlag_raisesError() {
@@ -560,6 +600,15 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 error
         """
+            )
+            .expectFixDiffs(
+                """
+                Fix for src/test/pkg/KotlinTest.kt line 14: Wrap with flag check:
+                @@ -14 +14
+                -             FlaggedApiContainer.flaggedApi()
+                +             if (androidx.core.flagging.Flags.getBooleanFlagValue("test.pkg", "myFlag")) { FlaggedApiContainer.flaggedApi() } else { TODO("Implement fallback behavior") }
+                """
+                    .trimIndent()
             )
     }
 

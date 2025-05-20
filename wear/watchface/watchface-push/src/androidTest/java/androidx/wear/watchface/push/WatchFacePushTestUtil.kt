@@ -84,7 +84,7 @@ internal suspend fun waitUntil(
 internal suspend fun isAppRunning(context: Context): Boolean {
     try {
         // If the service is down, any call will fail.
-        WatchFacePushManager(context).listWatchFaces()
+        WatchFacePushManagerFactory.createWatchFacePushManager(context).listWatchFaces()
         return true
     } catch (_: Exception) {
         return false

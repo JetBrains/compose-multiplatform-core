@@ -2474,6 +2474,11 @@ public final class Recorder implements VideoOutput {
         switch (audioState) {
             case DISABLED:
                 // Fall-through
+            case IDLING:
+                // Audio state will be transitioning to IDLING after the recording is stopped. If
+                // the next recording is stopped immediately such as encounter insufficient storage,
+                // consider the audio is disabled.
+                // Fall-through
             case INITIALIZING:
                 // Audio will not be initialized until the first recording with audio enabled is
                 // started. So if the audio state is INITIALIZING, consider the audio is disabled.
@@ -2490,9 +2495,6 @@ public final class Recorder implements VideoOutput {
                 return AudioStats.AUDIO_STATE_ENCODER_ERROR;
             case ERROR_SOURCE:
                 return AudioStats.AUDIO_STATE_SOURCE_ERROR;
-            case IDLING:
-                // AudioStats should not be produced when audio is in IDLING state.
-                break;
         }
         // Should not reach.
         throw new AssertionError("Invalid internal audio state: " + audioState);
@@ -2587,8 +2589,8 @@ public final class Recorder implements VideoOutput {
 
         switch (mAudioState) {
             case IDLING:
-                throw new AssertionError(
-                        "Incorrectly finalize recording when audio state is IDLING");
+                // No-op, the audio is not started, Keep it in IDLING state.
+                break;
             case INITIALIZING:
                 // No-op, the audio hasn't been initialized. Keep it in INITIALIZING state.
                 break;

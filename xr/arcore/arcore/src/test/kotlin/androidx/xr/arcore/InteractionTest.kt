@@ -93,7 +93,7 @@ class InteractionTest {
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = createTestSessionAndRunTest {
         runTest {
-            session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
+            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }

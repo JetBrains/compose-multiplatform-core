@@ -24,7 +24,6 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.internal.Camera2EncoderProfilesProvider
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -122,7 +121,6 @@ class BackupHdrProfileEncoderProfilesProviderTest(
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var cameraId: String
     private lateinit var cameraInfo: CameraInfoInternal
@@ -130,7 +128,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
 
     @Before
     fun setup() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Skip for b/264902324
         assumeFalse(

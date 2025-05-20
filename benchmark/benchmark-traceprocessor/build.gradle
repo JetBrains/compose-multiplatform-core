@@ -132,6 +132,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "AndroidX Benchmark TraceProcessor"
-    metalavaK2UastEnabled = false
     samples(project(":benchmark:benchmark-samples"))
 }

@@ -293,6 +293,7 @@ final class androidx.compose.ui.text.font/ResourceFont : androidx.compose.ui.tex
     final val style // androidx.compose.ui.text.font/ResourceFont.style|{}style[0]
         final fun <get-style>(): androidx.compose.ui.text.font/FontStyle // androidx.compose.ui.text.font/ResourceFont.style.<get-style>|<get-style>(){}[0]
     final val variationSettings // androidx.compose.ui.text.font/ResourceFont.variationSettings|{}variationSettings[0]
+        final fun <get-variationSettings>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/ResourceFont.variationSettings.<get-variationSettings>|<get-variationSettings>(){}[0]
     final val weight // androidx.compose.ui.text.font/ResourceFont.weight|{}weight[0]
         final fun <get-weight>(): androidx.compose.ui.text.font/FontWeight // androidx.compose.ui.text.font/ResourceFont.weight.<get-weight>|<get-weight>(){}[0]
 

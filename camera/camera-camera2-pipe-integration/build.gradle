@@ -61,7 +61,6 @@ dependencies {
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.byteBuddy)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTestJunit)
     testImplementation(project(":camera:camera-camera2-pipe-testing"))
@@ -127,4 +126,5 @@ androidx {
             "and reliable camera foundation that enables great camera driven experiences across " +
             "all of Android."
     doNotDocumentReason = "Not shipped externally"
+    enableRobolectric()
 }

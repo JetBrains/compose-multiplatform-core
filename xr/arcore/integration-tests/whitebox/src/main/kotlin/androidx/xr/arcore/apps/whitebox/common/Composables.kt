@@ -75,9 +75,9 @@ fun PlaneStateInfo(state: Plane.State) {
 
 private fun convertPlaneLabelToColor(label: Plane.Label): Color =
     when (label) {
-        Plane.Label.Wall -> Color.Green
-        Plane.Label.Floor -> Color.Blue
-        Plane.Label.Ceiling -> Color.Yellow
-        Plane.Label.Table -> Color.Magenta
+        Plane.Label.WALL -> Color.Green
+        Plane.Label.FLOOR -> Color.Blue
+        Plane.Label.CEILING -> Color.Yellow
+        Plane.Label.TABLE -> Color.Magenta
         else -> Color.Red
     }

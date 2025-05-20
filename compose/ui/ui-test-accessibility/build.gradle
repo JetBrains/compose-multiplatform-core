@@ -77,6 +77,5 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Compose testing library for accessibility checks"
-    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-test-accessibility:ui-test-accessibility-samples"))
 }

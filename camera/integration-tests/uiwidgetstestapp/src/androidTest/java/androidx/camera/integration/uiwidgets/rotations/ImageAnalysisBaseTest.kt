@@ -172,7 +172,11 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
 
         @JvmStatic
         protected val lensFacingList =
-            arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)
+            arrayOf(
+                CameraSelector.LENS_FACING_BACK,
+                CameraSelector.LENS_FACING_FRONT,
+                CameraSelector.LENS_FACING_EXTERNAL
+            )
 
         @JvmStatic
         protected val cameraXConfigList =

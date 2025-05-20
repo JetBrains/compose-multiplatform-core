@@ -369,8 +369,8 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                     ) {
                         addStatement(
                             "error(%S)",
-                            "Missing value for a NON-NULL column '${property.columnName}', " +
-                                "found NULL value instead."
+                            "Missing column '${property.columnName}' for a NON-NULL value, " +
+                                "column not found in result."
                         )
                     } else {
                         addStatement("%L = %L", tmpProperty, defaultValue)

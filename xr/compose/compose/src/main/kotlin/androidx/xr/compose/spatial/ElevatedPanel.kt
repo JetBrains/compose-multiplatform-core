@@ -123,7 +123,7 @@ internal fun ElevatedPanel(
                 name = "ElevatedPanel:${view.id}",
             )
         }
-
+    // TODO(b/416093964): Does ElevatedPanel's alpha still need to be dependent on Pose?
     view.setContent {
         CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
             Box(Modifier.alpha(if (pose == null) 0.0f else 1.0f)) { content() }

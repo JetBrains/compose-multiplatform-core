@@ -27,13 +27,16 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import androidx.pdf.testapp.ui.v2.PdfViewerFragmentExtended
 import androidx.pdf.testapp.ui.v2.StyledPdfViewerFragment
+import androidx.pdf.testapp.util.BehaviorFlags
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.button.MaterialButton
 
@@ -43,6 +46,7 @@ import com.google.android.material.button.MaterialButton
 class MainActivityV2 : AppCompatActivity() {
 
     private var pdfViewerFragment: PdfViewerFragment? = null
+    private var isCustomLinkHandlingEnabled = false
 
     @VisibleForTesting
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -52,9 +56,16 @@ class MainActivityV2 : AppCompatActivity() {
                 if (pdfViewerFragment == null) {
                     setPdfView()
                 }
-                pdfViewerFragment?.documentUri = uri
+                if (pdfViewerFragment is PdfViewerFragment) {
+                    (pdfViewerFragment as PdfViewerFragment).documentUri = uri
+                }
             }
         }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("custom_link_handling_enabled", isCustomLinkHandlingEnabled)
+    }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,21 +75,22 @@ class MainActivityV2 : AppCompatActivity() {
         pdfViewerFragment =
             supportFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragment?
 
+        isCustomLinkHandlingEnabled =
+            savedInstanceState?.getBoolean("custom_link_handling_enabled") ?: false
+
         val getContentButton: MaterialButton = findViewById(R.id.launch_button)
         val searchButton: MaterialButton = findViewById(R.id.search_pdf_button)
+        val customLinkHandlingSwitch: SwitchCompat = findViewById(R.id.custom_link_handling_switch)
+
+        customLinkHandlingSwitch.isChecked = isCustomLinkHandlingEnabled
+        customLinkHandlingSwitch.setOnCheckedChangeListener { _, isChecked ->
+            isCustomLinkHandlingEnabled = isChecked
+            updateFragment()
+        }
 
         getContentButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
         if (savedInstanceState == null) {
-            val fragmentType =
-                intent.extras?.let {
-                    BundleCompat.getSerializable(it, FRAGMENT_TYPE_KEY, FragmentType::class.java)
-                } ?: FragmentType.BASIC_FRAGMENT
-
-            pdfViewerFragment =
-                when (fragmentType) {
-                    FragmentType.BASIC_FRAGMENT -> PdfViewerFragment()
-                    FragmentType.STYLED_FRAGMENT -> StyledPdfViewerFragment.newInstance()
-                }
+            pdfViewerFragment = getFragmentForCurrentState() as? PdfViewerFragment
             setPdfView()
         }
 
@@ -92,22 +104,60 @@ class MainActivityV2 : AppCompatActivity() {
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
-    private fun setPdfView() {
-        val fragmentManager: FragmentManager = supportFragmentManager
+    private fun updateFragment() {
+        val currentUri = pdfViewerFragment?.documentUri
 
-        // Fragment initialization
-        pdfViewerFragment?.let {
-            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+        val newFragment = getFragmentForCurrentState()
+        pdfViewerFragment = newFragment as? PdfViewerFragment
 
-            // Replace an existing fragment in a container with an instance of a new fragment
-            transaction.replace(
-                R.id.fragment_container_view,
-                pdfViewerFragment!!,
-                PDF_VIEWER_FRAGMENT_TAG
-            )
-            transaction.commitAllowingStateLoss()
-            fragmentManager.executePendingTransactions()
+        val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_container_view, newFragment)
+        transaction.commit()
+        supportFragmentManager.executePendingTransactions()
+
+        // Restore URI if applicable
+        if (newFragment is PdfViewerFragment && currentUri != null) {
+            newFragment.documentUri = currentUri
         }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    private fun setPdfView() {
+        pdfViewerFragment?.let {
+            val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.fragment_container_view, pdfViewerFragment!!)
+            transaction.commitAllowingStateLoss()
+            supportFragmentManager.executePendingTransactions()
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    private fun getFragmentForCurrentState(): Fragment {
+        val fragmentType = getFragmentTypeFromIntent()
+
+        val flags =
+            BehaviorFlags.Builder()
+                .setCustomLinkHandlingEnabled(isCustomLinkHandlingEnabled)
+                .build()
+
+        return when (fragmentType) {
+            FragmentType.BASIC_FRAGMENT -> {
+                if (flags.isCustomLinkHandlingEnabled()) {
+                    PdfViewerFragmentExtended.newInstance(flags)
+                } else {
+                    PdfViewerFragment()
+                }
+            }
+            FragmentType.STYLED_FRAGMENT -> {
+                StyledPdfViewerFragment.newInstance(flags)
+            }
+        }
+    }
+
+    private fun getFragmentTypeFromIntent(): FragmentType {
+        return intent.extras?.let {
+            BundleCompat.getSerializable(it, FRAGMENT_TYPE_KEY, FragmentType::class.java)
+        } ?: FragmentType.BASIC_FRAGMENT
     }
 
     private fun handleWindowInsets() {

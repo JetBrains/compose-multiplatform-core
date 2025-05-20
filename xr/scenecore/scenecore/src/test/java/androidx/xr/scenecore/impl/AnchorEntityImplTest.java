@@ -182,6 +182,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         mXrExtensions,
                         mEntityManager,
                         () -> mXrExtensions.getSpatialState(activity),
+                        /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis);
 
@@ -1066,8 +1067,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1085,8 +1086,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1111,8 +1112,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         null,
                         new Pose(),
-                        TrackingState.Tracking,
-                        PersistenceState.NotPersisted,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 

@@ -644,6 +644,53 @@ class CanvasStrokeRendererTest {
         assertScreenshot("TextureOffset")
     }
 
+    @Test
+    fun supportsTextureRotation() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.addStrokeRows(
+                listOf(
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.0
+              rotation=45
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 45f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.5
+              offsetY=0.0
+              rotation=45
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.5f, offsetY = 0.0f, rotation = 45f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.0
+              rotation=180
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 180f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.5
+              rotation=180
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.5f, rotation = 180f),
+                    ),
+                )
+            )
+        }
+        assertScreenshot("TextureRotation")
+    }
+
     private fun assertScreenshot(filename: String) {
         onView(withId(R.id.stroke_grid))
             .perform(
@@ -713,6 +760,7 @@ class CanvasStrokeRendererTest {
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
+            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
@@ -731,6 +779,7 @@ class CanvasStrokeRendererTest {
                     textureOrigin = textureOrigin,
                     textureOffsetX = textureOffsetX,
                     textureOffsetY = textureOffsetY,
+                    textureRotationDegrees = textureRotationDegrees,
                     textureMapping = textureMapping,
                 )
             return brush(
@@ -747,6 +796,7 @@ class CanvasStrokeRendererTest {
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
+            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
@@ -758,6 +808,7 @@ class CanvasStrokeRendererTest {
                     sizeY = textureSize,
                     offsetX = textureOffsetX,
                     offsetY = textureOffsetY,
+                    rotation = Angle.degreesToRadians(textureRotationDegrees),
                     sizeUnit = textureSizeUnit,
                     origin = textureOrigin,
                     mapping = textureMapping,
@@ -779,12 +830,30 @@ class CanvasStrokeRendererTest {
                 INPUTS_ZIGZAG,
             )
 
+        fun textureRotationStroke(
+            offsetX: Float,
+            offsetY: Float,
+            rotation: Float
+        ): InProgressStroke =
+            finishedInProgressStroke(
+                texturedBrush(
+                    textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_AIRPLANE_EMOJI,
+                    textureSize = 30f,
+                    textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
+                    textureOffsetX = offsetX,
+                    textureOffsetY = offsetY,
+                    textureRotationDegrees = rotation,
+                    brushSize = 30f,
+                ),
+                INPUTS_ZIGZAG,
+            )
+
         fun finishedInProgressStroke(brush: Brush, inputs: ImmutableStrokeInputBatch) =
             InProgressStroke().apply {
                 start(brush)
-                enqueueInputs(inputs, NO_PREDICTION).getOrThrow()
+                enqueueInputsOrThrow(inputs, NO_PREDICTION)
                 finishInput()
-                updateShape(inputs.getDurationMillis()).getOrThrow()
+                updateShapeOrThrow(inputs.getDurationMillis())
             }
 
         fun colorBlendedStroke(blendMode: BlendMode, @ColorInt color: Int): InProgressStroke {

@@ -40,7 +40,7 @@ import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_MSG_U
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_VERSION_1;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_VERSION_4;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_DYNAMIC_ROUTE_DESCRIPTORS;
-import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUPABLE_SECION_TITLE;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUPABLE_SECTION_TITLE;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUP_ROUTE_DESCRIPTOR;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_TRANSFERABLE_SECTION_TITLE;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_DATA_ERROR;
@@ -1169,7 +1169,7 @@ public abstract class MediaRouteProviderService extends Service {
                                 mDynamicRoutesChangedListener);
                         mControllers.put(controllerId, controller);
                         Bundle bundle = new Bundle();
-                        bundle.putString(DATA_KEY_GROUPABLE_SECION_TITLE,
+                        bundle.putString(DATA_KEY_GROUPABLE_SECTION_TITLE,
                                 controller.getGroupableSelectionTitle());
                         bundle.putString(DATA_KEY_TRANSFERABLE_SECTION_TITLE,
                                 controller.getTransferableSectionTitle());
@@ -1396,11 +1396,6 @@ public abstract class MediaRouteProviderService extends Service {
 
             @Override
             public void dispose() {
-                int count = mControllers.size();
-                for (int i = 0; i < count; i++) {
-                    int controllerId = mControllers.keyAt(i);
-                    mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
-                }
                 mRouteIdToControllerMap.clear();
                 super.dispose();
             }
@@ -1420,12 +1415,6 @@ public abstract class MediaRouteProviderService extends Service {
                 boolean result =
                         super.createRouteController(
                                 routeId, routeGroupId, routeControllerOptions, controllerId);
-                // Don't add route controllers of member routes.
-                if (routeGroupId == null && result && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, routeId);
-                }
                 if (result) {
                     mRouteIdToControllerMap.put(routeId, mControllers.get(controllerId));
                 }
@@ -1433,24 +1422,7 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             @Override
-            public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId,
-                    RouteControllerOptions routeControllerOptions,
-                    int controllerId) {
-                Bundle result =
-                        super.createDynamicGroupRouteController(
-                                initialMemberRouteId, routeControllerOptions, controllerId);
-                if (result != null && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, initialMemberRouteId);
-                }
-                return result;
-            }
-
-            @Override
             public boolean releaseRouteController(int controllerId) {
-                mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
                 RouteController controller = mControllers.get(controllerId);
                 if (controller != null) {
                     for (Map.Entry<String, RouteController> entry :
@@ -1470,6 +1442,7 @@ public abstract class MediaRouteProviderService extends Service {
                 return super.releaseRouteController(controllerId);
             }
 
+            // TODO: b/309867093 - Move this logic to MediaRouteProviderServiceImplBase.
             @Override
             void sendDynamicRouteDescriptors(
                     DynamicGroupRouteController controller,

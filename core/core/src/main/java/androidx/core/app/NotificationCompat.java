@@ -365,6 +365,20 @@ public class NotificationCompat {
     public static final String EXTRA_BIG_TEXT = "android.bigText";
 
     /**
+     * {@link #getExtras extras} key: very short text summarizing the most critical
+     * information contained in the notification.
+     */
+    @SuppressLint("ActionValue")  // Field & value copied from android.app.Notification
+    public static final String EXTRA_SHORT_CRITICAL_TEXT = "android.shortCriticalText";
+
+    /**
+     * {@link #getExtras extras} key: If provided, should contain a boolean indicating
+     * whether the notification is requesting promoted treatment.
+     */
+    @SuppressLint("ActionValue")  // Field & value copied from android.app.Notification
+    public static final String EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing";
+
+    /**
      * {@link #getExtras extras} key: this is the resource ID of the notification's main small icon,
      * as supplied to {@link Builder#setSmallIcon(int)}.
      */
@@ -1086,6 +1100,7 @@ public class NotificationCompat {
 
         CharSequence mContentTitle;
         CharSequence mContentText;
+        @Nullable String mShortCriticalText;
         PendingIntent mContentIntent;
         PendingIntent mFullScreenIntent;
         RemoteViews mTickerView;
@@ -1250,6 +1265,11 @@ public class NotificationCompat {
                     this.setColorized(extras.getBoolean(EXTRA_COLORIZED));
                 }
             }
+            if (Build.VERSION.SDK_INT >= 36) {
+                if (extras.containsKey(EXTRA_SHORT_CRITICAL_TEXT)) {
+                    this.setShortCriticalText(extras.getString(EXTRA_SHORT_CRITICAL_TEXT));
+                }
+            }
         }
 
         /** Remove all extras which have been parsed by the rest of the copy process */
@@ -1265,6 +1285,9 @@ public class NotificationCompat {
             newExtras.remove(EXTRA_TEXT);
             newExtras.remove(EXTRA_INFO_TEXT);
             newExtras.remove(EXTRA_SUB_TEXT);
+            if (Build.VERSION.SDK_INT >= 36) {
+                newExtras.remove(EXTRA_SHORT_CRITICAL_TEXT);
+            }
             newExtras.remove(EXTRA_CHANNEL_ID);
             newExtras.remove(EXTRA_CHANNEL_GROUP_ID);
             newExtras.remove(EXTRA_SHOW_WHEN);
@@ -1542,6 +1565,32 @@ public class NotificationCompat {
          */
         public @NonNull Builder setContentInfo(@Nullable CharSequence info) {
             mContentInfo = limitCharSequenceLength(info);
+            return this;
+        }
+
+        /**
+         * Sets a very short string summarizing the most critical information contained in the
+         * notification. Suggested max length is 7 characters, and there is no guarantee how much or
+         * how little of this text will be shown.
+         */
+        @NonNull
+        public Builder setShortCriticalText(@Nullable String shortCriticalText) {
+            mShortCriticalText = shortCriticalText;
+            if (Build.VERSION.SDK_INT < 36) {
+                getExtras().putString(EXTRA_SHORT_CRITICAL_TEXT, shortCriticalText);
+            }
+            return this;
+        }
+
+        /**
+         * Set whether this notification is requesting to be a promoted ongoing notification.
+         *
+         * <p>This is the first requirement of {@link Notification#hasPromotableCharacteristics()}.
+         */
+        @SuppressWarnings("MissingGetterMatchingBuilder")
+        @NonNull
+        public Builder setRequestPromotedOngoing(boolean requestPromotedOngoing) {
+            getExtras().putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, requestPromotedOngoing);
             return this;
         }
 
@@ -9958,6 +10007,21 @@ public class NotificationCompat {
     }
 
     /**
+     * Returns the very short text summarizing the most critical information contained in the
+     * notification, or null if this field was not set.
+     */
+    public static @Nullable String getShortCriticalText(@NonNull Notification notification) {
+        return notification.extras.getString(EXTRA_SHORT_CRITICAL_TEXT);
+    }
+
+    /**
+     * Returns whether this notification has requested to be a promoted ongoing notification.
+     */
+    public static boolean hasRequestedPromotedOngoing(@NonNull Notification notification) {
+        return notification.extras.getBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, false);
+    }
+
+    /**
      * Get the category of this notification in a backwards compatible
      * manner.
      * @param notification The notification to inspect.
@@ -10223,6 +10287,19 @@ public class NotificationCompat {
                 true /* filtered */);
     }
 
+    /**
+     * Returns whether the notification has any promotable characteristics.
+     *
+     * <p>This is a wrapper around {@link Notification#hasPromotableCharacteristics()}.
+     */
+    public static boolean hasPromotableCharacteristics(@NonNull Notification notification) {
+        if (Build.VERSION.SDK_INT >= 36) {
+            return Api36Impl.hasPromotableCharacteristics(notification);
+        } else {
+            return false;
+        }
+    }
+
     /** @deprecated This type should not be instantiated as it contains only static methods. */
     @Deprecated
     @SuppressWarnings("PrivateConstructorForUtilityClass")
@@ -10393,6 +10470,21 @@ public class NotificationCompat {
 
         static boolean isAuthenticationRequired(Notification.Action action) {
             return action.isAuthenticationRequired();
+        }
+
+    }
+
+    /**
+     * A class for wrapping calls to {@link Notification} methods which
+     * were added in API 36; these calls must be wrapped to avoid performance issues.
+     * See the UnsafeNewApiCall lint rule for more details.
+     */
+    @RequiresApi(36)
+    static class Api36Impl {
+        private Api36Impl() { }
+
+        static boolean hasPromotableCharacteristics(@NonNull Notification notification) {
+            return notification.hasPromotableCharacteristics();
         }
 
     }

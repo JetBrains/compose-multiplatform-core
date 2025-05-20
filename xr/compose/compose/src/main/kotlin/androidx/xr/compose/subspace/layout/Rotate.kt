@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.unit.VolumeConstraints
@@ -31,6 +32,7 @@ import androidx.xr.runtime.math.Vector3
  * @param yaw Rotation around the y-axis. The y-axis is the axis height is measured on.
  * @param roll Rotation around the z-axis. The z-axis is the axis depth is measured on.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.rotate(pitch: Float, yaw: Float, roll: Float): SubspaceModifier =
     this.then(RotationElement(pitch, yaw, roll))
 
@@ -40,6 +42,7 @@ public fun SubspaceModifier.rotate(pitch: Float, yaw: Float, roll: Float): Subsp
  * @param axisAngle Vector representing the axis of rotation.
  * @param rotation Degrees of rotation.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.rotate(axisAngle: Vector3, rotation: Float): SubspaceModifier =
     this.then(RotationElement(axisAngle, rotation))
 
@@ -48,6 +51,7 @@ public fun SubspaceModifier.rotate(axisAngle: Vector3, rotation: Float): Subspac
  *
  * @param quaternion Quaternion describing the rotation.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.rotate(quaternion: Quaternion): SubspaceModifier =
     this.then(RotationElement(quaternion))
 

@@ -25,6 +25,7 @@ import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.contextmenu.close
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.foundation.text.contextmenu.internal.ProvideDefaultPlatformTextContextMenuProviders
@@ -146,7 +147,7 @@ internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composa
  *
  * @param stringId The android [android.R.string] id for the label of this item
  */
-internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val drawableId: Int?) {
+internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val drawableId: Int) {
     Cut(
         key = TextContextMenuKeys.CutKey,
         stringId = android.R.string.cut,
@@ -176,7 +177,7 @@ internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val dr
                 android.R.string.autofill
             },
         // Platform also doesn't have an icon for the autofill item.
-        drawableId = null
+        drawableId = Resources.ID_NULL
     );
 
     @ReadOnlyComposable @Composable fun resolvedString(): String = stringResource(stringId)

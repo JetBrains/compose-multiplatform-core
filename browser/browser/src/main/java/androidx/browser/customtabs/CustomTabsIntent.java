@@ -157,6 +157,47 @@ public final class CustomTabsIntent {
             "android.support.customtabs.extra.TITLE_VISIBILITY";
 
     /**
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef({OPEN_IN_BROWSER_STATE_DEFAULT, OPEN_IN_BROWSER_STATE_ON, OPEN_IN_BROWSER_STATE_OFF})
+    @Retention(RetentionPolicy.SOURCE)
+    @ExperimentalOpenInBrowser
+    public @interface OpenInBrowserState {
+    }
+
+    /**
+     * Applies the default Open in Browser button state in the toolbar depending on the browser.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_DEFAULT = 0;
+
+    /**
+     * Shows the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_ON = 1;
+
+    /**
+     * Explicitly does not show the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_OFF = 2;
+
+    /**
+     * Maximum value for the OPEN_IN_BROWSER_STATE_* configuration options. For validation purposes
+     * only.
+     */
+    @ExperimentalOpenInBrowser
+    private static final int OPEN_IN_BROWSER_STATE_MAX = 2;
+
+    /**
+     * Extra to set the state for the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final String EXTRA_OPEN_IN_BROWSER_STATE =
+            "androidx.browser.customtabs.extra.OPEN_IN_BROWSER_STATE";
+
+    /**
      * Extra to disable the bookmarks button in the overflow menu.
      */
     public static final String EXTRA_DISABLE_BOOKMARKS_BUTTON =
@@ -1361,6 +1402,27 @@ public final class CustomTabsIntent {
         }
 
         /**
+         * Sets the state for the Open in Browser button in the toolbar for this Custom Tab.
+         *
+         * @param openInBrowserState Desired Open in Browser state.
+         * @see CustomTabsIntent#EXTRA_OPEN_IN_BROWSER_STATE
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_DEFAULT
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
+         */
+        @ExperimentalOpenInBrowser
+        public @NonNull Builder setOpenInBrowserButtonState(
+                @OpenInBrowserState int openInBrowserState) {
+            if (openInBrowserState < 0 || openInBrowserState > OPEN_IN_BROWSER_STATE_MAX) {
+                throw new IllegalArgumentException(
+                        "Invalid value for the openInBrowserState argument.");
+            }
+
+            mIntent.putExtra(EXTRA_OPEN_IN_BROWSER_STATE, openInBrowserState);
+            return this;
+        }
+
+        /**
          * Enables or disables the bookmarks button in the overflow menu. The button
          * is enabled by default.
          *
@@ -1781,6 +1843,19 @@ public final class CustomTabsIntent {
     @CloseButtonPosition
     public static int getCloseButtonPosition(@NonNull Intent intent) {
         return intent.getIntExtra(EXTRA_CLOSE_BUTTON_POSITION, CLOSE_BUTTON_POSITION_DEFAULT);
+    }
+
+    /**
+     * @return The state for the Open in Browser button in the toolbar.
+     * @see CustomTabsIntent#EXTRA_OPEN_IN_BROWSER_STATE
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_DEFAULT
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
+     */
+    @ExperimentalOpenInBrowser
+    @OpenInBrowserState
+    public static int getOpenInBrowserButtonState(@NonNull Intent intent) {
+        return intent.getIntExtra(EXTRA_OPEN_IN_BROWSER_STATE, OPEN_IN_BROWSER_STATE_DEFAULT);
     }
 
     /**

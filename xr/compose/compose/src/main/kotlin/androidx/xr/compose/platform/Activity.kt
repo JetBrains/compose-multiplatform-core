@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -66,8 +65,7 @@ public fun ComponentActivity.setSubspaceContent(
  * @param session The JXR session to use for this subspace.
  * @param content A `@Composable` function declaring the spatial UI content.
  */
-@VisibleForTesting
-public fun ComponentActivity.setSubspaceContent(
+private fun ComponentActivity.setSubspaceContent(
     session: Session,
     content: @Composable @SubspaceComposable () -> Unit,
 ) {

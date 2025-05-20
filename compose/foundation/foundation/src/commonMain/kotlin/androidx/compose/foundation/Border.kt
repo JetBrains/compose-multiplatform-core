@@ -123,6 +123,8 @@ internal class BorderModifierNode(
     shapeParameter: Shape
 ) : DelegatingNode() {
 
+    override val shouldAutoInvalidate: Boolean = false
+
     // BorderCache object that is lazily allocated depending on the type of shape
     // This object is only used for generic shapes and rounded rectangles with different corner
     // radius sizes.

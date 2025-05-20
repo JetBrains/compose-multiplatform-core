@@ -75,6 +75,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assume
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -216,6 +217,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             "Skip Cuttlefish until further investigation.",
             Build.MODEL.contains("Cuttlefish")
         )
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Arrange.
         val countDownLatch = CountDownLatch(1)
@@ -231,6 +233,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 }
             }
         instrumentation.runOnMainSync {
+            fakeController.cameraSelector = cameraSelector
+
             val previewView = PreviewView(context)
             previewView.controller = fakeController
             previewView.implementationMode = ImplementationMode.COMPATIBLE
@@ -969,14 +973,16 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
     @Test
     fun canSetFrameUpdateListener() {
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
         lateinit var previewView: PreviewView
         activityScenario!!.onActivity { activity ->
             previewView = PreviewView(context)
             previewView.implementationMode = ImplementationMode.COMPATIBLE
             activity.setContentView(previewView)
             val preview = Preview.Builder().build()
-            preview.setSurfaceProvider(previewView.surfaceProvider)
-            cameraProvider!!.bindToLifecycle(activity, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+            preview.surfaceProvider = previewView.surfaceProvider
+            cameraProvider!!.bindToLifecycle(activity, cameraSelector, preview)
         }
 
         var executedOnExecutor = false

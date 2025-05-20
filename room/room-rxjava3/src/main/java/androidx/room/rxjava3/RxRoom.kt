@@ -43,14 +43,15 @@ import kotlinx.coroutines.rx3.rxMaybe
 import kotlinx.coroutines.rx3.rxSingle
 
 /** Marker class used by annotation processor to identify dependency is in the classpath. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) class Rx3RoomArtifactMarker private constructor()
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class Rx3RoomArtifactMarker private constructor()
 
 /** Data dispatched by the publisher created by [createFlowable]. */
-@JvmField val NOTHING: Any = Any()
+@JvmField public val NOTHING: Any = Any()
 
 /** Helper function used by generated code to create a [Flowable] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun <T : Any> createFlowable(
+public fun <T : Any> createFlowable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
@@ -60,7 +61,7 @@ fun <T : Any> createFlowable(
 
 /** Helper function used by generated code to create a [Observable] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun <T : Any> createObservable(
+public fun <T : Any> createObservable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
@@ -72,7 +73,7 @@ fun <T : Any> createObservable(
 
 /** Helper function used by generated code to create a [Maybe] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun <T : Any> createMaybe(
+public fun <T : Any> createMaybe(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
@@ -84,7 +85,7 @@ fun <T : Any> createMaybe(
 
 /** Helper function used by generated code to create a [Completable] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun createCompletable(
+public fun createCompletable(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
@@ -96,7 +97,7 @@ fun createCompletable(
 
 /** Helper function used by generated code to create a [Single] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun <T : Any> createSingle(
+public fun <T : Any> createSingle(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
@@ -122,7 +123,7 @@ fun <T : Any> createSingle(
  * @return A [Flowable] which emits [NOTHING] when one of the observed tables is modified (also once
  *   when the invalidation tracker connection is established).
  */
-fun createFlowable(database: RoomDatabase, vararg tableNames: String): Flowable<Any> {
+public fun createFlowable(database: RoomDatabase, vararg tableNames: String): Flowable<Any> {
     return Flowable.create(
         { emitter: FlowableEmitter<Any> ->
             val observer =
@@ -155,7 +156,7 @@ fun createFlowable(database: RoomDatabase, vararg tableNames: String): Flowable<
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Deprecated("No longer used by generated code.")
-fun <T : Any> createFlowable(
+public fun <T : Any> createFlowable(
     database: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
@@ -185,7 +186,7 @@ fun <T : Any> createFlowable(
  * @return A [Observable] which emits [NOTHING] when one of the observed tables is modified (also
  *   once when the invalidation tracker connection is established).
  */
-fun createObservable(database: RoomDatabase, vararg tableNames: String): Observable<Any> {
+public fun createObservable(database: RoomDatabase, vararg tableNames: String): Observable<Any> {
     return Observable.create { emitter: ObservableEmitter<Any> ->
         val observer =
             object : InvalidationTracker.Observer(tableNames) {
@@ -209,7 +210,7 @@ fun createObservable(database: RoomDatabase, vararg tableNames: String): Observa
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Deprecated("No longer used by generated code.")
-fun <T : Any> createObservable(
+public fun <T : Any> createObservable(
     database: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
@@ -229,7 +230,7 @@ fun <T : Any> createObservable(
  * EmptyResultSetException if the stream is already disposed.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun <T : Any> createSingle(callable: Callable<out T>): Single<T> {
+public fun <T : Any> createSingle(callable: Callable<out T>): Single<T> {
     return Single.create { emitter ->
         try {
             val result = callable.call()

@@ -414,12 +414,12 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                                     // invalidation in
                                     // order for the layer properties change to be applied:
                                     onLayerPropertyChanged = { displayingNode?.invalidateDraw() },
-                                    containerHeight = layoutMaxOffset - layoutMinOffset
+                                    containerHeight = layoutMaxOffset - layoutMinOffset,
+                                    transformedHeight = positionedItem.transformedHeight,
+                                    measuredHeight = positionedItem.measuredHeight,
+                                    measurementDirection = positionedItem.measurementDirection
                                 )
-                                .also {
-                                    animations[index] = it
-                                    it.transformedHeight = positionedItem.mainAxisSizeWithSpacings
-                                }
+                                .also { animations[index] = it }
                     animation.fadeInSpec = specs.fadeInSpec
                     animation.placementSpec = specs.placementSpec
                     animation.fadeOutSpec = specs.fadeOutSpec

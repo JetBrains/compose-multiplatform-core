@@ -38,7 +38,7 @@ package androidx.compose.ui.tooling.data {
     ctor public JoinedKey(Object? left, Object? right);
     method public Object? component1();
     method public Object? component2();
-    method public androidx.compose.ui.tooling.data.JoinedKey copy(Object? left, Object? right);
+    method public androidx.compose.ui.tooling.data.JoinedKey copy(optional Object? left, optional Object? right);
     method public Object? getLeft();
     method public Object? getRight();
     property public Object? left;
@@ -61,7 +61,7 @@ package androidx.compose.ui.tooling.data {
     method public boolean component5();
     method public String? component6();
     method public boolean component7();
-    method public androidx.compose.ui.tooling.data.ParameterInformation copy(String name, Object? value, boolean fromDefault, boolean static, boolean compared, String? inlineClass, boolean stable);
+    method public androidx.compose.ui.tooling.data.ParameterInformation copy(optional String name, optional Object? value, optional boolean fromDefault, optional boolean static, optional boolean compared, optional String? inlineClass, optional boolean stable);
     method public boolean getCompared();
     method public boolean getFromDefault();
     method public String? getInlineClass();
@@ -108,7 +108,7 @@ package androidx.compose.ui.tooling.data {
     method public int component3();
     method public String? component4();
     method public int component5();
-    method public androidx.compose.ui.tooling.data.SourceLocation copy(int lineNumber, int offset, int length, String? sourceFile, int packageHash);
+    method public androidx.compose.ui.tooling.data.SourceLocation copy(optional int lineNumber, optional int offset, optional int length, optional String? sourceFile, optional int packageHash);
     method public int getLength();
     method public int getLineNumber();
     method public int getOffset();

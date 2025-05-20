@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraExtensionSession
 import android.hardware.camera2.CaptureFailure
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
@@ -48,6 +49,9 @@ import javax.inject.Inject
 @CameraScope
 public class CameraCallbackMap @Inject constructor() : Request.Listener {
     private val callbackMap = mutableMapOf<CameraCaptureCallback, Executor>()
+    private val rejectOperationCameraCaptureSession: CameraCaptureSession by lazy {
+        RejectOperationCameraCaptureSession()
+    }
 
     @Volatile private var callbacks: Map<CameraCaptureCallback, Executor> = mapOf()
 
@@ -103,8 +107,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
-                val session: CameraCaptureSession? =
-                    requestMetadata.unwrapAs(CameraCaptureSession::class)
+                val session: CameraCaptureSession? = getCameraCaptureSession(requestMetadata)
                 val request: CaptureRequest? = requestMetadata.unwrapAs(CaptureRequest::class)
                 val totalCaptureResult: TotalCaptureResult? =
                     result.unwrapAs(TotalCaptureResult::class)
@@ -139,8 +142,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
-                val session: CameraCaptureSession? =
-                    requestMetadata.unwrapAs(CameraCaptureSession::class)
+                val session: CameraCaptureSession? = getCameraCaptureSession(requestMetadata)
                 val request: CaptureRequest? = requestMetadata.unwrapAs(CaptureRequest::class)
                 val captureFailure = requestFailure.unwrapAs(CaptureFailure::class)
                 if (session != null && request != null && captureFailure != null) {
@@ -220,8 +222,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
-                val session: CameraCaptureSession? =
-                    requestMetadata.unwrapAs(CameraCaptureSession::class)
+                val session: CameraCaptureSession? = getCameraCaptureSession(requestMetadata)
                 val request: CaptureRequest? = requestMetadata.unwrapAs(CaptureRequest::class)
                 if (session != null && request != null) {
                     executor.execute {
@@ -243,8 +244,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
-                val session: CameraCaptureSession? =
-                    requestMetadata.unwrapAs(CameraCaptureSession::class)
+                val session: CameraCaptureSession? = getCameraCaptureSession(requestMetadata)
                 val request: CaptureRequest? = requestMetadata.unwrapAs(CaptureRequest::class)
                 if (session != null && request != null) {
                     executor.execute {
@@ -316,6 +316,17 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
             }
         }
     }
+
+    private fun getCameraCaptureSession(requestMetadata: RequestMetadata): CameraCaptureSession? =
+        requestMetadata.unwrapAs(CameraCaptureSession::class)
+            // Also try the CameraExtensionSession for callback when API level is 31 or above
+            ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                requestMetadata.unwrapAs(CameraExtensionSession::class)?.let {
+                    rejectOperationCameraCaptureSession
+                }
+            } else {
+                null
+            }
 
     public companion object {
         public fun createFor(

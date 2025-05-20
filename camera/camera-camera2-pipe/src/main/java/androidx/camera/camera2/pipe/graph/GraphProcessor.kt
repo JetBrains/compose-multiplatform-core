@@ -146,7 +146,7 @@ constructor(
                 requiredParameters = requiredParameters,
                 graphListeners = graphListeners + listOfNotNull(captureLimiter),
                 listeners = listOfNotNull(graphListener3A, captureLimiter),
-                shutdownScope = threads.globalScope,
+                shutdownScope = threads.cameraPipeScope,
                 dispatcher = threads.lightweightDispatcher
             )
 

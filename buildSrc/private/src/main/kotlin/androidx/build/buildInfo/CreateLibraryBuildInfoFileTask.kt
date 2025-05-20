@@ -254,8 +254,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group!!.toString()
-                        this.version = it.version!!.toString()
+                        this.groupId = it.group!!
+                        this.version = it.version!!
                         this.isTipOfTree =
                             it is ProjectDependency || it is BuildInfoVariantDependency
                     }
@@ -269,8 +269,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group!!.toString()
-                        this.version = it.version!!.toString()
+                        this.groupId = it.group
+                        this.version = it.version!!
                         this.isTipOfTree = it is DefaultProjectDependencyConstraint
                     }
                 }

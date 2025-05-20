@@ -812,8 +812,6 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [NavigationBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalNavigationBarOverride: ProvidableCompositionLocal<NavigationBarOverride> =
     compositionLocalOf {

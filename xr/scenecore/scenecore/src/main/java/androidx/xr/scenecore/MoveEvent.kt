@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 
@@ -84,6 +85,7 @@ internal class MoveEvent(
 }
 
 /** Listener for move actions. Callbacks are invoked as user interacts with the entity. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface MoveListener {
     /**
      * Called when the user starts moving the entity.

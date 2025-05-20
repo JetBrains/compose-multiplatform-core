@@ -12,30 +12,30 @@ package androidx.ink.strokes {
 
   public final class InProgressStroke {
     ctor public InProgressStroke();
-    method public Object enqueueInputs(androidx.ink.strokes.StrokeInputBatch realInputs, androidx.ink.strokes.StrokeInputBatch predictedInputs);
+    method public void enqueueInputsOrIgnore(androidx.ink.strokes.StrokeInputBatch realInputs, androidx.ink.strokes.StrokeInputBatch predictedInputs);
     method public void enqueueInputsOrThrow(androidx.ink.strokes.StrokeInputBatch realInputs, androidx.ink.strokes.StrokeInputBatch predictedInputs);
     method protected void finalize();
     method public void finishInput();
     method public androidx.ink.brush.Brush? getBrush();
     method @IntRange(from=0L) public int getBrushCoatCount();
     method @IntRange(from=0L) public int getInputCount();
-    method public boolean getNeedsUpdate();
     method @IntRange(from=0L) public int getOutlineCount(@IntRange(from=0L) int coatIndex);
     method @IntRange(from=0L) public int getOutlineVertexCount(@IntRange(from=0L) int coatIndex, @IntRange(from=0L) int outlineIndex);
     method @IntRange(from=0L) public int getPredictedInputCount();
     method @IntRange(from=0L) public int getRealInputCount();
     method public boolean isInputFinished();
+    method public boolean isUpdateNeeded();
     method public androidx.ink.strokes.StrokeInput populateInput(androidx.ink.strokes.StrokeInput out, @IntRange(from=0L) int index);
     method public androidx.ink.strokes.MutableStrokeInputBatch populateInputs(androidx.ink.strokes.MutableStrokeInputBatch out);
     method public androidx.ink.strokes.MutableStrokeInputBatch populateInputs(androidx.ink.strokes.MutableStrokeInputBatch out, optional @IntRange(from=0L) int from);
     method public androidx.ink.strokes.MutableStrokeInputBatch populateInputs(androidx.ink.strokes.MutableStrokeInputBatch out, optional @IntRange(from=0L) int from, optional @IntRange(from=0L) int to);
-    method public androidx.ink.geometry.BoxAccumulator populateMeshBounds(@IntRange(from=0L) int coatIndex, androidx.ink.geometry.BoxAccumulator outBoxAccumulator);
-    method public void populateOutlinePosition(@IntRange(from=0L) int coatIndex, @IntRange(from=0L) int outlineIndex, @IntRange(from=0L) int outlineVertexIndex, androidx.ink.geometry.MutableVec outPosition);
-    method public androidx.ink.geometry.BoxAccumulator populateUpdatedRegion(androidx.ink.geometry.BoxAccumulator outBoxAccumulator);
+    method public androidx.ink.geometry.BoxAccumulator populateMeshBounds(@IntRange(from=0L) int coatIndex, androidx.ink.geometry.BoxAccumulator outMeshBounds);
+    method public androidx.ink.geometry.MutableVec populateOutlinePosition(@IntRange(from=0L) int coatIndex, @IntRange(from=0L) int outlineIndex, @IntRange(from=0L) int outlineVertexIndex, androidx.ink.geometry.MutableVec outPosition);
+    method public androidx.ink.geometry.BoxAccumulator populateUpdatedRegion(androidx.ink.geometry.BoxAccumulator outUpdatedRegion);
     method public void resetUpdatedRegion();
     method public void start(androidx.ink.brush.Brush brush);
     method public androidx.ink.strokes.Stroke toImmutable();
-    method public Object updateShape(optional long currentElapsedTimeMillis);
+    method public void updateShapeOrIgnore(optional long currentElapsedTimeMillis);
     method public void updateShapeOrThrow(optional long currentElapsedTimeMillis);
     property public androidx.ink.brush.Brush? brush;
     field public static final androidx.ink.strokes.InProgressStroke.Companion Companion;

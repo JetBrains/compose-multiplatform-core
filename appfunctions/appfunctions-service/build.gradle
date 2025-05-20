@@ -53,7 +53,6 @@ dependencies {
     testImplementation(project(":appfunctions:appfunctions-stubs"))
     testImplementation(libs.mockitoCore)
     testImplementation(libs.testCore)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinTest)
 
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
@@ -83,4 +82,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "A runtime library for the app to expose AppFunctions"
+    enableRobolectric()
 }

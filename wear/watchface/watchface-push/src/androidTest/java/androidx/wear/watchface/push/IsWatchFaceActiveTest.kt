@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class IsWatchFaceActiveTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
-    private var wfp = WatchFacePushManager(context)
+    private var wfp = WatchFacePushManagerFactory.createWatchFacePushManager(context)
 
     @Rule
     @JvmField

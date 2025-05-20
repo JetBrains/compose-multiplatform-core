@@ -57,8 +57,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Concrete implementation of SpatialEnvironment / XR Wallpaper for Android XR. */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 // TODO(b/373435470): Remove "deprecation"
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings({"deprecation", "BanSynchronizedMethods"})
 final class SpatialEnvironmentImpl implements SpatialEnvironment {
     public static final String TAG = "SpatialEnvironmentImpl";
@@ -272,9 +272,9 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
     }
 
     // This is called on the Activity's UI thread - so we should be careful to not block it.
-    synchronized void firePassthroughOpacityChangedEvent(float opacity) {
+    synchronized void firePassthroughOpacityChangedEvent() {
         for (Consumer<Float> listener : mOnPassthroughOpacityChangedListeners) {
-            listener.accept(opacity);
+            listener.accept(getCurrentPassthroughOpacity());
         }
     }
 
@@ -520,10 +520,9 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
     }
 
     // This is called on the Activity's UI thread - so we should be careful to not block it.
-    synchronized void fireOnSpatialEnvironmentChangedEvent(
-            boolean isSpatialEnvironmentPreferenceActive) {
+    synchronized void fireOnSpatialEnvironmentChangedEvent() {
         for (Consumer<Boolean> listener : mOnSpatialEnvironmentChangedListeners) {
-            listener.accept(isSpatialEnvironmentPreferenceActive);
+            listener.accept(mIsSpatialEnvironmentPreferenceActive);
         }
     }
 
@@ -571,7 +570,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
         mOnPassthroughOpacityChangedListeners.clear();
         mOnSpatialEnvironmentChangedListeners.clear();
         // TODO: b/376934871 - Check async results.
-        mXrExtensions.detachSpatialEnvironment(mActivity, (result) -> {}, Runnable::run);
+        mXrExtensions.detachSpatialEnvironment(mActivity, Runnable::run, (result) -> {});
         mActivity = null;
     }
 }

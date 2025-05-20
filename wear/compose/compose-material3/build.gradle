@@ -74,11 +74,10 @@ android {
     defaultConfig {
         minSdk = 25
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.wear.compose.material3"
 }
 

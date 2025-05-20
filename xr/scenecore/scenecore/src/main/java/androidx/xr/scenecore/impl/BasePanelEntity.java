@@ -23,6 +23,7 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.TypedValueCompat;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -55,16 +56,15 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
                 .defaultPixelsPerMeter(Resources.getSystem().getDisplayMetrics().density);
     }
 
-    @SuppressLint("ObsoleteSdkInt")
     protected float getDefaultCornerRadiusInMeters() {
         // Get the width and height of the panel in DP.
         float widthDp =
-                TypedValue.deriveDimension(
+                TypedValueCompat.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.width,
                         Resources.getSystem().getDisplayMetrics());
         float heightDp =
-                TypedValue.deriveDimension(
+                TypedValueCompat.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.height,
                         Resources.getSystem().getDisplayMetrics());
@@ -81,8 +81,7 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
         // Convert the updated corner radius to pixels.
         float radiusPixels =
-                TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
+                TypedValueCompat.dpToPx(
                         radiusDp,
                         Resources.getSystem().getDisplayMetrics());
 

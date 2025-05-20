@@ -97,7 +97,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
-            boolean hasVideoCapture) {
+            boolean hasVideoCapture, boolean allowFeatureCombinationResolutions) {
         List<UseCaseConfig<?>> newUseCaseConfigs =
                 new ArrayList<>(newUseCaseConfigsSupportedSizeMap.keySet());
         checkSurfaceCombo(existingSurfaces, newUseCaseConfigs);

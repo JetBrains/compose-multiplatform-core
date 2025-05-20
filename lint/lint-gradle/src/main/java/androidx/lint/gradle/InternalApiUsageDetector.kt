@@ -160,6 +160,14 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                             "Avoid using internal Android Gradle Plugin APIs$contextMsg"
                         )
                     }
+                } else if (cls.isInternalKgpApi()) {
+                    if (isImport || !isImported(cls, node)) {
+                        reportIncidentForNode(
+                            INTERNAL_KGP_ISSUE,
+                            node,
+                            "Avoid using internal Kotlin Gradle Plugin APIs$contextMsg"
+                        )
+                    }
                 }
             }
 
@@ -187,6 +195,12 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
             private fun PsiClass.isInternalAgpApi(): Boolean {
                 val className = qualifiedName ?: return false
                 return className.startsWith("com.android.build.") &&
+                    className.contains(".internal.")
+            }
+
+            private fun PsiClass.isInternalKgpApi(): Boolean {
+                val className = qualifiedName ?: return false
+                return className.startsWith("org.jetbrains.kotlin.") &&
                     className.contains(".internal.")
             }
 
@@ -221,6 +235,20 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
             Issue.create(
                 "InternalAgpApiUsage",
                 "Avoid using internal Android Gradle Plugin APIs",
+                """
+                Using internal APIs results in fragile plugin behavior as these types have no binary
+                compatibility guarantees. It is best to create a feature request to open up these
+                APIs if you find them useful.
+            """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
+            )
+        val INTERNAL_KGP_ISSUE =
+            Issue.create(
+                "InternalKgpApiUsage",
+                "Avoid using internal Kotlin Gradle Plugin APIs",
                 """
                 Using internal APIs results in fragile plugin behavior as these types have no binary
                 compatibility guarantees. It is best to create a feature request to open up these

@@ -32,6 +32,15 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
+    desktop()
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -54,26 +63,18 @@ androidXMultiplatform {
             }
         }
 
-        jvmCommonMain {
+        androidMain {
             dependsOn(commonMain)
+            dependencies {
+                implementation("androidx.core:core-viewtree:1.0.0")
+            }
         }
 
-        jvmCommonTest {
+        androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
                 runtimeOnly(libs.kotlinTestJunit)
                 implementation(libs.junit)
-            }
-        }
-
-        androidMain {
-            dependsOn(jvmCommonMain)
-            dependencies { }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(jvmCommonTest)
-            dependencies {
                 implementation(libs.espressoCore)
                 implementation(libs.hamcrestCore)
                 implementation(libs.testCore)
@@ -83,10 +84,25 @@ androidXMultiplatform {
                 implementation(libs.testRunner)
             }
         }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
     }
 }
 
 android {
+    compileSdk = 36
     namespace = "androidx.navigationevent"
 }
 
@@ -96,5 +112,4 @@ androidx {
     inceptionYear = "2025"
     description = "Provides APIs to easily intercept platform navigation events, including " +
             "swipes and clicks, to provide a consistent API surface for handling these events."
-    metalavaK2UastEnabled = false
 }

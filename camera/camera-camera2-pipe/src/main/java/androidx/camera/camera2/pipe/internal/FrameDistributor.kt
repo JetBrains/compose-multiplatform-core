@@ -53,8 +53,7 @@ import androidx.camera.camera2.pipe.media.OutputImage
  */
 internal class FrameDistributor(
     imageSources: Map<StreamId, ImageSource>,
-    private val frameCaptureQueue: FrameCaptureQueue,
-    private val frameStartedListener: FrameStartedListener
+    private val frameCaptureQueue: FrameCaptureQueue
 ) : AutoCloseable, Request.Listener {
     /**
      * Listener to observe new [FrameReferences][FrameReference] as they are started by the camera.
@@ -106,6 +105,8 @@ internal class FrameDistributor(
             imageDistributor
         }
     private val imageStreams: Set<StreamId> = imageDistributors.keys
+
+    var frameStartedListener: FrameStartedListener = FrameStartedListener {}
 
     /**
      * Create and distribute a [Frame] to the pending [FrameCapture] (If one has been registered for

@@ -76,7 +76,7 @@ internal class AndroidComposeSpatialElement :
      */
     private var isLayoutInProgress = false
 
-    internal var rootVolumeConstraints: VolumeConstraints = VolumeConstraints.Unbounded
+    internal var rootVolumeConstraints: VolumeConstraints = VolumeConstraints()
 
     init {
         root.attach(this)

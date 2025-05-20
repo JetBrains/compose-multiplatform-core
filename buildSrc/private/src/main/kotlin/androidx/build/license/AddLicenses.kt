@@ -24,7 +24,6 @@ import androidx.build.multiplatformExtension
 import com.android.build.gradle.tasks.BundleAar
 import java.io.File
 import java.nio.file.Files
-import kotlin.io.path.readBytes
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.withType

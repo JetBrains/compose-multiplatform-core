@@ -47,7 +47,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -64,9 +63,6 @@ android {
     defaultConfig {
         minSdk = 23
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.remote.interactions"
 }
 
@@ -78,4 +74,5 @@ androidx {
     description = "Android Wear Remote Interactions"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:wear-remote-interactions-samples"))
+    enableRobolectric()
 }

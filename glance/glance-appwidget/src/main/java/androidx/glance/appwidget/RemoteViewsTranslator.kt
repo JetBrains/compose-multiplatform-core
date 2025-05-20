@@ -133,7 +133,6 @@ internal fun translateComposition(
                     combineLandscapeAndPortrait(views.map { it.second })
                 }
             }
-            else -> error("Unknown sizeMode: $sizeMode")
         }
     } else {
         return children.single().let { child ->

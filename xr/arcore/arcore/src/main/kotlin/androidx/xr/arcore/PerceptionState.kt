@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.xr.runtime.CoreState
 import kotlin.time.ComparableTimeMark
 
 /**

@@ -30,7 +30,6 @@ import androidx.window.core.layout.WindowSizeClass
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.testing.layout.WindowLayoutInfoPublisherRule
-import androidx.window.testing.layout.WindowMetricsCalculatorRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -38,18 +37,14 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 
-@Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CurrentWindowAdaptiveInfoTest {
     private val composeRule = createComposeRule()
     private val layoutInfoRule = WindowLayoutInfoPublisherRule()
-    private val windowMetricsCalculatorRule = WindowMetricsCalculatorRule()
 
-    @get:Rule
-    val testRule: TestRule =
-        RuleChain.outerRule(windowMetricsCalculatorRule).around(layoutInfoRule).around(composeRule)
+    @get:Rule val testRule: TestRule = RuleChain.outerRule(layoutInfoRule).around(composeRule)
 
     @Test
     fun test_currentWindowAdaptiveInfo() {
@@ -70,7 +65,7 @@ class CurrentWindowAdaptiveInfoTest {
         composeRule.runOnIdle {
             val mockSize = with(MockDensity) { MockWindowSize1.toSize().toDpSize() }
             assertThat(actualAdaptiveInfo.windowSizeClass)
-                .isEqualTo(WindowSizeClass.compute(mockSize.width.value, mockSize.height.value))
+                .isEqualTo(WindowSizeClass.computeFromDpSize(mockSize))
             assertThat(actualAdaptiveInfo.windowPosture)
                 .isEqualTo(calculatePosture(MockFoldingFeatures1))
         }
@@ -81,7 +76,7 @@ class CurrentWindowAdaptiveInfoTest {
         composeRule.runOnIdle {
             val mockSize = with(MockDensity) { MockWindowSize2.toSize().toDpSize() }
             assertThat(actualAdaptiveInfo.windowSizeClass)
-                .isEqualTo(WindowSizeClass.compute(mockSize.width.value, mockSize.height.value))
+                .isEqualTo(WindowSizeClass.computeFromDpSize(mockSize))
             assertThat(actualAdaptiveInfo.windowPosture)
                 .isEqualTo(calculatePosture(MockFoldingFeatures2))
         }

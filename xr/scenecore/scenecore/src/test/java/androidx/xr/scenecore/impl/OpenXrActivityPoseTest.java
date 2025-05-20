@@ -80,6 +80,7 @@ public final class OpenXrActivityPoseTest {
                     mXrExtensions,
                     mEntityManager,
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mExecutor);
     private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =

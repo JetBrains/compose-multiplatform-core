@@ -52,21 +52,17 @@ internal val cameraPipeIds = atomic(0)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface CameraPipe {
 
+    @Deprecated(
+        "Use createCameraGraph instead.",
+        replaceWith = ReplaceWith("createCameraGraph(config)")
+    )
+    public fun create(config: CameraGraph.Config): CameraGraph
+
     /**
      * This creates a new [CameraGraph] that can be used to interact with a single Camera on the
      * device. Multiple [CameraGraph]s can be created, but only one should be active at a time.
      */
-    public fun create(config: CameraGraph.Config): CameraGraph
-
-    /**
-     * [FrameGraph] extends [CameraGraph] by adding stream management capabilities to it, so if
-     * stream management capabilities are desired, it's recommended to use [FrameGraph] over
-     * [CameraGraph].
-     *
-     * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
-     * device. Multiple [FrameGraph]s can be created, but only one should be active at a time.
-     */
-    public fun create(config: CameraGraph.Config, frameGraphConfig: FrameGraph.Config): FrameGraph
+    public fun createCameraGraph(config: CameraGraph.Config): CameraGraph
 
     /**
      * This creates a list of [CameraGraph]s that can be used to interact with multiple cameras on
@@ -74,6 +70,22 @@ public interface CameraPipe {
      * that can be operated concurrently, or the combination of sizes we're allowed to configure.
      */
     public fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph>
+
+    /**
+     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]'s,
+     * images, and metadata from the camera, while maintaining the capabilities of [CameraGraph].
+     *
+     * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
+     * device. Multiple [FrameGraph]s can be created, but only one should be active at a time.
+     */
+    public fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph
+
+    /**
+     * This creates a list of [FrameGraph]s that can be used to interact with multiple cameras on
+     * the device concurrently. Device-specific constraints may apply, such as the set of cameras
+     * that can be operated concurrently, or the combination of sizes we're allowed to configure.
+     */
+    public fun createFrameGraphs(frameGraphConfigs: FrameGraph.ConcurrentConfig): List<FrameGraph>
 
     /** This provides access to information about the available cameras on the device. */
     public fun cameras(): CameraDevices
@@ -87,6 +99,13 @@ public interface CameraPipe {
     public var globalAudioRestrictionMode: AudioRestrictionMode
 
     /**
+     * This shuts down the CameraPipe instance completely, releasing all its resources, notably the
+     * threads it created. After shutdown, a new CameraPipe instance should be recreated for any
+     * additional capture sessions the users would like to create.
+     */
+    public fun shutdown()
+
+    /**
      * Application level configuration for [CameraPipe]. Nullable values are optional and reasonable
      * defaults will be provided if values are not specified.
      */
@@ -98,8 +117,6 @@ public interface CameraPipe {
         val cameraBackendConfig: CameraBackendConfig = CameraBackendConfig(),
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
-        // TODO: b/409140708 - Remove this flag once we've removed all its references.
-        val usePruningDeviceManager: Boolean = true,
     )
 
     /**
@@ -197,7 +214,13 @@ public fun CameraPipe(config: Config): CameraPipe = CameraPipe.create(config)
 internal class CameraPipeImpl(private val component: CameraPipeComponent) : CameraPipe {
     private val debugId = cameraPipeIds.incrementAndGet()
 
-    override fun create(config: CameraGraph.Config): CameraGraph =
+    @Deprecated(
+        "Use createCameraGraph instead.",
+        replaceWith = ReplaceWith("createCameraGraph(config)")
+    )
+    override fun create(config: CameraGraph.Config): CameraGraph = createCameraGraph(config)
+
+    override fun createCameraGraph(config: CameraGraph.Config): CameraGraph =
         Debug.trace("CXCP#CameraGraph-${config.camera}") {
             component
                 .cameraGraphComponentBuilder()
@@ -206,25 +229,32 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                 .cameraGraph()
         }
 
-    override fun create(
-        config: CameraGraph.Config,
-        frameGraphConfig: FrameGraph.Config
-    ): FrameGraph =
-        Debug.trace("CXCP#CreateFrameGraph-${config.camera}") {
+    override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> {
+        return config.graphConfigs.map { createCameraGraph(it) }
+    }
+
+    override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph =
+        Debug.trace("CXCP#CreateFrameGraph-${frameGraphConfig.cameraGraphConfig.camera}") {
             val cameraGraphComponent =
                 component
                     .cameraGraphComponentBuilder()
-                    .cameraGraphConfigModule(CameraGraphConfigModule(config))
+                    .cameraGraphConfigModule(
+                        CameraGraphConfigModule(frameGraphConfig.cameraGraphConfig)
+                    )
                     .build()
-            cameraGraphComponent
+            component
                 .frameGraphComponentBuilder()
-                .frameGraphConfigModule(FrameGraphConfigModule(frameGraphConfig))
+                .frameGraphConfigModule(
+                    FrameGraphConfigModule(cameraGraphComponent, frameGraphConfig)
+                )
                 .build()
                 .frameGraph()
         }
 
-    override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> {
-        return config.graphConfigs.map { create(it) }
+    override fun createFrameGraphs(
+        frameGraphConfigs: FrameGraph.ConcurrentConfig
+    ): List<FrameGraph> {
+        return frameGraphConfigs.frameGraphConfigs.map { createFrameGraph(it) }
     }
 
     /** This provides access to information about the available cameras on the device. */
@@ -246,6 +276,10 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
         set(value) {
             component.cameraAudioRestrictionController().globalAudioRestrictionMode = value
         }
+
+    override fun shutdown() {
+        component.cameraPipeLifetime().shutdown()
+    }
 
     override fun toString(): String = "CameraPipe-$debugId"
 }

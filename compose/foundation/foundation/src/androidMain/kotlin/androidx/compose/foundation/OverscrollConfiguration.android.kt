@@ -72,8 +72,6 @@ class OverscrollConfiguration(
     replaceWith =
         ReplaceWith("LocalOverscrollFactory", "androidx.compose.foundation.LocalOverscrollFactory")
 )
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 @ExperimentalFoundationApi
-@get:ExperimentalFoundationApi
 val LocalOverscrollConfiguration =
     compositionLocalOf<OverscrollConfiguration?> { OverscrollConfiguration() }

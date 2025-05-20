@@ -16,17 +16,15 @@
 
 package androidx.xr.compose.subspace
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
-import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.compose.foundation.background
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.graphics.Color as UiColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
@@ -52,9 +49,11 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMaxOfOrNull
+import androidx.core.graphics.drawable.toDrawable
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.coreMainPanelEntity
 import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.subspace.layout.MeasurePolicy
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
@@ -73,7 +72,14 @@ import androidx.xr.scenecore.PanelEntity
 
 private const val DEFAULT_SIZE_PX = 400
 
+// Max allowed size for makeMeasureSpec is (1 << MeasureSpec.MODE_SHIFT) - 1.
+private const val MAX_MEASURE_SPEC_SIZE = (1 shl 30) - 1
+
+/** Set the scrim alpha to 32% opacity across all spatial panels. */
+private const val DEFAULT_SCRIM_ALPHA = 0x52000000
+
 /** Contains default values used by spatial panels. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SpatialPanelDefaults {
 
     /** Default shape for a Spatial Panel. */
@@ -94,6 +100,7 @@ public object SpatialPanelDefaults {
 @Composable
 @SubspaceComposable
 @Deprecated("Use SpatialPanel(factory, modifier, update, shape) instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialPanel(
     view: View,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -123,7 +130,7 @@ public fun SpatialPanel(
 
     LaunchedEffect(dialogManager.isSpatialDialogActive.value) {
         if (dialogManager.isSpatialDialogActive.value) {
-            scrim.setBackgroundColor(0x7D000000)
+            scrim.setBackgroundColor(DEFAULT_SCRIM_ALPHA)
 
             if (scrim.parent == null) {
                 val scrimLayoutParams =
@@ -142,8 +149,14 @@ public fun SpatialPanel(
 
     SubspaceLayout(modifier = modifier, coreEntity = corePanelEntity) { _, constraints ->
         view.measure(
-            MeasureSpec.makeMeasureSpec(constraints.maxWidth, MeasureSpec.AT_MOST),
-            MeasureSpec.makeMeasureSpec(constraints.maxHeight, MeasureSpec.AT_MOST),
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST
+            ),
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST
+            ),
         )
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
         val height = view.measuredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
@@ -173,9 +186,9 @@ public fun SpatialPanel(
  * @param update A lambda that allows updating the created Android View [T].
  * @param shape The shape of this Spatial Panel.
  */
-@SuppressLint("UseKtx")
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun <T : View> SpatialPanel(
     factory: (Context) -> T,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -185,22 +198,17 @@ public fun <T : View> SpatialPanel(
     val dialogManager = LocalDialogManager.current
     val context = LocalContext.current
 
+    @Suppress("UnnecessaryLambdaCreation")
     AndroidViewPanel(
-        factory = {
-            val frameLayout = FrameLayout(context)
-            val view = factory(context)
-            frameLayout.addView(view)
-
-            frameLayout
-        },
+        factory = { factory(context) },
         modifier = modifier,
-        update = { frameLayout ->
-            @Suppress("UNCHECKED_CAST") val view = frameLayout.getChildAt(0) as T
+        update = { view ->
             if (dialogManager.isSpatialDialogActive.value) {
-                frameLayout.setForeground(ColorDrawable(0x7D000000))
-                frameLayout.setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
+                view.foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
+                view.setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
             } else {
-                frameLayout.setForeground(ColorDrawable(Color.TRANSPARENT))
+                view.foreground = Color.TRANSPARENT.toDrawable()
+                view.setOnClickListener(null)
             }
             update(view)
         },
@@ -241,8 +249,14 @@ private fun <T : View> AndroidViewPanel(
 
     val measurePolicy = MeasurePolicy { _, constraints ->
         view.measure(
-            MeasureSpec.makeMeasureSpec(constraints.maxWidth, MeasureSpec.AT_MOST),
-            MeasureSpec.makeMeasureSpec(constraints.maxHeight, MeasureSpec.AT_MOST),
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST
+            ),
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST
+            ),
         )
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
         val height = view.measuredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
@@ -275,6 +289,7 @@ private fun <T : View> AndroidViewPanel(
  */
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
@@ -324,18 +339,16 @@ public fun SpatialPanel(
                     }
                 }
             }
-
             if (dialogManager.isSpatialDialogActive.value) {
+                view.foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
                 Box(
                     modifier =
-                        Modifier.fillMaxSize()
-                            .background(UiColor.Black.copy(alpha = 0.5f))
-                            .pointerInput(Unit) {
-                                detectTapGestures {
-                                    dialogManager.isSpatialDialogActive.value = false
-                                }
-                            }
+                        Modifier.fillMaxSize().pointerInput(Unit) {
+                            detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
+                        }
                 ) {}
+            } else {
+                view.foreground = Color.TRANSPARENT.toDrawable()
             }
         }
         val width = intrinsicWidth.coerceIn(volumeConstraints.minWidth, volumeConstraints.maxWidth)
@@ -365,17 +378,23 @@ public fun SpatialPanel(
  */
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun MainPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
 ) {
-    val mainPanel = rememberCoreMainPanelEntity(shape = shape)
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val mainPanel = session.coreMainPanelEntity
+    LaunchedEffect(shape) { mainPanel.shape = shape }
+
     val view = LocalContext.current.getActivity().window?.decorView ?: LocalView.current
 
-    DisposableEffect(Unit) {
-        mainPanel.hidden = false
-        onDispose { mainPanel.hidden = true }
-    }
+    // When the MainPanel enters the compose hierarchy, we can't directly set the mainPanel.hidden
+    // to false here because the hidden state is a subcomponent of the size calculation, see
+    // [SubspaceLayoutNode.MeasureLayout.placeAt] and [CoreEntity.size].
+    // This means hidden will be set after layout completes, on the first frame when the MainPanel
+    // enters the Compose hierarchy.
+    DisposableEffect(Unit) { onDispose { mainPanel.hidden = true } }
 
     SubspaceLayout(modifier = modifier, coreEntity = mainPanel) { _, constraints ->
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
@@ -394,6 +413,7 @@ public fun MainPanel(
  */
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialPanel(
     intent: Intent,
     modifier: SubspaceModifier = SubspaceModifier,

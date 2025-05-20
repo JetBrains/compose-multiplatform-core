@@ -2,13 +2,13 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "8.11.0-alpha07"
+androidGradlePlugin = "8.11.0-alpha05"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "31.11.0-alpha07"
+androidLint = "31.11.0-alpha05"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2025.1.1.7"
+androidStudio = "2025.1.1.5"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -53,16 +53,16 @@ kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
 kotlin21 = "2.1.20"
-kotlin = "2.1.20"
+kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
-kotlinGradlePluginAnnotations = "2.1.20"
-kotlinGradlePluginApi = "2.1.20"
+kotlinGradlePluginAnnotations = "2.1.21"
+kotlinGradlePluginApi = "2.1.21"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.8.1"
-kotlinNativeUtils = "2.1.20"
+kotlinNativeUtils = "2.1.21"
 kotlinSerialization = "1.8.0"
-kotlinToolingCore = "2.1.20"
-ksp = "2.1.20-1.0.31"
+kotlinToolingCore = "2.1.21"
+ksp = "2.1.21-2.0.1"
 ktfmt = "0.50"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -131,7 +131,7 @@ byteBuddyAgent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byt
 checkerframework = { module = "org.checkerframework:checker-qual", version = "2.5.3" }
 checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
-dackka = { module = "com.google.devsite:dackka", version = "1.6.3" }
+dackka = { module = "com.google.devsite:dackka", version = "1.6.4" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 dependency-analysis-gradle-plugin = { module = "com.autonomousapps:dependency-analysis-gradle-plugin", version.ref = "dependencyAnalysisGradlePlugin" }

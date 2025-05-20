@@ -369,6 +369,7 @@ constructor(
                 cameraMode = cameraMode,
                 cameraInfoInternal = this,
                 newUseCases = useCases,
+                cameraConfig = cameraConfig,
                 allowFeatureCombinationResolutions = allowFeatureCombinationResolutions
             )
         } catch (e: IllegalArgumentException) {

@@ -18,7 +18,7 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Ray
 
@@ -31,7 +31,8 @@ import androidx.xr.runtime.math.Ray
  *
  * @return A list of [HitResult] objects, sorted by distance from the origin of the ray. The nearest
  *   hit is at the beginning of the list.
- * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
+ * @throws [IllegalStateException] if [Session.config] is set to
+ *   [Config.PlaneTrackingMode.DISABLED].
  */
 public fun hitTest(session: Session, ray: Ray): List<HitResult> {
     val perceptionStateExtender =
@@ -39,8 +40,8 @@ public fun hitTest(session: Session, ray: Ray): List<HitResult> {
     val perceptionManager = perceptionStateExtender.perceptionManager
     val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
 
-    check(config.planeTracking != PlaneTrackingMode.Disabled) {
-        "Config.PlaneTrackingMode is set to Disabled."
+    check(config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+        "Config.PlaneTrackingMode is set to DISABLED."
     }
     val trackableMap = perceptionStateExtender.xrResourcesManager.trackablesMap
     return perceptionManager.hitTest(ray).map {

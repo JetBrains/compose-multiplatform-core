@@ -21,7 +21,6 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.TweenSpec
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
@@ -43,8 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.lerp
 import kotlin.math.max
-import kotlin.math.min
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 
@@ -204,11 +203,40 @@ public fun BasicSwipeToDismissBox(
                                                 this.translationX = translationX
                                                 scaleX = scale
                                                 scaleY = scale
-                                                clip = isRound && translationX > 0
-                                                shape = if (isRound) CircleShape else RectangleShape
                                             }
-                                            .background(backgroundScrimColor)
-                                    } else Modifier
+                                            .drawWithContent {
+                                                drawContent()
+                                                val color =
+                                                    contentScrimColor.copy(
+                                                        alpha =
+                                                            (progress / 2f).coerceAtMost(
+                                                                MAX_CONTENT_SCRIM_ALPHA
+                                                            )
+                                                    )
+                                                if (isRound) {
+                                                    drawCircle(color = color)
+                                                } else {
+                                                    drawRect(color = color)
+                                                }
+                                            }
+                                            .graphicsLayer {
+                                                if (isRound && isSwiping) {
+                                                    clip = true
+                                                    shape = CircleShape
+                                                }
+                                            }
+                                            .background(color = backgroundScrimColor)
+                                    } else {
+                                        Modifier.drawWithContent {
+                                            drawContent()
+                                            val color =
+                                                backgroundScrimColor.copy(
+                                                    alpha =
+                                                        MAX_BACKGROUND_SCRIM_ALPHA * (1 - progress)
+                                                )
+                                            drawRect(color = color)
+                                        }
+                                    }
                                 )
                         ) {
                             // We use the repeat loop above and call content at this location
@@ -216,24 +244,6 @@ public fun BasicSwipeToDismissBox(
                             // within the content composable has the same call stack which is used
                             // as part of the hash identity for saveable state.
                             content(isBackground)
-
-                            Canvas(Modifier.fillMaxSize()) {
-                                val color =
-                                    if (isBackground) {
-                                        backgroundScrimColor.copy(
-                                            alpha =
-                                                (MAX_BACKGROUND_SCRIM_ALPHA * (1 - progress))
-                                                    .coerceIn(0f, 1f)
-                                        )
-                                    } else {
-                                        contentScrimColor.copy(
-                                            alpha =
-                                                min(MAX_CONTENT_SCRIM_ALPHA, progress / 2f)
-                                                    .coerceIn(0f, 1f)
-                                        )
-                                    }
-                                drawRect(color = color)
-                            }
                         }
                     }
                 }

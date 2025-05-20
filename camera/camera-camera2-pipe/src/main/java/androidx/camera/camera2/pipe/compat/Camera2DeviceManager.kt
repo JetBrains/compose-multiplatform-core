@@ -181,7 +181,7 @@ constructor(
     private val camera2ErrorProcessor: Camera2ErrorProcessor,
     val threads: Threads
 ) : Camera2DeviceManager {
-    private val scope = threads.globalScope
+    private val scope = threads.cameraPipeScope
 
     private val queue =
         PruningProcessingQueue<CameraRequest>(prune = ::prune) { process(it) }.processIn(scope)

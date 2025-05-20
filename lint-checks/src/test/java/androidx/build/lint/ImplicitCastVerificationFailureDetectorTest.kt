@@ -18,6 +18,7 @@ package androidx.build.lint
 
 import androidx.build.lint.Stubs.Companion.DoNotInline
 import androidx.build.lint.Stubs.Companion.RequiresApi
+import com.android.tools.lint.checks.infrastructure.TestLintTask
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -35,6 +36,12 @@ class ImplicitCastVerificationFailureDetectorTest :
                 DoNotInline,
             ),
     ) {
+
+    override fun lint(): TestLintTask {
+        return super.lint()
+            .configureOption(ClassVerificationFailureDetector.IMPLICIT_CAST_ALLUSAGES_OPTION, true)
+    }
+
     @Test
     fun `Unsafe implicit cast for method argument`() {
         val input =
@@ -114,6 +121,7 @@ Fix for src/java/androidx/UnsafeImplicitCastAsMethodArgumentJava.java line 11: E
 -         Api16Impl.setBuilder(style, builder);
 +         Api16Impl.setBuilder(Api24Impl.castToStyle(style), builder);
 @@ -23 +23
++
 + @RequiresApi(24)
 + static class Api24Impl {
 +     private Api24Impl() {
@@ -125,7 +133,6 @@ Fix for src/java/androidx/UnsafeImplicitCastAsMethodArgumentJava.java line 11: E
 +         return messagingStyle;
 +     }
 +
-@@ -24 +35
 + }
         """
 
@@ -221,10 +228,11 @@ Fix for src/java/androidx/UnsafeImplicitCastInCatchBlockJava.java line 15: Extra
 +             Log.w("Error", "Couldn't show presentation!", Api17Impl.castToThrowable(e));
 @@ -26 +26
 -     }
-+     @DoNotInline
-+ static java.lang.Throwable castToThrowable(WindowManager.InvalidDisplayException invalidDisplayException) {
++
++ @DoNotInline
++ static Throwable castToThrowable(WindowManager.InvalidDisplayException invalidDisplayException) {
 +     return invalidDisplayException;
-@@ -28 +30
++
 + }
 + }
         """
@@ -288,10 +296,13 @@ src/java/androidx/UnsafeImplicitCastInAssignmentKotlin.kt:11: Error: This expres
         val expectedFixDiffs =
             """
 Fix for src/java/androidx/UnsafeImplicitCastInAssignmentJava.java line 11: Extract to static inner class:
-@@ -11 +11
+@@ -4 +4
++ import androidx.annotation.DoNotInline;
+@@ -11 +12
 -         style = messagingStyle;
 +         style = Api24Impl.castToStyle(messagingStyle);
-@@ -13 +13
+@@ -13 +14
++
 + @RequiresApi(24)
 + static class Api24Impl {
 +     private Api24Impl() {
@@ -303,7 +314,6 @@ Fix for src/java/androidx/UnsafeImplicitCastInAssignmentJava.java line 11: Extra
 +         return messagingStyle;
 +     }
 +
-@@ -14 +25
 + }
         """
 
@@ -362,10 +372,13 @@ src/java/androidx/ImplicitCastOnReturnKotlin.kt:9: Error: This expression has ty
         val expectedFixDiffs =
             """
 Fix for src/java/androidx/ImplicitCastOnReturnJava.java line 9: Extract to static inner class:
-@@ -9 +9
+@@ -4 +4
++ import androidx.annotation.DoNotInline;
+@@ -9 +10
 -         return style;
 +         return Api24Impl.castToStyle(style);
-@@ -11 +11
+@@ -11 +12
++
 + @RequiresApi(24)
 + static class Api24Impl {
 +     private Api24Impl() {
@@ -377,7 +390,6 @@ Fix for src/java/androidx/ImplicitCastOnReturnJava.java line 9: Extract to stati
 +         return messagingStyle;
 +     }
 +
-@@ -12 +23
 + }
         """
 
@@ -464,10 +476,11 @@ Fix for src/java/androidx/ImplicitCastOfMethodCallResultJava.java line 11: Extra
 +         return Api26Impl.castToDrawable(Api26Impl.createAdaptiveIconDrawable(null, null));
 @@ -22 +22
 -     }
-+     @DoNotInline
++
++ @DoNotInline
 + static Drawable castToDrawable(AdaptiveIconDrawable adaptiveIconDrawable) {
 +     return adaptiveIconDrawable;
-@@ -24 +26
++
 + }
 + }
         """
@@ -800,6 +813,7 @@ Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static in
 -         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
 +         Api27Impl.setAutofillOptions(adapter, Api30Impl.castToCharSequence(vararg1), vararg2, vararg3);
 @@ -22 +22
++
 + @RequiresApi(30)
 + static class Api30Impl {
 +     private Api30Impl() {
@@ -807,17 +821,17 @@ Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static in
 +     }
 +
 +     @DoNotInline
-+     static java.lang.CharSequence castToCharSequence(FormattedNumber formattedNumber) {
++     static CharSequence castToCharSequence(FormattedNumber formattedNumber) {
 +         return formattedNumber;
 +     }
 +
-@@ -23 +34
 + }
 Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static inner class:
 @@ -11 +11
 -         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
 +         Api27Impl.setAutofillOptions(adapter, vararg1, Api30Impl.castToCharSequence(vararg2), vararg3);
 @@ -22 +22
++
 + @RequiresApi(30)
 + static class Api30Impl {
 +     private Api30Impl() {
@@ -825,17 +839,17 @@ Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static in
 +     }
 +
 +     @DoNotInline
-+     static java.lang.CharSequence castToCharSequence(FormattedNumber formattedNumber) {
++     static CharSequence castToCharSequence(FormattedNumber formattedNumber) {
 +         return formattedNumber;
 +     }
 +
-@@ -23 +34
 + }
 Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static inner class:
 @@ -11 +11
 -         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
 +         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, Api30Impl.castToCharSequence(vararg3));
 @@ -22 +22
++
 + @RequiresApi(30)
 + static class Api30Impl {
 +     private Api30Impl() {
@@ -843,11 +857,10 @@ Fix for src/java/androidx/UnsafeCastToVarargs.java line 11: Extract to static in
 +     }
 +
 +     @DoNotInline
-+     static java.lang.CharSequence castToCharSequence(FormattedNumber formattedNumber) {
++     static CharSequence castToCharSequence(FormattedNumber formattedNumber) {
 +         return formattedNumber;
 +     }
 +
-@@ -23 +34
 + }
         """
 

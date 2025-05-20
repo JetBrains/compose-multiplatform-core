@@ -92,6 +92,7 @@ import androidx.compose.material3.samples.ExpandableVerticalFloatingToolbarSampl
 import androidx.compose.material3.samples.ExposedDropdownMenuSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonTextSample
+import androidx.compose.material3.samples.ExtraLargeFilledSplitButtonSample
 import androidx.compose.material3.samples.ExtraSmallNarrowSquareIconButtonsSample
 import androidx.compose.material3.samples.FadingHorizontalMultiBrowseCarouselSample
 import androidx.compose.material3.samples.FancyIndicatorContainerTabs
@@ -125,6 +126,7 @@ import androidx.compose.material3.samples.LargeAnimatedExtendedFloatingActionBut
 import androidx.compose.material3.samples.LargeButtonWithIconSample
 import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonTextSample
+import androidx.compose.material3.samples.LargeFilledSplitButtonSample
 import androidx.compose.material3.samples.LargeFloatingActionButtonSample
 import androidx.compose.material3.samples.LargeRoundUniformOutlinedIconButtonSample
 import androidx.compose.material3.samples.LargeToggleButtonWithIconSample
@@ -137,6 +139,7 @@ import androidx.compose.material3.samples.MediumAnimatedExtendedFloatingActionBu
 import androidx.compose.material3.samples.MediumButtonWithIconSample
 import androidx.compose.material3.samples.MediumExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.MediumExtendedFloatingActionButtonTextSample
+import androidx.compose.material3.samples.MediumFilledSplitButtonSample
 import androidx.compose.material3.samples.MediumFloatingActionButtonSample
 import androidx.compose.material3.samples.MediumRoundWideIconButtonSample
 import androidx.compose.material3.samples.MediumToggleButtonWithIconSample
@@ -214,6 +217,7 @@ import androidx.compose.material3.samples.SimpleTopAppBar
 import androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
 import androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
 import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
+import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
 import androidx.compose.material3.samples.SliderSample
 import androidx.compose.material3.samples.SliderWithCustomThumbSample
 import androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
@@ -269,6 +273,7 @@ import androidx.compose.material3.samples.WideNavigationRailResponsiveSample
 import androidx.compose.material3.samples.XLargeButtonWithIconSample
 import androidx.compose.material3.samples.XLargeToggleButtonWithIconSample
 import androidx.compose.material3.samples.XSmallButtonWithIconSample
+import androidx.compose.material3.samples.XSmallFilledSplitButtonSample
 import androidx.compose.material3.samples.XSmallToggleButtonWithIconSample
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -490,6 +495,13 @@ val ButtonGroupsExamples =
             sourceUrl = ButtonGroupsExampleSourceUrl,
         ) {
             SingleSelectConnectedButtonGroupSample()
+        },
+        Example(
+            name = "SingleSelectConnectedButtonGroupWithFlowLayoutSample",
+            description = ButtonGroupsExampleDescription,
+            sourceUrl = ButtonGroupsExampleSourceUrl,
+        ) {
+            SingleSelectConnectedButtonGroupWithFlowLayoutSample()
         },
         Example(
             name = "MultiSelectConnectedButtonGroupSample",
@@ -1951,6 +1963,34 @@ val SplitButtonExamples =
             sourceUrl = SplitButtonSourceUrl
         ) {
             SplitButtonWithIconSample()
+        },
+        Example(
+            name = "XSmallFilledSplitButtonSample",
+            description = SplitButtonExampleDescription,
+            sourceUrl = SplitButtonSourceUrl
+        ) {
+            XSmallFilledSplitButtonSample()
+        },
+        Example(
+            name = "MediumFilledSplitButtonSample",
+            description = SplitButtonExampleDescription,
+            sourceUrl = SplitButtonSourceUrl
+        ) {
+            MediumFilledSplitButtonSample()
+        },
+        Example(
+            name = "LargeFilledSplitButtonSample",
+            description = SplitButtonExampleDescription,
+            sourceUrl = SplitButtonSourceUrl
+        ) {
+            LargeFilledSplitButtonSample()
+        },
+        Example(
+            name = "ExtraLargeFilledSplitButtonSample",
+            description = SplitButtonExampleDescription,
+            sourceUrl = SplitButtonSourceUrl
+        ) {
+            ExtraLargeFilledSplitButtonSample()
         },
     )
 

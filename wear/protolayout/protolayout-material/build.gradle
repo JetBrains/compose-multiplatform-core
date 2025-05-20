@@ -52,7 +52,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
@@ -74,4 +73,5 @@ androidx {
     inceptionYear = "2023"
     description = "Material components library for ProtoLayout."
     addGoldenImageAssets()
+    enableRobolectric()
 }

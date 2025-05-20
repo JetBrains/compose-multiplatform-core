@@ -37,6 +37,7 @@ import kotlin.random.Random
 @Composable
 public fun PdfViewer(
     modifier: Modifier = Modifier,
+    state: PdfViewerState,
     pdfDocument: PdfDocument?,
     minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
@@ -46,7 +47,13 @@ public fun PdfViewer(
     val pdfViewId = rememberSaveable { Random(System.currentTimeMillis()).nextInt() }
     AndroidView(
         modifier = modifier,
-        factory = { context -> PdfView(context).apply { this.id = pdfViewId } },
+        factory = { context ->
+            PdfView(context).apply {
+                this.id = pdfViewId
+                state.pdfView = this
+            }
+        },
+        onRelease = { state.pdfView = null },
         // Factory will execute exactly once; update is the correct place to supply mutable states
         update = { view ->
             view.pdfDocument = pdfDocument

@@ -188,7 +188,7 @@ class SheetState(
             "Attempted to animate to partial expanded when skipPartiallyExpanded was enabled. Set" +
                 " skipPartiallyExpanded to false to use this function."
         }
-        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, showMotionSpec)
+        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, hideMotionSpec)
     }
 
     /**

@@ -98,7 +98,7 @@ import kotlin.math.roundToInt
  *   [WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE] on [Build.VERSION_CODES.R] and below and
  *   [WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING] on [Build.VERSION_CODES.S] and above.
  *   [Window.isFloating] will be `false` when `decorFitsSystemWindows` is `false`.
- * @property dialogContentTitle Title to be set on the dialog's window.
+ * @property windowTitle Title to be set on the dialog's window.
  */
 @Immutable
 actual class DialogProperties(
@@ -107,7 +107,7 @@ actual class DialogProperties(
     val securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
     actual val usePlatformDefaultWidth: Boolean = true,
     val decorFitsSystemWindows: Boolean = true,
-    val dialogContentTitle: String = "",
+    val windowTitle: String = "",
 ) {
     actual constructor(
         dismissOnBackPress: Boolean,
@@ -134,7 +134,7 @@ actual class DialogProperties(
         securePolicy = SecureFlagPolicy.Inherit,
         usePlatformDefaultWidth = usePlatformDefaultWidth,
         decorFitsSystemWindows = true,
-        dialogContentTitle = ""
+        windowTitle = ""
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
@@ -492,7 +492,7 @@ private class DialogWrapper(
         dialogLayout =
             DialogLayout(context, window).apply {
                 // Set window title.
-                setTitle(properties.dialogContentTitle)
+                setTitle(properties.windowTitle)
                 // Set unique id for AbstractComposeView. This allows state restoration for the
                 // state
                 // defined inside the Dialog via rememberSaveable()

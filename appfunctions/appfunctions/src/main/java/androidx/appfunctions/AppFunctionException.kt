@@ -16,8 +16,11 @@
 
 package androidx.appfunctions
 
+import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.annotation.IntDef
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
@@ -37,6 +40,17 @@ internal constructor(
     public fun toPlatformExtensionsClass():
         com.android.extensions.appfunctions.AppFunctionException {
         return com.android.extensions.appfunctions.AppFunctionException(
+            internalErrorCode,
+            errorMessage,
+            extras
+        )
+    }
+
+    @SuppressLint("WrongConstant")
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toPlatformClass(): android.app.appfunctions.AppFunctionException {
+        return android.app.appfunctions.AppFunctionException(
             internalErrorCode,
             errorMessage,
             extras
@@ -93,10 +107,52 @@ internal constructor(
     internal annotation class ErrorCode
 
     public companion object {
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @SuppressWarnings("WrongConstant")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromPlatformExtensionsClass(
             exception: com.android.extensions.appfunctions.AppFunctionException
+        ): AppFunctionException {
+            return when (exception.errorCode) {
+                ERROR_DENIED -> AppFunctionDeniedException(exception.errorMessage, exception.extras)
+                ERROR_INVALID_ARGUMENT ->
+                    AppFunctionInvalidArgumentException(exception.errorMessage, exception.extras)
+                ERROR_DISABLED ->
+                    AppFunctionDisabledException(exception.errorMessage, exception.extras)
+                ERROR_FUNCTION_NOT_FOUND ->
+                    AppFunctionFunctionNotFoundException(exception.errorMessage, exception.extras)
+                ERROR_RESOURCE_NOT_FOUND ->
+                    AppFunctionElementNotFoundException(exception.errorMessage, exception.extras)
+                ERROR_LIMIT_EXCEEDED ->
+                    AppFunctionLimitExceededException(exception.errorMessage, exception.extras)
+                ERROR_RESOURCE_ALREADY_EXISTS ->
+                    AppFunctionElementAlreadyExistsException(
+                        exception.errorMessage,
+                        exception.extras
+                    )
+                ERROR_SYSTEM_ERROR ->
+                    AppFunctionSystemUnknownException(exception.errorMessage, exception.extras)
+                ERROR_CANCELLED ->
+                    AppFunctionCancelledException(exception.errorMessage, exception.extras)
+                ERROR_APP_UNKNOWN_ERROR ->
+                    AppFunctionAppUnknownException(exception.errorMessage, exception.extras)
+                ERROR_PERMISSION_REQUIRED ->
+                    AppFunctionPermissionRequiredException(exception.errorMessage, exception.extras)
+                ERROR_NOT_SUPPORTED ->
+                    AppFunctionNotSupportedException(exception.errorMessage, exception.extras)
+                else ->
+                    AppFunctionUnknownException(
+                        exception.errorCode,
+                        exception.errorMessage,
+                        exception.extras,
+                    )
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+        @SuppressWarnings("WrongConstant")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun fromPlatformClass(
+            exception: android.app.appfunctions.AppFunctionException
         ): AppFunctionException {
             return when (exception.errorCode) {
                 ERROR_DENIED -> AppFunctionDeniedException(exception.errorMessage, exception.extras)

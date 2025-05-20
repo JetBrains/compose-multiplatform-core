@@ -313,7 +313,6 @@ public final class ProtoLayoutInflater {
 
     private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
 
-    private final boolean mAllowLayoutChangingBindsWithoutDefault;
     final String mClickableIdExtra;
 
     private final @Nullable LoggingUtils mLoggingUtils;
@@ -568,8 +567,6 @@ public final class ProtoLayoutInflater {
         private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
         private final boolean mAnimationEnabled;
 
-        private final boolean mAllowLayoutChangingBindsWithoutDefault;
-
         private final boolean mApplyFontVariantBodyAsDefault;
 
         Config(
@@ -586,7 +583,6 @@ public final class ProtoLayoutInflater {
                 @Nullable LoggingUtils loggingUtils,
                 @NonNull InflaterStatsLogger inflaterStatsLogger,
                 boolean animationEnabled,
-                boolean allowLayoutChangingBindsWithoutDefault,
                 boolean applyFontVariantBodyAsDefault) {
             this.mUiContext = uiContext;
             this.mLayout = layout;
@@ -597,7 +593,6 @@ public final class ProtoLayoutInflater {
             this.mProtoLayoutTheme = protoLayoutTheme;
             this.mDataPipeline = dataPipeline;
             this.mAnimationEnabled = animationEnabled;
-            this.mAllowLayoutChangingBindsWithoutDefault = allowLayoutChangingBindsWithoutDefault;
             this.mClickableIdExtra = clickableIdExtra;
             this.mLoggingUtils = loggingUtils;
             this.mInflaterStatsLogger = inflaterStatsLogger;
@@ -682,15 +677,6 @@ public final class ProtoLayoutInflater {
             return mAnimationEnabled;
         }
 
-        /**
-         * Whether a "layout changing" data bind can be applied without the "value_for_layout" field
-         * being filled in. This is to support legacy apps which use layout-changing data binds
-         * before the full support was built.
-         */
-        public boolean getAllowLayoutChangingBindsWithoutDefault() {
-            return mAllowLayoutChangingBindsWithoutDefault;
-        }
-
         /** Whether to apply FONT_VARIANT_BODY as default variant. */
         public boolean getApplyFontVariantBodyAsDefault() {
             return mApplyFontVariantBodyAsDefault;
@@ -707,7 +693,6 @@ public final class ProtoLayoutInflater {
             private @Nullable ProtoLayoutTheme mProtoLayoutTheme;
             private @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline = null;
             private boolean mAnimationEnabled = true;
-            private boolean mAllowLayoutChangingBindsWithoutDefault = false;
             private @Nullable String mClickableIdExtra;
 
             private @Nullable LoggingUtils mLoggingUtils;
@@ -822,21 +807,6 @@ public final class ProtoLayoutInflater {
                 return this;
             }
 
-            /**
-             * Sets whether a "layout changing" data bind can be applied without the
-             * "value_for_layout" field being filled in, or being set to zero / empty. Defaults to
-             * false.
-             *
-             * <p>This is to support legacy apps which use layout-changing data bind before the full
-             * support was built.
-             */
-            public @NonNull Builder setAllowLayoutChangingBindsWithoutDefault(
-                    boolean allowLayoutChangingBindsWithoutDefault) {
-                this.mAllowLayoutChangingBindsWithoutDefault =
-                        allowLayoutChangingBindsWithoutDefault;
-                return this;
-            }
-
             /** Apply FONT_VARIANT_BODY as default variant. */
             public @NonNull Builder setApplyFontVariantBodyAsDefault(
                     boolean applyFontVariantBodyAsDefault) {
@@ -888,7 +858,6 @@ public final class ProtoLayoutInflater {
                         mLoggingUtils,
                         mInflaterStatsLogger,
                         mAnimationEnabled,
-                        mAllowLayoutChangingBindsWithoutDefault,
                         mApplyFontVariantBodyAsDefault);
             }
         }
@@ -909,8 +878,6 @@ public final class ProtoLayoutInflater {
         this.mLoadActionListener = config.getLoadActionListener();
         this.mDataPipeline = Optional.ofNullable(config.getDynamicDataPipeline());
         this.mAnimationEnabled = config.getAnimationEnabled();
-        this.mAllowLayoutChangingBindsWithoutDefault =
-                config.getAllowLayoutChangingBindsWithoutDefault();
         this.mClickableIdExtra = config.getClickableIdExtra();
         this.mLoggingUtils = config.getLoggingUtils();
         this.mInflaterStatsLogger = config.getInflaterStatsLogger();
@@ -2602,23 +2569,11 @@ public final class ProtoLayoutInflater {
                             spacerDimensionToContainerDimension(spacer.getHeight()));
 
             if (widthForLayoutDp != null) {
-                if (widthForLayoutDp <= 0f) {
-                    Log.w(
-                            TAG,
-                            "Spacer width's value_for_layout is not a positive value. Element won't"
-                                    + " be visible.");
-                }
-                spaceWrapperLayoutParams.width = safeDpToPx(widthForLayoutDp);
+                spaceWrapperLayoutParams.width = dpToPx(widthForLayoutDp);
             }
 
             if (heightForLayoutDp != null) {
-                if (heightForLayoutDp <= 0f) {
-                    Log.w(
-                            TAG,
-                            "Spacer height's value_for_layout is not a positive value. Element"
-                                    + " won't be visible.");
-                }
-                spaceWrapperLayoutParams.height = safeDpToPx(heightForLayoutDp);
+                spaceWrapperLayoutParams.height = dpToPx(heightForLayoutDp);
             }
 
             int gravity =
@@ -2905,11 +2860,9 @@ public final class ProtoLayoutInflater {
 
         textView.setGravity(textAlignToAndroidGravity(text.getMultilineAlignment().getValue()));
 
-        String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
-
-        // Use valueForLayout as a proxy for "has a dynamic size". If there's a dynamic binding for
-        // the text element, then it can only have a single line of text.
-        if (text.hasMaxLines() && valueForLayout == null) {
+        // If there's a dynamic binding for the text element, then it can only have a single line of
+        // text.
+        if (text.hasMaxLines() && !text.getText().hasDynamicValue()) {
             textView.setMaxLines(max(TEXT_MIN_LINES, text.getMaxLines().getValue()));
         } else {
             textView.setMaxLines(TEXT_MAX_LINES_DEFAULT);
@@ -2960,11 +2913,9 @@ public final class ProtoLayoutInflater {
         // importantForAccessibility, so we don't want to override it after applying modifiers.
         textView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 
-        if (valueForLayout != null) {
-            if (valueForLayout.isEmpty()) {
-                Log.w(TAG, "Text's value_for_layout is empty. Element won't be visible.");
-            }
+        @Nullable String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
 
+        if (valueForLayout != null) {
             // Now create a "container" element, with that size, to hold the text.
             FrameLayout sizeChangingTextWrapper = new FrameLayout(mUiContext);
             LayoutParams sizeChangingTextWrapperLayoutParams = generateDefaultLayoutParams();
@@ -3591,12 +3542,6 @@ public final class ProtoLayoutInflater {
         if (sizeForLayout != null) {
             sizeWrapper = new SizedArcContainer(mUiContext);
             sizeWrapper.setArcDirection(arcLineDirection);
-            if (sizeForLayout <= 0f) {
-                Log.w(
-                        TAG,
-                        "Arc Line length's value_for_layout is not a positive value. Element won't"
-                                + " be visible.");
-            }
             sizeWrapper.setSweepAngleDegrees(sizeForLayout);
             sizedLayoutParams.setAngularAlignment(angularAlignment);
         }
@@ -4331,7 +4276,7 @@ public final class ProtoLayoutInflater {
             return stringProp.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : "";
+        return null;
     }
 
     /**
@@ -4348,7 +4293,7 @@ public final class ProtoLayoutInflater {
             return dimension.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : 0f;
+        return null;
     }
 
     /**
@@ -4365,7 +4310,7 @@ public final class ProtoLayoutInflater {
             return degreesProp.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : 0f;
+        return null;
     }
 
     private boolean canMeasureContainer(

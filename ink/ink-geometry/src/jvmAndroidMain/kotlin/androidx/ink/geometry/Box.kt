@@ -137,11 +137,11 @@ public abstract class Box internal constructor() {
             (abs(xMax - other.xMax) < tolerance) &&
             (abs(yMax - other.yMax) < tolerance)
 
-    public companion object {
+    internal companion object {
         /**
          * Returns true if [first] and [second] have the same values for all properties of [Box].
          */
-        internal fun areEquivalent(first: Box, second: Box): Boolean =
+        fun areEquivalent(first: Box, second: Box): Boolean =
             first.xMin == second.xMin &&
                 first.yMin == second.yMin &&
                 first.xMax == second.xMax &&
@@ -149,7 +149,7 @@ public abstract class Box internal constructor() {
 
         /** Returns a hash code for [box] using its [Box] properties. */
         // NOMUTANTS -- not testing exact hashCode values, just that equality implies same hashCode
-        internal fun hash(box: Box): Int =
+        fun hash(box: Box): Int =
             box.run {
                 var result = xMin.hashCode()
                 result = 31 * result + yMin.hashCode()
@@ -159,7 +159,7 @@ public abstract class Box internal constructor() {
             }
 
         /** Returns a string representation for [box] using its [Box] properties. */
-        internal fun string(box: Box): String =
+        fun string(box: Box): String =
             box.run { "Box(xMin=$xMin, yMin=$yMin, xMax=$xMax, yMax=$yMax)" }
     }
 }

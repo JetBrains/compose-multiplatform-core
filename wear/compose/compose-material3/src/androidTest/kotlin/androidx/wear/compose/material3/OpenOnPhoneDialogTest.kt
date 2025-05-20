@@ -17,6 +17,9 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,6 +96,7 @@ class OpenOnPhoneDialogTest {
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     fun openOnPhone_displays_icon() {
         rule.setContentWithTheme {
@@ -100,12 +104,13 @@ class OpenOnPhoneDialogTest {
             OpenOnPhoneDialog(
                 onDismissRequest = {},
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                modifier = Modifier.testTag(TEST_TAG)
             ) {
-                TestImage(IconTestTag)
+                Box(modifier = Modifier.fillMaxSize().background(Color.Red))
             }
         }
-        rule.onNodeWithTag(IconTestTag).assertExists()
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Red)
     }
 
     @OptIn(ExperimentalTestApi::class)

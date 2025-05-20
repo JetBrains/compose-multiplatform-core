@@ -223,7 +223,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
         }
 
         companion object {
-            private val NAME = "playgroundCIHostTests"
+            private const val NAME = "playgroundCIHostTests"
 
             fun addTask(project: Project, task: AbstractTestTask) {
                 project.rootProject.tasks.named(NAME).configure { it.dependsOn(task) }

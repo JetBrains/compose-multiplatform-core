@@ -21,6 +21,8 @@ import android.os.CancellationSignal
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.registry.provider.ClearCredentialRegistryRequest
+import androidx.credentials.registry.provider.ClearCredentialRegistryResponse
 import androidx.credentials.registry.provider.RegisterCredentialsException
 import androidx.credentials.registry.provider.RegisterCredentialsRequest
 import androidx.credentials.registry.provider.RegisterCredentialsResponse
@@ -66,6 +68,14 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
             .addOnFailureListener {
                 callback.onError(RegisterCredentialsUnknownException(it.message))
             }
+    }
+
+    override fun onClearCredentialRegistry(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+    ) {
+        TODO("b/368092001 - Not yet implemented")
     }
 
     override fun isAvailable(): Boolean {

@@ -32,6 +32,7 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.runtime.toString
 import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 
 /**
  * Remember the value produced by [init].
@@ -136,14 +137,12 @@ fun <T : Any> rememberSaveable(
  * @param init A factory function to create the initial value of this state
  */
 @Composable
-fun <T : Any> rememberSaveable(vararg inputs: Any?, init: () -> T): T {
-    // TODO(mgalhardo): We're planning to support both `autoSaver` and `serializer` in this base
-    //  variant, where neither is explicitly passed. To avoid potential method signature conflicts,
-    //  we're not using default parameters for `saver`.
-    //  This introduces a direct dependency between Compose Runtime and KTX Serialization, which is
-    //  currently under discussion at go/ktx-serialization-in-savedstate.
+inline fun <reified T : Any> rememberSaveable(vararg inputs: Any?, noinline init: () -> T): T {
+    val saver = serializableSaver {
+        SavedStateConfiguration.DEFAULT.serializersModule.serializer<T>()
+    }
     @Suppress("DEPRECATION")
-    return rememberSaveable(*inputs, saver = autoSaver(), key = null, init = init)
+    return rememberSaveable(*inputs, saver = saver, key = null, init = init)
 }
 
 /**

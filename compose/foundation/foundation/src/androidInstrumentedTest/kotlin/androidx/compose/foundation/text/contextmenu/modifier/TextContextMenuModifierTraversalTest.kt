@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.contextmenu.modifier
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.test.TestTextContextMenuDataInvoker
 import androidx.compose.foundation.text.contextmenu.test.testTextContextMenuDataReader
 import androidx.compose.runtime.Composable

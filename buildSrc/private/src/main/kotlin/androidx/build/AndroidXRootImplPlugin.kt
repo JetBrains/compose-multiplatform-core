@@ -176,7 +176,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             if (ProjectLayoutType.isPlayground(this)) {
                 project.file(
                     layout.buildDirectory.dir("javascript-for-playground").map {
-                        it.asFile.also { it.mkdirs() }
+                        it.asFile.also { file -> file.mkdirs() }
                     }
                 )
             } else {
@@ -185,7 +185,8 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         val createYarnRcFileTask =
             tasks.register("createYarnRcFile", CreateYarnRcFileTask::class.java) {
                 it.offlineMirrorStorage.set(offlineMirrorStorage)
-                it.yarnrcFile.set(layout.buildDirectory.file("js/.yarnrc"))
+                it.cacheStorage.set(layout.buildDirectory.dir("yarnCache"))
+                it.yarnrcFile.set(layout.buildDirectory.file(".yarnrc"))
             }
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {

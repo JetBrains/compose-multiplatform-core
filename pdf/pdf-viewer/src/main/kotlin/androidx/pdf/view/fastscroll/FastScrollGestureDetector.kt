@@ -50,6 +50,7 @@ internal class FastScrollGestureDetector(
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             if (fastScroller.isPointOnThumb(event.x, event.y, viewWidth)) {
                 trackingFastScrollGesture = true
+                gestureHandler.onFastScrollStart()
                 return true
             }
         }
@@ -60,6 +61,7 @@ internal class FastScrollGestureDetector(
             } else if (event.actionMasked == MotionEvent.ACTION_UP) {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 trackingFastScrollGesture = false
+                gestureHandler.onFastScrollEnd()
             }
             return true
         }
@@ -69,8 +71,14 @@ internal class FastScrollGestureDetector(
 
     /** An interface for receiving notifications about fast scroll gestures. */
     interface FastScrollGestureHandler {
+        /** Callback when the user starts interacting with the fast scroller */
+        fun onFastScrollStart() = Unit
+
+        /** Callback when the user stops interacting with the fast scroller */
+        fun onFastScrollEnd() = Unit
+
         /**
-         * Called when a fast scroll gesture is detected.
+         * Callback when the user drags the fast scroll handle to a new position
          *
          * @param eventY The vertical scroll position in pixels indicated by the fast scroll
          *   gesture.

@@ -46,16 +46,12 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(project(":camera:camera-testing"))
     testImplementation(project(":camera:camera-extensions-stub"))
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -98,8 +94,6 @@ android {
         enable.add("CameraXQuirksClassDetector")
     }
 
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.extensions"
 }
 
@@ -109,4 +103,5 @@ androidx {
     inceptionYear = "2019"
     description = "OEM Extensions for the Jetpack Camera Library, a library providing interfaces" +
             " to integrate with OEM specific camera features."
+    enableRobolectric()
 }

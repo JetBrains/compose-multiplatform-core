@@ -306,6 +306,18 @@ class SpatialComposeAppActivity : ComponentActivity() {
         ) {
             content()
 
+            Orbiter(
+                position = OrbiterEdge.End,
+                offset = 24.dp,
+                shape = SpatialRoundedCornerShape(size = CornerSize(50)),
+                settings = OrbiterSettings(shouldRenderInNonSpatial = false),
+                elevation = SpatialElevationLevel.Level2,
+            ) {
+                IconButton(onClick = {}, modifier = Modifier.background(Color.Gray)) {
+                    Icon(imageVector = Icons.Filled.Check, contentDescription = "Add highlight")
+                }
+            }
+
             Spacer(modifier = Modifier.size(20.dp))
 
             Button(onClick = { showDialog = true }) { Text("show dialog") }

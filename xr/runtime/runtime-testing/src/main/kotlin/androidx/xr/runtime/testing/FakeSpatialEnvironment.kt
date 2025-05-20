@@ -16,11 +16,13 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SpatialEnvironment
 import java.util.function.Consumer
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [SpatialEnvironment] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSpatialEnvironment : SpatialEnvironment {
 
     override val currentPassthroughOpacity: Float = 0.0f

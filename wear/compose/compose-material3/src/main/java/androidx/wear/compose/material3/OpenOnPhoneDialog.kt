@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
@@ -230,7 +231,10 @@ public fun OpenOnPhoneDialogContent(
         val size = screenWidthDp() * SizeFraction
         Box(
             modifier =
-                Modifier.padding(top = topPadding.dp).size(size.dp).align(Alignment.TopCenter),
+                Modifier.padding(top = topPadding.dp)
+                    .size(size.dp)
+                    .align(Alignment.TopCenter)
+                    .clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             iconAndProgressContainer(

@@ -70,7 +70,7 @@ class SpatialComposeSceneTest {
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
         assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints.Unbounded)
+            .isEqualTo(VolumeConstraints())
         assertThat(scene.lifecycle).isEqualTo(composeTestRule.activity.lifecycle)
         assertThat(currentSession).isEqualTo(session)
     }

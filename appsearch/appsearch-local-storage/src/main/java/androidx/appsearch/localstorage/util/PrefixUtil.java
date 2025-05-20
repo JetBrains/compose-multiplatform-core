@@ -105,24 +105,6 @@ public class PrefixUtil {
     }
 
     /**
-     * Returns Icing's schema database name that's contained within the {@code prefix}.
-     *
-     * @param prefix Prefix string that contains the database name inside of it. The Icing schema
-     *               database name is everything that is in front of {@link #DATABASE_DELIMITER}.
-     * @return Valid Icing schema database name.
-     */
-    public static @NonNull String getIcingSchemaDatabaseName(@NonNull String prefix)
-            throws AppSearchException {
-        int delimiterIndex = prefix.indexOf(DATABASE_DELIMITER);
-        if (delimiterIndex == -1) {
-            // This should never happen if we construct our prefixes properly
-            throw new AppSearchException(AppSearchResult.RESULT_INTERNAL_ERROR,
-                    "Malformed prefix doesn't contain database delimiter: " + prefix);
-        }
-        return prefix.substring(0, delimiterIndex);
-    }
-
-    /**
      * Creates a string with the package and database prefix removed from the input string.
      *
      * @param prefixedString a string containing a package and database prefix.

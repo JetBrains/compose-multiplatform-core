@@ -936,6 +936,48 @@ internal class InProgressStrokesManager(
         }
     }
 
+    /**
+     * Enqueue the [realInputs] and [predictedInputs] to the [stroke].
+     *
+     * If the inputs are invalid, log a warning and return.
+     *
+     * TODO(b/378506113): Throw an exception instead of logging a warning.
+     */
+    private fun enqueueInputs(
+        stroke: InProgressStroke,
+        realInputs: StrokeInputBatch,
+        predictedInputs: StrokeInputBatch,
+    ) {
+        try {
+            stroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        } catch (e: RuntimeException) {
+            Log.w(
+                InProgressStrokesManager::class.simpleName,
+                "Error during InProgressStroke.enqueueInputs",
+                e,
+            )
+        }
+    }
+
+    /**
+     * Update the shape of the [stroke] using the elapsed time since the stroke started.
+     *
+     * If the update fails, log a warning and return.
+     *
+     * TODO(b/306361370): Throw here once input is more sanitized.
+     */
+    private fun updateShape(stroke: InProgressStroke, currentElapsedTimeMillis: Long) {
+        try {
+            stroke.updateShapeOrThrow(currentElapsedTimeMillis)
+        } catch (e: RuntimeException) {
+            Log.w(
+                InProgressStrokesManager::class.simpleName,
+                "Error during InProgressStroke.updateShape",
+                e,
+            )
+        }
+    }
+
     /** Handle an action that was initiated by [startStroke]. */
     @WorkerThread
     private fun handleStartStroke(action: StartAction) {
@@ -947,27 +989,12 @@ internal class InProgressStrokesManager(
             val seed = renderThreadState.noiseSeedGenerator.nextInt()
             @OptIn(ExperimentalInkCustomBrushApi::class)
             stroke.start(action.brush, noiseSeed = seed)
-            stroke
-                .enqueueInputs(
-                    MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
-                    ImmutableStrokeInputBatch.EMPTY,
-                )
-                .onFailure {
-                    // TODO(b/306361370): Throw here once input is more sanitized.
-                    Log.w(
-                        InProgressStrokesManager::class.simpleName,
-                        "Error during InProgressStroke.enqueueInputs",
-                        it,
-                    )
-                }
-            stroke.updateShape(0).onFailure {
-                // TODO(b/306361370): Throw here once input is more sanitized.
-                Log.w(
-                    InProgressStrokesManager::class.simpleName,
-                    "Error during InProgressStroke.updateShape",
-                    it,
-                )
-            }
+            enqueueInputs(
+                stroke,
+                MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
+                ImmutableStrokeInputBatch.EMPTY,
+            )
+            updateShape(stroke, 0)
             RenderThreadStrokeState(
                 stroke,
                 strokeToMotionEventTransform,
@@ -1000,14 +1027,7 @@ internal class InProgressStrokesManager(
             "Stroke with ID ${action.strokeId} was canceled."
         }
         strokeState.inProgressStroke.apply {
-            enqueueInputs(action.realInputs, action.predictedInputs).onFailure {
-                // TODO(b/306361370): Throw here once input is more sanitized.
-                Log.w(
-                    InProgressStrokesManager::class.simpleName,
-                    "Error during InProgressStroke.enqueueInputs",
-                    it,
-                )
-            }
+            enqueueInputs(this, action.realInputs, action.predictedInputs)
             // Rather than updating the shape immediately, we enqueue the inputs and wait to update
             // the
             // shape until we have handled all the inputs in threadSharedState.inputActions. This is
@@ -1043,34 +1063,20 @@ internal class InProgressStrokesManager(
             AndroidMatrix().apply { set(renderThreadState.strokeToViewTransform) }
         // Save the stroke to be handed off.
         if (action.strokeInput != null) {
-            strokeState.inProgressStroke
-                .enqueueInputs(
-                    MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
-                    ImmutableStrokeInputBatch.EMPTY,
-                )
-                .onFailure {
-                    // TODO(b/306361370): Throw here once input is more sanitized.
-                    Log.w(
-                        InProgressStrokesManager::class.simpleName,
-                        "Error during InProgressStroke.enqueueInputs",
-                        it,
-                    )
-                }
+            enqueueInputs(
+                strokeState.inProgressStroke,
+                MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
+                ImmutableStrokeInputBatch.EMPTY,
+            )
             // We update the finished stroke immediately after enqueueing because we know we are not
             // going to be receiving any other inputs.
-            strokeState.inProgressStroke
-                .updateShape(getNanoTime() / 1_000_000L - strokeState.startEventTimeMillis)
-                .onFailure {
-                    // TODO(b/306361370): Throw here once input is more sanitized.
-                    Log.w(
-                        InProgressStrokesManager::class.simpleName,
-                        "Error during InProgressStroke.updateShape",
-                        it,
-                    )
-                }
+            updateShape(
+                strokeState.inProgressStroke,
+                getNanoTime() / 1_000_000L - strokeState.startEventTimeMillis,
+            )
         }
         strokeState.inProgressStroke.finishInput()
-        if (strokeState.inProgressStroke.getNeedsUpdate()) {
+        if (strokeState.inProgressStroke.isUpdateNeeded()) {
             renderThreadState.dryingStrokes.add(action.strokeId)
             postToUiThread(::scheduleAnimationFrameAction)
         } else {
@@ -1106,17 +1112,10 @@ internal class InProgressStrokesManager(
             checkNotNull(strokeState) { "Stroke state with ID ${strokeId} was not found." }
             val inProgressStroke = strokeState.inProgressStroke
 
-            inProgressStroke.updateShape(nowMillis - strokeState.startEventTimeMillis).onFailure {
-                // TODO(b/306361370): Throw here once input is more sanitized.
-                Log.w(
-                    InProgressStrokesManager::class.simpleName,
-                    "Error during InProgressStroke.updateShape",
-                    it,
-                )
-            }
+            updateShape(inProgressStroke, nowMillis - strokeState.startEventTimeMillis)
 
             // If the stroke is now fully dry, remove it from [dryingStrokes] and mark it finished.
-            if (!inProgressStroke.getNeedsUpdate()) {
+            if (!inProgressStroke.isUpdateNeeded()) {
                 dryingStrokesIterator.remove()
                 fillStrokeToViewTransform(strokeState)
                 val copiedStrokeToViewTransform =
@@ -1319,17 +1318,8 @@ internal class InProgressStrokesManager(
         val nowMillis = getNanoTime() / 1_000_000L
         for (strokeState in renderThreadState.toDrawStrokes.values) {
             val inProgressStroke = strokeState.inProgressStroke
-            if (inProgressStroke.getNeedsUpdate()) {
-                inProgressStroke
-                    .updateShape(nowMillis - strokeState.startEventTimeMillis)
-                    .onFailure {
-                        // TODO(b/306361370): Throw here once input is more sanitized.
-                        Log.w(
-                            InProgressStrokesManager::class.simpleName,
-                            "Error during InProgressStroke.updateShape after handleAction",
-                            it,
-                        )
-                    }
+            if (inProgressStroke.isUpdateNeeded()) {
+                updateShape(inProgressStroke, nowMillis - strokeState.startEventTimeMillis)
             }
         }
         if (inProgressStrokesRenderHelper.contentsPreservedBetweenDraws) {

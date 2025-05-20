@@ -279,9 +279,14 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
                 CameraActivity.IMAGE_CAPTURE_MODE_OUTPUT_STREAM,
                 CameraActivity.IMAGE_CAPTURE_MODE_MEDIA_STORE
             )
+
         @JvmStatic
         protected val lensFacingList =
-            arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)
+            arrayOf(
+                CameraSelector.LENS_FACING_BACK,
+                CameraSelector.LENS_FACING_FRONT,
+                CameraSelector.LENS_FACING_EXTERNAL
+            )
 
         @JvmStatic
         protected val cameraXConfigList =

@@ -199,7 +199,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                     )
                                 }
                             },
-                            Runnable::run
+                            Runnable::run,
                         )
                     }
                 ) {

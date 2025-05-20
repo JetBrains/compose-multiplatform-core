@@ -31,7 +31,7 @@ internal abstract class LazyListMeasuredItemProvider(
     isVertical: Boolean,
     private val itemProvider: LazyListItemProvider,
     private val measureScope: LazyLayoutMeasureScope
-) : LazyLayoutMeasuredItemProvider<LazyListMeasuredItem> {
+) : LazyLayoutMeasuredItemProvider<LazyListMeasuredItem>() {
     // the constraints we will measure child with. the main axis is not restricted
     val childConstraints =
         Constraints(
@@ -52,12 +52,12 @@ internal abstract class LazyListMeasuredItemProvider(
     ): LazyListMeasuredItem {
         val key = itemProvider.getKey(index)
         val contentType = itemProvider.getContentType(index)
-        val placeables = measureScope.measure(index, constraints)
+        val placeables = measureScope.getPlaceables(index, constraints)
         return createItem(index, key, contentType, placeables, constraints)
     }
 
     fun keepAround(index: Int) {
-        measureScope.measure(index, childConstraints)
+        measureScope.compose(index)
     }
 
     /**

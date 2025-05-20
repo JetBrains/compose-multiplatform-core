@@ -146,16 +146,16 @@ package androidx.compose.runtime {
     method @androidx.compose.runtime.ComposeCompilerApi public void endReusableGroup();
     method @androidx.compose.runtime.ComposeCompilerApi public void endToMarker(int marker);
     method public androidx.compose.runtime.Applier<? extends java.lang.Object?> getApplier();
-    method @org.jetbrains.annotations.TestOnly public kotlin.coroutines.CoroutineContext getApplyCoroutineContext();
-    method public long getCompositeKeyHashCode();
+    method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi @org.jetbrains.annotations.TestOnly public kotlin.coroutines.CoroutineContext getApplyCoroutineContext();
+    method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public long getCompositeKeyHashCode();
     method @org.jetbrains.annotations.TestOnly public androidx.compose.runtime.ControlledComposition getComposition();
     method public androidx.compose.runtime.tooling.CompositionData getCompositionData();
-    method @Deprecated public default int getCompoundKeyHash();
+    method @Deprecated @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public default int getCompoundKeyHash();
     method public androidx.compose.runtime.CompositionLocalMap getCurrentCompositionLocalMap();
     method public int getCurrentMarker();
     method public boolean getDefaultsInvalid();
     method public boolean getInserting();
-    method public androidx.compose.runtime.RecomposeScope? getRecomposeScope();
+    method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public androidx.compose.runtime.RecomposeScope? getRecomposeScope();
     method public Object? getRecomposeScopeIdentity();
     method public boolean getSkipping();
     method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public void insertMovableContent(androidx.compose.runtime.MovableContent<? extends java.lang.Object?> value, Object? parameter);
@@ -200,7 +200,7 @@ package androidx.compose.runtime {
 
   public static final class Composer.Companion {
     method public Object getEmpty();
-    method public void setDiagnosticStackTraceEnabled(boolean enabled);
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public void setDiagnosticStackTraceEnabled(boolean enabled);
     method @SuppressCompatibility @androidx.compose.runtime.InternalComposeTracingApi public void setTracer(androidx.compose.runtime.CompositionTracer? tracer);
     property public Object Empty;
   }
@@ -408,7 +408,7 @@ package androidx.compose.runtime {
   }
 
   public final class MonotonicFrameClockKt {
-    method public static androidx.compose.runtime.MonotonicFrameClock getMonotonicFrameClock(kotlin.coroutines.CoroutineContext);
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public static androidx.compose.runtime.MonotonicFrameClock getMonotonicFrameClock(kotlin.coroutines.CoroutineContext);
     method public static suspend inline <R> Object? withFrameMillis(androidx.compose.runtime.MonotonicFrameClock, kotlin.jvm.functions.Function1<? super java.lang.Long,? extends R> onFrame, kotlin.coroutines.Continuation<? super R>);
     method public static suspend <R> Object? withFrameMillis(kotlin.jvm.functions.Function1<? super java.lang.Long,? extends R> onFrame, kotlin.coroutines.Continuation<? super R>);
     method public static suspend <R> Object? withFrameNanos(kotlin.jvm.functions.Function1<? super java.lang.Long,? extends R> onFrame, kotlin.coroutines.Continuation<? super R>);
@@ -843,7 +843,7 @@ package androidx.compose.runtime.internal {
 
   public final class LiveLiteralKt {
     method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public static void enableLiveLiterals();
-    method public static boolean isLiveLiteralsEnabled();
+    method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public static boolean isLiveLiteralsEnabled();
     method @SuppressCompatibility @androidx.compose.runtime.ComposeCompilerApi @androidx.compose.runtime.InternalComposeApi public static <T> androidx.compose.runtime.State<T> liveLiteral(String key, T value);
     method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public static void updateLiveLiteralValue(String key, Object? value);
     property @SuppressCompatibility @androidx.compose.runtime.ComposeCompilerApi @androidx.compose.runtime.InternalComposeApi public static boolean isLiveLiteralsEnabled;

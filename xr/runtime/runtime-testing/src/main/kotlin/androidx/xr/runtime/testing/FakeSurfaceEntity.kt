@@ -19,12 +19,14 @@ package androidx.xr.runtime.testing
 import android.graphics.ImageFormat
 import android.media.ImageReader
 import android.view.Surface
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.SurfaceEntity
 import androidx.xr.runtime.internal.TextureResource
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [SurfaceEntity] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSurfaceEntity : SurfaceEntity, FakeEntity() {
     override var stereoMode: Int = 0
 

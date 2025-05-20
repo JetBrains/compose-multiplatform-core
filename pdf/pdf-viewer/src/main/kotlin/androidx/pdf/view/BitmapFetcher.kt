@@ -400,6 +400,8 @@ internal sealed interface PageContents {
     val bitmapScale: Float
 
     val needsWhiteBackground: Boolean
+
+    val isFullyRendered: Boolean
 }
 
 /** A singular [Bitmap] depicting the full page, when full page rendering is used */
@@ -409,6 +411,8 @@ internal class FullPageBitmap(val bitmap: Bitmap, override val bitmapScale: Floa
      * [Bitmap] covering the whole page
      */
     override val needsWhiteBackground: Boolean = false
+
+    override val isFullyRendered: Boolean = true
 }
 
 /**
@@ -441,6 +445,9 @@ internal class TileBoard(
      */
     override val needsWhiteBackground: Boolean
         get() = fullPageBitmap == null
+
+    override val isFullyRendered: Boolean
+        get() = tiles.all { it.bitmap != null }
 
     /** An individual [Tile] in this [TileBoard] */
     inner class Tile(val index: Int) {

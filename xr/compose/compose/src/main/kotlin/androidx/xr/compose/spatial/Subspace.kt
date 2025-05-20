@@ -17,6 +17,8 @@
 package androidx.xr.compose.spatial
 
 import androidx.activity.ComponentActivity
+import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.CompositionLocalProvider
@@ -56,7 +58,9 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.ActivitySpace
 import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.CameraView.CameraType
 import androidx.xr.scenecore.ContentlessEntity
@@ -64,11 +68,18 @@ import androidx.xr.scenecore.Fov
 import androidx.xr.scenecore.Head
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
+import kotlin.coroutines.resume
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.tan
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.annotations.TestOnly
 
 private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
     compositionLocalWithComputedDefaultOf {
@@ -76,6 +87,7 @@ private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
     }
 
 /** Defines default values used by the Subspace composables, primarily [ApplicationSubspace]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SubspaceDefaults {
     /**
      * Default [VolumeConstraints] used as a fallback value.
@@ -110,6 +122,7 @@ public object SubspaceDefaults {
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit) {
     val activity = LocalContext.current.getActivity()
 
@@ -134,6 +147,7 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
 
 /** Defines the behavior for applying [VolumeConstraints] to an ApplicationSubspace. */
 @JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class ConstraintsBehavior private constructor(private val value: Int) {
     public companion object {
         /**
@@ -176,6 +190,7 @@ public value class ConstraintsBehavior private constructor(private val value: In
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun ApplicationSubspace(
     constraints: VolumeConstraints = SubspaceDefaults.fallbackFieldOfViewConstraints,
     constraintsBehavior: ConstraintsBehavior = ConstraintsBehavior.FieldOfView,
@@ -358,9 +373,14 @@ private fun NestedSubspace(
     }
 }
 
-private object PerceptionStackRetryConstants {
-    const val MAX_ATTEMPTS = 50
-    const val RETRY_INTERVAL_MILLIS = 10L
+@VisibleForTesting
+internal object PerceptionStackRetrySettings {
+    /** Total maximum time to wait for perception stack data in milliseconds. */
+    internal const val MAX_WAIT_TIME_MILLIS = 500L
+    /** Interval between checks within the timeout period. */
+    internal const val RETRY_INTERVAL_MILLIS = 17L
+    /** Allows overriding the dispatcher used for FOV polling/calculations in tests. */
+    @TestOnly var FovPollingDispatcherOverride: CoroutineDispatcher? = null
 }
 
 /**
@@ -373,8 +393,8 @@ private object PerceptionStackRetryConstants {
  * or the `HEAD_TRACKING` Android permission is not granted.
  *
  * If the perception stack components (Head, Cameras) are not yet available, it retries periodically
- * ([PerceptionStackRetryConstants.RETRY_INTERVAL_MILLIS]) up to a maximum number of attempts
- * ([PerceptionStackRetryConstants.MAX_ATTEMPTS]).
+ * ([PerceptionStackRetrySettings.RETRY_INTERVAL_MILLIS]) up to the maximum wait time
+ * ([PerceptionStackRetrySettings.MAX_WAIT_TIME_MILLIS]).
  *
  * If the perception stack is ready but the ActivitySpace scale is zero, it registers a listener to
  * trigger potential re-evaluation and continues retrying with delays. The listener is removed after
@@ -393,80 +413,144 @@ private fun rememberCalculatedFovConstraints(
     fallbackFovConstraints: VolumeConstraints
 ): VolumeConstraints? {
     val session = LocalSession.current ?: return null
+    val activitySpace = session.scene.activitySpace
     val density = LocalDensity.current
-    val calculatedFovConstraints = remember { mutableStateOf<VolumeConstraints?>(null) }
 
-    if (session.config.headTracking == HeadTrackingMode.Disabled) {
-        calculatedFovConstraints.value = fallbackFovConstraints
+    val calculatedFovConstraints = remember {
+        mutableStateOf<VolumeConstraints?>(
+            if (session.config.headTracking == HeadTrackingMode.DISABLED) {
+                fallbackFovConstraints
+            } else {
+                val head: Head? = session.scene.spatialUser.head
+                val leftCamera: CameraView? =
+                    session.scene.spatialUser.getCameraView(CameraType.LEFT_EYE)
+                val rightCamera: CameraView? =
+                    session.scene.spatialUser.getCameraView(CameraType.RIGHT_EYE)
+                val scale = activitySpace.getScale(Space.REAL_WORLD)
+
+                if (head == null || leftCamera == null || rightCamera == null || scale == 0f) {
+                    null
+                } else {
+                    calculateFovConstraints(
+                        head,
+                        leftCamera,
+                        rightCamera,
+                        scale,
+                        density,
+                        fallbackFovConstraints,
+                        activitySpace,
+                    )
+                }
+            }
+        )
+    }
+
+    if (calculatedFovConstraints.value != null) {
         return calculatedFovConstraints.value
     }
 
-    val spaceUpdated = remember { mutableStateOf(false) }
-    val activitySpace = session.scene.activitySpace
-
-    LaunchedEffect(spaceUpdated) {
-        var attempts = 0
-
-        while (
-            attempts < PerceptionStackRetryConstants.MAX_ATTEMPTS &&
-                calculatedFovConstraints.value == null
-        ) {
-            val head: Head? = session.scene.spatialUser.head
-            val leftCamera: CameraView? =
-                session.scene.spatialUser.getCameraView(CameraType.LEFT_EYE)
-            val rightCamera: CameraView? =
-                session.scene.spatialUser.getCameraView(CameraType.RIGHT_EYE)
-            val currentScale = activitySpace.getScale(Space.REAL_WORLD)
-            if (head != null && leftCamera != null && rightCamera != null) {
-                if (currentScale == 0f) {
-                    activitySpace.setOnSpaceUpdatedListener({
-                        if (!spaceUpdated.value) {
-                            spaceUpdated.value = true
-                        }
-                    })
-                    delay(PerceptionStackRetryConstants.RETRY_INTERVAL_MILLIS)
-                    attempts++
-
-                    continue
-                }
-
-                if (spaceUpdated.value) {
-                    activitySpace.setOnSpaceUpdatedListener(null)
-                }
-
-                val distance: Meter =
-                    getDistanceBetweenUserAndActivitySpaceOrigin(
-                        head.getActivitySpacePose(),
-                        activitySpace.getActivitySpacePose(),
-                        currentScale,
-                    )
-                val fov = getSpatialUserFov(leftCamera.fov, rightCamera.fov)
-
-                if (distance.value == 0.0f) {
-                    calculatedFovConstraints.value = SubspaceDefaults.fallbackFieldOfViewConstraints
-                } else {
-                    calculatedFovConstraints.value =
-                        VolumeConstraints(
-                            minWidth = 0,
-                            maxWidth = getFovWidthAtDistance(distance, fov, density),
-                            minHeight = 0,
-                            maxHeight = getFovHeightAtDistance(distance, fov, density),
-                            minDepth = 0,
-                            maxDepth = VolumeConstraints.INFINITY,
+    LaunchedEffect(Unit) {
+        calculatedFovConstraints.value =
+            withContext(
+                PerceptionStackRetrySettings.FovPollingDispatcherOverride ?: Dispatchers.Default
+            ) {
+                val timeoutResult: VolumeConstraints? =
+                    withTimeoutOrNull(PerceptionStackRetrySettings.MAX_WAIT_TIME_MILLIS) {
+                        pollUntilReadyAndCalculateFovConstraints(
+                            session,
+                            density,
+                            fallbackFovConstraints,
+                            activitySpace,
                         )
-                }
-            } else {
-                delay(PerceptionStackRetryConstants.RETRY_INTERVAL_MILLIS)
-                attempts++
-            }
-        }
+                    }
 
-        if (calculatedFovConstraints.value == null) {
-            calculatedFovConstraints.value = fallbackFovConstraints
-        }
+                return@withContext timeoutResult ?: fallbackFovConstraints
+            }
     }
 
     return calculatedFovConstraints.value
+}
+
+/**
+ * Polls until the perception stack is ready and ActivitySpace scale is valid, then calculates FOV
+ * constraints.
+ */
+private suspend fun pollUntilReadyAndCalculateFovConstraints(
+    session: Session,
+    density: Density,
+    fallbackConstraints: VolumeConstraints,
+    activitySpace: ActivitySpace,
+): VolumeConstraints {
+    while (true) {
+        val head: Head? = session.scene.spatialUser.head
+        val leftCamera: CameraView? = session.scene.spatialUser.getCameraView(CameraType.LEFT_EYE)
+        val rightCamera: CameraView? = session.scene.spatialUser.getCameraView(CameraType.RIGHT_EYE)
+
+        if (head == null || leftCamera == null || rightCamera == null) {
+            delay(PerceptionStackRetrySettings.RETRY_INTERVAL_MILLIS)
+
+            continue
+        }
+
+        val currentScale = activitySpace.getScale(Space.REAL_WORLD)
+        if (currentScale == 0f) {
+            activitySpace.awaitUpdate()
+
+            continue
+        }
+
+        return calculateFovConstraints(
+            head,
+            leftCamera,
+            rightCamera,
+            currentScale,
+            density,
+            fallbackConstraints,
+            activitySpace,
+        )
+    }
+}
+
+/**
+ * Suspends until the ActivitySpace provides an update via its listener. Ensures the listener is
+ * removed on cancellation or successful resumption.
+ */
+private suspend fun ActivitySpace.awaitUpdate(): Unit =
+    suspendCancellableCoroutine { continuation ->
+        this.setOnSpaceUpdatedListener({ continuation.resume(Unit) })
+
+        continuation.invokeOnCancellation { setOnSpaceUpdatedListener(null) }
+    }
+
+private fun calculateFovConstraints(
+    head: Head,
+    leftCamera: CameraView,
+    rightCamera: CameraView,
+    scale: Float,
+    density: Density,
+    fallbackConstraints: VolumeConstraints,
+    activitySpace: ActivitySpace,
+): VolumeConstraints {
+    val distance: Meter =
+        getDistanceBetweenUserAndActivitySpaceOrigin(
+            head.getActivitySpacePose(),
+            activitySpace.getActivitySpacePose(),
+            scale,
+        )
+    val fov = getSpatialUserFov(leftCamera.fov, rightCamera.fov)
+
+    return if (distance.value == 0.0f) {
+        fallbackConstraints
+    } else {
+        VolumeConstraints(
+            minWidth = 0,
+            maxWidth = getFovWidthAtDistance(distance, fov, density),
+            minHeight = 0,
+            maxHeight = getFovHeightAtDistance(distance, fov, density),
+            minDepth = 0,
+            maxDepth = VolumeConstraints.INFINITY,
+        )
+    }
 }
 
 /**

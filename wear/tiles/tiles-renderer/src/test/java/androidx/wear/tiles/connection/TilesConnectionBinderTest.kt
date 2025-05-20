@@ -325,12 +325,6 @@ public class TilesConnectionBinderTest {
             TODO("Not yet implemented")
         }
 
-        override fun processRecentInteractionEvents(
-            events: MutableList<TileInteractionEventData>?
-        ) {
-            TODO("Not yet implemented")
-        }
-
         override fun onRecentInteractionEvents(
             events: List<TileInteractionEventData?>?,
             callback: InteractionEventsCallback?

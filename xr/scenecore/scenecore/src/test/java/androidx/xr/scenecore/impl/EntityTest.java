@@ -104,7 +104,8 @@ public final class EntityTest {
                         perceptionLibrary,
                         mock(SplitEngineSubspaceManager.class),
                         mock(ImpSplitEngineRenderer.class),
-                        false);
+                        false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
         mEntity =
                 new TestEntity(
                         mXrExtensions.createNode(),

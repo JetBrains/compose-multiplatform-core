@@ -46,6 +46,13 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
             finish()
         }
 
+        val errorName =
+            intent.getStringExtra(CredentialProviderBaseController.Companion.EXTRA_ERROR_NAME)
+        if (errorName == null) {
+            finish()
+            return
+        }
+
         restoreState(savedInstanceState)
         if (mWaitingForActivityResult) {
             return
@@ -53,7 +60,7 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
         }
         val pendingIntent: PendingIntent? =
             intent.getParcelableExtra(
-                CredentialProviderBaseController.Companion.EXTRA_GET_CREDENTIAL_INTENT
+                CredentialProviderBaseController.Companion.EXTRA_FLOW_PENDING_INTENT
             )
 
         if (pendingIntent != null) {
@@ -68,10 +75,7 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
                 /* options = */ null
             )
         } else {
-            resultReceiver?.reportError(
-                errName = CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                errMsg = "Internal error"
-            )
+            resultReceiver?.reportError(errName = errorName, errMsg = "Internal error")
             finish()
         }
     }

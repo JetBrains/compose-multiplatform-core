@@ -18,7 +18,9 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public val Session.scene: Scene
     get() = this.sessionConnectors.filterIsInstance<Scene>().single()

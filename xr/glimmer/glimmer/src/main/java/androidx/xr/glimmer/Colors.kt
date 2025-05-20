@@ -22,40 +22,30 @@ import androidx.compose.ui.graphics.Color
 /**
  * A set of named color parameters for a [GlimmerTheme].
  *
- * @property primary The primary color is typically used as an accent color for important actions
- *   and information.
- * @property onPrimary Color used for text and icons displayed on top of the primary color.
- * @property secondary The secondary color provides more ways to accent and distinguish your
- *   product.
- * @property onSecondary Color used for text and icons displayed on top of the secondary color.
- * @property positive The positive color is used to indicate positive or affirmative actions, such
- *   as a confirmation button.
- * @property onPositive Color used for text and icons displayed on top of the positive color.
- * @property negative The negative color is used to indicate negative actions, such as a cancel
- *   button.
- * @property onNegative Color used for text and icons displayed on top of the negative color.
+ * @property primary The primary color is an accent color used for brand expression. It should
+ *   typically be used with text and icons for emphasis, or with borders to accentuate a particular
+ *   component - it should not be used to fill surfaces.
+ * @property secondary The secondary color is an accent color used for brand expression. It should
+ *   typically be used with text and icons for emphasis, or with borders to accentuate a particular
+ *   component - it should not be used to fill surfaces.
+ * @property positive The positive color is used to indicate positive or affirmative actions. For
+ *   example, the border of a confirmation button. It should not be used to fill surfaces.
+ * @property negative The negative color is used to indicate negative actions. For example, the
+ *   border of a cancel button. It should not be used to fill surfaces.
  * @property surface The surface color that affect surfaces of components, such as buttons, cards,
- *   and list items.
- * @property onSurface Color used for text and icons displayed on top of the surface color.
- * @property surfaceLow Another option for a color with similar uses of [surface].
- * @property outline Subtle color used for boundaries. This color helps to add contrast around
+ *   and list items. This should be [Color.Black] to ensure maximum contrast.
+ * @property outline Subtle color used for borders. This color helps to add contrast around
  *   components for accessibility purposes.
- * @property outlineVariant Utility color used for boundaries for decorative elements when strong
+ * @property outlineVariant Utility color used for borders for decorative elements when strong
  *   contrast is not required.
  */
 @Immutable
 public class Colors(
     public val primary: Color = Color(0xFFA8C7FA),
-    public val onPrimary: Color = Color.Black,
     public val secondary: Color = Color(0xFF4C88E9),
-    public val onSecondary: Color = Color.Black,
     public val positive: Color = Color(0xFF4CE995),
-    public val onPositive: Color = Color.Black,
     public val negative: Color = Color(0xFFF57084),
-    public val onNegative: Color = Color.Black,
     public val surface: Color = Color.Black,
-    public val onSurface: Color = Color.White,
-    public val surfaceLow: Color = Color(0xFF4F4F4F),
     public val outline: Color = Color(0xFF606164),
     public val outlineVariant: Color = Color(0xFF42434A),
 ) {
@@ -63,36 +53,24 @@ public class Colors(
     /** Returns a copy of this Colors, optionally overriding some of the values. */
     public fun copy(
         primary: Color = this.primary,
-        onPrimary: Color = this.onPrimary,
         secondary: Color = this.secondary,
-        onSecondary: Color = this.onSecondary,
         positive: Color = this.positive,
-        onPositive: Color = this.onPositive,
         negative: Color = this.negative,
-        onNegative: Color = this.onNegative,
         surface: Color = this.surface,
-        onSurface: Color = this.onSurface,
-        surfaceLow: Color = this.surfaceLow,
         outline: Color = this.outline,
         outlineVariant: Color = this.outlineVariant,
     ): Colors =
         Colors(
             primary = primary,
-            onPrimary = onPrimary,
             secondary = secondary,
-            onSecondary = onSecondary,
             positive = positive,
-            onPositive = onPositive,
             negative = negative,
-            onNegative = onNegative,
             surface = surface,
-            onSurface = onSurface,
-            surfaceLow = surfaceLow,
             outline = outline,
             outlineVariant = outlineVariant,
         )
 
     override fun toString(): String {
-        return "Colors(primary=$primary, onPrimary=$onPrimary, secondary=$secondary, onSecondary=$onSecondary, positive=$positive, onPositive=$onPositive, negative=$negative, onNegative=$onNegative, surface=$surface, onSurface=$onSurface, surfaceLow=$surfaceLow, outline=$outline, outlineVariant=$outlineVariant)"
+        return "Colors(primary=$primary, secondary=$secondary, positive=$positive, negative=$negative, surface=$surface, outline=$outline, outlineVariant=$outlineVariant)"
     }
 }

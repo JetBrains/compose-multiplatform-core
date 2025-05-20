@@ -25,7 +25,7 @@ import androidx.annotation.RestrictTo.Scope
  * An instance of [GlanceNodeAssertion] can be obtained from `onNode` and equivalent methods on a
  * [GlanceNodeAssertionsProvider]
  */
-class GlanceNodeAssertion<R, T : GlanceNode<R>>
+public class GlanceNodeAssertion<R, T : GlanceNode<R>>
 @RestrictTo(Scope.LIBRARY_GROUP)
 constructor(
     private val testContext: TestContext<R, T>,
@@ -36,7 +36,7 @@ constructor(
      *
      * @throws [AssertionError] if the assert fails.
      */
-    fun assertExists(): GlanceNodeAssertion<R, T> {
+    public fun assertExists(): GlanceNodeAssertion<R, T> {
         findSingleMatchingNode(errorMessageOnFail = "Failed assertExists")
         return this
     }
@@ -46,7 +46,7 @@ constructor(
      *
      * @throws [AssertionError] if the assert fails.
      */
-    fun assertDoesNotExist(): GlanceNodeAssertion<R, T> {
+    public fun assertDoesNotExist(): GlanceNodeAssertion<R, T> {
         val errorMessageOnFail = "Failed assertDoesNotExist"
         val matchedNodesCount = testContext.findMatchingNodes(selector, errorMessageOnFail).size
         if (matchedNodesCount != 0) {
@@ -77,7 +77,7 @@ constructor(
      *   bigger operation that used this assert as a precondition check.
      * @throws AssertionError if the matcher does not match or the node can no longer be found.
      */
-    fun assert(
+    public fun assert(
         matcher: GlanceNodeMatcher<R>,
         messagePrefixOnError: (() -> String)? = null
     ): GlanceNodeAssertion<R, T> {
@@ -97,7 +97,7 @@ constructor(
      * Returns [GlanceNodeAssertionCollection] that allows performing assertions on the children of
      * the node selected by this [GlanceNodeAssertion].
      */
-    fun onChildren(): GlanceNodeAssertionCollection<R, T> {
+    public fun onChildren(): GlanceNodeAssertionCollection<R, T> {
         return GlanceNodeAssertionCollection(testContext, selector.addChildrenSelector())
     }
 

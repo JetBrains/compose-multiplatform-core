@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.PanelEntity
 import androidx.xr.runtime.internal.PixelDimensions
@@ -23,6 +24,7 @@ import androidx.xr.runtime.math.Vector3
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [PanelEntity] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakePanelEntity : PanelEntity, FakeEntity() {
     override var sizeInPixels: PixelDimensions = PixelDimensions(0, 0)
 

@@ -43,7 +43,6 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
-import org.junit.Assume
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -68,10 +67,11 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
         )
 
     private var cameraProvider: ProcessCameraProvider? = null
+    private lateinit var cameraSelector: CameraSelector
 
     @Before
     fun setUp() {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CAMERA_LENS))
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         val context = ApplicationProvider.getApplicationContext<Context>()
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context).get()
@@ -101,7 +101,6 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
         // Arrange
         val previewView = setUpPreviewView(implementationMode)
         val preview = Preview.Builder().build()
-        val cameraSelector = CameraSelector.Builder().requireLensFacing(CAMERA_LENS).build()
         runOnMainThread {
             val lifecycleOwner = FakeLifecycleOwner()
             lifecycleOwner.startAndResume()
@@ -324,7 +323,6 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
 
     private fun startPreview(previewView: PreviewView) {
         val preview = Preview.Builder().build()
-        val cameraSelector = CameraSelector.Builder().requireLensFacing(CAMERA_LENS).build()
         runOnMainThread {
             val lifecycleOwner = FakeLifecycleOwner()
             lifecycleOwner.startAndResume()
@@ -353,7 +351,6 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     }
 
     companion object {
-        private const val CAMERA_LENS = CameraSelector.LENS_FACING_BACK
 
         @BeforeClass
         @JvmStatic

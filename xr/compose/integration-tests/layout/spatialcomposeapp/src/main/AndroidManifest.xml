@@ -16,7 +16,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING"/>
+  <uses-permission android:name="android.permission.HEAD_TRACKING" />
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
 
   <application
       android:label="Spatial Compose App">
@@ -40,6 +41,12 @@
     </activity>
     <activity
         android:name=".VideoPlayerActivity"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
+    </activity>
+    <activity
+        android:name=".WindowManagerJxrTestActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
         android:enableOnBackInvokedCallback="true"
         android:exported="true">
     </activity>

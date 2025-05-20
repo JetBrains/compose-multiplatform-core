@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
+import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ExrImageResource as RtExrImage
@@ -24,7 +25,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Interface for image formats in SceneCore. */
-public interface Image
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Image
 
 /**
  * ExrImage represents an EXR Image resource in SceneCore. EXR images are used by the [Environment]
@@ -32,6 +33,7 @@ public interface Image
  */
 // TODO(b/319269278): Make this and GltfModel derive from a common Resource base class which has
 //                    async helpers.
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ExrImage
 internal constructor(internal val image: RtExrImage, internal val session: Session? = null) :
     Image {
@@ -73,6 +75,10 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             name: String,
             session: Session,
         ): ListenableFuture<ExrImage> {
+            require(name.endsWith(".zip", ignoreCase = true)) {
+                "Only preprocessed skybox files with the .zip extension are supported."
+            }
+
             return createExrImageFuture(platformAdapter.loadExrImageByAssetName(name), session)
         }
 
@@ -90,16 +96,21 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         }
 
         /**
-         * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
-         * asynchronously loaded.
+         * Public factory function for an [ExrImage], asynchronously loading a preprocessed skybox.
+         *
+         * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
+         * typically generated from an `.exr` or `.hdr` environment map using a tool like Filament's
+         * `cmgen`. See: https://github.com/google/filament/tree/main/tools/cmgen
          *
          * This method must be called from the main thread.
          * https://developer.android.com/guide/components/processes-and-threads
          *
          * @param session The [Session] to use for loading the asset.
-         * @param name The URL or asset-relative path of a the preprocessed EXR image to be loaded
-         * @return a ListenableFuture<ExrImage>. Listeners will be called on the main thread if
-         *   Runnable::run is supplied.
+         * @param name The URL or asset-relative path of the preprocessed `.zip` skybox file to
+         *   load.
+         * @return a [ListenableFuture] which will provide the [ExrImage] upon completion. Listeners
+         *   attached to the future will be executed on the main thread if a direct executor (like
+         *   `Runnable::run`) is used.
          */
         @MainThread
         @JvmStatic

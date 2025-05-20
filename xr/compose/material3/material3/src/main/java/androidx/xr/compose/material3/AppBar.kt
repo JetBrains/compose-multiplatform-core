@@ -57,8 +57,6 @@ internal object XrSingleRowTopAppBarOverride : SingleRowTopAppBarOverride {
  * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
  * [LocalSingleRowTopAppBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultSingleRowTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
@@ -70,8 +68,6 @@ public val DefaultSingleRowTopAppBarOrbiterProperties: HorizontalOrbiterProperti
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalSingleRowTopAppBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =
@@ -98,8 +94,6 @@ internal object XrTwoRowsTopAppBarOverride : TwoRowsTopAppBarOverride {
  * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
  * [LocalTwoRowsTopAppBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultTwoRowsTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
@@ -111,8 +105,6 @@ public val DefaultTwoRowsTopAppBarOrbiterProperties: HorizontalOrbiterProperties
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalTwoRowsTopAppBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =

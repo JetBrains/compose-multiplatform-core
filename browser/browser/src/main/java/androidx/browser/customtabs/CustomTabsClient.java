@@ -676,6 +676,19 @@ public class CustomTabsClient {
         return packageHasCategory(context, provider, CustomTabsService.CATEGORY_AUTH_TAB);
     }
 
+    /**
+     * Checks whether the Custom Tabs provider supports Ephemeral Browsing.
+     *
+     * @param context The application {@link Context}.
+     * @param provider The package name of the Custom Tabs provider.
+     * @return Whether the Custom Tabs provider supports Ephemeral Browsing.
+     * @see CustomTabsService#CATEGORY_EPHEMERAL_BROWSING
+     */
+    public static boolean isEphemeralBrowsingSupported(@NonNull Context context,
+            @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_EPHEMERAL_BROWSING);
+    }
+
     private static boolean packageHasCategory(@NonNull Context context, @NonNull String provider,
             @NonNull String category) {
         PackageManager pm = context.getPackageManager();

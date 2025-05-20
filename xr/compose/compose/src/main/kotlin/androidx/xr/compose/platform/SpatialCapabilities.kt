@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.platform
 
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SP
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
 import androidx.xr.scenecore.scene
 
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public val LocalSpatialCapabilities: CompositionLocal<SpatialCapabilities> =
     compositionLocalWithComputedDefaultOf {
         if (LocalHasXrSpatialFeature.currentValue) {
@@ -80,9 +82,10 @@ public interface SpatialCapabilities {
     public val isSpatialAudioEnabled: Boolean
 
     public companion object {
+        // TODO(b/417291809): Consider removing this map.
         private val sessionInstances: MutableMap<Session, SpatialCapabilities> = mutableMapOf()
 
-        public fun getOrCreate(session: Session): SpatialCapabilities =
+        internal fun getOrCreate(session: Session): SpatialCapabilities =
             sessionInstances.getOrPut(session) { SessionSpatialCapabilities(session) }
     }
 }

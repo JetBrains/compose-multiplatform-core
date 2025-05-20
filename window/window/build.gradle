@@ -75,7 +75,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -110,4 +109,5 @@ androidx {
     failOnDeprecationWarnings = false
     legacyDisableKotlinStrictApiMode = true
     samples(project(":window:window-samples"))
+    enableRobolectric()
 }

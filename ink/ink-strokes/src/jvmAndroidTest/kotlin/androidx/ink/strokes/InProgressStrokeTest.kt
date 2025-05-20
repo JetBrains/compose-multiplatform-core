@@ -20,6 +20,7 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.BoxAccumulator
+import androidx.ink.geometry.ImmutableVec
 import androidx.ink.geometry.MutableVec
 import androidx.ink.strokes.testing.buildStrokeInputBatchFromPoints
 import com.google.common.truth.Truth.assertThat
@@ -29,7 +30,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.test.assertFailsWith
-import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -41,17 +41,11 @@ class InProgressStrokeTest {
     private fun makeStartAndExtendStroke() =
         InProgressStroke().apply {
             start(makeBrush())
-            assertThat(
-                    enqueueInputs(
-                            buildStrokeInputBatchFromPoints(
-                                floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f)
-                            ),
-                            buildStrokeInputBatchFromPoints(floatArrayOf()),
-                        )
-                        .isSuccess
-                )
-                .isTrue()
-            assertThat(updateShape(2L).isSuccess).isTrue()
+            enqueueInputsOrThrow(
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f)),
+                ImmutableStrokeInputBatch.EMPTY,
+            )
+            updateShapeOrThrow(2L)
         }
 
     @Test
@@ -65,7 +59,7 @@ class InProgressStrokeTest {
     fun unstartedStroke_doesNotNeedUpdate() {
         val inProgressStroke = InProgressStroke()
 
-        assertThat(inProgressStroke.getNeedsUpdate()).isFalse()
+        assertThat(inProgressStroke.isUpdateNeeded()).isFalse()
     }
 
     @Test
@@ -95,7 +89,7 @@ class InProgressStrokeTest {
     }
 
     @Test
-    fun enqueueInputs_withRealAndPredictedInputs_needsUpdate() {
+    fun enqueueInputsOrThrow_withRealAndPredictedInputs_isUpdateNeeded() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
@@ -106,54 +100,116 @@ class InProgressStrokeTest {
                 startTime = 3L,
             )
 
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
-        assertThat(inProgressStroke.getNeedsUpdate()).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
     }
 
     @Test
-    fun enqueueInputs_beforeStart_fails() {
+    fun enqueueInputsOrThrow_onSuccess_incrementsVersion() {
         val inProgressStroke = InProgressStroke()
-
-        val result =
-            inProgressStroke.enqueueInputs(
-                ImmutableStrokeInputBatch.EMPTY,
-                ImmutableStrokeInputBatch.EMPTY,
+        inProgressStroke.start(makeBrush())
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val predictedInputs =
+            buildStrokeInputBatchFromPoints(
+                floatArrayOf(40f, 9f, 50f, 11f, 60f, 13f),
+                InputToolType.STYLUS,
+                startTime = 3L,
             )
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).hasMessageThat().contains("Start")
+
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion + 1)
     }
 
     @Test
-    fun enqueueInputsOrThrow_beforeStart_throws() {
-        val inProgressStroke = InProgressStroke()
-
-        val error =
-            assertThrows(IllegalArgumentException::class.java) {
-                inProgressStroke.enqueueInputsOrThrow(
-                    ImmutableStrokeInputBatch.EMPTY,
-                    ImmutableStrokeInputBatch.EMPTY,
-                )
-            }
-        assertThat(error).hasMessageThat().contains("Start")
-    }
-
-    @Test
-    fun updateShape_withPositiveElapsedTime_succeeds() {
+    fun enqueueInputsOrIgnore_onSuccess_incrementsVersion() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val predictedInputs =
+            buildStrokeInputBatchFromPoints(
+                floatArrayOf(40f, 9f, 50f, 11f, 60f, 13f),
+                InputToolType.STYLUS,
+                startTime = 3L,
+            )
 
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.enqueueInputsOrIgnore(realInputs, predictedInputs)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion + 1)
     }
 
     @Test
-    fun updateShape_withNegativeElapsedTime_fails() {
+    fun enqueueInputsOrThrow_beforeStart_fails() {
+        val inProgressStroke = InProgressStroke()
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        assertThat(
+                assertFailsWith<IllegalStateException> {
+                    inProgressStroke.enqueueInputsOrThrow(
+                        realInputs,
+                        ImmutableStrokeInputBatch.EMPTY
+                    )
+                }
+            )
+            .hasMessageThat()
+            .contains("Start")
+        assertThat(inProgressStroke.isUpdateNeeded()).isFalse()
+    }
+
+    @Test
+    fun enqueueInputsOrThrow_onFailure_doesNotIncrementVersion() {
+        val inProgressStroke = InProgressStroke()
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val previousVersion = inProgressStroke.version
+        assertFailsWith<IllegalStateException> {
+            inProgressStroke.enqueueInputsOrThrow(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        }
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion)
+    }
+
+    @Test
+    fun enqueueInputsOrIgnore_beforeStart_doesNothing() {
+        val inProgressStroke = InProgressStroke()
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrIgnore(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        assertThat(inProgressStroke.isUpdateNeeded()).isFalse()
+    }
+
+    @Test
+    fun enqueueInputsOrIgnore_onFailure_doesNotIncrementVersion() {
+        val inProgressStroke = InProgressStroke()
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.enqueueInputsOrIgnore(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion)
+    }
+
+    @Test
+    fun updateShapeOrThrow_withPositiveElapsedTime_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
+        inProgressStroke.updateShapeOrThrow(2)
+    }
 
-        val result = inProgressStroke.updateShape(-1)
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).hasMessageThat().contains("non-negative")
+    @Test
+    fun updateShapeOrThrow_onSuccess_updatesVersion() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.updateShapeOrThrow(2)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion + 1)
+    }
+
+    @Test
+    fun updateShapeOrIgnore_onSuccess_updatesVersion() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.updateShapeOrIgnore(2)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion + 1)
     }
 
     @Test
@@ -161,38 +217,72 @@ class InProgressStrokeTest {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
 
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrThrow(realInputs, ImmutableStrokeInputBatch.EMPTY)
+
+        assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
         val error =
-            assertThrows(IllegalArgumentException::class.java) {
-                inProgressStroke.updateShapeOrThrow(-1)
-            }
+            assertFailsWith<IllegalArgumentException> { inProgressStroke.updateShapeOrThrow(-1) }
         assertThat(error).hasMessageThat().contains("non-negative")
+        assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
     }
 
     @Test
-    fun enqueueInputs_withEmptyRealInputs_succeeds() {
-        val inProgressStroke = InProgressStroke()
-        inProgressStroke.start(makeBrush())
-        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf())
-        val predictedInputs =
-            buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
-
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
-    }
-
-    @Test
-    fun enqueueInputs_withEmptyPredictedInputs_succeeds() {
+    fun updateShapeOrIgnore_withNegativeElapsedTime_doesNothing() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
-        val predictedInputs = buildStrokeInputBatchFromPoints(floatArrayOf())
+        val predictedInputs = ImmutableStrokeInputBatch.EMPTY
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
 
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
+        assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
+        inProgressStroke.updateShapeOrIgnore(-1)
+        assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
     }
 
     @Test
-    fun enqueueInputs_withRealAndPredictedInputs_succeeds() {
+    fun updateShapeOrThrow_onFailure_doesNotIncrementVersion() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrThrow(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        val previousVersion = inProgressStroke.version
+        assertFailsWith<IllegalArgumentException> { inProgressStroke.updateShapeOrThrow(-1) }
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion)
+    }
+
+    @Test
+    fun updateShapeOrIgnore_onFailure_doesNotIncrementVersion() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrIgnore(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        val previousVersion = inProgressStroke.version
+        inProgressStroke.updateShapeOrIgnore(-1)
+        assertThat(inProgressStroke.version).isEqualTo(previousVersion)
+    }
+
+    @Test
+    fun enqueueInputsOrThrow_withEmptyRealInputs_succeeds() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+        val predictedInputs =
+            buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrThrow(ImmutableStrokeInputBatch.EMPTY, predictedInputs)
+    }
+
+    @Test
+    fun enqueueInputsOrThrow_withEmptyPredictedInputs_succeeds() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        inProgressStroke.enqueueInputsOrThrow(realInputs, ImmutableStrokeInputBatch.EMPTY)
+    }
+
+    @Test
+    fun enqueueInputsOrThrow_withRealAndPredictedInputs_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
@@ -203,12 +293,11 @@ class InProgressStrokeTest {
                 startTime = 3L,
             )
 
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
     }
 
     @Test
-    fun enqueueInputs_withRealAndPredictedInputsImmutable_succeeds() {
+    fun enqueueInputsOrThrow_withRealAndPredictedInputsImmutable_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs =
@@ -221,42 +310,51 @@ class InProgressStrokeTest {
                 )
                 .asImmutable()
 
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
     }
 
     @Test
-    fun enqueueInputs_withLowElapsedTime_fails() {
+    fun enqueueInputsOrThrow_withLowElapsedTime_fails() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f))
-        val predictedInputs = buildStrokeInputBatchFromPoints(floatArrayOf())
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 2 inputs points
-        assertThat(inProgressStroke.updateShape(0).isSuccess).isTrue()
+        val predictedInputs = ImmutableStrokeInputBatch.EMPTY
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs) // adds 2 inputs points
+        inProgressStroke.updateShapeOrThrow(0)
 
         // Try to add same two points with elapsed time from start still at 0.
-        val result = inProgressStroke.enqueueInputs(realInputs, predictedInputs)
-        assertThat(result.exceptionOrNull()).hasMessageThat().contains("non-decreasing")
+        assertThat(
+                assertFailsWith<IllegalArgumentException> {
+                    inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+                }
+            )
+            .hasMessageThat()
+            .contains("non-decreasing")
     }
 
     @Test
-    fun enqueueInputs_withInvalidRealInputs_fails() {
+    fun enqueueInputsOrThrow_withInvalidRealInputs_fails() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
-        val predictedInputs = buildStrokeInputBatchFromPoints(floatArrayOf())
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess)
-            .isTrue() // adds 3 inputs points
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, ImmutableStrokeInputBatch.EMPTY)
+        inProgressStroke.updateShapeOrThrow(2)
 
         // Try to add same three points that don't increase in elapsed time from last batch.
-        val result = inProgressStroke.enqueueInputs(realInputs, predictedInputs)
-        assertThat(result.exceptionOrNull()).hasMessageThat().contains("non-decreasing")
+        assertThat(
+                assertFailsWith<IllegalArgumentException> {
+                    inProgressStroke.enqueueInputsOrThrow(
+                        realInputs,
+                        ImmutableStrokeInputBatch.EMPTY
+                    )
+                }
+            )
+            .hasMessageThat()
+            .contains("non-decreasing")
     }
 
     @Test
-    fun enqueueInputs_withInvalidPredictedInputs_fails() {
+    fun enqueueInputsOrThrow_withInvalidPredictedInputs_fails() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs =
@@ -269,8 +367,13 @@ class InProgressStrokeTest {
         // Fails to add predicted points that don't make a valid StrokeInputBatch in conjunction
         // with
         // the real inputs.
-        val result = inProgressStroke.enqueueInputs(realInputs, predictedInputs)
-        assertThat(result.exceptionOrNull()).hasMessageThat().contains("non-decreasing")
+        assertThat(
+                assertFailsWith<IllegalArgumentException> {
+                    inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+                }
+            )
+            .hasMessageThat()
+            .contains("non-decreasing")
     }
 
     @Test
@@ -293,8 +396,8 @@ class InProgressStrokeTest {
                 InputToolType.STYLUS,
                 startTime = 3L,
             )
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess).isTrue()
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
 
         assertThat(inProgressStroke.getInputCount()).isEqualTo(5)
         assertThat(inProgressStroke.getRealInputCount()).isEqualTo(3)
@@ -312,8 +415,8 @@ class InProgressStrokeTest {
                 InputToolType.STYLUS,
                 startTime = 3L,
             )
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess).isTrue()
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
 
         val inputCount = inProgressStroke.getInputCount()
         assertThat(inputCount).isEqualTo(6)
@@ -337,8 +440,8 @@ class InProgressStrokeTest {
                 InputToolType.STYLUS,
                 startTime = 3L,
             )
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess).isTrue()
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
 
         val inputCount = inProgressStroke.getInputCount()
         assertThat(inputCount).isEqualTo(6)
@@ -353,6 +456,25 @@ class InProgressStrokeTest {
     }
 
     @Test
+    fun populateInputs_clearsExistingInputs() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val predictedInputs = ImmutableStrokeInputBatch.EMPTY
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
+
+        val inputCount = inProgressStroke.getInputCount()
+        assertThat(inputCount).isEqualTo(3)
+        val existingInputs =
+            MutableStrokeInputBatch().apply { inProgressStroke.populateInputs(this) }
+        assertThat(existingInputs.size).isEqualTo(inputCount)
+        val copiedInputs =
+            MutableStrokeInputBatch().apply { inProgressStroke.populateInputs(this, 2, 3) }
+        assertThat(copiedInputs.size).isEqualTo(1)
+    }
+
+    @Test
     @Suppress("Range")
     fun populateInputs_incorrectBoundsRaisesException() {
         val inProgressStroke = InProgressStroke()
@@ -364,8 +486,8 @@ class InProgressStrokeTest {
                 InputToolType.STYLUS,
                 startTime = 3L,
             )
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess).isTrue()
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
         assertThat(inProgressStroke.getInputCount()).isEqualTo(6)
         assertFailsWith<IllegalArgumentException> {
             inProgressStroke.populateInputs(MutableStrokeInputBatch(), -1)
@@ -389,8 +511,8 @@ class InProgressStrokeTest {
                 InputToolType.STYLUS,
                 startTime = 3L,
             )
-        assertThat(inProgressStroke.enqueueInputs(realInputs, predictedInputs).isSuccess).isTrue()
-        assertThat(inProgressStroke.updateShape(2).isSuccess).isTrue()
+        inProgressStroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+        inProgressStroke.updateShapeOrThrow(2)
         assertThat(inProgressStroke.getInputCount()).isEqualTo(6)
         val output = MutableStrokeInputBatch().apply { inProgressStroke.populateInputs(this, 6) }
         assertThat(output.size).isEqualTo(0)
@@ -418,7 +540,7 @@ class InProgressStrokeTest {
     }
 
     @Test
-    fun fillUpdatedRegion_withEmptyStroke_returnsEmptyEnvelope() {
+    fun populateUpdatedRegion_withEmptyStroke_returnsEmptyEnvelope() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val envelope = BoxAccumulator()
@@ -427,7 +549,7 @@ class InProgressStrokeTest {
     }
 
     @Test
-    fun fillUpdatedRegion_withStartedStroke_returnsBounds() {
+    fun populateUpdatedRegion_withStartedStroke_returnsBounds() {
         val inProgressStroke = makeStartAndExtendStroke()
         val envelope = BoxAccumulator()
 
@@ -442,11 +564,23 @@ class InProgressStrokeTest {
     }
 
     @Test
-    fun fillUpdatedRegion_afterResetRegion_returnsFalse() {
+    fun populateUpdatedRegion_overwritesInput() {
+        val inProgressStroke = makeStartAndExtendStroke()
+        val previouslyEmpty = BoxAccumulator()
+        val hadExistingData = BoxAccumulator().apply { add(ImmutableVec(10000F, 20000F)) }
+
+        inProgressStroke.populateUpdatedRegion(previouslyEmpty)
+        inProgressStroke.populateUpdatedRegion(hadExistingData)
+
+        assertThat(hadExistingData).isEqualTo(previouslyEmpty)
+    }
+
+    @Test
+    fun populateUpdatedRegion_afterResetRegion_returnsFalse() {
         val inProgressStroke = makeStartAndExtendStroke()
         inProgressStroke.resetUpdatedRegion()
 
-        val envelope = BoxAccumulator()
+        val envelope = BoxAccumulator().apply { add(ImmutableVec(10000F, 20000F)) }
         inProgressStroke.populateUpdatedRegion(envelope)
 
         assertThat(envelope.isEmpty()).isTrue()
@@ -562,18 +696,11 @@ class InProgressStrokeTest {
             val x = spiralRadius * cos(angle)
             val y = spiralRadius * sin(angle)
             val time = inputsAdded.toLong()
-            assertThat(
-                    stroke
-                        .enqueueInputs(
-                            MutableStrokeInputBatch()
-                                .addOrThrow(StrokeInput.create(x, y, time))
-                                .asImmutable(),
-                            ImmutableStrokeInputBatch.EMPTY,
-                        )
-                        .isSuccess
-                )
-                .isTrue()
-            assertThat(stroke.updateShape(time).isSuccess).isTrue()
+            stroke.enqueueInputsOrThrow(
+                MutableStrokeInputBatch().addOrThrow(StrokeInput.create(x, y, time)).asImmutable(),
+                ImmutableStrokeInputBatch.EMPTY,
+            )
+            stroke.updateShapeOrThrow(time)
             inputsAdded++
             // Failure case: internal crash.
             val bufferSize = stroke.getRawTriangleIndexBuffer(0, 0).remaining()
@@ -646,7 +773,8 @@ class InProgressStrokeTest {
         val p = MutableVec()
         for (outlineIndex in 0 until stroke.getOutlineCount(0)) {
             for (outlineVertexIndex in 0 until stroke.getOutlineVertexCount(0, outlineIndex)) {
-                stroke.populateOutlinePosition(0, outlineIndex, outlineVertexIndex, p)
+                assertThat(stroke.populateOutlinePosition(0, outlineIndex, outlineVertexIndex, p))
+                    .isSameInstanceAs(p)
                 assertThat(p.x).isAtLeast(bounds.box!!.xMin)
                 assertThat(p.y).isAtLeast(bounds.box!!.yMin)
                 assertThat(p.x).isAtMost(bounds.box!!.xMax)
@@ -656,6 +784,7 @@ class InProgressStrokeTest {
     }
 
     @Test
+    @Suppress("Range") // Testing behavior when index is out of range.
     fun populateOutlinePosition_whenBadIndex_shouldThrow() {
         val stroke = makeStartAndExtendStroke()
 

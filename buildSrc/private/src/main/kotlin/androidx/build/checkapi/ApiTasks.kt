@@ -209,7 +209,9 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                 // compilation and not a different jvm target compilation
                 multiplatformExtension?.let { extension ->
                     if (
-                        extension.targets.any { it.platformType == KotlinPlatformType.androidJvm }
+                        extension.targets.any { target ->
+                            target.platformType == KotlinPlatformType.androidJvm
+                        }
                     ) {
                         it.attributes.attribute(
                             Attribute.of(

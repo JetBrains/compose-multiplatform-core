@@ -45,7 +45,7 @@ class AnchorTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.anchortest_activity)
         session.resume()
-        session.configure(Config(planeTracking = PlaneTrackingMode.HorizontalAndVertical))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         // Create a transform widget model and assign it to an Anchor
         val transformWidgetModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
         transformWidgetModelFuture.addListener(

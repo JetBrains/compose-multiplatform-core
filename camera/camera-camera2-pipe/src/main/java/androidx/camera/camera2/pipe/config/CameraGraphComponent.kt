@@ -69,7 +69,7 @@ import kotlinx.coroutines.CoroutineScope
 internal interface CameraGraphComponent {
     fun cameraGraph(): CameraGraph
 
-    fun frameGraphComponentBuilder(): FrameGraphComponent.Builder
+    fun frameDistributor(): FrameDistributor
 
     @Subcomponent.Builder
     interface Builder {
@@ -163,7 +163,7 @@ internal abstract class SharedCameraGraphModules {
             imageSourceMap: ImageSourceMap,
             frameCaptureQueue: FrameCaptureQueue
         ): FrameDistributor {
-            return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue) {}
+            return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
         }
     }
 }

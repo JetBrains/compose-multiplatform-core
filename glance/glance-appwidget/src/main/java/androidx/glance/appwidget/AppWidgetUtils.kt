@@ -175,16 +175,16 @@ internal fun logException(throwable: Throwable) {
 
 /** [Tracing] contains methods for tracing sections of GlanceAppWidget. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object Tracing {
-    val enabled = AtomicBoolean(false)
+public object Tracing {
+    public val enabled: AtomicBoolean = AtomicBoolean(false)
 
-    fun beginGlanceAppWidgetUpdate() {
+    public fun beginGlanceAppWidgetUpdate() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && enabled.get()) {
             TracingApi29Impl.beginAsyncSection("GlanceAppWidget::update", 0)
         }
     }
 
-    fun endGlanceAppWidgetUpdate() {
+    public fun endGlanceAppWidgetUpdate() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && enabled.get()) {
             TracingApi29Impl.endAsyncSection("GlanceAppWidget::update", 0)
         }

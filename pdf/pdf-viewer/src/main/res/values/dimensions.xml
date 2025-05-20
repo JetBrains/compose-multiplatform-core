@@ -32,7 +32,7 @@
     <dimen name="pdf_horizontal_padding">0dp</dimen>
 
     <!--Fast scroller -->
-    <dimen name="page_indicator_right_margin">37dp</dimen>
+    <dimen name="page_indicator_right_margin">42dp</dimen>
     <dimen name="page_indicator_text_offset">12dp</dimen>
     <dimen name="page_indicator_text_size">12sp</dimen>
     <dimen name="scroller_top_margin">2dp</dimen>

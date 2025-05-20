@@ -498,6 +498,8 @@ public final class CameraX {
 
                                 // Deinit camera executor at last to avoid RejectExecutionException.
                                 future.addListener(() -> {
+                                    mCameraFactory.shutdown();
+
                                     if (mSchedulerThread != null) {
                                         // Ensure we shutdown the camera executor before
                                         // exiting the scheduler thread

@@ -20,6 +20,8 @@ import android.content.Context
 import android.graphics.Rect as AndroidRect
 import android.os.Build.VERSION.SDK_INT
 import android.view.View
+import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -139,6 +141,98 @@ class FocusViewInteropTest {
     }
 
     @Test
+    fun getFocusedRect_reportsEmptyRect_whenNothingFocusable() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                Box(
+                    Modifier.size(90.dp, 100.dp)
+                        .wrapContentSize(align = Alignment.TopStart)
+                        .size(10.dp, 20.dp)
+                        .offset(30.dp, 40.dp)
+                )
+            }
+        }
+
+        @OptIn(ExperimentalComposeUiApi::class)
+        val expectedRect =
+            if (ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled) {
+                IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
+            } else {
+                IntRect(0, 0, 90, 100)
+            }
+        assertThat(view.getFocusedRect()).isEqualTo(expectedRect)
+    }
+
+    @Test
+    fun getFocusedRect_reportsSizeOfFocusTarget_whenCanFocusIsTrue() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                Box(
+                    Modifier.size(90.dp, 100.dp)
+                        .wrapContentSize(align = Alignment.TopStart)
+                        .size(10.dp, 20.dp)
+                        .offset(30.dp, 40.dp)
+                        .focusProperties { canFocus = true }
+                        .focusable()
+                )
+            }
+        }
+
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(0, 0, 90, 100))
+    }
+
+    @Test
+    fun getFocusedRect_reportsEmptyRect_whenCanFocusIsFalse() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                Box(
+                    Modifier.size(90.dp, 100.dp)
+                        .wrapContentSize(align = Alignment.TopStart)
+                        .size(10.dp, 20.dp)
+                        .offset(30.dp, 40.dp)
+                        .focusProperties { canFocus = false }
+                        .focusable()
+                )
+            }
+        }
+
+        @OptIn(ExperimentalComposeUiApi::class)
+        val expectedRect =
+            if (ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled) {
+                IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
+            } else {
+                IntRect(0, 0, 90, 100)
+            }
+        assertThat(view.getFocusedRect()).isEqualTo(expectedRect)
+    }
+
+    @Test
+    fun getFocusedRect_reportsSizeOfFocusTarget_whenEnterIsCanceled() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                Box(
+                    Modifier.size(90.dp, 100.dp)
+                        .wrapContentSize(align = Alignment.TopStart)
+                        .size(10.dp, 20.dp)
+                        .offset(30.dp, 40.dp)
+                        .focusProperties { onEnter = { cancelFocusChange() } }
+                        .focusable()
+                )
+            }
+        }
+
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(0, 0, 90, 100))
+    }
+
+    @Test
     fun requestFocus_returnsFalseWhenCancelled() {
         // Arrange.
         lateinit var view: View
@@ -231,6 +325,160 @@ class FocusViewInteropTest {
 
         rule.waitForIdle()
         assertThat(thirdFocused).isTrue()
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun nonFocusableComposeViewDoesNotCrashOnFocusMove() {
+        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
+
+        lateinit var topEditText: EditText
+        lateinit var composeView: ComposeView
+        lateinit var bottomEditText: EditText
+
+        rule.setContent {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    LinearLayout(context).also { linearLayout ->
+                        linearLayout.orientation = LinearLayout.VERTICAL
+                        EditText(context).also {
+                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
+                            topEditText = it
+                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
+                        }
+                        ComposeView(context).also {
+                            it.setContent { Box(Modifier.size(10.dp)) }
+                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
+                            composeView = it
+                        }
+                        EditText(context).also {
+                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
+                            bottomEditText = it
+                        }
+                    }
+                }
+            )
+        }
+
+        rule.runOnIdle { topEditText.requestFocus() }
+
+        rule.runOnIdle {
+            BaseInputConnection(topEditText, true).performEditorAction(EditorInfo.IME_ACTION_NEXT)
+        }
+
+        rule.runOnIdle {
+            assertThat(topEditText.isFocused).isFalse()
+            assertThat(composeView.isFocused).isFalse()
+            assertThat(bottomEditText.isFocused).isTrue()
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun composeViewDoesNotCrashWithCanFocusFalseOnFocusMove() {
+        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
+
+        lateinit var topEditText: EditText
+        lateinit var composeView: ComposeView
+        lateinit var bottomEditText: EditText
+
+        rule.setContent {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    LinearLayout(context).also { linearLayout ->
+                        linearLayout.orientation = LinearLayout.VERTICAL
+                        EditText(context).also {
+                            linearLayout.addView(it)
+                            topEditText = it
+                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
+                        }
+                        ComposeView(context).also {
+                            it.setContent {
+                                Box(
+                                    Modifier.size(10.dp)
+                                        .focusProperties { canFocus = false }
+                                        .focusable()
+                                )
+                            }
+                            linearLayout.addView(it)
+                            composeView = it
+                        }
+                        EditText(context).also {
+                            linearLayout.addView(it)
+                            bottomEditText = it
+                        }
+                    }
+                }
+            )
+        }
+
+        rule.runOnIdle { topEditText.requestFocus() }
+
+        rule.runOnIdle {
+            BaseInputConnection(topEditText, true).performEditorAction(EditorInfo.IME_ACTION_NEXT)
+        }
+
+        rule.runOnIdle {
+            assertThat(topEditText.isFocused).isFalse()
+            assertThat(composeView.isFocused).isFalse()
+            assertThat(bottomEditText.isFocused).isTrue()
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun composeViewDoesNotCrashWithCanceledFocusOnFocusMove() {
+        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
+
+        lateinit var topEditText: EditText
+        lateinit var composeView: ComposeView
+        lateinit var bottomEditText: EditText
+
+        rule.setContent {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    LinearLayout(context).also { linearLayout ->
+                        linearLayout.orientation = LinearLayout.VERTICAL
+                        EditText(context).also {
+                            linearLayout.addView(it)
+                            topEditText = it
+                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
+                        }
+                        ComposeView(context).also {
+                            it.setContent {
+                                Box(
+                                    Modifier.focusProperties { onEnter = { cancelFocusChange() } }
+                                        .focusGroup()
+                                ) {
+                                    Box(Modifier.size(10.dp).focusable())
+                                }
+                            }
+                            linearLayout.addView(it)
+                            composeView = it
+                        }
+                        EditText(context).also {
+                            linearLayout.addView(it)
+                            bottomEditText = it
+                        }
+                    }
+                }
+            )
+        }
+
+        rule.runOnIdle { topEditText.requestFocus() }
+
+        rule.runOnIdle {
+            BaseInputConnection(topEditText, true).performEditorAction(EditorInfo.IME_ACTION_NEXT)
+        }
+
+        rule.runOnIdle {
+            assertThat(topEditText.isFocused).isFalse()
+            assertThat(composeView.isFocused).isFalse()
+            assertThat(bottomEditText.isFocused).isTrue()
+        }
     }
 
     @Test

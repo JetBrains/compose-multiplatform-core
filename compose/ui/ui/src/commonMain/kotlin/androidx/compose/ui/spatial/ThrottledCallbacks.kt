@@ -70,6 +70,7 @@ internal class ThrottledCallbacks {
                     bottomRight = bottomRight,
                     windowOffset = windowOffset,
                     screenOffset = screenOffset,
+                    windowSize = windowSize,
                     viewToWindowMatrix = viewToWindowMatrix,
                 )
             if (rect == null) {
@@ -95,9 +96,16 @@ internal class ThrottledCallbacks {
     var minDebounceDeadline: Long = -1
     var windowOffset: IntOffset = IntOffset.Zero
     var screenOffset: IntOffset = IntOffset.Zero
+    var windowSize: Long = 0
     var viewToWindowMatrix: Matrix? = null
 
-    fun updateOffsets(screen: IntOffset, window: IntOffset, matrix: Matrix?): Boolean {
+    fun updateOffsets(
+        screen: IntOffset,
+        window: IntOffset,
+        matrix: Matrix?,
+        windowWidth: Int,
+        windowHeight: Int
+    ): Boolean {
         var updated = false
         if (window != windowOffset) {
             windowOffset = window
@@ -109,6 +117,11 @@ internal class ThrottledCallbacks {
         }
         if (matrix != null) {
             viewToWindowMatrix = matrix
+            updated = true
+        }
+        val size = packXY(windowWidth, windowHeight)
+        if (size != windowSize) {
+            windowSize = size
             updated = true
         }
         return updated
@@ -455,6 +468,7 @@ internal fun rectInfoFor(
     bottomRight: Long,
     windowOffset: IntOffset,
     screenOffset: IntOffset,
+    windowSize: Long,
     viewToWindowMatrix: Matrix?,
 ): RelativeLayoutBounds? {
     val coordinator = node.requireCoordinator(Nodes.Layout)
@@ -478,6 +492,7 @@ internal fun rectInfoFor(
             IntOffset(transformedPos.x + size.width, transformedPos.y + size.height).packedValue,
             windowOffset,
             screenOffset,
+            windowSize,
             viewToWindowMatrix,
             node,
         )
@@ -487,6 +502,7 @@ internal fun rectInfoFor(
             bottomRight,
             windowOffset,
             screenOffset,
+            windowSize,
             viewToWindowMatrix,
             node,
         )

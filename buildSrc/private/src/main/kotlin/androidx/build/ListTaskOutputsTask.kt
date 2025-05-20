@@ -110,6 +110,7 @@ val taskNamesKnownToDuplicateOutputs =
 
         // b/308798582
         "transformNonJvmMainCInteropDependenciesMetadataForIde",
+        "transformAppleTestCInteropDependenciesMetadataForIde",
         "transformDarwinTestCInteropDependenciesMetadataForIde",
         "transformDarwinMainCInteropDependenciesMetadataForIde",
         "transformCommonMainCInteropDependenciesMetadataForIde",
@@ -119,6 +120,7 @@ val taskNamesKnownToDuplicateOutputs =
         "transformNativeTestCInteropDependenciesMetadataForIde",
         "transformNativeMainCInteropDependenciesMetadataForIde",
         "transformLinuxMainCInteropDependenciesMetadataForIde",
+        "transformNonIosNativeTestCInteropDependenciesMetadataForIde",
         "transformNonJvmCommonMainCInteropDependenciesMetadataForIde",
 
         // The following tests intentionally have the same output of golden images

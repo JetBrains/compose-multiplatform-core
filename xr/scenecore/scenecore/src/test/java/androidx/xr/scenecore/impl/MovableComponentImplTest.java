@@ -154,7 +154,8 @@ public class MovableComponentImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
         mActivitySpaceImpl = (ActivitySpaceImpl) mFakeRuntime.getActivitySpace();
         mActivitySpaceNode = mActivitySpaceImpl.getNode();
         mPerceptionSpaceActivityPose =

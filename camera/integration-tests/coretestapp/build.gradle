@@ -117,7 +117,6 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 
     // Transitive dependencies
@@ -140,6 +139,10 @@ dependencies {
     testImplementation 'org.robolectric:shadows-framework:4.14'
     testImplementation libs.kotlinCoroutinesCore
     testImplementation libs.testCore
+}
+
+androidx {
+    enableRobolectric()
 }
 
 // Publish the APK to dist/apk for testing.

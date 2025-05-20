@@ -147,6 +147,15 @@ package androidx.appfunctions {
   public abstract class AppFunctionRequestException extends androidx.appfunctions.AppFunctionException {
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface AppFunctionSchemaDefinition {
+    method public abstract String category();
+    method public abstract String name();
+    method public abstract int version();
+    property public abstract String category;
+    property public abstract String name;
+    property public abstract int version;
+  }
+
   public final class AppFunctionSearchSpec {
     ctor public AppFunctionSearchSpec();
     ctor public AppFunctionSearchSpec(optional java.util.Set<java.lang.String>? packageNames);

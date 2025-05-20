@@ -4,7 +4,7 @@
     <issue
         id="AndroidXFlaggedApi"
         message="Class `FlagFlaggedApiImpl` is a flagged API and must be inside a flag check for &quot;flaggedapi.myFlag&quot;"
-        errorLine1="        FlagFlaggedApiImpl.flaggedApi()"
+        errorLine1="        FlagFlaggedApiImpl.innerApi()"
         errorLine2="        ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/flaggedapi/FlaggedUsageInOutline.kt"/>
@@ -12,11 +12,20 @@
 
     <issue
         id="AndroidXFlaggedApi"
-        message="Method `flaggedApi()` is a flagged API and must be inside a flag check for &quot;flaggedapi.myFlag&quot;"
-        errorLine1="        FlagFlaggedApiImpl.flaggedApi()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="Method `innerApi()` is a flagged API and must be inside a flag check for &quot;flaggedapi.myFlag&quot;"
+        errorLine1="        FlagFlaggedApiImpl.innerApi()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/flaggedapi/FlaggedUsageInOutline.kt"/>
+    </issue>
+
+    <issue
+        id="AndroidXFlaggedApi"
+        message="Method `innerApi()` is a flagged API and must be inside a flag check for &quot;flaggedapi.myFlag&quot;"
+        errorLine1="        FlaggedApiContainer.innerApi()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/FlaggedUsageWithoutOutline.kt"/>
     </issue>
 
     <issue
@@ -152,6 +161,51 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/sample/core/app/ActivityRecreatorKt.kt"/>
+    </issue>
+
+    <issue
+        id="ClassVerificationFailure"
+        message="This call references a method guarded by Trunk Stable flag &quot;flaggedapi.myFlag&quot;; however, the containing class flaggedapi.AutofixUnsafeUsageWithTypeConversion is reachable from earlier API levels and will fail run-time class verification."
+        errorLine1="            val resultA = FlaggedApiContainer.apiWithTypeArgument(null)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt"/>
+    </issue>
+
+    <issue
+        id="ClassVerificationFailure"
+        message="This call references a method guarded by Trunk Stable flag &quot;flaggedapi.myFlag&quot;; however, the containing class flaggedapi.AutofixUnsafeUsageWithTypeConversion is reachable from earlier API levels and will fail run-time class verification."
+        errorLine1="            val resultB = FlaggedApiContainer.apiWithGenericType&lt;Int?, Float>(null)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt"/>
+    </issue>
+
+    <issue
+        id="ClassVerificationFailure"
+        message="This call references a method guarded by Trunk Stable flag &quot;flaggedapi.myFlag&quot;; however, the containing class flaggedapi.AutofixUnsafeUsageWithTypeConversion is reachable from earlier API levels and will fail run-time class verification."
+        errorLine1="            val resultC = FlaggedApiContainer.apiWithTwoDimensionalArray(null)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt"/>
+    </issue>
+
+    <issue
+        id="ClassVerificationFailure"
+        message="This call references a method guarded by Trunk Stable flag &quot;flaggedapi.myFlag&quot;; however, the containing class flaggedapi.FlaggedUsageWithoutOutline is reachable from earlier API levels and will fail run-time class verification."
+        errorLine1="            FlaggedApiContainer.innerApi()"
+        errorLine2="                                ~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/FlaggedUsageWithoutOutline.kt"/>
+    </issue>
+
+    <issue
+        id="ClassVerificationFailure"
+        message="This call references a method guarded by Trunk Stable flag &quot;flaggedapi.myFlag&quot;; however, the containing class flaggedapi.FlaggedUsageWithoutOutline is reachable from earlier API levels and will fail run-time class verification."
+        errorLine1="        FlaggedApiContainer.innerApi()"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="src/main/java/flaggedapi/FlaggedUsageWithoutOutline.kt"/>
     </issue>
 
     <issue
@@ -507,11 +561,47 @@
 
     <issue
         id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeCallToThisKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeCallToThisKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeCallToThisKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 19"
         errorLine1="    @RequiresApi(19)"
         errorLine2="    ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/AutofixUnsafeMethodWithQualifiedClass.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 19"
+        errorLine1="    @RequiresApi(19)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeMethodWithQualifiedClassKotlin.kt"/>
     </issue>
 
     <issue
@@ -526,6 +616,24 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingClassKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="    @RequiresApi(21)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingFix.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
         errorLine1="    @RequiresApi(21)"
         errorLine2="    ~~~~~~~~~~~~~~~~">
         <location
@@ -547,7 +655,25 @@
         errorLine1="    @RequiresApi(21)"
         errorLine2="    ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingFix.java"/>
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingFixKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="    @RequiresApi(21)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingFixKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="    @RequiresApi(21)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingFixKotlin.kt"/>
     </issue>
 
     <issue
@@ -562,10 +688,28 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 17) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeStaticMethodReferenceKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
         errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/AutofixUnsafeVoidMethodReferenceJava.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeVoidMethodReferenceKotlin.kt"/>
     </issue>
 
     <issue
@@ -872,6 +1016,42 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/AutofixUnsafeMethodWithQualifiedClass.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static List&lt;int[]&gt; apiWithTypeArgument(BiConsumer&lt;Integer, Float> param) {"
+        errorLine2="                  ~~~~~~~~~~~">
+        <location
+            file="src/main/java/android/flagging/FlaggedApiContainer.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static List&lt;int[]&gt; apiWithTypeArgument(BiConsumer&lt;Integer, Float> param) {"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/android/flagging/FlaggedApiContainer.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static float[][] apiWithTwoDimensionalArray(int[] param) {"
+        errorLine2="                  ~~~~~~~~~">
+        <location
+            file="src/main/java/android/flagging/FlaggedApiContainer.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static float[][] apiWithTwoDimensionalArray(int[] param) {"
+        errorLine2="                                                       ~~~~~">
+        <location
+            file="src/main/java/android/flagging/FlaggedApiContainer.java"/>
     </issue>
 
 </issues>

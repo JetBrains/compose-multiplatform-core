@@ -184,5 +184,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
-    metalavaK2UastEnabled = false
 }

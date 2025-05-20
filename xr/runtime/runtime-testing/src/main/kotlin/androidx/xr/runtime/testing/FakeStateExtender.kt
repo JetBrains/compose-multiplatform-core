@@ -16,10 +16,12 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
 import androidx.xr.runtime.internal.Runtime
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeStateExtender() : StateExtender {
 
     /** Whether the [StateExtender] has been initialized or not. */
@@ -37,6 +39,7 @@ public class FakeStateExtender() : StateExtender {
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AnotherFakeStateExtender() : StateExtender {
 
     /** Whether the [StateExtender] has been initialized or not. */

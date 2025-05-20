@@ -50,7 +50,6 @@ dependencies {
 
     testRuntimeOnly(libs.testCore)
     testRuntimeOnly(libs.testRunner)
-    testRuntimeOnly(libs.robolectric)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
@@ -72,4 +71,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "Android Dynamic Feature Navigation Fragment"
+    enableRobolectric()
 }

@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 
 /**
  * A high-level resize event which is sent in response to the User interacting with the Entity.
@@ -49,6 +50,7 @@ internal data class ResizeEvent(
  * Listener for resize actions. Callbacks are invoked as the user interacts with the resize
  * affordance.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ResizeListener {
     /**
      * Called when the user starts resizing the entity.

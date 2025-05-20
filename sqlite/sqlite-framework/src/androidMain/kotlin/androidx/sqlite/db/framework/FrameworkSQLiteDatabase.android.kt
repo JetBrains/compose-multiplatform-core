@@ -29,7 +29,6 @@ import android.os.CancellationSignal
 import android.text.TextUtils
 import android.util.Pair
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
@@ -43,9 +42,8 @@ import java.util.Locale
  * @param delegate The delegate to receive all calls.
  * @constructor Creates a wrapper around [SQLiteDatabase].
  */
-// TODO(b/408010324): Make internal and remove @RestrictTo
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) : SupportSQLiteDatabase {
+internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
+    SupportSQLiteDatabase {
     override fun compileStatement(sql: String): SupportSQLiteStatement {
         return FrameworkSQLiteStatement(delegate.compileStatement(sql))
     }

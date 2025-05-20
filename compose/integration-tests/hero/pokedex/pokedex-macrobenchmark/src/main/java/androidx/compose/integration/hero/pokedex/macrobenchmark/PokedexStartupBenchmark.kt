@@ -47,6 +47,9 @@ class PokedexStartupBenchmark(
     @Test
     fun startupCompose() = measureStartup("$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_COMPOSE_ACTIVITY")
 
+    @Test
+    fun startupViews() = measureStartup("$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_VIEWS_HOME_ACTIVITY")
+
     companion object {
         @Parameterized.Parameters(name = "startup={0},compilationMode={1}")
         @JvmStatic

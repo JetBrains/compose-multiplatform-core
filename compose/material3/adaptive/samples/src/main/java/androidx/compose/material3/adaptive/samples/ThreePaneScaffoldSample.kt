@@ -58,17 +58,20 @@ import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AdaptStrategy
 import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.DockedEdge
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
 import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.Scrim
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
-import androidx.compose.material3.adaptive.layout.defaultDragHandleSemantics
+import androidx.compose.material3.adaptive.layout.rememberDragToResizeState
 import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
@@ -185,19 +188,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                 keyProvider = scaffoldNavigator.scaffoldValue,
                 anchors = PaneExpansionAnchors
             ),
-        paneExpansionDragHandle = { state ->
-            val interactionSource = remember { MutableInteractionSource() }
-            VerticalDragHandle(
-                modifier =
-                    Modifier.paneExpansionDraggable(
-                        state,
-                        LocalMinimumInteractiveComponentSize.current,
-                        interactionSource,
-                        state.defaultDragHandleSemantics()
-                    ),
-                interactionSource = interactionSource
-            )
-        }
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
     )
 }
 
@@ -241,19 +232,78 @@ fun SupportingPaneScaffoldSample() {
                 keyProvider = scaffoldNavigator.scaffoldValue,
                 anchors = PaneExpansionAnchors
             ),
-        paneExpansionDragHandle = { state ->
-            val interactionSource = remember { MutableInteractionSource() }
-            VerticalDragHandle(
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+    )
+}
+
+/**
+ * This sample shows how to create a [SupportingPaneScaffold] that shows the extra pane as a bottom
+ * sheet when it's a single-pane layout and the extra pane is the current destination. The key parts
+ * of this sample are:
+ * 1. [rememberSupportingPaneScaffoldNavigator] with a custom
+ *    [androidx.compose.material3.adaptive.layout.ThreePaneScaffoldAdaptStrategies] that provides
+ *    [AdaptStrategy.Levitate] with [Alignment.BottomCenter] for the extra pane.
+ * 2. The use of [androidx.compose.material3.adaptive.layout.PaneScaffoldScope.dragToResize] with
+ *    [DockedEdge.Bottom] so that the levitated extra pane can be resized by dragging.
+ *
+ * @see levitateAdaptStrategySample for more usage samples of [AdaptStrategy.Levitate].
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet() {
+    val coroutineScope = rememberCoroutineScope()
+    val scaffoldNavigator =
+        rememberSupportingPaneScaffoldNavigator<NavItemData>(
+            adaptStrategies =
+                SupportingPaneScaffoldDefaults.adaptStrategies(
+                    extraPaneAdaptStrategy =
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.BottomCenter,
+                        )
+                )
+        )
+    val extraItems = listOf("Extra content")
+    val selectedItem = NavItemData(index = 0, showExtra = true)
+
+    SupportingPaneScaffold(
+        directive = scaffoldNavigator.scaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
+        mainPane = {
+            AnimatedPane {
+                MainPaneContent(
+                    scaffoldNavigator = scaffoldNavigator,
+                    hasExtraPane = true,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        supportingPane = {
+            AnimatedPane(modifier = Modifier.preferredWidth(200.dp)) { SupportingPaneContent() }
+        },
+        extraPane = {
+            AnimatedPane(
                 modifier =
-                    Modifier.paneExpansionDraggable(
-                        state,
-                        LocalMinimumInteractiveComponentSize.current,
-                        interactionSource,
-                        state.defaultDragHandleSemantics()
-                    ),
-                interactionSource = interactionSource
-            )
-        }
+                    Modifier.preferredWidth(480.dp)
+                        .preferredHeight(412.dp)
+                        .dragToResize(rememberDragToResizeState(dockedEdge = DockedEdge.Bottom))
+            ) {
+                ExtraPaneContent(
+                    extraItems = extraItems,
+                    selectedItem = selectedItem,
+                    scaffoldNavigator = scaffoldNavigator,
+                    coroutineScope = coroutineScope
+                )
+            }
+        },
+        paneExpansionState =
+            rememberPaneExpansionState(
+                keyProvider = scaffoldNavigator.scaffoldValue,
+                anchors = PaneExpansionAnchors
+            ),
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
     )
 }
 
@@ -271,7 +321,6 @@ fun ThreePaneScaffoldScope.PaneExpansionDragHandleSample(
                 state,
                 LocalMinimumInteractiveComponentSize.current,
                 interactionSource,
-                state.defaultDragHandleSemantics()
             ),
         interactionSource = interactionSource
     )
@@ -289,6 +338,38 @@ fun <T> reflowAdaptStrategySample(): ThreePaneScaffoldNavigator<T> =
                     AdaptStrategy.Reflow(targetPane = ListDetailPaneScaffoldRole.Detail)
             )
     )
+
+/**
+ * This sample shows how to create a [ThreePaneScaffoldNavigator] that will show the extra pane as a
+ * modal dialog in a single pane layout when the extra pane is the current destination. The dialog
+ * will be centered in the scaffold, with a scrim that clicking on it will dismiss the dialog.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun <T> levitateAdaptStrategySample(): ThreePaneScaffoldNavigator<T> {
+    val coroutineScope = rememberCoroutineScope()
+    var navigator: ThreePaneScaffoldNavigator<T>? = null
+    navigator =
+        rememberListDetailPaneScaffoldNavigator<T>(
+            adaptStrategies =
+                ListDetailPaneScaffoldDefaults.adaptStrategies(
+                    extraPaneAdaptStrategy =
+                        AdaptStrategy.Levitate(
+                            strategy = AdaptStrategy.Levitate.Strategy.SinglePaneOnly,
+                            alignment = Alignment.Center,
+                            scrim =
+                                Scrim(
+                                    onClick = {
+                                        coroutineScope.launch { navigator?.navigateBack() }
+                                    }
+                                )
+                        )
+                )
+        )
+    return navigator
+}
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Preview

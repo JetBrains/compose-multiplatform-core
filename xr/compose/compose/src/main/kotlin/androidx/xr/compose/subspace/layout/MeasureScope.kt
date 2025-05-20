@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 
@@ -25,6 +26,7 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutNode
  *
  * Based on [androidx.compose.ui.layout.MeasureScope].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface MeasureScope : Density {
 
     /**

@@ -38,10 +38,10 @@ internal constructor(
     override var pose: Pose = Pose()
         private set
 
-    override var trackingState: TrackingState = TrackingState.Paused
+    override var trackingState: TrackingState = TrackingState.PAUSED
         private set
 
-    override var persistenceState: Anchor.PersistenceState = Anchor.PersistenceState.NotPersisted
+    override var persistenceState: Anchor.PersistenceState = Anchor.PersistenceState.NOT_PERSISTED
         private set
 
     override var uuid: UUID? = loadedUuid
@@ -49,8 +49,8 @@ internal constructor(
 
     override fun persist() {
         if (
-            persistenceState == Anchor.PersistenceState.Persisted ||
-                persistenceState == Anchor.PersistenceState.Pending
+            persistenceState == Anchor.PersistenceState.PERSISTED ||
+                persistenceState == Anchor.PersistenceState.PENDING
         ) {
             return
         }
@@ -58,7 +58,7 @@ internal constructor(
             checkNotNull(nativePersistAnchor(nativePointer)) { "Failed to persist anchor." }
         UUIDFromByteArray(uuidBytes)?.let {
             uuid = it
-            persistenceState = Anchor.PersistenceState.Pending
+            persistenceState = Anchor.PersistenceState.PENDING
         }
     }
 
@@ -76,7 +76,7 @@ internal constructor(
 
         trackingState = anchorState.trackingState
         anchorState.pose?.let { pose = it }
-        if (uuid != null && persistenceState == Anchor.PersistenceState.Pending) {
+        if (uuid != null && persistenceState == Anchor.PersistenceState.PENDING) {
             persistenceState = nativeGetPersistenceState(uuid!!)
         }
     }
@@ -110,9 +110,9 @@ internal fun Anchor.PersistenceState.Companion.fromOpenXrPersistenceState(
     when (value) {
         0 ->
             Anchor.PersistenceState
-                .NotPersisted // XR_ANCHOR_PERSIST_STATE_PERSIST_NOT_REQUESTED_ANDROID
-        1 -> Anchor.PersistenceState.Pending // XR_ANCHOR_PERSIST_STATE_PERSIST_PENDING_ANDROID
-        2 -> Anchor.PersistenceState.Persisted // XR_ANCHOR_PERSIST_STATE_PERSISTED_ANDROID
+                .NOT_PERSISTED // XR_ANCHOR_PERSIST_STATE_PERSIST_NOT_REQUESTED_ANDROID
+        1 -> Anchor.PersistenceState.PENDING // XR_ANCHOR_PERSIST_STATE_PERSIST_PENDING_ANDROID
+        2 -> Anchor.PersistenceState.PERSISTED // XR_ANCHOR_PERSIST_STATE_PERSISTED_ANDROID
         else -> {
             throw IllegalArgumentException("Invalid persistence state value.")
         }

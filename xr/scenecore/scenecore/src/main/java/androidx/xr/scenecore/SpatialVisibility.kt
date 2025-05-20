@@ -20,6 +20,7 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
 /** Spatial Visibility states of content within the user's field of view. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialVisibility(@SpatialVisibilityValue public val visibility: Int) {
     public companion object {
         /** Unknown spatial visibility state. */

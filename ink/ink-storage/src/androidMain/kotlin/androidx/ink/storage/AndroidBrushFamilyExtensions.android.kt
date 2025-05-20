@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.rendering.android.TextureBitmapStore
+import androidx.ink.brush.TextureBitmapStore
+import androidx.ink.nativeloader.UsedByNative
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -41,6 +42,7 @@ public fun interface BrushFamilyDecodeCallback {
      *   BrushFamily. Null indicates that the serialized form did not store a bitmap for
      *   clientTextureId.
      */
+    @UsedByNative // brush_serialization_jni.cc
     public fun onDecodeTexture(clientTextureId: String, bitmap: Bitmap?): String
 }
 
@@ -82,6 +84,9 @@ public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureB
  * [AndroidBrushFamilySerialization.decodeOrThrow].
  *
  * [getClientTextureId] is called synchronously as part of this function call, on the same thread.
+ *
+ * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide a
+ * valid gzip-compressed `ink.proto.BrushFamily` binary proto message.
  */
 @SuppressWarnings("ExecutorRegistration")
 @ExperimentalInkCustomBrushApi
@@ -97,6 +102,10 @@ public fun BrushFamily.Companion.decodeOrThrow(
  * [BrushFamily.encode]. Java callers should use [AndroidBrushFamilySerialization.decodeOrNull].
  *
  * [getClientTextureId] is called synchronously as part of this function call, on the same thread.
+ *
+ * Will return `null` if the input stream does not provide a valid gzip-compressed
+ * `ink.proto.BrushFamily` binary proto message. If failed reads should fall back to some default
+ * value, prefer this to [decodeOrThrow].
  */
 @SuppressWarnings("ExecutorRegistration")
 @ExperimentalInkCustomBrushApi
@@ -135,6 +144,9 @@ public object AndroidBrushFamilySerialization {
      *
      * [getClientTextureId] is called synchronously as part of this function call, on the same
      * thread.
+     *
+     * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide
+     * a valid gzip-compressed `ink.proto.BrushFamily` binary proto message.
      */
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic
@@ -152,6 +164,10 @@ public object AndroidBrushFamilySerialization {
      *
      * [getClientTextureId] is called synchronously as part of this function call, on the same
      * thread.
+     *
+     * Will return `null` if the input stream does not provide a valid gzip-compressed
+     * `ink.proto.BrushFamily` binary proto message. If failed reads should fall back to some
+     * default value, prefer this to [decodeOrThrow].
      */
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic

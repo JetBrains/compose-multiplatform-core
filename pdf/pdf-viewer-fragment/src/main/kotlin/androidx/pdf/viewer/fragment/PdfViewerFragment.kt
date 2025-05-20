@@ -49,6 +49,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withStarted
+import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.util.AnnotationUtils
@@ -165,9 +166,11 @@ public open class PdfViewerFragment constructor() : Fragment() {
     public var isTextSearchActive: Boolean
         get() = documentViewModel.isTextSearchActiveFromState
         set(value) {
-            documentViewModel.updateSearchState(value)
-            // entering the immersive mode when search is active and exiting when search is closes
-            documentViewModel.setImmersiveModeDesired(enterImmersive = value)
+            if (isTextSearchActive != value) {
+                // entering the immersive mode when search is active and exiting when search closes
+                documentViewModel.setImmersiveModeDesired(enterImmersive = value)
+                documentViewModel.updateSearchState(value)
+            }
         }
 
     /**
@@ -180,9 +183,10 @@ public open class PdfViewerFragment constructor() : Fragment() {
     public var isToolboxVisible: Boolean
         // We can't use toolbox.visibility because toolboxView is the layout here, and
         // its visibility doesn't change.
-        get() = if (::toolboxView.isInitialized) toolboxView.toolboxVisibility == VISIBLE else false
+        get() =
+            if (::_toolboxView.isInitialized) _toolboxView.toolboxVisibility == VISIBLE else false
         set(value) {
-            if (value && isAnnotationIntentResolvable) toolboxView.show() else toolboxView.hide()
+            if (isAnnotationIntentResolvable && value) _toolboxView.show() else _toolboxView.hide()
         }
 
     /**
@@ -235,9 +239,18 @@ public open class PdfViewerFragment constructor() : Fragment() {
     protected val pdfSearchView: PdfSearchView
         @RestrictTo(RestrictTo.Scope.LIBRARY) get() = _pdfSearchView
 
+    @VisibleForTesting
+    protected val toolboxView: ToolBoxView
+        @RestrictTo(RestrictTo.Scope.LIBRARY) get() = _toolboxView
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    protected fun setAnnotationIntentResolvability(value: Boolean) {
+        isAnnotationIntentResolvable = value
+    }
+
     private lateinit var _pdfView: PdfView
     private lateinit var _pdfSearchView: PdfSearchView
-    private lateinit var toolboxView: ToolBoxView
+    private lateinit var _toolboxView: ToolBoxView
     private lateinit var errorView: TextView
     private lateinit var loadingView: ProgressBar
     private lateinit var pdfViewManager: PdfViewManager
@@ -331,7 +344,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
             errorView = findViewById(R.id.errorTextView)
             loadingView = findViewById(R.id.pdfLoadingProgressBar)
             _pdfSearchView = findViewById(R.id.pdfSearchView)
-            toolboxView = findViewById(R.id.toolBoxView)
+            _toolboxView = findViewById(R.id.toolBoxView)
         }
         val gestureDetector =
             GestureDetector(
@@ -377,8 +390,8 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
         onPdfSearchViewCreated(_pdfSearchView)
         lifecycleScope.launch { collectFragmentUiScreenState() }
-        toolboxView.hide()
-        toolboxView.setOnCurrentPageRequested { _pdfView.visiblePages.getCenter() }
+        _toolboxView.hide()
+        _toolboxView.setOnCurrentPageRequested { _pdfView.visiblePages.getCenter() }
 
         val stylingOptions = pdfStylingOptions
         if (stylingOptions != null) {
@@ -432,6 +445,12 @@ public open class PdfViewerFragment constructor() : Fragment() {
         pdfView.pdfDocument?.uri?.let { uri -> setAnnotationIntentResolvability(uri) }
     }
 
+    override fun onDestroyView() {
+        // Clean up the listener to avoid potential memory leaks
+        pdfView.linkClickListener = null
+        super.onDestroyView()
+    }
+
     /**
      * Called from Fragment.onViewCreated(). This gives subclasses a chance to customize component.
      */
@@ -456,6 +475,20 @@ public open class PdfViewerFragment constructor() : Fragment() {
         }
     }
 
+    /**
+     * Called when an external link in the PDF is clicked. Override this method to provide custom
+     * handling for external links (e.g., URLs), as opposed to internal document navigation like
+     * `goTo` links, which are handled separately.
+     *
+     * @param externalLink The [ExternalLink] model representing the clicked link. It contains
+     *   metadata such as the link's URL, bounds, and the page it was found on.
+     * @return `true` if the link click was handled; `false` to fall back to the default behaviour.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    protected open fun onLinkClicked(externalLink: ExternalLink): Boolean {
+        return false
+    }
+
     private fun setupPdfViewListeners() {
         /**
          * Closes any active search session if the user selects anything in the PdfView. This
@@ -471,6 +504,14 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 }
             }
         )
+
+        // Set the internal LinkClickListener on PdfView
+        pdfView.linkClickListener =
+            object : PdfView.LinkClickListener {
+                override fun onLinkClicked(externalLink: ExternalLink): Boolean {
+                    return this@PdfViewerFragment.onLinkClicked(externalLink)
+                }
+            }
     }
 
     private fun setupSearchViewListeners(searchView: PdfSearchView) {
@@ -631,7 +672,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
         dismissPasswordDialog()
         onLoadDocumentSuccess()
         _pdfView.pdfDocument = uiState.pdfDocument
-        toolboxView.setPdfDocument(uiState.pdfDocument)
+        _toolboxView.setPdfDocument(uiState.pdfDocument)
         setAnnotationIntentResolvability(uiState.pdfDocument.uri)
         setViewVisibility(
             pdfView = VISIBLE,
@@ -646,7 +687,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
         isAnnotationIntentResolvable =
             AnnotationUtils.resolveAnnotationIntent(requireContext(), uri)
         if (!isAnnotationIntentResolvable) {
-            toolboxView.hide()
+            _toolboxView.hide()
         }
     }
 

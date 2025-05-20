@@ -16,6 +16,7 @@
 
 package androidx.xr.glimmer
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.InteractionSource
@@ -89,6 +90,8 @@ public class GlimmerTheme(
         public val LocalGlimmerTheme: CompositionLocal<GlimmerTheme>
             get() = _localGlimmerTheme
     }
+
+    internal var defaultSurfaceBorderCached: BorderStroke? = null
 }
 
 private object NoIndication : IndicationNodeFactory {

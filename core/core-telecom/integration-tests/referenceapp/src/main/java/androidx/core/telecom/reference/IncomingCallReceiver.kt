@@ -46,7 +46,7 @@ class IncomingCallReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d(TAG, "onReceive with Action: ${intent.action}")
+        Log.i(TAG, "onReceive with Action: ${intent.action}")
         if (ACTION_NEW_INCOMING_CALL != intent.action) {
             Log.w(TAG, "Received unexpected action: " + intent.action)
             return
@@ -63,9 +63,17 @@ class IncomingCallReceiver : BroadcastReceiver() {
             return
         }
 
+        val notificationId = getNextNotificationId()
+        val attributes = getCallAttributes(context, incomingNumber, remoteName)
+
+        val callRepository = (context.applicationContext as? VoipApplication)?.callRepository
+        // add the call to Core-Telecom in parallel to creating the call-style notification
+        // this allows calling surfaces (e.g. Android Auto, Watch Faces) to answer the call
+        callRepository?.maybeConnectService(context.applicationContext)
+        callRepository?.onIncomingCallDetected(attributes, notificationId)
+
         callNotificationManager = CallNotificationManager(context)
 
-        val notificationId = getNextNotificationId()
         Log.d(TAG, "Generated notification ID [$notificationId] for incoming call.")
         postNotification(
             callNotificationManager,

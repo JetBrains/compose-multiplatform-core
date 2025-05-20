@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
@@ -35,6 +36,7 @@ import androidx.xr.runtime.math.Vector3
  *
  * Negative padding is not permitted — it will cause [IllegalArgumentException].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.padding(
     left: Dp = 0.dp,
     top: Dp = 0.dp,
@@ -61,6 +63,7 @@ public fun SubspaceModifier.padding(
  *
  * Negative padding is not permitted — it will cause [IllegalArgumentException]. See [padding]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.padding(
     horizontal: Dp = 0.dp,
     vertical: Dp = 0.dp,
@@ -83,6 +86,7 @@ public fun SubspaceModifier.padding(
  *
  * Negative padding is not permitted — it will cause [IllegalArgumentException]. See [padding]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.padding(all: Dp): SubspaceModifier =
     this then
         SubspacePaddingElement(

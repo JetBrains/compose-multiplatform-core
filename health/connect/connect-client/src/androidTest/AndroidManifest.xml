@@ -75,6 +75,9 @@
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE"/>
     <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE"/>
 
+    <!-- Read permissions for WELLBEING. -->
+    <uses-permission android:name="android.permission.health.READ_MINDFULNESS"/>
+
     <!-- Read permissions for PERSONAL HEALTH RECORD. -->
     <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES"/>
     <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_CONDITIONS"/>
@@ -140,5 +143,8 @@
     <uses-permission android:name="android.permission.health.WRITE_RESPIRATORY_RATE"/>
     <uses-permission android:name="android.permission.health.WRITE_RESTING_HEART_RATE"/>
     <uses-permission android:name="android.permission.health.WRITE_SKIN_TEMPERATURE"/>
+
+    <!-- Write permissions for WELLBEING. -->
+    <uses-permission android:name="android.permission.health.WRITE_MINDFULNESS"/>
 
 </manifest>

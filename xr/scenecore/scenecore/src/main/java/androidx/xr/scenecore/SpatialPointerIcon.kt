@@ -16,14 +16,19 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
+
 /** Specifies the pointer icon that is rendered in the spatialized scene. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public sealed class SpatialPointerIcon protected constructor(private val name: String)
 
 /**
  * Do not render an icon for the pointer; this option can be used to hide the pointer icon, either
  * because the client wants it to be invisible or to implement custom icon rendering.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SpatialPointerIconNone : SpatialPointerIcon("none")
 
 /** Renders the icon for the pointer as a circle. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SpatialPointerIconCircle : SpatialPointerIcon("circle")

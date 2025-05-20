@@ -411,9 +411,12 @@ private class DeterminateLinearWavyProgressElement(
 
     override fun update(node: DeterminateLinearWavyProgressNode) {
         super.update(node)
-        node.progress = progress
-        node.amplitude = amplitude
         node.stopSize = stopSize
+        if (node.progress !== progress || node.amplitude !== amplitude) {
+            node.progress = progress
+            node.amplitude = amplitude
+            node.cacheDrawNodeDelegate.invalidateDrawCache()
+        }
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -426,15 +429,20 @@ private class DeterminateLinearWavyProgressElement(
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
         if (other !is DeterminateLinearWavyProgressElement) return false
-        if (stopSize != other.stopSize) return false
-        // Exclude lambdas: progress, amplitudeLambda
+        if (
+            stopSize != other.stopSize ||
+                progress !== other.progress ||
+                amplitude !== other.amplitude
+        )
+            return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + stopSize.hashCode()
-        // Exclude lambdas: progress, amplitudeLambda
+        result = 31 * result + progress.hashCode()
+        result = 31 * result + amplitude.hashCode()
         return result
     }
 }
@@ -485,7 +493,7 @@ private class DeterminateLinearWavyProgressNode(
         cacheDrawNodeDelegate.invalidateDrawCache()
     }
 
-    private val cacheDrawNodeDelegate: CacheDrawModifierNode =
+    val cacheDrawNodeDelegate: CacheDrawModifierNode =
         delegate(
             CacheDrawModifierNode {
                 val coercedProgress = progress().fastCoerceIn(0f, 1f)

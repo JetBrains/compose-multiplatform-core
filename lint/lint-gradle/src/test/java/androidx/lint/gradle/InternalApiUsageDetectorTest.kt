@@ -29,6 +29,7 @@ class InternalApiUsageDetectorTest :
             listOf(
                 InternalApiUsageDetector.INTERNAL_GRADLE_ISSUE,
                 InternalApiUsageDetector.INTERNAL_AGP_ISSUE,
+                InternalApiUsageDetector.INTERNAL_KGP_ISSUE,
             )
     ) {
     @Test
@@ -98,6 +99,29 @@ class InternalApiUsageDetectorTest :
                 src/test.kt:1: Error: Avoid using internal Android Gradle Plugin APIs [InternalAgpApiUsage]
                 import com.android.build.gradle.internal.lint.VariantInputs
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                1 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
+    }
+
+    @Test
+    fun `Test usage of internal Kotlin Gradle API`() {
+        val input =
+            kotlin(
+                """
+                import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
+            """
+                    .trimIndent()
+            )
+
+        // Import aliases mode is covered by other tests
+        check(input, skipTestModes = arrayOf(TestMode.IMPORT_ALIAS))
+            .expect(
+                """
+                src/test.kt:1: Error: Avoid using internal Kotlin Gradle Plugin APIs [InternalKgpApiUsage]
+                import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
                     .trimIndent()

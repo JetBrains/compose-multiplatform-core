@@ -237,7 +237,6 @@ androidx {
     inceptionYear = "2020"
     description = "Compose integration with Navigation"
     samples(project(":navigation:navigation-compose:navigation-compose-samples"))
-    metalavaK2UastEnabled = false
     addGoldenImageAssets()
 }
 

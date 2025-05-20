@@ -33,7 +33,7 @@ internal constructor(
     internal val timeSource: OpenXrTimeSource,
     private val xrResources: XrResources,
 ) : Plane, Updatable {
-    override var label: Plane.Label = Plane.Label.Unknown
+    override var label: Plane.Label = Plane.Label.UNKNOWN
         private set
 
     override var centerPose: Pose = Pose()
@@ -48,7 +48,7 @@ internal constructor(
     override var subsumedBy: Plane? = null
         private set
 
-    override var trackingState: TrackingState = TrackingState.Paused
+    override var trackingState: TrackingState = TrackingState.PAUSED
         private set
 
     override fun createAnchor(pose: Pose): Anchor {
@@ -94,9 +94,11 @@ internal constructor(
 /** Create a [Plane.Type] from an integer value corresponding to an [XrPlaneTypeANDROID]. */
 internal fun Plane.Type.Companion.fromOpenXrType(type: Int): Plane.Type =
     when (type) {
-        0 -> Plane.Type.HorizontalDownwardFacing // XR_PLANE_TYPE_HORIZONTAL_DOWNWARD_FACING_ANDROID
-        1 -> Plane.Type.HorizontalUpwardFacing // XR_PLANE_TYPE_HORIZONTAL_UPWARD_FACING_ANDROID
-        2 -> Plane.Type.Vertical // XR_PLANE_TYPE_VERTICAL_ANDROID
+        0 ->
+            Plane.Type
+                .HORIZONTAL_DOWNWARD_FACING // XR_PLANE_TYPE_HORIZONTAL_DOWNWARD_FACING_ANDROID
+        1 -> Plane.Type.HORIZONTAL_UPWARD_FACING // XR_PLANE_TYPE_HORIZONTAL_UPWARD_FACING_ANDROID
+        2 -> Plane.Type.VERTICAL // XR_PLANE_TYPE_VERTICAL_ANDROID
         else -> {
             throw IllegalArgumentException("Invalid plane type.")
         }
@@ -105,11 +107,11 @@ internal fun Plane.Type.Companion.fromOpenXrType(type: Int): Plane.Type =
 /** Create a [Plane.Label] from an integer value corresponding to an [XrPlaneLabelANDROID]. */
 internal fun Plane.Label.Companion.fromOpenXrLabel(label: Int): Plane.Label =
     when (label) {
-        0 -> Plane.Label.Unknown // XR_PLANE_LABEL_UNKNOWN_ANDROID
-        1 -> Plane.Label.Wall // XR_PLANE_LABEL_WALL_ANDROID
-        2 -> Plane.Label.Floor // XR_PLANE_LABEL_FLOOR_ANDROID
-        3 -> Plane.Label.Ceiling // XR_PLANE_LABEL_CEILING_ANDROID
-        4 -> Plane.Label.Table // XR_PLANE_LABEL_TABLE_ANDROID
+        0 -> Plane.Label.UNKNOWN // XR_PLANE_LABEL_UNKNOWN_ANDROID
+        1 -> Plane.Label.WALL // XR_PLANE_LABEL_WALL_ANDROID
+        2 -> Plane.Label.FLOOR // XR_PLANE_LABEL_FLOOR_ANDROID
+        3 -> Plane.Label.CEILING // XR_PLANE_LABEL_CEILING_ANDROID
+        4 -> Plane.Label.TABLE // XR_PLANE_LABEL_TABLE_ANDROID
         else -> {
             throw IllegalArgumentException("Invalid plane label.")
         }

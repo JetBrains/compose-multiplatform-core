@@ -44,16 +44,18 @@ internal constructor(
 
     override fun create() {
         nativePointer = nativeGetPointer()
+        // Only initialize the OpenXrManager and bring up resources.
+        check(nativeInit(activity, startPollingThread = false))
     }
 
     /** The current state of the runtime configuration for the session. */
     // TODO(b/392660855): Disable all features by default once this API is fully implemented.
     override var config: Config =
         Config(
-            Config.PlaneTrackingMode.Disabled,
-            Config.HandTrackingMode.Disabled,
-            Config.DepthEstimationMode.Disabled,
-            Config.AnchorPersistenceMode.Enabled,
+            Config.PlaneTrackingMode.DISABLED,
+            Config.HandTrackingMode.DISABLED,
+            Config.DepthEstimationMode.DISABLED,
+            Config.AnchorPersistenceMode.ENABLED,
         )
         private set
 
@@ -71,12 +73,16 @@ internal constructor(
                 throw RuntimeException(
                     "There was an unknown runtime error configuring the session."
                 ) // XR_ERROR_RUNTIME_FAILURE
+            -12L ->
+                throw IllegalStateException(
+                    "One or more objects are null. Has the OpenXrManager been created?"
+                ) // XR_ERROR_HANDLE_INVALID
             -1000710000L ->
                 throw PermissionNotGrantedException() // XR_ERROR_PERMISSION_INSUFFICIENT
         }
 
         if (config.handTracking != this.config.handTracking) {
-            if (config.handTracking == Config.HandTrackingMode.Enabled) {
+            if (config.handTracking == Config.HandTrackingMode.ENABLED) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.leftHand)
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.rightHand)
             } else {
@@ -93,7 +99,11 @@ internal constructor(
     }
 
     override fun resume() {
-        check(nativeInit(activity))
+        // (b/412663675): This is a temporary solution to split the init and resume portions of the
+        // lifecycle. Ideally make this two different functions.
+        // The initialization will be a no-op but it will start the polling loop for the resumed
+        // lifecycle.
+        check(nativeInit(activity, startPollingThread = true))
     }
 
     override suspend fun update(): ComparableTimeMark {
@@ -102,7 +112,7 @@ internal constructor(
         val now = timeSource.markNow()
         val xrTime = timeSource.getXrTime(now)
 
-        if (config.planeTracking != Config.PlaneTrackingMode.Disabled) {
+        if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
             perceptionManager.updatePlanes(xrTime)
         }
         perceptionManager.update(xrTime)
@@ -127,7 +137,7 @@ internal constructor(
 
     private external fun nativeGetPointer(): Long
 
-    private external fun nativeInit(activity: Activity): Boolean
+    private external fun nativeInit(activity: Activity, startPollingThread: Boolean): Boolean
 
     private external fun nativeDeInit(): Boolean
 

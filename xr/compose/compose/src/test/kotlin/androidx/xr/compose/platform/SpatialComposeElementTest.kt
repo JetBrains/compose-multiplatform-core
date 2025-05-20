@@ -86,7 +86,7 @@ class SpatialComposeElementTest {
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
         assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints.Unbounded)
+            .isEqualTo(VolumeConstraints())
     }
 
     @Test

@@ -18,7 +18,7 @@ package androidx.webkit;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

@@ -34,7 +34,7 @@ internal expect class RoomConnectionManager
  * connections, including performing migrations if necessary and validating schema.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-abstract class BaseRoomConnectionManager {
+public abstract class BaseRoomConnectionManager {
 
     protected abstract val configuration: DatabaseConfiguration
     protected abstract val openDelegate: RoomOpenDelegate
@@ -46,13 +46,16 @@ abstract class BaseRoomConnectionManager {
     // Flag set during initialization to prevent recursive initialization.
     private var isInitializing = false
 
-    abstract suspend fun <R> useConnection(isReadOnly: Boolean, block: suspend (Transactor) -> R): R
+    public abstract suspend fun <R> useConnection(
+        isReadOnly: Boolean,
+        block: suspend (Transactor) -> R
+    ): R
 
     // Lets impl class resolve driver file name if necessary.
     internal open fun resolveFileName(fileName: String): String = fileName
 
     /* A driver wrapper that configures opened connections per the manager. */
-    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver {
+    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver by actual {
         override fun open(fileName: String): SQLiteConnection {
             return openLocked(resolveFileName(fileName))
         }
@@ -350,12 +353,12 @@ abstract class BaseRoomConnectionManager {
         callbacks.forEach { it.onOpen(connection) }
     }
 
-    companion object {
+    public companion object {
         /*
          * Busy timeout amount. This wait time is relevant to same-process connections, if a
          * database is used across multiple processes, it is recommended that the developer sets a
          * higher timeout.
          */
-        const val BUSY_TIMEOUT_MS = 3000
+        public const val BUSY_TIMEOUT_MS: Int = 3000
     }
 }

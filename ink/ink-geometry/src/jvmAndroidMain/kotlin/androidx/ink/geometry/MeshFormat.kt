@@ -74,10 +74,10 @@ private object MeshFormatNative {
     }
 
     @UsedByNative
-    public external fun isPackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
+    external fun isPackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
 
     @UsedByNative
-    public external fun isUnpackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
+    external fun isUnpackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
 
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 }

@@ -41,6 +41,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -127,7 +128,7 @@ class VideoPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.Enabled))
+        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         setContent { Subspace { VideoOptionsContent(session) } }
     }
@@ -426,6 +427,7 @@ class VideoPlayerActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalComposeApi::class)
     @Composable
     fun VideoInSpatialExternalSurface(
         stereoMode: StereoMode,

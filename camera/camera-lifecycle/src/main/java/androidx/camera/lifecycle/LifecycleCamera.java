@@ -199,7 +199,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
      */
     public boolean isBound(@NonNull SessionConfig sessionConfig) {
         // Should only be invoked on SessionConfig disallowing multiple binding.
-        Preconditions.checkState(!sessionConfig.isMultipleBindingAllowed());
+        Preconditions.checkState(!sessionConfig.isLegacy());
         synchronized (mLock) {
             return mBoundSessionConfig == sessionConfig;
         }
@@ -246,33 +246,34 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             if (mBoundSessionConfig == null) {
                 mBoundSessionConfig = sessionConfig;
             } else {
-                if (!mBoundSessionConfig.isMultipleBindingAllowed()) {
-                    if (!sessionConfig.isMultipleBindingAllowed()) {
-                        throw new IllegalStateException(
-                                "A SessionConfig is already bound to this LifecycleOwner."
-                                + " Please unbind first");
-                    } else {
+                if (sessionConfig.isLegacy()) { // Bind use cases
+                    if (!mBoundSessionConfig.isLegacy()) {
                         throw new IllegalStateException(
                                 "Cannot bind use cases when a SessionConfig is already bound to "
                                         + "this LifecycleOwner. Please unbind first");
                     }
-                }
-                if (!sessionConfig.isMultipleBindingAllowed()) {
-                    throw new IllegalStateException(
-                            "Cannot bind the SessionConfig when use cases are bound to this"
-                                    + " LifecycleOwner already. Please unbind first");
-                }
 
-                // allows multiple binding
-                List<UseCase> boundUseCases = new ArrayList<>(mBoundSessionConfig.getUseCases());
-                boundUseCases.addAll(sessionConfig.getUseCases());
-                // Uses the latest SessionConfig parameters to update the mBoundSessionConfig.
-                mBoundSessionConfig = new LegacySessionConfig(
-                        boundUseCases,
-                        sessionConfig.getViewPort(),
-                        sessionConfig.getEffects(),
-                        sessionConfig.getTargetHighSpeedFrameRate()
-                );
+                    List<UseCase> boundUseCases =
+                            new ArrayList<>(mBoundSessionConfig.getUseCases());
+                    boundUseCases.addAll(sessionConfig.getUseCases());
+                    // Uses the latest SessionConfig parameters to update the mBoundSessionConfig.
+                    mBoundSessionConfig = new LegacySessionConfig(
+                            boundUseCases,
+                            sessionConfig.getViewPort(),
+                            sessionConfig.getEffects(),
+                            sessionConfig.getTargetHighSpeedFrameRate()
+                    );
+                }
+                else { // Bind sessionConfig.
+                    if (mBoundSessionConfig.isLegacy()) {
+                        throw new IllegalStateException(
+                                "Cannot bind the SessionConfig when use cases are bound to this"
+                                        + " LifecycleOwner already. Please unbind first");
+                    }
+                    mBoundSessionConfig = sessionConfig;
+                    // implicitly unbind the previous SessionConfig when SessionConfig is updated.
+                    mCameraUseCaseAdapter.removeUseCases(mCameraUseCaseAdapter.getUseCases());
+                }
             }
             mCameraUseCaseAdapter.setViewPort(sessionConfig.getViewPort());
             mCameraUseCaseAdapter.setEffects(sessionConfig.getEffects());
@@ -296,6 +297,12 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
         }
     }
 
+    boolean isLegacySessionConfigBound() {
+        synchronized (mLock) {
+            return mBoundSessionConfig == null ? false : mBoundSessionConfig.isLegacy();
+        }
+    }
+
     /**
      * Unbinds the SessionConfig from the lifecycle camera.
      *
@@ -304,15 +311,13 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     void unbind(@NonNull SessionConfig sessionConfig) {
         synchronized (mLock) {
             if (mBoundSessionConfig == null
-                    || (mBoundSessionConfig.isMultipleBindingAllowed()
-                            != sessionConfig.isMultipleBindingAllowed())) {
+                    || (mBoundSessionConfig.isLegacy() != sessionConfig.isLegacy())) {
                 // No-ops if no bound config or the unbinding SessionConfig is not compatible with
                 // bound SessionConfig.
                 return;
             }
 
-            if (!mBoundSessionConfig.isMultipleBindingAllowed()
-                    && !sessionConfig.isMultipleBindingAllowed()) {
+            if (!mBoundSessionConfig.isLegacy() && !sessionConfig.isLegacy()) {
                 // Unbinding SessionConfig
                 if (mBoundSessionConfig == sessionConfig) {
                     // Unbind the bound SessionConfig successfully only when they are identical.
@@ -322,8 +327,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
                     // Returning here is necessary to avoid removing the use cases.
                     return;
                 }
-            } else if (mBoundSessionConfig.isMultipleBindingAllowed()
-                    && sessionConfig.isMultipleBindingAllowed()) {
+            } else if (mBoundSessionConfig.isLegacy() && sessionConfig.isLegacy()) {
                 // Unbinding LegacySessionConfig (UseCases or UseCaseGroup)
                 List<UseCase> boundUseCases =
                         new ArrayList<>(mBoundSessionConfig.getUseCases());

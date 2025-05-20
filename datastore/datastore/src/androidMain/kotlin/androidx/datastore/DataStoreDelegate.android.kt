@@ -90,8 +90,7 @@ public fun <T> dataStore(
 }
 
 /**
- * Overload for [dataStore] that allows setting the [createInDeviceProtectedStorage] flag to create
- * a datastore to be used in direct boot.
+ * Creates a property delegate for a single process DataStore to be used in direct boot.
  *
  * @param fileName the filename relative to Context.applicationContext.filesDir that DataStore acts
  *   on. The File is obtained from [dataStoreFile]. It is created in the "/datastore" subdirectory,

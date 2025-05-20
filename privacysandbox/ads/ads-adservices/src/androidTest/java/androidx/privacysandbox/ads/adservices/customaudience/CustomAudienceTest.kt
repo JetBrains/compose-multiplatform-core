@@ -123,9 +123,9 @@ class CustomAudienceTest {
                 .setAuctionServerRequestFlags(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
                 .build()
 
-        Truth.assertWithMessage("Priority").that(customAudience.priority).isEqualTo(priority)
+        Truth.assertWithMessage("Priority").that(customAudience.getPriority()).isEqualTo(priority)
         Truth.assertWithMessage("Auction server request flag")
-            .that(customAudience.auctionServerRequestFlags)
+            .that(customAudience.getAuctionServerRequestFlags())
             .isEqualTo(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
     }
 

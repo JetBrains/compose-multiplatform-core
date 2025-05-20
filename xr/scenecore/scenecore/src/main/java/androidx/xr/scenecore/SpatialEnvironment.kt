@@ -19,6 +19,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SpatialEnvironment as RtSpatialEnvironment
 import androidx.xr.runtime.internal.SpatialEnvironment.SetPassthroughOpacityPreferenceResult as RtSetPassthroughOpacityPreferenceResult
@@ -50,6 +51,7 @@ import java.util.function.Consumer
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
 
     private val TAG = "SpatialEnvironment"
@@ -67,14 +69,14 @@ public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
     public class PassthroughMode internal constructor(public val value: Int) {
         public companion object {
             /** The state at startup. The application cannot set this state. No longer used. */
-            @JvmField public val Uninitialized: PassthroughMode = PassthroughMode(0)
+            @JvmField public val UNINITIALIZED: PassthroughMode = PassthroughMode(0)
             /**
              * The user's passthrough is not composed into their view. Environment skyboxes and
              * geometry are only visible in this state.
              */
-            @JvmField public val Disabled: PassthroughMode = PassthroughMode(1)
+            @JvmField public val DISABLED: PassthroughMode = PassthroughMode(1)
             /** The user's passthrough is visible at full or partial opacity. */
-            @JvmField public val Enabled: PassthroughMode = PassthroughMode(2)
+            @JvmField public val ENABLED: PassthroughMode = PassthroughMode(2)
         }
     }
 
@@ -134,9 +136,9 @@ public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
     @Deprecated(message = "Use setPassthroughOpacityPreference instead.")
     public fun setPassthrough(passthroughMode: PassthroughMode) {
         when (passthroughMode) {
-            PassthroughMode.Uninitialized -> return // Do nothing. This isn't allowed.
-            PassthroughMode.Disabled -> setPassthroughOpacityPreference(0.0f)
-            PassthroughMode.Enabled -> setPassthroughOpacityPreference(1.0f)
+            PassthroughMode.UNINITIALIZED -> return // Do nothing. This isn't allowed.
+            PassthroughMode.DISABLED -> setPassthroughOpacityPreference(0.0f)
+            PassthroughMode.ENABLED -> setPassthroughOpacityPreference(1.0f)
         }
     }
 
@@ -155,9 +157,9 @@ public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
     @Deprecated(message = "Use getCurrentPassthroughOpacity instead.")
     public fun getPassthroughMode(): PassthroughMode {
         if (getCurrentPassthroughOpacity() > 0.0f) {
-            return PassthroughMode.Enabled
+            return PassthroughMode.ENABLED
         } else {
-            return PassthroughMode.Disabled
+            return PassthroughMode.DISABLED
         }
     }
 

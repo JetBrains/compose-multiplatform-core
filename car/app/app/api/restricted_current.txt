@@ -1365,6 +1365,7 @@ package androidx.car.app.model {
     method public int getItemSize();
     field public static final int ITEM_IMAGE_SHAPE_CIRCLE = 2; // 0x2
     field public static final int ITEM_IMAGE_SHAPE_UNSET = 1; // 0x1
+    field public static final int ITEM_SIZE_EXTRA_LARGE = 4; // 0x4
     field public static final int ITEM_SIZE_LARGE = 3; // 0x3
     field public static final int ITEM_SIZE_MEDIUM = 2; // 0x2
     field public static final int ITEM_SIZE_SMALL = 1; // 0x1

@@ -20,6 +20,7 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.os.Bundle
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -40,20 +41,24 @@ import java.util.function.Consumer
  * real world.
  */
 @Suppress("NotCloseable")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Scene : SessionConnector {
 
     internal val entityManager = EntityManager()
 
     internal lateinit var platformAdapter: JxrPlatformAdapter
+        private set
 
-    @Suppress("MutableBareField") public lateinit var spatialEnvironment: SpatialEnvironment
+    public lateinit var spatialEnvironment: SpatialEnvironment
+        private set
 
     /**
      * The PerceptionSpace represents the origin of the space in which the ARCore for XR API
      * provides tracking info. The transformations provided by the PerceptionSpace are only valid
      * for the call frame, as the transformation can be changed by the system at any time.
      */
-    @Suppress("MutableBareField") public lateinit var perceptionSpace: PerceptionSpace
+    public lateinit var perceptionSpace: PerceptionSpace
+        private set
 
     /**
      * The ActivitySpace is a special entity that represents the space in which the application is
@@ -61,13 +66,16 @@ public class Scene : SessionConnector {
      *
      * The ActivitySpace is created automatically when the Session is created.
      */
-    @Suppress("MutableBareField") public lateinit var activitySpace: ActivitySpace
+    public lateinit var activitySpace: ActivitySpace
+        private set
 
     // TODO: 378706624 - Remove this method once we have a better way to handle the root entity.
-    @Suppress("MutableBareField") public lateinit var activitySpaceRoot: Entity
+    public lateinit var activitySpaceRoot: Entity
+        private set
 
     /** The SpatialUser contains information about the user. */
-    @Suppress("MutableBareField") public lateinit var spatialUser: SpatialUser
+    public lateinit var spatialUser: SpatialUser
+        private set
 
     /**
      * A spatialized PanelEntity associated with the "main window" for the Activity. When in
@@ -75,14 +83,16 @@ public class Scene : SessionConnector {
      *
      * If called multiple times, this will return the same PanelEntity.
      */
-    @Suppress("MutableBareField") public lateinit var mainPanelEntity: PanelEntity
+    public lateinit var mainPanelEntity: PanelEntity
+        private set
 
     /**
      * Returns the current [SpatialCapabilities] of the Session. The set of capabilities can change
      * within a session. The returned object will not update if the capabilities change; this method
      * should be called again to get the latest set of capabilities.
      */
-    @Suppress("MutableBareField") public lateinit var spatialCapabilities: SpatialCapabilities
+    public lateinit var spatialCapabilities: SpatialCapabilities
+        private set
 
     private val spatialCapabilitiesListeners:
         ConcurrentMap<Consumer<SpatialCapabilities>, Consumer<RtSpatialCapabilities>> =
@@ -106,6 +116,30 @@ public class Scene : SessionConnector {
     override fun close(): Unit {
         entityManager.clear()
     }
+
+    /**
+     * Sets whether the depth test is enabled for all panels in the Scene when the Scene is in full
+     * space mode. Panels in home space mode are unaffected.
+     *
+     * <p>When the depth test for panels is enabled, panels in the Scene will undergo depth testing,
+     * where they can appear behind other content in the Scene. When the depth test is disabled,
+     * panels in the Scene do not undergo depth tests, that will always be drawn on top of other
+     * objects in the Scene that were already drawn. Panels and non-panel content (ex:
+     * SurfaceEntity, GltfEntity) are always drawn after the SpatialEnvironment in back to front
+     * order when such an order exists. Subsequent content will be drawn on top of panels with no
+     * depth test if the subsequent content is drawn later.
+     *
+     * <p>This method says "panel" because it only affects panels. Other content in the Scene is
+     * unaffected by this setting.
+     *
+     * <p>By default the depth test is enabled for all panels in the Scene. It can be disabled, or
+     * re-enabled, by using this method.
+     *
+     * @param enabled true to enable the depth test for all panels in the Scene (default), false to
+     *   disable the depth test for all panels in the Scene.
+     */
+    public fun enablePanelDepthTest(enabled: Boolean): Unit =
+        platformAdapter.enablePanelDepthTest(enabled)
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this Session's current

@@ -446,11 +446,11 @@ internal class Operations : OperationsDebugStringFormattable() {
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
                     val mask = (0b1 shl parameter1.offset) or (0b1 shl parameter2.offset)
-                    debugRuntimeCheck(pushedIntMask and mask == 0) {
+                    debugRuntimeCheck(pushedObjectMask and mask == 0) {
                         "Already pushed argument(s) ${operation.objectParamName(parameter1)}" +
                             ", ${operation.objectParamName(parameter2)}"
                     }
-                    pushedIntMask = pushedIntMask or mask
+                    pushedObjectMask = pushedObjectMask or mask
                 }
                 val base = objectArgsSize - peekOperation().objects
                 val objectArgs = objectArgs
@@ -472,12 +472,12 @@ internal class Operations : OperationsDebugStringFormattable() {
                         (0b1 shl parameter1.offset) or
                             (0b1 shl parameter2.offset) or
                             (0b1 shl parameter3.offset)
-                    debugRuntimeCheck(pushedIntMask and mask == 0) {
+                    debugRuntimeCheck(pushedObjectMask and mask == 0) {
                         "Already pushed argument(s) ${operation.objectParamName(parameter1)}" +
                             ", ${operation.objectParamName(parameter2)}" +
                             ", ${operation.objectParamName(parameter3)}"
                     }
-                    pushedIntMask = pushedIntMask or mask
+                    pushedObjectMask = pushedObjectMask or mask
                 }
                 val base = objectArgsSize - peekOperation().objects
                 val objectArgs = objectArgs
@@ -503,13 +503,13 @@ internal class Operations : OperationsDebugStringFormattable() {
                             (0b1 shl parameter2.offset) or
                             (0b1 shl parameter3.offset) or
                             (0b1 shl parameter4.offset)
-                    debugRuntimeCheck(pushedIntMask and mask == 0) {
+                    debugRuntimeCheck(pushedObjectMask and mask == 0) {
                         "Already pushed argument(s) ${operation.objectParamName(parameter1)}" +
                             ", ${operation.objectParamName(parameter2)}" +
                             ", ${operation.objectParamName(parameter3)}" +
                             ", ${operation.objectParamName(parameter4)}"
                     }
-                    pushedIntMask = pushedIntMask or mask
+                    pushedObjectMask = pushedObjectMask or mask
                 }
                 val base = objectArgsSize - peekOperation().objects
                 val objectArgs = objectArgs

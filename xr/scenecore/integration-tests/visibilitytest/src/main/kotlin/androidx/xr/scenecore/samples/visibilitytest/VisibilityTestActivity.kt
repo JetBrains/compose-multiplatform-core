@@ -66,19 +66,19 @@ class VisibilityTestActivity : AppCompatActivity() {
         }
 
         childPanelEntity2 = createPanelEntity(session, "Child Panel 2", childPanelEntity1)
-        val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
-        sharkModelFuture.addListener(
+        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        dragonModelFuture.addListener(
             {
-                val sharkModel = sharkModelFuture.get()
-                setUpScene(sharkModel)
+                val dragonModel = dragonModelFuture.get()
+                setUpScene(dragonModel)
             },
             // This will cause the listener to be run on the UI thread
             Runnable::run,
         )
     }
 
-    private fun setUpScene(sharkModel: GltfModel) {
-        createGltfEntities(session, sharkModel)
+    private fun setUpScene(dragonModel: GltfModel) {
+        createGltfEntities(session, dragonModel)
 
         findViewById<Button>(R.id.toggle_fsm_hsm).setOnClickListener { _ ->
             if (isFsm) {

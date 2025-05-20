@@ -40,6 +40,15 @@ public sealed interface ExecuteAppFunctionResponse {
             )
         }
 
+        @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionResponse {
+            return android.app.appfunctions.ExecuteAppFunctionResponse(
+                returnValue.genericDocument,
+                returnValue.extras,
+            )
+        }
+
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun copy(returnValue: AppFunctionData = this.returnValue): Success =
             Success(returnValue)
@@ -51,12 +60,20 @@ public sealed interface ExecuteAppFunctionResponse {
              * See [AppFunctionData] documentation on retrieving expected fields.
              */
             public const val PROPERTY_RETURN_VALUE: String =
-                com.android.extensions.appfunctions.ExecuteAppFunctionResponse.PROPERTY_RETURN_VALUE
+                android.app.appfunctions.ExecuteAppFunctionResponse.PROPERTY_RETURN_VALUE
 
             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
             public fun fromPlatformExtensionClass(
                 response: com.android.extensions.appfunctions.ExecuteAppFunctionResponse
+            ): Success {
+                return Success(AppFunctionData(response.resultDocument, response.extras))
+            }
+
+            @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            public fun fromPlatformClass(
+                response: android.app.appfunctions.ExecuteAppFunctionResponse
             ): Success {
                 return Success(AppFunctionData(response.resultDocument, response.extras))
             }

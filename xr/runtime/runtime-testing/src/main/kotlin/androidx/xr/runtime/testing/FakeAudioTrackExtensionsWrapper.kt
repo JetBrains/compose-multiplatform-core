@@ -17,6 +17,7 @@
 package androidx.xr.runtime.testing
 
 import android.media.AudioTrack
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.AudioTrackExtensionsWrapper
 import androidx.xr.runtime.internal.PointSourceParams
 import androidx.xr.runtime.internal.SoundFieldAttributes
@@ -24,6 +25,7 @@ import androidx.xr.runtime.internal.SpatializerConstants
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [AudioTrackExtensionsWrapper] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeAudioTrackExtensionsWrapper : AudioTrackExtensionsWrapper {
     override fun getPointSourceParams(track: AudioTrack): PointSourceParams? = null
 

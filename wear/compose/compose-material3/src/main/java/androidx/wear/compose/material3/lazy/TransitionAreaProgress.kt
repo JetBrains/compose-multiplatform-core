@@ -18,6 +18,10 @@ package androidx.wear.compose.material3.lazy
 
 import androidx.compose.animation.core.Easing
 import androidx.compose.ui.util.lerp
+import androidx.compose.ui.util.packFloats
+import androidx.compose.ui.util.unpackFloat1
+import androidx.compose.ui.util.unpackFloat2
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress
 import androidx.wear.compose.foundation.lazy.inverseLerp
 
 /**
@@ -76,8 +80,23 @@ internal value class TransitionAreaProgress(private val encodedProgress: Float) 
 }
 
 // TODO: Decide what we want to compute & store vs compute when needed.
-internal data class TransformationState(
-    val containerAlpha: Float,
-    val contentAlpha: Float,
-    val scale: Float,
-)
+@JvmInline
+internal value class TransformationState internal constructor(private val packedValue: Long) {
+    val scale: Float
+        get() = unpackFloat1(packedValue)
+
+    val containerAlpha: Float
+        get() = unpackFloat2(packedValue)
+
+    constructor(scale: Float, containerAlpha: Float) : this(packFloats(scale, containerAlpha))
+
+    companion object {
+        /**
+         * Represents an unspecified [TransformingLazyColumnItemScrollProgress] value, usually a
+         * replacement for `null` when a primitive value is desired.
+         */
+        val Unspecified: TransformationState = TransformationState(UnspecifiedPackedFloats)
+    }
+}
+
+internal const val UnspecifiedPackedFloats = 0x7fc00000_7fc00000L // NaN_NaN

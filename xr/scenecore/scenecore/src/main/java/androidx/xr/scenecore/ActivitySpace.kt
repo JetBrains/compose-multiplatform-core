@@ -18,6 +18,7 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import java.util.concurrent.ConcurrentHashMap
@@ -31,6 +32,7 @@ import java.util.function.Consumer
  * but the system might update it in response to the User moving it or entering or exiting FullSpace
  * mode.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ActivitySpace
 private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
     BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {
@@ -162,6 +164,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
 
 // TODO: b/370538244 - remove with deprecated spatial state callbacks
 @Deprecated(message = "Use addBoundsChangedListener(Consumer<Dimensions>)")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface OnBoundsChangeListener {
     public fun onBoundsChanged(bounds: Dimensions) // Dimensions are in meters.
 }

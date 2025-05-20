@@ -228,7 +228,7 @@ class SessionConfigAdapterTest {
         // Assert.
         assertThat(mapping[fakePreviewSurface]).isEqualTo(StreamUseHint.DEFAULT.value)
         assertThat(mapping[fakeVideoSurface]).isEqualTo(StreamUseHint.VIDEO_RECORD.value)
-        assertThat(mapping[fakeStreamSharingSurface]).isEqualTo(StreamUseHint.VIDEO_RECORD.value)
+        assertThat(mapping[fakeStreamSharingSurface]).isEqualTo(StreamUseHint.DEFAULT.value)
     }
 
     @Test

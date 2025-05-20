@@ -30,4 +30,6 @@ internal object ScubaConstants {
     internal const val FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE = "fastScroller_shown_inImmersiveMode"
     internal const val FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP =
         "fastScroller_and_fab_shown_onScrollToTop"
+    internal const val FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT = "fastScroller_withStyle_inPortrait"
+    internal const val FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE = "fastScroller_withStyle_inLandscape"
 }

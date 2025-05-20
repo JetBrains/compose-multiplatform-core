@@ -60,19 +60,26 @@ sealed interface PaneAdaptedValue {
      * @param alignment the alignment of the levitated pane relative to the pane scaffold; the
      *   alignment can also be provided as anchoring to a certain alignment line or a certain
      *   element in the window. See [Alignment] for more information.
+     * @param scrim the scrim to show when the levitated pane is shown to block user interaction
+     *   with the underlying layout and emphasize the levitated pane; by default it will be `null`
+     *   and no scrim will show.
      */
     @Immutable
-    class Levitated(val alignment: Alignment) : PaneAdaptedValue {
-        override fun toString() = "PaneAdaptedValue[Levitated with $alignment]"
+    class Levitated(val alignment: Alignment, val scrim: Scrim? = null) : PaneAdaptedValue {
+        override fun toString() = "PaneAdaptedValue[Levitated with $alignment and scrim=$scrim]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Levitated) return false
-            return alignment == other.alignment
+            if (alignment != other.alignment) return false
+            if (scrim != other.scrim) return false
+            return true
         }
 
         override fun hashCode(): Int {
-            return alignment.hashCode()
+            var result = alignment.hashCode()
+            result = 31 * result + scrim.hashCode()
+            return result
         }
     }
 

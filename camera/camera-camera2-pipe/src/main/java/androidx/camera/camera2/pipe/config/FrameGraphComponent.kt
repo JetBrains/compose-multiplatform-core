@@ -16,18 +16,31 @@
 
 package androidx.camera.camera2.pipe.config
 
+import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameGraph
-import androidx.camera.camera2.pipe.framegraph.FrameGraphModule
+import androidx.camera.camera2.pipe.core.Threads
+import androidx.camera.camera2.pipe.framegraph.FrameGraphImpl
+import androidx.camera.camera2.pipe.internal.FrameDistributor
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
+import javax.inject.Qualifier
+import javax.inject.Scope
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 
+@Scope internal annotation class FrameGraphScope
+
+@Qualifier internal annotation class FrameGraphCoroutineScope
+
+@FrameGraphScope
 @Subcomponent(
     modules =
         [
-            FrameGraphConfigModule::class,
             FrameGraphModule::class,
-        ]
+            FrameGraphConfigModule::class,
+        ],
 )
 internal interface FrameGraphComponent {
 
@@ -43,6 +56,30 @@ internal interface FrameGraphComponent {
 }
 
 @Module
-internal class FrameGraphConfigModule(private val config: FrameGraph.Config) {
+internal class FrameGraphConfigModule(
+    private val cameraGraphComponent: CameraGraphComponent,
+    private val config: FrameGraph.Config
+) {
     @Provides fun provideCameraGraphConfig(): FrameGraph.Config = config
+
+    @Provides fun provideCameraGraph(): CameraGraph = cameraGraphComponent.cameraGraph()
+
+    @Provides
+    fun provideFrameDistributor(): FrameDistributor = cameraGraphComponent.frameDistributor()
+}
+
+@Module
+internal abstract class FrameGraphModule {
+    @Binds abstract fun bindFrameGraph(frameGraph: FrameGraphImpl): FrameGraph
+
+    companion object {
+        @FrameGraphScope
+        @Provides
+        @FrameGraphCoroutineScope
+        fun provideFrameGraphCoroutineScope(threads: Threads): CoroutineScope {
+            return CoroutineScope(
+                threads.lightweightDispatcher.plus(CoroutineName("CXCP-FrameGraph"))
+            )
+        }
+    }
 }

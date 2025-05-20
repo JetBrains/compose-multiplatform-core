@@ -79,7 +79,8 @@ public class MainPanelEntityImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
 
         mMainPanelEntity = (MainPanelEntityImpl) mTestRuntime.getMainPanelEntity();
     }

@@ -37,14 +37,17 @@ import java.nio.ShortBuffer
  * To use an [InProgressStroke], you would typically:
  * 1. Begin a stroke by calling [start] with a chosen [Brush].
  * 2. Repeatedly update the stroke:
- *     1. Call [enqueueInputs] with any new real and predicted stroke inputs.
- *     2. Call [updateShape] when [needsUpdate] is `true` and new geometry is needed for rendering.
+ *     1. Call [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]) with any new real and predicted
+ *        stroke inputs.
+ *     2. Call [updateShapeOrThrow] (or [updateShapeOrIgnore]) when [isUpdateNeeded] is `true` and
+ *        new geometry is needed for rendering.
  *     3. Render the current stroke mesh or outlines, either via a provided renderer that accepts an
  *        [InProgressStroke] or by using the various getters on this type with a custom renderer.
  * 3. Call [finishInput] once there are no more inputs for this stroke (e.g. the user lifts the
  *    stylus from the screen).
- * 4. Continue to call [updateShape] and render after [finishInput] until [getNeedsUpdate] returns
- *    false (to allow any lingering brush shape animations to complete).
+ * 4. Continue to call [updateShapeOrThrow] (or [updateShapeOrIgnore]) and render after
+ *    [finishInput] until [isUpdateNeeded] returns false (to allow any lingering brush shape
+ *    animations to complete).
  * 5. Extract the completed stroke by calling [toImmutable].
  * 6. For best performance, reuse this object and go back to step 1 rather than allocating a new
  *    instance.
@@ -85,8 +88,9 @@ public class InProgressStroke {
      * Clears and starts a new stroke with the given [brush].
      *
      * This includes clearing or resetting any existing inputs, mesh data, and updated region. This
-     * method must be called at least once after construction before starting to call
-     * [enqueueInputs] or [updateShape].
+     * method must be called at least once after construction before making any calls to
+     * [enqueueInputsOrThrow] or [updateShapeOrThrow]. ([enqueueInputsOrIgnore] and
+     * [updateShapeOrIgnore] will also not do anything before this has been called.)
      */
     @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun start(brush: Brush): Unit = start(brush, noiseSeed = 0)
@@ -96,8 +100,9 @@ public class InProgressStroke {
      * to help seed the brush's noise behaviors, if any.
      *
      * This includes clearing or resetting any existing inputs, mesh data, and updated region. This
-     * method (or [start]) must be called at least once after construction before starting to call
-     * [enqueueInputs] or [updateShape].
+     * method must be called at least once after construction before making any calls to
+     * [enqueueInputsOrThrow] or [updateShapeOrThrow]. ([enqueueInputsOrIgnore] and
+     * [updateShapeOrIgnore] will also not do anything before this has been called.)
      */
     @ExperimentalInkCustomBrushApi
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
@@ -110,98 +115,136 @@ public class InProgressStroke {
     /**
      * Enqueues the incremental [realInputs] and sets the prediction to [predictedInputs],
      * overwriting any previous prediction. Queued inputs will be processed on the next call to
-     * [updateShape].
+     * [updateShapeOrThrow] (or [updateShapeOrIgnore]).
      *
      * This method requires that:
      * * [start] has been previously called to set the current [Brush].
      * * [finishInput] has not been called since the last call to [start].
      * * [realInputs] and [predictedInputs] must form a valid stroke input sequence together with
-     *   previously added real input.
-     *
-     * If the above requirements are not satisfied, the [Result] will be a failure and this object
-     * is left in the state it had prior to the call.
+     *   previously added real input. In particular, this means that the first input in [realInputs]
+     *   must be valid following the last input in previously added real inputs, and the first input
+     *   in [predictedInputs] must be valid following the last input in [realInputs]: They must have
+     *   the same [InputToolType], their [StrokeInput.elapsedTimeMillis] values must be
+     *   monotonically non-decreasing, and they can not duplicate the previous input.
      *
      * Either one or both of [realInputs] and [predictedInputs] may be empty.
+     *
+     * Throws an appopriate subclass of [RuntimeException] if the input is invalid.
      */
-    public fun enqueueInputs(
-        realInputs: StrokeInputBatch,
-        predictedInputs: StrokeInputBatch,
-    ): Result<Unit> =
-        InProgressStrokeNative.enqueueInputs(
-                nativePointer,
-                realInputs.nativePointer,
-                predictedInputs.nativePointer,
-            )
-            ?.let { Result.failure(IllegalArgumentException(it)) }
-            ?: Result.success(Unit).also { version++ }
-
-    /** @see enqueueInputs */
     public fun enqueueInputsOrThrow(
         realInputs: StrokeInputBatch,
         predictedInputs: StrokeInputBatch,
-    ): Unit = enqueueInputs(realInputs, predictedInputs).getOrThrow()
+    ): Unit = enqueueInputs(realInputs, predictedInputs, throwOnError = true)
+
+    /**
+     * Same as [enqueueInputsOrThrow], but ignores invalid inputs without raising an exception. Use
+     * this method when skipping invalid inputs (e.g. out of order or duplicate inputs) is the
+     * desired behavior.
+     */
+    public fun enqueueInputsOrIgnore(
+        realInputs: StrokeInputBatch,
+        predictedInputs: StrokeInputBatch,
+    ): Unit = enqueueInputs(realInputs, predictedInputs, throwOnError = false)
+
+    private fun enqueueInputs(
+        realInputs: StrokeInputBatch,
+        predictedInputs: StrokeInputBatch,
+        throwOnError: Boolean,
+    ) {
+        val success =
+            InProgressStrokeNative.enqueueInputs(
+                nativePointer,
+                realInputs.nativePointer,
+                predictedInputs.nativePointer,
+                throwOnError,
+            )
+        check(success || !throwOnError) {
+            "Should have thrown an exception if enqueueInputs failed."
+        }
+        if (success) version++
+    }
 
     /**
      * Indicates that the inputs for the current stroke are finished. After calling this, it is an
-     * error to call [enqueueInputs] until [start] is called again to start a new stroke. This
-     * method is idempotent; it has no effect if [start] was never called, or if this method has
-     * already been called since the last call to [start].
+     * error to call [enqueueInputsOrThrow] until [start] is called again to start a new stroke.
+     * This method is idempotent; it has no effect if [start] was never called, or if this method
+     * has already been called since the last call to [start]. This method is synchronous, but the
+     * stroke may not be fully finished changing shape due to brush shape animations until
+     * [isUpdateNeeded] returns false. Until that condition is met, keep calling
+     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) periodically and rendering the result.
      */
     public fun finishInput(): Unit =
         InProgressStrokeNative.finishInput(nativePointer).also { version++ }
 
     /**
      * Updates the stroke geometry up to the given duration since the start of the stroke. This will
-     * will consume any inputs queued up by calls to [enqueueInputs], and cause brush shape
-     * animations (if any) to progress up to the specified time. Any stroke geometry resulting from
-     * previously-predicted input from before the previous call to this method will be cleared.
+     * consume any inputs queued up by calls to [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]),
+     * and cause brush shape animations (if any) to progress up to the specified time. Any stroke
+     * geometry resulting from previously-predicted input from before the previous call to this
+     * method will be cleared.
      *
      * This method requires that:
      * * [start] has been previously called to set the current [brush].
-     * * The value of [currentElapsedTimeMillis] passed into this method over the course of a single
-     *   stroke must be non-decreasing and non-negative. Its default value causes all ongoing stroke
-     *   shape animations to be completed immediately. To have shape animations progress at their
-     *   intended rate, pass in values for this field that are in the same time base as the
-     *   [StrokeInput.elapsedTimeMillis] values being passed to [enqueueInputs], repeatedly until
-     *   [isInputFinished] returns `true`.
+     * * If passed, the value of [currentElapsedTimeMillis] passed into this method over the course
+     *   of a single stroke must be non-decreasing and non-negative. To have shape animations
+     *   progress at their intended rate, pass in values for this field that are in the same time
+     *   base as the [StrokeInput.elapsedTimeMillis] values being passed to [enqueueInputsOrThrow],
+     *   repeatedly until [isInputFinished] returns `true`.
      *
-     * If the above requirements are not satisfied, the [Result] will be a failure and this object
-     * is left in the state it had prior to the call.
+     * Clients that do not use brushes with shape animation behaviors can omit
+     * [currentElapsedTimeMillis]. Doing so with brushes with shape animation beaviors will cause
+     * the animation to be completed immediately.
+     *
+     * Throws an appropriate subclass of [RuntimeException] if the update fails.
      */
-    public fun updateShape(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Result<Unit> =
-        InProgressStrokeNative.updateShape(nativePointer, currentElapsedTimeMillis)?.let {
-            Result.failure(IllegalArgumentException(it))
-        } ?: Result.success(Unit).also { version++ }
-
-    /** @see updateShape */
     public fun updateShapeOrThrow(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Unit =
-        updateShape(currentElapsedTimeMillis).getOrThrow()
+        updateShape(currentElapsedTimeMillis, throwOnError = true)
+
+    /**
+     * Same as [updateShapeOrThrow], but ignores failures without raising an exception. Use this
+     * method when doing nothing if an update fails (e.g. the elapsed time is out of order or the
+     * stroke has not yet been started) is the desired behavior.
+     */
+    public fun updateShapeOrIgnore(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Unit =
+        updateShape(currentElapsedTimeMillis, throwOnError = false)
+
+    private fun updateShape(currentElapsedTimeMillis: Long, throwOnError: Boolean) {
+        val success =
+            InProgressStrokeNative.updateShape(
+                nativePointer,
+                currentElapsedTimeMillis,
+                throwOnError
+            )
+        check(success || !throwOnError) { "Should have thrown an exception if updateShape failed." }
+        if (success) version++
+    }
 
     /**
      * Returns `true` if [finishInput] has been called since the last call to [start], or if [start]
-     * hasn't been called yet. If this returns `true`, it is an error to call [enqueueInputs].
+     * hasn't been called yet. If this returns `true`, it is an error to call
+     * [enqueueInputsOrThrow].
      */
     public fun isInputFinished(): Boolean = InProgressStrokeNative.isInputFinished(nativePointer)
 
     /**
-     * Returns `true` if calling [updateShape] would have any effect on the stroke (and should thus
-     * be called before the next render), or `false` if no calls to [updateShape] are currently
-     * needed. Specifically:
+     * Returns `true` if calling [updateShapeOrThrow] (or [updateShapeOrIgnore]) would have any
+     * effect on the stroke (and should thus be called before the next render), or `false` if no
+     * calls to [updateShapeOrThrow] are currently needed. Specifically:
      * * If the brush has one or more timed shape animation behavior that are still active (which
      *   can be true even after inputs are finished), returns `true`.
      * * If there are no active shape animation behaviors, but there are pending inputs from an
-     *   [enqueueInputs] call that have not yet been consumed by a call to [updateShape], returns
-     *   `true`.
+     *   [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]) call that have not yet been consumed by
+     *   a call to [updateShapeOrThrow], returns `true`.
      * * Otherwise, returns `false`.
      *
      * Once [isInputFinished] returns `true` and this method returns `false`, the stroke is
      * considered "dry", and will not change any further until the next call to [start].
      */
-    public fun getNeedsUpdate(): Boolean = InProgressStrokeNative.getNeedsUpdate(nativePointer)
+    public fun isUpdateNeeded(): Boolean = InProgressStrokeNative.isUpdateNeeded(nativePointer)
 
     /**
-     * Copies the current input, brush, and geometry as of the last call to [start] or [updateShape]
-     * to a new [Stroke].
+     * Copies the current input, brush, and geometry as of the last call to [start] or
+     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) to a new [Stroke].
      *
      * The resulting [Stroke] will not be modified if further inputs are added to this
      * [InProgressStroke], and a [Stroke] created by another call to this method will not modify or
@@ -231,7 +274,10 @@ public class InProgressStroke {
         InProgressStrokeNative.getPredictedInputCount(nativePointer)
 
     /**
-     * Add the specified range of inputs from this stroke to the output [MutableStrokeInputBatch].
+     * Replace the contents of the [MutableStrokeInputBatch] with the specified range of inputs from
+     * the this [InProgressStroke]. By default, all inputs are copied.
+     *
+     * Returns the passed-in [MutableStrokeInputBatch] to make it easier to chain calls.
      *
      * @return [out]
      */
@@ -244,13 +290,15 @@ public class InProgressStroke {
         val size = getInputCount()
         require(from >= 0) { "index ($from) must be >= 0" }
         require(to <= size && to >= from) { "to ($to) must be in [from=$from, inputCount=$size]" }
-        InProgressStrokeNative.fillInputs(nativePointer, out.nativePointer, from, to)
+        InProgressStrokeNative.populateInputs(nativePointer, out.nativePointer, from, to)
         return out
     }
 
     /**
      * Gets the value of the i-th input and overwrites [out]. Requires that [index] is positive and
      * less than [getInputCount].
+     *
+     * Returns the passed-in [StrokeInput] to make it easier to chain calls.
      *
      * @return [out]
      */
@@ -284,31 +332,36 @@ public class InProgressStroke {
      * Writes to [outBoxAccumulator] the bounding box of the vertex positions of the mesh for brush
      * coat [coatIndex].
      *
+     * Returns the passed in [BoxAccumulator] to make it easier to chain calls.
+     *
      * @param coatIndex The index of the coat to obtain the bounding box from.
-     * @param outBoxAccumulator The pre-allocated [BoxAccumulator] to be filled with the result.
-     * @return [outBoxAccumulator]
+     * @param outMeshBounds The pre-allocated [BoxAccumulator] to be filled with the result.
+     * @return [outMeshBounds]
      */
     public fun populateMeshBounds(
         @IntRange(from = 0) coatIndex: Int,
-        outBoxAccumulator: BoxAccumulator,
+        outMeshBounds: BoxAccumulator,
     ): BoxAccumulator {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "coatIndex=$coatIndex must be between 0 and brushCoatCount=${getBrushCoatCount()}"
         }
-        InProgressStrokeNative.getMeshBounds(nativePointer, coatIndex, outBoxAccumulator)
-        return outBoxAccumulator
+        InProgressStrokeNative.getMeshBounds(nativePointer, coatIndex, outMeshBounds)
+        return outMeshBounds
     }
 
     /**
      * Returns the bounding rectangle of mesh positions added, modified, or removed by calls to
-     * [updateShape] since the most recent call to [start] or [resetUpdatedRegion].
+     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) since the most recent call to [start] or
+     * [resetUpdatedRegion].
      *
-     * @param outBoxAccumulator The pre-allocated [BoxAccumulator] to be filled with the result.
-     * @return [outBoxAccumulator]
+     * Returns the passed in [BoxAccumulator] to make it easier to chain calls.
+     *
+     * @param outUpdatedRegion The pre-allocated [BoxAccumulator] to be filled with the result.
+     * @return [outUpdatedRegion]
      */
-    public fun populateUpdatedRegion(outBoxAccumulator: BoxAccumulator): BoxAccumulator {
-        InProgressStrokeNative.fillUpdatedRegion(nativePointer, outBoxAccumulator)
-        return outBoxAccumulator
+    public fun populateUpdatedRegion(outUpdatedRegion: BoxAccumulator): BoxAccumulator {
+        InProgressStrokeNative.fillUpdatedRegion(nativePointer, outUpdatedRegion)
+        return outUpdatedRegion
     }
 
     /** Call after making use of a value from [populateUpdatedRegion] to reset the accumulation. */
@@ -373,7 +426,9 @@ public class InProgressStroke {
     ): Int = getOutlineVertexCount(coatIndex, outlineIndex)
 
     /**
-     * Fills [outPosition] with the x- and y- coordinates of the specified outline vertex.
+     * Fills [outPosition] with the x and y coordinates of the specified outline vertex.
+     *
+     * Returns the passed-in [MutableVec] to make it easier to chain calls.
      *
      * @param coatIndex Must be between 0 (inclusive) and the result of [getBrushCoatCount]
      *   (exclusive).
@@ -388,7 +443,7 @@ public class InProgressStroke {
         @IntRange(from = 0) outlineIndex: Int,
         @IntRange(from = 0) outlineVertexIndex: Int,
         outPosition: MutableVec,
-    ) {
+    ): MutableVec {
         val outlineVertexCount = getOutlineVertexCount(coatIndex, outlineIndex)
         require(outlineVertexIndex >= 0 && outlineVertexIndex < outlineVertexCount) {
             "outlineVertexIndex=$outlineVertexIndex must be between 0 and " +
@@ -401,6 +456,7 @@ public class InProgressStroke {
             outlineVertexIndex,
             outPosition,
         )
+        return outPosition
     }
 
     // Internal methods for rendering the MutableMesh(es) of an InProgressStroke. These mesh data
@@ -514,42 +570,46 @@ private object InProgressStrokeNative {
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative public external fun create(): Long
+    @UsedByNative external fun create(): Long
 
-    @UsedByNative public external fun clear(nativePointer: Long)
+    @UsedByNative external fun clear(nativePointer: Long)
 
+    @UsedByNative external fun start(nativePointer: Long, brushNativePointer: Long, noiseSeed: Int)
+
+    /** Returns whether the inputs were successfully enqueued. */
     @UsedByNative
-    public external fun start(nativePointer: Long, brushNativePointer: Long, noiseSeed: Int)
-
-    /** Returns null on success or an error message string on failure. */
-    @UsedByNative
-    public external fun enqueueInputs(
+    external fun enqueueInputs(
         nativePointer: Long,
         realInputsPointer: Long,
         predictedInputsPointer: Long,
-    ): String?
+        throwOnError: Boolean,
+    ): Boolean
 
-    /** Returns null on success or an error message string on failure. */
+    /** Returns whether the shape was successfully updated. */
     @UsedByNative
-    public external fun updateShape(nativePointer: Long, currentElapsedTime: Long): String?
+    external fun updateShape(
+        nativePointer: Long,
+        currentElapsedTime: Long,
+        throwOnError: Boolean,
+    ): Boolean
 
-    @UsedByNative public external fun finishInput(nativePointer: Long)
+    @UsedByNative external fun finishInput(nativePointer: Long)
 
-    @UsedByNative public external fun isInputFinished(nativePointer: Long): Boolean
+    @UsedByNative external fun isInputFinished(nativePointer: Long): Boolean
 
-    @UsedByNative public external fun getNeedsUpdate(nativePointer: Long): Boolean
+    @UsedByNative external fun isUpdateNeeded(nativePointer: Long): Boolean
 
     /** Returns the native pointer for an `ink::Stroke`, to be wrapped by a [Stroke]. */
-    @UsedByNative public external fun newStrokeFromCopy(nativePointer: Long): Long
+    @UsedByNative external fun newStrokeFromCopy(nativePointer: Long): Long
 
-    @UsedByNative public external fun getInputCount(nativePointer: Long): Int
+    @UsedByNative external fun getInputCount(nativePointer: Long): Int
 
-    @UsedByNative public external fun getRealInputCount(nativePointer: Long): Int
+    @UsedByNative external fun getRealInputCount(nativePointer: Long): Int
 
-    @UsedByNative public external fun getPredictedInputCount(nativePointer: Long): Int
+    @UsedByNative external fun getPredictedInputCount(nativePointer: Long): Int
 
     @UsedByNative
-    public external fun fillInputs(
+    external fun populateInputs(
         nativePointer: Long,
         mutableStrokeInputBatchPointer: Long,
         from: Int,
@@ -561,41 +621,32 @@ private object InProgressStrokeNative {
      * needing to do a reflection-based FindClass lookup.
      */
     @UsedByNative
-    public external fun getAndOverwriteInput(
+    external fun getAndOverwriteInput(
         nativePointer: Long,
         input: StrokeInput,
         index: Int,
         toolTypeClass: Class<InputToolType>,
     )
 
-    @UsedByNative public external fun getBrushCoatCount(nativePointer: Long): Int
+    @UsedByNative external fun getBrushCoatCount(nativePointer: Long): Int
 
     /** Writes the bounding region to [outEnvelope]. */
     @UsedByNative
-    public external fun getMeshBounds(
-        nativePointer: Long,
-        coatIndex: Int,
-        outEnvelope: BoxAccumulator,
-    )
+    external fun getMeshBounds(nativePointer: Long, coatIndex: Int, outEnvelope: BoxAccumulator)
 
     /** Returns the number of mesh partitions. */
-    @UsedByNative
-    public external fun getMeshPartitionCount(nativePointer: Long, coatIndex: Int): Int
+    @UsedByNative external fun getMeshPartitionCount(nativePointer: Long, coatIndex: Int): Int
 
     /** Returns the number of vertices in the mesh at [partitionIndex]. */
     @UsedByNative
-    public external fun getVertexCount(
-        nativePointer: Long,
-        coatIndex: Int,
-        partitionIndex: Int
-    ): Int
+    external fun getVertexCount(nativePointer: Long, coatIndex: Int, partitionIndex: Int): Int
 
     /**
      * Returns a direct [ByteBuffer] wrapped around the contents of [RawVertexData] for the mesh at
      * [partitionIndex]. It will be writeable, so be sure to only expose a read-only wrapper of it.
      */
     @UsedByNative
-    public external fun getRawVertexData(
+    external fun getRawVertexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
@@ -607,17 +658,17 @@ private object InProgressStrokeNative {
      * it.
      */
     @UsedByNative
-    public external fun getRawTriangleIndexData(
+    external fun getRawTriangleIndexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
     ): ByteBuffer?
 
     @UsedByNative
-    public external fun getTriangleIndexStride(
+    external fun getTriangleIndexStride(
         nativePointer: Long,
         coatIndex: Int,
-        partitionIndex: Int,
+        partitionIndex: Int
     ): Int
 
     /**
@@ -625,29 +676,20 @@ private object InProgressStrokeNative {
      * at [partitionIndex].
      */
     @UsedByNative
-    public external fun newCopyOfMeshFormat(
-        nativePointer: Long,
-        coatIndex: Int,
-        partitionIndex: Int,
-    ): Long
+    external fun newCopyOfMeshFormat(nativePointer: Long, coatIndex: Int, partitionIndex: Int): Long
 
     /** Writes the updated region to [outEnvelope]. */
-    @UsedByNative
-    public external fun fillUpdatedRegion(nativePointer: Long, outEnvelope: BoxAccumulator)
+    @UsedByNative external fun fillUpdatedRegion(nativePointer: Long, outEnvelope: BoxAccumulator)
 
-    @UsedByNative public external fun resetUpdatedRegion(nativePointer: Long)
+    @UsedByNative external fun resetUpdatedRegion(nativePointer: Long)
 
-    @UsedByNative public external fun getOutlineCount(nativePointer: Long, coatIndex: Int): Int
-
-    @UsedByNative
-    public external fun getOutlineVertexCount(
-        nativePointer: Long,
-        coatIndex: Int,
-        outlineIndex: Int,
-    ): Int
+    @UsedByNative external fun getOutlineCount(nativePointer: Long, coatIndex: Int): Int
 
     @UsedByNative
-    public external fun fillOutlinePosition(
+    external fun getOutlineVertexCount(nativePointer: Long, coatIndex: Int, outlineIndex: Int): Int
+
+    @UsedByNative
+    external fun fillOutlinePosition(
         nativePointer: Long,
         coatIndex: Int,
         outlineIndex: Int,
@@ -656,5 +698,5 @@ private object InProgressStrokeNative {
     )
 
     /** Release the underlying memory allocated in [nativeCreateInProgressStroke]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 }

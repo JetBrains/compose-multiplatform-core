@@ -44,7 +44,7 @@ internal class SpatialComposeScene(
     @InternalSubspaceApi public val jxrSession: Session,
     parentCompositionContext: CompositionContext? = null,
     rootEntity: CoreEntity? = null,
-    rootVolumeConstraints: VolumeConstraints = VolumeConstraints.Unbounded,
+    rootVolumeConstraints: VolumeConstraints = VolumeConstraints(),
 ) : DefaultLifecycleObserver, LifecycleOwner {
     init {
         SceneManager.onSceneCreated(this)

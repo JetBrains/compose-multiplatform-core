@@ -16,8 +16,12 @@
 
 package androidx.camera.testing.impl
 
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
+import android.os.Build
 import android.util.Pair
 import android.util.Size
 import androidx.camera.core.CameraFilter
@@ -34,6 +38,7 @@ import androidx.camera.core.impl.Identifier
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.UseCaseConfigFactory
+import org.junit.Assume.assumeTrue
 
 /** Utilities for Extensions related tests. */
 public object ExtensionsUtil {
@@ -142,5 +147,39 @@ public object ExtensionsUtil {
         )
 
         return builder.build()
+    }
+
+    /**
+     * Checks whether the device is Pixel 7, 8, 9 series and the installed PCS is suitable for test
+     * or not.
+     */
+    @JvmStatic
+    public fun assumePcsSupportedForImageCapture(appContext: Context) {
+        // Only checks Pixel 7, 8, 9 series devices.
+        // For the older devices, there is no ImageCapture problem on PCS.
+        // For the newer devices, it is expected that the built-in PCS will work normally.
+        if (!"google".equals(Build.BRAND, ignoreCase = true)) {
+            return
+        }
+
+        if (
+            !Build.MODEL.contains("pixel 7", ignoreCase = true) &&
+                !Build.MODEL.contains("pixel 8", ignoreCase = true) &&
+                !Build.MODEL.contains("pixel 9", ignoreCase = true)
+        ) {
+            return
+        }
+
+        // Checks whether the PCS version is v2.3 or above
+        try {
+            val pcsPackageName = "com.google.android.apps.camera.services"
+            val packageInfo: PackageInfo =
+                appContext.packageManager.getPackageInfo(pcsPackageName, 0)
+            packageInfo.versionName?.let {
+                assumeTrue("PCS_VERSION_UNSUITABLE_FOR_TEST, current version is $it", it >= "2.3")
+            }
+        } catch (e: PackageManager.NameNotFoundException) {
+            // Do nothing if the package can't be found.
+        }
     }
 }

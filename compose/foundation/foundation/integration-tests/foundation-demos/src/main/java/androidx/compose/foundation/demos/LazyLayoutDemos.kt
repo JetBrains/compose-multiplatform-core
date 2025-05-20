@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +37,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
@@ -160,7 +160,7 @@ private fun measure2dGrid(
     columns: Int,
     state: Lazy2DGridState,
     updateScrollPosition: (IntPosition, IntOffset, Offset) -> Unit
-): LazyLayoutMeasureScope.(Constraints) -> MeasureResult = { constraints ->
+): LazyLayoutMeasurePolicy = LazyLayoutMeasurePolicy { constraints ->
     var currentFirstVisibleRowIndex =
         Snapshot.withoutReadObservation { state.firstVisiblePosition.row }
     var currentFirstVisibleRowScrollOffset =
@@ -523,7 +523,8 @@ private fun LazyLayoutMeasureScope.measureItem(
 ): MeasuredItem {
     val index = indexGenerator(rowIndex, index, columns)
 
-    val itemPlaceables = measure(index, childConstraints)
+    val measurables = compose(index)
+    val itemPlaceables = measurables.map { it.measure(childConstraints) }
 
     check(itemPlaceables.size == 1) { "Multi-item is not supported" }
     val item = itemPlaceables.first()

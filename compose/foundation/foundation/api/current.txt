@@ -531,6 +531,7 @@ package androidx.compose.foundation.gestures {
     method public static suspend Object? awaitVerticalDragOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope, long pointerId, kotlin.coroutines.Continuation<? super androidx.compose.ui.input.pointer.PointerInputChange?>);
     method public static suspend Object? awaitVerticalPointerSlopOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope, long pointerId, int pointerType, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super java.lang.Float,kotlin.Unit> onPointerSlopReached, kotlin.coroutines.Continuation<? super androidx.compose.ui.input.pointer.PointerInputChange?>);
     method public static suspend Object? awaitVerticalTouchSlopOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope, long pointerId, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super java.lang.Float,kotlin.Unit> onTouchSlopReached, kotlin.coroutines.Continuation<? super androidx.compose.ui.input.pointer.PointerInputChange?>);
+    method public static suspend Object? detectDragGestures(androidx.compose.ui.input.pointer.PointerInputScope, androidx.compose.foundation.gestures.Orientation? orientationLock, optional kotlin.jvm.functions.Function3<? super androidx.compose.ui.input.pointer.PointerInputChange,? super androidx.compose.ui.input.pointer.PointerInputChange,? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDragStart, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.input.pointer.PointerInputChange,kotlin.Unit> onDragEnd, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragCancel, optional kotlin.jvm.functions.Function0<java.lang.Boolean> shouldAwaitTouchSlop, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDrag, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public static suspend Object? detectDragGestures(androidx.compose.ui.input.pointer.PointerInputScope, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDragStart, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragEnd, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragCancel, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDrag, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public static suspend Object? detectDragGesturesAfterLongPress(androidx.compose.ui.input.pointer.PointerInputScope, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDragStart, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragEnd, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragCancel, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDrag, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public static suspend Object? detectHorizontalDragGestures(androidx.compose.ui.input.pointer.PointerInputScope, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit> onDragStart, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragEnd, optional kotlin.jvm.functions.Function0<kotlin.Unit> onDragCancel, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputChange,? super java.lang.Float,kotlin.Unit> onHorizontalDrag, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -611,14 +612,39 @@ package androidx.compose.foundation.gestures {
     method public suspend Object? tryAwaitRelease(kotlin.coroutines.Continuation<? super java.lang.Boolean>);
   }
 
+  public interface Scroll2DScope {
+    method public long scrollBy(long delta);
+  }
+
   public final class ScrollExtensionsKt {
+    method public static suspend Object? animateScrollBy(androidx.compose.foundation.gestures.Scrollable2DState, long value, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> animationSpec, kotlin.coroutines.Continuation<? super androidx.compose.ui.geometry.Offset>);
     method public static suspend Object? animateScrollBy(androidx.compose.foundation.gestures.ScrollableState, float value, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.coroutines.Continuation<? super java.lang.Float>);
+    method public static boolean canScroll(androidx.compose.foundation.gestures.Scrollable2DState, long offset);
+    method public static suspend Object? scrollBy(androidx.compose.foundation.gestures.Scrollable2DState, long value, kotlin.coroutines.Continuation<? super androidx.compose.ui.geometry.Offset>);
     method public static suspend Object? scrollBy(androidx.compose.foundation.gestures.ScrollableState, float value, kotlin.coroutines.Continuation<? super java.lang.Float>);
+    method public static suspend Object? stopScroll(androidx.compose.foundation.gestures.Scrollable2DState, optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public static suspend Object? stopScroll(androidx.compose.foundation.gestures.ScrollableState, optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
   public interface ScrollScope {
     method public float scrollBy(float pixels);
+  }
+
+  public final class Scrollable2DKt {
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier scrollable2D(androidx.compose.ui.Modifier, androidx.compose.foundation.gestures.Scrollable2DState state, optional boolean enabled, optional androidx.compose.foundation.OverscrollEffect? overscrollEffect, optional androidx.compose.foundation.gestures.FlingBehavior? flingBehavior, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+  }
+
+  public interface Scrollable2DState {
+    method public boolean canScroll(float angle);
+    method public long dispatchRawDelta(long delta);
+    method public boolean isScrollInProgress();
+    method public suspend Object? scroll(optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.gestures.Scroll2DScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public abstract boolean isScrollInProgress;
+  }
+
+  public final class Scrollable2DStateKt {
+    method public static androidx.compose.foundation.gestures.Scrollable2DState Scrollable2DState(kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,androidx.compose.ui.geometry.Offset> consumeScrollDelta);
+    method @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.Scrollable2DState rememberScrollable2DState(kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,androidx.compose.ui.geometry.Offset> consumeScrollDelta);
   }
 
   public final class ScrollableDefaults {
@@ -1234,19 +1260,17 @@ package androidx.compose.foundation.lazy.layout {
   }
 
   public final class LazyLayoutKt {
-    method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope,? super androidx.compose.ui.unit.Constraints,? extends androidx.compose.ui.layout.MeasureResult> measurePolicy);
+    method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy measurePolicy);
+    method @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope,? super androidx.compose.ui.unit.Constraints,? extends androidx.compose.ui.layout.MeasureResult> measurePolicy);
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public sealed interface LazyLayoutMeasureScope extends androidx.compose.ui.layout.MeasureScope {
-    method public java.util.List<androidx.compose.ui.layout.Placeable> measure(int index, long constraints);
-    method @androidx.compose.runtime.Stable public default float toDp(float);
-    method @androidx.compose.runtime.Stable public default float toDp(int);
-    method @androidx.compose.runtime.Stable public default float toDp(long);
-    method @androidx.compose.runtime.Stable public default long toDpSize(long);
-    method @androidx.compose.runtime.Stable public default long toSize(long);
-    method @androidx.compose.runtime.Stable public default long toSp(float);
-    method @androidx.compose.runtime.Stable public default long toSp(float);
-    method @androidx.compose.runtime.Stable public default long toSp(int);
+  public fun interface LazyLayoutMeasurePolicy {
+    method public androidx.compose.ui.layout.MeasureResult measure(androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope, long constraints);
+  }
+
+  @androidx.compose.runtime.Stable public sealed interface LazyLayoutMeasureScope extends androidx.compose.ui.layout.MeasureScope {
+    method public java.util.List<androidx.compose.ui.layout.Measurable> compose(@IntRange(from=0L) int index);
+    method @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public java.util.List<androidx.compose.ui.layout.Placeable> measure(int index, long constraints);
   }
 
   public final class LazyLayoutPinnableItemKt {
@@ -1742,7 +1766,8 @@ package androidx.compose.foundation.text {
 
   public final class BasicSecureTextFieldKt {
     method @Deprecated @androidx.compose.runtime.Composable public static void BasicSecureTextField(androidx.compose.foundation.text.input.TextFieldState state, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.ui.text.TextStyle textStyle, optional androidx.compose.foundation.text.KeyboardOptions keyboardOptions, optional androidx.compose.foundation.text.input.KeyboardActionHandler? onKeyboardAction, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density,? super kotlin.jvm.functions.Function0<androidx.compose.ui.text.TextLayoutResult?>,kotlin.Unit>? onTextLayout, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional androidx.compose.ui.graphics.Brush cursorBrush, optional androidx.compose.foundation.text.input.TextFieldDecorator? decorator, optional int textObfuscationMode, optional char textObfuscationCharacter);
-    method @androidx.compose.runtime.Composable public static void BasicSecureTextField(androidx.compose.foundation.text.input.TextFieldState state, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.ui.text.TextStyle textStyle, optional androidx.compose.foundation.text.KeyboardOptions keyboardOptions, optional androidx.compose.foundation.text.input.KeyboardActionHandler? onKeyboardAction, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density,? super kotlin.jvm.functions.Function0<androidx.compose.ui.text.TextLayoutResult?>,kotlin.Unit>? onTextLayout, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional androidx.compose.ui.graphics.Brush cursorBrush, optional androidx.compose.foundation.text.input.TextFieldDecorator? decorator, optional int textObfuscationMode, optional char textObfuscationCharacter);
+    method @Deprecated @androidx.compose.runtime.Composable public static void BasicSecureTextField(androidx.compose.foundation.text.input.TextFieldState state, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.ui.text.TextStyle textStyle, optional androidx.compose.foundation.text.KeyboardOptions keyboardOptions, optional androidx.compose.foundation.text.input.KeyboardActionHandler? onKeyboardAction, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density,? super kotlin.jvm.functions.Function0<androidx.compose.ui.text.TextLayoutResult?>,kotlin.Unit>? onTextLayout, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional androidx.compose.ui.graphics.Brush cursorBrush, optional androidx.compose.foundation.text.input.TextFieldDecorator? decorator, optional int textObfuscationMode, optional char textObfuscationCharacter);
+    method @androidx.compose.runtime.Composable public static void BasicSecureTextField(androidx.compose.foundation.text.input.TextFieldState state, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.ui.text.TextStyle textStyle, optional androidx.compose.foundation.text.KeyboardOptions keyboardOptions, optional androidx.compose.foundation.text.input.KeyboardActionHandler? onKeyboardAction, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density,? super kotlin.jvm.functions.Function0<androidx.compose.ui.text.TextLayoutResult?>,kotlin.Unit>? onTextLayout, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional androidx.compose.ui.graphics.Brush cursorBrush, optional androidx.compose.foundation.text.input.TextFieldDecorator? decorator, optional int textObfuscationMode, optional char textObfuscationCharacter, optional androidx.compose.foundation.ScrollState scrollState);
   }
 
   public final class BasicTextFieldKt {
@@ -1891,6 +1916,11 @@ package androidx.compose.foundation.text.handwriting {
 
 package androidx.compose.foundation.text.input {
 
+  public fun interface AnnotatedOutputTransformation extends androidx.compose.foundation.text.input.OutputTransformation {
+    method public void annotateOutput(androidx.compose.foundation.text.input.OutputTransformationAnnotationScope);
+    method public default void transformOutput(androidx.compose.foundation.text.input.TextFieldBuffer);
+  }
+
   @androidx.compose.runtime.Stable public fun interface InputTransformation {
     method public default void applySemantics(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public default androidx.compose.foundation.text.KeyboardOptions? getKeyboardOptions();
@@ -1918,13 +1948,19 @@ package androidx.compose.foundation.text.input {
     method public void transformOutput(androidx.compose.foundation.text.input.TextFieldBuffer);
   }
 
+  public sealed interface OutputTransformationAnnotationScope {
+    method public void addAnnotation(androidx.compose.ui.text.AnnotatedString.Annotation annotation, int start, int end);
+    method public CharSequence getText();
+    property public abstract CharSequence text;
+  }
+
   public final class TextFieldBuffer implements java.lang.Appendable {
     method public Appendable append(char char);
     method public Appendable append(CharSequence? text);
     method public Appendable append(CharSequence? text, int start, int end);
     method public CharSequence asCharSequence();
     method public char charAt(int index);
-    method public androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList getChanges();
+    method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList getChanges();
     method public int getLength();
     method public long getOriginalSelection();
     method public CharSequence getOriginalText();

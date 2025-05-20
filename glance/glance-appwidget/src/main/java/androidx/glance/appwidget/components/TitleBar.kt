@@ -54,7 +54,7 @@ import androidx.glance.unit.ColorProvider
  */
 @SuppressLint("ComposableLambdaParameterNaming") // lint thinks `actions` should be called `content`
 @Composable
-fun TitleBar(
+public fun TitleBar(
     startIcon: ImageProvider,
     title: String,
     iconColor: ColorProvider? = GlanceTheme.colors.onSurface,

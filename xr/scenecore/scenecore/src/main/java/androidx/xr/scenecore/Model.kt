@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
+import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.GltfModelResource as RtGltfModel
@@ -24,7 +25,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Represents a 3D model in SceneCore. */
-public interface Model
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Model
 
 /**
  * [GltfModel] represents a glTF resource in SceneCore. These can be used as part of the
@@ -36,6 +37,7 @@ public interface Model
 //                     animation name for a loaded glTF, as well as an interface for selecting the
 //                     playback animation from the integer index.
 // TODO: b/362368652 - Add an interface which returns a list of available animation names
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class GltfModel internal constructor(internal val model: RtGltfModel) : Model {
 
     public companion object {

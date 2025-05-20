@@ -25,6 +25,7 @@ import androidx.benchmark.macro.ArtMetric
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.StartupMode
@@ -159,3 +160,38 @@ fun createCompilationParams(
             }
         }
     }
+
+@OptIn(ExperimentalMetricApi::class)
+fun defaultComposeScrollingMetrics(): List<Metric> =
+    listOfNotNull(
+        FrameTimingMetric(),
+        TraceSectionMetric(
+            sectionName = "ContentCapture:changeChecker",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:recompose",
+            label = "composition",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:applyChanges",
+            label = "applyChanges",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:onForgotten",
+            label = "onForgotten",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "compose:lazy:prefetch:compose",
+            label = "precompose",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "compose:lazy:prefetch:measure",
+            label = "premeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+    )

@@ -49,7 +49,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,7 +62,6 @@ import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.SwipeToReveal
 import androidx.wear.compose.foundation.basicCurvedText
 import androidx.wear.compose.foundation.expandableButton
 import androidx.wear.compose.foundation.expandableItem
@@ -68,11 +70,11 @@ import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.foundation.rememberExpandableState
-import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.material.AppCard
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Card
+import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.Checkbox
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
@@ -99,6 +101,12 @@ import androidx.wear.compose.material.SelectableChip
 import androidx.wear.compose.material.SplitToggleChip
 import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.StepperDefaults
+import androidx.wear.compose.material.SwipeToRevealCard
+import androidx.wear.compose.material.SwipeToRevealChip
+import androidx.wear.compose.material.SwipeToRevealDefaults
+import androidx.wear.compose.material.SwipeToRevealPrimaryAction
+import androidx.wear.compose.material.SwipeToRevealSecondaryAction
+import androidx.wear.compose.material.SwipeToRevealUndoAction
 import androidx.wear.compose.material.Switch
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
@@ -116,11 +124,11 @@ import androidx.wear.compose.material.placeholderShimmer
 import androidx.wear.compose.material.rememberPickerGroupState
 import androidx.wear.compose.material.rememberPickerState
 import androidx.wear.compose.material.rememberPlaceholderState
+import androidx.wear.compose.material.rememberRevealState
 import androidx.wear.compose.material.scrollAway
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import kotlin.math.abs
 import kotlinx.coroutines.delay
 
 private val ALERT_DIALOG = "alert-dialog"
@@ -215,7 +223,7 @@ class BaselineActivity : ComponentActivity() {
                         }
                         composable(SLIDER) { Slider() }
                         composable(STEPPER) { Stepper() }
-                        composable(SWIPE_TO_REVEAL) { SwipeToReveal() }
+                        composable(SWIPE_TO_REVEAL) { SwipeToRevealScreen() }
                     }
                 }
             }
@@ -632,37 +640,106 @@ fun Stepper() {
 }
 
 @Suppress("DEPRECATION")
-@OptIn(ExperimentalWearFoundationApi::class)
+@OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
 @Composable
-fun SwipeToReveal() {
-    val state = rememberRevealState()
-    SwipeToReveal(
-        state = state,
-        primaryAction = {
-            Box(
-                modifier = Modifier.fillMaxSize().clickable { /* Add the primary action */ },
-            ) {
-                if (abs(state.offset) > state.revealThreshold) {
-                    Spacer(Modifier.size(5.dp))
-                    Text("Clear")
+fun SwipeToRevealScreen() {
+    val revealCardState = rememberRevealState()
+    val revealChipState = rememberRevealState()
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        SwipeToRevealCard(
+            revealState = revealCardState,
+            modifier = Modifier.fillMaxWidth(),
+            primaryAction = {
+                SwipeToRevealPrimaryAction(
+                    revealState = revealCardState,
+                    icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
+                    label = { Text("Delete") },
+                    onClick = {}
+                )
+            },
+            secondaryAction = {
+                SwipeToRevealSecondaryAction(
+                    revealState = revealCardState,
+                    onClick = { /* Add the click handler here */ }
+                ) {
+                    Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
                 }
+            },
+            undoPrimaryAction = {
+                SwipeToRevealUndoAction(
+                    revealState = revealCardState,
+                    label = { Text("Undo") },
+                    onClick = {}
+                )
+            },
+            undoSecondaryAction = {
+                SwipeToRevealUndoAction(
+                    revealState = revealCardState,
+                    label = { Text("Undo") },
+                    onClick = {}
+                )
+            },
+            onFullSwipe = {}
+        ) {
+            AppCard(
+                onClick = {},
+                appName = { Text("App name") },
+                appImage = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
+                        contentDescription = "airplane",
+                        modifier = Modifier.size(CardDefaults.AppImageSize)
+                    )
+                },
+                title = { Text("App Card") },
+                time = { Text("now") },
+                modifier =
+                    Modifier.semantics {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Delete") { true },
+                                CustomAccessibilityAction("More Options") { true }
+                            )
+                    }
+            ) {
+                Text("Basic card with Swipe to Reveal actions")
             }
-        },
-        undoAction = {
+        }
+        SwipeToRevealChip(
+            revealState = revealChipState,
+            primaryAction = {
+                SwipeToRevealPrimaryAction(
+                    revealState = revealChipState,
+                    icon = { Icon(SwipeToRevealDefaults.Delete, "Clear") },
+                    label = { Text("Clear") },
+                    onClick = {}
+                )
+            },
+            undoPrimaryAction = {
+                SwipeToRevealUndoAction(
+                    revealState = revealChipState,
+                    onClick = { /* Add undo action here */ },
+                    label = { Text(text = "Undo") }
+                )
+            },
+            secondaryAction = {
+                SwipeToRevealSecondaryAction(revealState = revealChipState, onClick = {}) {
+                    Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
+                }
+            },
+            onFullSwipe = {}
+        ) {
             Chip(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { /* Add undo action here */ },
+                onClick = { /* the click action associated with chip */ },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Swipe Me") }
             )
         }
-    ) {
-        Chip(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { /* the click action associated with chip */ },
-            colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
-        )
     }
 }
 

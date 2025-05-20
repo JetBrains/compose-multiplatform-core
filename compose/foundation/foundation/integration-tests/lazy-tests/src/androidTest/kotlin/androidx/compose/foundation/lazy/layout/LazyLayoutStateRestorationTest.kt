@@ -278,7 +278,7 @@ class LazyLayoutStateRestorationTest {
             val placeables = mutableListOf<Placeable>()
             repeat(itemCount()) { index ->
                 if (itemIsVisible(index)) {
-                    placeables.addAll(measure(index, constraints))
+                    placeables.addAll(compose(index).map { it.measure(constraints) })
                 }
             }
             layout(constraints.maxWidth, constraints.maxHeight) {

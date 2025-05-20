@@ -16,32 +16,43 @@
 
 package androidx.appfunctions
 
-import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
+import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 
 /**
- * Annotates an interface defining the schema for an app function, outlining its input, output, and
- * behavior
+ * Marks an interface as a pre-defined schema for an App Function.
  *
- * Example Usage:
- * ```kotlin
+ * The provided metadata will be stored in AppSearch when indexing App Functions. Agents can then
+ * retrieve this metadata as an [AppFunctionSchemaMetadata] object by calling
+ * [AppFunctionManagerCompat.observeAppFunctions]. Agent developers can define and share these
+ * annotated App Function schemas as an SDK with app developers.
+ *
+ * A pre-defined schema outlines an App Function's capabilities, including its parameters and return
+ * type. Knowing the schema in advance allows agents to perform tasks like model fine-tuning for
+ * more accurate function calling.
+ *
+ * For example, here's how you might define a `findNotes` function schema:
+ * ```
  * @AppFunctionSchemaDefinition(name = "findNotes", version = 1, category = "Notes")
- * interface FindNotes {
- *   suspend fun findNotes(
- *     appFunctionContext: AppFunctionContext,
- *     findNotesParams: FindNotesParams,
- *   ): List<Note>
+ * interface FindNotesSchema {
+ * suspend fun findNotes(
+ * appFunctionContext: AppFunctionContext,
+ * params: FindNotesParams,
+ * ): List<Note>
  * }
  * ```
+ *
+ * @see AppFunctionSearchSpec
  */
-@RestrictTo(Scope.LIBRARY_GROUP)
 @Retention(
     // Binary because it's used to determine the annotation values from the compiled schema library.
     AnnotationRetention.BINARY
 )
 @Target(AnnotationTarget.CLASS)
 public annotation class AppFunctionSchemaDefinition(
+    /** The name of the schema. */
     val name: String,
+    /** The version of the schema. */
     val version: Int,
+    /** The category of the schema. */
     val category: String
 )

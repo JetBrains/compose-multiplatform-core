@@ -20,6 +20,8 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
@@ -38,6 +40,11 @@ import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExtendableBuilder
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 @kotlin.OptIn(CPExperimentalCamera2Interop::class)
 @OptIn(markerClass = [ExperimentalCamera2Interop::class])
@@ -278,4 +285,120 @@ object Camera2InteropUtil {
             else -> throw IllegalArgumentException("Unexpected implementation: $implName")
         }
     }
+
+    class CaptureCallback(
+        val _timeout: Long = TimeUnit.SECONDS.toMillis(5),
+        val _numOfCaptures: Int = 1
+    ) : CameraCaptureSession.CaptureCallback() {
+
+        val waitingList = mutableListOf<CaptureContainer>()
+
+        /** Wait for the specified number of captures, then verify the results. */
+        suspend fun waitFor(
+            timeout: Long = _timeout,
+            numOfCaptures: Int = _numOfCaptures,
+        ) {
+            verifyFor(timeout = timeout, numOfCaptures = numOfCaptures, breakWhenSuccess = false)
+        }
+
+        /**
+         * Verify the results until the specified number of captures reaches.
+         *
+         * @param timeout the timeout for waiting for the captures.
+         * @param numOfCaptures the number of captures to wait.
+         * @param verifyBlock the block for verifying the capture requests and results. It should
+         *   return `true` if the requests and results is expected, otherwise `false`.
+         */
+        suspend fun verifyFor(
+            timeout: Long = _timeout,
+            numOfCaptures: Int = _numOfCaptures,
+            breakWhenSuccess: Boolean = true,
+            verifyBlock:
+                (
+                    captureRequests: List<CaptureRequest>, captureResults: List<TotalCaptureResult>
+                ) -> Boolean =
+                { _, _ ->
+                    true
+                }
+        ) {
+            val resultContainer =
+                CaptureContainer(
+                    count = numOfCaptures,
+                    breakWhenSuccess = breakWhenSuccess,
+                    verifyBlock = verifyBlock
+                )
+            waitingList.add(resultContainer)
+            withTimeout(timeout) { resultContainer.signal.await() }
+            waitingList.remove(resultContainer)
+        }
+
+        fun <T> verifyLastCaptureRequest(
+            keyValueMap: Map<CaptureRequest.Key<T>, T>,
+            numOfCaptures: Int = 30
+        ) = runBlocking {
+            verifyFor(numOfCaptures = numOfCaptures) { captureRequests, _ ->
+                keyValueMap.forEach {
+                    if (captureRequests.last()[it.key] != it.value) return@verifyFor false
+                }
+                true
+            }
+        }
+
+        fun <T> verifyLastCaptureResult(
+            keyValueMap: Map<CaptureResult.Key<T>, T>,
+            numOfCaptures: Int = 30
+        ) = runBlocking {
+            verifyFor(numOfCaptures = numOfCaptures) { _, captureResults ->
+                keyValueMap.forEach {
+                    if (captureResults.last()[it.key] != it.value) return@verifyFor false
+                }
+                true
+            }
+        }
+
+        override fun onCaptureCompleted(
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            result: TotalCaptureResult
+        ) {
+            val copyList = waitingList
+            copyList.toList().forEach {
+                it.apply {
+                    captureRequests.add(request)
+                    captureResults.add(result)
+                    val success = verifyBlock(captureRequests, captureResults)
+                    if (success && breakWhenSuccess) {
+                        signal.complete(Unit)
+                        return@forEach
+                    }
+                    if (count-- <= 0) {
+                        if (success) {
+                            signal.complete(Unit)
+                        } else {
+                            signal.completeExceptionally(
+                                TimeoutException(
+                                    "Test doesn't complete after waiting for $_numOfCaptures frames."
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    data class CaptureContainer(
+        var count: Int,
+        val breakWhenSuccess: Boolean = true,
+        val signal: CompletableDeferred<Unit> = CompletableDeferred(),
+        val captureRequests: MutableList<CaptureRequest> = mutableListOf(),
+        val captureResults: MutableList<TotalCaptureResult> = mutableListOf(),
+        val verifyBlock:
+            (
+                captureRequests: List<CaptureRequest>, captureResults: List<TotalCaptureResult>
+            ) -> Boolean =
+            { _, _ ->
+                true
+            }
+    )
 }

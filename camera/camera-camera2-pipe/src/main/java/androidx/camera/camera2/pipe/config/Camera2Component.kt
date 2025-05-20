@@ -132,6 +132,7 @@ internal class Camera2ControllerConfig(
     private val graphListener: GraphListener,
     private val streamGraph: StreamGraph,
     private val surfaceTracker: SurfaceTracker,
+    private val shutdownListener: Camera2CameraController.ShutdownListener,
 ) {
     @Provides fun provideCameraGraphConfig() = graphConfig
 
@@ -144,6 +145,8 @@ internal class Camera2ControllerConfig(
     @Provides fun provideGraphListener() = graphListener
 
     @Provides fun provideSurfaceGraph() = surfaceTracker
+
+    @Provides fun provideShutdownListener() = shutdownListener
 }
 
 @Module

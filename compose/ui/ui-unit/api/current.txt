@@ -251,7 +251,7 @@ package androidx.compose.ui.unit {
     method public int component3();
     method public int component4();
     method public boolean contains(long offset);
-    method public androidx.compose.ui.unit.IntRect copy(int left, int top, int right, int bottom);
+    method public androidx.compose.ui.unit.IntRect copy(optional int left, optional int top, optional int right, optional int bottom);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect deflate(int delta);
     method public int getBottom();
     method public long getBottomCenter();

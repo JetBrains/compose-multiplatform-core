@@ -32,5 +32,53 @@ public class PermissionNotGrantedException(
 
 /** A [Feature] attempting to be enabled is not supported by the current runtime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ConfigurationNotSupportedException() :
+public class ConfigurationNotSupportedException(cause: Throwable? = null) :
     LifecycleException("Failed to configure session, requested configuration is not supported.")
+
+/** The Google Play Services Location Library is not linked. */
+@Suppress("MentionsGoogle")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class GooglePlayServicesLocationLibraryNotLinkedException(cause: Throwable? = null) :
+    LifecycleException(
+        "Failed to configure session, Google Play Services Location Library is not linked."
+    )
+
+/**
+ * A [Session] was unable to be created due to a required APK being out of date or not installed.
+ *
+ * @property requiredApk the fully qualified name of the package that is missing or needs to be
+ *   updated.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class ApkNotInstalledException(public val requiredApk: String) :
+    LifecycleException("Failed to create session, $requiredApk installation required.")
+
+/**
+ * A [Session] was unable to be created due to the device not supporting a required APK or feature.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class UnsupportedDeviceException() :
+    LifecycleException("Failed to create session, device is not supported.")
+
+/**
+ * A [Session] was unable to be created due to a required APK waiting for a remote query to confirm
+ * support. [Session.create] should be called again after waiting at least 200 ms.
+ *
+ * @property requiredApk the fully qualified name of the package that is waiting for a remote query
+ *   to confirm support.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class ApkCheckAvailabilityInProgressException(public val requiredApk: String) :
+    LifecycleException(
+        "Failed to create session, $requiredApk requires a remote query to confirm support."
+    )
+
+/**
+ * A [Session] was unable to be created due to the check for a required apk's availability failing.
+ *
+ * @property requiredApk the fully qualified name of the package that errored confirming
+ *   availability.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class ApkCheckAvailabilityErrorException(public val requiredApk: String) :
+    LifecycleException("Failed to create session, unable to check $requiredApk availability.")

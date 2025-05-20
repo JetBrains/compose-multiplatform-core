@@ -47,7 +47,7 @@ import java.lang.reflect.Method
  *
  * For information see [Overview of system tracing]({@docRoot}studio/profile/systrace/).
  */
-object Trace {
+actual object Trace {
     private const val TAG: String = "Trace"
     internal const val MAX_TRACE_LABEL_LENGTH: Int = 127
 
@@ -123,7 +123,7 @@ object Trace {
      * @param label The name of the code section to appear in the trace.
      */
     @JvmStatic
-    fun beginSection(label: String) {
+    actual fun beginSection(label: String) {
         Trace.beginSection(label.truncatedTraceSectionLabel())
     }
 
@@ -135,7 +135,7 @@ object Trace {
      * that beginSection / endSection pairs are properly nested and called from the same thread.
      */
     @JvmStatic
-    fun endSection() {
+    actual fun endSection() {
         Trace.endSection()
     }
 

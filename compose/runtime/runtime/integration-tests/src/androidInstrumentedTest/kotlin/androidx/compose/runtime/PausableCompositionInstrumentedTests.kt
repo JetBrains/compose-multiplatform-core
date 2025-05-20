@@ -128,7 +128,7 @@ class PausableCompositionInstrumentedTests {
     }
 
     @Test // b/404058957
-    fun test() {
+    fun test_for_404058957() {
         val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
         var active by mutableStateOf(true)
         var modifier by mutableStateOf<Modifier>(Modifier)
@@ -251,4 +251,201 @@ class PausableCompositionInstrumentedTests {
 
         rule.runOnIdle {}
     }
+
+    @Test
+    fun precomposingWithPauseAndExtraRecomposition_effectAppliedOnlyOnce() {
+        // initialize SubcomposeLayout with one composition in a reuse pool
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var addSlot by mutableStateOf(true)
+
+        rule.setContent {
+            SubcomposeLayout(state) {
+                if (addSlot) {
+                    subcompose("for-reuse") {}
+                }
+                layout(10, 10) {}
+            }
+        }
+        rule.runOnIdle { addSlot = false }
+
+        // do pausable precomposition
+        var outerCompositionHappened = false
+        var applyCalls = 0
+        var recompositionTrigger by mutableStateOf(Unit, neverEqualPolicy())
+
+        val precomposition =
+            rule.runOnIdle {
+                val precomposition =
+                    state.createPausedPrecomposition(Unit) {
+                        outerCompositionHappened = true
+                        DisposableEffectWrapper(
+                            onComposed = { recompositionTrigger },
+                            onApplied = { applyCalls++ }
+                        )
+                    }
+
+                // resume and pause before composing DisposableEffectWrapper
+                precomposition.resume { outerCompositionHappened }
+
+                // continue after the pause
+                precomposition.resume { false }
+
+                // trigger recomposition
+                recompositionTrigger = Unit
+
+                precomposition
+            }
+
+        rule.runOnIdle {
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
+            }
+
+            precomposition.apply()
+
+            assertThat(applyCalls).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun precomposingWithPauseAndExtraRecomposition_effectAppliedOnlyOnce2() {
+        val state = SubcomposeLayoutState()
+
+        rule.setContent { SubcomposeLayout(state) { layout(10, 10) {} } }
+
+        // do pausable precomposition
+        var outerCompositionHappened = false
+        var applyCalls = 0
+        var key by mutableStateOf("A")
+
+        val precomposition =
+            rule.runOnIdle {
+                val precomposition =
+                    state.createPausedPrecomposition(Unit) {
+                        outerCompositionHappened = true
+                        ReusableContent(key) {
+                            DisposableEffectWrapper(onComposed = {}, onApplied = { applyCalls++ })
+                        }
+                    }
+                // resume and pause before composing DisposableEffectWrapper
+                precomposition.resume { outerCompositionHappened }
+                // continue after the pause
+                precomposition.resume { false }
+
+                // trigger recomposition
+                key = "B"
+
+                precomposition
+            }
+
+        rule.runOnIdle {
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
+            }
+            precomposition.apply()
+
+            assertThat(applyCalls).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun precomposingWithPauseAndExtraRecomposition_rememberedValueNotRecreated() {
+        // initialize SubcomposeLayout with one composition in a reuse pool
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var addSlot by mutableStateOf(true)
+
+        rule.setContent {
+            SubcomposeLayout(state) {
+                if (addSlot) {
+                    subcompose("for-reuse") {}
+                }
+                layout(10, 10) {}
+            }
+        }
+        rule.runOnIdle { addSlot = false }
+
+        // do pausable precomposition
+        var outerCompositionHappened = false
+        var recompositionTrigger by mutableStateOf(Unit, neverEqualPolicy())
+        var rememberCalls = 0
+
+        val precomposition =
+            rule.runOnIdle {
+                val precomposition =
+                    state.createPausedPrecomposition(Unit) {
+                        outerCompositionHappened = true
+                        RememberWrapper(
+                            onComposed = { recompositionTrigger },
+                            onRemembered = { rememberCalls++ }
+                        )
+                    }
+
+                // resume and pause before composing DisposableEffectWrapper
+                precomposition.resume { outerCompositionHappened }
+
+                // continue after the pause
+                precomposition.resume { false }
+
+                // trigger recomposition
+                recompositionTrigger = Unit
+
+                precomposition
+            }
+
+        rule.runOnIdle {
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
+            }
+
+            assertThat(rememberCalls).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun pausedPrecompositionIsNotCrashingWhenRecompositionIsTriggeredAndIgnoredMultipleTimes() {
+        val state = SubcomposeLayoutState()
+        var key by mutableStateOf("1")
+        lateinit var scope: RecomposeScope
+
+        rule.setContent { SubcomposeLayout(state) { layout(10, 10) {} } }
+
+        rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    key
+                    scope = currentRecomposeScope
+                }
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
+            }
+
+            // first recomposition could be triggered by a state change
+            key = "2"
+        }
+
+        rule.runOnIdle {
+            // second recomposition should happen not because of the state change
+            scope.invalidate()
+        }
+        rule.waitForIdle()
+    }
+}
+
+@Composable
+fun DisposableEffectWrapper(onComposed: () -> Unit, onApplied: () -> Unit) {
+    onComposed()
+    DisposableEffect(Unit) {
+        onApplied()
+        onDispose {}
+    }
+}
+
+@Composable
+fun RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
+    onComposed()
+    val a = remember {
+        onRemembered()
+        object {}
+    }
+    println(a)
 }

@@ -26,7 +26,7 @@ import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.reference.model.CallData
-import androidx.core.telecom.reference.service.LocalIcsBinder
+import androidx.core.telecom.reference.service.LocalServiceBinder
 import androidx.core.telecom.reference.service.TelecomVoipService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +45,7 @@ class CallRepository {
 
     // --- State Management ---
     private var mIsBound = false
-    private var mBinder: LocalIcsBinder? = null // Store the Binder interface directly
+    private var mBinder: LocalServiceBinder? = null // Store the Binder interface directly
     private var mBoundContext: Context? = null // Keep track of the context used for unbinding
 
     // --- Coroutine Scope & Job ---
@@ -67,7 +67,7 @@ class CallRepository {
                 }
                 try {
                     // Cast to the Binder interface defined in your service
-                    mBinder = (service as LocalIcsBinder.Connector).getService()
+                    mBinder = (service as LocalServiceBinder.Connector).getService()
                     mIsBound = true
                     Log.i(LOG_TAG, "Service bound successfully.")
 
@@ -227,6 +227,15 @@ class CallRepository {
         mBinder?.addCall(callAttributesCompat, getNextNotificationId())
     }
 
+    fun onIncomingCallDetected(attributes: CallAttributesCompat, id: Int) {
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "onIncomingCallDetected: Service is not connected/bound.")
+            return
+        }
+        Log.i(LOG_TAG, "onIncomingCallDetected: ")
+        mBinder?.addCall(attributes, id)
+    }
+
     fun setCallActive(callId: String) {
         if (!mIsBound || mBinder == null) {
             Log.w(LOG_TAG, "setCallActive: Service is not connected/bound.")
@@ -265,5 +274,37 @@ class CallRepository {
             return
         }
         mBinder?.toggleGlobalMute(isMuted)
+    }
+
+    fun toggleLocalCallSilence(callId: String, isMuted: Boolean) {
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "toggleLocalCallSilence: Service is not connected/bound.")
+            return
+        }
+        mBinder?.toggleLocalCallSilence(callId, isMuted)
+    }
+
+    fun addParticipant(callId: String) {
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "addParticipant: Service is not connected/bound.")
+            return
+        }
+        mBinder?.addParticipant(callId)
+    }
+
+    fun removeParticipant(callId: String) {
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "kickParticipant: Service is not connected/bound.")
+            return
+        }
+        mBinder?.removeParticipant(callId)
+    }
+
+    fun changeCallIcon(callId: String) {
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "changeCallIcon: Service is not connected/bound.")
+            return
+        }
+        mBinder?.changeCallIcon(callId)
     }
 }

@@ -49,7 +49,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
@@ -60,9 +59,6 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation(libs.junit) // Needed for Assert.assertThrows
     testImplementation("org.codehaus.plexus:plexus-utils:3.4.1")
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
 
     androidTestImplementation(libs.testExtJunit)
@@ -101,8 +97,6 @@ android {
         enable.add("CameraXQuirksClassDetector")
     }
 
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.camera2"
 }
 
@@ -117,4 +111,5 @@ androidx {
     description = "Camera2 implementation and extensions for the Jetpack Camera Library, a " +
             "library providing a consistent and reliable camera foundation that enables great " +
             "camera driven experiences across all of Android."
+    enableRobolectric()
 }

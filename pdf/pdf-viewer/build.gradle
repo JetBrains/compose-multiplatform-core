@@ -41,7 +41,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testExtJunitKtx)
@@ -97,4 +96,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "add pdf viewing to their apps."
+    enableRobolectric()
 }

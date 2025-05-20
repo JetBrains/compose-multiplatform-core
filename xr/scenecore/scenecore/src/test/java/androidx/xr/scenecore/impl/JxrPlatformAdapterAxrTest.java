@@ -210,7 +210,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ true);
+                        /* useSplitEngine= */ true,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
 
         mRuntime.setSplitEngineSubspaceManager(mSplitEngineSubspaceManager);
     }
@@ -226,7 +227,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     @After
@@ -335,7 +337,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
 
         // The perception library failed to initialize a session, but the runtime should still be
         // created.
@@ -2290,8 +2293,9 @@ public final class JxrPlatformAdapterAxrTest {
                 () ->
                         mRuntime.createSurfaceEntity(
                                 SurfaceEntity.StereoMode.SIDE_BY_SIDE,
-                                new SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
                                 new Pose(),
+                                new SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                                SurfaceEntity.ContentSecurityLevel.NONE,
                                 mRuntime.getActivitySpaceRootImpl()));
     }
 
@@ -2305,8 +2309,9 @@ public final class JxrPlatformAdapterAxrTest {
         SurfaceEntity surfaceEntityQuad =
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.SIDE_BY_SIDE,
-                        new SurfaceEntity.CanvasShape.Quad(kTestWidth, kTestHeight),
                         new Pose(),
+                        new SurfaceEntity.CanvasShape.Quad(kTestWidth, kTestHeight),
+                        SurfaceEntity.ContentSecurityLevel.NONE,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntityQuad).isNotNull();
@@ -2319,8 +2324,9 @@ public final class JxrPlatformAdapterAxrTest {
         SurfaceEntity surfaceEntitySphere =
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.TOP_BOTTOM,
-                        new SurfaceEntity.CanvasShape.Vr360Sphere(kTestSphereRadius),
                         new Pose(),
+                        new SurfaceEntity.CanvasShape.Vr360Sphere(kTestSphereRadius),
+                        SurfaceEntity.ContentSecurityLevel.NONE,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntitySphere).isNotNull();
@@ -2333,8 +2339,9 @@ public final class JxrPlatformAdapterAxrTest {
         SurfaceEntity surfaceEntityHemisphere =
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.MONO,
-                        new SurfaceEntity.CanvasShape.Vr180Hemisphere(kTestHemisphereRadius),
                         new Pose(),
+                        new SurfaceEntity.CanvasShape.Vr180Hemisphere(kTestHemisphereRadius),
+                        SurfaceEntity.ContentSecurityLevel.NONE,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntityHemisphere).isNotNull();
@@ -2415,7 +2422,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mSplitEngineRenderer,
                         rootNode,
                         taskWindowLeashNode,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
 
         assertThat(((AndroidXrEntity) runtime.getActivitySpace()).getNode()).isEqualTo(rootNode);
         assertThat(((AndroidXrEntity) runtime.getMainPanelEntity()).getNode())

@@ -369,7 +369,7 @@ public class LifecycleCameraTest {
     }
 
     @Test
-    public void bindSessonConfigMultipleTimes_throwExceptions()
+    public void bindLegacySessonConfigWithSessionConfig_throwExceptions()
             throws CameraUseCaseAdapter.CameraException {
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
@@ -378,6 +378,35 @@ public class LifecycleCameraTest {
 
         assertThrows(IllegalStateException.class, () ->
                 mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase2)));
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
+    }
+
+    @Test
+    public void bindMultipleSessonConfig_latestSessionConfigIsBound()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        SessionConfig sessionConfig1 = createSessionConfig(mFakeUseCase);
+        SessionConfig sessionConfig2 = createSessionConfig(mFakeUseCase2);
+        mLifecycleCamera.bind(sessionConfig1);
+        mLifecycleCamera.bind(sessionConfig2);
+
+        assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase2);
+        assertThat(mLifecycleCamera.isBound(sessionConfig1)).isFalse();
+        assertThat(mLifecycleCamera.isBound(sessionConfig2)).isTrue();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isFalse();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase2)).isTrue();
+    }
+
+    @Test
+    public void bindSessonConfigWithLegacySessionConfig_throwExceptions()
+            throws CameraUseCaseAdapter.CameraException {
+        mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
+        mLifecycleOwner.start();
+
+        mLifecycleCamera.bind(createLegacySessonConfig(mFakeUseCase));
 
         assertThrows(IllegalStateException.class, () ->
                 mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2)));
@@ -477,11 +506,8 @@ public class LifecycleCameraTest {
 
         // camera state is not changed
         assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
-
-        // It can't bind new SessionnConfig because the bound SessionConfig is there.
-        assertThrows(IllegalStateException.class, () ->
-                mLifecycleCamera.bind(createSessionConfig(mFakeUseCase2))
-        );
+        assertThat(mLifecycleCamera.isBound(sessionConfig1)).isTrue();
+        assertThat(mLifecycleCamera.isBound(mFakeUseCase)).isTrue();
     }
 
     @Test

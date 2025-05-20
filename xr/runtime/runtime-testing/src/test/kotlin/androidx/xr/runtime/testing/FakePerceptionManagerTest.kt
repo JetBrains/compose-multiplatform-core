@@ -73,7 +73,7 @@ class FakePerceptionManagerTest {
     fun createAnchor_returnsAnchorWithTrackingStateTracking() {
         val anchor = underTest.createAnchor(Pose())
 
-        assertThat(anchor.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(anchor.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
     @Test
@@ -184,6 +184,6 @@ class FakePerceptionManagerTest {
                 underTest.persistAnchor(anchor)
             }
 
-            override val trackingState = TrackingState.Tracking
+            override val trackingState = TrackingState.TRACKING
         }
 }

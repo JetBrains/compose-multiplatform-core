@@ -38,6 +38,7 @@ import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.JxrPlatformAdapter;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
+import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
@@ -88,7 +89,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     private XrExtensions mXrExtensions;
     private FakeImpressApi mFakeImpressApi;
     private JxrPlatformAdapter mTestRuntime;
-    private ActivitySpace mActivitySpace;
+    private ActivitySpaceImpl mActivitySpace;
 
     @Before
     public void setUp() {
@@ -107,9 +108,10 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
 
-        mActivitySpace = mTestRuntime.getActivitySpace();
+        mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
 
         // This is slightly hacky. We're grabbing the singleton instance of the ActivitySpaceImpl
         // that
@@ -263,5 +265,42 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
         assertVector3(hitTestResult.getSurfaceNormal(), new Vector3(4, 5, 6));
         assertThat(hitTestResult.getSurfaceType())
                 .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE);
+    }
+
+    @Test
+    public void getRotationForGravityAlignment_identityTransform_returnsIdentityQuaternion() {
+        Matrix4 identityTransform = Matrix4.Identity;
+        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(identityTransform);
+
+        assertThat(rotation.getX()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getZ()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getW()).isWithin(0.001f).of(1.0f);
+    }
+
+    @Test
+    public void getRotationForGravityAlignment_rotateX90Transform_returnsExpectedQuaternion() {
+        // Create a transform that rotates the space 90 degrees around the x axis.
+        Matrix4 rotateX90Transform =
+                Matrix4.fromQuaternion(Quaternion.fromRotation(Vector3.Up, Vector3.Backward));
+        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(rotateX90Transform);
+
+        assertThat(rotation.getX()).isWithin(0.001f).of(-0.707f);
+        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getZ()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getW()).isWithin(0.001f).of(0.707f);
+    }
+
+    @Test
+    public void getRotationForGravityAlignment_rotateZ90Transform_returnsExpectedQuaternion() {
+        // Create a transform that rotates the space 90 degrees around the z axis.
+        Matrix4 rotateZ90Transform =
+                Matrix4.fromQuaternion(Quaternion.fromRotation(Vector3.Right, Vector3.Up));
+        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(rotateZ90Transform);
+
+        assertThat(rotation.getX()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
+        assertThat(rotation.getZ()).isWithin(0.001f).of(-0.707f);
+        assertThat(rotation.getW()).isWithin(0.001f).of(0.707f);
     }
 }

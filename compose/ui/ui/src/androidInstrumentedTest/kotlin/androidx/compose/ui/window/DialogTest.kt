@@ -114,7 +114,7 @@ class DialogTest {
         rule.setContent {
             Dialog(
                 onDismissRequest = {},
-                properties = DialogProperties(dialogContentTitle = defaultText)
+                properties = DialogProperties(windowTitle = defaultText)
             ) {
                 var parent = LocalView.current
                 while (parent !is DialogWindowProvider) {

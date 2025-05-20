@@ -71,6 +71,14 @@ public abstract class CustomTabsService extends Service {
             "androidx.browser.customtabs.category.ColorSchemeCustomization";
 
     /**
+     * An Intent filter category to signify that the Custom Tabs provider supports ephemeral
+     * browsing feature which opens Custom Tab that does not share cookies or other data with
+     * the browser that handles the Custom Tab.
+     */
+    public static final String CATEGORY_EPHEMERAL_BROWSING =
+            "androidx.browser.customtabs.category.EphemeralBrowsing";
+
+    /**
      * An Intent filter category to signify that the Custom Tabs provider supports multi-network,
      * bind a custom tab to a particular network via {@link CustomTabsIntent.Builder#setNetwork}.
      */
@@ -313,12 +321,6 @@ public abstract class CustomTabsService extends Service {
             return CustomTabsService.this.setEngagementSignalsCallback(
                     new CustomTabsSessionToken(customTabsCallback, getSessionIdFromBundle(extras)),
                     remote, extras);
-        }
-
-        @Override
-        @ExperimentalEphemeralBrowsing
-        public boolean isEphemeralBrowsingSupported(@NonNull Bundle extras) {
-            return CustomTabsService.this.isEphemeralBrowsingSupported(extras);
         }
 
         @SuppressWarnings("deprecation")
@@ -652,20 +654,6 @@ public abstract class CustomTabsService extends Service {
     protected boolean setEngagementSignalsCallback(
             @NonNull CustomTabsSessionToken sessionToken,
             @NonNull EngagementSignalsCallback callback, @NonNull Bundle extras) {
-        return false;
-    }
-
-    /**
-     * Returns whether ephemeral browsing is supported.
-     *
-     * Ephemeral browsing allows apps to open Custom Tab that does not share cookies or other
-     * data with the browser that handles the Custom Tab.
-     *
-     * @param extras Reserved for future use.
-     * @return Whether ephemeral browsing is supported.
-     */
-    @ExperimentalEphemeralBrowsing
-    protected boolean isEphemeralBrowsingSupported(@NonNull Bundle extras) {
         return false;
     }
 

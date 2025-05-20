@@ -6,6 +6,19 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.compose.material3.adaptive:adaptive-layout>
+final enum class androidx.compose.material3.adaptive.layout/DockedEdge : kotlin/Enum<androidx.compose.material3.adaptive.layout/DockedEdge> { // androidx.compose.material3.adaptive.layout/DockedEdge|null[0]
+    enum entry Bottom // androidx.compose.material3.adaptive.layout/DockedEdge.Bottom|null[0]
+    enum entry End // androidx.compose.material3.adaptive.layout/DockedEdge.End|null[0]
+    enum entry Start // androidx.compose.material3.adaptive.layout/DockedEdge.Start|null[0]
+    enum entry Top // androidx.compose.material3.adaptive.layout/DockedEdge.Top|null[0]
+
+    final val entries // androidx.compose.material3.adaptive.layout/DockedEdge.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<androidx.compose.material3.adaptive.layout/DockedEdge> // androidx.compose.material3.adaptive.layout/DockedEdge.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): androidx.compose.material3.adaptive.layout/DockedEdge // androidx.compose.material3.adaptive.layout/DockedEdge.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<androidx.compose.material3.adaptive.layout/DockedEdge> // androidx.compose.material3.adaptive.layout/DockedEdge.values|values#static(){}[0]
+}
+
 final enum class androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole : kotlin/Enum<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole> { // androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole|null[0]
     enum entry Primary // androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole.Primary|null[0]
     enum entry Secondary // androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole.Secondary|null[0]
@@ -65,10 +78,12 @@ sealed interface androidx.compose.material3.adaptive.layout/AdaptStrategy { // a
     open fun adapt(): androidx.compose.material3.adaptive.layout/PaneAdaptedValue // androidx.compose.material3.adaptive.layout/AdaptStrategy.adapt|adapt(){}[0]
 
     final class Levitate : androidx.compose.material3.adaptive.layout/AdaptStrategy { // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate|null[0]
-        constructor <init>(androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.Strategy = ..., androidx.compose.ui/Alignment = ...) // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.<init>|<init>(androidx.compose.material3.adaptive.layout.AdaptStrategy.Levitate.Strategy;androidx.compose.ui.Alignment){}[0]
+        constructor <init>(androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.Strategy = ..., androidx.compose.ui/Alignment = ..., androidx.compose.material3.adaptive.layout/Scrim? = ...) // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.<init>|<init>(androidx.compose.material3.adaptive.layout.AdaptStrategy.Levitate.Strategy;androidx.compose.ui.Alignment;androidx.compose.material3.adaptive.layout.Scrim?){}[0]
 
         final val alignment // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.alignment|{}alignment[0]
             final fun <get-alignment>(): androidx.compose.ui/Alignment // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.alignment.<get-alignment>|<get-alignment>(){}[0]
+        final val scrim // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.scrim|{}scrim[0]
+            final fun <get-scrim>(): androidx.compose.material3.adaptive.layout/Scrim? // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.scrim.<get-scrim>|<get-scrim>(){}[0]
         final val strategy // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.strategy|{}strategy[0]
             final fun <get-strategy>(): androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.Strategy // androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate.strategy.<get-strategy>|<get-strategy>(){}[0]
 
@@ -115,10 +130,12 @@ sealed interface androidx.compose.material3.adaptive.layout/AnimatedPaneScope : 
 
 sealed interface androidx.compose.material3.adaptive.layout/PaneAdaptedValue { // androidx.compose.material3.adaptive.layout/PaneAdaptedValue|null[0]
     final class Levitated : androidx.compose.material3.adaptive.layout/PaneAdaptedValue { // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated|null[0]
-        constructor <init>(androidx.compose.ui/Alignment) // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.<init>|<init>(androidx.compose.ui.Alignment){}[0]
+        constructor <init>(androidx.compose.ui/Alignment, androidx.compose.material3.adaptive.layout/Scrim? = ...) // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.<init>|<init>(androidx.compose.ui.Alignment;androidx.compose.material3.adaptive.layout.Scrim?){}[0]
 
         final val alignment // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.alignment|{}alignment[0]
             final fun <get-alignment>(): androidx.compose.ui/Alignment // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.alignment.<get-alignment>|<get-alignment>(){}[0]
+        final val scrim // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.scrim|{}scrim[0]
+            final fun <get-scrim>(): androidx.compose.material3.adaptive.layout/Scrim? // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.scrim.<get-scrim>|<get-scrim>(){}[0]
 
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated.hashCode|hashCode(){}[0]
@@ -213,6 +230,8 @@ sealed interface androidx.compose.material3.adaptive.layout/PaneMotion { // andr
 }
 
 sealed interface androidx.compose.material3.adaptive.layout/PaneScaffoldParentData { // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData|null[0]
+    abstract val dragToResizeState // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData.dragToResizeState|{}dragToResizeState[0]
+        abstract fun <get-dragToResizeState>(): androidx.compose.material3.adaptive.layout/DragToResizeState? // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData.dragToResizeState.<get-dragToResizeState>|<get-dragToResizeState>(){}[0]
     abstract val isAnimatedPane // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData.isAnimatedPane|{}isAnimatedPane[0]
         abstract fun <get-isAnimatedPane>(): kotlin/Boolean // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData.isAnimatedPane.<get-isAnimatedPane>|<get-isAnimatedPane>(){}[0]
     abstract val minTouchTargetSize // androidx.compose.material3.adaptive.layout/PaneScaffoldParentData.minTouchTargetSize|{}minTouchTargetSize[0]
@@ -227,14 +246,22 @@ sealed interface androidx.compose.material3.adaptive.layout/PaneScaffoldScope { 
     abstract val saveableStateHolder // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.saveableStateHolder|{}saveableStateHolder[0]
         abstract fun <get-saveableStateHolder>(): androidx.compose.runtime.saveable/SaveableStateHolder // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.saveableStateHolder.<get-saveableStateHolder>|<get-saveableStateHolder>(){}[0]
 
-    abstract fun (androidx.compose.ui/Modifier).paneExpansionDraggable(androidx.compose.material3.adaptive.layout/PaneExpansionState, androidx.compose.ui.unit/Dp, androidx.compose.foundation.interaction/MutableInteractionSource, kotlin/Function1<androidx.compose.ui.semantics/SemanticsPropertyReceiver, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.paneExpansionDraggable|paneExpansionDraggable@androidx.compose.ui.Modifier(androidx.compose.material3.adaptive.layout.PaneExpansionState;androidx.compose.ui.unit.Dp;androidx.compose.foundation.interaction.MutableInteractionSource;kotlin.Function1<androidx.compose.ui.semantics.SemanticsPropertyReceiver,kotlin.Unit>){}[0]
+    abstract fun (androidx.compose.ui/Modifier).paneExpansionDraggable(androidx.compose.material3.adaptive.layout/PaneExpansionState, androidx.compose.ui.unit/Dp, androidx.compose.foundation.interaction/MutableInteractionSource, kotlin/Function1<androidx.compose.ui.semantics/SemanticsPropertyReceiver, kotlin/Unit>? = ...): androidx.compose.ui/Modifier // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.paneExpansionDraggable|paneExpansionDraggable@androidx.compose.ui.Modifier(androidx.compose.material3.adaptive.layout.PaneExpansionState;androidx.compose.ui.unit.Dp;androidx.compose.foundation.interaction.MutableInteractionSource;kotlin.Function1<androidx.compose.ui.semantics.SemanticsPropertyReceiver,kotlin.Unit>?){}[0]
     abstract fun (androidx.compose.ui/Modifier).preferredHeight(androidx.compose.ui.unit/Dp): androidx.compose.ui/Modifier // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.preferredHeight|preferredHeight@androidx.compose.ui.Modifier(androidx.compose.ui.unit.Dp){}[0]
     abstract fun (androidx.compose.ui/Modifier).preferredWidth(androidx.compose.ui.unit/Dp): androidx.compose.ui/Modifier // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.preferredWidth|preferredWidth@androidx.compose.ui.Modifier(androidx.compose.ui.unit.Dp){}[0]
+    open fun (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState): androidx.compose.ui/Modifier // androidx.compose.material3.adaptive.layout/PaneScaffoldScope.dragToResize|dragToResize@androidx.compose.ui.Modifier(androidx.compose.material3.adaptive.layout.DragToResizeState){}[0]
 }
 
 sealed interface androidx.compose.material3.adaptive.layout/ThreePaneScaffoldPaneScope : androidx.compose.material3.adaptive.layout/ExtendedPaneScaffoldPaneScope<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue>, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldScope // androidx.compose.material3.adaptive.layout/ThreePaneScaffoldPaneScope|null[0]
 
 sealed interface androidx.compose.material3.adaptive.layout/ThreePaneScaffoldScope : androidx.compose.material3.adaptive.layout/ExtendedPaneScaffoldScope<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue> // androidx.compose.material3.adaptive.layout/ThreePaneScaffoldScope|null[0]
+
+abstract class androidx.compose.material3.adaptive.layout/DragToResizeState : androidx.compose.foundation.gestures/DraggableState { // androidx.compose.material3.adaptive.layout/DragToResizeState|null[0]
+    open fun dispatchRawDelta(kotlin/Float) // androidx.compose.material3.adaptive.layout/DragToResizeState.dispatchRawDelta|dispatchRawDelta(kotlin.Float){}[0]
+    open suspend fun drag(androidx.compose.foundation/MutatePriority, kotlin.coroutines/SuspendFunction1<androidx.compose.foundation.gestures/DragScope, kotlin/Unit>) // androidx.compose.material3.adaptive.layout/DragToResizeState.drag|drag(androidx.compose.foundation.MutatePriority;kotlin.coroutines.SuspendFunction1<androidx.compose.foundation.gestures.DragScope,kotlin.Unit>){}[0]
+
+    final object Companion // androidx.compose.material3.adaptive.layout/DragToResizeState.Companion|null[0]
+}
 
 final class <#A: kotlin/Any?, #B: androidx.compose.material3.adaptive.layout/PaneScaffoldValue<#A>> androidx.compose.material3.adaptive.layout/AnimatedPaneOverrideScope { // androidx.compose.material3.adaptive.layout/AnimatedPaneOverrideScope|null[0]
     final val boundsAnimationSpec // androidx.compose.material3.adaptive.layout/AnimatedPaneOverrideScope.boundsAnimationSpec|{}boundsAnimationSpec[0]
@@ -340,6 +367,19 @@ final class androidx.compose.material3.adaptive.layout/PaneScaffoldDirective { /
         final val Default // androidx.compose.material3.adaptive.layout/PaneScaffoldDirective.Companion.Default|{}Default[0]
             final fun <get-Default>(): androidx.compose.material3.adaptive.layout/PaneScaffoldDirective // androidx.compose.material3.adaptive.layout/PaneScaffoldDirective.Companion.Default.<get-Default>|<get-Default>(){}[0]
     }
+}
+
+final class androidx.compose.material3.adaptive.layout/Scrim { // androidx.compose.material3.adaptive.layout/Scrim|null[0]
+    constructor <init>(androidx.compose.ui.graphics/Color = ..., kotlin/Function0<kotlin/Unit>? = ...) // androidx.compose.material3.adaptive.layout/Scrim.<init>|<init>(androidx.compose.ui.graphics.Color;kotlin.Function0<kotlin.Unit>?){}[0]
+
+    final val color // androidx.compose.material3.adaptive.layout/Scrim.color|{}color[0]
+        final fun <get-color>(): androidx.compose.ui.graphics/Color // androidx.compose.material3.adaptive.layout/Scrim.color.<get-color>|<get-color>(){}[0]
+    final val onClick // androidx.compose.material3.adaptive.layout/Scrim.onClick|{}onClick[0]
+        final fun <get-onClick>(): kotlin/Function0<kotlin/Unit>? // androidx.compose.material3.adaptive.layout/Scrim.onClick.<get-onClick>|<get-onClick>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.material3.adaptive.layout/Scrim.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.material3.adaptive.layout/Scrim.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.compose.material3.adaptive.layout/Scrim.toString|toString(){}[0]
 }
 
 final class androidx.compose.material3.adaptive.layout/ThreePaneMotion { // androidx.compose.material3.adaptive.layout/ThreePaneMotion|null[0]
@@ -547,6 +587,7 @@ final fun androidx.compose.material3.adaptive.layout/calculatePaneScaffoldDirect
 final fun androidx.compose.material3.adaptive.layout/calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(androidx.compose.material3.adaptive/WindowAdaptiveInfo, androidx.compose.material3.adaptive.layout/HingePolicy = ...): androidx.compose.material3.adaptive.layout/PaneScaffoldDirective // androidx.compose.material3.adaptive.layout/calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth|calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(androidx.compose.material3.adaptive.WindowAdaptiveInfo;androidx.compose.material3.adaptive.layout.HingePolicy){}[0]
 final fun androidx.compose.material3.adaptive.layout/calculateThreePaneScaffoldValue(kotlin/Int, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldAdaptStrategies, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldDestinationItem<*>?, kotlin/Int = ...): androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue // androidx.compose.material3.adaptive.layout/calculateThreePaneScaffoldValue|calculateThreePaneScaffoldValue(kotlin.Int;androidx.compose.material3.adaptive.layout.ThreePaneScaffoldAdaptStrategies;androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem<*>?;kotlin.Int){}[0]
 final fun androidx.compose.material3.adaptive.layout/calculateThreePaneScaffoldValue(kotlin/Int, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldAdaptStrategies, kotlin.collections/List<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldDestinationItem<*>>, kotlin/Int = ...): androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue // androidx.compose.material3.adaptive.layout/calculateThreePaneScaffoldValue|calculateThreePaneScaffoldValue(kotlin.Int;androidx.compose.material3.adaptive.layout.ThreePaneScaffoldAdaptStrategies;kotlin.collections.List<androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem<*>>;kotlin.Int){}[0]
+final fun androidx.compose.material3.adaptive.layout/rememberDragToResizeState(androidx.compose.material3.adaptive.layout/DockedEdge, androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ...): androidx.compose.material3.adaptive.layout/DragToResizeState // androidx.compose.material3.adaptive.layout/rememberDragToResizeState|rememberDragToResizeState(androidx.compose.material3.adaptive.layout.DockedEdge;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]
 final fun androidx.compose.material3.adaptive.layout/rememberPaneExpansionState(androidx.compose.material3.adaptive.layout/PaneExpansionStateKey = ..., kotlin.collections/List<androidx.compose.material3.adaptive.layout/PaneExpansionAnchor> = ..., kotlin/Int = ..., androidx.compose.animation.core/FiniteAnimationSpec<kotlin/Float> = ..., androidx.compose.foundation.gestures/FlingBehavior = ...): androidx.compose.material3.adaptive.layout/PaneExpansionState // androidx.compose.material3.adaptive.layout/rememberPaneExpansionState|rememberPaneExpansionState(androidx.compose.material3.adaptive.layout.PaneExpansionStateKey;kotlin.collections.List<androidx.compose.material3.adaptive.layout.PaneExpansionAnchor>;kotlin.Int;androidx.compose.animation.core.FiniteAnimationSpec<kotlin.Float>;androidx.compose.foundation.gestures.FlingBehavior){}[0]
 final fun androidx.compose.material3.adaptive.layout/rememberPaneExpansionState(androidx.compose.material3.adaptive.layout/PaneExpansionStateKeyProvider, kotlin.collections/List<androidx.compose.material3.adaptive.layout/PaneExpansionAnchor> = ..., kotlin/Int = ..., androidx.compose.animation.core/FiniteAnimationSpec<kotlin/Float> = ..., androidx.compose.foundation.gestures/FlingBehavior = ...): androidx.compose.material3.adaptive.layout/PaneExpansionState // androidx.compose.material3.adaptive.layout/rememberPaneExpansionState|rememberPaneExpansionState(androidx.compose.material3.adaptive.layout.PaneExpansionStateKeyProvider;kotlin.collections.List<androidx.compose.material3.adaptive.layout.PaneExpansionAnchor>;kotlin.Int;androidx.compose.animation.core.FiniteAnimationSpec<kotlin.Float>;androidx.compose.foundation.gestures.FlingBehavior){}[0]
 final inline fun <#A: kotlin/Any?> (androidx.compose.material3.adaptive.layout/PaneScaffoldMotionDataProvider<#A>).androidx.compose.material3.adaptive.layout/forEach(kotlin/Function2<#A, androidx.compose.material3.adaptive.layout/PaneMotionData, kotlin/Unit>) // androidx.compose.material3.adaptive.layout/forEach|forEach@androidx.compose.material3.adaptive.layout.PaneScaffoldMotionDataProvider<0:0>(kotlin.Function2<0:0,androidx.compose.material3.adaptive.layout.PaneMotionData,kotlin.Unit>){0§<kotlin.Any?>}[0]

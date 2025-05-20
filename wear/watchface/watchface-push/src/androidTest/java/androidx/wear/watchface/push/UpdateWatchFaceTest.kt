@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class UpdateWatchFaceTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
-    private var wfp = WatchFacePushManager(context)
+    private var wfp = WatchFacePushManagerFactory.createWatchFacePushManager(context)
     private lateinit var details: WatchFaceDetails
 
     @Before

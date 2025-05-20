@@ -200,8 +200,8 @@ package androidx.compose.foundation.layout {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi @androidx.compose.foundation.layout.LayoutScopeMarker @androidx.compose.runtime.Stable public interface FlowColumnOverflowScope extends androidx.compose.foundation.layout.FlowColumnScope {
-    method public int getShownItemCount();
-    method public int getTotalItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getShownItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getTotalItemCount();
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int shownItemCount;
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int totalItemCount;
   }
@@ -236,8 +236,8 @@ package androidx.compose.foundation.layout {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi @androidx.compose.foundation.layout.LayoutScopeMarker @androidx.compose.runtime.Stable public interface FlowRowOverflowScope extends androidx.compose.foundation.layout.FlowRowScope {
-    method public int getShownItemCount();
-    method public int getTotalItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getShownItemCount();
+    method @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public int getTotalItemCount();
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int shownItemCount;
     property @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract int totalItemCount;
   }

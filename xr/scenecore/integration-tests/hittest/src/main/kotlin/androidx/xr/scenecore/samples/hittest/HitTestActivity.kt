@@ -45,7 +45,7 @@ class HitTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.hittest_activity)
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.Enabled))
+        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
 
         // Create a single panel with text
         @SuppressLint("InflateParams")

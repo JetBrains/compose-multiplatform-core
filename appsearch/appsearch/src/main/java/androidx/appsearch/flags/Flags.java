@@ -246,6 +246,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
             FLAG_PREFIX + "enable_compression_mem_level_one";
 
+    /** Enables gzip decompression buffer size memory optimization. */
+    public static final String FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE =
+            FLAG_PREFIX + "enable_smaller_decompression_buffer_size";
+
     /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
     public static final String FLAG_ENABLE_RESULT_ABORTED =
             FLAG_PREFIX + "enable_result_aborted";
@@ -562,8 +566,14 @@ public final class Flags {
      * Whether to enable database-scoped set and get schema operations for AppSearch internal impl.
      */
     public static boolean enableDatabaseScopedSchemaOperations() {
-        // TODO(b/337913932): enable once Icing-side schema change to allow setting the full
-        //  schema is completed
-        return false;
+        return true;
+    }
+
+    /**
+     * Whether to enable gzip decompression buffer memory optimization that uses a smaller buffer
+     * size.
+     */
+    public static boolean enableSmallerDecompressionBufferSize() {
+        return true;
     }
 }

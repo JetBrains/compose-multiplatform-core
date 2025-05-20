@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
@@ -28,11 +29,14 @@ import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.SpaceValue;
+import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
+import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.Bounds;
 import com.android.extensions.xr.space.SpatialState;
@@ -63,6 +67,9 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private final Activity mActivity;
     private final Supplier<SpatialState> mSpatialStateProvider;
     private final AtomicReference<Dimensions> mBounds = new AtomicReference<>();
+    // The current scene parent aka ActivitySpace origin transform.
+    private final AtomicReference<Matrix4> mOriginTransform = new AtomicReference<>();
+    private final boolean mUnscaledGravityAlignedActivitySpace;
 
     ActivitySpaceImpl(
             Node taskNode,
@@ -70,10 +77,16 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
             XrExtensions extensions,
             EntityManager entityManager,
             Supplier<SpatialState> spatialStateProvider,
+            boolean unscaledGravityAlignedActivitySpace,
             ScheduledExecutorService executor) {
         super(taskNode, extensions, entityManager, executor);
         mActivity = activity;
         mSpatialStateProvider = spatialStateProvider;
+        mUnscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace;
+        Log.i(
+                TAG,
+                "ActivitySpaceImpl: mUnscaledGravityAlignedActivitySpace: "
+                        + mUnscaledGravityAlignedActivitySpace);
     }
 
     /** Returns the identity pose since this entity defines the origin of the activity space. */
@@ -107,11 +120,58 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         Log.e(TAG, "Cannot set scale for the ActivitySpace.");
     }
 
+    @Override
+    public void setPose(Pose p, @SpaceValue int s) {
+        Log.e(TAG, "Cannot set pose for the ActivitySpace.");
+    }
+
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
         Log.i(TAG, "Disposing " + this);
         super.dispose();
+    }
+
+    /**
+     * Returns the rotation that should be applied to the ActivitySpace to align it with the gravity
+     * vector in the world space.
+     */
+    @VisibleForTesting
+    Quaternion getRotationForGravityAlignment(Matrix4 transform) {
+        // Get the origin's local down vector.
+        Vector3 localDown = transform.getPose().getDown();
+        // This is the gravity direction in the world space.
+        Vector3 gravityDirection = Vector3.Down;
+        // This is the rotation that should be applied to the ActivitySpace origin to align it with
+        // the
+        // gravity vector in the world space.
+        return Quaternion.fromRotation(localDown, gravityDirection);
+    }
+
+    public void handleOriginUpdate(Matrix4 newTransform) {
+        Matrix4 oldTransform = mOriginTransform.getAndSet(newTransform);
+        if (mUnscaledGravityAlignedActivitySpace) {
+            // Undoing the scale of the ActivitySpace.
+            Vector3 activitySpaceScale = newTransform.getScale();
+            Quaternion rotation = getRotationForGravityAlignment(newTransform);
+            Log.i(TAG, "handleOriginUpdate: activitySpaceScale: " + activitySpaceScale);
+            Log.i(TAG, "handleOriginUpdate: rotation: " + rotation);
+            try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+                transaction
+                        .setScale(
+                                mNode,
+                                1.0f / activitySpaceScale.getX(),
+                                1.0f / activitySpaceScale.getY(),
+                                1.0f / activitySpaceScale.getZ())
+                        .setOrientation(
+                                mNode,
+                                rotation.getX(),
+                                rotation.getY(),
+                                rotation.getZ(),
+                                rotation.getW())
+                        .apply();
+            }
+        }
     }
 
     @NonNull

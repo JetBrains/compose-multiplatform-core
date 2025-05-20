@@ -18,6 +18,7 @@
 package androidx.binarycompatibilityvalidator
 
 import java.io.File
+import kotlin.collections.removeFirst
 import org.jetbrains.kotlin.library.abi.AbiClass
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.ClassReference
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.TypeParameterReference
@@ -279,18 +280,22 @@ class BinaryCompatibilityChecker(
                     "$qualifiedName"
             )
         }
-        if (hasExtensionReceiverParameter != otherFunction.hasExtensionReceiverParameter) {
+        // We consider a function to be removed if the extension receiver parameter has changed
+        // so we should never make it this far, but leave the check for correctness
+        if (hasExtensionReceiverParameter() != otherFunction.hasExtensionReceiverParameter()) {
             errors.add(
                 "hasExtensionReceiverParameter changed from " +
-                    "${otherFunction.hasExtensionReceiverParameter} to " +
-                    "$hasExtensionReceiverParameter for $qualifiedName"
+                    "${otherFunction.hasExtensionReceiverParameter()} to " +
+                    "${hasExtensionReceiverParameter()} for $qualifiedName"
             )
         }
-        if (contextReceiverParametersCount != otherFunction.contextReceiverParametersCount) {
+        // Same as with extension functions if the context receiver param count changes we won't
+        // consider these to be the same function
+        if (contextReceiverParametersCount() != otherFunction.contextReceiverParametersCount()) {
             errors.add(
                 "contextReceiverParametersCount changed from " +
-                    "${otherFunction.contextReceiverParametersCount} to " +
-                    "$contextReceiverParametersCount for $qualifiedName"
+                    "${otherFunction.contextReceiverParametersCount()} to " +
+                    "${contextReceiverParametersCount()} for $qualifiedName"
             )
         }
         returnType.isBinaryCompatibleWith(
@@ -401,7 +406,11 @@ class BinaryCompatibilityChecker(
                 return errors
             }
             return oldLibraries.keys.flatMap { target ->
-                val newLib = newLibraries[target]!!
+                val newLib =
+                    newLibraries[target]
+                        // We can't compare targets if they've been removed. We'll throw on removed
+                        // targets but if that removal is baselined we can still make it here.
+                        ?: return@flatMap emptyList()
                 val oldLib = oldLibraries[target]!!
                 val errorsForTarget = CompatibilityErrors(baselines, target)
                 BinaryCompatibilityChecker(newLib, oldLib)
@@ -589,39 +598,68 @@ private fun AbiTypeArgument.isBinaryCompatibleWith(
 
 private fun AbiDeclaration.asTypeString() =
     when (this) {
-        is AbiFunction -> qualifiedName.toString() + valueParameterString()
+        is AbiFunction -> asTypeString()
         is AbiProperty -> asTypeString()
         else -> qualifiedName.toString()
     }
 
-private fun AbiProperty.asTypeString(): String {
-    val builder = StringBuilder()
-    val getterFunc = getter ?: return qualifiedName.toString()
-    val valueParameters = getterFunc.valueParameters.toMutableList()
-    if (getterFunc.contextReceiverParametersCount > 0) {
-        builder.append("context(")
-        repeat(getterFunc.contextReceiverParametersCount) {
-            builder.append(valueParameters.removeFirst().type.asString())
-        }
-        builder.append(") ")
-    }
-    if (getterFunc.hasExtensionReceiverParameter) {
-        builder.append("(${valueParameters.removeFirst().type.asString()}).")
-    }
-    builder.append(qualifiedName.toString())
-    return builder.toString()
+private fun AbiFunction.asTypeString(name: String = qualifiedName.toString()): String {
+    return (contextReceiverParametersString() +
+        extensionReceiverParameterString() +
+        name +
+        regularValueParametersString())
 }
+
+private fun AbiProperty.asTypeString(name: String = qualifiedName.toString()): String {
+    val getterFunc = getter ?: return name
+    return (getterFunc.contextReceiverParametersString() +
+        getterFunc.extensionReceiverParameterString() +
+        name)
+}
+
+private fun AbiFunction.contextReceiverParameters(): List<AbiValueParameter> {
+    return valueParameters.take(contextReceiverParametersCount())
+}
+
+private fun AbiFunction.contextReceiverParametersString(): String {
+    if (contextReceiverParametersCount() == 0) {
+        return ""
+    }
+    return "context(" + contextReceiverParameters().joinToString(", ") { it.type.asString() } + ") "
+}
+
+private fun AbiFunction.extensionReceiverParameter(): AbiValueParameter? {
+    if (!hasExtensionReceiverParameter()) {
+        return null
+    }
+    return valueParameters[contextReceiverParametersCount()]
+}
+
+private fun AbiFunction.extensionReceiverParameterString(): String =
+    extensionReceiverParameter()?.let { "(${it.type.asString()})." } ?: ""
+
+private fun AbiFunction.regularValueParameters(): List<AbiValueParameter> {
+    return valueParameters.drop(contextReceiverParametersCount() + extensionReceiverParameterCount)
+}
+
+private fun AbiFunction.regularValueParametersString(): String =
+    "(" + regularValueParameters().joinToString(", ") { it.type.asString() } + ")"
+
+private val AbiFunction.extensionReceiverParameterCount: Int
+    get() =
+        if (hasExtensionReceiverParameter()) 1
+        else {
+            0
+        }
 
 private fun AbiDeclaration.asUnqualifiedTypeString(): String {
     val name = qualifiedName.relativeName.nameSegments.last().value
     return when (this) {
-        is AbiFunction -> name + valueParameterString()
+        is AbiFunction -> asTypeString(name)
+        is AbiProperty -> asTypeString(name)
         else -> name
     }
 }
-
-private fun AbiFunction.valueParameterString() =
-    "(${valueParameters.joinToString(", ") { it.type.asString() }})"
 
 private fun AbiType.asString() =
     when (this) {
@@ -736,3 +774,7 @@ private fun File.asBaselineErrors(): Set<String> =
 
 private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
     AbiValueParameter by param
+
+private fun AbiFunction.contextReceiverParametersCount() = contextReceiverParametersCount
+
+private fun AbiFunction.hasExtensionReceiverParameter() = hasExtensionReceiverParameter

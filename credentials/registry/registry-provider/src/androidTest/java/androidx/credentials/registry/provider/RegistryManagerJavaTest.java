@@ -74,6 +74,31 @@ public class RegistryManagerJavaTest {
     }
 
     @Test
+    public void clearCredentialRegistryAsync_noOptionalModule_throws() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Exception> resultCaptor = new AtomicReference<>();
+
+        mRegistryManager.clearCredentialRegistryAsync(
+                new ClearCredentialRegistryRequest(true, null),
+                Runnable::run,
+                new CredentialManagerCallback<ClearCredentialRegistryResponse,
+                        Exception>() {
+                    @Override
+                    public void onResult(ClearCredentialRegistryResponse result) {}
+
+                    @Override
+                    public void onError(@NonNull Exception e) {
+                        resultCaptor.set(e);
+                        latch.countDown();
+                    }
+                }
+        );
+        latch.await(100L, TimeUnit.MILLISECONDS);
+        assertThat(resultCaptor.get()).isInstanceOf(
+                IllegalArgumentException.class);
+    }
+
+    @Test
     public void constant() {
         assertThat(RegistryManager.ACTION_GET_CREDENTIAL).isEqualTo(
                 "androidx.credentials.registry.provider.action.GET_CREDENTIAL");

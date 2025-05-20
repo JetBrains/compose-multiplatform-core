@@ -31,28 +31,20 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    implementation("androidx.annotation:annotation-experimental:1.4.1")
-    implementation(libs.guavaListenableFuture)
     implementation("androidx.core:core:1.7.0")
-    implementation("androidx.concurrent:concurrent-futures:1.1.0")
-    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation(libs.autoValueAnnotations)
-    implementation("androidx.appcompat:appcompat:1.1.0")
-    implementation("androidx.test.espresso:espresso-idling-resource:3.1.0")
     implementation(libs.kotlinCoroutinesCore)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.atomicFu)
     implementation("androidx.tracing:tracing-ktx:1.2.0")
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)
-
-    annotationProcessor(libs.autoValue)
+    testImplementation("org.robolectric:shadowapi:4.14")
+    testImplementation(libs.junit)
 }
 
 android {
@@ -66,4 +58,5 @@ androidx {
     inceptionYear = "2023"
     description = "Core dependencies for Viewfinder"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

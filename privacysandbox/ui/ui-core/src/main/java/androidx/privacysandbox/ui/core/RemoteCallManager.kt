@@ -41,14 +41,6 @@ object RemoteCallManager {
         tryToCallRemoteObject(remoteSessionController) { this.asBinder().linkToDeath(recipient, 0) }
     }
 
-    fun closeRemoteSession(remoteSessionController: IRemoteSessionController) {
-        tryToCallRemoteObject(remoteSessionController) { close() }
-    }
-
-    fun closeRemoteSession(remoteSessionController: IRemoteSharedUiSessionController) {
-        tryToCallRemoteObject(remoteSessionController) { close() }
-    }
-
     /** Tries to call the remote object and handles exceptions if the remote object has died. */
     inline fun <RemoteObject> tryToCallRemoteObject(
         remoteObject: RemoteObject,

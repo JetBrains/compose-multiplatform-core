@@ -344,19 +344,18 @@ val DEFERRED_TYPES =
         PagingTypeNames.PAGING_SOURCE
     )
 
-fun XTypeName.defaultValue(): String {
-    return if (!isPrimitive) {
-        "null"
-    } else if (this == XTypeName.PRIMITIVE_BOOLEAN) {
-        "false"
-    } else if (this == XTypeName.PRIMITIVE_DOUBLE) {
-        "0.0"
-    } else if (this == XTypeName.PRIMITIVE_FLOAT) {
-        "0f"
-    } else {
-        "0"
+fun XTypeName.defaultValue(): String =
+    when (this) {
+        XTypeName.PRIMITIVE_BOOLEAN -> "false"
+        XTypeName.PRIMITIVE_DOUBLE -> "0.0"
+        XTypeName.PRIMITIVE_FLOAT -> "0f"
+        XTypeName.PRIMITIVE_CHAR -> "' '"
+        XTypeName.PRIMITIVE_LONG,
+        XTypeName.PRIMITIVE_INT,
+        XTypeName.PRIMITIVE_BYTE,
+        XTypeName.PRIMITIVE_SHORT -> "0"
+        else -> "null"
     }
-}
 
 fun CallableTypeSpecBuilder(parameterTypeName: XTypeName, callBody: XFunSpec.Builder.() -> Unit) =
     XTypeSpec.anonymousClassBuilder("").apply {

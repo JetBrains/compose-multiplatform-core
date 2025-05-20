@@ -20,40 +20,52 @@ import android.hardware.camera2.CaptureRequest
 import androidx.annotation.GuardedBy
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameGraph.FrameBuffer
+import androidx.camera.camera2.pipe.FrameReference
 import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.config.CameraGraphScope
-import androidx.camera.camera2.pipe.config.ForCameraGraph
+import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
+import androidx.camera.camera2.pipe.config.FrameGraphScope
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.filterToCaptureRequestParameters
 import androidx.camera.camera2.pipe.filterToMetadataParameters
+import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
 internal class FrameBufferImpl(
+    private val frameBuffers: FrameBuffers,
     override val streams: Set<StreamId>,
     override val parameters: Map<Any, Any?>,
-    private val frameBuffers: FrameBuffers,
-) : FrameBuffer {
+    override val capacity: Int,
+) : FrameBuffer, FrameDistributor.FrameStartedListener {
     override fun close() {
         frameBuffers.detach(this)
     }
+
+    override fun onFrameStarted(frameReference: FrameReference) {
+        // TODO: This must hold and cycle FrameReferences that are attached to this FrameBuffer.
+    }
 }
 
-@CameraGraphScope
+@FrameGraphScope
 internal class FrameBuffers
 @Inject
 internal constructor(
     private val cameraGraph: CameraGraph,
-    @ForCameraGraph private val graphScope: CoroutineScope
-) {
+    @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope
+) : FrameDistributor.FrameStartedListener {
     private val lock = Any()
-    @GuardedBy("lock") private val buffers = mutableListOf<FrameBuffer>()
+    @GuardedBy("lock") private val buffers = mutableListOf<FrameBufferImpl>()
     @GuardedBy("lock") private var streams = mutableSetOf<StreamId>()
     @GuardedBy("lock") private var parameters = mutableMapOf<Any, Any>()
 
-    fun attach(frameBuffer: FrameBuffer) {
+    internal fun attach(
+        streams: Set<StreamId>,
+        parameters: Map<Any, Any?>,
+        capacity: Int
+    ): FrameBuffer {
+        val frameBuffer = FrameBufferImpl(this, streams, parameters, capacity)
         val modified =
             synchronized(lock) {
                 buffers.add(frameBuffer)
@@ -62,9 +74,10 @@ internal constructor(
         if (modified) {
             invalidate()
         }
+        return frameBuffer
     }
 
-    fun detach(frameBuffer: FrameBuffer) {
+    internal fun detach(frameBuffer: FrameBufferImpl) {
         val modified =
             synchronized(lock) {
                 buffers.remove(frameBuffer)
@@ -111,9 +124,11 @@ internal constructor(
     private fun invalidate() {
         if (buffers.isEmpty()) {
             Log.warn { "No available buffer, invoke stop repeating." }
-            cameraGraph.useSessionIn(graphScope) { session -> session.stopRepeating() }
+            cameraGraph.useSessionIn(frameGraphCoroutineScope) { session ->
+                session.stopRepeating()
+            }
         } else {
-            cameraGraph.useSessionIn(graphScope) { session ->
+            cameraGraph.useSessionIn(frameGraphCoroutineScope) { session ->
                 session.startRepeating(
                     Request(
                         streams = streams.toList(),
@@ -121,6 +136,14 @@ internal constructor(
                         extras = parameters.filterToMetadataParameters()
                     )
                 )
+            }
+        }
+    }
+
+    override fun onFrameStarted(frameReference: FrameReference) {
+        synchronized(lock) {
+            for (buffer in buffers) {
+                buffer.onFrameStarted(frameReference)
             }
         }
     }

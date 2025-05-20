@@ -16,11 +16,13 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SystemSpaceEntity
 import java.util.concurrent.Executor
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [SystemSpaceEntity] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeSystemSpaceEntity : SystemSpaceEntity, FakeEntity() {
 
     @Suppress("ExecutorRegistration")

@@ -36,23 +36,17 @@ dependencies {
 
     annotationProcessor(libs.autoValue)
 
-    // TODO(leohuang): We need this for assertThrows. Point back to the AndroidX shared version if
-    //  it is ever upgraded.
     testImplementation(libs.junit)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation("androidx.core:core-ktx:1.1.0")
     testImplementation(project(":camera:camera-testing"), {
         exclude group: "androidx.camera", module: "camera-core"
     })
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
 
     androidTestImplementation(project(":camera:camera-camera2"))
@@ -90,9 +84,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.video"
 }
 
@@ -103,4 +94,5 @@ androidx {
     description = "Video components for the Jetpack Camera Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +
             "experiences across all of Android."
+    enableRobolectric()
 }

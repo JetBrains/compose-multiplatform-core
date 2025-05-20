@@ -19,11 +19,10 @@ package androidx.xr.scenecore.impl;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -224,15 +223,16 @@ public final class SpatialEnvironmentImplTest {
         mEnvironment.addOnPassthroughOpacityChangedListener(listener1);
         mEnvironment.addOnPassthroughOpacityChangedListener(listener2);
 
-        mEnvironment.firePassthroughOpacityChangedEvent(0.5f);
-        verify(listener1).accept(0.5f);
-        verify(listener2).accept(0.5f);
+        float opacity = mEnvironment.getCurrentPassthroughOpacity();
+
+        mEnvironment.firePassthroughOpacityChangedEvent();
+        verify(listener1).accept(opacity);
+        verify(listener2).accept(opacity);
 
         mEnvironment.removeOnPassthroughOpacityChangedListener(listener1);
-        mEnvironment.firePassthroughOpacityChangedEvent(0.0f);
-        verify(listener1)
-                .accept(any()); // Verify the removed listener was called exactly once total
-        verify(listener2).accept(0.0f); // Verify the active listener was called again with false
+        mEnvironment.firePassthroughOpacityChangedEvent();
+        verify(listener1).accept(opacity);
+        verify(listener2, times(2)).accept(opacity);
     }
 
     @Test
@@ -603,32 +603,43 @@ public final class SpatialEnvironmentImplTest {
         @SuppressWarnings(value = "unchecked")
         Consumer<Boolean> listener2 = (Consumer<Boolean>) mock(Consumer.class);
 
+        SpatialState spatialState = ShadowSpatialState.create();
+        mEnvironment.setSpatialState(spatialState);
+
         mEnvironment.addOnSpatialEnvironmentChangedListener(listener1);
         mEnvironment.addOnSpatialEnvironmentChangedListener(listener2);
 
-        mEnvironment.fireOnSpatialEnvironmentChangedEvent(true);
-        verify(listener1).accept(true);
-        verify(listener2).accept(true);
+        boolean isSpatialEnvironmentPreferenceActive =
+                mEnvironment.isSpatialEnvironmentPreferenceActive();
+
+        mEnvironment.fireOnSpatialEnvironmentChangedEvent();
+        verify(listener1).accept(isSpatialEnvironmentPreferenceActive);
+        verify(listener2).accept(isSpatialEnvironmentPreferenceActive);
 
         mEnvironment.removeOnSpatialEnvironmentChangedListener(listener1);
-        mEnvironment.fireOnSpatialEnvironmentChangedEvent(false);
-        verify(listener1)
-                .accept(any()); // Verify the removed listener was called exactly once total
-        verify(listener2).accept(false); // Verify the active listener was called again with false
+        mEnvironment.fireOnSpatialEnvironmentChangedEvent();
+        verify(listener1).accept(isSpatialEnvironmentPreferenceActive);
+        verify(listener2, times(2)).accept(isSpatialEnvironmentPreferenceActive);
     }
 
     @Test
     public void dispose_clearsSpatialEnvironmentPreferenceListeners() {
         @SuppressWarnings(value = "unchecked")
         Consumer<Boolean> listener = (Consumer<Boolean>) mock(Consumer.class);
+
+        SpatialState spatialState = ShadowSpatialState.create();
+        mEnvironment.setSpatialState(spatialState);
         mEnvironment.addOnSpatialEnvironmentChangedListener(listener);
 
-        mEnvironment.fireOnSpatialEnvironmentChangedEvent(true);
-        verify(listener).accept(true);
+        boolean isSpatialEnvironmentPreferenceActive =
+                mEnvironment.isSpatialEnvironmentPreferenceActive();
+
+        mEnvironment.fireOnSpatialEnvironmentChangedEvent();
+        verify(listener).accept(isSpatialEnvironmentPreferenceActive);
 
         mEnvironment.dispose();
-        mEnvironment.fireOnSpatialEnvironmentChangedEvent(false);
-        verify(listener, never()).accept(false);
+        mEnvironment.fireOnSpatialEnvironmentChangedEvent();
+        verify(listener).accept(isSpatialEnvironmentPreferenceActive);
     }
 
     @Test
@@ -637,13 +648,15 @@ public final class SpatialEnvironmentImplTest {
         Consumer<Float> listener = (Consumer<Float>) mock(Consumer.class);
         mEnvironment.addOnPassthroughOpacityChangedListener(listener);
 
-        mEnvironment.firePassthroughOpacityChangedEvent(1.0f);
-        verify(listener).accept(1.0f);
+        float opacity = mEnvironment.getCurrentPassthroughOpacity();
+
+        mEnvironment.firePassthroughOpacityChangedEvent();
+        verify(listener).accept(opacity);
 
         // Ensure the listener is called exactly once, even if the event is fired after dispose.
         mEnvironment.dispose();
-        mEnvironment.firePassthroughOpacityChangedEvent(0.5f);
-        verify(listener).accept(any());
+        mEnvironment.firePassthroughOpacityChangedEvent();
+        verify(listener).accept(opacity);
     }
 
     @Test

@@ -206,10 +206,26 @@ public class SessionConfigAdapter(
         }
     }
 
+    /**
+     * Determines the appropriate [OutputStream.StreamUseHint] value based on the provided container
+     * class.
+     *
+     * StreamUseHint is used for the following purposes:
+     *
+     * (1) **Surface Ordering:** To ensure [MediaCodec] surfaces are placed at the end of the output
+     * list within [androidx.camera.camera2.pipe.graph.StreamGraphImpl]. Note: [StreamSharing] uses
+     * [android.graphics.SurfaceTexture], not [MediaCodec] surface.
+     *
+     * (2) **High-Speed Session Operation:** To identify the presence of a [MediaCodec] surface in
+     * high-speed capture session scenarios within
+     * [androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessor].
+     *
+     * @param kClass The Kotlin [Class] of the container.
+     * @return The corresponding [OutputStream.StreamUseHint] value.
+     */
     private fun getStreamUseHintForContainerClass(kClass: Class<*>?): Long {
         return when (kClass) {
             MediaCodec::class.java -> OutputStream.StreamUseHint.VIDEO_RECORD.value
-            StreamSharing::class.java -> OutputStream.StreamUseHint.VIDEO_RECORD.value
             else -> OutputStream.StreamUseHint.DEFAULT.value
         }
     }

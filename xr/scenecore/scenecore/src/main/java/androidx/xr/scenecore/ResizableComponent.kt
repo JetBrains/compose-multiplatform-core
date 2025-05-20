@@ -19,6 +19,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
@@ -30,6 +31,7 @@ import java.util.concurrent.Executor
  *
  * Note: This Component is currently unsupported on GltfModelEntity.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ResizableComponent
 private constructor(
     private val platformAdapter: JxrPlatformAdapter,

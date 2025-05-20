@@ -28,17 +28,31 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.StringOption
 import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.isUnconditionalReturn
+import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.PsiStatement
+import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtClassInitializer
+import org.jetbrains.kotlin.psi.KtContainerNode
+import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
+import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtReturnExpression
+import org.jetbrains.kotlin.psi.KtWhenEntry
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
@@ -103,6 +117,9 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                     implementation = IMPLEMENTATION,
                 )
                 .setOptions(listOf(ALLOWLIST_OPTION))
+
+        // Message embedded in the autofix reminding the developer to implement a fallback.
+        private const val TODO_FALLBACK_MESSAGE = "Implement fallback behavior"
 
         private const val COMPAT_FLAGS_CLASS = "androidx.core.flagging.Flags"
         private const val COMPAT_FLAGS_COMPANION_CLASS = "androidx.core.flagging.Flags.Companion"
@@ -215,7 +232,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             }
         val message =
             "$description is a flagged API and must be inside a flag check for \"$flagString\""
-        context.report(ISSUE, element, context.getLocation(element), message)
+        val quickfixData = autoFixWithFlagCheck(context, element, flagString)
+        context.report(ISSUE, element, context.getLocation(element), message, quickfixData)
     }
 
     private val AnnotationUsageInfo.referencedElement: UElement?
@@ -455,6 +473,79 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             }
         }
         return false
+    }
+
+    private fun autoFixWithFlagCheck(
+        context: JavaContext,
+        usage: UElement,
+        flagString: String
+    ): LintFix? {
+        val flagPackage = flagString.substringBeforeLast('.')
+        val flagName = flagString.substringAfterLast('.')
+        val presentation = usage.sourcePsi?.getPresentation() ?: return null
+        val condition =
+            "androidx.core.flagging.Flags.getBooleanFlagValue(\"$flagPackage\", \"$flagName\")"
+        val oldText = presentation.text
+        val todoText =
+            when (usage.lang) {
+                KotlinLanguage.INSTANCE -> "TODO(\"$TODO_FALLBACK_MESSAGE\")"
+                JavaLanguage.INSTANCE ->
+                    "throw new RuntimeException(\"TODO: $TODO_FALLBACK_MESSAGE\");"
+                else -> return null
+            }
+
+        return fix()
+            .replace()
+            .name("Wrap with flag check")
+            .range(context.getLocation(presentation))
+            .reformat(true)
+            .with("if ($condition) { $oldText } else { $todoText }")
+            .build()
+    }
+
+    /** Returns an element that is suitable for wrapping with an `if` check. */
+    private fun PsiElement.getPresentation(): PsiElement =
+        when (language) {
+            JavaLanguage.INSTANCE ->
+                // For Java, take the first enclosing statement.
+                findParent(withSelf = true) { it is PsiStatement } ?: this
+            KotlinLanguage.INSTANCE ->
+                // For Kotlin, expand the enclosing element until we reach something that is not a
+                // valid target expression.
+                findParent(withSelf = true) { it?.parent.isInvalidTargetKtExpression() } ?: this
+            else -> this
+        }
+
+    /**
+     * Returns the first parent element -- or the element itself when [withSelf] if `true` -- that
+     * matches the [predicate].
+     */
+    private fun PsiElement.findParent(
+        withSelf: Boolean,
+        predicate: (PsiElement?) -> Boolean
+    ): PsiElement? {
+        var current = if (withSelf) this else this.parent
+        while (current != null && !predicate(current)) {
+            current = current.parent
+        }
+        return current
+    }
+
+    /**
+     * Returns whether a Kotlin element should not be wrapped with an `if` statement.
+     *
+     * This is adapted from a method in Android Lint's `AddTargetVersionCheckQuickFix` class.
+     */
+    private fun PsiElement?.isInvalidTargetKtExpression(): Boolean {
+        return this is KtBlockExpression ||
+            this is KtContainerNode ||
+            this is KtWhenEntry ||
+            this is KtFunction ||
+            this is KtPropertyAccessor ||
+            this is KtProperty ||
+            this is KtReturnExpression ||
+            this is KtDestructuringDeclaration ||
+            this is KtClassInitializer
     }
 
     fun JavaContext.getAllowlistedCoordinates(): List<String> =

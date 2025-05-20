@@ -82,7 +82,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val mActivity = this
         mSession.resume()
-        mSession.configure(Config(headTracking = HeadTrackingMode.Enabled))
+        mSession.configure(Config(headTracking = HeadTrackingMode.ENABLED))
 
         // Set the main panel size and make the main panel movable.
         mSession.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(width = 1500, height = 1100))

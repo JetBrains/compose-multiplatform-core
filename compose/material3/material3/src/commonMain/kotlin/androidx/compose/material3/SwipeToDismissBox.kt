@@ -17,27 +17,25 @@
 package androidx.compose.material3
 
 import androidx.annotation.FloatRange
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.SwipeToDismissBoxState.Companion.Saver
-import androidx.compose.material3.internal.AnchoredDraggableDefaults
-import androidx.compose.material3.internal.AnchoredDraggableState
-import androidx.compose.material3.internal.DraggableAnchors
-import androidx.compose.material3.internal.anchoredDraggable
-import androidx.compose.material3.internal.animateTo
-import androidx.compose.material3.internal.draggableAnchors
-import androidx.compose.material3.internal.snapTo
+import androidx.compose.material3.internal.draggableAnchorsV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 
@@ -70,13 +68,15 @@ class SwipeToDismissBoxState(
     confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = { true },
     positionalThreshold: (totalDistance: Float) -> Float
 ) {
+    @Suppress("Deprecation")
     internal val anchoredDraggableState =
         AnchoredDraggableState(
             initialValue = initialValue,
-            animationSpec = { AnchoredDraggableDefaults.AnimationSpec },
             confirmValueChange = confirmValueChange,
+            velocityThreshold = { with(density) { DismissVelocityThreshold.toPx() } },
             positionalThreshold = positionalThreshold,
-            velocityThreshold = { with(density) { DismissVelocityThreshold.toPx() } }
+            snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
+            decayAnimationSpec = AnchoredDraggableDefaults.DecayAnimationSpec,
         )
 
     internal val offset: Float
@@ -105,6 +105,7 @@ class SwipeToDismissBoxState(
      * The fraction of the progress going from currentValue to targetValue, within [0f..1f] bounds.
      */
     @get:FloatRange(from = 0.0, to = 1.0)
+    @Suppress("Deprecation")
     val progress: Float
         get() = anchoredDraggableState.progress
 
@@ -222,31 +223,30 @@ fun SwipeToDismissBox(
     gesturesEnabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-
     Box(
-        modifier.anchoredDraggable(
-            state = state.anchoredDraggableState,
-            orientation = Orientation.Horizontal,
-            enabled = gesturesEnabled && state.currentValue == SwipeToDismissBoxValue.Settled,
-        ),
+        modifier =
+            modifier.anchoredDraggable(
+                state = state.anchoredDraggableState,
+                orientation = Orientation.Horizontal,
+                enabled = gesturesEnabled && state.currentValue == SwipeToDismissBoxValue.Settled,
+            ),
         propagateMinConstraints = true
     ) {
         Row(content = backgroundContent, modifier = Modifier.matchParentSize())
         Row(
             content = content,
             modifier =
-                Modifier.draggableAnchors(state.anchoredDraggableState, Orientation.Horizontal) {
+                Modifier.draggableAnchorsV2(state.anchoredDraggableState, Orientation.Horizontal) {
                     size,
                     _ ->
                     val width = size.width.toFloat()
-                    return@draggableAnchors DraggableAnchors {
+                    DraggableAnchors {
                         SwipeToDismissBoxValue.Settled at 0f
                         if (enableDismissFromStartToEnd) {
-                            SwipeToDismissBoxValue.StartToEnd at (if (isRtl) -width else width)
+                            SwipeToDismissBoxValue.StartToEnd at width
                         }
                         if (enableDismissFromEndToStart) {
-                            SwipeToDismissBoxValue.EndToStart at (if (isRtl) width else -width)
+                            SwipeToDismissBoxValue.EndToStart at -width
                         }
                     } to state.targetValue
                 }

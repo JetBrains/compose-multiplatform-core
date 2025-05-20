@@ -74,7 +74,7 @@ import kotlin.reflect.safeCast
  * The helper is then instantiated to use the same schema location where they are exported to. See
  * platform-specific documentation for further configuration.
  */
-expect class MigrationTestHelper {
+public expect class MigrationTestHelper {
     /**
      * Creates the database at the given version.
      *
@@ -84,7 +84,7 @@ expect class MigrationTestHelper {
      * @return A database connection of the newly created database.
      * @throws IllegalStateException If a new database was not created.
      */
-    fun createDatabase(version: Int): SQLiteConnection
+    public fun createDatabase(version: Int): SQLiteConnection
 
     /**
      * Runs the given set of migrations on the existing database once created via [createDatabase].
@@ -103,7 +103,7 @@ expect class MigrationTestHelper {
      * @return A database connection of the migrated database.
      * @throws IllegalStateException If the schema validation fails.
      */
-    fun runMigrationsAndValidate(
+    public fun runMigrationsAndValidate(
         version: Int,
         migrations: List<Migration> = emptyList()
     ): SQLiteConnection

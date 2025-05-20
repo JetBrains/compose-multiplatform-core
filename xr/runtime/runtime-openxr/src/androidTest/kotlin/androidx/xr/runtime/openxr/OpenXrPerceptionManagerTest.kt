@@ -129,7 +129,7 @@ class OpenXrPerceptionManagerTest {
         // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
         // and
         // a fake perception library can be used mock trackables.
-        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.Disabled))
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.DISABLED))
 
         underTest.updatePlanes(XR_TIME)
 
@@ -155,8 +155,8 @@ class OpenXrPerceptionManagerTest {
     @Test
     fun update_updatesHands() = initOpenXrManagerAndRunTest {
         check(underTest.xrResources.updatables.size == 2)
-        check(underTest.leftHand.trackingState != TrackingState.Tracking)
-        check(underTest.rightHand.trackingState != TrackingState.Tracking)
+        check(underTest.leftHand.trackingState != TrackingState.TRACKING)
+        check(underTest.rightHand.trackingState != TrackingState.TRACKING)
 
         underTest.update(XR_TIME)
 
@@ -164,7 +164,7 @@ class OpenXrPerceptionManagerTest {
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         val leftHandJoints = underTest.leftHand.handJoints
-        assertThat(underTest.leftHand.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.leftHand.trackingState).isEqualTo(TrackingState.TRACKING)
         assertThat(leftHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
@@ -184,7 +184,7 @@ class OpenXrPerceptionManagerTest {
         }
 
         val rightHandJoints = underTest.rightHand.handJoints
-        assertThat(underTest.rightHand.trackingState).isEqualTo(TrackingState.Tracking)
+        assertThat(underTest.rightHand.trackingState).isEqualTo(TrackingState.TRACKING)
         assertThat(rightHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
@@ -228,7 +228,7 @@ class OpenXrPerceptionManagerTest {
 
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
-        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.Disabled))
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.DISABLED))
         underTest.updatePlanes(XR_TIME)
         underTest.update(XR_TIME)
 
@@ -321,8 +321,8 @@ class OpenXrPerceptionManagerTest {
             openXrManager.resume()
             openXrManager.configure(
                 Config(
-                    planeTracking = Config.PlaneTrackingMode.HorizontalAndVertical,
-                    handTracking = Config.HandTrackingMode.Enabled,
+                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    handTracking = Config.HandTrackingMode.ENABLED,
                 )
             )
 

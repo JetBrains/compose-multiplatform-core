@@ -23,7 +23,6 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Threading
 import androidx.camera.camera2.pipe.core.Threads
 import java.util.concurrent.CountDownLatch
 import javax.inject.Inject
@@ -170,11 +169,7 @@ constructor(
         val cameraDeviceId = cameraDevice.id
         Log.debug { "closeCameraDevice($cameraDeviceId)" }
         var cameraDeviceClosed = false
-        Threading.runBlockingCheckedOrNull(
-            threads.blockingDispatcher,
-            threads.backgroundDispatcher,
-            CAMERA_CLOSE_TIMEOUT_MS,
-        ) {
+        threads.runBlockingCheckedOrNull(CAMERA_CLOSE_TIMEOUT_MS) {
             cameraDevice.closeWithTrace()
             cameraDeviceClosed = true
         }

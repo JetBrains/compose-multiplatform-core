@@ -278,7 +278,6 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
         val Fling: NestedScrollSource = SideEffect
 
         /** Relocating when a component asks parents to scroll to bring it into view. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @Deprecated("Do not use. Will be removed in the future.")
         val Relocate: NestedScrollSource = NestedScrollSource(3)
 

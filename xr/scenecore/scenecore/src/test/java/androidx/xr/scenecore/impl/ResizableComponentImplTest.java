@@ -99,6 +99,7 @@ public class ResizableComponentImplTest {
                     mXrExtensions,
                     mEntityManager,
                     () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mFakeExecutor);
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
     private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose =
@@ -127,7 +128,8 @@ public class ResizableComponentImplTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
     }
 
     @After

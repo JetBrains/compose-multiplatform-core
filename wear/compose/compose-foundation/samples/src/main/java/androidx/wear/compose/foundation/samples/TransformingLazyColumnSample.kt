@@ -106,7 +106,7 @@ fun TransformingLazyColumnLettersSample() {
         return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
 
-    TransformingLazyColumn(contentPadding = PaddingValues(vertical = 10.dp)) {
+    TransformingLazyColumn {
         items(count = alphabet.size) { index ->
             Text(
                 alphabet[index],

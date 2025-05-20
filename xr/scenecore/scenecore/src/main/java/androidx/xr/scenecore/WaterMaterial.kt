@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
+import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -24,11 +25,13 @@ import androidx.xr.runtime.internal.MaterialResource as RtMaterial
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Represents a Material in SceneCore. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class Material(internal val material: RtMaterial?)
 
 /** A Material which implements a water effect. */
 // TODO(b/396201066): Add unit tests for this class if we end up making it public.
 @Suppress("NotCloseable")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class WaterMaterial
 internal constructor(
     internal val materialResource: RtMaterial,
@@ -53,16 +56,16 @@ internal constructor(
     }
 
     /**
-     * Sets the reflection cube texture for the water material.
+     * Sets the reflection map texture for the water material.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
      *
-     * @param reflectionCube The [CubeMapTexture] to be used as the reflection cube.
+     * @param reflectionMap The [CubeMapTexture] to be used as the reflection cube.
      */
     @MainThread
-    public fun setReflectionCube(reflectionCube: CubeMapTexture) {
-        session.platformAdapter.setReflectionCube(materialResource, reflectionCube.texture)
+    public fun setReflectionMap(reflectionMap: CubeMapTexture) {
+        session.platformAdapter.setReflectionMap(materialResource, reflectionMap.texture)
     }
 
     /**

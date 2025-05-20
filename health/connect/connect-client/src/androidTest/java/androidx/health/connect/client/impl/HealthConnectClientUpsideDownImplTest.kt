@@ -34,6 +34,7 @@ import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceF
 import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceFactory.createVaccinesUpsertMedicalResourceRequest
 import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS
 import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_13
+import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_15
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.readRecord
 import androidx.health.connect.client.records.FhirResource.Companion.FHIR_RESOURCE_TYPE_IMMUNIZATION
@@ -104,6 +105,14 @@ class HealthConnectClientUpsideDownImplTest {
         // availability, which would lead to a crash.
         private val FHIR_VERSION_4_0_1 by lazy { FhirVersion(4, 0, 1) }
 
+        private val TEST_RECORD_TYPES =
+            listOf(
+                StepsRecord::class,
+                HeartRateRecord::class,
+                NutritionRecord::class,
+                WeightRecord::class
+            )
+
         fun getAllRecordPermissions(): Array<String> {
             val permissions: HashSet<String> = HashSet()
 
@@ -114,6 +123,13 @@ class HealthConnectClientUpsideDownImplTest {
 
             if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 13) {
                 for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_13.keys) {
+                    permissions.add(HealthPermission.getReadPermission(recordType))
+                    permissions.add(HealthPermission.getWritePermission(recordType))
+                }
+            }
+
+            if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 15) {
+                for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_15.keys) {
                     permissions.add(HealthPermission.getReadPermission(recordType))
                     permissions.add(HealthPermission.getWritePermission(recordType))
                 }
@@ -142,13 +158,8 @@ class HealthConnectClientUpsideDownImplTest {
 
     @After
     fun tearDown() = runTest {
-        for (recordType in SDK_TO_PLATFORM_RECORD_CLASS.keys) {
+        for (recordType in TEST_RECORD_TYPES) {
             healthConnectClient.deleteRecords(recordType, TimeRangeFilter.after(Instant.EPOCH))
-        }
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 13) {
-            for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_13.keys) {
-                healthConnectClient.deleteRecords(recordType, TimeRangeFilter.after(Instant.EPOCH))
-            }
         }
         if (isPersonalHealthRecordFeatureAvailableInPlatform()) {
             healthConnectClient

@@ -16,6 +16,8 @@
 
 package androidx.navigationevent
 
+import kotlin.jvm.JvmInline
+
 /**
  * Priority to be provided to the [NavigationEventCallback] when it is being initialized to
  * determine when the callback should be triggered.

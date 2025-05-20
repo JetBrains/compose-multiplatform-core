@@ -20,6 +20,7 @@
 
 package androidx.binarycompatibilityvalidator
 
+import kotlin.text.dropLast
 import org.jetbrains.kotlin.library.abi.AbiClassKind
 import org.jetbrains.kotlin.library.abi.AbiCompoundName
 import org.jetbrains.kotlin.library.abi.AbiModality
@@ -147,11 +148,42 @@ internal fun Cursor.parseFunctionModifiers(): Set<String> {
 
 internal fun Cursor.parseConstructorName() = parseSymbol(constructorNameRegex)
 
+// Valid identifiers can appear in a lot of places, some of them are followed by spaces,
+// for example at the end of a class name ('class libname.Foo {'). But not at the end of a function
+// name ('libname.foo()'). So we trim the whitespace only when we know it was inserted by the dump
+// format and is not part of the identifier itself.
+internal fun Cursor.parseValidIdentifierAndMaybeTrim(peek: Boolean = false) =
+    parseValidIdentifier(peek)?.let {
+        if (parseSymbol(symbolsFollowingIdentifiersWithSpaces, peek = true) != null) {
+            it.dropLast(1)
+        } else {
+            it
+        }
+    }
+
 internal fun Cursor.parseAbiQualifiedName(peek: Boolean = false): AbiQualifiedName? {
-    val symbol = parseSymbol(abiQualifiedNameRegex, peek) ?: return null
-    val (packageName, relativeName) = symbol.split("/")
+    val cursor = subCursor(peek)
+    val packageName = cursor.parsePackageName() ?: return null
+    cursor.parseSymbol(slashRegex) ?: return null
+    val relativeNameBuilder = StringBuilder()
+    while (cursor.hasNextValidIdentifierPiece()) {
+        cursor.parseSymbol(dotRegex)?.let { relativeNameBuilder.append(it) }
+        relativeNameBuilder.append(cursor.parseValidIdentifierAndMaybeTrim())
+    }
+    val relativeName =
+        relativeNameBuilder.toString().ifEmpty {
+            return null
+        }
     return AbiQualifiedName(AbiCompoundName(packageName), AbiCompoundName(relativeName))
 }
+
+private fun Cursor.hasNextValidIdentifierPiece(): Boolean {
+    val cursor = subCursor(peek = true)
+    cursor.parseSymbol(dotRegex)
+    return cursor.parseValidIdentifier(peek = true) != null
+}
+
+internal fun Cursor.parsePackageName() = parseSymbol(packageNameRegex)
 
 internal fun Cursor.parseAbiType(peek: Boolean = false): AbiType? {
     val cursor = subCursor(peek)
@@ -458,7 +490,7 @@ private val setterNameRegex = Regex("^<set\\-")
 private val classModifierRegex = Regex("^(inner|value|fun|open)")
 private val functionKindRegex = Regex("^(constructor|fun)")
 private val functionModifierRegex = Regex("^(inline|suspend)")
-private val abiQualifiedNameRegex = Regex("^[a-zA-Z0-9\\.]+\\/[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*")
+private val packageNameRegex = Regex("^[a-zA-Z0-9.]+")
 private val openAngleBracketRegex = Regex("^<")
 private val closeAngleBracketRegex = Regex("^>")
 private val openCurlyBraceRegex = Regex("^\\{")
@@ -474,3 +506,5 @@ private val enumEntryKindRegex = Regex("^enum\\sentry")
 private val signatureMarkerRegex = Regex("-\\sSignature\\sversion:")
 private val digitRegex = Regex("^\\d+")
 private val dotRegex = Regex("^\\.")
+private val slashRegex = Regex("^/")
+private val symbolsFollowingIdentifiersWithSpaces = Regex("^[:|/={]")

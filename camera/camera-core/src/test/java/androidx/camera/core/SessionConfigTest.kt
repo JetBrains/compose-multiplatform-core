@@ -26,7 +26,6 @@ import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
 import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
 import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
 import androidx.camera.core.featurecombination.impl.feature.FeatureTypeInternal
-import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
@@ -60,7 +59,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.targetHighSpeedFrameRate).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
         assertThat(sessionConfig.requiredFeatures).isEmpty()
         assertThat(sessionConfig.preferredFeatures).isEmpty()
-        assertThat(sessionConfig.isMultipleBindingAllowed).isFalse()
+        assertThat(sessionConfig.isLegacy).isFalse()
     }
 
     @Test
@@ -73,7 +72,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.targetHighSpeedFrameRate).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
         assertThat(sessionConfig.requiredFeatures).isEmpty()
         assertThat(sessionConfig.preferredFeatures).isEmpty()
-        assertThat(sessionConfig.isMultipleBindingAllowed).isFalse()
+        assertThat(sessionConfig.isLegacy).isFalse()
     }
 
     @Test
@@ -129,7 +128,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.targetHighSpeedFrameRate).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
         assertThat(sessionConfig.requiredFeatures).isEmpty()
         assertThat(sessionConfig.preferredFeatures).isEmpty()
-        assertThat(sessionConfig.isMultipleBindingAllowed).isFalse()
+        assertThat(sessionConfig.isLegacy).isFalse()
     }
 
     @Test
@@ -150,7 +149,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.targetHighSpeedFrameRate).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
         assertThat(sessionConfig.requiredFeatures).isEmpty()
         assertThat(sessionConfig.preferredFeatures).isEmpty()
-        assertThat(sessionConfig.isMultipleBindingAllowed).isFalse()
+        assertThat(sessionConfig.isLegacy).isFalse()
     }
 
     @Test
@@ -321,7 +320,7 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.viewPort).isEqualTo(viewPort)
         assertThat(legacySessionConfig.effects).isEqualTo(effects)
         assertThat(legacySessionConfig.targetHighSpeedFrameRate).isEqualTo(frameRateRange)
-        assertThat(legacySessionConfig.isMultipleBindingAllowed).isTrue()
+        assertThat(legacySessionConfig.isLegacy).isTrue()
     }
 
     @Test
@@ -332,8 +331,8 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.viewPort).isNull()
         assertThat(legacySessionConfig.effects).isEmpty()
         assertThat(legacySessionConfig.targetHighSpeedFrameRate)
-            .isEqualTo(StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED)
-        assertThat(legacySessionConfig.isMultipleBindingAllowed).isTrue()
+            .isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
+        assertThat(legacySessionConfig.isLegacy).isTrue()
     }
 
     @Test
@@ -353,8 +352,8 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.viewPort).isEqualTo(viewPort)
         assertThat(legacySessionConfig.effects).isEqualTo(effects)
         assertThat(legacySessionConfig.targetHighSpeedFrameRate)
-            .isEqualTo(useCaseGroup.targetHighSpeedFrameRate)
-        assertThat(legacySessionConfig.isMultipleBindingAllowed).isTrue()
+            .isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
+        assertThat(legacySessionConfig.isLegacy).isTrue()
     }
 
     data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) : Feature() {

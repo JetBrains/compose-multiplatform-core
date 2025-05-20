@@ -3,34 +3,28 @@ package androidx.xr.glimmer {
 
   @androidx.compose.runtime.Immutable public final class Colors {
     ctor public Colors();
-    ctor public Colors(optional long primary, optional long onPrimary, optional long secondary, optional long onSecondary, optional long positive, optional long onPositive, optional long negative, optional long onNegative, optional long surface, optional long onSurface, optional long surfaceLow, optional long outline, optional long outlineVariant);
-    method public androidx.xr.glimmer.Colors copy(optional long primary, optional long onPrimary, optional long secondary, optional long onSecondary, optional long positive, optional long onPositive, optional long negative, optional long onNegative, optional long surface, optional long onSurface, optional long surfaceLow, optional long outline, optional long outlineVariant);
+    ctor public Colors(optional long primary, optional long secondary, optional long positive, optional long negative, optional long surface, optional long outline, optional long outlineVariant);
+    method public androidx.xr.glimmer.Colors copy(optional long primary, optional long secondary, optional long positive, optional long negative, optional long surface, optional long outline, optional long outlineVariant);
     method public long getNegative();
-    method public long getOnNegative();
-    method public long getOnPositive();
-    method public long getOnPrimary();
-    method public long getOnSecondary();
-    method public long getOnSurface();
     method public long getOutline();
     method public long getOutlineVariant();
     method public long getPositive();
     method public long getPrimary();
     method public long getSecondary();
     method public long getSurface();
-    method public long getSurfaceLow();
     property public long negative;
-    property public long onNegative;
-    property public long onPositive;
-    property public long onPrimary;
-    property public long onSecondary;
-    property public long onSurface;
     property public long outline;
     property public long outlineVariant;
     property public long positive;
     property public long primary;
     property public long secondary;
     property public long surface;
-    property public long surfaceLow;
+  }
+
+  public final class ContentColorKt {
+    method public static long calculateContentColor(long backgroundColor);
+    method public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.graphics.Color> getModifierLocalContentColor();
+    property public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.graphics.Color> ModifierLocalContentColor;
   }
 
   @androidx.compose.runtime.Immutable public final class GlimmerTheme {
@@ -54,6 +48,18 @@ package androidx.xr.glimmer {
 
   public final class GlimmerThemeKt {
     method @androidx.compose.runtime.Composable public static void GlimmerTheme(optional androidx.xr.glimmer.Colors colors, optional androidx.xr.glimmer.Typography typography, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+  }
+
+  public final class SurfaceDefaults {
+    method @androidx.compose.runtime.Composable public androidx.compose.foundation.BorderStroke border();
+    method @androidx.compose.runtime.Composable public androidx.compose.foundation.BorderStroke border(optional float width, optional long color);
+    method public androidx.compose.ui.graphics.Shape getShape();
+    property public androidx.compose.ui.graphics.Shape Shape;
+    field public static final androidx.xr.glimmer.SurfaceDefaults INSTANCE;
+  }
+
+  public final class SurfaceKt {
+    method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier surface(androidx.compose.ui.Modifier, optional androidx.compose.ui.graphics.Shape shape, optional long color, optional long contentColor, optional androidx.compose.foundation.BorderStroke? border);
   }
 
   @androidx.compose.runtime.Immutable public final class Typography {

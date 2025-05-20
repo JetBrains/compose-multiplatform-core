@@ -34,9 +34,6 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  * and common properties like the field-of-view defined by [ViewPort], the [CameraEffect], required
  * or preferred [Feature]s etc.
  *
- * The following shows the example of how to configure the SessionConfig in CameraX.
- *
- * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
  * @property useCases The list of [UseCase] to be attached to the camera and receive camera data.
  *   This can't be empty.
  * @property viewPort The [ViewPort] to be applied on the camera session. If not set, the default is
@@ -65,28 +62,52 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  *
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
+// TODO: b/414298514 - The class-wide restriction to remove when making SessionConfig API public.
+//  Removing only this restriction won't make the feature combo params public.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalSessionConfig
 public open class SessionConfig
-@JvmOverloads
+// TODO: b/384404392 - Remove when feature combo impl. is ready. The feature combo params should be
+//  kept restricted until then.
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(
     useCases: List<UseCase>,
     public val viewPort: ViewPort? = null,
     public val effects: List<CameraEffect> = emptyList(),
-    // The feature combo params should be kept restricted until their impl. is ready, even if the
-    // class-wide restriction is removed. If required, we can do it with the help of secondary
-    // constructors.
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val requiredFeatures: Set<Feature> = emptySet(),
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val preferredFeatures: List<Feature> = emptyList(),
 ) {
     public val useCases: List<UseCase> = useCases.distinct()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public open val isMultipleBindingAllowed: Boolean = false
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val isLegacy: Boolean = false
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
 
     init {
+        validateFeatureCombination()
+    }
+
+    // TODO: b/384404392 - Remove this extra constructor when feature combo impl. is ready. The
+    //  feature combo params should be kept restricted until the impl. is ready. In order to unblock
+    //  the release of SessionConfig, we are splitting the constructor with and without the feature
+    //  params so that the one with feature params can be marked restricted. When feature combo
+    //  impl. is completed, we can just remove this constructor while removing the restricted
+    //  annotation for the primary constructor. Due to @JvmOverloads, only two new constructors will
+    //  be added without changing any previous one, so it won't be an API breaking change.
+    @JvmOverloads
+    public constructor(
+        useCases: List<UseCase>,
+        viewPort: ViewPort? = null,
+        effects: List<CameraEffect> = emptyList()
+    ) : this(
+        useCases = useCases,
+        viewPort = viewPort,
+        effects = effects,
+        requiredFeatures = emptySet(),
+        preferredFeatures = emptyList()
+    ) {
         validateFeatureCombination()
     }
 
@@ -165,6 +186,8 @@ constructor(
          * @return The [Builder] instance, allowing for method chaining.
          * @see androidx.camera.core.SessionConfig.requiredFeatures
          */
+        // TODO: b/384404392 - Remove when feature combo impl. is ready.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun addRequiredFeatures(vararg features: Feature): Builder {
             requiredFeatures.addAll(features)
             return this
@@ -182,6 +205,8 @@ constructor(
          * @return The [Builder] instance, allowing for method chaining.
          * @see androidx.camera.core.SessionConfig.preferredFeatures
          */
+        // TODO: b/384404392 - Remove when feature combo impl. is ready.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun setPreferredFeatures(vararg features: Feature): Builder {
             preferredFeatures.clear()
             preferredFeatures.addAll(features)
@@ -201,7 +226,7 @@ constructor(
     }
 }
 
-/** The legacy SessionConfig which allows multiple binding. This is used internally. */
+/** The legacy SessionConfig which allows sequential binding. This is used internally. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @OptIn(ExperimentalSessionConfig::class)
 public class LegacySessionConfig(
@@ -210,14 +235,9 @@ public class LegacySessionConfig(
     effects: List<CameraEffect> = emptyList(),
     public override val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
 ) : SessionConfig(useCases, viewPort, effects) {
-    public override val isMultipleBindingAllowed: Boolean = true
+    public override val isLegacy: Boolean = true
 
     public constructor(
         useCaseGroup: UseCaseGroup
-    ) : this(
-        useCaseGroup.useCases,
-        useCaseGroup.viewPort,
-        useCaseGroup.effects,
-        useCaseGroup.targetHighSpeedFrameRate
-    )
+    ) : this(useCaseGroup.useCases, useCaseGroup.viewPort, useCaseGroup.effects)
 }

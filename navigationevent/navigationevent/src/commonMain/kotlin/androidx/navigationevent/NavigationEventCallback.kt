@@ -19,10 +19,9 @@ package androidx.navigationevent
 /**
  * Call for handling [NavigationEventDispatcher] callbacks.
  *
- * This class maintains its own [enabled] state and will only receive callbacks when enabled.
+ * This class maintains its own [isEnabled] state and will only receive callbacks when enabled.
  *
  * @param isEnabled The default enabled state for this callback.
- * @param dispatcher The dispatcher this callback is being added to.
  * @param priority The priority this callback should be registered with.
  * @see NavigationEventDispatcher
  */
@@ -32,13 +31,11 @@ public abstract class NavigationEventCallback(
      * callbacks to [onEventCompleted].
      */
     isEnabled: Boolean,
-    /** The dispatcher that this callback is being added to. */
-    internal val dispatcher: NavigationEventDispatcher,
     /** The priority of this callback. */
     public val priority: NavigationEventPriority = NavigationEventPriority.Default
 ) {
 
-    internal var enabled: Boolean = isEnabled
+    public var isEnabled: Boolean = isEnabled
         set(value) {
             field = value
             enabledChangedCallback?.invoke()
@@ -52,9 +49,27 @@ public abstract class NavigationEventCallback(
      */
     public var isPassThrough: Boolean = false
 
-    /** Removes this callback from the [NavigationEventDispatcher] it is currently added to. */
+    /**
+     * A set of active [AutoCloseable] resources associated with this [NavigationEventCallback].
+     *
+     * Each closeable typically represents a registration with a [NavigationEventDispatcher] or
+     * another resource that should be properly closed. These are automatically closed when [remove]
+     * is called to avoid unintended event dispatches or resource leaks.
+     */
+    private val closeables = mutableSetOf<AutoCloseable>()
+
+    /**
+     * Cleans up all tracked [AutoCloseable] resources associated with this
+     * [NavigationEventCallback].
+     *
+     * This method calls [AutoCloseable.close] on each tracked resource, ensuring that no lingering
+     * event registrations or resources remain active.
+     */
     public fun remove() {
-        dispatcher.removeCallback(this)
+        for (closeable in closeables) {
+            closeable.close()
+        }
+        // Don't clear `closeables`; each closeable may remove itself via `removeCloseable`.
     }
 
     /** Callback for handling the [NavigationEventDispatcher.dispatchOnStarted] callback. */
@@ -68,4 +83,28 @@ public abstract class NavigationEventCallback(
 
     /** Callback for handling the [NavigationEventDispatcher.dispatchOnCancelled] callback. */
     public open fun onEventCancelled() {}
+
+    /**
+     * Tracks an [AutoCloseable] resource associated with this [NavigationEventCallback].
+     *
+     * Tracked resources will be automatically closed when [remove] is called, preventing unintended
+     * behavior or resource leaks.
+     *
+     * @param closeable The [AutoCloseable] to track for later cleanup.
+     */
+    internal fun addCloseable(closeable: AutoCloseable) {
+        closeables += closeable
+    }
+
+    /**
+     * Removes a specific [AutoCloseable] from the tracked set without closing it.
+     *
+     * This is useful if the resource has already been closed manually or should no longer be
+     * managed by this [NavigationEventCallback].
+     *
+     * @param closeable The [AutoCloseable] to stop tracking.
+     */
+    internal fun removeCloseable(closeable: AutoCloseable) {
+        closeables -= closeable
+    }
 }

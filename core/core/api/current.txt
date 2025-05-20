@@ -287,6 +287,7 @@ package androidx.core.app {
     method public static java.util.List<androidx.core.app.Person!> getPeople(android.app.Notification);
     method public static android.app.Notification? getPublicVersion(android.app.Notification);
     method public static CharSequence? getSettingsText(android.app.Notification);
+    method public static String? getShortCriticalText(android.app.Notification);
     method public static String? getShortcutId(android.app.Notification);
     method public static boolean getShowWhen(android.app.Notification);
     method public static String? getSortKey(android.app.Notification);
@@ -294,6 +295,8 @@ package androidx.core.app {
     method public static long getTimeoutAfter(android.app.Notification);
     method public static boolean getUsesChronometer(android.app.Notification);
     method public static int getVisibility(android.app.Notification);
+    method public static boolean hasPromotableCharacteristics(android.app.Notification);
+    method public static boolean hasRequestedPromotedOngoing(android.app.Notification);
     method public static boolean isGroupSummary(android.app.Notification);
     method public static android.graphics.Bitmap? reduceLargeIconSize(android.content.Context, android.graphics.Bitmap?);
     field public static final int BADGE_ICON_LARGE = 2; // 0x2
@@ -369,7 +372,9 @@ package androidx.core.app {
     field public static final String EXTRA_PROGRESS_START_ICON = "android.progressStartIcon";
     field public static final String EXTRA_PROGRESS_TRACKER_ICON = "android.progressTrackerIcon";
     field public static final String EXTRA_REMOTE_INPUT_HISTORY = "android.remoteInputHistory";
+    field public static final String EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing";
     field public static final String EXTRA_SELF_DISPLAY_NAME = "android.selfDisplayName";
+    field public static final String EXTRA_SHORT_CRITICAL_TEXT = "android.shortCriticalText";
     field public static final String EXTRA_SHOW_BIG_PICTURE_WHEN_COLLAPSED = "android.showBigPictureWhenCollapsed";
     field public static final String EXTRA_SHOW_CHRONOMETER = "android.showChronometer";
     field public static final String EXTRA_SHOW_WHEN = "android.showWhen";
@@ -596,7 +601,9 @@ package androidx.core.app {
     method public androidx.core.app.NotificationCompat.Builder setProgress(int, int, boolean);
     method public androidx.core.app.NotificationCompat.Builder setPublicVersion(android.app.Notification?);
     method public androidx.core.app.NotificationCompat.Builder setRemoteInputHistory(CharSequence![]?);
+    method public androidx.core.app.NotificationCompat.Builder setRequestPromotedOngoing(boolean);
     method public androidx.core.app.NotificationCompat.Builder setSettingsText(CharSequence?);
+    method public androidx.core.app.NotificationCompat.Builder setShortCriticalText(String?);
     method public androidx.core.app.NotificationCompat.Builder setShortcutId(String?);
     method public androidx.core.app.NotificationCompat.Builder setShortcutInfo(androidx.core.content.pm.ShortcutInfoCompat?);
     method public androidx.core.app.NotificationCompat.Builder setShowWhen(boolean);
@@ -859,6 +866,7 @@ package androidx.core.app {
 
   public final class NotificationManagerCompat {
     method public boolean areNotificationsEnabled();
+    method public boolean canPostPromotedNotifications();
     method public boolean canUseFullScreenIntent();
     method public void cancel(int);
     method public void cancel(String?, int);
@@ -3410,6 +3418,7 @@ package androidx.core.view {
   }
 
   public final class WindowCompat {
+    method public static void enableEdgeToEdge(android.view.Window);
     method public static androidx.core.view.WindowInsetsControllerCompat getInsetsController(android.view.Window, android.view.View);
     method public static <T extends android.view.View> T requireViewById(android.view.Window, @IdRes int);
     method public static void setDecorFitsSystemWindows(android.view.Window, boolean);

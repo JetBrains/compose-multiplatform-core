@@ -32,7 +32,7 @@ import androidx.sqlite.SQLiteStatement
 
 /** SQLiteStatement backed by a Cursor used for backwards compatibility of Paging2 APIs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class CursorSQLiteStatement(private val cursor: Cursor) : SQLiteStatement {
+public class CursorSQLiteStatement(private val cursor: Cursor) : SQLiteStatement {
     override fun getBlob(index: Int): ByteArray = cursor.getBlob(index)
 
     override fun getDouble(index: Int): Double = cursor.getDouble(index)
@@ -59,25 +59,25 @@ class CursorSQLiteStatement(private val cursor: Cursor) : SQLiteStatement {
         cursor.close()
     }
 
-    override fun bindBlob(index: Int, value: ByteArray) =
+    override fun bindBlob(index: Int, value: ByteArray): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    override fun bindDouble(index: Int, value: Double) =
+    override fun bindDouble(index: Int, value: Double): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    override fun bindLong(index: Int, value: Long) =
+    override fun bindLong(index: Int, value: Long): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    override fun bindText(index: Int, value: String) =
+    override fun bindText(index: Int, value: String): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    override fun bindNull(index: Int) =
+    override fun bindNull(index: Int): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    override fun clearBindings() =
+    override fun clearBindings(): Nothing =
         error("Only get*() calls are allowed on a Cursor backed SQLiteStatement")
 
-    companion object {
+    public companion object {
         private fun Cursor.getDataType(index: Int): Int {
             val fieldType = this.getType(index)
             return when (this.getType(index)) {

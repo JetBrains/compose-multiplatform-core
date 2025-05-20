@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.contextmenu.builder
 
+import android.content.res.Resources
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
@@ -278,7 +279,7 @@ private fun createAndRunScope(
 
 private fun TextContextMenuBuilderScope.intItem(
     intValue: Int,
-    leadingIcon: Int? = null,
+    leadingIcon: Int = Resources.ID_NULL,
     onClick: TextContextMenuSession.() -> Unit = {},
 ) {
     item(key = intValue, label = intValue.toString(), leadingIcon = leadingIcon, onClick = onClick)

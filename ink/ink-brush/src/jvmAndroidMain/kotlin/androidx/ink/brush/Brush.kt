@@ -407,6 +407,7 @@ private constructor(
          * for those objects from C++.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @OptIn(ExperimentalInkCustomBrushApi::class)
         public fun wrapNative(unownedNativePointer: Long): Brush {
             return Brush(
                 unownedNativePointer,
@@ -461,7 +462,7 @@ private object BrushNative {
 
     /** Create underlying native object and return reference for all subsequent native calls. */
     @UsedByNative
-    public external fun create(
+    external fun create(
         familyNativePointer: Long,
         colorRed: Float,
         colorGreen: Float,
@@ -473,13 +474,13 @@ private object BrushNative {
     ): Long
 
     /** Release the underlying memory allocated in [create]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
-    @UsedByNative public external fun computeComposeColorLong(nativePointer: Long): Long
+    @UsedByNative external fun computeComposeColorLong(nativePointer: Long): Long
 
     /** This is a callback used by computeComposeColorLong. */
     @UsedByNative
-    public fun composeColorLongFromComponents(
+    fun composeColorLongFromComponents(
         colorSpaceId: Int,
         redGammaCorrected: Float,
         greenGammaCorrected: Float,
@@ -496,13 +497,13 @@ private object BrushNative {
             .value
             .toLong()
 
-    @UsedByNative public external fun getSize(nativePointer: Long): Float
+    @UsedByNative external fun getSize(nativePointer: Long): Float
 
-    @UsedByNative public external fun getEpsilon(nativePointer: Long): Float
+    @UsedByNative external fun getEpsilon(nativePointer: Long): Float
 
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushFamily` for the pointed-at
      * native `Brush`.
      */
-    @UsedByNative public external fun newCopyOfBrushFamily(nativePointer: Long): Long
+    @UsedByNative external fun newCopyOfBrushFamily(nativePointer: Long): Long
 }

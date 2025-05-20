@@ -27,10 +27,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
+import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigurePermissionsNotGranted
 import androidx.xr.runtime.SessionConfigureSuccess
+import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreatePermissionsNotGranted
+import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SessionCreateUnsupportedDevice
 import androidx.xr.runtime.SessionResumePermissionsNotGranted
 import androidx.xr.runtime.SessionResumeSuccess
 
@@ -42,6 +46,7 @@ class SessionLifecycleHelper(
     val activity: ComponentActivity,
     val config: Config = Config(),
     val onSessionAvailable: (Session) -> Unit = {},
+    val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
 ) : DefaultLifecycleObserver {
 
     /** Accessed through the [onSessionAvailable] callback. */
@@ -51,23 +56,7 @@ class SessionLifecycleHelper(
     override fun onCreate(owner: LifecycleOwner) {
         registerRequestPermissionLauncher(activity)
 
-        when (val result = Session.create(activity)) {
-            is SessionCreateSuccess -> {
-                session = result.session
-                val configResult = session.configure(config)
-                if (configResult is SessionConfigurePermissionsNotGranted) {
-                    requestPermissionLauncher.launch(configResult.permissions.toTypedArray())
-                } else if (configResult is SessionConfigureConfigurationNotSupported) {
-                    showErrorMessage("Session configuration not supported.")
-                    activity.finish()
-                } else if (configResult is SessionConfigureSuccess) {
-                    onSessionAvailable(session)
-                }
-            }
-            is SessionCreatePermissionsNotGranted -> {
-                requestPermissionLauncher.launch(result.permissions.toTypedArray())
-            }
-        }
+        tryCreateSession()
     }
 
     override fun onResume(owner: LifecycleOwner) {
@@ -114,6 +103,42 @@ class SessionLifecycleHelper(
                     activity.recreate()
                 }
             }
+    }
+
+    public fun tryCreateSession() {
+        when (val result = Session.create(activity)) {
+            is SessionCreateSuccess -> {
+                session = result.session
+                when (val configResult = session.configure(config)) {
+                    is SessionConfigurePermissionsNotGranted -> {
+                        requestPermissionLauncher.launch(configResult.permissions.toTypedArray())
+                    }
+                    is SessionConfigureConfigurationNotSupported -> {
+                        showErrorMessage("Session configuration not supported.")
+                        activity.finish()
+                    }
+                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                        Log.e(
+                            TAG,
+                            "Google Play Services Location Library is not linked, this should not happen.",
+                        )
+                    }
+                    is SessionConfigureSuccess -> {
+                        onSessionAvailable(session)
+                    }
+                }
+            }
+            is SessionCreatePermissionsNotGranted -> {
+                requestPermissionLauncher.launch(result.permissions.toTypedArray())
+            }
+            is SessionCreateApkRequired -> {
+                onSessionCreateActionRequired(result)
+            }
+            is SessionCreateUnsupportedDevice -> {
+                showErrorMessage("Session could not be created, device is Unsupported.")
+                activity.finish()
+            }
+        }
     }
 
     companion object {

@@ -44,6 +44,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.Logger;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraInfoInternal;
@@ -191,6 +192,8 @@ public class StreamSharing extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
+                + ", secondaryStreamSpec " + secondaryStreamSpec);
         updateSessionConfig(
                 createPipelineAndUpdateChildrenSpecs(getCameraId(),
                         getSecondaryCameraId(),

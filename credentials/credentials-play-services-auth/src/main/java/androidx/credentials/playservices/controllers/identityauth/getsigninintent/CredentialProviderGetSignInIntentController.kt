@@ -18,6 +18,7 @@
 
 package androidx.credentials.playservices.controllers.identityauth.getsigninintent
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -38,6 +39,10 @@ import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.GET_INTERRUPTED
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.GET_NO_CREDENTIALS
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.getCredentialExceptionTypeToException
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.retryables
 import androidx.credentials.playservices.controllers.CredentialProviderController
 import androidx.credentials.playservices.controllers.identityauth.HiddenActivity
 import com.google.android.gms.auth.api.identity.GetSignInIntentRequest
@@ -108,21 +113,28 @@ internal class CredentialProviderGetSignInIntentController(private val context: 
             return
         }
 
+        val convertedRequest: GetSignInIntentRequest
         try {
-            val convertedRequest: GetSignInIntentRequest =
-                this.convertRequestToPlayServices(request)
+            convertedRequest = this.convertRequestToPlayServices(request)
+        } catch (e: GetCredentialUnsupportedException) {
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                this.executor.execute { this.callback.onError(e) }
+            }
+            return
+        }
 
-            val hiddenIntent = Intent(context, HiddenActivity::class.java)
-            hiddenIntent.putExtra(REQUEST_TAG, convertedRequest)
-            generateHiddenActivityIntent(resultReceiver, hiddenIntent, SIGN_IN_INTENT_TAG)
-            context.startActivity(hiddenIntent)
-        } catch (e: Exception) {
-            when (e) {
-                is GetCredentialUnsupportedException ->
-                    cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                        this.executor.execute { this.callback.onError(e) }
-                    }
-                else ->
+        Identity.getSignInClient(context)
+            .getSignInIntent(convertedRequest)
+            .addOnSuccessListener { result: PendingIntent ->
+                if (CredentialProviderPlayServicesImpl.cancellationReviewer(cancellationSignal)) {
+                    return@addOnSuccessListener
+                }
+                val hiddenIntent = Intent(context, HiddenActivity::class.java)
+                generateHiddenActivityIntent(resultReceiver, hiddenIntent, SIGN_IN_INTENT_TAG)
+                hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result)
+                try {
+                    context.startActivity(hiddenIntent)
+                } catch (_: Exception) {
                     cancelOrCallbackExceptionOrResult(cancellationSignal) {
                         this.executor.execute {
                             this.callback.onError(
@@ -130,8 +142,25 @@ internal class CredentialProviderGetSignInIntentController(private val context: 
                             )
                         }
                     }
+                }
             }
+            .addOnFailureListener { e ->
+                val getException = fromGmsException(e)
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    this.executor.execute { this.callback.onError(getException) }
+                }
+            }
+    }
+
+    private fun fromGmsException(e: Throwable): GetCredentialException {
+        var errName = GET_NO_CREDENTIALS
+        if (e is ApiException && e.statusCode in retryables) {
+            errName = GET_INTERRUPTED
         }
+        return getCredentialExceptionTypeToException(
+            errName,
+            "During get sign-in intent, failure response from one tap: ${e.message}"
+        )
     }
 
     @VisibleForTesting

@@ -1351,6 +1351,8 @@ public final class ImageCapture extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
+                + ", secondaryStreamSpec " + secondaryStreamSpec);
         mSessionConfigBuilder = createPipeline(getCameraId(),
                 (ImageCaptureConfig) getCurrentConfig(), primaryStreamSpec);
 

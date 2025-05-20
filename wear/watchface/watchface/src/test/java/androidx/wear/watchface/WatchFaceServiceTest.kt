@@ -6872,12 +6872,13 @@ public class WatchFaceServiceTest {
                                 INTERACTIVE_UPDATE_RATE_MS
                             ) {
                             init {
-                                watchfaceColors =
+                                setWatchfaceColors(
                                     WatchFaceColors(
                                         Color.valueOf(1),
                                         Color.valueOf(2),
                                         Color.valueOf(3)
                                     )
+                                )
                             }
 
                             override fun render(
@@ -6956,8 +6957,9 @@ public class WatchFaceServiceTest {
         assertThat(lastWatchFaceColors)
             .isEqualTo(WatchFaceColors(Color.valueOf(1), Color.valueOf(2), Color.valueOf(3)))
 
-        renderer.watchfaceColors =
+        renderer.setWatchfaceColors(
             WatchFaceColors(Color.valueOf(10), Color.valueOf(20), Color.valueOf(30))
+        )
 
         assertThat(lastWatchFaceColors)
             .isEqualTo(WatchFaceColors(Color.valueOf(10), Color.valueOf(20), Color.valueOf(30)))
@@ -6965,8 +6967,9 @@ public class WatchFaceServiceTest {
         interactiveWatchFaceInstance.removeWatchFaceListener(listener)
 
         // This should be ignored.
-        renderer.watchfaceColors =
+        renderer.setWatchfaceColors(
             WatchFaceColors(Color.valueOf(100), Color.valueOf(200), Color.valueOf(300))
+        )
         assertThat(lastWatchFaceColors)
             .isNotEqualTo(
                 WatchFaceColors(Color.valueOf(100), Color.valueOf(200), Color.valueOf(300))

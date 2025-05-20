@@ -76,6 +76,9 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize
+import androidx.camera.core.impl.SurfaceConfig.ConfigSize.S1440P_16_9
+import androidx.camera.core.impl.SurfaceConfig.ConfigSize.S1440P_4_3
+import androidx.camera.core.impl.SurfaceConfig.ConfigSize.S720P_16_9
 import androidx.camera.core.impl.SurfaceConfig.ConfigType
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
@@ -113,6 +116,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.util.ReflectionHelpers
 
 private const val DEFAULT_CAMERA_ID = "0"
@@ -855,7 +859,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.PRIVATE,
                 RESOLUTION_720P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, S720P_16_9)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -876,7 +880,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 RESOLUTION_720P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, S720P_16_9)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -897,7 +901,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 RESOLUTION_720P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, S720P_16_9)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -918,7 +922,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.PRIVATE,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, S1440P_4_3)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -939,7 +943,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, S1440P_4_3)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -960,7 +964,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, S1440P_4_3)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -1780,7 +1784,8 @@ class SupportedSurfaceCombinationTest {
                 attachedSurfaceInfoList,
                 useCaseConfigToOutputSizesMap,
                 isPreviewStabilizationOn,
-                hasVideoCapture
+                hasVideoCapture,
+                false
             )
         val suggestedStreamSpecsForNewUseCases = resultPair.first
         val suggestedStreamSpecsForOldSurfaces = resultPair.second
@@ -3295,6 +3300,8 @@ class SupportedSurfaceCombinationTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedCombination() {
+        ShadowLog.stream = System.out
+
         val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCaseOverride = true) // PREVIEW
         val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCaseOverride = true) // PREVIEW
         val useCaseExpectedResultMap =
@@ -3613,6 +3620,150 @@ class SupportedSurfaceCombinationTest {
         }
     }
 
+    @Test
+    fun filterSupportedSizes_configSrcCaptureSessionTables_withoutTargetFpsRange_filtersCorrectly() {
+        // Arrange
+        val useCaseConfig = createUseCase(CaptureType.IMAGE_CAPTURE).currentConfig
+        val supportedSurfaceCombination = createSupportedSurfaceCombination()
+        val useCaseConfigToSizesMap =
+            mapOf(
+                useCaseConfig to
+                    listOf(
+                        MAXIMUM_SIZE, // maps to MAX size with max FPS of 20
+                        RECORD_SIZE, // maps to RECORD size with max FPS of 25
+                        S1440P_16_9.relatedFixedSize, // maps to RECORD size with max FPS of 30
+                        S1440P_4_3.relatedFixedSize, // maps to RECORD size with max FPS of 30
+                        PREVIEW_SIZE, // maps to PREVIEW size with max FPS of 45
+                        S720P_16_9.relatedFixedSize, // maps to PREVIEW size with max FPS of 45
+                    )
+            )
+
+        // Act
+        val filteredSizes =
+            supportedSurfaceCombination.filterSupportedSizes(
+                useCaseConfigToSizesMap,
+                createFeatureSettings()
+            )
+
+        // Assert: Sizes mapping to same ConfigSize pairs are filtered out
+        assertThat(filteredSizes.getValue(useCaseConfig))
+            .containsExactly(MAXIMUM_SIZE, RECORD_SIZE, PREVIEW_SIZE)
+            .inOrder()
+    }
+
+    @Test
+    fun filterSupportedSizes_configSrcCaptureSessionTables_withTargetFpsRange_filtersCorrectly() {
+        // Arrange
+        val useCaseConfig = createUseCase(CaptureType.IMAGE_CAPTURE).currentConfig
+        val supportedSurfaceCombination = createSupportedSurfaceCombination()
+        val useCaseConfigToSizesMap =
+            mapOf(
+                useCaseConfig to
+                    listOf(
+                        MAXIMUM_SIZE, // maps to MAX size with max FPS of 20
+                        RECORD_SIZE, // maps to RECORD size with max FPS of 25
+                        S1440P_16_9.relatedFixedSize, // maps to RECORD size with max FPS of 30
+                        S1440P_4_3.relatedFixedSize, // maps to RECORD size with max FPS of 30
+                        PREVIEW_SIZE, // maps to PREVIEW size with max FPS of 45
+                        S720P_16_9.relatedFixedSize, // maps to PREVIEW size with max FPS of 45
+                    )
+            )
+
+        // Act
+        val filteredSizes =
+            supportedSurfaceCombination.filterSupportedSizes(
+                useCaseConfigToSizesMap,
+                createFeatureSettings(targetFpsRange = Range(30, 30))
+            )
+
+        // Assert: Sizes mapping to same (ConfigSize, FPS) pairs are filtered out
+        assertThat(filteredSizes.getValue(useCaseConfig))
+            .containsExactly(MAXIMUM_SIZE, RECORD_SIZE, S1440P_16_9.relatedFixedSize, PREVIEW_SIZE)
+            .inOrder()
+    }
+
+    @Test
+    fun filterSupportedSizes_configSrcFeatureComboTable_withoutTargetFpsRange_filtersCorrectly() {
+        // Arrange
+        val useCaseConfig = createUseCase(CaptureType.IMAGE_CAPTURE).currentConfig
+        val supportedSurfaceCombination = createSupportedSurfaceCombination()
+        val useCaseConfigToSizesMap =
+            mapOf(
+                useCaseConfig to
+                    listOf(
+                        MAXIMUM_SIZE, // maps to MAX size with max FPS of 20
+                        RECORD_SIZE, // maps to UHD size with max FPS of 25
+                        S1440P_16_9.relatedFixedSize, // maps to 1440P_16_9 size with max FPS of 30
+                        S1440P_4_3.relatedFixedSize, // ConfigSize.NOT_SUPPORT, not in FCombo table
+                        PREVIEW_SIZE, // maps to 720P_16_9 size with max FPS of 45
+                        S720P_16_9.relatedFixedSize, // maps to 720P_16_9 size with max FPS of 45
+                    )
+            )
+
+        // Act
+        val filteredSizes =
+            supportedSurfaceCombination.filterSupportedSizes(
+                useCaseConfigToSizesMap,
+                createFeatureSettings(requiresFeatureComboQuery = true)
+            )
+
+        // Assert: Unsupported sizes are filtered out
+        assertThat(filteredSizes.getValue(useCaseConfig))
+            .containsExactly(
+                MAXIMUM_SIZE,
+                RECORD_SIZE,
+                S1440P_16_9.relatedFixedSize,
+                PREVIEW_SIZE,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun filterSupportedSizes_configSrcFeatureComboTable_withTargetFpsRange_filtersCorrectly() {
+        // Arrange
+        val useCaseConfig = createUseCase(CaptureType.IMAGE_CAPTURE).currentConfig
+        val supportedSurfaceCombination = createSupportedSurfaceCombination()
+        val useCaseConfigToSizesMap =
+            mapOf(
+                useCaseConfig to
+                    listOf(
+                        MAXIMUM_SIZE, // maps to MAX size with max FPS of 20
+                        RECORD_SIZE, // maps to UHD size with max FPS of 25
+                        S1440P_16_9.relatedFixedSize, // maps to 1440P_16_9 size with max FPS of 30
+                        S1440P_4_3.relatedFixedSize, // ConfigSize.NOT_SUPPORT, not in FCombo table
+                        PREVIEW_SIZE, // maps to 720P_16_9 size with max FPS of 45
+                        S720P_16_9.relatedFixedSize, // maps to 720P_16_9 size with max FPS of 45
+                    )
+            )
+
+        // Act
+        val filteredSizes =
+            supportedSurfaceCombination.filterSupportedSizes(
+                useCaseConfigToSizesMap,
+                createFeatureSettings(
+                    requiresFeatureComboQuery = true,
+                    targetFpsRange = Range(22, 30)
+                )
+            )
+
+        // Assert: Unsupported sizes are filtered out
+        assertThat(filteredSizes.getValue(useCaseConfig))
+            .containsExactly(S1440P_16_9.relatedFixedSize, S720P_16_9.relatedFixedSize)
+            .inOrder()
+    }
+
+    // TODO: b/413849280 - Add feature combo tests for the full code flow of getSuggestedStreamSpecs
+
+    private fun createSupportedSurfaceCombination(): SupportedSurfaceCombination {
+        setupCameraAndInitCameraX()
+        return SupportedSurfaceCombination(
+            context,
+            DEFAULT_CAMERA_ID,
+            cameraManagerCompat!!,
+            mockCamcorderProfileHelper
+        )
+    }
+
     /**
      * Sets up camera according to the specified settings and initialize [CameraX].
      *
@@ -3778,6 +3929,14 @@ class SupportedSurfaceCombinationTest {
                         map.getOutputMinFrameDuration(
                             anyInt(),
                             ArgumentMatchers.eq(Size(1920, 1440))
+                        )
+                    )
+                    .thenReturn(33333333L) // 30
+
+                Mockito.`when`(
+                        map.getOutputMinFrameDuration(
+                            anyInt(),
+                            ArgumentMatchers.eq(Size(2560, 1440))
                         )
                     )
                     .thenReturn(33333333L) // 30
@@ -4070,13 +4229,18 @@ class SupportedSurfaceCombinationTest {
         isPreviewStabilizationOn: Boolean = false,
         isUltraHdrOn: Boolean = false,
         isHighSpeedOn: Boolean = false,
+        requiresFeatureComboQuery: Boolean = false,
+        targetFpsRange: Range<Int>? = null
     ): FeatureSettings {
         return FeatureSettings.of(
             cameraMode,
+            false,
             requiredMaxBitDepth,
             isPreviewStabilizationOn,
             isUltraHdrOn,
-            isHighSpeedOn
+            isHighSpeedOn,
+            requiresFeatureComboQuery,
+            targetFpsRange,
         )
     }
 }

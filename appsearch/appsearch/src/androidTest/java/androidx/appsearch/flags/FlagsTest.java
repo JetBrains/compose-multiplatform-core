@@ -280,4 +280,10 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_DATABASE_SCOPED_SCHEMA_OPERATIONS)
                 .isEqualTo("com.android.appsearch.flags.enable_database_scoped_schema_operations");
     }
+
+    @Test
+    public void testFlagValue_enableSmallerDecompressionBufferSize() {
+        assertThat(Flags.FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE)
+                .isEqualTo("com.android.appsearch.flags.enable_smaller_decompression_buffer_size");
+    }
 }

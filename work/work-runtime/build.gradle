@@ -92,7 +92,6 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCoreKtx)
     lintPublish(project(":work:work-runtime-lint"))
 }
@@ -113,4 +112,5 @@ androidx {
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

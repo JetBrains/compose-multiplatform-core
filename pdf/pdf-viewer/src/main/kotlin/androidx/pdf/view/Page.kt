@@ -100,6 +100,10 @@ internal class Page(
             }
         }
 
+    internal fun isFullyRendered(): Boolean {
+        return bitmapFetcher?.pageBitmaps?.isFullyRendered ?: false
+    }
+
     /**
      * Puts this page into a "visible" state, and / or updates various properties related to the
      * page's visible state

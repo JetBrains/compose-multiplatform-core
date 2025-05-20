@@ -186,7 +186,7 @@ public final class RequestBuilders {
             @Deprecated
             public @NonNull Builder setDeviceParameters(
                     androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
-                                    deviceParameters) {
+                            deviceParameters) {
                 mImpl.setDeviceConfiguration(deviceParameters.toProto());
                 return this;
             }
@@ -374,7 +374,7 @@ public final class RequestBuilders {
             @SuppressWarnings("deprecation") // for backward compatibility
             public @NonNull Builder setDeviceParameters(
                     androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
-                                    deviceParameters) {
+                            deviceParameters) {
                 mImpl.setDeviceConfiguration(deviceParameters.toProto());
                 return this;
             }

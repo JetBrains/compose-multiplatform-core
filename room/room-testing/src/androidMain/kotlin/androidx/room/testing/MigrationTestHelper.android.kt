@@ -23,8 +23,6 @@ import androidx.room.DatabaseConfiguration
 import androidx.room.InvalidationTracker
 import androidx.room.RoomDatabase
 import androidx.room.RoomOpenDelegate
-import androidx.room.driver.SupportSQLiteConnection
-import androidx.room.driver.SupportSQLiteDriver
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.room.migration.bundle.SchemaBundle
@@ -34,6 +32,8 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.sqlite.driver.SupportSQLiteConnection
+import androidx.sqlite.driver.SupportSQLiteDriver
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -70,7 +70,7 @@ import org.junit.runner.Description
  * See also
  * [Room's Test Migrations Documentation](https://developer.android.com/training/data-storage/room/migrating-db-versions#test)
  */
-actual open class MigrationTestHelper : TestWatcher {
+public actual open class MigrationTestHelper : TestWatcher {
     private val delegate: AndroidMigrationTestHelper
 
     private val managedSupportDatabases = mutableListOf<WeakReference<SupportSQLiteDatabase>>()
@@ -98,7 +98,7 @@ actual open class MigrationTestHelper : TestWatcher {
         """
     )
     @JvmOverloads
-    constructor(
+    public constructor(
         instrumentation: Instrumentation,
         assetsFolder: String,
         openFactory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory()
@@ -124,7 +124,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @param instrumentation The instrumentation instance.
      * @param databaseClass The Database class to be tested.
      */
-    constructor(
+    public constructor(
         instrumentation: Instrumentation,
         databaseClass: Class<out RoomDatabase>
     ) : this(
@@ -153,7 +153,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @param openFactory factory for creating an [SupportSQLiteOpenHelper]
      */
     @JvmOverloads
-    constructor(
+    public constructor(
         instrumentation: Instrumentation,
         databaseClass: Class<out RoomDatabase>,
         specs: List<AutoMigrationSpec>,
@@ -196,7 +196,7 @@ actual open class MigrationTestHelper : TestWatcher {
      *   [androidx.room.AutoMigration]s that require them.
      */
     @Suppress("StreamFiles")
-    constructor(
+    public constructor(
         instrumentation: Instrumentation,
         file: File,
         driver: SQLiteDriver,
@@ -242,7 +242,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @return A database connection which has the schema in the requested version.
      */
     @Throws(IOException::class)
-    open fun createDatabase(name: String, version: Int): SupportSQLiteDatabase {
+    public open fun createDatabase(name: String, version: Int): SupportSQLiteDatabase {
         check(delegate is SupportSQLiteMigrationTestHelper) {
             "MigrationTestHelper functionality returning a SupportSQLiteDatabase is not possible " +
                 "because a SQLiteDriver was provided during configuration."
@@ -270,7 +270,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @param migrations The list of available migrations.
      * @throws IllegalStateException If the schema validation fails.
      */
-    open fun runMigrationsAndValidate(
+    public open fun runMigrationsAndValidate(
         name: String,
         version: Int,
         validateDroppedTables: Boolean,
@@ -292,7 +292,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @return A database connection of the newly created database.
      * @throws IllegalStateException If a new database was not created.
      */
-    actual fun createDatabase(version: Int): SQLiteConnection {
+    public actual fun createDatabase(version: Int): SQLiteConnection {
         check(delegate is SQLiteDriverMigrationTestHelper) {
             "MigrationTestHelper functionality returning a SQLiteConnection is not possible " +
                 "because a SupportSQLiteOpenHelper was provided during configuration (i.e. no " +
@@ -318,7 +318,7 @@ actual open class MigrationTestHelper : TestWatcher {
      * @return A database connection of the migrated database.
      * @throws IllegalStateException If the schema validation fails.
      */
-    actual fun runMigrationsAndValidate(
+    public actual fun runMigrationsAndValidate(
         version: Int,
         migrations: List<Migration>,
     ): SQLiteConnection {
@@ -345,7 +345,7 @@ actual open class MigrationTestHelper : TestWatcher {
      *
      * @param db The database connection that should be closed after the test finishes.
      */
-    open fun closeWhenFinished(db: SupportSQLiteDatabase) {
+    public open fun closeWhenFinished(db: SupportSQLiteDatabase) {
         check(testStarted) {
             "You cannot register a database to be closed before" +
                 " the test starts. Maybe you forgot to annotate MigrationTestHelper as a" +
@@ -362,7 +362,7 @@ actual open class MigrationTestHelper : TestWatcher {
      *
      * @param db The RoomDatabase instance which holds the database.
      */
-    open fun closeWhenFinished(db: RoomDatabase) {
+    public open fun closeWhenFinished(db: RoomDatabase) {
         check(testStarted) {
             "You cannot register a database to be closed before" +
                 " the test starts. Maybe you forgot to annotate MigrationTestHelper as a" +

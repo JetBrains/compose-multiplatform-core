@@ -107,7 +107,6 @@ androidXMultiplatform {
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
-                implementation(libs.robolectric)
                 implementation(project(":compose:test-utils"))
             }
         }
@@ -221,6 +220,7 @@ androidx {
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
+    enableRobolectric()
     samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
 }
 

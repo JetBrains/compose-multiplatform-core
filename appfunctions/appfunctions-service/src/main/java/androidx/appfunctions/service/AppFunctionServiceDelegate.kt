@@ -95,10 +95,25 @@ internal class AppFunctionServiceDelegate(
                     )
                 )
             } catch (e: CancellationException) {
+                Log.d(
+                    APP_FUNCTIONS_TAG,
+                    "Invocation of ${executeAppFunctionRequest.functionIdentifier} was cancelled",
+                    e
+                )
                 callback.onError(AppFunctionCancelledException(e.message))
             } catch (e: AppFunctionException) {
+                Log.d(
+                    APP_FUNCTIONS_TAG,
+                    "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
+                    e
+                )
                 callback.onError(e)
             } catch (e: Exception) {
+                Log.d(
+                    APP_FUNCTIONS_TAG,
+                    "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
+                    e
+                )
                 callback.onError(AppFunctionAppUnknownException(e.message))
             }
         }

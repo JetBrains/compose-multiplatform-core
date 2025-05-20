@@ -19,6 +19,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MoveEventListener as RtMoveEventListener
@@ -31,6 +32,7 @@ import java.util.concurrent.Executor
  *
  * NOTE: This Component is currently unsupported on GltfModelEntity.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class MovableComponent
 private constructor(
     private val platformAdapter: JxrPlatformAdapter,

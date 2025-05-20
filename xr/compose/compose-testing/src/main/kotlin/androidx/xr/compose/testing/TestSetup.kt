@@ -19,7 +19,7 @@ package androidx.xr.compose.testing
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.view.View
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -28,7 +28,6 @@ import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
-import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPose
 import androidx.xr.runtime.internal.ActivitySpace
 import androidx.xr.runtime.internal.CameraViewActivityPose
@@ -38,111 +37,68 @@ import androidx.xr.runtime.internal.HeadActivityPose
 import androidx.xr.runtime.internal.HitTestResult
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose
-import androidx.xr.runtime.internal.PixelDimensions
-import androidx.xr.runtime.internal.SpatialCapabilities
-import androidx.xr.runtime.internal.SpatialEnvironment
+import androidx.xr.runtime.internal.SystemSpaceEntity.OnSpaceUpdatedListener
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.scenecore.scene
 import com.google.common.util.concurrent.ListenableFuture
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
+import java.util.concurrent.Executor
 
 /**
- * A Test environment composable wrapper to support testing elevated components locally.
+ * A Test environment composable wrapper to support testing spatial components locally.
  *
- * @param isXrEnabled Whether to enable XR.
- * @param isFullSpace Whether to enable full space mode.
- * @param runtime The [JxrPlatformAdapter] to use for the [Session].
+ * This function simplifies the initializing and configuring Session for testing purposes. It
+ * provides control over whether XR features are enabled and whether the application should operate
+ * in "full space" mode or "home space" mode.
+ *
+ * The created fake Session is then provided down the Composable tree using [LocalSession], and a
+ * boolean indicating XR availability is provided via [LocalHasXrSpatialFeature]. If [isXrEnabled]
+ * is false, the Session will not be created.
+ *
+ * @param isXrEnabled Whether the system XR Spatial feature should be enabled. If false, the Session
+ *   will not be created.
+ * @param isFullSpace Whether to enable full space mode. Only effective if [isXrEnabled] is true.
+ * @param runtime The [JxrPlatformAdapter] to use for the Session.
  * @param content The content block containing the compose content to be tested.
  */
 @Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun TestSetup(
     isXrEnabled: Boolean = true,
     isFullSpace: Boolean = true,
-    runtime: JxrPlatformAdapter =
-        TestJxrPlatformAdapter.create(
-            createFakeRuntime(LocalContext.current.getActivity() as SubspaceTestingActivity)
-        ),
+    runtime: JxrPlatformAdapter? = null,
     content: @Composable () -> Unit,
 ) {
     val activity = LocalContext.current.getActivity() as SubspaceTestingActivity
-    activity.session = createFakeSessionWithTestConfigs(activity, runtime)
-    val session = remember {
-        if (isXrEnabled) {
-            activity.session.apply {
-                // TODO: b/405401088 - There's functions aren't being honored at the moment of
-                // TestSetup
-                // creation.
-                if (isFullSpace) {
-                    scene.spatialEnvironment.requestFullSpaceMode()
-                } else {
-                    scene.spatialEnvironment.requestHomeSpaceMode()
+
+    activity.session =
+        remember(isXrEnabled, activity, runtime, isFullSpace) {
+            if (isXrEnabled) {
+                val actualRuntime: JxrPlatformAdapter =
+                    runtime ?: TestJxrPlatformAdapter.create(createFakeRuntime(activity))
+
+                createFakeSessionWithTestConfigs(activity, actualRuntime).apply {
+                    // TODO: b/405401088 - These functions aren't being honored at the moment of
+                    // TestSetup
+                    // creation.
+                    if (isFullSpace) {
+                        scene.spatialEnvironment.requestFullSpaceMode()
+                    } else {
+                        scene.spatialEnvironment.requestHomeSpaceMode()
+                    }
+                    resume()
+                    configure(Config(headTracking = HeadTrackingMode.ENABLED))
                 }
-                resume()
-                configure(Config(headTracking = HeadTrackingMode.Enabled))
+            } else {
+                null
             }
-        } else {
-            null
         }
-    }
 
     CompositionLocalProvider(
-        LocalSession provides session,
+        LocalSession provides activity.session,
         LocalHasXrSpatialFeature provides isXrEnabled,
         content = content,
     )
-}
-
-private fun createNonXrSession(activity: Activity): Session {
-    val mockJxrRuntime = mock<JxrPlatformAdapter>()
-    val mockActivitySpace =
-        mock<ActivitySpace>(defaultAnswer = { throw UnsupportedOperationException() })
-    mockJxrRuntime.stub {
-        on { mockJxrRuntime.spatialEnvironment } doReturn mock<SpatialEnvironment>()
-        on { activitySpace } doReturn mockActivitySpace
-        on { activitySpaceRootImpl } doReturn mockActivitySpace
-        on { headActivityPose } doReturn mock<HeadActivityPose>()
-        on { perceptionSpaceActivityPose } doReturn
-            mock<PerceptionSpaceActivityPose>(
-                defaultAnswer = { throw UnsupportedOperationException() }
-            )
-        on { mainPanelEntity } doReturn mock<PanelEntity>()
-        on { requestHomeSpaceMode() } doAnswer { throw UnsupportedOperationException() }
-        on { requestFullSpaceMode() } doAnswer { throw UnsupportedOperationException() }
-        on { spatialCapabilities } doReturn SpatialCapabilities(0)
-        on { createActivityPanelEntity(any(), any(), any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on { createAnchorEntity(any(), any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on { createEntity(any(), any(), any()) } doAnswer { throw UnsupportedOperationException() }
-        on { createGltfEntity(any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on {
-            createPanelEntity(
-                any<Context>(),
-                any<Pose>(),
-                any<View>(),
-                any<PixelDimensions>(),
-                any<String>(),
-                any<Entity>(),
-            )
-        } doAnswer { throw UnsupportedOperationException() }
-        on { createLoggingEntity(any()) } doAnswer { throw UnsupportedOperationException() }
-    }
-
-    return Session(activity, FakeRuntimeFactory().createRuntime(activity), mockJxrRuntime)
 }
 
 private tailrec fun Context.getActivity(): Activity =
@@ -160,6 +116,7 @@ private tailrec fun Context.getActivity(): Activity =
  * @param worldSpaceScale The scale of the head in WorldSpace.
  * @param activitySpaceScale The scale of the head in ActivitySpace.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestHeadActivityPose(
     override var activitySpacePose: Pose = Pose.Identity,
     override var worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
@@ -189,6 +146,7 @@ public class TestHeadActivityPose(
  * @param activitySpaceScale The scale of the camera in ActivitySpace.
  * @param worldSpaceScale The scale of the camera in WorldSpace.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestCameraViewActivityPose(
     override val cameraType: Int,
     override var fov: CameraViewActivityPose.Fov =
@@ -212,7 +170,7 @@ public class TestCameraViewActivityPose(
 }
 
 /**
- * A test implementation of [ActivitySpace] that allows for setting custom values.
+ * A test implementation of a SceneCore [ActivitySpace] that allows for setting custom values.
  *
  * This class delegates non-overridden functionality to a base ActivitySpace instance but provides
  * direct control over key properties like [activitySpacePose] and [activitySpaceScale] (via the
@@ -223,6 +181,7 @@ public class TestCameraViewActivityPose(
  * @param activitySpacePose The pose of the ActivitySpace. Defaults to [Pose.Identity].
  * @param activitySpaceScale The scale of the ActivitySpace. Defaults to one.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestActivitySpace(
     private val fakeRuntimeActivitySpaceBase: ActivitySpace,
     override var activitySpacePose: Pose = Pose.Identity,
@@ -231,6 +190,30 @@ public class TestActivitySpace(
 
     override fun getScale(relativeTo: Int): Vector3 {
         return activitySpaceScale
+    }
+
+    private var spaceUpdateListener: OnSpaceUpdatedListener? = null
+
+    @Suppress("ExecutorRegistration")
+    override fun setOnSpaceUpdatedListener(listener: OnSpaceUpdatedListener?, executor: Executor?) {
+        this.spaceUpdateListener = listener
+    }
+
+    /**
+     * Manually triggers [OnSpaceUpdatedListener] that was captured via [setOnSpaceUpdatedListener].
+     *
+     * This method is primarily intended for use in unit tests. It simulates the runtime invoking
+     * the listener, which is necessary for testing code that uses suspending functions like
+     * `ActivitySpace.awaitUpdate()` or otherwise waits on the listener callback.
+     *
+     * Call this method in your test after simulating the condition that should cause the space
+     * update (e.g., changing `activitySpaceScale` from zero to non-zero) to manually resume any
+     * coroutine that might be suspended waiting for the `onSpaceUpdated()` callback.
+     *
+     * The listener's `onSpaceUpdated()` method is invoked directly on the calling thread.
+     */
+    public fun triggerOnSpaceUpdatedListener() {
+        spaceUpdateListener?.let { it.onSpaceUpdated() }
     }
 }
 
@@ -251,9 +234,11 @@ public class TestActivitySpace(
  * @param unknownCameraViewPose The [TestCameraViewActivityPose] to use for the [JxrPlatformAdapter]
  *   implementation for the unknown camera.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestJxrPlatformAdapter
 private constructor(
     private val fakeRuntimeBase: JxrPlatformAdapter,
+    override var mainPanelEntity: PanelEntity = fakeRuntimeBase.mainPanelEntity,
     override var activitySpace: ActivitySpace = fakeRuntimeBase.activitySpace,
     override var headActivityPose: TestHeadActivityPose? =
         TestHeadActivityPose(activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))),

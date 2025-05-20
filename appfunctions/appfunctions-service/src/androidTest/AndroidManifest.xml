@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   Copyright 2025 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,5 +14,29 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <application>
+        <service
+            android:name="androidx.appfunctions.service.ExtensionAppFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true">
+            <!-- XML file property for Legacy AppSearch Indexer.-->
+            <property
+                android:name="android.app.appfunctions"
+                android:value="app_functions.xml" />
+            <!-- XSD & XML file properties for Dynamic AppSearch Indexer.-->
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="app_functions_v2.xml" />
+
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
+    </application>
+
 </manifest>

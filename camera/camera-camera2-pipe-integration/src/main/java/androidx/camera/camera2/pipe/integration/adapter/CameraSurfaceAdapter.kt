@@ -146,7 +146,8 @@ public class CameraSurfaceAdapter(
         existingSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,
         isPreviewStabilizationOn: Boolean,
-        hasVideoCapture: Boolean
+        hasVideoCapture: Boolean,
+        allowFeatureCombinationResolutions: Boolean,
     ): Pair<Map<UseCaseConfig<*>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>> {
 
         if (!checkIfSupportedCombinationExist(cameraId)) {
@@ -160,7 +161,8 @@ public class CameraSurfaceAdapter(
             existingSurfaces,
             newUseCaseConfigsSupportedSizeMap,
             isPreviewStabilizationOn,
-            hasVideoCapture
+            hasVideoCapture,
+            allowFeatureCombinationResolutions,
         )
     }
 }

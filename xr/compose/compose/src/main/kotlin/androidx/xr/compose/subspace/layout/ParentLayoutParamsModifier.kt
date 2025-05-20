@@ -16,7 +16,10 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
+
 /** Interface for classes involved in setting layout params. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ParentLayoutParamsModifier {
 
     /** Adjusts layout with new [ParentLayoutParamsAdjustable]. */
@@ -24,4 +27,4 @@ public interface ParentLayoutParamsModifier {
 }
 
 /** Marker interface for types allowed to be adjusted by a [ParentLayoutParamsModifier]. */
-public interface ParentLayoutParamsAdjustable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ParentLayoutParamsAdjustable

@@ -31,7 +31,19 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    // Add dependencies here
+
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.junit)
+
+    implementation("androidx.datastore:datastore-core:1.1.4")
+    implementation("androidx.datastore:datastore-preferences:1.1.4")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.4")
+
+    api(project(":privacysandbox:databridge:databridge-core"))
 }
 
 android {

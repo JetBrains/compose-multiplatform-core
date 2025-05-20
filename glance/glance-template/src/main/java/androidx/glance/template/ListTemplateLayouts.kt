@@ -43,7 +43,7 @@ import androidx.glance.layout.width
  * @param data the data that defines the widget
  */
 @Composable
-fun ListTemplate(data: ListTemplateData) {
+public fun ListTemplate(data: ListTemplateData) {
     when (LocalTemplateMode.current) {
         TemplateMode.Collapsed -> WidgetLayoutCollapsed(data)
         TemplateMode.Vertical -> WidgetLayoutExpanded(data)

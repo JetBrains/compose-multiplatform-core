@@ -28,7 +28,6 @@ dependencies {
     implementation(project(":camera:featurecombinationquery:featurecombinationquery"))
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
@@ -46,9 +45,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-
-    testOptions.unitTests.includeAndroidResources = true
-
     namespace = "androidx.camera.featurecombinationquery.playservices"
 }
 
@@ -58,4 +54,5 @@ androidx {
     inceptionYear = "2024"
     description = "Camera feature combination components for the Camera Library, a " +
             "library providing camera feature combination with Google Play Services dependencies."
+    enableRobolectric()
 }

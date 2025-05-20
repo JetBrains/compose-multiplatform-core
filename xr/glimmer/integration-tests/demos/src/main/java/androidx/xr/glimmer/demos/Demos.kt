@@ -17,6 +17,7 @@
 package androidx.xr.glimmer.demos
 
 import androidx.xr.glimmer.samples.ColorsSample
+import androidx.xr.glimmer.samples.SurfaceSampleUsage
 import androidx.xr.glimmer.samples.TypographySample
 
 val Demos =
@@ -24,6 +25,7 @@ val Demos =
         "Glimmer Demos",
         listOf(
             ComposableDemo("Colors") { ColorsSample() },
-            ComposableDemo("Typography") { TypographySample() }
+            ComposableDemo("Typography") { TypographySample() },
+            ComposableDemo("Surface") { SurfaceSampleUsage() }
         )
     )

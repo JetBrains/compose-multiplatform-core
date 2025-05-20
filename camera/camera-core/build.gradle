@@ -59,7 +59,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     testImplementation(project(":internal-testutils-ktx"))
@@ -69,9 +68,6 @@ dependencies {
         exclude group: "androidx.camera", module: "camera-core"
     })
     testImplementation(project(":camera:camera-lifecycle"))
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.kotlinCoroutinesCore)
     testImplementation(project(":camera:camera-video"))
@@ -131,9 +127,6 @@ android {
         enable.add("CameraXQuirksClassDetector")
     }
 
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-
     packagingOptions {
         pickFirst "META-INF/support.camera_camera-core.version"
     }
@@ -155,4 +148,5 @@ androidx {
         name = "BSD License"
         url = "https://chromium.googlesource.com/libyuv/libyuv/+/refs/heads/main/README.chromium"
     }
+    enableRobolectric()
 }

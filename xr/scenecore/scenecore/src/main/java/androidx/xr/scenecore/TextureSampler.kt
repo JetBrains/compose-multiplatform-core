@@ -41,6 +41,7 @@ import androidx.annotation.RestrictTo
  * @property anisotropyLog2 an [Int] which controls the level of anisotropic filtering applied to
  *   the texture. Higher values mean more samples and better quality, at increased GPU cost.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TextureSampler
 internal constructor(
     public val minFilter: @MinFilterValues Int,

@@ -43,7 +43,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
@@ -83,4 +82,5 @@ androidx {
     description = "Material3 components library for ProtoLayout."
     samples(project(":wear:protolayout:protolayout-material3-samples"))
     addGoldenImageAssets()
+    enableRobolectric()
 }

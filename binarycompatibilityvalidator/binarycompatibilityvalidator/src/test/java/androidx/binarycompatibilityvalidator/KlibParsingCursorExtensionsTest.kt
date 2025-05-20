@@ -213,11 +213,11 @@ class KlibParsingCursorExtensionsTest {
 
     @Test
     fun parseQualifiedName() {
-        val input = "androidx.collection/MutableScatterMap something"
+        val input = "androidx.collection/MutableScatterMap { something"
         val cursor = Cursor(input)
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
-        assertThat(cursor.currentLine).isEqualTo("something")
+        assertThat(cursor.currentLine).isEqualTo("{ something")
     }
 
     @Test
@@ -243,11 +243,19 @@ class KlibParsingCursorExtensionsTest {
 
     @Test
     fun parseQualifiedNameWithQualifiedReceiver() {
-        val input = "androidx.compose.ui.text/AnnotatedString.Builder.BulletScope"
+        val input = "androidx.compose.ui.text/AnnotatedString.Builder.BulletScope {"
         val cursor = Cursor(input)
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString())
             .isEqualTo("androidx.compose.ui.text/AnnotatedString.Builder.BulletScope")
+    }
+
+    @Test
+    fun parseQualifiedNameBeforeDefaultParameterSymbol() {
+        val input = "androidx.collection/MutableScatterMap =..."
+        val cursor = Cursor(input)
+        val qName = cursor.parseAbiQualifiedName()
+        assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
     }
 
     @Test
@@ -660,5 +668,33 @@ class KlibParsingCursorExtensionsTest {
         val cursor = Cursor(input)
         assertThat(cursor.hasEnumEntry()).isTrue()
         assertThat(cursor.currentLine).isEqualTo(input)
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForFunctionName() {
+        val input = "myFun ()"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("myFun ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassName() {
+        val input = "MyClass  {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassWithSuper() {
+        val input = "MyClass = : my.lib/MyClass {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass =")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForForValueParameter() {
+        val input = "MyClass ,"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
     }
 }

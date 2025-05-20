@@ -47,8 +47,11 @@ class GetAdSelectionDataRequest
 @JvmOverloads
 public constructor(
     val seller: AdTechIdentifier,
-    @property:ExperimentalFeatures.Ext12OptIn val coordinatorOriginUri: Uri? = null,
-    @property:ExperimentalFeatures.Ext14OptIn val sellerConfiguration: SellerConfiguration? = null
+    // Note: public experimental properties are not allowed because the accessors will not appear
+    // experimental to Java clients. There are public accessors for these properties below.
+    @property:ExperimentalFeatures.Ext12OptIn private val coordinatorOriginUri: Uri? = null,
+    @property:ExperimentalFeatures.Ext14OptIn
+    private val sellerConfiguration: SellerConfiguration? = null
 ) {
     /** Checks whether two [GetAdSelectionDataRequest] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -72,6 +75,24 @@ public constructor(
         return "GetAdSelectionDataRequest: seller=$seller, " +
             "coordinatorOriginUri=$coordinatorOriginUri, " +
             "sellerConfiguration=$sellerConfiguration"
+    }
+
+    /**
+     * Gets the coordinator origin Uri from which GetAdSelectionData API should fetch the decryption
+     * key.
+     */
+    @ExperimentalFeatures.Ext12OptIn
+    fun getCoordinatorOriginUri(): Uri? {
+        return coordinatorOriginUri
+    }
+
+    /**
+     * Gets the seller ad tech's requested payload configuration, set by the calling SDK, to
+     * optimize the payload.
+     */
+    @ExperimentalFeatures.Ext12OptIn
+    fun getSellerConfiguration(): SellerConfiguration? {
+        return sellerConfiguration
     }
 
     @SuppressLint("NewApi")

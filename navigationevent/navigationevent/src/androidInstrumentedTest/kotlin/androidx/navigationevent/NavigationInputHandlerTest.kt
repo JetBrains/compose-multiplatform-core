@@ -53,7 +53,7 @@ class NavigationInputHandlerTest {
         inputHandler.setOnBackInvokedDispatcher(invoker)
 
         val callback =
-            object : NavigationEventCallback(true, dispatcher) {
+            object : NavigationEventCallback(true) {
                 override fun onEventCompleted() {}
             }
 
@@ -87,7 +87,7 @@ class NavigationInputHandlerTest {
         inputHandler.setOnBackInvokedDispatcher(invoker)
 
         val callback =
-            object : NavigationEventCallback(true, dispatcher) {
+            object : NavigationEventCallback(true) {
                 override fun onEventCompleted() {}
             }
 
@@ -95,11 +95,11 @@ class NavigationInputHandlerTest {
 
         assertThat(registerCount).isEqualTo(1)
 
-        callback.enabled = false
+        callback.isEnabled = false
 
         assertThat(unregisterCount).isEqualTo(1)
 
-        callback.enabled = true
+        callback.isEnabled = true
 
         assertThat(registerCount).isEqualTo(2)
     }
@@ -107,14 +107,14 @@ class NavigationInputHandlerTest {
     @Test
     fun testCallbackEnabledDisabled() {
         val callback =
-            object : NavigationEventCallback(false, NavigationEventDispatcher {}) {
+            object : NavigationEventCallback(false) {
                 override fun onEventCompleted() {
                     TODO("Not yet implemented")
                 }
             }
 
-        callback.enabled = true
-        callback.enabled = false
+        callback.isEnabled = true
+        callback.isEnabled = false
     }
 
     @Test
@@ -135,7 +135,7 @@ class NavigationInputHandlerTest {
         val dispatcher = NavigationEventDispatcher {}
 
         val callback =
-            object : NavigationEventCallback(false, dispatcher) {
+            object : NavigationEventCallback(false) {
                 override fun onEventCompleted() {}
             }
 
@@ -147,11 +147,11 @@ class NavigationInputHandlerTest {
 
         assertThat(registerCount).isEqualTo(0)
 
-        callback.enabled = true
+        callback.isEnabled = true
 
         assertThat(registerCount).isEqualTo(1)
 
-        callback.enabled = false
+        callback.isEnabled = false
 
         assertThat(unregisterCount).isEqualTo(1)
     }
@@ -174,7 +174,7 @@ class NavigationInputHandlerTest {
         val dispatcher = NavigationEventDispatcher {}
 
         val callback =
-            object : NavigationEventCallback(true, dispatcher) {
+            object : NavigationEventCallback(true) {
                 override fun onEventCompleted() {}
             }
 
@@ -186,7 +186,7 @@ class NavigationInputHandlerTest {
 
         assertThat(registerCount).isEqualTo(1)
 
-        callback.enabled = false
+        callback.isEnabled = false
 
         assertThat(unregisterCount).isEqualTo(1)
     }
@@ -215,7 +215,7 @@ class NavigationInputHandlerTest {
         var progressedCount = 0
         var cancelledCount = 0
         val callback =
-            object : NavigationEventCallback(true, dispatcher) {
+            object : NavigationEventCallback(true) {
                 override fun onEventStarted(event: NavigationEvent) {
                     startedCount++
                 }
@@ -247,5 +247,209 @@ class NavigationInputHandlerTest {
         callback.remove()
 
         assertThat(unregisterCount).isEqualTo(1)
+    }
+
+    @Test
+    fun testSimpleAnimatedCallbackRemovedCancel() {
+        var registerCount = 0
+        var unregisterCount = 0
+        val invoker =
+            object : OnBackInvokedDispatcher {
+                override fun registerOnBackInvokedCallback(p0: Int, p1: OnBackInvokedCallback) {
+                    registerCount++
+                }
+
+                override fun unregisterOnBackInvokedCallback(p0: OnBackInvokedCallback) {
+                    unregisterCount++
+                }
+            }
+
+        val dispatcher = NavigationEventDispatcher {}
+        val inputHandler = NavigationInputHandler(dispatcher)
+
+        inputHandler.setOnBackInvokedDispatcher(invoker)
+
+        var cancelledCount = 0
+        val callback =
+            object : NavigationEventCallback(true) {
+                override fun onEventStarted(event: NavigationEvent) {}
+
+                override fun onEventProgressed(event: NavigationEvent) {}
+
+                override fun onEventCompleted() {}
+
+                override fun onEventCancelled() {
+                    cancelledCount++
+                }
+            }
+
+        dispatcher.addCallback(callback)
+
+        assertThat(registerCount).isEqualTo(1)
+
+        dispatcher.dispatchOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, EDGE_LEFT))
+
+        callback.remove()
+        assertThat(cancelledCount).isEqualTo(1)
+
+        assertThat(unregisterCount).isEqualTo(1)
+    }
+
+    @Test
+    fun testSimpleAnimatedCallbackRemovedCancelInHandleOnStarted() {
+        var registerCount = 0
+        var unregisterCount = 0
+        val invoker =
+            object : OnBackInvokedDispatcher {
+                override fun registerOnBackInvokedCallback(p0: Int, p1: OnBackInvokedCallback) {
+                    registerCount++
+                }
+
+                override fun unregisterOnBackInvokedCallback(p0: OnBackInvokedCallback) {
+                    unregisterCount++
+                }
+            }
+
+        val dispatcher = NavigationEventDispatcher {}
+        val inputHandler = NavigationInputHandler(dispatcher)
+
+        inputHandler.setOnBackInvokedDispatcher(invoker)
+
+        var cancelledCount = 0
+        val callback =
+            object : NavigationEventCallback(true) {
+                override fun onEventStarted(event: NavigationEvent) {
+                    this.remove()
+                }
+
+                override fun onEventProgressed(event: NavigationEvent) {}
+
+                override fun onEventCompleted() {}
+
+                override fun onEventCancelled() {
+                    cancelledCount++
+                }
+            }
+
+        dispatcher.addCallback(callback)
+
+        assertThat(registerCount).isEqualTo(1)
+
+        dispatcher.dispatchOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, EDGE_LEFT))
+
+        assertThat(cancelledCount).isEqualTo(1)
+
+        assertThat(unregisterCount).isEqualTo(1)
+    }
+
+    @Test
+    fun testSimpleAnimatedCallbackAddedContinue() {
+        var registerCount = 0
+        var unregisterCount = 0
+        val invoker =
+            object : OnBackInvokedDispatcher {
+                override fun registerOnBackInvokedCallback(p0: Int, p1: OnBackInvokedCallback) {
+                    registerCount++
+                }
+
+                override fun unregisterOnBackInvokedCallback(p0: OnBackInvokedCallback) {
+                    unregisterCount++
+                }
+            }
+
+        val dispatcher = NavigationEventDispatcher {}
+        val inputHandler = NavigationInputHandler(dispatcher)
+
+        inputHandler.setOnBackInvokedDispatcher(invoker)
+
+        var completedCount = 0
+        val callback =
+            object : NavigationEventCallback(true) {
+                override fun onEventStarted(event: NavigationEvent) {}
+
+                override fun onEventProgressed(event: NavigationEvent) {}
+
+                override fun onEventCompleted() {
+                    completedCount++
+                }
+
+                override fun onEventCancelled() {}
+            }
+
+        dispatcher.addCallback(callback)
+
+        assertThat(registerCount).isEqualTo(1)
+
+        dispatcher.dispatchOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, EDGE_LEFT))
+
+        dispatcher.addCallback(
+            object : NavigationEventCallback(true) {
+                override fun onEventCompleted() {}
+            }
+        )
+
+        dispatcher.dispatchOnCompleted()
+
+        assertThat(completedCount).isEqualTo(1)
+    }
+
+    @Test
+    fun testDoubleStartCallbackCausesCancel() {
+        var registerCount = 0
+        var unregisterCount = 0
+        val invoker =
+            object : OnBackInvokedDispatcher {
+                override fun registerOnBackInvokedCallback(p0: Int, p1: OnBackInvokedCallback) {
+                    registerCount++
+                }
+
+                override fun unregisterOnBackInvokedCallback(p0: OnBackInvokedCallback) {
+                    unregisterCount++
+                }
+            }
+
+        val dispatcher = NavigationEventDispatcher {}
+        val inputHandler = NavigationInputHandler(dispatcher)
+
+        inputHandler.setOnBackInvokedDispatcher(invoker)
+
+        var cancelledCount = 0
+        val callback1 =
+            object : NavigationEventCallback(true) {
+                override fun onEventStarted(event: NavigationEvent) {}
+
+                override fun onEventProgressed(event: NavigationEvent) {}
+
+                override fun onEventCompleted() {}
+
+                override fun onEventCancelled() {
+                    cancelledCount++
+                }
+            }
+
+        dispatcher.addCallback(callback1)
+
+        assertThat(registerCount).isEqualTo(1)
+
+        dispatcher.dispatchOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, EDGE_LEFT))
+
+        var startedCount2 = 0
+
+        val callback2 =
+            object : NavigationEventCallback(true) {
+                override fun onEventStarted(event: NavigationEvent) {
+                    startedCount2++
+                }
+            }
+
+        dispatcher.addCallback(callback2)
+
+        dispatcher.dispatchOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, EDGE_LEFT))
+
+        assertThat(registerCount).isEqualTo(1)
+
+        assertThat(cancelledCount).isEqualTo(1)
+
+        assertThat(startedCount2).isEqualTo(1)
     }
 }

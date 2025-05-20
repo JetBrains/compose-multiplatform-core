@@ -284,6 +284,12 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Broken in 7.0.0-alpha15 due to b/187343720
         disable.add("UnusedResources")
 
+        // b/416046484: broken in 8.11.0-alpha10+ (Kotlin 2.2.0)
+        // TODO(b/416387032): Need to upgrade all binary dep usages
+        disable.add("ModifierFactoryExtensionFunction")
+        disable.add("ModifierFactoryReturnType")
+        disable.add("ModifierFactoryUnreferencedReceiver")
+
         // Disable NullAnnotationGroup check for :compose:ui:ui-text (b/233788571)
         if (isLibrary && project.group == "androidx.compose.ui" && project.name == "ui-text") {
             disable.add("NullAnnotationGroup")
@@ -391,7 +397,7 @@ private fun ConfigurableFileCollection.withChangesAllowed(
 private fun Any.findDeclaredFieldOnClass(name: String): Field? =
     try {
         this::class.java.getDeclaredField(name)
-    } catch (e: NoSuchFieldException) {
+    } catch (_: NoSuchFieldException) {
         null
     }
 

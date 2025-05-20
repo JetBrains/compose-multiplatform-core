@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 /** Data class that holds the schema information about an [androidx.room.Entity]. */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-open class EntityBundle(
+public open class EntityBundle(
     @SerialName("tableName") override val tableName: String,
     @SerialName("createSql") override val createSql: String,
     @SerialName("fields") override val fields: List<FieldBundle>,

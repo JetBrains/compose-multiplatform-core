@@ -18,8 +18,10 @@ package androidx.binarycompatibilityvalidator
 
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import org.jetbrains.kotlin.library.abi.AbiClass
 import org.jetbrains.kotlin.library.abi.AbiClassKind
 import org.jetbrains.kotlin.library.abi.AbiCompoundName
+import org.jetbrains.kotlin.library.abi.AbiFunction
 import org.jetbrains.kotlin.library.abi.AbiModality
 import org.jetbrains.kotlin.library.abi.AbiProperty
 import org.jetbrains.kotlin.library.abi.AbiQualifiedName
@@ -357,6 +359,90 @@ class KlibDumpParserTest {
         val input = "$exampleMetadata\nfinal fun my.lib/foo(kotlin/Int, kotlin/Int): kotlin/Int"
         val parsed = KlibDumpParser(input, "current.txt").parse()
         assertThat(parsed.values.first().topLevelDeclarations.declarations).hasSize(1)
+    }
+
+    @Test
+    fun parseAConstructorWithDefaultValue() {
+        val input = "constructor <init>(kotlin/Int =..., kotlin/Int =...)"
+        val parsed =
+            KlibDumpParser(input, "current.txt")
+                .parseFunction(
+                    parentQualifiedName =
+                        AbiQualifiedName(
+                            AbiCompoundName("androidx.collection"),
+                            AbiCompoundName("ObjectList")
+                        )
+                )
+        assertThat(parsed.valueParameters.map { it.type.classNameOrTag })
+            .containsExactly("kotlin/Int", "kotlin/Int")
+    }
+
+    @Test
+    fun parseAConstructorWithDefaultValue2() {
+        val input =
+            "constructor <init>(kotlin/Int = ...) // androidx.collection/MutableScatterMap.<init>|<init>(kotlin.Int){}[0]"
+        val parsed =
+            KlibDumpParser(input, "current.txt")
+                .parseFunction(
+                    parentQualifiedName =
+                        AbiQualifiedName(
+                            AbiCompoundName("androidx.collection"),
+                            AbiCompoundName("ObjectList")
+                        )
+                )
+        assertThat(parsed.valueParameters.single().type.classNameOrTag).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseClassNameThatEndsWithASpace() {
+        val input =
+            """$exampleMetadata
+            open class my.lib/MyClass  { // my.lib/MyClass |null[0]
+                constructor <init>() // my.lib/MyClass .<init>|<init>(){}[0]
+            }
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        val parsedClass =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiClass>()
+                .single()
+        assertThat(parsedClass.qualifiedName.toString()).isEqualTo("my.lib/MyClass ")
+    }
+
+    @Test
+    fun parseAVeryAnnoyingClassName() {
+        val input =
+            """$exampleMetadata
+            final class my.lib/MyMaybeClass = =  { // my.lib/MyMaybeClass = = |null[0]
+                constructor <init>() // my.lib/MyMaybeClass = = .<init>|<init>(){}[0]
+            }
+            final fun my.lib/foo(my.lib/MyMaybeClass = =  =...): kotlin/Int // my.lib/foo|foo(my.lib.MyMaybeClass = = ){}[0]
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        val parsedFunc =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiFunction>()
+                .single()
+        val parsedClass =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiClass>()
+                .single()
+        assertThat(parsedClass.qualifiedName.toString()).isEqualTo("my.lib/MyMaybeClass = = ")
+        assertThat(parsedFunc.valueParameters).hasSize(1)
+        assertThat(parsedFunc.valueParameters.single().type.classNameOrTag)
+            .isEqualTo("my.lib/MyMaybeClass = = ")
+        assertThat(parsedFunc.valueParameters.single().hasDefaultArg).isTrue()
     }
 
     @Test

@@ -20,6 +20,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -30,6 +31,7 @@ import androidx.xr.runtime.math.Pose
  * either use an intent to launch an activity in the given panel or provide an instance of activity
  * to move into this panel. Calling dispose() on this entity will destroy the underlying activity.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ActivityPanelEntity
 private constructor(
     private val rtActivityPanelEntity: RtActivityPanelEntity,

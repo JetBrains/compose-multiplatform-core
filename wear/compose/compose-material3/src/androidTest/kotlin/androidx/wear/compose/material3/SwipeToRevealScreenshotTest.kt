@@ -147,6 +147,39 @@ class SwipeToRevealScreenshotTest {
     }
 
     @Test
+    fun swipeToReveal_hasDefaultUndoHeightForLongLabels(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshotForSize(screenSize) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SwipeToReveal(
+                    primaryAction = {
+                        PrimaryActionButton(
+                            onClick = {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
+                    },
+                    onSwipePrimaryAction = {}, /* Empty for testing */
+                    modifier = Modifier.testTag(TEST_TAG),
+                    undoPrimaryAction = {
+                        UndoActionButton({} /* Empty for testing */, { Text("Undo") })
+                    },
+                    revealState =
+                        rememberRevealState(
+                            initialValue = RevealValue.RightRevealed,
+                        ),
+                ) {
+                    Button({}) {
+                        Text(
+                            "This Button has an extremely long label so that the undo " +
+                                "action must truncate its label and should stay standard height"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun swipeToReveal_showsUndoPrimaryAction_singleLineTruncated() {
         verifyScreenshotForSize(ScreenSize.SMALL) {
             Box(modifier = Modifier.fillMaxSize()) {

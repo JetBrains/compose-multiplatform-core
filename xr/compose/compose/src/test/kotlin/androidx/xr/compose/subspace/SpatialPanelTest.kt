@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +38,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -48,6 +50,7 @@ import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.BasePanelEntity
+import androidx.xr.scenecore.PanelEntity
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
@@ -161,6 +164,34 @@ class SpatialPanelTest {
     }
 
     @Test
+    fun mainPanel_disposes_mainPanelGetsHidden() {
+        val showMainPanel = mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    if (showMainPanel.value) {
+                        MainPanel(
+                            SubspaceModifier.testTag("mainPanel").width(100.dp).height(100.dp)
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
+        val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(mainPanelSceneCoreEntity).isHidden()).isFalse()
+
+        showMainPanel.value = false
+        composeTestRule.waitForIdle()
+
+        val mainPanelSceneCoreEntityAfter = mainPanelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(mainPanelSceneCoreEntityAfter).isHidden()).isTrue()
+    }
+
+    @Test
     fun mainPanel_addedTwice_asserts() {
         val text = "Main Window Text"
 
@@ -207,6 +238,23 @@ class SpatialPanelTest {
             }
         }
         assertThat(getBasePanelEntity("panel")?.getCornerRadius()?.meters?.toDp()).isEqualTo(32.dp)
+    }
+
+    @Test
+    fun mainPanel_cornerRadius_dp() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    MainPanel(
+                        modifier =
+                            SubspaceModifier.width(200.dp).height(300.dp).testTag("mainPanel"),
+                        shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
+                    )
+                }
+            }
+        }
+        assertThat(getBasePanelEntity("mainPanel")?.getCornerRadius()?.meters?.toDp())
+            .isEqualTo(16.dp)
     }
 
     @Test

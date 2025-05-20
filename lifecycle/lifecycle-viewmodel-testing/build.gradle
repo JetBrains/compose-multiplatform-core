@@ -80,7 +80,6 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
             }
         }
 
@@ -141,6 +140,7 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Testing utilities for 'lifecycle-viewmodel' artifact"
+    enableRobolectric()
 }
 
 android {

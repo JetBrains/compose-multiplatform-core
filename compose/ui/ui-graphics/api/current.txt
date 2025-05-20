@@ -21,6 +21,11 @@ package androidx.compose.ui.graphics {
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.compose.ui.graphics.colorspace.ColorSpace toComposeColorSpace(android.graphics.ColorSpace);
   }
 
+  public final class AndroidColor_androidKt {
+    method public static long fromColorLong(androidx.compose.ui.graphics.Color.Companion, long colorLong);
+    method public static long toColorLong(long);
+  }
+
   public final class AndroidGraphicsContext_androidKt {
     method public static androidx.compose.ui.graphics.GraphicsContext GraphicsContext(android.view.ViewGroup layerContainer);
   }
@@ -1226,7 +1231,7 @@ package androidx.compose.ui.graphics.colorspace {
     method public double component5();
     method public double component6();
     method public double component7();
-    method public androidx.compose.ui.graphics.colorspace.TransferParameters copy(double gamma, double a, double b, double c, double d, double e, double f);
+    method public androidx.compose.ui.graphics.colorspace.TransferParameters copy(optional double gamma, optional double a, optional double b, optional double c, optional double d, optional double e, optional double f);
     method public double getA();
     method public double getB();
     method public double getC();
@@ -1248,7 +1253,7 @@ package androidx.compose.ui.graphics.colorspace {
     ctor public WhitePoint(float x, float y, float z);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.colorspace.WhitePoint copy(float x, float y);
+    method public androidx.compose.ui.graphics.colorspace.WhitePoint copy(optional float x, optional float y);
     method public float getX();
     method public float getY();
     property public float x;
@@ -1620,7 +1625,7 @@ package androidx.compose.ui.graphics.vector {
     method public boolean component5();
     method public float component6();
     method public float component7();
-    method public androidx.compose.ui.graphics.vector.PathNode.ArcTo copy(float horizontalEllipseRadius, float verticalEllipseRadius, float theta, boolean isMoreThanHalf, boolean isPositiveArc, float arcStartX, float arcStartY);
+    method public androidx.compose.ui.graphics.vector.PathNode.ArcTo copy(optional float horizontalEllipseRadius, optional float verticalEllipseRadius, optional float theta, optional boolean isMoreThanHalf, optional boolean isPositiveArc, optional float arcStartX, optional float arcStartY);
     method public float getArcStartX();
     method public float getArcStartY();
     method public float getHorizontalEllipseRadius();
@@ -1649,7 +1654,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component4();
     method public float component5();
     method public float component6();
-    method public androidx.compose.ui.graphics.vector.PathNode.CurveTo copy(float x1, float y1, float x2, float y2, float x3, float y3);
+    method public androidx.compose.ui.graphics.vector.PathNode.CurveTo copy(optional float x1, optional float y1, optional float x2, optional float y2, optional float x3, optional float y3);
     method public float getX1();
     method public float getX2();
     method public float getX3();
@@ -1667,7 +1672,7 @@ package androidx.compose.ui.graphics.vector {
   @androidx.compose.runtime.Immutable public static final class PathNode.HorizontalTo extends androidx.compose.ui.graphics.vector.PathNode {
     ctor public PathNode.HorizontalTo(float x);
     method public float component1();
-    method public androidx.compose.ui.graphics.vector.PathNode.HorizontalTo copy(float x);
+    method public androidx.compose.ui.graphics.vector.PathNode.HorizontalTo copy(optional float x);
     method public float getX();
     property public float x;
   }
@@ -1676,7 +1681,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.LineTo(float x, float y);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.LineTo copy(float x, float y);
+    method public androidx.compose.ui.graphics.vector.PathNode.LineTo copy(optional float x, optional float y);
     method public float getX();
     method public float getY();
     property public float x;
@@ -1687,7 +1692,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.MoveTo(float x, float y);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.MoveTo copy(float x, float y);
+    method public androidx.compose.ui.graphics.vector.PathNode.MoveTo copy(optional float x, optional float y);
     method public float getX();
     method public float getY();
     property public float x;
@@ -1700,7 +1705,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component2();
     method public float component3();
     method public float component4();
-    method public androidx.compose.ui.graphics.vector.PathNode.QuadTo copy(float x1, float y1, float x2, float y2);
+    method public androidx.compose.ui.graphics.vector.PathNode.QuadTo copy(optional float x1, optional float y1, optional float x2, optional float y2);
     method public float getX1();
     method public float getX2();
     method public float getY1();
@@ -1717,7 +1722,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component2();
     method public float component3();
     method public float component4();
-    method public androidx.compose.ui.graphics.vector.PathNode.ReflectiveCurveTo copy(float x1, float y1, float x2, float y2);
+    method public androidx.compose.ui.graphics.vector.PathNode.ReflectiveCurveTo copy(optional float x1, optional float y1, optional float x2, optional float y2);
     method public float getX1();
     method public float getX2();
     method public float getY1();
@@ -1732,7 +1737,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.ReflectiveQuadTo(float x, float y);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.ReflectiveQuadTo copy(float x, float y);
+    method public androidx.compose.ui.graphics.vector.PathNode.ReflectiveQuadTo copy(optional float x, optional float y);
     method public float getX();
     method public float getY();
     property public float x;
@@ -1748,7 +1753,7 @@ package androidx.compose.ui.graphics.vector {
     method public boolean component5();
     method public float component6();
     method public float component7();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeArcTo copy(float horizontalEllipseRadius, float verticalEllipseRadius, float theta, boolean isMoreThanHalf, boolean isPositiveArc, float arcStartDx, float arcStartDy);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeArcTo copy(optional float horizontalEllipseRadius, optional float verticalEllipseRadius, optional float theta, optional boolean isMoreThanHalf, optional boolean isPositiveArc, optional float arcStartDx, optional float arcStartDy);
     method public float getArcStartDx();
     method public float getArcStartDy();
     method public float getHorizontalEllipseRadius();
@@ -1773,7 +1778,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component4();
     method public float component5();
     method public float component6();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeCurveTo copy(float dx1, float dy1, float dx2, float dy2, float dx3, float dy3);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeCurveTo copy(optional float dx1, optional float dy1, optional float dx2, optional float dy2, optional float dx3, optional float dy3);
     method public float getDx1();
     method public float getDx2();
     method public float getDx3();
@@ -1791,7 +1796,7 @@ package androidx.compose.ui.graphics.vector {
   @androidx.compose.runtime.Immutable public static final class PathNode.RelativeHorizontalTo extends androidx.compose.ui.graphics.vector.PathNode {
     ctor public PathNode.RelativeHorizontalTo(float dx);
     method public float component1();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeHorizontalTo copy(float dx);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeHorizontalTo copy(optional float dx);
     method public float getDx();
     property public float dx;
   }
@@ -1800,7 +1805,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.RelativeLineTo(float dx, float dy);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeLineTo copy(float dx, float dy);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeLineTo copy(optional float dx, optional float dy);
     method public float getDx();
     method public float getDy();
     property public float dx;
@@ -1811,7 +1816,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.RelativeMoveTo(float dx, float dy);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeMoveTo copy(float dx, float dy);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeMoveTo copy(optional float dx, optional float dy);
     method public float getDx();
     method public float getDy();
     property public float dx;
@@ -1824,7 +1829,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component2();
     method public float component3();
     method public float component4();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeQuadTo copy(float dx1, float dy1, float dx2, float dy2);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeQuadTo copy(optional float dx1, optional float dy1, optional float dx2, optional float dy2);
     method public float getDx1();
     method public float getDx2();
     method public float getDy1();
@@ -1841,7 +1846,7 @@ package androidx.compose.ui.graphics.vector {
     method public float component2();
     method public float component3();
     method public float component4();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeReflectiveCurveTo copy(float dx1, float dy1, float dx2, float dy2);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeReflectiveCurveTo copy(optional float dx1, optional float dy1, optional float dx2, optional float dy2);
     method public float getDx1();
     method public float getDx2();
     method public float getDy1();
@@ -1856,7 +1861,7 @@ package androidx.compose.ui.graphics.vector {
     ctor public PathNode.RelativeReflectiveQuadTo(float dx, float dy);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeReflectiveQuadTo copy(float dx, float dy);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeReflectiveQuadTo copy(optional float dx, optional float dy);
     method public float getDx();
     method public float getDy();
     property public float dx;
@@ -1866,7 +1871,7 @@ package androidx.compose.ui.graphics.vector {
   @androidx.compose.runtime.Immutable public static final class PathNode.RelativeVerticalTo extends androidx.compose.ui.graphics.vector.PathNode {
     ctor public PathNode.RelativeVerticalTo(float dy);
     method public float component1();
-    method public androidx.compose.ui.graphics.vector.PathNode.RelativeVerticalTo copy(float dy);
+    method public androidx.compose.ui.graphics.vector.PathNode.RelativeVerticalTo copy(optional float dy);
     method public float getDy();
     property public float dy;
   }
@@ -1874,7 +1879,7 @@ package androidx.compose.ui.graphics.vector {
   @androidx.compose.runtime.Immutable public static final class PathNode.VerticalTo extends androidx.compose.ui.graphics.vector.PathNode {
     ctor public PathNode.VerticalTo(float y);
     method public float component1();
-    method public androidx.compose.ui.graphics.vector.PathNode.VerticalTo copy(float y);
+    method public androidx.compose.ui.graphics.vector.PathNode.VerticalTo copy(optional float y);
     method public float getY();
     property public float y;
   }

@@ -240,6 +240,7 @@ android {
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.compose.runtime"
 }
 

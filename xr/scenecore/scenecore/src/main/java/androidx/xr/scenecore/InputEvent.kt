@@ -23,6 +23,7 @@ import androidx.xr.runtime.math.Vector3
 import kotlin.annotation.Retention
 
 /** Listener for [InputEvent]s. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface InputEventListener {
     public fun onInputEvent(inputEvent: InputEvent)
 }
@@ -47,6 +48,7 @@ public fun interface InputEventListener {
  * @param secondaryHitInfo Info about the second scene entity from the same task that was hit, if
  *   any.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class InputEvent(
     @Source public val source: Int,
     @PointerType public val pointerType: Int,

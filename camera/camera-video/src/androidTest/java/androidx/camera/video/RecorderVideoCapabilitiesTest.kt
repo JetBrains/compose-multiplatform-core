@@ -20,7 +20,6 @@ import android.content.Context
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.CameraInfoInternal
@@ -40,7 +39,6 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -78,7 +76,6 @@ class RecorderVideoCapabilitiesTest(
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var cameraInfo: CameraInfoInternal
     private lateinit var videoCapabilities: RecorderVideoCapabilities
@@ -91,7 +88,7 @@ class RecorderVideoCapabilitiesTest(
             Build.VERSION.SDK_INT == 30 && isEmulator()
         )
 
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         CameraXUtil.initialize(context, cameraConfig).get()
 

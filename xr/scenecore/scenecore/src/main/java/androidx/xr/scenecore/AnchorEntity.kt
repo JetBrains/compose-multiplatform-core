@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.annotation.SuppressLint
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference
  * by the system.
  */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AnchorEntity
 private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     BaseEntity<RtAnchorEntity>(rtEntity, entityManager) {
@@ -217,7 +219,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          *   before the anchor state is updated. If the timeout duration is zero it will search for
          *   the anchor indefinitely.
          * @throws [IllegalStateException] if [session.config.planeTracking] is set to
-         *   [PlaneTrackingMode.Disabled].
+         *   [PlaneTrackingMode.DISABLED].
          */
         @JvmStatic
         @JvmOverloads
@@ -228,7 +230,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             planeSemantic: @PlaneSemanticValue Int,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
-            check(session.config.planeTracking != PlaneTrackingMode.Disabled) {
+            check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
                 "Config.PlaneTrackingMode is set to Disabled."
             }
 
@@ -285,6 +287,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface OnStateChangedListener {
     public fun onStateChanged(newState: @AnchorEntity.StateValue Int)
 }

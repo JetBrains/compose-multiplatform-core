@@ -25,11 +25,14 @@ import static androidx.appsearch.localstorage.util.PrefixUtil.createPrefix;
 import static androidx.appsearch.localstorage.util.PrefixUtil.getDatabaseName;
 import static androidx.appsearch.localstorage.util.PrefixUtil.getPackageName;
 import static androidx.appsearch.localstorage.util.PrefixUtil.getPrefix;
+import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefix;
 import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefixesFromDocument;
+import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefixesFromSchemaType;
 
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.OptIn;
@@ -73,7 +76,6 @@ import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
-import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
@@ -194,6 +196,9 @@ public final class AppSearchImpl implements Closeable {
     @VisibleForTesting
     static final int CHECK_OPTIMIZE_INTERVAL = 100;
 
+    @VisibleForTesting
+    static final int PRUNE_PACKAGE_USING_FULL_SET_SCHEMA_THRESHOLD = 20;
+
     /** A GetResultSpec that uses projection to skip all properties. */
     private static final GetResultSpecProto GET_RESULT_SPEC_NO_PROPERTIES =
             GetResultSpecProto.newBuilder().addTypePropertyMasks(
@@ -209,6 +214,8 @@ public final class AppSearchImpl implements Closeable {
     @VisibleForTesting
     final IcingSearchEngineInterface mIcingSearchEngineLocked;
     private final boolean mIsVMEnabled;
+
+    private boolean mIsIcingSchemaDatabaseEnabled = false;
 
     @GuardedBy("mReadWriteLock")
     private final SchemaCache mSchemaCacheLocked = new SchemaCache();
@@ -336,6 +343,7 @@ public final class AppSearchImpl implements Closeable {
                         icingDir.getAbsolutePath(), mIsVMEnabled);
                 LogUtil.piiTrace(TAG, "Constructing IcingSearchEngine, request", options);
                 mIcingSearchEngineLocked = new IcingSearchEngine(options);
+                mIsIcingSchemaDatabaseEnabled = options.getEnableSchemaDatabase();
                 LogUtil.piiTrace(
                         TAG,
                         "Constructing IcingSearchEngine, response",
@@ -343,6 +351,7 @@ public final class AppSearchImpl implements Closeable {
             } else {
                 mIcingSearchEngineLocked = icingSearchEngine;
                 mIsVMEnabled = true;
+                mIsIcingSchemaDatabaseEnabled = true;
             }
 
             // The core initialization procedure. If any part of this fails, we bail into
@@ -520,6 +529,12 @@ public final class AppSearchImpl implements Closeable {
         return mIsVMEnabled;
     }
 
+    /** Returns whether this AppSearchImpl instance should use database-scoped set and get schema */
+    @VisibleForTesting
+    boolean useDatabaseScopedSchemaOperations() {
+        return mIsIcingSchemaDatabaseEnabled;
+    }
+
     /**
      * Updates the AppSearch schema for this app.
      *
@@ -564,19 +579,30 @@ public final class AppSearchImpl implements Closeable {
             throwIfClosedLocked();
             if (setSchemaStatsBuilder != null) {
                 setSchemaStatsBuilder.setJavaLockAcquisitionLatencyMillis(
-                        (int) (SystemClock.elapsedRealtime()
-                                - javaLockAcquisitionLatencyStartMillis))
+                                (int) (SystemClock.elapsedRealtime()
+                                        - javaLockAcquisitionLatencyStartMillis))
                         .setLaunchVMEnabled(mIsVMEnabled);
             }
             if (mObserverManager.isPackageObserved(packageName)) {
-                return doSetSchemaWithChangeNotificationLocked(
-                        packageName,
-                        databaseName,
-                        schemas,
-                        visibilityConfigs,
-                        forceOverride,
-                        version,
-                        setSchemaStatsBuilder);
+                if (useDatabaseScopedSchemaOperations()) {
+                    return doSetSchemaWithChangeNotificationNoGetSchemaLocked(
+                            packageName,
+                            databaseName,
+                            schemas,
+                            visibilityConfigs,
+                            forceOverride,
+                            version,
+                            setSchemaStatsBuilder);
+                } else {
+                    return doSetSchemaWithChangeNotificationLocked(
+                            packageName,
+                            databaseName,
+                            schemas,
+                            visibilityConfigs,
+                            forceOverride,
+                            version,
+                            setSchemaStatsBuilder);
+                }
             } else {
                 return doSetSchemaNoChangeNotificationLocked(
                         packageName,
@@ -585,7 +611,7 @@ public final class AppSearchImpl implements Closeable {
                         visibilityConfigs,
                         forceOverride,
                         version,
-                        setSchemaStatsBuilder);
+                        setSchemaStatsBuilder).first;
             }
         } finally {
             mReadWriteLock.writeLock().unlock();
@@ -593,7 +619,8 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
-     * Updates the AppSearch schema for this app, dispatching change notifications.
+     * Updates the AppSearch schema for this app, dispatching change notifications. This method
+     * calls the getSchema API in the process.
      *
      * @see #setSchema
      * @see #doSetSchemaNoChangeNotificationLocked
@@ -655,7 +682,7 @@ public final class AppSearchImpl implements Closeable {
                 visibilityConfigs,
                 forceOverride,
                 version,
-                setSchemaStatsBuilder);
+                setSchemaStatsBuilder).first;
 
         // This check is needed wherever setSchema is called to detect soft errors which do not
         // throw an exception but also prevent the schema from actually being applied.
@@ -768,6 +795,222 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
+     * Updates the AppSearch schema for this app and dispatches change notifications, without
+     * calling the getSchema API.
+     *
+     * @see #setSchema
+     * @see #doSetSchemaNoChangeNotificationLocked
+     */
+    @GuardedBy("mReadWriteLock")
+    private @NonNull InternalSetSchemaResponse doSetSchemaWithChangeNotificationNoGetSchemaLocked(
+            @NonNull String packageName,
+            @NonNull String databaseName,
+            @NonNull List<AppSearchSchema> schemas,
+            @NonNull List<InternalVisibilityConfig> visibilityConfigs,
+            boolean forceOverride,
+            int version,
+            SetSchemaStats.@Nullable Builder setSchemaStatsBuilder) throws AppSearchException {
+        // Get the old schema map and cache the listening packages for the database
+        long getOldSchemaObserverStartTimeMillis = SystemClock.elapsedRealtime();
+        Set<String> oldPrefixedTypesForPrefix = mSchemaCacheLocked.getSchemaMapForPrefix(
+                createPrefix(packageName, databaseName)).keySet();
+        Map<String, Set<String>> oldSchemaNameToVisibleListeningPackage =
+                new ArrayMap<>(oldPrefixedTypesForPrefix.size());
+        for (String prefixedTypeName : oldPrefixedTypesForPrefix) {
+            String unprefixedTypeName = removePrefix(prefixedTypeName);
+            oldSchemaNameToVisibleListeningPackage.put(
+                    unprefixedTypeName,
+                    mObserverManager.getObserversForSchemaType(
+                            packageName,
+                            databaseName,
+                            unprefixedTypeName,
+                            mDocumentVisibilityStoreLocked,
+                            mVisibilityCheckerLocked));
+        }
+        int getOldSchemaObserverLatencyMillis =
+                (int) (SystemClock.elapsedRealtime() - getOldSchemaObserverStartTimeMillis);
+
+        // Apply the new schema
+        Pair<InternalSetSchemaResponse, SetSchemaResultProto> setSchemaResponsePair =
+                doSetSchemaNoChangeNotificationLocked(
+                        packageName,
+                        databaseName,
+                        schemas,
+                        visibilityConfigs,
+                        forceOverride,
+                        version,
+                        setSchemaStatsBuilder);
+
+        // This check is needed wherever setSchema is called to detect soft errors which do not
+        // throw an exception but also prevent the schema from actually being applied.
+        if (!setSchemaResponsePair.first.isSuccess()) {
+            return setSchemaResponsePair.first;
+        }
+
+        long getNewSchemaObserverStartTimeMillis = SystemClock.elapsedRealtime();
+        // Maps unprefixed schema name to the set of listening packages that have visibility into
+        // that type under the new schema.
+        Map<String, Set<String>> requestSchemaNameToVisibleListeningPackage =
+                new ArrayMap<>(schemas.size());
+        Set<String> requestUnprefixedSchemaNames = new ArraySet<>();
+        for (AppSearchSchema requestSchemaType : schemas) {
+            String requestSchemaName = requestSchemaType.getSchemaType();
+            requestUnprefixedSchemaNames.add(requestSchemaName);
+            requestSchemaNameToVisibleListeningPackage.put(
+                    requestSchemaName,
+                    mObserverManager.getObserversForSchemaType(
+                            packageName,
+                            databaseName,
+                            requestSchemaName,
+                            mDocumentVisibilityStoreLocked,
+                            mVisibilityCheckerLocked));
+        }
+        long getNewSchemaObserverEndTimeMillis = SystemClock.elapsedRealtime();
+        if (setSchemaStatsBuilder != null) {
+            setSchemaStatsBuilder.setGetObserverLatencyMillis(
+                    getOldSchemaObserverLatencyMillis
+                            + (int)
+                            (getNewSchemaObserverEndTimeMillis
+                                    - getNewSchemaObserverStartTimeMillis));
+        }
+
+        long preparingChangeNotificationStartTimeMillis = SystemClock.elapsedRealtime();
+        SetSchemaResultProto setSchemaResultProto = setSchemaResponsePair.second;
+        // Send notifications for all old listeners of deleted types
+        sendDeletedTypeNotificationsLocked(packageName, databaseName,
+                setSchemaResultProto.getDeletedSchemaTypesList(),
+                oldSchemaNameToVisibleListeningPackage);
+
+        // Send notifications for types in the request schema.
+        sendRequestSchemaTypesNotificationsLocked(packageName, databaseName, setSchemaResultProto,
+                requestUnprefixedSchemaNames, oldSchemaNameToVisibleListeningPackage,
+                requestSchemaNameToVisibleListeningPackage);
+
+        if (setSchemaStatsBuilder != null) {
+            setSchemaStatsBuilder.setPreparingChangeNotificationLatencyMillis(
+                    (int) (SystemClock.elapsedRealtime()
+                            - preparingChangeNotificationStartTimeMillis));
+        }
+
+        return setSchemaResponsePair.first;
+    }
+
+    /**
+     * Schedule observer notifications for schema types that have been deleted.
+     *
+     * @param targetPackageName     The package of the deleted types.
+     * @param databaseName          The database of the deleted types.
+     * @param prefixedDeletedTypes  A list of prefixed deleted schema type names.
+     * @param unprefixedSchemaNameToObserversMap A map from unprefixed schema type names to
+     *                     the set of observer package names that should be notified.
+     */
+    private void sendDeletedTypeNotificationsLocked(String targetPackageName, String databaseName,
+            List<String> prefixedDeletedTypes,
+            Map<String, Set<String>> unprefixedSchemaNameToObserversMap) throws AppSearchException {
+        for (int i = 0; i < prefixedDeletedTypes.size(); ++i) {
+            String deletedType = removePrefix(prefixedDeletedTypes.get(i));
+            Set<String> visibleListeners = unprefixedSchemaNameToObserversMap.get(deletedType);
+            if (visibleListeners != null) {
+                for (String listeningPackageName : visibleListeners) {
+                    mObserverManager.onSchemaChange(listeningPackageName, targetPackageName,
+                            databaseName, deletedType);
+                }
+            }
+        }
+    }
+
+    /**
+     * Schedule observer notifications for schema types in the request schema. Notifications are
+     * scheduled for a type if:
+     *   1. The type is either a new type, or its definition has changed from before.
+     *   2. There is a change in the type's visibility from its old visibility for the observer.
+     *
+     * @param targetPackageName             The package of the deleted types.
+     * @param databaseName                  The database of the deleted types.
+     * @param setSchemaResultProto          Result proto from the set schema request
+     * @param unprefixedRequestSchemaNames  Set of unprefixed schema type names for the set
+     *                                      schema request
+     * @param unprefixedPriorSchemaNameToObserversMap   A map from the prior unprefixed schema type
+     *       names to the set of observer package names that should be notified.
+     * @param unprefixedRequestSchemaNameToObserversMap A map from the request's unprefixed
+     *       schema type names to the set of observer package names that should be notified.
+     */
+    private void sendRequestSchemaTypesNotificationsLocked(
+            String targetPackageName, String databaseName,
+            SetSchemaResultProto setSchemaResultProto,
+            Set<String> unprefixedRequestSchemaNames,
+            Map<String, Set<String>> unprefixedPriorSchemaNameToObserversMap,
+            Map<String, Set<String>> unprefixedRequestSchemaNameToObserversMap)
+            throws AppSearchException {
+        // Get new or changed types from the setSchemaResultProto
+        Set<String> unprefixedNewAndChangedTypes = new ArraySet<>();
+        addUnprefixedTypeNames(
+                setSchemaResultProto.getNewSchemaTypesList(),
+                unprefixedNewAndChangedTypes);
+        addUnprefixedTypeNames(
+                setSchemaResultProto.getIncompatibleSchemaTypesList(),
+                unprefixedNewAndChangedTypes);
+        addUnprefixedTypeNames(
+                setSchemaResultProto.getFullyCompatibleChangedSchemaTypesList(),
+                unprefixedNewAndChangedTypes);
+        addUnprefixedTypeNames(
+                setSchemaResultProto.getIndexIncompatibleChangedSchemaTypesList(),
+                unprefixedNewAndChangedTypes);
+        addUnprefixedTypeNames(
+                setSchemaResultProto.getJoinIncompatibleChangedSchemaTypesList(),
+                unprefixedNewAndChangedTypes);
+
+        // Iterate through each type in the request schema and send notifications
+        for (String schemaName : unprefixedRequestSchemaNames) {
+            Set<String> priorVisibleListeners =
+                    unprefixedPriorSchemaNameToObserversMap.get(schemaName);
+            Set<String> requestVisibleListeners =
+                    unprefixedRequestSchemaNameToObserversMap.get(schemaName);
+
+            // Iterate through each observer in the prior and current listeners and consider its
+            // view of the type to send notifications
+            if (priorVisibleListeners != null) {
+                for (String priorListeningPackage : priorVisibleListeners) {
+                    if (requestVisibleListeners != null
+                            && requestVisibleListeners.contains(priorListeningPackage)
+                            && !unprefixedNewAndChangedTypes.contains(schemaName)) {
+                        // Neither the listener's view nor the type itself has changed -- no need to
+                        // notify
+                        continue;
+                    }
+                    mObserverManager.onSchemaChange(priorListeningPackage, targetPackageName,
+                            databaseName, schemaName);
+                }
+            }
+
+            if (requestVisibleListeners != null) {
+                for (String currentListeningPackage : requestVisibleListeners) {
+                    // At this point we only need to notify if the listener is not a visible
+                    // listener prior to the request.
+                    // For other scenarios, we've already checked and notified above while
+                    // notifying prior listeners.
+                    if (priorVisibleListeners == null
+                            || !priorVisibleListeners.contains(currentListeningPackage)) {
+                        mObserverManager.onSchemaChange(currentListeningPackage, targetPackageName,
+                                databaseName, schemaName);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts unprefixed type names from a list of prefixed type names and adds them to the
+     * given set.
+     */
+    private void addUnprefixedTypeNames(List<String> prefixedTypes, Set<String> unprefixedTypeSet)
+            throws AppSearchException {
+        for (int i = 0; i < prefixedTypes.size(); ++i) {
+            unprefixedTypeSet.add(removePrefix(prefixedTypes.get(i)));
+        }
+    }
+
+    /**
      * Updates the AppSearch schema for this app, without dispatching change notifications.
      *
      * <p>This method can be used only when no one is observing {@code packageName}.
@@ -776,7 +1019,8 @@ public final class AppSearchImpl implements Closeable {
      * @see #doSetSchemaWithChangeNotificationLocked
      */
     @GuardedBy("mReadWriteLock")
-    private @NonNull InternalSetSchemaResponse doSetSchemaNoChangeNotificationLocked(
+    private @NonNull Pair<InternalSetSchemaResponse, SetSchemaResultProto>
+    doSetSchemaNoChangeNotificationLocked(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull List<AppSearchSchema> schemas,
@@ -801,8 +1045,9 @@ public final class AppSearchImpl implements Closeable {
         long rewriteSchemaEndTimeMillis;
         long nativeLatencyStartTimeMillis = SystemClock.elapsedRealtime();
         // Rewrite and apply schema
-        if (Flags.enableDatabaseScopedSchemaOperations()) {
-            rewrittenPrefixedTypes = getRewrittenPrefixedTypes(prefix, newSchemaBuilder.build());
+        if (useDatabaseScopedSchemaOperations()) {
+            rewrittenPrefixedTypes = getRewrittenPrefixedTypes(prefix,
+                    newSchemaBuilder.build(), /*populateDatabase=*/true);
             rewriteSchemaEndTimeMillis = SystemClock.elapsedRealtime();
 
             SchemaProto finalSchema = SchemaProto.newBuilder()
@@ -810,7 +1055,7 @@ public final class AppSearchImpl implements Closeable {
                     .build();
             SetSchemaRequestProto setSchemaRequestProto = SetSchemaRequestProto.newBuilder()
                     .setSchema(finalSchema)
-                    .setDatabase(PrefixUtil.getIcingSchemaDatabaseName(prefix))
+                    .setDatabase(prefix)
                     .setIgnoreErrorsAndDeleteDocuments(forceOverride)
                     .build();
             LogUtil.piiTrace(TAG, "setSchema, request", finalSchema.getTypesCount(),
@@ -823,8 +1068,8 @@ public final class AppSearchImpl implements Closeable {
             // Combine the existing schema (which may have types from other prefixes) with this
             // prefix's new schema. Modifies the existingSchemaBuilder.
             RewrittenSchemaResults rewrittenSchemaResults = rewriteSchema(prefix,
-                    existingSchemaBuilder,
-                    newSchemaBuilder.build());
+                    existingSchemaBuilder, newSchemaBuilder.build(),
+                    /*populateDatabase=*/false);
             rewriteSchemaEndTimeMillis = SystemClock.elapsedRealtime();
 
             deletedPrefixedTypes = rewrittenSchemaResults.mDeletedPrefixedTypes;
@@ -868,7 +1113,8 @@ public final class AppSearchImpl implements Closeable {
                 String errorMessage = "Schema is incompatible."
                         + "\n  Deleted types: " + setSchemaResponse.getDeletedTypes()
                         + "\n  Incompatible types: " + setSchemaResponse.getIncompatibleTypes();
-                return newFailedSetSchemaResponse(setSchemaResponse, errorMessage);
+                return new Pair<>(newFailedSetSchemaResponse(setSchemaResponse, errorMessage),
+                        setSchemaResultProto);
             } else {
                 throw e;
             }
@@ -920,7 +1166,7 @@ public final class AppSearchImpl implements Closeable {
                     (int) (convertToResponseEndTimeMillis
                             - convertToResponseStartTimeMillis));
         }
-        return setSchemaResponse;
+        return new Pair<>(setSchemaResponse, setSchemaResultProto);
     }
 
     /**
@@ -949,7 +1195,7 @@ public final class AppSearchImpl implements Closeable {
             // retrieved.
             SchemaProto icingSchema;
             String prefix = createPrefix(packageName, databaseName);
-            if (Flags.enableDatabaseScopedSchemaOperations()) {
+            if (useDatabaseScopedSchemaOperations()) {
                 icingSchema = getSchemaProtoForPrefixLocked(prefix);
             } else {
                 icingSchema = getSchemaProtoLocked();
@@ -979,7 +1225,7 @@ public final class AppSearchImpl implements Closeable {
 
                 // Rewrite SchemaProto.types.schema_type
                 SchemaTypeConfigProto.Builder typeConfigBuilder = typeConfig.toBuilder();
-                PrefixUtil.removePrefixesFromSchemaType(typeConfigBuilder);
+                removePrefixesFromSchemaType(typeConfigBuilder);
                 AppSearchSchema schema = SchemaToProtoConverter.toAppSearchSchema(
                         typeConfigBuilder);
 
@@ -1120,8 +1366,7 @@ public final class AppSearchImpl implements Closeable {
             List<PutDocumentRequest.Builder> requestBuilderList = new ArrayList<>();
             // This is to make sure the batching size is at least getMaxDocumentSizeBytes.
             // Otherwise one valid size doc may not fit into a batch.
-            int maxBufferedBytes = Integer.max(mConfig.getMaxByteLimitForBatchPut(),
-                    mConfig.getMaxDocumentSizeBytes());
+            int maxBufferedBytes = mConfig.getMaxByteLimitForBatchPut();
             int currentTotalBytes = 0;
             PutDocumentRequest.Builder currentBatchBuilder =
                     PutDocumentRequest.newBuilder().setPersistType(PersistType.Code.UNKNOWN);
@@ -1156,10 +1401,15 @@ public final class AppSearchImpl implements Closeable {
                     int serializedSizeBytes = finalDocument.getSerializedSize();
                     enforceLimitConfigLocked(packageName, docId, serializedSizeBytes);
 
-                    // to see if we want to finish the current batch and build a PutRequestProto.
-                    // based on how we calculate maxBufferedBytes, serializedSizeBytes is guaranteed
-                    // to be smaller or same as maxBufferedBytes.
-                    if (serializedSizeBytes > maxBufferedBytes - currentTotalBytes) {
+                    // to see if we want to finish the current batch due to the byte limitation and
+                    // build a PutRequestProto.
+                    // - It is possible for serializedSizeBytes to exceed maxBufferedBytes if the
+                    //   currentBatch is empty, then we must add the document to it instead of
+                    //   finishing the batch.
+                    // - If the currentBatch is non-empty, then we should finish that batch and
+                    //   create a new one with this document.
+                    if (currentBatchBuilder.getDocumentsCount() > 0
+                            && serializedSizeBytes > maxBufferedBytes - currentTotalBytes) {
                         // Time to finish the current batch.
                         requestBuilderList.add(currentBatchBuilder);
 
@@ -1280,8 +1530,8 @@ public final class AppSearchImpl implements Closeable {
                             mObserverManager.onDocumentChange(
                                     packageName,
                                     databaseName,
-                                    PrefixUtil.removePrefix(documentProto.getNamespace()),
-                                    PrefixUtil.removePrefix(documentProto.getSchema()),
+                                    removePrefix(documentProto.getNamespace()),
+                                    removePrefix(documentProto.getSchema()),
                                     documentProto.getUri(),
                                     mDocumentVisibilityStoreLocked,
                                     mVisibilityCheckerLocked);
@@ -1986,11 +2236,11 @@ public final class AppSearchImpl implements Closeable {
                     //  the same schema before.
                     if (callerAccess != null
                             && !VisibilityUtil.isSchemaSearchableByCaller(
-                                callerAccess,
-                                packageName,
-                                getResultProto.getDocument().getSchema(),
-                                mDocumentVisibilityStoreLocked,
-                                mVisibilityCheckerLocked)) {
+                            callerAccess,
+                            packageName,
+                            getResultProto.getDocument().getSchema(),
+                            mDocumentVisibilityStoreLocked,
+                            mVisibilityCheckerLocked)) {
                         throw new AppSearchException(AppSearchResult.RESULT_NOT_FOUND);
                     }
 
@@ -2001,10 +2251,10 @@ public final class AppSearchImpl implements Closeable {
                     // The schema type map cannot be null at this point. It could only be null if no
                     // schema had ever been set for that prefix. Given we have retrieved a document
                     // from the index, we know a schema had to have been set.
-                     GenericDocument doc = GenericDocumentToProtoConverter.toGenericDocument(
-                             documentBuilder.build(), prefix, mSchemaCacheLocked, mConfig);
+                    GenericDocument doc = GenericDocumentToProtoConverter.toGenericDocument(
+                            documentBuilder.build(), prefix, mSchemaCacheLocked, mConfig);
 
-                     resultBuilder.setSuccess(id, doc);
+                    resultBuilder.setSuccess(id, doc);
                 } catch (Throwable t) {
                     // Global get
                     if (callerAccess != null) {
@@ -2052,9 +2302,9 @@ public final class AppSearchImpl implements Closeable {
                     nonPrefixedPropertyMaskBuilders.get(i).setSchemaType(prefixedType).build());
         }
 
-       GetResultSpecProto.Builder resultSpecProtoBuilder = GetResultSpecProto.newBuilder()
-               .setNamespaceRequested(namespace)
-               .addAllTypePropertyMasks(prefixedPropertyMasks);
+        GetResultSpecProto.Builder resultSpecProtoBuilder = GetResultSpecProto.newBuilder()
+                .setNamespaceRequested(namespace)
+                .addAllTypePropertyMasks(prefixedPropertyMasks);
 
         // For old getDocumentProtoByIdLocked, we don't need to set the ids in the request.
         // So we don't pass the ids in from there.
@@ -2496,8 +2746,8 @@ public final class AppSearchImpl implements Closeable {
         try {
             if (sStatsBuilder != null) {
                 sStatsBuilder.setJavaLockAcquisitionLatencyMillis(
-                        (int) (SystemClock.elapsedRealtime()
-                                - javaLockAcquisitionLatencyStartMillis))
+                                (int) (SystemClock.elapsedRealtime()
+                                        - javaLockAcquisitionLatencyStartMillis))
                         .setLaunchVMEnabled(mIsVMEnabled);
             }
             throwIfClosedLocked();
@@ -2682,7 +2932,7 @@ public final class AppSearchImpl implements Closeable {
                         prefixedNamespace, documentId, GET_RESULT_SPEC_NO_PROPERTIES);
                 LogUtil.piiTrace(TAG, "removeById, getResponse", getResult.getStatus(), getResult);
                 checkSuccess(getResult.getStatus());
-                schemaType = PrefixUtil.removePrefix(getResult.getDocument().getSchema());
+                schemaType = removePrefix(getResult.getDocument().getSchema());
             }
 
             if (LogUtil.isPiiTraceEnabled()) {
@@ -2695,7 +2945,7 @@ public final class AppSearchImpl implements Closeable {
 
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setStatusCode(statusProtoToResultCode(
-                        deleteResultProto.getStatus()))
+                                deleteResultProto.getStatus()))
                         .setLaunchVMEnabled(mIsVMEnabled);
                 AppSearchLoggerHelper.copyNativeStats(deleteResultProto.getDeleteStats(),
                         removeStatsBuilder);
@@ -2789,7 +3039,7 @@ public final class AppSearchImpl implements Closeable {
                         finalSearchSpec.getSchemaTypeFiltersList();
                 for (int i = 0; i < prefixedTargetSchemaTypes.size(); i++) {
                     String prefixedType = prefixedTargetSchemaTypes.get(i);
-                    String shortTypeName = PrefixUtil.removePrefix(prefixedType);
+                    String shortTypeName = removePrefix(prefixedType);
                     if (mObserverManager.isSchemaTypeObserved(packageName, shortTypeName)) {
                         prefixedObservedSchemas.add(prefixedType);
                     }
@@ -2803,7 +3053,7 @@ public final class AppSearchImpl implements Closeable {
             mReadWriteLock.writeLock().unlock();
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setTotalLatencyMillis(
-                        (int) (SystemClock.elapsedRealtime() - totalLatencyStartTimeMillis))
+                                (int) (SystemClock.elapsedRealtime() - totalLatencyStartTimeMillis))
                         .setLaunchVMEnabled(mIsVMEnabled);
             }
         }
@@ -2872,8 +3122,8 @@ public final class AppSearchImpl implements Closeable {
                 continue;
             }
             String databaseName = getDatabaseName(group.getNamespace());
-            String namespace = PrefixUtil.removePrefix(group.getNamespace());
-            String schemaType = PrefixUtil.removePrefix(group.getSchema());
+            String namespace = removePrefix(group.getNamespace());
+            String schemaType = removePrefix(group.getSchema());
             for (int j = 0; j < group.getUrisCount(); ++j) {
                 String uri = group.getUris(j);
                 mObserverManager.onDocumentChange(
@@ -3003,7 +3253,7 @@ public final class AppSearchImpl implements Closeable {
                     mSchemaCacheLocked.getSchemaMapForPrefix(prefix);
             for (SchemaTypeConfigProto typeConfig : visibilitySchemaProto.values()) {
                 SchemaTypeConfigProto.Builder typeConfigBuilder = typeConfig.toBuilder();
-                PrefixUtil.removePrefixesFromSchemaType(typeConfigBuilder);
+                removePrefixesFromSchemaType(typeConfigBuilder);
                 responseBuilder.setVersion(typeConfig.getVersion());
                 responseBuilder.addSchema(SchemaToProtoConverter.toAppSearchSchema(
                         typeConfigBuilder));
@@ -3265,80 +3515,56 @@ public final class AppSearchImpl implements Closeable {
                 return;
             }
 
-            // Prune schema proto
-            SchemaProto existingSchema = getSchemaProtoLocked();
-            if (Flags.enableDatabaseScopedSchemaOperations()) {
-                // We can only set the schema for a single Icing schema database at a time.
+            // Prune schema proto and delete documents
+            boolean successfullyDeletedData = false;
+            if (useDatabaseScopedSchemaOperations()) {
                 Set<String> databasesToDelete = new ArraySet<>();
-                for (int i = 0; i < existingSchema.getTypesCount(); i++) {
-                    SchemaTypeConfigProto schemaType = existingSchema.getTypes(i);
-                    String packageName = getPackageName(schemaType.getSchemaType());
-                    Log.e(TAG, "package: " + packageName);
+                Set<String> allSchemaPrefixes = mSchemaCacheLocked.getAllPrefixes();
+                for (String prefix : allSchemaPrefixes) {
+                    String packageName = getPackageName(prefix);
                     if (!installedPackages.contains(packageName)) {
-                        databasesToDelete.add(schemaType.getDatabase());
+                        databasesToDelete.add(prefix);
                     }
                 }
 
-                // Prune all schemas in databaseToDelete by sending an empty setSchema request
-                // for those dbs
-                // TODO(b/337913932): use old code path and reset the full schema once Icing
-                //  reallows it
-                for (String database : databasesToDelete) {
-                    // Apply schema, set force override to true to remove all schemas and documents
-                    // that doesn't belong to any of these installed packages.
-                    SetSchemaRequestProto emptySetSchemaRequestProto =
-                            SetSchemaRequestProto.newBuilder()
-                                    .setSchema(SchemaProto.newBuilder().build())
-                                    .setDatabase(database)
-                                    .setIgnoreErrorsAndDeleteDocuments(true)
-                                    .build();
-                    LogUtil.piiTrace(
-                            TAG,
-                            "clearPackageData.setSchema for database, request",
-                            emptySetSchemaRequestProto);
-                    SetSchemaResultProto setSchemaResultProto =
-                            mIcingSearchEngineLocked.setSchemaWithRequestProto(
-                                    emptySetSchemaRequestProto);
-                    LogUtil.piiTrace(
-                            TAG,
-                            "clearPackageData.setSchema, response",
-                            setSchemaResultProto.getStatus(),
-                            setSchemaResultProto);
+                if (databasesToDelete.size()
+                        < PRUNE_PACKAGE_USING_FULL_SET_SCHEMA_THRESHOLD) {
+                    // Use database-scoped set schema request to prune the schemas and documents
+                    // a single database at a time.
+                    for (String database : databasesToDelete) {
+                        // Apply an empty schema and set force override to true to remove all
+                        // schemas and documents that don't belong to any of the installed packages.
+                        SetSchemaRequestProto emptySetSchemaRequestProto =
+                                SetSchemaRequestProto.newBuilder()
+                                        .setSchema(SchemaProto.newBuilder().build())
+                                        .setDatabase(database)
+                                        .setIgnoreErrorsAndDeleteDocuments(true)
+                                        .build();
+                        LogUtil.piiTrace(
+                                TAG,
+                                "clearPackageData.setSchema for database, request",
+                                emptySetSchemaRequestProto);
+                        SetSchemaResultProto setSchemaResultProto =
+                                mIcingSearchEngineLocked.setSchemaWithRequestProto(
+                                        emptySetSchemaRequestProto);
+                        LogUtil.piiTrace(
+                                TAG,
+                                "clearPackageData.setSchema, response",
+                                setSchemaResultProto.getStatus(),
+                                setSchemaResultProto);
 
-                    // Determine whether it succeeded.
-                    checkSuccess(setSchemaResultProto.getStatus());
-                }
-            } else {
-                SchemaProto.Builder newSchemaBuilder = SchemaProto.newBuilder();
-                for (int i = 0; i < existingSchema.getTypesCount(); i++) {
-                    String packageName = getPackageName(existingSchema.getTypes(i).getSchemaType());
-                    if (installedPackages.contains(packageName)) {
-                        newSchemaBuilder.addTypes(existingSchema.getTypes(i));
+                        // Determine whether it succeeded.
+                        checkSuccess(setSchemaResultProto.getStatus());
                     }
+                    successfullyDeletedData = true;
                 }
-
-                SchemaProto finalSchema = newSchemaBuilder.build();
-
-                // Apply schema, set force override to true to remove all schemas and documents that
-                // doesn't belong to any of these installed packages.
-                LogUtil.piiTrace(
-                        TAG,
-                        "clearPackageData.setSchema, request",
-                        finalSchema.getTypesCount(),
-                        finalSchema);
-                SetSchemaResultProto setSchemaResultProto = mIcingSearchEngineLocked.setSchema(
-                        finalSchema, /*ignoreErrorsAndDeleteDocuments=*/ true);
-                LogUtil.piiTrace(
-                        TAG,
-                        "clearPackageData.setSchema, response",
-                        setSchemaResultProto.getStatus(),
-                        setSchemaResultProto);
-
-                // Determine whether it succeeded.
-                checkSuccess(setSchemaResultProto.getStatus());
             }
 
-            // Prune cached maps
+            if (!successfullyDeletedData) {
+                prunePackageDataUsingFullSetSchemaLocked(installedPackages);
+            }
+
+            // Prune cached maps once schema and documents have been successfully deleted
             for (Map.Entry<String, Set<String>> entry : packageToDatabases.entrySet()) {
                 String packageName = entry.getKey();
                 Set<String> databaseNames = entry.getValue();
@@ -3361,6 +3587,46 @@ public final class AppSearchImpl implements Closeable {
         } finally {
             mReadWriteLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Remove all {@link AppSearchSchema}s and {@link GenericDocument}s that doesn't belong to any
+     * of the given installed packages by resetting the full schema for the remaining installed
+     * packages.
+     *
+     * @param installedPackages The name of all installed package.
+     * @throws AppSearchException if we cannot remove the data.
+     */
+    private void prunePackageDataUsingFullSetSchemaLocked(@NonNull Set<String> installedPackages)
+            throws AppSearchException {
+        SchemaProto existingSchema = getSchemaProtoLocked();
+        SchemaProto.Builder newSchemaBuilder = SchemaProto.newBuilder();
+        for (int i = 0; i < existingSchema.getTypesCount(); i++) {
+            String packageName = getPackageName(existingSchema.getTypes(i).getSchemaType());
+            if (installedPackages.contains(packageName)) {
+                newSchemaBuilder.addTypes(existingSchema.getTypes(i));
+            }
+        }
+
+        SchemaProto finalSchema = newSchemaBuilder.build();
+
+        // Apply schema, set force override to true to remove all schemas and documents that
+        // doesn't belong to any of these installed packages.
+        LogUtil.piiTrace(
+                TAG,
+                "clearPackageData.setSchema, request",
+                finalSchema.getTypesCount(),
+                finalSchema);
+        SetSchemaResultProto setSchemaResultProto = mIcingSearchEngineLocked.setSchema(
+                finalSchema, /*ignoreErrorsAndDeleteDocuments=*/ true);
+        LogUtil.piiTrace(
+                TAG,
+                "clearPackageData.setSchema, response",
+                setSchemaResultProto.getStatus(),
+                setSchemaResultProto);
+
+        // Determine whether it succeeded.
+        checkSuccess(setSchemaResultProto.getStatus());
     }
 
     /**
@@ -3416,28 +3682,26 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
-     * Rewrites all types mentioned in the given {@code newSchema} to prepend {@code prefix} and
-     * populate the schema's database field if
-     * {@link Flags#enableDatabaseScopedSchemaOperations()} is true.
+     * Rewrites all types mentioned in the given {@code newSchema}.
      *
      * <p> Rewritten types will be added to the {@code existingSchema}.
      *
-     * @param prefix         The full prefix to prepend to the schema.
-     * @param existingSchema A schema that may contain existing types from across all prefixes
-     *                       (only if database-scoped schema operations is disabled).
-     *                       Will be mutated to contain the properly rewritten schema
-     *                       types from {@code newSchema}.
-     * @param newSchema      Schema with types to add to the {@code existingSchema}.
+     * @param prefix            The full prefix to prepend to the schema.
+     * @param existingSchema    A schema that may contain existing types from across all prefixes
+     *                          (only if database-scoped schema operations is disabled).
+     *                          Will be mutated to contain the properly rewritten schema
+     *                          types from {@code newSchema}.
+     * @param newSchema         Schema with types to add to the {@code existingSchema}.
+     * @param populateDatabase  Whether to populate the database field in the rewritten schema.
      * @return a RewrittenSchemaResults that contains all prefixed schema type names in the given
-     * prefix as well as a set of schema types that were deleted if
-     * {@link Flags#enableDatabaseScopedSchemaOperations()} is false.
+     * prefix as well as a set of schema types that were deleted.
      */
     @VisibleForTesting
     static RewrittenSchemaResults rewriteSchema(@NonNull String prefix,
             SchemaProto.@NonNull Builder existingSchema,
-            @NonNull SchemaProto newSchema) throws AppSearchException {
+            @NonNull SchemaProto newSchema, boolean populateDatabase) throws AppSearchException {
         Map<String, SchemaTypeConfigProto> newTypesToProto = getRewrittenPrefixedTypes(prefix,
-                newSchema);
+                newSchema, populateDatabase);
 
         // newTypesToProto is modified below, so we need a copy first
         RewrittenSchemaResults rewrittenSchemaResults = new RewrittenSchemaResults();
@@ -3469,16 +3733,16 @@ public final class AppSearchImpl implements Closeable {
 
     /**
      * Rewrites all types in the given {@code schema}. The rewrite prepends {@code prefix} to the
-     * schema types, and also populates the schema's database field with {@code prefix} when
-     * {@link Flags#enableDatabaseScopedSchemaOperations()} is true.
+     * schema types, and also populates the schema's database field accordingly.
      *
-     * @param prefix       The full prefix to prepend to the schema.
-     * @param newSchema    Schema with types to rewrite.
+     * @param prefix           The full prefix to prepend to the schema.
+     * @param newSchema        Schema with types to rewrite.
+     * @param populateDatabase Whether to populate the database field in the rewritten schema
      * @return a map containing the rewritten schema type names and their corresponding rewritten
      * protos.
      */
     static Map<String, SchemaTypeConfigProto> getRewrittenPrefixedTypes(@NonNull String prefix,
-            @NonNull SchemaProto newSchema) throws AppSearchException {
+            @NonNull SchemaProto newSchema, boolean populateDatabase) throws AppSearchException {
         Map<String, SchemaTypeConfigProto> newTypesToProto = new ArrayMap<>();
         // Rewrite the schema type to include the typePrefix.
         for (int typeIdx = 0; typeIdx < newSchema.getTypesCount(); typeIdx++) {
@@ -3488,10 +3752,8 @@ public final class AppSearchImpl implements Closeable {
             // Rewrite SchemaProto.types.schema_type and populate SchemaProto.types.database
             String newSchemaType = prefix + typeConfigBuilder.getSchemaType();
             typeConfigBuilder.setSchemaType(newSchemaType);
-            if (Flags.enableDatabaseScopedSchemaOperations()) {
-                // TODO(b/337913932): remove getIcingSchemaDatabaseName once icing change to keep
-                //  the database name in sync with AppSearch's prefix is synced over.
-                typeConfigBuilder.setDatabase(PrefixUtil.getIcingSchemaDatabaseName(prefix));
+            if (populateDatabase) {
+                typeConfigBuilder.setDatabase(prefix);
             }
 
             // Rewrite SchemaProto.types.properties.schema_type
@@ -3524,10 +3786,10 @@ public final class AppSearchImpl implements Closeable {
      * Rewrite the {@link InternalVisibilityConfig} to add given prefix in the schemaType of the
      * given List of {@link InternalVisibilityConfig}
      *
-     * @param prefix                      The full prefix to prepend to the visibilityConfigs.
-     * @param visibilityConfigs           The visibility configs that need to add prefix
-     * @param removedVisibilityConfigs    The removed configs that is not included in the given
-     *                                    visibilityConfigs.
+     * @param prefix                   The full prefix to prepend to the visibilityConfigs.
+     * @param visibilityConfigs        The visibility configs that need to add prefix
+     * @param removedVisibilityConfigs The removed configs that is not included in the given
+     *                                 visibilityConfigs.
      * @return The List of {@link InternalVisibilityConfig} that contains prefixed in its schema
      * types.
      */
@@ -3577,10 +3839,9 @@ public final class AppSearchImpl implements Closeable {
      * Retrieves the SchemaProto from IcingLib for the specified prefix. The returned SchemaProto
      * will only contain types for the matching the schema database prefix.
      *
-     * <p> Requires {@link Flags#enableDatabaseScopedSchemaOperations()}.
+     * <p> Requires {@link #useDatabaseScopedSchemaOperations()} to be true.
      * {@link #getSchemaProtoLocked()} should be used instead when
-     * {@link Flags#enableDatabaseScopedSchemaOperations()} is disabled or when the entire schema
-     * is needed.
+     * {@link #useDatabaseScopedSchemaOperations()} is false or when the entire schema is needed.
      *
      * @param prefix  The full prefix for which to retrieve the schema.
      */
@@ -3588,9 +3849,7 @@ public final class AppSearchImpl implements Closeable {
     @GuardedBy("mReadWriteLock")
     SchemaProto getSchemaProtoForPrefixLocked(@NonNull String prefix) throws AppSearchException {
         LogUtil.piiTrace(TAG, "getSchemaForDatabase, request", prefix);
-        String icingSchemaDatabaseName = PrefixUtil.getIcingSchemaDatabaseName(prefix);
-        GetSchemaResultProto schemaProto = mIcingSearchEngineLocked.getSchemaForDatabase(
-                icingSchemaDatabaseName);
+        GetSchemaResultProto schemaProto = mIcingSearchEngineLocked.getSchemaForDatabase(prefix);
         LogUtil.piiTrace(TAG, "getSchemaForDatabase, response", schemaProto.getStatus(),
                 schemaProto);
         checkCodeOneOf(schemaProto.getStatus(), StatusProto.Code.OK, StatusProto.Code.NOT_FOUND);

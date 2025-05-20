@@ -41,6 +41,7 @@ import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.graph.SurfaceGraph
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import androidx.camera.camera2.pipe.internal.ImageSourceMap
@@ -89,13 +90,15 @@ class FrameGraphImplTest {
             streams = listOf(stream1Config, stream2Config),
         )
     private val threads = FakeThreads.fromTestScope(testScope)
+    private val cameraPipeLifetime = CameraPipeLifetime()
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(
             defaultBackendId = backend.id,
             cameraBackends = mapOf(backend.id to CameraBackendFactory { backend }),
             context,
-            threads
+            threads,
+            cameraPipeLifetime,
         )
     private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
     private val imageSources = ImageReaderImageSources(threads)
@@ -105,8 +108,7 @@ class FrameGraphImplTest {
     private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
     private val streamGraph = StreamGraphImpl(metadata, graphConfig, cameraControllerProvider)
     private val imageSourceMap = ImageSourceMap(graphConfig, streamGraph, imageSources)
-    private val frameDistributor =
-        FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue) {}
+    private val frameDistributor = FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
     private val surfaceGraph =
         SurfaceGraph(streamGraph, cameraControllerProvider, cameraSurfaceManager, emptyMap())
     private val audioRestriction = FakeAudioRestrictionController()
@@ -135,7 +137,7 @@ class FrameGraphImplTest {
 
     private val frameBuffers = FrameBuffers(cameraGraph, testScope)
     private val frameGraph: FrameGraph =
-        FrameGraphImpl(cameraGraphParameters, cameraGraph, cameraGraph.id, frameBuffers)
+        FrameGraphImpl(cameraGraph, frameDistributor, frameBuffers, testScope.backgroundScope)
 
     private val streamId1: StreamId = StreamId(1)
     private val streamId2: StreamId = StreamId(2)

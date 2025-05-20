@@ -49,6 +49,7 @@ internal constructor(
          *   [Bundle] format; this should be constructed and retrieved from the a given
          *   [CreateCredentialResponse] itself and never be created from scratch
          */
+        @OptIn(ExperimentalDigitalCredentialApi::class)
         @JvmStatic
         fun createFrom(type: String, data: Bundle): CreateCredentialResponse {
             return try {
@@ -57,6 +58,8 @@ internal constructor(
                         CreatePasswordResponse.createFrom(data)
                     PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL ->
                         CreatePublicKeyCredentialResponse.createFrom(data)
+                    DigitalCredential.TYPE_DIGITAL_CREDENTIAL ->
+                        CreateDigitalCredentialResponse.createFrom(data)
                     else -> throw FrameworkClassParsingException()
                 }
             } catch (e: FrameworkClassParsingException) {

@@ -203,21 +203,21 @@ package androidx.constraintlayout.compose {
 
   @androidx.compose.runtime.Stable public static final class ConstraintLayoutBaseScope.BaselineAnchor {
     method public androidx.constraintlayout.compose.LayoutReference component2();
-    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor copy(Object id, androidx.constraintlayout.compose.LayoutReference reference);
+    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor copy(optional Object id, optional androidx.constraintlayout.compose.LayoutReference reference);
     method public androidx.constraintlayout.compose.LayoutReference getReference();
     property public androidx.constraintlayout.compose.LayoutReference reference;
   }
 
   @androidx.compose.runtime.Stable public static final class ConstraintLayoutBaseScope.HorizontalAnchor {
     method public androidx.constraintlayout.compose.LayoutReference component3();
-    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor copy(Object id, int index, androidx.constraintlayout.compose.LayoutReference reference);
+    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor copy(optional Object id, optional int index, optional androidx.constraintlayout.compose.LayoutReference reference);
     method public androidx.constraintlayout.compose.LayoutReference getReference();
     property public androidx.constraintlayout.compose.LayoutReference reference;
   }
 
   @androidx.compose.runtime.Stable public static final class ConstraintLayoutBaseScope.VerticalAnchor {
     method public androidx.constraintlayout.compose.LayoutReference component3();
-    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor copy(Object id, int index, androidx.constraintlayout.compose.LayoutReference reference);
+    method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor copy(optional Object id, optional int index, optional androidx.constraintlayout.compose.LayoutReference reference);
     method public androidx.constraintlayout.compose.LayoutReference getReference();
     property public androidx.constraintlayout.compose.LayoutReference reference;
   }
@@ -295,7 +295,7 @@ package androidx.constraintlayout.compose {
   }
 
   public final class ConstraintSetRef {
-    method public androidx.constraintlayout.compose.ConstraintSetRef copy(String name);
+    method public androidx.constraintlayout.compose.ConstraintSetRef copy(optional String name);
   }
 
   @androidx.compose.foundation.layout.LayoutScopeMarker public final class ConstraintSetScope extends androidx.constraintlayout.compose.ConstraintLayoutBaseScope {

@@ -16,6 +16,7 @@
 
 package androidx.pdf
 
+import android.app.AlertDialog
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -27,10 +28,10 @@ import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.pdf.content.ExternalLink
 import androidx.pdf.idlingresource.PdfIdlingResource
 import androidx.pdf.testapp.R
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.PdfView.OnScrollStateChangedListener
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -52,12 +53,15 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
     val pdfSearchFocusIdlingResource = PdfIdlingResource(PDF_SEARCH_FOCUS_RESOURCE_NAME)
     val pdfSearchViewVisibleIdlingResource =
         PdfIdlingResource(PDF_SEARCH_VIEW_VISIBLE_RESOURCE_NAME)
-
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
 
+    private var gestureStateChangedListener: PdfView.OnGestureStateChangedListener? = null
+
     var documentLoaded = false
     var documentError: Throwable? = null
+
+    var shouldOverrideLinkHandling: Boolean = false
 
     fun getPdfViewInstance(): PdfView = pdfView
 
@@ -90,20 +94,20 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
             isTextSearchActive = true
         }
 
-        pdfView.scrollStateChangedListener =
-            object : OnScrollStateChangedListener {
-                override fun onScrollStateChanged(x: Int, y: Int, isStable: Boolean) {
-                    if (isStable) {
-                        pdfScrollIdlingResource.decrement()
+        gestureStateChangedListener =
+            object : PdfView.OnGestureStateChangedListener {
+                    override fun onGestureStateChanged(newState: Int) {
+                        if (newState == PdfView.GESTURE_STATE_IDLE) {
+                            pdfScrollIdlingResource.decrement()
+                        }
                     }
                 }
-            }
+                .also { pdfView.addOnGestureStateChangedListener(it) }
+
         pdfSearchView.searchQueryBox.onFocusChangeListener =
-            object : View.OnFocusChangeListener {
-                override fun onFocusChange(v: View?, hasFocus: Boolean) {
-                    if (!hasFocus) {
-                        pdfSearchFocusIdlingResource.decrement()
-                    }
+            View.OnFocusChangeListener { v, hasFocus ->
+                if (!hasFocus) {
+                    pdfSearchFocusIdlingResource.decrement()
                 }
             }
 
@@ -121,9 +125,24 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
             )
     }
 
+    fun setIsAnnotationIntentResolvable(value: Boolean) {
+        setAnnotationIntentResolvability(value)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        gestureStateChangedListener?.let { pdfView.removeOnGestureStateChangedListener(it) }
+    }
+
     override fun onRequestImmersiveMode(enterImmersive: Boolean) {
         super.onRequestImmersiveMode(enterImmersive)
-        if (!enterImmersive) search?.show() else search?.hide()
+        if (!enterImmersive) {
+            isToolboxVisible = true
+            search?.show()
+        } else {
+            isToolboxVisible = false
+            search?.hide()
+        }
     }
 
     override fun onLoadDocumentSuccess() {
@@ -134,6 +153,18 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
     override fun onLoadDocumentError(error: Throwable) {
         documentError = error
         pdfLoadingIdlingResource.decrement()
+    }
+
+    override fun onLinkClicked(externalLink: ExternalLink): Boolean {
+        requireActivity().runOnUiThread {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Handled by custom link handler")
+                .setMessage(externalLink.uri.toString())
+                .setPositiveButton("OK", null)
+                .show()
+        }
+        // true = handled, false = use default behavior
+        return shouldOverrideLinkHandling
     }
 
     companion object {

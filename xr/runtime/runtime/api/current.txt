@@ -1,82 +1,6 @@
 // Signature format: 4.0
 package androidx.xr.runtime {
 
-  public final class Config {
-    ctor public Config();
-    ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
-    method public androidx.xr.runtime.Config copy();
-    method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking);
-    method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking);
-    method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
-    method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
-    method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
-    method public androidx.xr.runtime.Config.AnchorPersistenceMode getAnchorPersistence();
-    method public androidx.xr.runtime.Config.DepthEstimationMode getDepthEstimation();
-    method public androidx.xr.runtime.Config.HandTrackingMode getHandTracking();
-    method public androidx.xr.runtime.Config.HeadTrackingMode getHeadTracking();
-    method public androidx.xr.runtime.Config.PlaneTrackingMode getPlaneTracking();
-    property public androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence;
-    property public androidx.xr.runtime.Config.DepthEstimationMode depthEstimation;
-    property public androidx.xr.runtime.Config.HandTrackingMode handTracking;
-    property public androidx.xr.runtime.Config.HeadTrackingMode headTracking;
-    property public androidx.xr.runtime.Config.PlaneTrackingMode planeTracking;
-  }
-
-  public static final class Config.AnchorPersistenceMode {
-    field public static final androidx.xr.runtime.Config.AnchorPersistenceMode.Companion Companion;
-    field public static final androidx.xr.runtime.Config.AnchorPersistenceMode Disabled;
-    field public static final androidx.xr.runtime.Config.AnchorPersistenceMode Enabled;
-  }
-
-  public static final class Config.AnchorPersistenceMode.Companion {
-    property public androidx.xr.runtime.Config.AnchorPersistenceMode Disabled;
-    property public androidx.xr.runtime.Config.AnchorPersistenceMode Enabled;
-  }
-
-  public static final class Config.DepthEstimationMode {
-    field public static final androidx.xr.runtime.Config.DepthEstimationMode.Companion Companion;
-    field public static final androidx.xr.runtime.Config.DepthEstimationMode Disabled;
-    field public static final androidx.xr.runtime.Config.DepthEstimationMode Enabled;
-  }
-
-  public static final class Config.DepthEstimationMode.Companion {
-    property public androidx.xr.runtime.Config.DepthEstimationMode Disabled;
-    property public androidx.xr.runtime.Config.DepthEstimationMode Enabled;
-  }
-
-  public static final class Config.HandTrackingMode {
-    field public static final androidx.xr.runtime.Config.HandTrackingMode.Companion Companion;
-    field public static final androidx.xr.runtime.Config.HandTrackingMode Disabled;
-    field public static final androidx.xr.runtime.Config.HandTrackingMode Enabled;
-  }
-
-  public static final class Config.HandTrackingMode.Companion {
-    property public androidx.xr.runtime.Config.HandTrackingMode Disabled;
-    property public androidx.xr.runtime.Config.HandTrackingMode Enabled;
-  }
-
-  public static final class Config.HeadTrackingMode {
-    field public static final androidx.xr.runtime.Config.HeadTrackingMode.Companion Companion;
-    field public static final androidx.xr.runtime.Config.HeadTrackingMode Disabled;
-    field public static final androidx.xr.runtime.Config.HeadTrackingMode Enabled;
-  }
-
-  public static final class Config.HeadTrackingMode.Companion {
-    property public androidx.xr.runtime.Config.HeadTrackingMode Disabled;
-    property public androidx.xr.runtime.Config.HeadTrackingMode Enabled;
-  }
-
-  public static final class Config.PlaneTrackingMode {
-    field public static final androidx.xr.runtime.Config.PlaneTrackingMode.Companion Companion;
-    field public static final androidx.xr.runtime.Config.PlaneTrackingMode Disabled;
-    field public static final androidx.xr.runtime.Config.PlaneTrackingMode HorizontalAndVertical;
-  }
-
-  public static final class Config.PlaneTrackingMode.Companion {
-    property public androidx.xr.runtime.Config.PlaneTrackingMode Disabled;
-    property public androidx.xr.runtime.Config.PlaneTrackingMode HorizontalAndVertical;
-  }
-
   public final class CoreState {
     ctor public CoreState(kotlin.time.ComparableTimeMark timeMark);
     method public kotlin.time.ComparableTimeMark getTimeMark();
@@ -192,6 +116,10 @@ package androidx.xr.runtime {
     ctor public SessionConfigureConfigurationNotSupported();
   }
 
+  public final class SessionConfigureGooglePlayServicesLocationLibraryNotLinked extends androidx.xr.runtime.SessionConfigureResult {
+    ctor public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
+  }
+
   public final class SessionConfigurePermissionsNotGranted extends androidx.xr.runtime.SessionConfigureResult {
     ctor public SessionConfigurePermissionsNotGranted(java.util.List<java.lang.String> permissions);
     method public java.util.List<java.lang.String> getPermissions();
@@ -203,6 +131,12 @@ package androidx.xr.runtime {
 
   public final class SessionConfigureSuccess extends androidx.xr.runtime.SessionConfigureResult {
     ctor public SessionConfigureSuccess();
+  }
+
+  public final class SessionCreateApkRequired extends androidx.xr.runtime.SessionCreateResult {
+    ctor public SessionCreateApkRequired(String requiredApk);
+    method public String getRequiredApk();
+    property public String requiredApk;
   }
 
   public final class SessionCreatePermissionsNotGranted extends androidx.xr.runtime.SessionCreateResult {
@@ -220,6 +154,10 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.Session session;
   }
 
+  public final class SessionCreateUnsupportedDevice extends androidx.xr.runtime.SessionCreateResult {
+    ctor public SessionCreateUnsupportedDevice();
+  }
+
   public final class SessionResumePermissionsNotGranted extends androidx.xr.runtime.SessionResumeResult {
     ctor public SessionResumePermissionsNotGranted(java.util.List<java.lang.String> permissions);
     method public java.util.List<java.lang.String> getPermissions();
@@ -235,15 +173,15 @@ package androidx.xr.runtime {
 
   public final class TrackingState {
     field public static final androidx.xr.runtime.TrackingState.Companion Companion;
-    field public static final androidx.xr.runtime.TrackingState Paused;
-    field public static final androidx.xr.runtime.TrackingState Stopped;
-    field public static final androidx.xr.runtime.TrackingState Tracking;
+    field public static final androidx.xr.runtime.TrackingState PAUSED;
+    field public static final androidx.xr.runtime.TrackingState STOPPED;
+    field public static final androidx.xr.runtime.TrackingState TRACKING;
   }
 
   public static final class TrackingState.Companion {
-    property public androidx.xr.runtime.TrackingState Paused;
-    property public androidx.xr.runtime.TrackingState Stopped;
-    property public androidx.xr.runtime.TrackingState Tracking;
+    property public androidx.xr.runtime.TrackingState PAUSED;
+    property public androidx.xr.runtime.TrackingState STOPPED;
+    property public androidx.xr.runtime.TrackingState TRACKING;
   }
 
 }
@@ -267,6 +205,39 @@ package androidx.xr.runtime.math {
     method public static float lerp(float a, float b, float t);
     method public static float toDegrees(float angleInRadians);
     method public static float toRadians(float angleInDegrees);
+  }
+
+  public final class Matrix3 {
+    ctor public Matrix3(androidx.xr.runtime.math.Matrix3 other);
+    ctor public Matrix3(float[] dataToCopy);
+    method public androidx.xr.runtime.math.Matrix3 copy(optional float[] data);
+    method public static androidx.xr.runtime.math.Matrix3 fromQuaternion(androidx.xr.runtime.math.Quaternion quaternion);
+    method public static androidx.xr.runtime.math.Matrix3 fromScale(androidx.xr.runtime.math.Vector3 scale);
+    method public static androidx.xr.runtime.math.Matrix3 fromScale(float scale);
+    method public float[] getData();
+    method public androidx.xr.runtime.math.Matrix3 getInverse();
+    method public androidx.xr.runtime.math.Quaternion getRotation();
+    method public androidx.xr.runtime.math.Vector3 getScale();
+    method public androidx.xr.runtime.math.Matrix3 getTranspose();
+    method public boolean isTrs();
+    method public operator androidx.xr.runtime.math.Matrix3 times(androidx.xr.runtime.math.Matrix3 other);
+    property public float[] data;
+    property public androidx.xr.runtime.math.Matrix3 inverse;
+    property public boolean isTrs;
+    property public androidx.xr.runtime.math.Quaternion rotation;
+    property public androidx.xr.runtime.math.Vector3 scale;
+    property public androidx.xr.runtime.math.Matrix3 transpose;
+    field public static final androidx.xr.runtime.math.Matrix3.Companion Companion;
+    field public static final androidx.xr.runtime.math.Matrix3 IDENTITY;
+    field public static final androidx.xr.runtime.math.Matrix3 ZERO;
+  }
+
+  public static final class Matrix3.Companion {
+    method public androidx.xr.runtime.math.Matrix3 fromQuaternion(androidx.xr.runtime.math.Quaternion quaternion);
+    method public androidx.xr.runtime.math.Matrix3 fromScale(androidx.xr.runtime.math.Vector3 scale);
+    method public androidx.xr.runtime.math.Matrix3 fromScale(float scale);
+    property public androidx.xr.runtime.math.Matrix3 IDENTITY;
+    property public androidx.xr.runtime.math.Matrix3 ZERO;
   }
 
   public final class Matrix4 {

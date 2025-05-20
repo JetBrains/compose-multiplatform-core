@@ -26,8 +26,11 @@ import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionClient
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionController
 import androidx.privacysandbox.ui.core.ISharedUiAdapter
-import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
+import androidx.privacysandbox.ui.core.LocalSharedUiAdapter
+import androidx.privacysandbox.ui.core.ProtocolConstants
+import androidx.privacysandbox.ui.core.SdkRuntimeUiLibVersions
 import androidx.privacysandbox.ui.core.SharedUiAdapter
+import androidx.privacysandbox.ui.core.SharedUiAdapter.SessionClient
 import java.util.concurrent.Executor
 
 /**
@@ -44,43 +47,57 @@ fun SharedUiAdapter.toCoreLibInfo(): Bundle {
         return this.getSourceBundle()
     }
     val binderAdapter = BinderSharedUiAdapterDelegate(this)
-    // TODO(b/350445624): Add version info
+
     val bundle = Bundle()
+    bundle.putInt(
+        ProtocolConstants.uiProviderVersionKey,
+        SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel
+    )
 
     // Bundle key is a binary compatibility requirement
-    bundle.putBinder("sharedUiAdapterBinder", binderAdapter)
+    bundle.putBinder(ProtocolConstants.sharedUiAdapterBinderKey, binderAdapter)
     return bundle
 }
 
 @SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 private class BinderSharedUiAdapterDelegate(private val adapter: SharedUiAdapter) :
-    ISharedUiAdapter.Stub(), SharedUiAdapter {
+    ISharedUiAdapter.Stub(), LocalSharedUiAdapter {
 
-    override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
-        adapter.openSession(clientExecutor, client)
+    override fun openLocalSession(
+        clientVersion: Int,
+        clientExecutor: Executor,
+        client: SessionClient
+    ) {
+        adapter.openSession(clientExecutor, LocalSharedUiSessionClient(clientVersion, client))
     }
 
     // TODO(b/365614954): try to improve method's performance.
-    override fun openRemoteSession(remoteSessionClient: IRemoteSharedUiSessionClient) {
+    override fun openRemoteSession(
+        clientVersion: Int,
+        remoteSessionClient: IRemoteSharedUiSessionClient
+    ) {
+        val remoteSessionClientWithVersionCheck =
+            RemoteSharedUiSessionClient(clientVersion, remoteSessionClient)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            tryToCallRemoteObject(remoteSessionClient) {
-                onRemoteSessionError("openRemoteSession() requires API34+")
-            }
+            remoteSessionClientWithVersionCheck.onRemoteSessionError(
+                "openRemoteSession() requires API34+"
+            )
             return
         }
 
         try {
-            val sessionClient = SessionClientProxy(remoteSessionClient)
-            openSession(Runnable::run, sessionClient)
+            val sessionClient = SessionClientProxy(remoteSessionClientWithVersionCheck)
+            adapter.openSession(Runnable::run, sessionClient)
         } catch (exception: Throwable) {
-            tryToCallRemoteObject(remoteSessionClient) { onRemoteSessionError(exception.message) }
+            remoteSessionClientWithVersionCheck.onRemoteSessionError(exception.message)
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private class SessionClientProxy(
-        private val remoteSessionClient: IRemoteSharedUiSessionClient
+        private val remoteSessionClient:
+            androidx.privacysandbox.ui.provider.IRemoteSharedUiSessionClient
     ) : SharedUiAdapter.SessionClient {
         override fun onSessionOpened(session: SharedUiAdapter.Session) {
             remoteSessionClient.onRemoteSessionOpened(RemoteSharedUiSessionController(session))

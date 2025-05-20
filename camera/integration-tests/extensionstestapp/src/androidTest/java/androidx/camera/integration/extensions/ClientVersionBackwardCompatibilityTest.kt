@@ -32,6 +32,7 @@ import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
@@ -95,6 +96,7 @@ class ClientVersionBackwardCompatibilityTest(private val config: CameraXExtensio
     @Before
     fun setUp(): Unit =
         runBlocking(Dispatchers.Main) {
+            assumePcsSupportedForImageCapture(context)
             ProcessCameraProvider.configureInstance(config.cameraXConfig)
             cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
             lifecycleOwner = FakeLifecycleOwner()

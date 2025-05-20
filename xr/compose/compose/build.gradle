@@ -54,9 +54,9 @@ dependencies {
 
     testImplementation(libs.espressoCore)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.mockitoKotlin)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
@@ -86,4 +86,5 @@ androidx {
     optOutJSpecify = true
     // b/384785925
     metalavaK2UastEnabled = false
+    enableRobolectric()
 }

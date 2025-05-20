@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose
 import androidx.xr.runtime.internal.ActivitySpace
 import androidx.xr.runtime.internal.Dimensions
@@ -26,6 +27,7 @@ import com.google.common.util.concurrent.ListenableFuture
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [ActivitySpace] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeActivitySpace : ActivitySpace, FakeSystemSpaceEntity() {
     override val bounds: Dimensions = Dimensions(0.0f, 0.0f, 0.0f)
 

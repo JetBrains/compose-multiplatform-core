@@ -50,7 +50,6 @@ dependencies {
     testImplementation(libs.testCoreKtx)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":compose:ui:ui-test"))
@@ -77,8 +76,6 @@ android {
     defaultConfig {
         minSdk = 25
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
@@ -96,4 +93,5 @@ androidx {
     samples(project(":wear:compose:compose-foundation-samples"))
     metalavaK2UastEnabled = false
     addGoldenImageAssets()
+    enableRobolectric()
 }

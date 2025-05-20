@@ -21,7 +21,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice
 import android.view.Surface
 import androidx.camera.camera2.pipe.integration.adapter.CameraControlAdapter
-import androidx.camera.camera2.pipe.testing.toCameraControlAdapter
+import androidx.camera.camera2.pipe.integration.testing.toCameraControlAdapter
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.impl.CameraCaptureCallback

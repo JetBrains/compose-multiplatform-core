@@ -18,19 +18,15 @@ package androidx.compose.integration.macrobenchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.CompilationMode
-import androidx.benchmark.macro.ExperimentalMetricApi
-import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.StartupMode
-import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
-import androidx.compose.integration.macrobenchmark.FormFillingBenchmark.Companion.COMPOSE_APPLY_CHANGES
-import androidx.compose.integration.macrobenchmark.FormFillingBenchmark.Companion.CONTENT_CAPTURE_CHANGE_CHECKER
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import androidx.testutils.createCompilationParams
+import androidx.testutils.defaultComposeScrollingMetrics
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -54,19 +50,7 @@ class PagerOfLazyGridBenchmark(private val compilationMode: CompilationMode) {
     fun scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                @OptIn(ExperimentalMetricApi::class)
-                listOf(
-                    FrameTimingMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
-                ),
+            metrics = defaultComposeScrollingMetrics(),
             compilationMode = compilationMode,
             startupMode = StartupMode.WARM,
             iterations = 10,

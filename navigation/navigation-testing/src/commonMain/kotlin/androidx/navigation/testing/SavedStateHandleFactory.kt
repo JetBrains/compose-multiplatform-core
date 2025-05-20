@@ -89,5 +89,6 @@ public operator fun SavedStateHandle.Companion.invoke(
     // convert arg bundle to arg map
     val finalMap = savedState.read { toMap() }
     // populate handle with arg map
-    return SavedStateHandle(finalMap)
+    @Suppress("VisibleForTests") // Safe to use here as this is a test utilities module.
+    return SavedStateHandle(initialState = finalMap)
 }

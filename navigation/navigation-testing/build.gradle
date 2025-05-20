@@ -114,8 +114,6 @@ androidXMultiplatform {
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
-
                 runtimeOnly(libs.testCore)
                 runtimeOnly(libs.kotlinTestJunit)
                 implementation(libs.junit)
@@ -146,8 +144,6 @@ androidXMultiplatform {
              }
          }
     }
-
-    enableBinaryCompatibilityValidator = false
 }
 
 androidx {
@@ -155,6 +151,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
+    enableRobolectric()
 }
 
 android {

@@ -52,7 +52,6 @@ import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
-import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
@@ -107,7 +106,6 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.AbstractTestTask
-import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.build.event.BuildEventsListenerRegistry
@@ -206,10 +204,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             configureTestTask(project, task, allHostTests, androidXExtension)
         }
 
-        project.tasks.withType(Test::class.java).configureEach { task ->
-            configureJvmTestTask(project, task)
-        }
-
         project.configureTaskTimeouts()
         project.configureMavenArtifactUpload(
             androidXExtension,
@@ -270,12 +264,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                     configureAarAsJarForConfiguration(project, configurationName)
                 }
             )
-            .apply {
-                kotlinTarget.set(
-                    if (project.shouldForceKotlin20Target().get()) KotlinTarget.KOTLIN_2_0
-                    else KotlinTarget.DEFAULT
-                )
-            }
+            .apply { kotlinTarget.set(KotlinTarget.DEFAULT) }
     }
 
     /**
@@ -289,25 +278,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun Copy.configureForHermeticBuild() {
         duplicatesStrategy = DuplicatesStrategy.FAIL
-    }
-
-    private fun configureJvmTestTask(project: Project, task: Test) {
-        // Robolectric 1.7 increased heap size requirements, see b/207169653.
-        task.maxHeapSize = "3g"
-
-        // For non-playground setup use robolectric offline
-        if (!ProjectLayoutType.isPlayground(project)) {
-            task.systemProperty("robolectric.offline", "true")
-            val robolectricDependencies =
-                File(
-                    project.getPrebuiltsRoot(),
-                    "androidx/external/org/robolectric/android-all-instrumented"
-                )
-            task.systemProperty(
-                "robolectric.dependency.dir",
-                robolectricDependencies.relativeTo(project.projectDir)
-            )
-        }
     }
 
     private fun configureTestTask(
@@ -684,9 +654,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             AndroidComponentsExtension<*, out LibraryVariantBuilder, out LibraryVariant>,
     ) {
         androidComponents.onVariants { variant ->
-            variant.hostTests.forEach { (_, hostTest) ->
-                hostTest.configureTestTask { it.configureForRobolectric() }
-            }
             variant.configureTests()
             variant.enableMicrobenchmarkInternalDefaults(project)
             project.validateKotlinModuleFiles(
@@ -775,7 +742,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             project.addToBuildOnServer("assembleAndroidMain")
             project.addToBuildOnServer("lint")
             // Created to be consumed by docs-tip-of-tree
-            project.configurations.create("androidIntermediates") {
+            project.configurations.register("androidIntermediates") {
                 it.isVisible = false
                 it.isCanBeResolved = false
                 it.attributes.attribute(
@@ -1124,10 +1091,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testOptions.animationsDisabled = !project.isMacrobenchmark()
-        testOptions.unitTests.isReturnDefaultValues = true
-
-        // Include resources in Robolectric tests as a workaround for b/184641296
-        testOptions.unitTests.isIncludeAndroidResources = true
 
         project.afterEvaluate {
             val minSdkVersion = defaultConfig.minSdk!!
@@ -1197,13 +1160,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             .configureEach {
                 it.instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 it.animationsDisabled = true
-            }
-        compilations
-            .withType(KotlinMultiplatformAndroidHostTestCompilation::class.java)
-            .configureEach {
-                it.isReturnDefaultValues = true
-                // Include resources in Robolectric tests as a workaround for b/184641296
-                it.isIncludeAndroidResources = true
             }
 
         @Suppress("UnstableApiUsage") // usage of withHostTestBuilder
@@ -1722,18 +1678,6 @@ private fun Project.configureUnzipChromeBuildService() {
         it.parameters.browserDir.set(File(getPrebuiltsRoot(), "androidx/chrome-for-testing/"))
         it.parameters.unzipToDir.set(getOutDirectory().resolve("chrome-bin"))
     }
-}
-
-private fun Test.configureForRobolectric() {
-    // https://github.com/robolectric/robolectric/issues/7456
-    jvmArgs =
-        listOf(
-            "--add-opens=java.base/java.lang=ALL-UNNAMED",
-            "--add-opens=java.base/java.util=ALL-UNNAMED",
-            "--add-opens=java.base/java.io=ALL-UNNAMED",
-        )
-    // Robolectric 1.7 increased heap size requirements, see b/207169653.
-    maxHeapSize = "3g"
 }
 
 private fun Project.enforceBanOnVersionRanges() {

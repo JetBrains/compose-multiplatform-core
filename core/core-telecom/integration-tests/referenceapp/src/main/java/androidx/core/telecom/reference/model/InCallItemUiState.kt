@@ -16,6 +16,7 @@
 
 package androidx.core.telecom.reference.model
 
+import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallException
 
@@ -25,35 +26,24 @@ import androidx.core.telecom.CallException
  * This data class transforms the raw call data (like [CallData]) into a format directly usable by
  * the UI composable responsible for rendering information and controls for one specific ongoing or
  * held call.
- *
- * @property callId The unique identifier for the call this UI state represents.
- * @property displayName The name associated with the call, suitable for display to the user.
- * @property callState The current state of the call (e.g., ACTIVE, INACTIVE/HOLDING), represented
- *   by the [CallState] enum.
- * @property isMuted A boolean flag indicating if the microphone is currently muted for this call.
- * @property isSpeakerOn A boolean flag indicating if the speakerphone audio route is currently
- *   active for this call. Defaults to `false`.
- * @property isVideoCall A boolean flag indicating if this is a video call.
- * @property isCallActive A convenience boolean flag derived from [callState], typically `true` if
- *   the call is in a state where communication is possible or being established (e.g., ACTIVE,
- *   DIALING, RINGING), and `false` otherwise (e.g., INACTIVE, DISCONNECTED).
- * @property currentEndpoint The currently selected audio endpoint for this call (e.g., earpiece,
- *   speaker, Bluetooth). Nullable if unknown or not applicable. Represented by
- *   [CallEndpointCompat].
- * @property availableEndpoints A list of audio endpoints the user can switch to for this call.
- *   Nullable if the list is not available or empty. Represented by a List of [CallEndpointCompat].
- * @property hasCallException Contains the [CallException] associated with the call if an error
- *   occurred (e.g., disconnection reason), otherwise `null`. Defaults to `null`.
  */
 data class InCallItemUiState(
     val callId: String,
+    val attributes: CallAttributesCompat,
     val displayName: String,
     val callState: CallState,
-    val isMuted: Boolean,
+    val isGloballyMuted: Boolean,
     val isSpeakerOn: Boolean = false,
     val isVideoCall: Boolean,
     val isCallActive: Boolean,
     val currentEndpoint: CallEndpointCompat?,
     val availableEndpoints: List<CallEndpointCompat>?,
-    val hasCallException: CallException? = null
+    val hasCallException: CallException? = null,
+    val isLoopbackActive: Boolean = false,
+    val participants: List<ParticipantState> = emptyList(),
+    val callIconData: IconData? = null,
+    val isLocalCallSilenceEnabled: Boolean = false,
+    val isLocallyMuted: Boolean = false,
+    val isParticipantExtensionEnabled: Boolean = false,
+    val isCallIconExtensionEnabled: Boolean = false
 )

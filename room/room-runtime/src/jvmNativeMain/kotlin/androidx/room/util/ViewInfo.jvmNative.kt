@@ -27,20 +27,20 @@ import kotlin.jvm.JvmStatic
  * Even though SQLite column names are case insensitive, this class uses case sensitive matching.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-actual class ViewInfo
+public actual class ViewInfo
 actual constructor(
     /** The view name */
-    actual val name: String,
+    public actual val name: String,
     /** The SQL of CREATE VIEW. */
-    actual val sql: String?
+    public actual val sql: String?
 ) {
-    actual override fun equals(other: Any?) = equalsCommon(other)
+    public actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 
-    actual override fun hashCode() = hashCodeCommon()
+    public actual override fun hashCode(): Int = hashCodeCommon()
 
-    actual override fun toString() = toStringCommon()
+    public actual override fun toString(): String = toStringCommon()
 
-    actual companion object {
+    public actual companion object {
         /**
          * Reads the view information from the given database.
          *
@@ -49,7 +49,7 @@ actual constructor(
          * @return A ViewInfo containing the schema information for the provided view name.
          */
         @JvmStatic
-        actual fun read(connection: SQLiteConnection, viewName: String): ViewInfo {
+        public actual fun read(connection: SQLiteConnection, viewName: String): ViewInfo {
             return readViewInfo(connection, viewName)
         }
     }

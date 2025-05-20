@@ -349,7 +349,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             if (parentQualifiedName == null) {
                 throw parseException("Failed to parse qName")
             }
-            val identifier = cursor.parseValidIdentifier()
+            val identifier = cursor.parseValidIdentifierAndMaybeTrim()
             val relativeName = parentQualifiedName.relativeName.value + "." + identifier
             return AbiQualifiedName(parentQualifiedName.packageName, AbiCompoundName(relativeName))
         }

@@ -43,7 +43,7 @@ import androidx.camera.core.internal.StreamSpecsCalculator
  * share resources across Camera instances.
  */
 internal class CameraFactoryAdapter(
-    lazyCameraPipe: Lazy<CameraPipe>,
+    private val lazyCameraPipe: Lazy<CameraPipe>,
     context: Context,
     threadConfig: CameraThreadConfig,
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
@@ -117,4 +117,10 @@ internal class CameraFactoryAdapter(
     override fun getCameraManager(): Any = appComponent
 
     override fun getStreamSpecsCalculator(): StreamSpecsCalculator = streamSpecsCalculator
+
+    override fun shutdown() {
+        if (lazyCameraPipe.isInitialized()) {
+            lazyCameraPipe.value.shutdown()
+        }
+    }
 }

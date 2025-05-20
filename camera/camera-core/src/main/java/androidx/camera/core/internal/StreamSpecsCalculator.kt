@@ -150,8 +150,9 @@ public class StreamSpecsCalculatorImpl(
                     newUseCases,
                     cameraConfig.useCaseConfigFactory,
                     useCaseConfigFactory,
-                    targetHighSpeedFrameRate
-                )
+                    targetHighSpeedFrameRate,
+                ),
+                allowFeatureCombinationResolutions
             )
     }
 
@@ -211,7 +212,8 @@ public class StreamSpecsCalculatorImpl(
         cameraInfoInternal: CameraInfoInternal,
         newUseCases: List<UseCase>,
         attachedSurfaceInfoToUseCaseMap: Map<AttachedSurfaceInfo, UseCase>,
-        configPairMap: Map<UseCase, CameraUseCaseAdapter.ConfigPair>
+        configPairMap: Map<UseCase, CameraUseCaseAdapter.ConfigPair>,
+        allowFeatureCombinationResolutions: Boolean
     ): Map<UseCase, StreamSpec> {
         val cameraId = cameraInfoInternal.getCameraId()
         val suggestedStreamSpecs = mutableMapOf<UseCase, StreamSpec>()
@@ -269,7 +271,8 @@ public class StreamSpecsCalculatorImpl(
                         ArrayList<AttachedSurfaceInfo?>(attachedSurfaceInfoToUseCaseMap.keys),
                         configToSupportedSizesMap,
                         isPreviewStabilizationOn,
-                        CameraUseCaseAdapter.hasVideoCapture(newUseCases)
+                        CameraUseCaseAdapter.hasVideoCapture(newUseCases),
+                        allowFeatureCombinationResolutions
                     )
 
             for (entry in configToUseCaseMap.entries) {

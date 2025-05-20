@@ -17,6 +17,7 @@
 package androidx.xr.compose.spatial
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +53,7 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
  * @param content the composable content to be displayed within the elevated panel.
  */
 @Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialElevation(
     spatialElevationLevel: SpatialElevationLevel = SpatialElevationLevel.Level0,
     content: @Composable () -> Unit,

@@ -33,6 +33,7 @@ import androidx.camera.camera2.pipe.CameraGraph.OperatingMode.Companion.HIGH_SPE
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode.Companion.NORMAL
 import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.AT_LEAST
 import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.EXACT
+import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.coroutines.CancellationException
@@ -42,78 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface CameraGraph : BaseGraph {
-    /**
-     * Used exclusively interact with the camera via a [Session] from within an existing suspending
-     * function. This function will suspend until the internal mutex lock can be acquired and
-     * returned. When possible, prefer [useSession] when possible as it will guarantee that the
-     * session will be closed.
-     *
-     * The returned [Session] **must** be closed.
-     */
-    public suspend fun acquireSession(): Session
-
-    /**
-     * Immediately try to acquire access to the internal mutex lock, and return null if it is not
-     * currently available.
-     *
-     * The returned [Session] **must** be closed.
-     */
-    public fun acquireSessionOrNull(): Session?
-
-    /**
-     * Used exclusively interact with the camera via a [Session] from within an existing suspending
-     * function. This method will suspend until the internal mutex lock can be acquired. This is
-     * similar to [acquireSession] an [use] with the additional guarantee that all launch and async
-     * calls will complete before the lock is released (unless the [Session] is closed early). The
-     * [action] will always execute unless parent scope has been canceled.
-     *
-     * Example:
-     * ```
-     * suspend fun process(cameraGraph: CameraGraph, analysisStream: CameraStream) {
-     *     cameraGraph.useSession { session ->
-     *         val result = session.capture(
-     *             Request(streams = listOf(jpegStream.id))
-     *         )
-     *         val frame = result.awaitFrame()
-     *         val image = frame?.awaitImage(analysisStream.id)
-     *         // process image if not null
-     *     }
-     * }
-     * ```
-     */
-    public suspend fun <T> useSession(action: suspend CoroutineScope.(Session) -> T): T
-
-    /**
-     * Used to exclusively interact with the camera from a normal function with a [Session] by
-     * acquiring a lock to the internal mutex and running the [action] in the provided [scope]. This
-     * is similar to [useSession] with the additional guarantee that multiple calls to
-     * [useSessionIn] will be executed in the same order they are invoked in, which is not the case
-     * for `scope.launch` or `scope.async`. When possible, prefer using this function when
-     * interacting with a [CameraGraph.Session] from non-suspending code. The [action] will always
-     * execute unless parent scope has been canceled.
-     *
-     * Example:
-     * ```
-     * fun capture(
-     *     cameraGraph: CameraGraph, jpegStream: CameraStream, scope: CoroutineScope
-     * ) {
-     *     cameraGraph.useSessionIn(scope) { session ->
-     *         val result = session.capture(
-     *             Request(streams = listOf(jpegStream.id))
-     *         )
-     *         val frame = result.awaitFrame()
-     *         val jpeg = frame?.awaitImage(jpegStream.id)
-     *         // Save jpeg
-     *     }
-     * }
-     * ```
-     */
-    public fun <T> useSessionIn(
-        scope: CoroutineScope,
-        action: suspend CoroutineScope.(Session) -> T
-    ): Deferred<T>
-
+public interface CameraGraph : CameraGraphBase<Session> {
     /**
      * This defines the configuration, flags, and pre-defined structure of a [CameraGraph] instance.
      * Note that for parameters, null is considered a valid value, and unset keys are ignored.
@@ -679,9 +609,9 @@ public interface CameraGraph : BaseGraph {
     }
 }
 
-/** A [BaseGraph] represents common properties and methods to operate a camera graph. */
+/** A [CameraGraphBase] represents common properties and methods to operate a camera graph. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface BaseGraph : AutoCloseable {
+public interface CameraGraphBase<TSession : Session> : AutoCloseable {
     /**
      * This will cause the camera graph to start opening the [CameraDevice] and configuring a
      * [CameraCaptureSession]. While the camera graph is alive it will attempt to keep the camera
@@ -742,6 +672,77 @@ public interface BaseGraph : AutoCloseable {
      * Sets the audio restriction of camera graph.
      */
     public fun updateAudioRestrictionMode(mode: AudioRestrictionMode)
+
+    /**
+     * Used exclusively interact with the camera via a [TSession] from within an existing suspending
+     * function. This function will suspend until the internal mutex lock can be acquired and
+     * returned. When possible, prefer [useSession] when possible as it will guarantee that the
+     * session will be closed.
+     *
+     * The returned [TSession] **must** be closed.
+     */
+    public suspend fun acquireSession(): TSession
+
+    /**
+     * Immediately try to acquire access to the internal mutex lock, and return null if it is not
+     * currently available.
+     *
+     * The returned [TSession] **must** be closed.
+     */
+    public fun acquireSessionOrNull(): TSession?
+
+    /**
+     * Used exclusively interact with the camera via a [TSession] from within an existing suspending
+     * function. This method will suspend until the internal mutex lock can be acquired. This is
+     * similar to [acquireSession] and use with the additional guarantee that all launch and async
+     * calls will complete before the lock is released (unless the [TSession] is closed early). The
+     * [action] will always execute unless parent scope has been canceled.
+     *
+     * Example:
+     * ```
+     * suspend fun process(cameraGraph: CameraGraph, analysisStream: CameraStream) {
+     *     cameraGraph.useSession { session ->
+     *         val result = session.capture(
+     *             Request(streams = listOf(jpegStream.id))
+     *         )
+     *         val frame = result.awaitFrame()
+     *         val image = frame?.awaitImage(analysisStream.id)
+     *         // process image if not null
+     *     }
+     * }
+     * ```
+     */
+    public suspend fun <T> useSession(action: suspend CoroutineScope.(TSession) -> T): T
+
+    /**
+     * Used to exclusively interact with the camera from a normal function with a [TSession] by
+     * acquiring a lock to the internal mutex and running the [action] in the provided [scope]. This
+     * is similar to [useSession] with the additional guarantee that multiple calls to
+     * [useSessionIn] will be executed in the same order they are invoked in, which is not the case
+     * for `scope.launch` or `scope.async`. When possible, prefer using this function when
+     * interacting with a [TSession] from non-suspending code. The [action] will always execute
+     * unless parent scope has been canceled.
+     *
+     * Example:
+     * ```
+     * fun capture(
+     *     cameraGraph: CameraGraph, jpegStream: CameraStream, scope: CoroutineScope
+     * ) {
+     *     cameraGraph.useSessionIn(scope) { session ->
+     *         val result = session.capture(
+     *             Request(streams = listOf(jpegStream.id))
+     *         )
+     *         val frame = result.awaitFrame()
+     *         val jpeg = frame?.awaitImage(jpegStream.id)
+     *         // Save jpeg
+     *     }
+     * }
+     * ```
+     */
+    public fun <T> useSessionIn(
+        scope: CoroutineScope,
+        action: suspend CoroutineScope.(TSession) -> T
+    ): Deferred<T>
 }
 
 /**

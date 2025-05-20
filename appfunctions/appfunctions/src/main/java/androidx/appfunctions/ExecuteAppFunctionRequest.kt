@@ -47,12 +47,29 @@ constructor(
         functionParameters: AppFunctionData
     ) : this(targetPackageName, functionIdentifier, functionParameters, useJetpackSchema = true)
 
-    @RestrictTo(LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toPlatformExtensionClass():
         com.android.extensions.appfunctions.ExecuteAppFunctionRequest {
         return com.android.extensions.appfunctions.ExecuteAppFunctionRequest.Builder(
                 targetPackageName,
                 functionIdentifier,
+            )
+            .setParameters(functionParameters.genericDocument)
+            .setExtras(
+                Bundle().apply {
+                    putBundle(EXTRA_PARAMETERS, functionParameters.extras)
+                    putBoolean(EXTRA_USE_JETPACK_SCHEMA, useJetpackSchema)
+                }
+            )
+            .build()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionRequest {
+        return android.app.appfunctions.ExecuteAppFunctionRequest.Builder(
+                targetPackageName,
+                functionIdentifier
             )
             .setParameters(functionParameters.genericDocument)
             .setExtras(
@@ -88,9 +105,26 @@ constructor(
         internal const val EXTRA_USE_JETPACK_SCHEMA = "androidXAppfunctionsExtraUseJetpackSchema"
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        @RestrictTo(LIBRARY_GROUP)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromPlatformExtensionClass(
             request: com.android.extensions.appfunctions.ExecuteAppFunctionRequest
+        ): ExecuteAppFunctionRequest {
+            return ExecuteAppFunctionRequest(
+                targetPackageName = request.targetPackageName,
+                functionIdentifier = request.functionIdentifier,
+                functionParameters =
+                    AppFunctionData(
+                        request.parameters,
+                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY
+                    ),
+                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false)
+            )
+        }
+
+        @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun fromPlatformClass(
+            request: android.app.appfunctions.ExecuteAppFunctionRequest
         ): ExecuteAppFunctionRequest {
             return ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,

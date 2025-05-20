@@ -46,14 +46,12 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
@@ -426,14 +424,31 @@ private class DeterminateCircularWavyProgressElement(
 
     override fun update(node: DeterminateCircularWavyProgressNode) {
         super.update(node)
-        node.progress = progress
-        node.amplitude = amplitude
+        if (node.progress !== progress || node.amplitude !== amplitude) {
+            node.progress = progress
+            node.amplitude = amplitude
+            node.cacheDrawNode.invalidateDrawCache()
+        }
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "determinateCircularWavyProgressIndicator"
         baseInspectableProperties()
         // Lambdas are excluded
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (!super.equals(other)) return false
+        if (other !is DeterminateCircularWavyProgressElement) return false
+        if (progress !== other.progress || amplitude !== other.amplitude) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + progress.hashCode()
+        result = 31 * result + amplitude.hashCode()
+        return result
     }
 }
 
@@ -544,7 +559,7 @@ private class DeterminateCircularWavyProgressNode(
 
     override fun isDrawingWave() = amplitudeState.floatValue > 0f
 
-    private val cacheDrawNode =
+    val cacheDrawNode =
         delegate(
             CacheDrawModifierNode {
                 val currentProgress = progress().fastCoerceIn(0f, 1f)
@@ -556,7 +571,10 @@ private class DeterminateCircularWavyProgressNode(
                 val targetAmplitude = amplitude(currentProgress).fastCoerceIn(0f, 1f)
 
                 amplitudeAnimatable
-                    ?: Animatable(initialValue = 0f).also { amplitudeAnimatable = it }
+                    ?: Animatable(initialValue = targetAmplitude).also {
+                        amplitudeAnimatable = it
+                        amplitudeState.floatValue = targetAmplitude
+                    }
 
                 // Launch amplitude animation if target changed and node attached/active
                 if (
@@ -639,27 +657,13 @@ private class DeterminateCircularWavyProgressNode(
                         stroke = stroke,
                         trackStroke = trackStroke
                     )
-
-                    if (layoutDirection == LayoutDirection.Rtl) {
-                        // Scaling on the X will flip the drawing for RTL
-                        scale(scaleX = -1f, scaleY = 1f) {
-                            drawCircularIndicator(
-                                color = color,
-                                trackColor = trackColor,
-                                stroke = stroke,
-                                trackStroke = trackStroke,
-                                drawingCache = progressDrawingCache
-                            )
-                        }
-                    } else {
-                        drawCircularIndicator(
-                            color = color,
-                            trackColor = trackColor,
-                            stroke = stroke,
-                            trackStroke = trackStroke,
-                            drawingCache = progressDrawingCache
-                        )
-                    }
+                    drawCircularIndicator(
+                        color = color,
+                        trackColor = trackColor,
+                        stroke = stroke,
+                        trackStroke = trackStroke,
+                        drawingCache = progressDrawingCache
+                    )
                 }
             }
         )
@@ -853,11 +857,6 @@ private class IndeterminateCircularWavyProgressNode(
                     // Draw
                     withTransform(
                         transformBlock = {
-                            // RTL flip before rotation to effectively reverse the rotation
-                            // direction
-                            if (this@onDrawWithContent.layoutDirection == LayoutDirection.Rtl) {
-                                scale(scaleX = -1f, scaleY = 1f, pivot = size.center)
-                            }
                             // Apply rotation
                             rotate(
                                 degrees = currentGlobalRotation + currentAdditionalRotation + 90f
@@ -1325,7 +1324,6 @@ private class CircularShapes {
         requiresMorph: Boolean
     ) {
         require(wavelength > 0f) { "Wavelength should be greater than zero" }
-        require(size.minDimension > 0f) { "Size min dimension should be greater than zero" }
         if (size == currentSize && wavelength == currentWavelength) {
             if (requiresMorph && activeIndicatorMorph == null) {
                 // This is the first time a requiredMorph is set, so we need to create a new Morph.

@@ -19,32 +19,33 @@
 package androidx.xr.runtime
 
 /**
- * Application or Activity level {@link android.content.pm.PackageManager.Property
- * PackageManager.Property} for an app to inform the system of the activity launch mode in XR. When
- * it is declared at the application level, all activities are set to the defined value, unless it
- * is overridden at the activity level.
+ * Application or Activity level
+ * [PackageManager.Property][android.content.pm.PackageManager.Property] for an app to inform the
+ * system of the activity launch mode in XR. When it is declared at the application level, all
+ * activities are set to the defined value, unless it is overridden at the activity level.
  *
- * <p>The default value is {@link #XR_ACTIVITY_START_MODE_UNDEFINED}.
+ * The default value is [XR_ACTIVITY_START_MODE_UNDEFINED].
  *
- * <p>The available values are:
- * <ul>
- * <li>{@link #XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED}
- * <li>{@link #XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED}
- * <li>{@link #XR_ACTIVITY_START_MODE_HOME_SPACE}
- * <li>{@link #XR_ACTIVITY_START_MODE_UNDEFINED}
- * </ul>
+ * The available values are:
+ * - [XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED]
+ * - [XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED]
+ * - [XR_ACTIVITY_START_MODE_HOME_SPACE]
+ * - [XR_ACTIVITY_START_MODE_UNDEFINED]
  *
- * <p><b>Syntax:</b>
- * <pre>
- * &lt;application&gt;
- *   &lt;property
+ * **Syntax:**
+ *
+ * ```
+ * <application>
+ *   <property
  *     android:name="android.window.PROPERTY_ACTIVITY_XR_START_MODE"
  *     android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED|
  *                    XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED|
  *                    XR_ACTIVITY_START_MODE_HOME_SPACE|
- *                    XR_ACTIVITY_START_MODE_UNDEFINED"/&gt;
- * &lt;/application&gt;
- * </pre>
+ *                    XR_ACTIVITY_START_MODE_UNDEFINED" />
+ * </application>
+ * ```
+ *
+ * Constant Value: "android.window.PROPERTY_XR_ACTIVITY_START_MODE"
  */
 @JvmField
 public val PROPERTY_XR_ACTIVITY_START_MODE: String =
@@ -56,6 +57,8 @@ public val PROPERTY_XR_ACTIVITY_START_MODE: String =
  * activities that use OpenXR to render.
  *
  * @see [PROPERTY_XR_ACTIVITY_START_MODE]
+ *
+ * Constant Value: "XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED"
  */
 @JvmField
 public val XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED: String =
@@ -64,10 +67,12 @@ public val XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED: String =
 /**
  * The default value if not specified. If used, the actual launching mode will be determined by the
  * system based on the launching activity's current mode and the launching flags. When
- * {@link #PROPERTY_XR_ACTIVITY_START_MODE} is used at the application level, apps can use this
- * value to reset at individual activity level.
+ * [PROPERTY_XR_ACTIVITY_START_MODE] is used at the application level, apps can use this value to
+ * reset at individual activity level.
  *
  * @see [PROPERTY_XR_ACTIVITY_START_MODE]
+ *
+ * Constant Value: "XR_ACTIVITY_START_MODE_UNDEFINED"
  */
 @JvmField public val XR_ACTIVITY_START_MODE_UNDEFINED: String = "XR_ACTIVITY_START_MODE_UNDEFINED"
 
@@ -77,6 +82,8 @@ public val XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED: String =
  * full space mode</a> in XR, where the system is rendering the activity from a scene graph.
  *
  * @see [PROPERTY_XR_ACTIVITY_START_MODE]
+ *
+ * Constant Value: "XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED"
  */
 @JvmField
 public val XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED: String =
@@ -88,34 +95,37 @@ public val XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED: String =
  * space mode</a> in XR.
  *
  * @see [PROPERTY_XR_ACTIVITY_START_MODE]
+ *
+ * Constant Value: "XR_ACTIVITY_START_MODE_HOME_SPACE"
  */
 @JvmField public val XR_ACTIVITY_START_MODE_HOME_SPACE: String = "XR_ACTIVITY_START_MODE_HOME_SPACE"
 
 /**
- * Application and Activity level {@link android.content.pm.PackageManager.Property
- * PackageManager.Property} for an app to inform the system of the type of safety boundary
- * recommended for the activity. When it is declared at the application level, all activities are
- * set to the defined value, unless it is overridden at the activity level. When not declared, the
- * system will not enforce any recommendations for a type of safety boundary and will continue to
- * use the type that is currently in use.
+ * Application or Activity level
+ * [PackageManager.Property][android.content.pm.PackageManager.Property] for an app to inform the
+ * system of the type of safety boundary recommended for the activity. When it is declared at the
+ * application level, all activities are set to the defined value, unless it is overridden at the
+ * activity level. When not declared, the system will not enforce any recommendations for a type of
+ * safety boundary and will continue to use the type that is currently in use.
  *
- * <p>The default value is {@link #XR_BOUNDARY_TYPE_NO_RECOMMENDATION}.
+ * The default value is [XR_BOUNDARY_TYPE_NO_RECOMMENDATION].
  *
- * <p>The available values are:
- * <ul>
- * <li>{@link #XR_BOUNDARY_TYPE_LARGE}
- * <li>{@link #XR_BOUNDARY_TYPE_NO_RECOMMENDATION}
- * </ul>
+ * The available values are:
+ * - [XR_BOUNDARY_TYPE_LARGE]
+ * - [XR_BOUNDARY_TYPE_NO_RECOMMENDATION]
  *
- * <p><b>Syntax:</b>
- * <pre>
- * &lt;application&gt;
- *   &lt;property
+ * **Syntax:**
+ *
+ * ```
+ * <application>
+ *   <property
  *     android:name="android.window.PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED"
  *     android:value="XR_BOUNDARY_TYPE_LARGE|
- *                    XR_BOUNDARY_TYPE_NO_RECOMMENDATION"/&gt;
- * &lt;/application&gt;
- * </pre>
+ *                    XR_BOUNDARY_TYPE_NO_RECOMMENDATION" />
+ * </application>
+ * ```
+ *
+ * Constant Value: "android.window.PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED"
  */
 @JvmField
 public val PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED: String =
@@ -126,6 +136,8 @@ public val PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED: String =
  * The system will continue to use the type of safety boundary that is currently in use.
  *
  * @see [PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED]
+ *
+ * Constant Value: "XR_BOUNDARY_TYPE_NO_RECOMMENDATION"
  */
 @JvmField
 public val XR_BOUNDARY_TYPE_NO_RECOMMENDATION: String = "XR_BOUNDARY_TYPE_NO_RECOMMENDATION"
@@ -137,29 +149,34 @@ public val XR_BOUNDARY_TYPE_NO_RECOMMENDATION: String = "XR_BOUNDARY_TYPE_NO_REC
  * already in use. This larger size will be determined by the system.
  *
  * @see [PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED]
+ *
+ * Constant Value: "XR_BOUNDARY_TYPE_LARGE"
  */
 @JvmField public val XR_BOUNDARY_TYPE_LARGE: String = "XR_BOUNDARY_TYPE_LARGE"
 
 /**
- * Application and Activity level {@link android.content.pm.PackageManager.Property
- * PackageManager.Property} to inform the system if it should play a system provided default
- * animation when the app requests to enter or exit <a
+ * Application or Activity level
+ * [PackageManager.Property][android.content.pm.PackageManager.Property] to inform the system if it
+ * should play a system provided default animation when the app requests to enter or exit <a
  * href="https://developer.android.com/develop/xr/jetpack-xr-sdk/transition-home-space-to-full-space">managed
- * full space mode</a> in XR. When set to {@code true}, the system provided default animation is not
+ * full space mode</a> in XR. When set to `true`, the system provided default animation is not
  * played and the app is responsible for playing a custom enter or exit animation. When it is
  * declared at the application level, all activities are set to the defined value, unless it is
  * overridden at the activity level.
  *
- * <p>The default value is {@code false}.
+ * The default value is `false`.
  *
- * <p><b>Syntax:</b>
- * <pre>
- * &lt;application&gt;
- *   &lt;property
+ * **Syntax:**
+ *
+ * ```
+ * <application>
+ *   <property
  *     android:name="android.window.PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION"
- *     android:value="false|true"/&gt;
- * &lt;/application&gt;
- * </pre>
+ *     android:value="false|true"/>
+ * </application>
+ * ```
+ *
+ * Constant Value: "android.window.PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION"
  */
 @JvmField
 public val PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION: String =

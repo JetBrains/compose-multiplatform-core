@@ -803,6 +803,39 @@ class TooltipTest {
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick))
     }
+
+    @Test
+    fun fullWidthTooltipCaret_xPositioning() {
+        val screenWidth = 1080
+        val tooltipWidth = 1080f
+
+        // Test for when the anchor is near the left side of the screen
+        var caretX: Float =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 135f, right = 185f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(160f)
+
+        // Test for when the anchor is in the middle of the screen
+        caretX =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 515.5f, right = 565.5f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(540.5f)
+
+        // Test for when the anchor is in the right side of the screen
+        caretX =
+            caretX(
+                screenWidthPx = screenWidth,
+                tooltipWidth = tooltipWidth,
+                anchorBounds = Rect(left = 920.88f, right = 970.88f, top = 0f, bottom = 0f)
+            )
+        assertThat(caretX).isEqualTo(945.88f)
+    }
 }
 
 private const val ActionTestTag = "Action"

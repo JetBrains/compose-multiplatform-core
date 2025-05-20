@@ -577,7 +577,6 @@ internal fun ThreePaneScaffoldScope.MockDragHandle(state: PaneExpansionState) {
                 state,
                 LocalMinimumInteractiveComponentSize.current,
                 interactionSource,
-                state.defaultDragHandleSemantics()
             ),
         interactionSource = interactionSource
     )

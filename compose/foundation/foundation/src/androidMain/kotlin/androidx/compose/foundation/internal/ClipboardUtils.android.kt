@@ -25,6 +25,7 @@ import android.util.Base64
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.fromColorLong
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -382,7 +383,7 @@ internal class DecodeHelper(string: String) {
     }
 
     fun decodeColor(): Color {
-        return Color(decodeULong())
+        return Color.fromColorLong(parcel.readLong())
     }
 
     fun decodeTextUnit(): TextUnit {

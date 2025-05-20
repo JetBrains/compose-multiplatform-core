@@ -108,7 +108,6 @@ internal fun ForEachSize(sizeMode: SizeMode, minSize: DpSize, content: @Composab
                         .map { findBestSize(it, sizeMode.sizes) ?: smallestSize }
                         .ifEmpty { listOf(smallestSize, smallestSize) }
                 }
-            else -> error("Unknown sizeMode: $sizeMode")
         }
     sizes.distinct().map { size -> SizeBox(size, sizeMode, content) }
 }

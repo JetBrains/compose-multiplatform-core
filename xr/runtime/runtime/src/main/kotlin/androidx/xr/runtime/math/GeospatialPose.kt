@@ -27,9 +27,6 @@ import androidx.annotation.RestrictTo
  *   meters above sea level.
  * - Orientation approximates the direction the user is facing in the EUS coordinate system. The EUS
  *   coordinate system has X+ pointing east, Y+ pointing up, and Z+ pointing south.
- * - Accuracy of the latitude, longitude, altitude, and orientation are available as numeric
- *   confidence intervals where a large value (large interval) means low confidence and small value
- *   (small interval) means high confidence.
  *
  * @property latitude The latitude of the GeospatialPose in degrees.
  * @property longitude The longitude of the GeospatialPose in degrees.

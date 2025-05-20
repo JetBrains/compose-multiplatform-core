@@ -225,7 +225,8 @@ public interface Features {
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link
-     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)}
+     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)} and
+     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
      */
     String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
 

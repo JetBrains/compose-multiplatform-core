@@ -577,8 +577,17 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         }
 
         return buildAnnotatedString {
+            var started = false
             selectionRegistrar.sort(requireContainerCoordinates()).fastForEach { selectable ->
                 selectionRegistrar.subselections[selectable.selectableId]?.let { subSelection ->
+                    // We need to add line separators between different selectable nodes' contents.
+                    // However we cannot be sure whether the appended text will be the last in this
+                    // iteration. So we add the separator in the next iteration's beginning.
+                    if (started) {
+                        append('\n')
+                    } else {
+                        started = true
+                    }
                     val currentText = selectable.getText()
                     val currentSelectedText =
                         if (subSelection.handlesCrossed) {

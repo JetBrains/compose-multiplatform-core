@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.app.appfunctions.AppFunctionManager
 import android.content.Context
 import android.os.Build
 import androidx.annotation.IntDef
@@ -25,10 +26,10 @@ import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.AppSearchAppFunctionReader
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.ExtensionAppFunctionManagerApi
+import androidx.appfunctions.internal.PlatformAppFunctionManagerApi
 import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
-import com.android.extensions.appfunctions.AppFunctionManager
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -208,16 +209,12 @@ internal constructor(
         private const val LEGACY_SDK_GLOBAL_SCHEMA_VERSION = 1L
 
         /**
-         * Checks whether the AppFunction feature is supported.
+         * Checks whether the AppFunction extension library is available.
          *
-         * Support is determined by verifying if the device implements the App Functions extension
-         * library
-         *
-         * @return `true` if the AppFunctions feature is supported on this device, `false`
+         * @return `true` if the AppFunctions extension library is available on this device, `false`
          *   otherwise.
          */
-        private fun isSupported(): Boolean {
-            // TODO(b/395589225): Check isSupported based on SDK version and update the document.
+        private fun isExtensionLibraryAvailable(): Boolean {
             return try {
                 Class.forName("com.android.extensions.appfunctions.AppFunctionManager")
                 true
@@ -229,23 +226,43 @@ internal constructor(
         /**
          * Gets an instance of [AppFunctionManagerCompat] if the AppFunction feature is supported.
          *
-         * Support is determined by verifying the SDK version is at least 33 and if the device
-         * implements the App Functions extension library.
+         * The AppFunction feature is supported,
+         * * If SDK version is greater or equal to 36
+         * * If SDK version is greater or equal to 33 and the device implements App Function
+         *   extension library.
          *
          * @return an instance of [AppFunctionManagerCompat] if the AppFunction feature is supported
          *   or `null`.
          */
         @JvmStatic
         public fun getInstance(context: Context): AppFunctionManagerCompat? {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && isSupported()) {
-                AppFunctionManagerCompat(
-                    context,
-                    Dependencies.translatorSelector,
-                    AppSearchAppFunctionReader(context, Dependencies.schemaAppFunctionInventory),
-                    ExtensionAppFunctionManagerApi(context),
-                )
-            } else {
-                null
+            return when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
+                    AppFunctionManagerCompat(
+                        context,
+                        Dependencies.translatorSelector,
+                        AppSearchAppFunctionReader(
+                            context,
+                            Dependencies.schemaAppFunctionInventory
+                        ),
+                        PlatformAppFunctionManagerApi(context),
+                    )
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    isExtensionLibraryAvailable() -> {
+                    AppFunctionManagerCompat(
+                        context,
+                        Dependencies.translatorSelector,
+                        AppSearchAppFunctionReader(
+                            context,
+                            Dependencies.schemaAppFunctionInventory
+                        ),
+                        ExtensionAppFunctionManagerApi(context),
+                    )
+                }
+                else -> {
+                    null
+                }
             }
         }
     }

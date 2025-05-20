@@ -46,14 +46,19 @@ class PostviewFormatValidatorTest(private val config: TestConfig) {
                     .getPostviewFormatSelector()
                     .select(config.stillImageFormat, config.supportedPostviewFormats)
             )
-            .isEqualTo(config.selectedPostviewFormat)
+            .isEqualTo(
+                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    config.selectedPostviewFormatAndroidU
+                else config.selectedPostviewFormatOthers
+            )
     }
 
     class TestConfig(
         val brand: String,
         val stillImageFormat: Int,
         val supportedPostviewFormats: List<Int>,
-        val selectedPostviewFormat: Int
+        val selectedPostviewFormatAndroidU: Int,
+        val selectedPostviewFormatOthers: Int
     )
 
     companion object {
@@ -63,13 +68,19 @@ class PostviewFormatValidatorTest(private val config: TestConfig) {
         fun createTestSet(): List<TestConfig> {
             val supportedPostviewFormats = listOf(YUV_420_888, JPEG)
             return listOf(
-                TestConfig("Samsung", YUV_420_888, supportedPostviewFormats, YUV_420_888),
-                TestConfig("Samsung", JPEG, supportedPostviewFormats, JPEG),
-                TestConfig("Samsung", JPEG_R, supportedPostviewFormats, UNKNOWN),
-                TestConfig("", YUV_420_888, supportedPostviewFormats, YUV_420_888),
-                TestConfig("", JPEG, supportedPostviewFormats, YUV_420_888),
-                TestConfig("", JPEG_R, supportedPostviewFormats, YUV_420_888),
-                TestConfig("", YUV_420_888, listOf(RAW_SENSOR), UNKNOWN),
+                TestConfig(
+                    "Samsung",
+                    YUV_420_888,
+                    supportedPostviewFormats,
+                    YUV_420_888,
+                    YUV_420_888
+                ),
+                TestConfig("Samsung", JPEG, supportedPostviewFormats, JPEG, YUV_420_888),
+                TestConfig("Samsung", JPEG_R, supportedPostviewFormats, UNKNOWN, YUV_420_888),
+                TestConfig("", YUV_420_888, supportedPostviewFormats, YUV_420_888, YUV_420_888),
+                TestConfig("", JPEG, supportedPostviewFormats, JPEG, YUV_420_888),
+                TestConfig("", JPEG_R, supportedPostviewFormats, UNKNOWN, YUV_420_888),
+                TestConfig("", YUV_420_888, listOf(RAW_SENSOR), UNKNOWN, UNKNOWN),
             )
         }
     }

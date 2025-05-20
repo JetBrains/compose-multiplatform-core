@@ -66,11 +66,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime:2.1.0'
     implementation libs.testMonitor
 
-    testImplementation(libs.robolectric)
-    testImplementation 'org.robolectric:annotations:4.14'
-    testImplementation 'org.robolectric:shadowapi:4.14'
-    testImplementation 'org.robolectric:shadows-framework:4.14'
-
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
@@ -93,9 +88,6 @@ android {
         enable.add("CameraXQuirksClassDetector")
     }
 
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
@@ -112,4 +104,5 @@ androidx {
     description = "Testing components for the Jetpack Camera Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +"" +
             "experiences across all of Android."
+    enableRobolectric()
 }

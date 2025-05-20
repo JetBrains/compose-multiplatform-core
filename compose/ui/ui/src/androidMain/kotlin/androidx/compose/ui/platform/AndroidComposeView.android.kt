@@ -970,12 +970,23 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
      * system for accurate focus searching and so ViewRootImpl will scroll correctly.
      */
     override fun getFocusedRect(rect: Rect) {
-        onFetchFocusRect()?.run {
-            rect.left = left.fastRoundToInt()
-            rect.top = top.fastRoundToInt()
-            rect.right = right.fastRoundToInt()
-            rect.bottom = bottom.fastRoundToInt()
-        } ?: super.getFocusedRect(rect)
+        val focusRect = onFetchFocusRect()
+        if (focusRect != null) {
+            rect.left = focusRect.left.fastRoundToInt()
+            rect.top = focusRect.top.fastRoundToInt()
+            rect.right = focusRect.right.fastRoundToInt()
+            rect.bottom = focusRect.bottom.fastRoundToInt()
+        } else {
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (
+                ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled &&
+                    focusOwner.focusSearch(Down, null) { true } != true
+            ) {
+                rect.set(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
+            } else {
+                super.getFocusedRect(rect)
+            }
+        }
     }
 
     /**
@@ -1741,6 +1752,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
+    private var _rootView: View? = null
+
     private fun updatePositionCacheAndDispatch() {
         var positionChanged = false
         getLocationOnScreen(tmpPositionArray)
@@ -1759,7 +1772,21 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             }
         }
         recalculateWindowPosition()
-        rectManager.updateOffsets(globalPosition, windowPosition.round(), viewToWindowMatrix)
+
+        val rootView: View =
+            _rootView
+                ?: rootView.let {
+                    _rootView = it
+                    it
+                }
+
+        rectManager.updateOffsets(
+            globalPosition,
+            windowPosition.round(),
+            viewToWindowMatrix,
+            rootView.width,
+            rootView.height,
+        )
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = positionChanged)
         @OptIn(ExperimentalComposeUiApi::class)
         if (ComposeUiFlags.isRectTrackingEnabled) {
@@ -1925,6 +1952,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchDraw(canvas: android.graphics.Canvas) {
         if (!isAttachedToWindow) {
             invalidateLayers(root)
@@ -1990,6 +2018,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
             currentFrameRate = Float.NaN
             currentFrameRateCategory = Float.NaN
+        }
+        if (ComposeUiFlags.isRectTrackingEnabled) {
+            rectManager.dispatchCallbacks()
         }
     }
 

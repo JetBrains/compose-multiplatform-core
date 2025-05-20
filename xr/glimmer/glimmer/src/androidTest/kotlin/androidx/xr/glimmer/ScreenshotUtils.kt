@@ -16,4 +16,28 @@
 
 package androidx.xr.glimmer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
+import androidx.compose.ui.test.onRoot
+import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.MSSIMMatcher
+
 internal const val GOLDEN_DIRECTORY = "xr/glimmer/glimmer"
+
+internal fun ComposeContentTestRule.setGlimmerThemeContent(content: @Composable () -> Unit) {
+    setContent {
+        GlimmerTheme { Box(Modifier.background(GlimmerTheme.colors.surface)) { content() } }
+    }
+}
+
+internal fun ComposeContentTestRule.assertRootAgainstGolden(
+    goldenName: String,
+    screenshotRule: AndroidXScreenshotTestRule
+) {
+    onRoot().captureToImage().assertAgainstGolden(screenshotRule, goldenName, MSSIMMatcher(0.995))
+}

@@ -19,6 +19,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.math.Pose
@@ -28,6 +29,7 @@ import androidx.xr.runtime.math.Vector3
  * Interface for a spatial Entity. An Entity's [Pose]s are represented as being relative to their
  * parent. Applications create and manage Entity instances to construct spatial scenes.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface Entity : ActivityPose {
 
     /**
@@ -225,6 +227,7 @@ public interface Entity : ActivityPose {
 }
 
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class BaseEntity<out RtEntityType : RtEntity>
 internal constructor(
     internal val rtEntity: RtEntityType,
@@ -330,6 +333,7 @@ internal constructor(
     override fun setContentDescription(text: String) {}
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface OnSpaceUpdatedListener {
     public fun onSpaceUpdated()
 }

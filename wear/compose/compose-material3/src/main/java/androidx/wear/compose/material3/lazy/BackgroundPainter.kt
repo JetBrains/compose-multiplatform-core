@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
 
 internal class BackgroundPainter(
-    internal val transformState: DrawScope.() -> TransformationState?,
+    internal val transformState: DrawScope.() -> TransformationState,
     internal val shape: Shape,
     private val border: BorderStroke?,
     private val backgroundPainter: Painter
@@ -39,7 +39,10 @@ internal class BackgroundPainter(
         get() = Size.Unspecified
 
     override fun DrawScope.onDraw() {
-        transformState()?.let {
+        transformState().let {
+            if (it == TransformationState.Unspecified) {
+                return
+            }
             val contentWidth = size.width * it.scale
             val xOffset = (size.width - contentWidth) / 2f
 

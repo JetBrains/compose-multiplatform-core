@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.platform.LocalSession
@@ -69,6 +70,7 @@ import kotlinx.coroutines.asExecutor
  *   the [MoveEvent] type @see [MoveEvent].
  *     @see [MoveEvent].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.movable(
     enabled: Boolean = true,
     stickyPose: Boolean = false,
@@ -97,7 +99,9 @@ public typealias PoseChangeEvent = MoveEvent
  *   with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
+ * @property type The type of move event.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 open public class MoveEvent(
     public var pose: Pose = Pose.Identity,
     public var scale: Float = 1.0F,
@@ -134,6 +138,7 @@ open public class MoveEvent(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class MoveStartEvent(
     pose: Pose = Pose.Identity,
     scale: Float = 1.0F,
@@ -164,6 +169,7 @@ public class MoveStartEvent(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class MoveEndEvent(
     pose: Pose = Pose.Identity,
     scale: Float = 1.0F,

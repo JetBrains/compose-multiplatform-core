@@ -66,7 +66,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.transformationtests_activity)
         session.resume()
-        session.configure(Config(planeTracking = PlaneTrackingMode.HorizontalAndVertical))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         setupMovableMainPanel()
 
         // Create a transform widget model and assign it to an Anchor
@@ -80,12 +80,12 @@ class TransformationTestsActivity : AppCompatActivity() {
             Runnable::run,
         )
 
-        // Create multiple orbiting shark models
-        val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
-        sharkModelFuture.addListener(
+        // Create multiple orbiting dragon models
+        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        dragonModelFuture.addListener(
             {
-                val sharkModel = sharkModelFuture.get()
-                createModelSolarSystem(session, sharkModel)
+                val dragonModel = dragonModelFuture.get()
+                createModelSolarSystem(session, dragonModel)
             },
             // This will cause the listener to be run on the UI thread
             Runnable::run,
@@ -274,26 +274,26 @@ class TransformationTestsActivity : AppCompatActivity() {
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunShark = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 3f, -9f)))
-        sunShark.setScale(3f)
-        sunShark.setParent(session.scene.activitySpace)
+        val sunDragon = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 3f, -9f)))
+        sunDragon.setScale(3f)
+        sunDragon.setParent(session.scene.activitySpace)
 
-        val planetShark = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 3f, -9f)))
-        planetShark.setScale(0.5f)
-        planetShark.setParent(sunShark)
+        val planetDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 3f, -9f)))
+        planetDragon.setScale(0.5f)
+        planetDragon.setParent(sunDragon)
 
-        val moonShark = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 3f, -9f)))
-        moonShark.setScale(0.5f)
-        moonShark.setParent(planetShark)
+        val moonDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 3f, -9f)))
+        moonDragon.setScale(0.5f)
+        moonDragon.setParent(planetDragon)
 
         // Create debug panels for the sun, planet, and moon
         val largeLabelDimensions = Dimensions(700f, 200f)
-        createDebugPanelAndLabel("sunShark", sunShark, largeLabelDimensions)
-        createDebugPanelAndLabel("planetShark", planetShark, largeLabelDimensions)
-        createDebugPanelAndLabel("moonShark", moonShark, largeLabelDimensions)
+        createDebugPanelAndLabel("sunDragon", sunDragon, largeLabelDimensions)
+        createDebugPanelAndLabel("planetDragon", planetDragon, largeLabelDimensions)
+        createDebugPanelAndLabel("moonDragon", moonDragon, largeLabelDimensions)
 
-        orbitModelAroundParent(planetShark, 4f, 0f, 20000f)
-        orbitModelAroundParent(moonShark, 2f, 1.67f, 5000f)
+        orbitModelAroundParent(planetDragon, 4f, 0f, 20000f)
+        orbitModelAroundParent(moonDragon, 2f, 1.67f, 5000f)
     }
 
     // TODO: b/339450306 - Simply update parent's rotation once math library is added to jxrCore

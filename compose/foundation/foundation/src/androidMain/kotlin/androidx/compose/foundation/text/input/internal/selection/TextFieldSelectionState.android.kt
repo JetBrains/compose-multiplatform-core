@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State

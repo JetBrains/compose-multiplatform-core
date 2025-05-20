@@ -211,7 +211,7 @@ package androidx.wear.compose.material {
   @SuppressCompatibility @androidx.compose.runtime.Immutable @androidx.wear.compose.material.ExperimentalWearMaterialApi public final class FractionalThreshold implements androidx.wear.compose.material.ThresholdConfig {
     ctor public FractionalThreshold(@FloatRange(from=0.0, to=1.0) float fraction);
     method public float computeThreshold(androidx.compose.ui.unit.Density, float fromValue, float toValue);
-    method public androidx.wear.compose.material.FractionalThreshold copy(@FloatRange(from=0.0, to=1.0) float fraction);
+    method public androidx.wear.compose.material.FractionalThreshold copy(optional @FloatRange(from=0.0, to=1.0) float fraction);
   }
 
   public final class HorizontalPageIndicatorKt {
@@ -382,7 +382,7 @@ package androidx.wear.compose.material {
   }
 
   @SuppressCompatibility @androidx.compose.runtime.Stable @androidx.wear.compose.material.ExperimentalWearMaterialApi public final class PlaceholderState {
-    method public float getPlaceholderProgression();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public float getPlaceholderProgression();
     method public boolean isShowContent();
     method public boolean isWipeOff();
     method public suspend Object? startPlaceholderAnimation(kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -886,13 +886,13 @@ package androidx.wear.compose.material {
   @SuppressCompatibility @androidx.compose.runtime.Stable @androidx.wear.compose.material.ExperimentalWearMaterialApi public class SwipeableState<T> {
     ctor public SwipeableState(T initialValue, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, optional kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> confirmStateChange);
     method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final suspend Object? animateTo(T targetValue, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> anim, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public final T getCurrentValue();
-    method public final float getDirection();
-    method public final androidx.compose.runtime.State<java.lang.Float> getOffset();
-    method public final androidx.compose.runtime.State<java.lang.Float> getOverflow();
-    method public final androidx.wear.compose.material.SwipeProgress<T> getProgress();
-    method public final T getTargetValue();
-    method public final boolean isAnimationRunning();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final T getCurrentValue();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final float getDirection();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final androidx.compose.runtime.State<java.lang.Float> getOffset();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final androidx.compose.runtime.State<java.lang.Float> getOverflow();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final androidx.wear.compose.material.SwipeProgress<T> getProgress();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final T getTargetValue();
+    method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final boolean isAnimationRunning();
     method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final suspend Object? performFling(float velocity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final suspend Object? snapTo(T targetValue, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public final T currentValue;

@@ -86,7 +86,7 @@ class WindowManagerJxrTestActivity : ComponentActivity() {
             MainPanelContent()
 
             ApplicationSubspace(
-                constraints = VolumeConstraints.Unbounded,
+                constraints = VolumeConstraints(),
                 constraintsBehavior = ConstraintsBehavior.Specified,
             ) {
                 SpatialLayout()

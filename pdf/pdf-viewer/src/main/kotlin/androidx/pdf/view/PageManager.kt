@@ -23,7 +23,6 @@ import android.util.Range
 import android.util.SparseArray
 import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
-import androidx.core.util.size
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
 import kotlinx.coroutines.CoroutineScope
@@ -78,6 +77,11 @@ internal class PageManager(
             for (page in pages.valueIterator()) {
                 page.isAccessibilityEnabled = value
             }
+        }
+
+    internal fun areAllVisiblePagesFullyRendered(visiblePageRange: Range<Int>): Boolean =
+        (visiblePageRange.lower..visiblePageRange.upper).all { pageNum ->
+            pages[pageNum]?.isFullyRendered() ?: false
         }
 
     /**

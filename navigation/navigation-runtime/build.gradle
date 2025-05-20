@@ -196,8 +196,6 @@ androidXMultiplatform {
             }
         }
     }
-
-    enableBinaryCompatibilityValidator = false
 }
 
 dependencies {
@@ -213,5 +211,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Runtime"
-    metalavaK2UastEnabled = false
 }

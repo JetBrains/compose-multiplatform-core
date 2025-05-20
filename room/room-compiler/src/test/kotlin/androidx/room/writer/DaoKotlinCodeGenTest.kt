@@ -1973,15 +1973,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             @Entity
             class MyEntity(
                 @PrimaryKey
-                val valuePrimitive: Long,
+                val valuePrimitiveLong: Long,
+                val valuePrimitiveInt: Int,
+                val valuePrimitiveByte: Byte,
+                val valuePrimitiveShort: Short,
+                val valueFloat: Float,
+                val valueDouble: Double,
                 val valueBoolean: Boolean,
+                val valueNullableBoolean: Boolean?,
                 val valueString: String,
-                val valueNullableString: String?
+                val valueNullableString: String?,
+                val valueChar: Char,
             ) {
-                var variablePrimitive: Long = 0
+                var variablePrimitiveLong: Long = 0
+                var variablePrimitiveInt: Int = 0
+                var variablePrimitiveByte: Byte = 0
+                var variablePrimitiveShort: Short = 0
+                var variableFloat: Float = 0f
+                var variableDouble: Double = 0.0
+                var variableBoolean: Boolean = false
                 var variableNullableBoolean: Boolean? = null
                 var variableString: String = ""
                 var variableNullableString: String? = null
+                var variableChar: Char = ' '
             }
             """
                     .trimIndent()
@@ -2684,6 +2698,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             interface MyDao {
               @Query("SELECT * FROM MyEntity")
               fun getEntity(): MyEntity
+
+              @SkipQueryVerification
+              @Query("SELECT * FROM MyEntity")
+              fun getEntitySkipVerification(): MyEntity
 
               @Query("SELECT uuidData FROM MyEntity")
               fun getValueClass(): UUIDValueClass

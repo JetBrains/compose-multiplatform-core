@@ -22,13 +22,10 @@ import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
-import androidx.xr.arcore.AnchorCreateNotTracking
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
-import androidx.xr.arcore.AnchorLoadInvalidUuid
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.hitTest
-import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -61,7 +58,6 @@ internal class AnchorRenderer(
     private lateinit var updateJob: CompletableJob
 
     override fun onResume(owner: LifecycleOwner) {
-        session.configure(session.config.copy(headTracking = HeadTrackingMode.Enabled))
         updateJob =
             SupervisorJob(
                 coroutineScope.launch() {
@@ -108,60 +104,40 @@ internal class AnchorRenderer(
                                     // planes once we can
                                     // support rendering them.
                                     (it.trackable as? Plane)?.state?.value?.label !=
-                                        Plane.Label.Unknown
+                                        Plane.Label.UNKNOWN
                                 }
                                 ?.let { hitResult ->
-                                    try {
-                                        when (
-                                            val anchorResult =
-                                                Anchor.create(session, hitResult.hitPose)
-                                        ) {
-                                            is AnchorCreateSuccess ->
-                                                renderedAnchors.add(
-                                                    createAnchorModel(anchorResult.anchor)
-                                                )
-                                            is AnchorCreateResourcesExhausted -> {
-                                                Log.e(
-                                                    activity::class.simpleName,
-                                                    "Failed to create anchor: anchor resources exhausted.",
-                                                )
-                                                Toast.makeText(
-                                                        activity,
-                                                        "Anchor limit has been reached.",
-                                                        Toast.LENGTH_LONG,
-                                                    )
-                                                    .show()
-                                            }
-                                            is AnchorCreateNotTracking -> {
-                                                Log.e(
-                                                    activity::class.simpleName,
-                                                    "Failed to create anchor: camera not tracking.",
-                                                )
-                                                Toast.makeText(
-                                                        activity,
-                                                        "Anchor failed to start tracking.",
-                                                        Toast.LENGTH_LONG,
-                                                    )
-                                                    .show()
-                                            }
-                                            is AnchorLoadInvalidUuid -> {
-                                                Log.e(
-                                                    activity::class.simpleName,
-                                                    "Failed to create anchor: invalid UUID."
-                                                )
-                                                Toast.makeText(
-                                                        activity,
-                                                        "Anchor failed to load.",
-                                                        Toast.LENGTH_LONG
-                                                    )
-                                                    .show()
-                                            }
+                                    val anchorResult = Anchor.create(session, hitResult.hitPose)
+                                    when (anchorResult) {
+                                        is AnchorCreateSuccess -> {
+                                            renderedAnchors.add(
+                                                createAnchorModel(anchorResult.anchor)
+                                            )
                                         }
-                                    } catch (e: IllegalStateException) {
-                                        Log.e(
-                                            activity::class.simpleName,
-                                            "Failed to create anchor: ${e.message}"
-                                        )
+                                        is AnchorCreateResourcesExhausted -> {
+                                            Log.e(
+                                                activity::class.simpleName,
+                                                "Failed to create anchor: anchor resources exhausted.",
+                                            )
+                                            Toast.makeText(
+                                                    activity,
+                                                    "Anchor limit has been reached.",
+                                                    Toast.LENGTH_LONG
+                                                )
+                                                .show()
+                                        }
+                                        else -> {
+                                            Log.e(
+                                                activity::class.simpleName,
+                                                "Failed to create anchor: ${anchorResult::class.simpleName}",
+                                            )
+                                            Toast.makeText(
+                                                    activity,
+                                                    "Anchor failed to create.",
+                                                    Toast.LENGTH_LONG
+                                                )
+                                                .show()
+                                        }
                                     }
                                 }
                         }
@@ -177,14 +153,14 @@ internal class AnchorRenderer(
         val renderJob =
             coroutineScope.launch(updateJob) {
                 anchor.state.collect { state ->
-                    if (state.trackingState == TrackingState.Tracking) {
+                    if (state.trackingState == TrackingState.TRACKING) {
                         entity.setPose(
                             session.scene.perceptionSpace.transformPoseTo(
                                 state.pose,
                                 session.scene.activitySpace
                             )
                         )
-                    } else if (state.trackingState == TrackingState.Stopped) {
+                    } else if (state.trackingState == TrackingState.STOPPED) {
                         entity.setHidden(true)
                     }
                 }

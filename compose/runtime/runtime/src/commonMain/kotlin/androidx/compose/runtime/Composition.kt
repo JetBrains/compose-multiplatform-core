@@ -327,8 +327,6 @@ internal inline fun <R> ControlledComposition.pausable(
 // ControlledComposition with a default implementation.
 @ExperimentalComposeApi
 val ControlledComposition.recomposeCoroutineContext: CoroutineContext
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalComposeApi
     get() = (this as? CompositionImpl)?.recomposeContext ?: EmptyCoroutineContext
 
 /**
@@ -994,7 +992,6 @@ internal class CompositionImpl(
 
     override fun recompose(): Boolean =
         synchronized(lock) {
-            drainPendingModificationsForCompositionLocked()
             val pendingPausedComposition = pendingPausedComposition
             if (pendingPausedComposition != null && !pendingPausedComposition.isRecomposing) {
                 // If the composition is pending do not recompose it now as the recomposition
@@ -1005,6 +1002,7 @@ internal class CompositionImpl(
                 pendingPausedComposition.markIncomplete()
                 return false
             }
+            drainPendingModificationsForCompositionLocked()
             guardChanges {
                 guardInvalidationsLocked { invalidations ->
                     val observer = observer()

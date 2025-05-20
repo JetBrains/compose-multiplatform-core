@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
@@ -26,6 +27,7 @@ import kotlinx.coroutines.sync.Semaphore
 
 /** Test-only implementation of [LifecycleManager] used to validate state transitions. */
 @Suppress("NotCloseable")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeLifecycleManager(
     /** If false, create() will throw an exception during testing. */
     @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true
@@ -64,15 +66,22 @@ public class FakeLifecycleManager(
     override fun create() {
         check(state == State.NOT_INITIALIZED)
         if (!hasCreatePermission) throw PermissionNotGrantedException()
+        if (FakeRuntimeFactory.lifecycleCreateException != null) {
+            // FakeRuntimeFactory will continue to throw exception on subsequent tests unless
+            // cleared.
+            var exceptionToThrow = FakeRuntimeFactory.lifecycleCreateException!!
+            FakeRuntimeFactory.lifecycleCreateException = null
+            throw exceptionToThrow
+        }
         state = State.INITIALIZED
     }
 
     override var config: Config =
         Config(
-            Config.PlaneTrackingMode.HorizontalAndVertical,
-            Config.HandTrackingMode.Enabled,
-            Config.DepthEstimationMode.Enabled,
-            Config.AnchorPersistenceMode.Enabled,
+            Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+            Config.HandTrackingMode.ENABLED,
+            Config.DepthEstimationMode.ENABLED,
+            Config.AnchorPersistenceMode.ENABLED,
         )
 
     override fun configure(config: Config) {
@@ -83,7 +92,7 @@ public class FakeLifecycleManager(
                 state == State.PAUSED
         )
         if (
-            !shouldSupportPlaneTracking && config.planeTracking != Config.PlaneTrackingMode.Disabled
+            !shouldSupportPlaneTracking && config.planeTracking != Config.PlaneTrackingMode.DISABLED
         ) {
             throw ConfigurationNotSupportedException()
         }

@@ -103,7 +103,6 @@ object SemanticsProperties {
         "Use `hideFromAccessibility` instead.",
         replaceWith = ReplaceWith("HideFromAccessibility")
     )
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     // Retain for binary compatibility with aosp/3341487 in 1.7
     val InvisibleToUser =
         SemanticsPropertyKey<Unit>(

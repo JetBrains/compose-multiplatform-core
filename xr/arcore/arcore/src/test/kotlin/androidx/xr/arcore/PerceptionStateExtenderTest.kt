@@ -32,6 +32,7 @@ import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TestTimeSource
@@ -121,18 +122,18 @@ class PerceptionStateExtenderTest {
         underTest.extend(coreState)
         check(
             coreState.perceptionState!!.trackables.last().state.value.trackingState ==
-                TrackingState.Tracking
+                TrackingState.TRACKING
         )
 
         // act
         timeSource += 10.milliseconds
-        runtimeTrackable.trackingState = TrackingState.Stopped
+        runtimeTrackable.trackingState = TrackingState.STOPPED
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
 
         // assert
         assertThat(coreState2.perceptionState!!.trackables.last().state.value.trackingState)
-            .isEqualTo(TrackingState.Stopped)
+            .isEqualTo(TrackingState.STOPPED)
     }
 
     @Test
@@ -145,12 +146,12 @@ class PerceptionStateExtenderTest {
         check(coreState.perceptionState!!.rightHand != null)
         check(
             coreState.perceptionState!!.leftHand!!.state.value.trackingState !=
-                TrackingState.Tracking
+                TrackingState.TRACKING
         )
         check(coreState.perceptionState!!.leftHand!!.state.value.handJoints.isEmpty())
         check(
             coreState.perceptionState!!.rightHand!!.state.value.trackingState !=
-                TrackingState.Tracking
+                TrackingState.TRACKING
         )
         check(coreState.perceptionState!!.rightHand!!.state.value.handJoints.isEmpty())
 
@@ -168,18 +169,18 @@ class PerceptionStateExtenderTest {
 
         val leftRuntimeHand = fakeRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
         val rightRuntimeHand = fakeRuntime.perceptionManager.rightHand!! as FakeRuntimeHand
-        leftRuntimeHand.trackingState = TrackingState.Tracking
+        leftRuntimeHand.trackingState = TrackingState.TRACKING
         leftRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
-        rightRuntimeHand.trackingState = TrackingState.Tracking
+        rightRuntimeHand.trackingState = TrackingState.TRACKING
         rightRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
 
         // assert
         assertThat(coreState2.perceptionState!!.leftHand!!.state.value.trackingState)
-            .isEqualTo(TrackingState.Tracking)
+            .isEqualTo(TrackingState.TRACKING)
         assertThat(coreState2.perceptionState!!.rightHand!!.state.value.trackingState)
-            .isEqualTo(TrackingState.Tracking)
+            .isEqualTo(TrackingState.TRACKING)
         for (jointType in HandJointType.values()) {
             val leftHandJoints = coreState2.perceptionState!!.leftHand!!.state.value.handJoints
             val rightHandJoints = coreState2.perceptionState!!.rightHand!!.state.value.handJoints
@@ -244,7 +245,7 @@ class PerceptionStateExtenderTest {
         }
     }
 
-    fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): ByteBuffer {
+    fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): FloatBuffer {
         val buffer = ByteBuffer.allocate(handJointBufferSize).order(ByteOrder.nativeOrder())
 
         repeat(26) {
@@ -260,7 +261,7 @@ class PerceptionStateExtenderTest {
         }
 
         buffer.flip()
-        return buffer
+        return buffer.asFloatBuffer()
     }
 
     fun assertRotationEquals(actual: Quaternion, expected: Quaternion) {

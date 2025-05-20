@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.AnchorNotTrackingException
@@ -24,6 +25,7 @@ import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
 /** Test-only implementation of [RuntimeAnchor] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeAnchor(
     override var pose: Pose,
     public val anchorHolder: AnchorHolder? = null,
@@ -40,10 +42,10 @@ public class FakeRuntimeAnchor(
         }
     }
 
-    override var trackingState: TrackingState = TrackingState.Tracking
+    override var trackingState: TrackingState = TrackingState.TRACKING
 
     override var persistenceState: RuntimeAnchor.PersistenceState =
-        RuntimeAnchor.PersistenceState.NotPersisted
+        RuntimeAnchor.PersistenceState.NOT_PERSISTED
 
     override var uuid: UUID? = null
 
@@ -53,7 +55,7 @@ public class FakeRuntimeAnchor(
 
     override fun persist() {
         uuid = UUID.randomUUID()
-        persistenceState = RuntimeAnchor.PersistenceState.Persisted
+        persistenceState = RuntimeAnchor.PersistenceState.PERSISTED
         anchorHolder?.persistAnchor(this)
     }
 

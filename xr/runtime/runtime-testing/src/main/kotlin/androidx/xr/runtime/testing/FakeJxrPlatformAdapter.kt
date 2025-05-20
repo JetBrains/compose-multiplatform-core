@@ -20,6 +20,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPanelEntity
 import androidx.xr.runtime.internal.ActivitySpace
 import androidx.xr.runtime.internal.Anchor
@@ -67,7 +68,26 @@ import java.util.function.Consumer
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [JxrPlatformAdapter] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
+    /* Tracks the current state of the adapter according to where it is in its lifecycle. */
+    public enum class State {
+        CREATED,
+        STARTED,
+        PAUSED,
+        STOPPED,
+    }
+
+    private var _state: Enum<State> = State.CREATED
+
+    /**
+     * The current state of the adapter will transition based on the lifecycle of the adapter. It
+     * starts off as State.CREATED and transitions to State.STARTED when startRenderer is called.
+     * When stopRenderer is called, it transitions to State.PAUSED. When dispose is called, it
+     * transitions to State.STOPPED.
+     */
+    public val state: Enum<State>
+        get() = _state
 
     override val spatialEnvironment: SpatialEnvironment = FakeSpatialEnvironment()
 
@@ -140,7 +160,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun destroyWaterMaterial(material: MaterialResource) {}
 
-    override fun setReflectionCube(material: MaterialResource, reflectionCube: TextureResource) {}
+    override fun setReflectionMap(material: MaterialResource, reflectionMap: TextureResource) {}
 
     override fun setNormalMap(material: MaterialResource, normalMap: TextureResource) {}
 
@@ -164,10 +184,13 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun createSurfaceEntity(
         stereoMode: Int,
-        canvasShape: SurfaceEntity.CanvasShape,
         pose: Pose,
+        canvasShape: SurfaceEntity.CanvasShape,
+        contentSecurityLevel: Int,
         parentEntity: Entity,
     ): SurfaceEntity = FakeSurfaceEntity()
+
+    override fun enablePanelDepthTest(enabled: Boolean) {}
 
     override fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
@@ -276,9 +299,15 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun setPreferredAspectRatio(activity: Activity, preferredRatio: Float) {}
 
-    override fun startRenderer() {}
+    override fun startRenderer() {
+        _state = State.STARTED
+    }
 
-    override fun stopRenderer() {}
+    override fun stopRenderer() {
+        _state = State.PAUSED
+    }
 
-    override fun dispose() {}
+    override fun dispose() {
+        _state = State.STOPPED
+    }
 }

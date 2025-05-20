@@ -110,15 +110,15 @@ class EnvironmentTestActivity : ComponentActivity() {
             session.scene.spatialEnvironment.getPassthroughMode()
         Log.i(TAG, lastApiCall)
         when (passthroughMode) {
-            SpatialEnvironment.PassthroughMode.Uninitialized -> return
+            SpatialEnvironment.PassthroughMode.UNINITIALIZED -> return
             //  Do Nothing. We're still waiting
-            SpatialEnvironment.PassthroughMode.Disabled ->
+            SpatialEnvironment.PassthroughMode.DISABLED ->
                 session.scene.spatialEnvironment.setPassthrough(
-                    SpatialEnvironment.PassthroughMode.Enabled
+                    SpatialEnvironment.PassthroughMode.ENABLED
                 )
-            SpatialEnvironment.PassthroughMode.Enabled ->
+            SpatialEnvironment.PassthroughMode.ENABLED ->
                 session.scene.spatialEnvironment.setPassthrough(
-                    SpatialEnvironment.PassthroughMode.Disabled
+                    SpatialEnvironment.PassthroughMode.DISABLED
                 )
         }
     }

@@ -2222,8 +2222,6 @@ object BottomAppBarDefaults {
     val bottomAppBarFabColor: Color
         @Composable get() = FabSecondaryContainerTokens.ContainerColor.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default padding used for [FlexibleBottomAppBar]. */
     val FlexibleContentPadding =
@@ -2236,22 +2234,16 @@ object BottomAppBarDefaults {
      * Default height of a flexible [FlexibleBottomAppBar]. The height here represents the height of
      * the bottom app bar in its expanded state.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleBottomAppBarHeight = DockedToolbarTokens.ContainerHeight
 
     /** A default [Arrangement] that will be used to space a [FlexibleBottomAppBar]'s content. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleHorizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
 
     /**
      * An [Arrangement] that will be used to space [FlexibleBottomAppBar]'s with a fixed spacing.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     val FlexibleFixedHorizontalArrangement: Arrangement.Horizontal =
         Arrangement.spacedBy(DockedToolbarTokens.ContainerMaxSpacing, Alignment.CenterHorizontally)
@@ -2752,10 +2744,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [SingleRowTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
 @OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalSingleRowTopAppBarOverride: ProvidableCompositionLocal<SingleRowTopAppBarOverride> =
     compositionLocalOf {
@@ -3023,10 +3012,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [TwoRowsTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
 @OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalTwoRowsTopAppBarOverride: ProvidableCompositionLocal<TwoRowsTopAppBarOverride> =
     compositionLocalOf {

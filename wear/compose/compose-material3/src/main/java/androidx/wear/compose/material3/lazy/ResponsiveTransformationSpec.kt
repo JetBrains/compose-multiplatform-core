@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
+import androidx.compose.ui.util.trace
 import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress
 import androidx.wear.compose.foundation.lazy.inverseLerp
@@ -381,32 +382,36 @@ internal class ResponsiveTransformationSpecImpl(
         measuredHeight: Int,
         scrollProgress: TransformingLazyColumnItemScrollProgress
     ): Int =
-        with(TransitionAreaProgress(scrollProgress)) {
-            ceil(compute(scale, easing) * measuredHeight).fastRoundToInt()
+        trace("wear-compose:tlc:getTransformedHeight") {
+            with(TransitionAreaProgress(scrollProgress)) {
+                ceil(compute(scale, easing) * measuredHeight).fastRoundToInt()
+            }
         }
 
     override fun GraphicsLayerScope.applyContentTransformation(
         scrollProgress: TransformingLazyColumnItemScrollProgress,
-    ) {
-        if (scrollProgress.isUnspecified) return
-        with(TransformationState(scrollProgress = scrollProgress)) {
-            compositingStrategy = CompositingStrategy.Offscreen
-            alpha = contentAlpha
+    ) =
+        trace("wear-compose:tlc:applyContentTransformation") {
+            if (scrollProgress.isUnspecified) return
+            with(TransitionAreaProgress(scrollProgress)) {
+                compositingStrategy = CompositingStrategy.Offscreen
+                alpha = compute(contentAlpha, easing)
+            }
         }
-    }
 
     override fun GraphicsLayerScope.applyContainerTransformation(
         scrollProgress: TransformingLazyColumnItemScrollProgress
-    ) {
-        if (scrollProgress.isUnspecified) return
-        with(TransformationState(scrollProgress = scrollProgress)) {
-            compositingStrategy = CompositingStrategy.Offscreen
-            translationY = -1f * size.height * (1f - scale) / 2f
-            alpha = containerAlpha
-            scaleX = scale
-            scaleY = scale
+    ) =
+        trace("wear-compose:tlc:applyContainerTransformation") {
+            if (scrollProgress.isUnspecified) return
+            with(TransformationState(TransitionAreaProgress(scrollProgress))) {
+                compositingStrategy = CompositingStrategy.Offscreen
+                translationY = -1f * size.height * (1f - scale) / 2f
+                alpha = containerAlpha
+                scaleX = scale
+                scaleY = scale
+            }
         }
-    }
 
     override fun TransformedContainerPainterScope.createTransformedContainerPainter(
         painter: Painter,
@@ -414,7 +419,12 @@ internal class ResponsiveTransformationSpecImpl(
         border: BorderStroke?
     ): Painter =
         BackgroundPainter(
-            transformState = { TransformationState(scrollProgress = scrollProgress) },
+            transformState = {
+                val scrollProgress = scrollProgress
+                trace("wear-compose:tlc:backgroundPainterStateResolution") {
+                    TransformationState(TransitionAreaProgress(scrollProgress))
+                }
+            },
             shape = shape,
             border = border,
             backgroundPainter = painter
@@ -454,13 +464,12 @@ private fun lerp(
 
 /** Uses a TransformationSpec to compute a TransformationState. */
 internal fun ResponsiveTransformationSpecImpl.TransformationState(
-    scrollProgress: TransformingLazyColumnItemScrollProgress
+    transitionAreaProgress: TransitionAreaProgress
 ): TransformationState =
-    with(TransitionAreaProgress(scrollProgress)) {
+    with(transitionAreaProgress) {
         TransformationState(
             scale = compute(scale, easing),
             containerAlpha = compute(containerAlpha, easing),
-            contentAlpha = compute(contentAlpha, easing),
         )
     }
 

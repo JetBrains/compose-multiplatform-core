@@ -192,7 +192,6 @@ internal constructor(
                 .await()
         }
         val changeToken = proto.changesToken
-        Logger.debug(HEALTH_CONNECT_CLIENT_TAG, "Retrieved change token $changeToken.")
         return changeToken
     }
 
@@ -206,11 +205,6 @@ internal constructor(
                 )
                 .await()
         }
-        val nextToken = proto.nextChangesToken
-        Logger.debug(
-            HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved changes successful with $changesToken, next token $nextToken."
-        )
         return toChangesResponse(proto)
     }
 

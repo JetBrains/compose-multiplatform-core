@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
 
@@ -25,6 +26,7 @@ import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
  * If the audio being played is stereo or multichannel AND the AudioAttributes USAGE_TYPE is
  * USAGE_MEDIA then the point provided will serve as the focal point of the media sound bed.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class PointSourceParams(internal val entity: Entity) {
 
     internal val rtPointSourceParams: RtPointSourceParams =

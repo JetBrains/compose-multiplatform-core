@@ -175,8 +175,8 @@ open class CustomAudienceManagerImplCommon(
                         Ext14Impl.convertTrustedSignals(request.trustedBiddingSignals)
                     )
                     .setUserBiddingSignals(request.userBiddingSignals?.convertToAdServices())
-                    .setAuctionServerRequestFlags(request.auctionServerRequestFlags)
-                    .setPriority(request.priority)
+                    .setAuctionServerRequestFlags(request.getAuctionServerRequestFlags())
+                    .setPriority(request.getPriority())
                     .setComponentAds(convertComponentAds(request.getComponentAds()))
                     .build()
             }
@@ -240,8 +240,8 @@ open class CustomAudienceManagerImplCommon(
                     .setName(request.name)
                     .setTrustedBiddingData(convertTrustedSignals(request.trustedBiddingSignals))
                     .setUserBiddingSignals(request.userBiddingSignals?.convertToAdServices())
-                    .setAuctionServerRequestFlags(request.auctionServerRequestFlags)
-                    .setPriority(request.priority)
+                    .setAuctionServerRequestFlags(request.getAuctionServerRequestFlags())
+                    .setPriority(request.getPriority())
                     .build()
             }
 

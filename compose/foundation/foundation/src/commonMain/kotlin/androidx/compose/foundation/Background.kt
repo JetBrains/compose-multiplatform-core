@@ -108,6 +108,7 @@ private class BackgroundElement(
         node.brush = brush
         node.alpha = alpha
         node.shape = shape
+        node.invalidateDraw()
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -137,6 +138,8 @@ private class BackgroundNode(
     var alpha: Float,
     var shape: Shape,
 ) : DrawModifierNode, Modifier.Node(), ObserverModifierNode {
+
+    override val shouldAutoInvalidate = false
 
     // Naively cache outline calculation if input parameters are the same, we manually observe
     // reads inside shape#createOutline separately

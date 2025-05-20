@@ -95,7 +95,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
         if (!tigerFile.exists()) {
             Toast.makeText(
                     this,
-                    "Audio files not found. Did you download all the assets?",
+                    "Audio files ($tigerPath) not found. Did you download all the assets?",
                     Toast.LENGTH_LONG,
                 )
                 .show()

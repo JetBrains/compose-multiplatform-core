@@ -257,7 +257,7 @@ class MutableBoxTest {
     }
 
     @Test
-    fun overwriteFromValues_whenInOrder_changesAllValues() {
+    fun populateFromTwoPoints_whenInOrder_changesAllValues() {
         val rect = MutableBox().populateFromTwoPoints(ImmutableVec(1F, 2F), ImmutableVec(3F, 4F))
 
         rect.populateFromTwoPoints(ImmutableVec(5F, 6F), ImmutableVec(7F, 8F))
@@ -269,7 +269,7 @@ class MutableBoxTest {
     }
 
     @Test
-    fun overwriteFromValues_whenOutOfOrder_changesAllValues() {
+    fun populateFromTwoPoints_whenOutOfOrder_changesAllValues() {
         val rect = MutableBox().populateFromTwoPoints(ImmutableVec(1F, 2F), ImmutableVec(3F, 4F))
 
         rect.populateFromTwoPoints(ImmutableVec(-1F, -2F), ImmutableVec(-3F, -4F))

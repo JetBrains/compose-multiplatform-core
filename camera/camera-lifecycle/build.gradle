@@ -77,7 +77,6 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
     testImplementation(project(":internal-testutils-truth"))
@@ -99,8 +98,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.lifecycle"
 }
 
@@ -112,4 +109,5 @@ androidx {
     description = "Lifecycle components for the Jetpack Camera Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +
             "experiences across all of Android."
+    enableRobolectric()
 }

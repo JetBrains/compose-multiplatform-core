@@ -195,6 +195,17 @@
         </activity>
 
         <activity
+            android:name=".HorizontalPagerScaffoldActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.HORIZONTAL_PAGER_SCAFFOLD_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".IconButtonActivity"
             android:theme="@style/AppTheme"
             android:exported="true">
@@ -307,6 +318,16 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.wear.compose.material3.macrobenchmark.target.SWIPE_TO_REVEAL_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SwipeToDismissBoxActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.wear.compose.material3.macrobenchmark.target.SWIPE_TO_DISMISS_BOX_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

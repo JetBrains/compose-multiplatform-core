@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace.layout
 
 import android.util.Log
-import android.view.View
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.subspace.SpatialPanelDefaults
@@ -169,15 +168,49 @@ internal sealed class CoreBasePanelEntity(
 ) : CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
     override var overrideSize: IntVolumeSize? = null
 
+    /**
+     * The size of the [CoreBasePanelEntity] in pixels.
+     *
+     * This value is used to set the size of the CoreBasePanelEntity.
+     *
+     * If the width or height is zero or negative, the panel will be hidden. And the panel size will
+     * be adjusted to 1 because the underlying implementation of the main panel entity does not
+     * allow for zero or negative sizes.
+     */
     override var size: IntVolumeSize
         get() = super.size
         set(value) {
-            val nextSize = overrideSize ?: value
+            var nextSize = overrideSize ?: value
+
+            val shouldHide = nextSize.width <= 0 || nextSize.height <= 0
+
+            if (shouldHide) {
+                Log.w(
+                    "CoreBasePanelEntity",
+                    "Setting the panel size to 0 or less. The panel will be hidden.",
+                )
+            }
+            hidden = shouldHide
+
+            nextSize =
+                IntVolumeSize(max(nextSize.width, 1), max(nextSize.height, 1), nextSize.depth)
+
             if (super.size != nextSize) {
                 super.size = nextSize
                 panelEntity.setSizeInPixels(PixelDimensions(size.width, size.height))
                 updateShape()
             }
+        }
+
+    /**
+     * Whether this entity or any of its ancestors is marked as hidden.
+     *
+     * Note that a non-hidden entity may still not be visible if its alpha is 0.
+     */
+    var hidden: Boolean
+        get() = entity.isHidden(includeParents = true)
+        set(value) {
+            entity.setHidden(value)
         }
 
     /** The [SpatialShape] of this [CoreBasePanelEntity]. */
@@ -213,57 +246,9 @@ internal class CorePanelEntity(entity: PanelEntity, density: Density) :
  */
 internal class CoreMainPanelEntity(session: Session, density: Density) :
     CoreBasePanelEntity(session.scene.mainPanelEntity, density) {
-    private val mainView = session.activity.window.decorView
-    private val listener =
-        View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            mutableSize.value =
-                session.scene.mainPanelEntity.getSizeInPixels().run {
-                    IntVolumeSize(width, height, 0)
-                }
-        }
-
-    init {
-        mainView.addOnLayoutChangeListener(listener)
-    }
-
-    /**
-     * Whether this entity or any of its ancestors is marked as hidden.
-     *
-     * Note that a non-hidden entity may still not be visible if its alpha is 0.
-     */
-    public var hidden: Boolean
-        get() = entity.isHidden(includeParents = true)
-        set(value) {
-            entity.setHidden(value)
-        }
-
-    /**
-     * The size of the [CoreMainPanelEntity] in pixels.
-     *
-     * This value is used to set the size of the CoreMainPanelEntity. If the width or height is zero
-     * or negative, the main panel will be hidden and its size will be adjusted to 1 because the
-     * underlying implementation of the main panel entity does not allow for zero or negative sizes.
-     */
-    override var size: IntVolumeSize
-        get() = super.size
-        set(value) {
-            hidden = value.width <= 0 || value.height <= 0
-            if (hidden) {
-                Log.w(
-                    "MainPanel",
-                    "Main panel size is zero or negative. The main panel will be hidden."
-                )
-            }
-
-            val clampedWidth = max(value.width, 1)
-            val clampedHeight = max(value.height, 1)
-
-            super.size = IntVolumeSize(clampedWidth, clampedHeight, value.depth)
-        }
 
     override fun dispose() {
         // Do not call super.dispose() because we don't want to dispose the main panel entity.
-        mainView.removeOnLayoutChangeListener(listener)
     }
 }
 

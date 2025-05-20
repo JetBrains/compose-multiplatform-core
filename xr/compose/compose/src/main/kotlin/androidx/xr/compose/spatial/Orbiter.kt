@@ -16,6 +16,8 @@
 
 package androidx.xr.compose.spatial
 
+import android.view.View
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,13 +49,19 @@ import androidx.xr.compose.platform.LocalCoreEntity
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.platform.coreMainPanelEntity
 import androidx.xr.compose.spatial.EdgeOffset.Companion.outer
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
+import androidx.xr.compose.subspace.node.SubspaceNodeApplier
+import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.runtime.Session
 import androidx.xr.scenecore.PixelDimensions
 
+/** Set the scrim alpha to 32% opacity across orbiters. */
+private const val DEFAULT_SCRIM_ALPHA = 0x52000000
+
 /** Contains default values used by Orbiters. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object OrbiterDefaults {
 
     /** Default shape for an Orbiter. */
@@ -71,6 +81,7 @@ public object OrbiterDefaults {
  *   rendered as if the orbiter wrapper was not present and removed from the flow otherwise. In
  *   spatial environments, this flag is ignored.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OrbiterSettings(
     @get:Suppress("GetterSetterNames")
     @get:JvmName("shouldRenderInNonSpatial")
@@ -127,6 +138,7 @@ public class OrbiterSettings(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Horizontal,
     offset: Dp = 0.dp,
@@ -181,6 +193,7 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Horizontal,
     offset: EdgeOffset,
@@ -232,6 +245,7 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Vertical,
     offset: Dp = 0.dp,
@@ -286,6 +300,7 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Vertical,
     offset: EdgeOffset,
@@ -310,7 +325,10 @@ public fun Orbiter(
 
 @Composable
 private fun Orbiter(data: OrbiterData) {
-    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+    if (
+        LocalSpatialCapabilities.current.isSpatialUiEnabled ||
+            currentComposer.applier is SubspaceNodeApplier
+    ) {
         PositionedOrbiter(data)
     } else if (data.settings.shouldRenderInNonSpatial) {
         data.content()
@@ -320,11 +338,22 @@ private fun Orbiter(data: OrbiterData) {
 @Composable
 internal fun PositionedOrbiter(data: OrbiterData) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val entity = LocalCoreEntity.current ?: session.coreMainPanelEntity
-    var contentSize: IntSize? by remember { mutableStateOf(null) }
-    val dialogManager = LocalDialogManager.current
     val density = LocalDensity.current
-    val panelSize = entity.size
+    val dialogManager = LocalDialogManager.current
+    var contentSize: IntSize? by remember { mutableStateOf(null) }
+
+    val parentEntity = LocalCoreEntity.current
+    /**
+     * Determine the reference panel size for Orbiter positioning.
+     * 1. If parent entity is present, Orbiter is nested within a specific spatial component (e.g.,
+     *    MainPanel, SpatialPanel) and uses its size.
+     * 2. Otherwise, Orbiter is not explicitly parented within a Subspace()'s spatial entity. This
+     *    occurs if Orbiter is used: a) Directly in `setContent { Orbiter(...) }` for a traditional
+     *    2D Compose app. b) Inside a `Subspace { Orbiter(...) }` but not as a child of a CoreEntity
+     *    provider. In these cases, Orbiter defaults to the main window's size, which are fetched
+     *    and kept updated by getMainWindowSize().
+     */
+    val panelSize: IntVolumeSize = parentEntity?.size ?: getMainWindowSize(session)
 
     ElevatedPanel(
         contentSize = contentSize ?: IntSize.Zero,
@@ -350,25 +379,62 @@ internal fun PositionedOrbiter(data: OrbiterData) {
         ) {
             data.content()
         }
-        Box(
-            modifier =
-                Modifier.fillMaxSize()
-                    .then(
-                        if (dialogManager.isSpatialDialogActive.value) {
-                            Modifier.background(Color.Black.copy(alpha = 0.2f)).pointerInput(Unit) {
-                                detectTapGestures {
-                                    dialogManager.isSpatialDialogActive.value = false
-                                }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-        ) {}
+        if (dialogManager.isSpatialDialogActive.value) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize().background(Color(DEFAULT_SCRIM_ALPHA)).pointerInput(
+                        Unit
+                    ) {
+                        detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
+                    }
+            ) {}
+        }
     }
 }
 
+private fun getWindowBoundsInPixels(session: Session): PixelDimensions =
+    session.activity.window.decorView.run { PixelDimensions(width, height) }
+
+/**
+ * Provides the dimensions of the Android main window.
+ *
+ * Remembers and provides the size of the main window. It initializes the size from the main window
+ * and keeps it updated by listening to layout changes on the decorView.
+ *
+ * The "main window" refers to the top-level window of an Android activity. It's the 2D Android
+ * equivalent concept to the Android XR’s main panel.
+ */
+@Composable
+private fun getMainWindowSize(session: Session): IntVolumeSize {
+    var panelSize by
+        remember(session) {
+            val initialPixelDimensions = getWindowBoundsInPixels(session)
+            mutableStateOf(
+                IntVolumeSize(initialPixelDimensions.width, initialPixelDimensions.height, 0)
+            )
+        }
+
+    val mainView = session.activity.window.decorView
+
+    DisposableEffect(Unit) {
+        val listener =
+            View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                val newSize =
+                    getWindowBoundsInPixels(session).run { IntVolumeSize(width, height, 0) }
+                if (panelSize != newSize) {
+                    panelSize = newSize
+                }
+            }
+        mainView.addOnLayoutChangeListener(listener)
+
+        onDispose { mainView.removeOnLayoutChangeListener(listener) }
+    }
+
+    return panelSize
+}
+
 /** An enum that represents the edges of a view where an orbiter can be placed. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public sealed interface OrbiterEdge {
     @JvmInline
     public value class Horizontal private constructor(private val value: Int) : OrbiterEdge {
@@ -401,6 +467,7 @@ public sealed interface OrbiterEdge {
 
 /** Represents the type of offset used for positioning an orbiter. */
 @JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class OrbiterOffsetType private constructor(private val value: Int) {
     public companion object {
         /** Indicates that the offset is relative to the outer edge of the orbiter. */
@@ -417,6 +484,7 @@ public value class OrbiterOffsetType private constructor(private val value: Int)
  * @property type the type of offset ([OrbiterOffsetType.OuterEdge] or
  *   [OrbiterOffsetType.InnerEdge]).
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class EdgeOffset
 internal constructor(public val amount: Dp, public val type: OrbiterOffsetType) {
     override fun equals(other: Any?): Boolean {

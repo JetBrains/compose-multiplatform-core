@@ -78,9 +78,12 @@ class PreviewViewStreamStateTest(
             active = implName == CameraPipeConfig::class.simpleName,
         )
 
+    private lateinit var defaultCameraSelector: CameraSelector
+
     @Before
     fun setUp() {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
         CoreAppTestUtil.assumeCompatibleDevice()
 
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -127,7 +130,7 @@ class PreviewViewStreamStateTest(
     fun streamState_IDLE_TO_STREAMING_startPreview() {
         assertStreamState(PreviewView.StreamState.IDLE)
 
-        startPreview(lifecycle, previewView, CameraSelector.DEFAULT_BACK_CAMERA)
+        startPreview(lifecycle, previewView, defaultCameraSelector)
         instrumentation.runOnMainSync { lifecycle.startAndResume() }
 
         assertStreamState(PreviewView.StreamState.STREAMING)
@@ -135,7 +138,7 @@ class PreviewViewStreamStateTest(
 
     @Test
     fun streamState_STREAMING_TO_IDLE_TO_STREAMING_lifecycleStopAndStart() {
-        startPreview(lifecycle, previewView, CameraSelector.DEFAULT_BACK_CAMERA)
+        startPreview(lifecycle, previewView, defaultCameraSelector)
         instrumentation.runOnMainSync { lifecycle.startAndResume() }
         assertStreamState(PreviewView.StreamState.STREAMING)
 
@@ -148,7 +151,7 @@ class PreviewViewStreamStateTest(
 
     @Test
     fun streamState_STREAMING_TO_IDLE_unbindAll() {
-        startPreview(lifecycle, previewView, CameraSelector.DEFAULT_BACK_CAMERA)
+        startPreview(lifecycle, previewView, defaultCameraSelector)
         instrumentation.runOnMainSync { lifecycle.startAndResume() }
         assertStreamState(PreviewView.StreamState.STREAMING)
 
@@ -158,7 +161,7 @@ class PreviewViewStreamStateTest(
 
     @Test
     fun streamState_STREAMING_TO_IDLE_unbindPreviewOnly() {
-        val preview = startPreview(lifecycle, previewView, CameraSelector.DEFAULT_BACK_CAMERA)
+        val preview = startPreview(lifecycle, previewView, defaultCameraSelector)
 
         instrumentation.runOnMainSync { lifecycle.startAndResume() }
         assertStreamState(PreviewView.StreamState.STREAMING)
@@ -170,14 +173,17 @@ class PreviewViewStreamStateTest(
     @Test
     @FlakyTest(bugId = 238664500)
     fun streamState_STREAMING_TO_IDLE_TO_STREAMING_switchCamera() {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        Assume.assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+        val cameraSelector0 = cameraSelectors[0]
+        val cameraSelector1 = cameraSelectors[1]
 
-        startPreview(lifecycle, previewView, CameraSelector.DEFAULT_BACK_CAMERA)
+        startPreview(lifecycle, previewView, cameraSelector0)
         instrumentation.runOnMainSync { lifecycle.startAndResume() }
         assertStreamState(PreviewView.StreamState.STREAMING)
 
         instrumentation.runOnMainSync { cameraProvider.unbindAll() }
-        startPreview(lifecycle, previewView, CameraSelector.DEFAULT_FRONT_CAMERA)
+        startPreview(lifecycle, previewView, cameraSelector1)
 
         assertStreamState(PreviewView.StreamState.IDLE)
         assertStreamState(PreviewView.StreamState.STREAMING)

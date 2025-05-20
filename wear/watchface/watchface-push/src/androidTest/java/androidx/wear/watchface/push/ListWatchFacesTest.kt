@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ListWatchFacesTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
-    private var wfp = WatchFacePushManager(context)
+    private var wfp = WatchFacePushManagerFactory.createWatchFacePushManager(context)
 
     @Before
     fun setup() {

@@ -159,7 +159,7 @@ class SimpleCamera(
                         mapOf(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE to Range(120, 120))
                 )
 
-            val cameraGraph = cameraPipe.create(config)
+            val cameraGraph = cameraPipe.createCameraGraph(config)
 
             val viewfinderStream = cameraGraph.streams[viewfinderStreamConfig]!!
             val viewfinderOutput = viewfinderStream.outputs.single()
@@ -249,7 +249,7 @@ class SimpleCamera(
                     defaultTemplate = RequestTemplate(CameraDevice.TEMPLATE_PREVIEW)
                 )
 
-            val cameraGraph = cameraPipe.create(config)
+            val cameraGraph = cameraPipe.createCameraGraph(config)
 
             val viewfinderStream = cameraGraph.streams[viewfinderStreamConfig]!!
             val viewfinderOutput = viewfinderStream.outputs.single()

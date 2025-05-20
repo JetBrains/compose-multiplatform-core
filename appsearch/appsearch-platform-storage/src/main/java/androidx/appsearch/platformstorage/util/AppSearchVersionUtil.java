@@ -37,6 +37,9 @@ import org.jspecify.annotations.NonNull;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppSearchVersionUtil {
+    public static class TExtensionVersions {
+        public static final int V_BASE = 13;
+    }
     public static final long APPSEARCH_U_BASE_VERSION_CODE = 340800000;
     public static final long APPSEARCH_M2023_11_VERSION_CODE = 341113000;
     public static final long APPSEARCH_V_BASE_VERSION_CODE = 350700000;

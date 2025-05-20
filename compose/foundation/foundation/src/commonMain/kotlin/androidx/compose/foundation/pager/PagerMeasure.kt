@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.pager
 
+import androidx.collection.MutableIntObjectMap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -62,7 +63,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
     snapPosition: SnapPosition,
     placementScopeInvalidator: ObservableScopeInvalidator,
     coroutineScope: CoroutineScope,
-    layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult
+    layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
+    placeablesCache: MutableIntObjectMap<List<Placeable>>
 ): PagerMeasureResult {
     requirePrecondition(beforeContentPadding >= 0) { "negative beforeContentPadding" }
     requirePrecondition(afterContentPadding >= 0) { "negative afterContentPadding" }
@@ -177,7 +179,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     verticalAlignment = verticalAlignment,
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
-                    pageAvailableSize = pageAvailableSize
+                    pageAvailableSize = pageAvailableSize,
+                    placeablesCache = placeablesCache
                 )
 
             debugLog { "Composed Page=$previous" }
@@ -240,7 +243,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     verticalAlignment = verticalAlignment,
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
-                    pageAvailableSize = pageAvailableSize
+                    pageAvailableSize = pageAvailableSize,
+                    placeablesCache = placeablesCache
                 )
 
             debugLog { "Composed Page=$index at $currentFirstPageScrollOffset" }
@@ -285,7 +289,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
                         verticalAlignment = verticalAlignment,
                         layoutDirection = layoutDirection,
                         reverseLayout = reverseLayout,
-                        pageAvailableSize = pageAvailableSize
+                        pageAvailableSize = pageAvailableSize,
+                        placeablesCache = placeablesCache
                     )
                 visiblePages.add(0, measuredPage)
                 maxCrossAxis = maxOf(maxCrossAxis, measuredPage.crossAxisSize)
@@ -342,7 +347,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     verticalAlignment = verticalAlignment,
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
-                    pageAvailableSize = pageAvailableSize
+                    pageAvailableSize = pageAvailableSize,
+                    placeablesCache = placeablesCache
                 )
             }
 
@@ -367,7 +373,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     verticalAlignment = verticalAlignment,
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
-                    pageAvailableSize = pageAvailableSize
+                    pageAvailableSize = pageAvailableSize,
+                    placeablesCache = placeablesCache
                 )
             }
 
@@ -586,10 +593,19 @@ private fun LazyLayoutMeasureScope.getAndMeasure(
     verticalAlignment: Alignment.Vertical?,
     layoutDirection: LayoutDirection,
     reverseLayout: Boolean,
-    pageAvailableSize: Int
+    pageAvailableSize: Int,
+    placeablesCache: MutableIntObjectMap<List<Placeable>>
 ): MeasuredPage {
     val key = pagerItemProvider.getKey(index)
-    val placeable = measure(index, childConstraints)
+    val cachedPlaceables = placeablesCache[index]
+    val placeable =
+        if (cachedPlaceables != null) {
+            cachedPlaceables
+        } else {
+            val measurables = compose(index)
+            List(measurables.size) { i -> measurables[i].measure(childConstraints) }
+                .also { placeablesCache[index] = it }
+        }
 
     return MeasuredPage(
         index = index,

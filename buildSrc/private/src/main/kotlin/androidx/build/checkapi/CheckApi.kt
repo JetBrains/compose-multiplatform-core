@@ -74,10 +74,7 @@ fun getApiFileVersion(version: Version): Version {
 
 /** Whether it is allowed for an artifact to have this version */
 fun isValidArtifactVersion(version: Version): Boolean {
-    if (version.patch != 0 && (version.isAlpha() || version.isBeta() || version.isDev())) {
-        return false
-    }
-    return true
+    return !(version.patch != 0 && (version.isAlpha() || version.isBeta() || version.isDev()))
 }
 
 /**
@@ -106,7 +103,7 @@ fun getRequiredCompatibilityApiFileFromDir(
             val pathVersion = Version.parseFilenameOrNull(pathName)
             if (
                 pathVersion != null &&
-                    (highestVersion == null || pathVersion > highestVersion!!) &&
+                    (highestVersion == null || pathVersion > highestVersion) &&
                     pathVersion <= apiVersion &&
                     pathVersion.isFinalApi() &&
                     pathVersion.major == apiVersion.major

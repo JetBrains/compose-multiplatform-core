@@ -394,7 +394,7 @@ internal constructor(
             RevealActionType.UndoAction,
             iconStartFadeInFraction = startFadeInFraction(hasSecondaryAction),
             iconEndFadeInFraction = endFadeInFraction(hasSecondaryAction),
-            modifier = modifier,
+            modifier = modifier.height(ButtonDefaults.Height),
         )
     }
 }
@@ -977,7 +977,7 @@ private fun SwipeToRevealImpl(
                             LeftRevealing,
                             RightRevealing -> {
                                 if (secondaryAction == null && !hasPartiallyRevealedState) {
-                                    0f
+                                    null
                                 } else {
                                     val anchorSideMultiplier =
                                         if (value == RightRevealing) -1 else 1

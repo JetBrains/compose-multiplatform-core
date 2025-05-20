@@ -62,9 +62,9 @@ import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo
 import androidx.camera.camera2.pipe.integration.interop.CaptureRequestOptions
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
-import androidx.camera.camera2.pipe.testing.VerifyResultListener
-import androidx.camera.camera2.pipe.testing.toCameraControlAdapter
-import androidx.camera.camera2.pipe.testing.toCameraInfoAdapter
+import androidx.camera.camera2.pipe.integration.testing.VerifyResultListener
+import androidx.camera.camera2.pipe.integration.testing.toCameraControlAdapter
+import androidx.camera.camera2.pipe.integration.testing.toCameraInfoAdapter
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraSelector

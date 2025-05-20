@@ -52,6 +52,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraX;
 import androidx.camera.core.CameraXConfig;
 import androidx.camera.core.CompositionSettings;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.ExperimentalRetryPolicy;
 import androidx.camera.core.Logger;
 import androidx.camera.core.RetryPolicy;
@@ -749,6 +750,65 @@ public final class CameraUtil {
     }
 
     /**
+     * Retrieves a list of {@link CameraSelector} instances corresponding to available physical
+     * cameras on the device (back, front, and external).
+     *
+     * <p>This method checks for the presence of default back-facing, default front-facing,
+     * and any external-facing cameras. For each available lens facing direction, a corresponding
+     * {@link CameraSelector} is added to the returned list.
+     *
+     * <p>Note: Accessing {@link CameraSelector#LENS_FACING_EXTERNAL} requires opting in to
+     * {@link ExperimentalLensFacing}. This method itself is annotated with
+     * {@code @OptIn(markerClass = ExperimentalLensFacing.class)}.
+     *
+     * @return A {@link List} of {@link CameraSelector}s for available cameras. The list will
+     * be empty if no back, front, or external cameras are detected. It will contain
+     * {@link CameraSelector#DEFAULT_BACK_CAMERA} if a back camera is present,
+     * {@link CameraSelector#DEFAULT_FRONT_CAMERA} if a front camera is present,
+     * and a custom {@code CameraSelector} requiring {@link CameraSelector#LENS_FACING_EXTERNAL}
+     * if an external camera is present.
+     */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
+    public static @NonNull List<CameraSelector> getAvailableCameraSelectors() {
+        ArrayList<CameraSelector> list = new ArrayList<>();
+        if (hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK)) {
+            list.add(CameraSelector.DEFAULT_BACK_CAMERA);
+        }
+
+        if (hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
+            list.add(CameraSelector.DEFAULT_FRONT_CAMERA);
+        }
+
+        if (hasCameraWithLensFacing(CameraSelector.LENS_FACING_EXTERNAL)) {
+            list.add(new CameraSelector.Builder().requireLensFacing(
+                    CameraSelector.LENS_FACING_EXTERNAL).build());
+        }
+
+        return list;
+    }
+
+    /**
+     * Assumes and returns the first available {@link CameraSelector}.
+     *
+     * <p>This method retrieves a list of available camera selectors using
+     * {@link #getAvailableCameraSelectors()}. If the list is empty, indicating no
+     * available cameras, it throws an {@link AssumptionViolatedException}.
+     * Otherwise, it returns the first {@link CameraSelector} from the list.
+     *
+     * @return A {@link NonNull} {@link CameraSelector} representing the first available camera.
+     * @throws AssumptionViolatedException if no cameras are available to be selected.
+     */
+    public static @NonNull CameraSelector assumeFirstAvailableCameraSelector() {
+        List<CameraSelector> cameraSelectors = getAvailableCameraSelectors();
+
+        if (cameraSelectors.isEmpty()) {
+            throw new AssumptionViolatedException("No available camera to test.");
+        }
+
+        return cameraSelectors.get(0);
+    }
+
+    /**
      * Check if the camera sensor in the native orientation({@link Surface.ROTATION_0}) is portrait
      * or not.
      *
@@ -876,7 +936,8 @@ public final class CameraUtil {
      * {@link CameraMetadata}.
      */
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({CameraMetadata.LENS_FACING_FRONT, CameraMetadata.LENS_FACING_BACK})
+    @IntDef({CameraMetadata.LENS_FACING_FRONT, CameraMetadata.LENS_FACING_BACK,
+            CameraMetadata.LENS_FACING_EXTERNAL})
     @interface SupportedLensFacingInt {
     }
 
@@ -887,6 +948,7 @@ public final class CameraUtil {
      * @param lensFacingInteger The lens facing integer, as defined in {@link CameraMetadata}.
      * @return The lens facing enum.
      */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
     @CameraSelector.LensFacing
     public static int getLensFacingEnumFromInt(
             @SupportedLensFacingInt int lensFacingInteger) {
@@ -895,6 +957,8 @@ public final class CameraUtil {
                 return CameraSelector.LENS_FACING_BACK;
             case CameraMetadata.LENS_FACING_FRONT:
                 return CameraSelector.LENS_FACING_FRONT;
+            case CameraMetadata.LENS_FACING_EXTERNAL:
+                return CameraSelector.LENS_FACING_EXTERNAL;
             default:
                 throw new IllegalArgumentException(
                         "Unsupported lens facing integer: " + lensFacingInteger);
@@ -961,6 +1025,7 @@ public final class CameraUtil {
      * @param lensFacing The lens facing enum, as defined in {@link CameraSelector}.
      * @return The lens facing integer.
      */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
     @SupportedLensFacingInt
     private static int getLensFacingIntFromEnum(@CameraSelector.LensFacing int lensFacing) {
         switch (lensFacing) {
@@ -968,6 +1033,8 @@ public final class CameraUtil {
                 return CameraMetadata.LENS_FACING_BACK;
             case CameraSelector.LENS_FACING_FRONT:
                 return CameraMetadata.LENS_FACING_FRONT;
+            case CameraSelector.LENS_FACING_EXTERNAL:
+                return CameraMetadata.LENS_FACING_EXTERNAL;
             default:
                 throw new IllegalArgumentException("Unsupported lens facing enum: " + lensFacing);
         }

@@ -468,7 +468,51 @@ class BinaryCompatibilityCheckerTest {
         final fun (kotlin/Int).my.lib/myFun(): kotlin/Int // my.lib/myFun|myFun@kotlin.Int(){}[0]
         """
         val expectedErrorMessages =
-            listOf("hasExtensionReceiverParameter changed from false to true for my.lib/myFun")
+            listOf("Removed declaration my.lib/myFun(kotlin/Int) from androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun changeFromParamToFirstReceiver() {
+        val afterText =
+            """
+        final fun my.lib/myFun(kotlin/Int): kotlin/Int // my.lib/myFun|myFun(kotlin.Int){}[0]
+        """
+        val beforeText =
+            """
+        final fun (kotlin/Int).my.lib/myFun(): kotlin/Int // my.lib/myFun|myFun@kotlin.Int(){}[0]
+        """
+        val expectedErrorMessages =
+            listOf("Removed declaration (kotlin/Int).my.lib/myFun() from androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun changeFromContextReceiverToParam() {
+        val beforeText =
+            """
+        final fun context(kotlin/Int) my.lib/foo(): kotlin/Int // my.lib/foo|foo!kotlin.Int(){}[0]
+        """
+        val afterText =
+            """
+        final fun my.lib/foo(kotlin/Int): kotlin/Int // my.lib/foo|foo(kotlin.Int){}[0]
+        """
+        val expectedErrorMessages =
+            listOf("Removed declaration context(kotlin/Int) my.lib/foo() from androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun changeFromParamToContextReceiver() {
+        val afterText =
+            """
+        final fun context(kotlin/Int) my.lib/foo(): kotlin/Int // my.lib/foo|foo!kotlin.Int(){}[0]
+        """
+        val beforeText =
+            """
+        final fun my.lib/foo(kotlin/Int): kotlin/Int // my.lib/foo|foo(kotlin.Int){}[0]
+        """
+        val expectedErrorMessages = listOf("Removed declaration my.lib/foo(kotlin/Int)")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -1447,6 +1491,20 @@ class BinaryCompatibilityCheckerTest {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs)
             }
         assertThat(e.message).contains("[iosX64]: Target was removed")
+    }
+
+    @Test
+    fun removedTargetsWhenBaselinedSucceeds() {
+        val beforeText = createDumpText("", listOf("iosX64", "linuxX64"))
+        val afterText = createDumpText("", listOf("linuxX64"))
+        val beforeLibs = KlibDumpParser(beforeText).parse()
+        val afterLibs = KlibDumpParser(afterText).parse()
+
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            afterLibs,
+            beforeLibs,
+            setOf("[iosX64]: Target was removed")
+        )
     }
 
     @Test

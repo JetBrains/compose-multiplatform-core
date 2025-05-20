@@ -24,26 +24,39 @@ import androidx.camera.camera2.pipe.FrameGraph
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.config.CameraGraphScope
+import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
+import androidx.camera.camera2.pipe.config.FrameGraphScope
+import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.StateFlow
 
-@CameraGraphScope
+@FrameGraphScope
 internal class FrameGraphImpl
 @Inject
 constructor(
-    override val parameters: Parameters,
     private val cameraGraph: CameraGraph,
-    override val id: CameraGraphId,
-    private val frameBuffers: FrameBuffers
+    private val frameDistributor: FrameDistributor,
+    private val frameBuffers: FrameBuffers,
+    @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope,
 ) : FrameGraph {
     override val streams = cameraGraph.streams
 
     override val graphState: StateFlow<GraphState> = cameraGraph.graphState
 
     override var isForeground: Boolean = cameraGraph.isForeground
+    override val parameters: Parameters
+        get() = cameraGraph.parameters
+
+    override val id: CameraGraphId
+        get() = cameraGraph.id
+
+    init {
+        // Wire up the frameStartedListener.
+        frameDistributor.frameStartedListener = frameBuffers
+    }
 
     override fun start() {
         cameraGraph.start()
@@ -59,11 +72,10 @@ constructor(
 
     override fun captureWith(
         streamIds: Set<StreamId>,
-        parameters: Map<Any, Any?>
+        parameters: Map<Any, Any?>,
+        capacity: Int
     ): FrameGraph.FrameBuffer {
-        val frameBuffer = FrameBufferImpl(streamIds, parameters, frameBuffers)
-        frameBuffers.attach(frameBuffer)
-        return frameBuffer
+        return frameBuffers.attach(streamIds, parameters, capacity)
     }
 
     override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {
@@ -94,4 +106,11 @@ constructor(
     ): Deferred<T> {
         TODO("Not yet implemented")
     }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+        when (type) {
+            CameraGraph::class -> cameraGraph as T?
+            else -> null
+        }
 }

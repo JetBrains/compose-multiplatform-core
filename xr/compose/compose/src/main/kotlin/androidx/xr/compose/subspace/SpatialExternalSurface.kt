@@ -17,8 +17,10 @@
 package androidx.xr.compose.subspace
 
 import android.view.Surface
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.remember
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
@@ -36,6 +38,7 @@ private const val DEFAULT_SIZE_PX = 400
  * [SpatialExternalSurfaceScope] is a scoped environment that provides the [Surface] associated with
  * a [SpatialExternalSurface]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialExternalSurfaceScope {
     /**
      * Invoked only one time when the Surface is created. This will execute before any layout or
@@ -72,6 +75,7 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
 
 /** Mode for SpatialExternalSurface display. */
 @JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class StereoMode private constructor(public val value: Int) {
     public companion object {
         /** Each eye will see the entire surface (no separation). */
@@ -80,6 +84,24 @@ public value class StereoMode private constructor(public val value: Int) {
         public val TopBottom: StereoMode = StereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM)
         /** The [left, right] halves of the surface will map to [left, right] eyes. */
         public val SideBySide: StereoMode = StereoMode(SurfaceEntity.StereoMode.SIDE_BY_SIDE)
+    }
+}
+
+/** Protection levels for the Surface content. */
+@JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public value class ContentSecurityLevel private constructor(public val value: Int) {
+    public companion object {
+        /** No security is applied. */
+        public val None: ContentSecurityLevel =
+            ContentSecurityLevel(SurfaceEntity.ContentSecurityLevel.NONE)
+        /**
+         * Protects digital rights content that is encoded in a scheme supported by the device. This
+         * will prevent recordings of the Surface content. This protection level is only usable with
+         * secure media content. A protected Surface can't play non-drm digital content.
+         */
+        public val DrmProtected: ContentSecurityLevel =
+            ContentSecurityLevel(SurfaceEntity.ContentSecurityLevel.PROTECTED)
     }
 }
 
@@ -93,13 +115,21 @@ public value class StereoMode private constructor(public val value: Int) {
  * Note that this Surface does not capture input events. It is also not currently possible to
  * synchronize StereoMode changes with application rendering or video decoding. This composable
  * currently cannot render in front of other panels, so movable modifier usage is not recommended if
- * there are other panels in the layout, aside from the content block of this Composable.
+ * there are other panels in the layout, aside from the content block of this Composable. Digital
+ * rights management provided by different media players will require the proper
+ * [contentSecurityLevel] to be set.
  *
  * @param modifier SubspaceModifiers to apply to the SpatialSurfacePanel.
  * @param stereoMode The [StereoMode] which describes how parts of the surface are displayed to the
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to to canvas of
  *   [SpatialExternalSurfaceScope.surface].
+ * @param contentSecurityLevel Sets a security level of the Surface to secure digital content. Using
+ *   DrmProtected is currently in an Experimental state. Currently this field does not support
+ *   recomposition, and there might be rendering issues if creating a new SpatialExternalSurface
+ *   immediately after removing a DrmProtected one from composition. Playing a list of mixed drm and
+ *   non drm content with one Surface is not supported. There may also be rendering issues if the
+ *   AndroidManifest includes a full space start mode for the Activity using this Composable.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.surface]. Composable content will be rendered over the Surface
  *   canvas. If using [StereoMode.SideBySide] or [StereoMode.TopBottom], it is recommended to offset
@@ -107,16 +137,23 @@ public value class StereoMode private constructor(public val value: Int) {
  */
 @Composable
 @SubspaceComposable
+@ExperimentalComposeApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialExternalSurface(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
     featheringEffect: SpatialFeatheringEffect = SpatialSmoothFeatheringEffect(ZeroFeatheringSize),
+    contentSecurityLevel: ContentSecurityLevel = ContentSecurityLevel.None,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = LocalSession.current
 
     val coreSurfaceEntity = rememberCoreSurfaceEntity {
-        SurfaceEntity.create(checkNotNull(session) { "Session is required" }, stereoMode.value)
+        SurfaceEntity.create(
+            session = checkNotNull(session) { "Session is required" },
+            stereoMode = stereoMode.value,
+            contentSecurityLevel = contentSecurityLevel.value,
+        )
     }
     val instance = remember { SpatialExternalSurfaceScopeInstance(coreSurfaceEntity) }
 

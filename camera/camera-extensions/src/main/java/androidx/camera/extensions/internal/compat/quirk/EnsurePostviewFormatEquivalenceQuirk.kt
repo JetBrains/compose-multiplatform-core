@@ -20,15 +20,17 @@ import android.os.Build
 import androidx.camera.core.impl.Quirk
 
 /**
- * <p>QuirkSummary Bug Id: b/409722084 Description: On Samsung devices, when enabling extensions via
- * the Camera2 Extensions API approach, the requested postview image format is required to be
- * equivalent to the still image capture format. Device(s): Samsung devices.
+ * <p>QuirkSummary Bug Id: b/409722084 Description: According to the javadoc of {@link
+ * CameraExtensionCharacteristics#isPostviewAvailable()}, the formats of the still capture and
+ * postview were required to be equivalent on API level 34 devices and are not required to be
+ * equivalent from Android V (postview is supported since API level 34). Device(s): All API level 34
+ * devices.
  */
 public class EnsurePostviewFormatEquivalenceQuirk : Quirk {
     public companion object {
         @JvmStatic
         public fun load(): Boolean {
-            return Build.BRAND.equals("SAMSUNG", ignoreCase = true)
+            return Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE
         }
     }
 }

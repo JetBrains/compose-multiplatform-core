@@ -182,8 +182,6 @@ val currentComposer: Composer
  */
 @InternalComposeApi
 val currentCompositionContext: CompositionContext
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @InternalComposeApi
     @TestOnly
     @ReadOnlyComposable
     @Composable

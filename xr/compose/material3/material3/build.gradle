@@ -41,13 +41,13 @@ dependencies {
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
 
-    implementation(project(":xr:compose:compose"))
+    implementation("androidx.xr.compose:compose:1.0.0-alpha04")
 }
 
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk = 34
+        minSdk = 24
     }
     namespace = "androidx.xr.compose.material3"
 }

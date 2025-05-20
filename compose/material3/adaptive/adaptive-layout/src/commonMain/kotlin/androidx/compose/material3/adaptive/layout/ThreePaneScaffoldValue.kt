@@ -123,7 +123,7 @@ fun calculateThreePaneScaffoldValue(
     destinationHistory.lastOrNull()?.apply {
         (adaptStrategies[pane] as? AdaptStrategy.Levitate)?.apply {
             if (canOnlyLevitate()) {
-                setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment))
+                setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment, scrim))
             }
         }
     }
@@ -218,14 +218,10 @@ class ThreePaneScaffoldValue(
 ) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
     internal val expandedCount by lazy {
         var count = 0
-        if (primary == PaneAdaptedValue.Expanded) {
-            count++
-        }
-        if (secondary == PaneAdaptedValue.Expanded) {
-            count++
-        }
-        if (tertiary == PaneAdaptedValue.Expanded) {
-            count++
+        forEach { _, value ->
+            if (value == PaneAdaptedValue.Expanded) {
+                count++
+            }
         }
         count
     }
@@ -236,17 +232,19 @@ class ThreePaneScaffoldValue(
         } else {
             val expandedPanes = Array<ThreePaneScaffoldRole?>(2) { null }
             var count = 0
-            if (primary == PaneAdaptedValue.Expanded) {
-                expandedPanes[count++] = ThreePaneScaffoldRole.Primary
-            }
-            if (secondary == PaneAdaptedValue.Expanded) {
-                expandedPanes[count++] = ThreePaneScaffoldRole.Secondary
-            }
-            if (tertiary == PaneAdaptedValue.Expanded) {
-                expandedPanes[count] = ThreePaneScaffoldRole.Tertiary
+            forEach { role, value ->
+                if (value == PaneAdaptedValue.Expanded) {
+                    expandedPanes[count++] = role
+                }
             }
             TwoPaneExpansionStateKeyImpl(expandedPanes[0]!!, expandedPanes[1]!!)
         }
+    }
+
+    internal inline fun forEach(action: (ThreePaneScaffoldRole, PaneAdaptedValue) -> Unit) {
+        action(ThreePaneScaffoldRole.Primary, primary)
+        action(ThreePaneScaffoldRole.Secondary, secondary)
+        action(ThreePaneScaffoldRole.Tertiary, tertiary)
     }
 
     override fun equals(other: Any?): Boolean {

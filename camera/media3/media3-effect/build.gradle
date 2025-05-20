@@ -31,6 +31,8 @@ plugins {
 
 dependencies {
     api("androidx.camera:camera-core:1.4.0")
+    api(libs.androidx.core)
+    implementation(libs.androidx.annotation)
     implementation("androidx.media3:media3-common:1.6.0")
     implementation("androidx.media3:media3-effect:1.6.0")
 
@@ -40,8 +42,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -53,15 +53,16 @@ dependencies {
     androidTestImplementation("androidx.camera:camera-camera2:1.4.0")
     androidTestImplementation("androidx.camera:camera-lifecycle:1.4.0")
     androidTestImplementation(project(":camera:camera-testing"))
+    androidTestImplementation("androidx.lifecycle:lifecycle-common:2.3.1")
+    androidTestImplementation(libs.guavaAndroid)
+    androidTestImplementation(libs.jspecify)
+    androidTestImplementation(libs.kotlinCoroutinesCore)
+    androidTestImplementation(project(":camera:camera-core"))
 }
 
 android {
     compileSdk = 35
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.media3.effect"
-    lint {
-        baseline = file("lint-baseline.xml")
-    }
 }
 
 androidx {
@@ -69,4 +70,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Media3 effect components for the Jetpack Camera Library, a library providing a seamless integration that enables media3 effect in CameraX."
+    enableRobolectric()
 }

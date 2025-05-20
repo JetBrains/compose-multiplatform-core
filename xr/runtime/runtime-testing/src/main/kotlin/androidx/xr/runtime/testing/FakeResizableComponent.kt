@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.ResizableComponent
 import androidx.xr.runtime.internal.ResizeEventListener
@@ -23,6 +24,7 @@ import java.util.concurrent.Executor
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Fake implementation of [ResizableComponent] for testing. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeResizableComponent : ResizableComponent, FakeComponent() {
 
     override var size: Dimensions = Dimensions(0.0f, 0.0f, 0.0f)

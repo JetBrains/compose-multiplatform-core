@@ -235,7 +235,7 @@ package androidx.wear.watchface {
     method @Deprecated public final void setAdditionalContentDescriptionLabels(java.util.Collection<kotlin.Pair<java.lang.Integer,androidx.wear.watchface.ContentDescriptionLabel>>);
     method @Deprecated public final void setInteractiveDrawModeUpdateDelayMillis(long);
     method @Deprecated protected final void setSurfaceHolder(android.view.SurfaceHolder);
-    method @Deprecated @SuppressCompatibility @androidx.wear.watchface.WatchFaceExperimental public final void setWatchfaceColors(androidx.wear.watchface.WatchFaceColors?);
+    method @Deprecated @SuppressCompatibility @androidx.wear.watchface.WatchFaceExperimental public final void setWatchfaceColors(androidx.wear.watchface.WatchFaceColors? value);
     method @Deprecated @UiThread public boolean shouldAnimate();
     property @Deprecated public final java.util.Collection<kotlin.Pair<java.lang.Integer,androidx.wear.watchface.ContentDescriptionLabel>> additionalContentDescriptionLabels;
     property @Deprecated @Px public final float centerX;
@@ -244,7 +244,6 @@ package androidx.wear.watchface {
     property @Deprecated public final androidx.wear.watchface.RenderParameters renderParameters;
     property @Deprecated public final android.graphics.Rect screenBounds;
     property @Deprecated public final android.view.SurfaceHolder surfaceHolder;
-    property @Deprecated @SuppressCompatibility @androidx.wear.watchface.WatchFaceExperimental public final androidx.wear.watchface.WatchFaceColors? watchfaceColors;
   }
 
   @Deprecated public abstract static class Renderer.CanvasRenderer extends androidx.wear.watchface.Renderer {

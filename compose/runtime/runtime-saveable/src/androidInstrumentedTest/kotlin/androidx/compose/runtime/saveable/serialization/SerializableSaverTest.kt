@@ -16,7 +16,9 @@
 
 package androidx.compose.runtime.saveable.serialization
 
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
+import androidx.savedstate.SavedState
 import androidx.savedstate.read
 import androidx.savedstate.serialization.ClassDiscriminatorMode.ALL_OBJECTS
 import androidx.savedstate.serialization.SavedStateConfiguration
@@ -33,6 +35,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.serializer
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -41,7 +44,7 @@ import org.junit.runner.RunWith
 internal class SerializableSaverTest {
 
     @Test
-    fun savedStateSaver_reifiedSerializer_defaultConfig_restores() {
+    fun serializableSaver_reifiedSerializer_defaultConfig_restores() {
         val original = TestData(7)
         val scope = TestSaverScope { true }
         val saver = serializableSaver<TestData>()
@@ -55,7 +58,7 @@ internal class SerializableSaverTest {
     }
 
     @Test
-    fun savedStateSaver_customSerializer_defaultConfig_restores() {
+    fun serializableSaver_customSerializer_defaultConfig_restores() {
         val original = TestData(7)
         val scope = TestSaverScope { true }
         val saver = serializableSaver(serializer = TestSerializer)
@@ -69,11 +72,11 @@ internal class SerializableSaverTest {
     }
 
     @Test
-    fun savedStateSaver_reifiedSerializer_customConfig_restores() {
-        val config = SavedStateConfiguration { classDiscriminatorMode = ALL_OBJECTS }
+    fun serializableSaver_reifiedSerializer_customConfig_restores() {
+        val configuration = SavedStateConfiguration { classDiscriminatorMode = ALL_OBJECTS }
         val original = TestData(7)
         val scope = TestSaverScope { true }
-        val saver = serializableSaver<TestData>(config)
+        val saver = serializableSaver<TestData>(configuration)
 
         val saved = with(saver) { scope.save(original)!! }
         val restored = saver.restore(saved)
@@ -84,11 +87,11 @@ internal class SerializableSaverTest {
     }
 
     @Test
-    fun savedStateSaver_customSerializer_customConfig_restores() {
-        val config = SavedStateConfiguration { classDiscriminatorMode = ALL_OBJECTS }
+    fun serializableSaver_customSerializer_customConfig_restores() {
+        val configuration = SavedStateConfiguration { classDiscriminatorMode = ALL_OBJECTS }
         val original = TestData(7)
         val scope = TestSaverScope { true }
-        val saver = serializableSaver<TestData>(TestSerializer, config)
+        val saver = serializableSaver<TestData>(TestSerializer, configuration)
 
         val saved = with(saver) { scope.save(original)!! }
         val restored = saver.restore(saved)
@@ -96,6 +99,30 @@ internal class SerializableSaverTest {
 
         assertThat(restored).isEqualTo(original)
         assertThat(hasClassDiscriminator).isTrue()
+    }
+
+    @Test
+    fun serializableSaver_lazySerializer_canNotBeSaved_useSerialization() {
+        val original = TestData(7)
+        val scope = TestSaverScope { false }
+        val saver: Saver<TestData, Any> = serializableSaver<TestData> { TestSerializer }
+
+        val saved = with(saver) { scope.save(original)!! } as SavedState
+        val restored = saver.restore(saved)
+
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun serializableSaver_lazySerializer_canBeSaved_useSaver() {
+        val original = 7
+        val scope = TestSaverScope { true }
+        val saver = serializableSaver<Int> { error("no-op") }
+
+        val saved = with(saver) { scope.save(original)!! } as Int
+        val restored = saver.restore(saved)
+
+        assertThat(restored).isEqualTo(original)
     }
 }
 

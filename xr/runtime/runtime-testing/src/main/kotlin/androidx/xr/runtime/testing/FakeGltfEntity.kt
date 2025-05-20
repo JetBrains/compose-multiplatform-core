@@ -16,11 +16,13 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.GltfEntity
 import androidx.xr.runtime.internal.MaterialResource
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [GltfEntity] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeGltfEntity : GltfEntity, FakeEntity() {
 
     @GltfEntity.AnimationState override val animationState: Int = GltfEntity.AnimationState.STOPPED

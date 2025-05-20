@@ -49,16 +49,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.3.1")
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)
     testImplementation(project(":camera:camera-camera2"))
     testImplementation(project(":camera:camera-testing"))
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesCore)
@@ -91,8 +87,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.view"
 }
 androidx {
@@ -102,4 +96,5 @@ androidx {
     description = "UI tools for the Jetpack Camera Library, a library providing a consistent and " +
             "reliable camera foundation that enables great camera driven experiences across all " +
             "of Android."
+    enableRobolectric()
 }

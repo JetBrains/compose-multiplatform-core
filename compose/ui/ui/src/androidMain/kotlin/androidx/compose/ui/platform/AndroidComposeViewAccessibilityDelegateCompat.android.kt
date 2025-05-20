@@ -3315,10 +3315,7 @@ private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {
         ),
     level = DeprecationLevel.WARNING
 )
-@Suppress("GetterSetterNames", "OPT_IN_MARKER_ON_WRONG_TARGET", "NullAnnotationGroup")
-@get:Suppress("GetterSetterNames")
-@get:ExperimentalComposeUiApi
-@set:ExperimentalComposeUiApi
+@Suppress("GetterSetterNames", "NullAnnotationGroup")
 @ExperimentalComposeUiApi
 var DisableContentCapture: Boolean
     get() = ContentCaptureManager.isEnabled

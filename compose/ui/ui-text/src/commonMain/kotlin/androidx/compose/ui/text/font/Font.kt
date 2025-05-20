@@ -156,15 +156,11 @@ internal constructor(
     val resId: Int,
     override val weight: FontWeight = FontWeight.Normal,
     override val style: FontStyle = FontStyle.Normal,
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalTextApi
-    @get:ExperimentalTextApi
     val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
     loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Async
 ) : Font {
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET", "CanBePrimaryConstructorProperty")
-    @get:ExperimentalTextApi
+    @Suppress("CanBePrimaryConstructorProperty")
     @ExperimentalTextApi
     override val loadingStrategy: FontLoadingStrategy = loadingStrategy
 

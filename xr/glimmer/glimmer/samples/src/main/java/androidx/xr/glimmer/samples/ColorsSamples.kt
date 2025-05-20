@@ -16,11 +16,8 @@
 
 package androidx.xr.glimmer.samples
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,10 +29,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.surface
 
 @Preview
 @Composable
@@ -45,87 +44,13 @@ fun ColorsSample() {
         contentPadding = PaddingValues(15.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-                ColorAndOnColorItem(
-                    colors.primary,
-                    colorName = "primary",
-                    colors.onPrimary,
-                    onColorName = "onPrimary",
-                    modifier = Modifier.weight(1f)
-                )
-                ColorAndOnColorItem(
-                    colors.secondary,
-                    colorName = "secondary",
-                    colors.onSecondary,
-                    onColorName = "onSecondary",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-                ColorAndOnColorItem(
-                    colors.negative,
-                    colorName = "negative",
-                    colors.onNegative,
-                    onColorName = "onNegative",
-                    modifier = Modifier.weight(1f)
-                )
-                ColorAndOnColorItem(
-                    colors.positive,
-                    colorName = "positive",
-                    colors.onPositive,
-                    onColorName = "onPositive",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        item { ColorItem(colors.surface, colorName = "surface", colors.onSurface) }
-        item { ColorItem(colors.surfaceLow, colorName = "surfaceLow", colors.onSurface) }
-        item { ColorItem(colors.onSurface, colorName = "onSurface", colors.surface) }
-        item { ColorItem(colors.outline, colorName = "outline", colors.onSurface) }
-        item { ColorItem(colors.outlineVariant, colorName = "outlineVariant", colors.onSurface) }
-    }
-}
-
-@Composable
-private fun ColorAndOnColorItem(
-    color: Color,
-    colorName: String,
-    onColor: Color,
-    onColorName: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier.border(1.dp, color = GlimmerTheme.colors.outlineVariant).fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().height(75.dp).background(color)) {
-            BasicText(
-                text = colorName,
-                style = TextStyle(color = Color.White),
-                modifier = Modifier.align(Alignment.TopStart).padding(10.dp)
-            )
-            BasicText(
-                text = color.toHexString(),
-                style = TextStyle(color = Color.White),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
-            )
-        }
-        Row(
-            Modifier.fillMaxWidth().height(50.dp).background(onColor),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BasicText(
-                text = onColorName,
-                style = TextStyle(color = Color.White),
-                modifier = Modifier.padding(10.dp)
-            )
-            BasicText(
-                text = onColor.toHexString(),
-                style = TextStyle(color = Color.White),
-                modifier = Modifier.padding(10.dp)
-            )
-        }
+        item { ColorItem(colors.primary, colorName = "primary", Color.Black) }
+        item { ColorItem(colors.secondary, colorName = "secondary", Color.Black) }
+        item { ColorItem(colors.negative, colorName = "negative", Color.Black) }
+        item { ColorItem(colors.positive, colorName = "positive", Color.Black) }
+        item { ColorItem(colors.surface, colorName = "surface", Color.White) }
+        item { ColorItem(colors.outline, colorName = "outline", Color.White) }
+        item { ColorItem(colors.outlineVariant, colorName = "outlineVariant", Color.White) }
     }
 }
 
@@ -138,10 +63,13 @@ private fun ColorItem(
 ) {
     Row(
         modifier
-            .border(1.dp, color = GlimmerTheme.colors.outlineVariant)
+            .surface(
+                shape = RectangleShape,
+                color = color,
+                border = BorderStroke(1.dp, color = Color.White)
+            )
             .fillMaxWidth()
-            .height(50.dp)
-            .background(color),
+            .height(50.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -26,6 +26,7 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
 import androidx.credentials.CreateCredentialRequest
 import androidx.credentials.CreateCredentialResponse
+import androidx.credentials.CreateDigitalCredentialRequest
 import androidx.credentials.CreatePasswordRequest
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreateRestoreCredentialRequest
@@ -49,6 +50,7 @@ import androidx.credentials.playservices.controllers.identityauth.beginsignin.Cr
 import androidx.credentials.playservices.controllers.identityauth.createpassword.CredentialProviderCreatePasswordController
 import androidx.credentials.playservices.controllers.identityauth.createpublickeycredential.CredentialProviderCreatePublicKeyCredentialController
 import androidx.credentials.playservices.controllers.identityauth.getsigninintent.CredentialProviderGetSignInIntentController
+import androidx.credentials.playservices.controllers.identitycredentials.createdigitalcredential.CreateDigitalCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.createpublickeycredential.CreatePublicKeyCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.getdigitalcredential.CredentialProviderGetDigitalCredentialController
 import com.google.android.gms.auth.api.identity.Identity
@@ -173,6 +175,23 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                 }
                 CredentialProviderCreateRestoreCredentialController(context)
                     .invokePlayServices(request, callback, executor, cancellationSignal)
+            }
+            is CreateDigitalCredentialRequest -> {
+                if (Build.VERSION.SDK_INT >= 23) {
+                    CreateDigitalCredentialController(context)
+                        .invokePlayServices(request, callback, executor, cancellationSignal)
+                } else {
+                    cancellationReviewerWithCallback(cancellationSignal) {
+                        executor.execute {
+                            callback.onError(
+                                CreateCredentialProviderConfigurationException(
+                                    "this feature requires the minimum API level to be 23"
+                                )
+                            )
+                        }
+                    }
+                    return
+                }
             }
             else -> {
                 throw UnsupportedOperationException(

@@ -52,7 +52,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaItem.DrmConfiguration
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
@@ -97,7 +100,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
         val session = (Session.create(this) as SessionCreateSuccess).session
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.Enabled))
+        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
 
         val alphaMaskTextureFuture: ListenableFuture<Texture> =
@@ -165,9 +168,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 )
                 setContent { VideoPlayerControls(session) }
             }
-        panelContentView.setViewTreeLifecycleOwner(activity as LifecycleOwner)
-        panelContentView.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
-        panelContentView.setViewTreeSavedStateRegistryOwner(activity as SavedStateRegistryOwner)
 
         controlPanelEntity =
             PanelEntity.create(
@@ -180,6 +180,16 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Pose(Vector3(0.0f, -0.4f, -0.85f)), // kind of low, but within a 1m radius
             )
         controlPanelEntity!!.setParent(surfaceEntity!!)
+
+        // TODO: b/413478924 - Use controlPanelEntity.view when the api is available.
+        val parentView: View =
+            if (panelContentView.parent != null && panelContentView.parent is View)
+                panelContentView.parent as View
+            else panelContentView
+
+        parentView.setViewTreeLifecycleOwner(activity as LifecycleOwner)
+        parentView.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
+        parentView.setViewTreeSavedStateRegistryOwner(activity as SavedStateRegistryOwner)
     }
 
     fun initializeExoPlayer(context: Context): ExoPlayer {
@@ -353,13 +363,15 @@ class VideoPlayerTestActivity : ComponentActivity() {
         buttonText: String,
         enabled: Boolean = true,
         loop: Boolean = false,
+        protected: Boolean = false,
     ) {
+        val drmLicenseUrl = "https://proxy.uat.widevine.com/proxy?provider=widevine_test"
         val currentExoPlayer = remember { mutableStateOf(exoPlayer) }
         val file = File(videoUri)
         if (!file.exists()) {
             Toast.makeText(
                     activity,
-                    "File does not exist. Did you download all the assets?",
+                    "File ($videoUri) does not exist. Did you download all the assets?",
                     Toast.LENGTH_LONG,
                 )
                 .show()
@@ -369,16 +381,33 @@ class VideoPlayerTestActivity : ComponentActivity() {
         Button(
             enabled = enabled,
             onClick = {
-
                 // Create SurfaceEntity and MovableComponent if they don't exist.
                 if (surfaceEntity == null) {
-                    surfaceEntity = SurfaceEntity.create(session, stereoMode, pose, canvasShape)
+
+                    val surfaceContentLevel =
+                        if (protected) {
+                            SurfaceEntity.ContentSecurityLevel.PROTECTED
+                        } else {
+                            SurfaceEntity.ContentSecurityLevel.NONE
+                        }
+
+                    surfaceEntity =
+                        SurfaceEntity.create(
+                            session,
+                            stereoMode,
+                            pose,
+                            canvasShape,
+                            surfaceContentLevel
+                        )
                     // Make the video player movable (to make it easier to look at it from different
-                    // angles and distances)
+                    // angles and distances) (only on quad canvas)
                     movableComponent = MovableComponent.create(session)
                     // The quad has a radius of 1.0 meters
                     movableComponent!!.size = Dimensions(1.0f, 1.0f, 1.0f)
-                    val unused = surfaceEntity!!.addComponent(movableComponent!!)
+
+                    if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
+                        val unused = surfaceEntity!!.addComponent(movableComponent!!)
+                    }
                 }
 
                 // Get or initialize the ExoPlayer.
@@ -389,7 +418,20 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 player.setVideoSurface(surfaceEntity!!.getSurface())
                 // Clear previous media items.
                 player.clearMediaItems()
-                val mediaItem = MediaItem.fromUri(videoUri)
+
+                val mediaItem =
+                    if (protected) {
+                        MediaItem.Builder()
+                            .setUri(videoUri)
+                            .setDrmConfiguration(
+                                DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                                    .setLicenseUri(drmLicenseUrl)
+                                    .build()
+                            )
+                            .build()
+                    } else {
+                        MediaItem.fromUri(videoUri)
+                    }
                 player.setMediaItem(mediaItem)
 
                 player.addListener(
@@ -426,6 +468,10 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                 destroySurfaceEntity()
                             }
                         }
+
+                        override fun onPlayerError(error: PlaybackException) {
+                            Log.e("VideoPlayerTestActivity", "Player error: $error")
+                        }
                     }
                 )
                 if (loop) {
@@ -454,6 +500,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
             buttonText = "Play Big Buck Bunny",
             enabled = enabled,
+            protected = false,
         )
     }
 
@@ -478,6 +525,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             buttonText = "Play MVHEVC Left Primary",
             enabled = enabled,
             loop = loop,
+            protected = false,
         )
     }
 
@@ -502,6 +550,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             buttonText = "Play MVHEVC Right Primary",
             enabled = enabled,
             loop = loop,
+            protected = false,
         )
     }
 
@@ -522,6 +571,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
             buttonText = "Play Naver 180 (Side-by-Side)",
             enabled = enabled,
+            protected = false,
         )
     }
 
@@ -540,9 +590,10 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     Pose.Identity,
                     session.scene.activitySpace,
                 )!!,
-            canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
+            canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
             buttonText = "Play Galaxy 360 (Top-Bottom)",
             enabled = enabled,
+            protected = false,
         )
     }
 
@@ -564,6 +615,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
             buttonText = "Play Naver 180 (MV-HEVC)",
             enabled = enabled,
+            protected = false,
         )
     }
 
@@ -583,9 +635,60 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     Pose.Identity,
                     session.scene.activitySpace,
                 )!!,
-            canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
+            canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
             buttonText = "Play Galaxy 360 (MV-HEVC)",
             enabled = enabled,
+            protected = false,
+        )
+    }
+
+    @Composable
+    fun ForBiggerBlazesProtectedButton(
+        session: Session,
+        activity: Activity,
+        enabled: Boolean = true,
+        loop: Boolean = false,
+    ) {
+        PlayVideoButton(
+            session = session,
+            activity = activity,
+            // For Testers: Note that this translates to
+            // "/sdcard/Download/sdr_singleview_protected.mp4"
+            videoUri =
+                Environment.getExternalStorageDirectory().getPath() +
+                    "/Download/sdr_singleview_protected.mp4",
+            stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+            pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            buttonText = "Play DRM Protected For Bigger Blazes",
+            enabled = enabled,
+            loop = loop,
+            protected = true,
+        )
+    }
+
+    @Composable
+    fun MVHEVCLeftPrimaryProtectedButton(
+        session: Session,
+        activity: Activity,
+        enabled: Boolean = true,
+        loop: Boolean = false,
+    ) {
+        PlayVideoButton(
+            session = session,
+            activity = activity,
+            // For Testers: Note that this translates to
+            // "/sdcard/Download/mvhevc_flat_left_primary_1080_protected.mp4"
+            videoUri =
+                Environment.getExternalStorageDirectory().getPath() +
+                    "/Download/mvhevc_flat_left_primary_1080_protected.mp4",
+            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            buttonText = "Play DRM Protected MVHEVC Left Primary",
+            enabled = enabled,
+            loop = loop,
+            protected = true,
         )
     }
 
@@ -644,6 +747,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     Naver180MVHEVCButton(session, activity)
                     Galaxy360Button(session, activity)
                     Galaxy360MVHEVCButton(session, activity)
+                    ForBiggerBlazesProtectedButton(session, activity)
+                    MVHEVCLeftPrimaryProtectedButton(session, activity)
                 } else {
                     Column(
                         verticalArrangement = Arrangement.Center,

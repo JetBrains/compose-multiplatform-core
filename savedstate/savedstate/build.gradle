@@ -73,7 +73,6 @@ androidXMultiplatform {
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
             }
         }
 
@@ -183,5 +182,5 @@ androidx {
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    metalavaK2UastEnabled = false
+    enableRobolectric()
 }

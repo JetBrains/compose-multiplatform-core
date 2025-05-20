@@ -85,6 +85,7 @@ fun getCameraXConfigSample(executor: Executor, handler: Handler) {
     }
 }
 
+@androidx.annotation.OptIn(ExperimentalCameraProviderConfiguration::class)
 @Sampled
 fun configureAndGetInstanceSample(executor: Executor, scheduleHandler: Handler) {
     var configured = false // Whether the camera provider has been configured or not.

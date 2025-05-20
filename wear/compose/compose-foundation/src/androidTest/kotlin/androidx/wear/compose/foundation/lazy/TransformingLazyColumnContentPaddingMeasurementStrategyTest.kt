@@ -497,7 +497,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     private fun makeMeasuredItemProvider(
         itemHeights: List<Int>,
         transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null
-    ) = MeasuredItemProvider { index, offset, progressProvider ->
+    ) = MeasuredItemProvider { index, offset, measurementDirection, progressProvider ->
         TransformingLazyColumnMeasuredItem(
             index = index,
             offset = offset,
@@ -512,6 +512,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             leftPadding = 0,
             rightPadding = 0,
             measureScrollProgress = progressProvider(itemHeights[index]),
+            measurementDirection = measurementDirection,
             horizontalAlignment = Alignment.CenterHorizontally,
             layoutDirection = LayoutDirection.Ltr,
             key = index,

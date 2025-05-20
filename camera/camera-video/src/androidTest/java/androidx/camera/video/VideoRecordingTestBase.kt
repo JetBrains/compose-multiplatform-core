@@ -131,6 +131,13 @@ abstract class VideoRecordingTestBase(
                     Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
+                    "external+" + Camera2Config::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
+                ),
+                arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig.defaultConfig(),
@@ -138,6 +145,13 @@ abstract class VideoRecordingTestBase(
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
+                    CameraPipeConfig.defaultConfig(),
+                ),
+                arrayOf(
+                    "external+" + CameraPipeConfig::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
                     CameraPipeConfig.defaultConfig(),
                 ),
             )
@@ -614,6 +628,11 @@ abstract class VideoRecordingTestBase(
 
     @Test
     fun canRecordWithCorrectTransformation() {
+        assumeTrue(
+            "No OppositeCamera for test.",
+            CameraUtil.hasCameraWithLensFacing(oppositeCameraSelector.lensFacing!!)
+        )
+
         // Act.
         checkAndBindUseCases(preview, videoCapture)
         val result1 = recordingSession.createRecording().recordAndVerify()

@@ -16,9 +16,13 @@
 
 package androidx.xr.runtime.openxr
 
+// import android.content.Context
+// import androidx.test.core.app.ApplicationProvider
+// import androidx.xr.runtime.FEATURE_XR_API_OPENXR
+// import org.robolectric.Shadows.shadowOf
+// import org.robolectric.shadows.ShadowBuild
+
 import android.app.Activity
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -50,7 +54,10 @@ class OpenXrRuntimeFactoryTest {
     @Ignore("Source utilizes robolectric which does not work with androidTests.")
     @Test
     fun createRuntime_createsOpenXrRuntime() {
-        val context: Context = ApplicationProvider.getApplicationContext()
+        // ShadowBuild.setFingerprint("a_fake_openxr_device")
+        // val context: Context = ApplicationProvider.getApplicationContext()
+        // shadowOf(context.packageManager).setSystemFeature(FEATURE_XR_API_OPENXR, /* supported= */
+        // true)
 
         activityRule.scenario.onActivity {
             assertThat((Session.create(it) as SessionCreateSuccess).session.runtime)
