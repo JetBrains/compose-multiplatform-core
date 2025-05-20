@@ -317,7 +317,7 @@ val `FilledIconButton Story` by story {
                         imageVector = icon,
                         contentDescription = iconContentDescription,
                         modifier = Modifier.size(iconSizeFloat.dp),
-                        tint = if (useCustomColors) contentColor else MaterialTheme.colorScheme.onSurface
+                        tint = if (useCustomColors) contentColor else MaterialTheme.colorScheme.onPrimary
                     )
                 }
 

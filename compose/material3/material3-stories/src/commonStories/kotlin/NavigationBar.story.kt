@@ -62,10 +62,8 @@ val `NavigationBar Story` by story {
     val useDifferentIconsForStates by parameter(false)
 
     // NavigationBar parameters
-    val containerColor by parameter(NavigationBarDefaults.containerColor)
     val contentColor by parameter(MaterialTheme.colorScheme.contentColorFor(NavigationBarDefaults.containerColor))
     val tonalElevation by parameter(3f)
-    val windowInsets by parameter(NavigationBarDefaults.windowInsets)
 
     // Item color parameters
     val useCustomItemColors by parameter(false)
@@ -142,10 +140,9 @@ val `NavigationBar Story` by story {
             // Navigation bar at the bottom (outside the Box)
             NavigationBar(
                 modifier = Modifier.fillMaxWidth(),
-                containerColor = containerColor,
                 contentColor = contentColor,
                 tonalElevation = tonalElevation.dp,
-                windowInsets = windowInsets
+                windowInsets = NavigationBarDefaults.windowInsets
             ) {
                 // Use RowScope to properly layout items
                 items.forEachIndexed { index, item ->

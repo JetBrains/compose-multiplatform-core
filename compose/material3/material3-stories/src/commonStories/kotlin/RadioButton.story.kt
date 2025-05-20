@@ -31,7 +31,7 @@ import org.jetbrains.compose.storytale.story
 val `RadioButton Story` by story {
     // Parameters for customization
     var selected by parameter(false)
-    val useCustomColors by parameter(true)
+    val useCustomColors by parameter(false)
     val selectedColor by parameter(Color.Black)
     val unselectedColor by parameter(Color.Gray)
 

@@ -108,9 +108,9 @@ val `DatePickerDialog Story` by story {
             // Button to show the dialog
             Button(
                 onClick = { showDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Show Date Picker Dialog", color = MaterialTheme.colorScheme.onSurface)
+                Text("Show Date Picker Dialog", color = MaterialTheme.colorScheme.onPrimary)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
