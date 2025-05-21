@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui
+package androidx.compose.ui.platform
 
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.platform.InspectorInfo
+import kotlinx.coroutines.CoroutineDispatcher
 
-internal actual fun classKeyForObject(a: Any): Any {
-    return a::class
-}
-
-// TODO: For non-JVM platforms, you can revive the kotlin-reflect implementation from
-//  https://android-review.googlesource.com/c/platform/frameworks/support/+/2441379
-@OptIn(ExperimentalComposeUiApi::class)
-internal actual fun InspectorInfo.tryPopulateReflectively(
-    element: ModifierNodeElement<*>
-) {
-}
+internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher get() = ComposeUiMainDispatcher

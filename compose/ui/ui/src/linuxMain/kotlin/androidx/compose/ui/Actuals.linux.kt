@@ -16,17 +16,8 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.ComposeUiMainDispatcher
+import kotlin.coroutines.CoroutineContext
 
-internal actual fun classKeyForObject(a: Any): Any {
-    return a::class
-}
-
-// TODO: For non-JVM platforms, you can revive the kotlin-reflect implementation from
-//  https://android-review.googlesource.com/c/platform/frameworks/support/+/2441379
-@OptIn(ExperimentalComposeUiApi::class)
-internal actual fun InspectorInfo.tryPopulateReflectively(
-    element: ModifierNodeElement<*>
-) {
-}
+internal actual val PostDelayedDispatcher: CoroutineContext
+    get() = ComposeUiMainDispatcher

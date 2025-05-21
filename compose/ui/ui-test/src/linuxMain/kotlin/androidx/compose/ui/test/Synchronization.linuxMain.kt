@@ -16,9 +16,9 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.ui.platform.ComposeUiMainDispatcher
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import platform.posix.nanosleep
 import platform.posix.timespec
@@ -32,7 +32,7 @@ internal actual fun <T> runOnUiThread(action: () -> T): T {
     return if (isOnUiThread()) {
         action()
     } else {
-        runBlocking(Dispatchers.Main) {
+        runBlocking(ComposeUiMainDispatcher) {
             action()
         }
     }
