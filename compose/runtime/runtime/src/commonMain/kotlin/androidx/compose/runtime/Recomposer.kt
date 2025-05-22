@@ -433,14 +433,15 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
      * @return `true` if the frame has work to do (e.g. [hasFrameWorkLocked])
      */
     private fun recordComposerModifications(): Boolean {
+        var compositions: List<ControlledComposition> = emptyList()
         val changes =
             synchronized(stateLock) {
                 if (snapshotInvalidations.isEmpty()) return hasFrameWorkLocked
+                compositions = knownCompositionsLocked()
                 snapshotInvalidations.wrapIntoSet().also {
                     snapshotInvalidations = MutableScatterSet()
                 }
             }
-        val compositions = knownCompositions()
         var complete = false
         try {
             run {
@@ -452,7 +453,6 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                     if (_state.value <= State.ShuttingDown) return@run
                 }
             }
-            synchronized(stateLock) { snapshotInvalidations = MutableScatterSet() }
             complete = true
         } finally {
             if (!complete) {
