@@ -18,11 +18,13 @@ package androidx.compose.ui.backhandler
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.uikit.utils.CMPScreenEdgePanGestureRecognizer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
@@ -145,7 +147,8 @@ private class UiKitScreenEdgePanGestureHandler(
                     eventOffset = eventOffset,
                     leftEdge = recognizer.edges == UIRectEdgeLeft,
                     touch = touch,
-                    bounds = view.bounds.asDpRect()
+                    bounds = view.bounds.asDpRect(),
+                    CUPERTINO_TOUCH_SLOP.dp
                 )
 
                 listener?.onProgressed(event)

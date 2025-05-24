@@ -23,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.width
@@ -51,12 +52,14 @@ internal fun backEventCompat(
     eventOffset: Offset,
     leftEdge: Boolean,
     touch: DpOffset,
-    bounds: DpRect
+    bounds: DpRect,
+    touchSlopeDp: Dp
 ): BackEventCompat {
-    val progress = if (leftEdge) {
-        touch.x / bounds.width
+    val shift = if (leftEdge) touch.x else bounds.width - touch.x
+    val progress = if (shift > touchSlopeDp) {
+        (shift - touchSlopeDp) / (bounds.width - touchSlopeDp)
     } else {
-        (bounds.width - touch.x) / bounds.width
+        0.0f
     }
     return BackEventCompat(
         touchX = eventOffset.x,
