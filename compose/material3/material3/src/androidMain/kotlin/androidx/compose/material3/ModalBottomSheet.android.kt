@@ -25,13 +25,9 @@ import android.view.View
 import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowManager
-import android.window.BackEvent
-import android.window.OnBackAnimationCallback
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
+import androidx.activity.BackEventCompat
 import androidx.activity.ComponentDialog
-import androidx.activity.addCallback
-import androidx.annotation.RequiresApi
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.layout.Box
@@ -386,15 +382,9 @@ internal actual fun ModalBottomSheetDialog(
 private class ModalBottomSheetDialogLayout(
     context: Context,
     override val window: Window,
-    val shouldDismissOnBackPress: Boolean,
-    private val onDismissRequest: () -> Unit,
-    private val predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    private val scope: CoroutineScope,
 ) : AbstractComposeView(context), DialogWindowProvider {
 
     private var content: @Composable () -> Unit by mutableStateOf({})
-
-    private var backCallback: Any? = null
 
     override var shouldCreateCompositionOnAttachedToWindow: Boolean = false
         private set
@@ -411,98 +401,6 @@ private class ModalBottomSheetDialogLayout(
     @Composable
     override fun Content() {
         content()
-    }
-
-    // Existing predictive back behavior below.
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-
-        maybeRegisterBackCallback()
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
-        maybeUnregisterBackCallback()
-    }
-
-    private fun maybeRegisterBackCallback() {
-        if (!shouldDismissOnBackPress || Build.VERSION.SDK_INT < 33) {
-            return
-        }
-        if (backCallback == null) {
-            backCallback =
-                if (Build.VERSION.SDK_INT >= 34) {
-                    Api34Impl.createBackCallback(onDismissRequest, predictiveBackProgress, scope)
-                } else {
-                    Api33Impl.createBackCallback(onDismissRequest)
-                }
-        }
-        Api33Impl.maybeRegisterBackCallback(this, backCallback)
-    }
-
-    private fun maybeUnregisterBackCallback() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            Api33Impl.maybeUnregisterBackCallback(this, backCallback)
-        }
-        backCallback = null
-    }
-
-    @RequiresApi(34)
-    private object Api34Impl {
-        @JvmStatic
-        fun createBackCallback(
-            onDismissRequest: () -> Unit,
-            predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-            scope: CoroutineScope
-        ) =
-            object : OnBackAnimationCallback {
-                override fun onBackStarted(backEvent: BackEvent) {
-                    scope.launch {
-                        predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
-                    }
-                }
-
-                override fun onBackProgressed(backEvent: BackEvent) {
-                    scope.launch {
-                        predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
-                    }
-                }
-
-                override fun onBackInvoked() {
-                    onDismissRequest()
-                }
-
-                override fun onBackCancelled() {
-                    scope.launch { predictiveBackProgress.animateTo(0f) }
-                }
-            }
-    }
-
-    @RequiresApi(33)
-    private object Api33Impl {
-        @JvmStatic
-        fun createBackCallback(onDismissRequest: () -> Unit) =
-            OnBackInvokedCallback(onDismissRequest)
-
-        @JvmStatic
-        fun maybeRegisterBackCallback(view: View, backCallback: Any?) {
-            if (backCallback is OnBackInvokedCallback) {
-                view
-                    .findOnBackInvokedDispatcher()
-                    ?.registerOnBackInvokedCallback(
-                        OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                        backCallback
-                    )
-            }
-        }
-
-        @JvmStatic
-        fun maybeUnregisterBackCallback(view: View, backCallback: Any?) {
-            if (backCallback is OnBackInvokedCallback) {
-                view.findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(backCallback)
-            }
-        }
     }
 }
 
@@ -544,42 +442,29 @@ private class ModalBottomSheetDialogWrapper(
         window.setBackgroundDrawableResource(android.R.color.transparent)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         dialogLayout =
-            ModalBottomSheetDialogLayout(
-                    context,
-                    window,
-                    properties.shouldDismissOnBackPress,
-                    onDismissRequest,
-                    predictiveBackProgress,
-                    scope,
-                )
-                .apply {
-                    // Set unique id for AbstractComposeView. This allows state restoration for the
-                    // state
-                    // defined inside the Dialog via rememberSaveable()
-                    setTag(R.id.compose_view_saveable_id_tag, "Dialog:$dialogId")
-                    // Enable children to draw their shadow by not clipping them
-                    clipChildren = false
-                    // Allocate space for elevation
-                    with(density) { elevation = maxSupportedElevation.toPx() }
-                    // Simple outline to force window manager to allocate space for shadow.
-                    // Note that the outline affects clickable area for the dismiss listener. In
-                    // case of
-                    // shapes like circle the area for dismiss might be to small (rectangular
-                    // outline
-                    // consuming clicks outside of the circle).
-                    outlineProvider =
-                        object : ViewOutlineProvider() {
-                            override fun getOutline(view: View, result: Outline) {
-                                result.setRect(0, 0, view.width, view.height)
-                                // We set alpha to 0 to hide the view's shadow and let the
-                                // composable to draw
-                                // its own shadow. This still enables us to get the extra space
-                                // needed in the
-                                // surface.
-                                result.alpha = 0f
-                            }
+            ModalBottomSheetDialogLayout(context, window).apply {
+                // Set unique id for AbstractComposeView. This allows state restoration for the
+                // state defined inside the Dialog via rememberSaveable()
+                setTag(R.id.compose_view_saveable_id_tag, "Dialog:$dialogId")
+                // Enable children to draw their shadow by not clipping them
+                clipChildren = false
+                // Allocate space for elevation
+                with(density) { elevation = maxSupportedElevation.toPx() }
+                // Simple outline to force window manager to allocate space for shadow.
+                // Note that the outline affects clickable area for the dismiss listener. In
+                // case of shapes like circle the area for dismiss might be to small
+                // (rectangular outline consuming clicks outside of the circle).
+                outlineProvider =
+                    object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, result: Outline) {
+                            result.setRect(0, 0, view.width, view.height)
+                            // We set alpha to 0 to hide the view's shadow and let the
+                            // composable to draw its own shadow. This still enables us to get
+                            // the extra space needed in the surface.
+                            result.alpha = 0f
                         }
-                }
+                    }
+            }
         // Clipping logic removed because we are spanning edge to edge.
 
         setContentView(dialogLayout)
@@ -602,14 +487,20 @@ private class ModalBottomSheetDialogWrapper(
         }
         // Due to how the onDismissRequest callback works
         // (it enforces a just-in-time decision on whether to update the state to hide the dialog)
-        // we need to unconditionally add a callback here that is always enabled,
-        // meaning we'll never get a system UI controlled predictive back animation
-        // for these dialogs
-        onBackPressedDispatcher.addCallback(this) {
-            if (properties.shouldDismissOnBackPress) {
-                onDismissRequest()
-            }
-        }
+        // we need to provide a custom onBackPressedCallback to provide predictive back animations
+        // for this component while handling onDismissRequest.
+        onBackPressedDispatcher.addCallback(
+            owner = this,
+            onBackPressedCallback =
+                PredictiveBackOnBackPressedCallback(
+                    isEnabled = properties.shouldDismissOnBackPress,
+                    scope = scope,
+                    predictiveBackProgress = predictiveBackProgress,
+                    onDismissRequest = {
+                        this.onDismissRequest()
+                    } // Ensure lambda captures current onDismissRequest
+                )
+        )
     }
 
     private fun setLayoutDirection(layoutDirection: LayoutDirection) {
@@ -679,6 +570,37 @@ private class ModalBottomSheetDialogWrapper(
     override fun cancel() {
         // Prevents the dialog from dismissing itself
         return
+    }
+
+    private class PredictiveBackOnBackPressedCallback(
+        isEnabled: Boolean,
+        val scope: CoroutineScope,
+        val predictiveBackProgress: Animatable<Float, AnimationVector1D>,
+        var onDismissRequest: () -> Unit
+    ) : OnBackPressedCallback(isEnabled) {
+
+        override fun handleOnBackStarted(backEvent: BackEventCompat) {
+            scope.launch {
+                predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
+            }
+        }
+
+        override fun handleOnBackProgressed(backEvent: BackEventCompat) {
+            scope.launch {
+                // Use snapTo for immediate feedback during the gesture
+                predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
+            }
+        }
+
+        override fun handleOnBackPressed() {
+            // Back gesture completed successfully, invoke dismiss
+            onDismissRequest()
+        }
+
+        override fun handleOnBackCancelled() {
+            // Back gesture cancelled, animate back to 0
+            scope.launch { predictiveBackProgress.animateTo(0f) }
+        }
     }
 }
 

@@ -17,19 +17,18 @@
 package androidx.compose.foundation.text.contextmenu.builder
 
 import androidx.collection.mutableObjectListOf
-import androidx.compose.foundation.text.contextmenu.data.PlatformIcon
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
-import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator
-import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponents
 
 /**
  * Scope for building a text context menu in
  * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents]. See member functions for
  * how to add context menu components to this scope as part of the
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] modifier.
+ * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] modifier. The `item`
+ * function is not in the common source set, but is instead defined as an extension function in the
+ * platform specific source sets.
  */
 // TODO(grantapher-cm-api-publicize) Make class public
 internal class TextContextMenuBuilderScope internal constructor() {
@@ -85,24 +84,8 @@ internal class TextContextMenuBuilderScope internal constructor() {
         filters += filter
     }
 
-    // TODO(grantapher-cm-api-publicize) add AddItemToTextContextMenuAndroid sample
-    /**
-     * Adds an item to the list of text context menu components.
-     *
-     * @param key A unique key that identifies this item. Used to identify context menu items in the
-     *   context menu. It is advisable to use a `data object` as a key here.
-     * @param label string to display as the text of the item.
-     * @param leadingIcon Icon that precedes the label in the context menu. Setting this to null
-     *   means that it will not be displayed.
-     * @param onClick Action to perform upon the item being clicked/pressed.
-     */
-    fun item(
-        key: Any,
-        label: String,
-        leadingIcon: PlatformIcon? = null,
-        onClick: TextContextMenuSession.() -> Unit,
-    ) {
-        components += TextContextMenuItem(key, label, leadingIcon, onClick)
+    internal fun addComponent(component: TextContextMenuComponent) {
+        components += component
     }
 
     /**
@@ -114,5 +97,5 @@ internal class TextContextMenuBuilderScope internal constructor() {
     }
 }
 
-private val TextContextMenuComponent?.isSeparator: Boolean
+internal val TextContextMenuComponent?.isSeparator: Boolean
     get() = this === TextContextMenuSeparator

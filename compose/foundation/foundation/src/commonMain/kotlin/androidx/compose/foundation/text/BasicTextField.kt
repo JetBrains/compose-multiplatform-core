@@ -19,7 +19,6 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.scrollable
@@ -391,23 +390,6 @@ internal fun BasicTextField(
             keyboardOptions.keyboardType != KeyboardType.NumberPassword
     val decorationModifiers =
         modifier
-            .then(
-                // semantics + some focus + input session + touch to focus
-                TextFieldDecoratorModifier(
-                    textFieldState = transformedState,
-                    textLayoutState = textLayoutState,
-                    textFieldSelectionState = textFieldSelectionState,
-                    filter = inputTransformation,
-                    enabled = enabled,
-                    readOnly = readOnly,
-                    keyboardOptions = resolvedKeyboardOptions,
-                    keyboardActionHandler = onKeyboardAction,
-                    singleLine = singleLine,
-                    interactionSource = interactionSource,
-                    isPassword = isPassword,
-                    stylusHandwritingTrigger = stylusHandwritingTrigger
-                )
-            )
             .stylusHandwriting(enabled, handwritingEnabled) {
                 // If this is a password field, we can't trigger handwriting.
                 // The expected behavior is 1) request focus 2) show software keyboard.
@@ -429,13 +411,28 @@ internal fun BasicTextField(
                     stylusHandwritingTrigger.tryEmit(Unit)
                 }
             }
-            .focusable(interactionSource = interactionSource, enabled = enabled)
+            .then(
+                // semantics + some focus + input session + touch to focus
+                TextFieldDecoratorModifier(
+                    textFieldState = transformedState,
+                    textLayoutState = textLayoutState,
+                    textFieldSelectionState = textFieldSelectionState,
+                    filter = inputTransformation,
+                    enabled = enabled,
+                    readOnly = readOnly,
+                    keyboardOptions = resolvedKeyboardOptions,
+                    keyboardActionHandler = onKeyboardAction,
+                    singleLine = singleLine,
+                    interactionSource = interactionSource,
+                    isPassword = isPassword,
+                    stylusHandwritingTrigger = stylusHandwritingTrigger
+                )
+            )
             .scrollable(
                 state = scrollState,
                 orientation = orientation,
                 // Disable scrolling when textField is disabled or another dragging gesture is
-                // taking
-                // place
+                // taking place
                 enabled =
                     enabled && textFieldSelectionState.directDragGestureInitiator == InputType.None,
                 reverseDirection =
@@ -493,17 +490,14 @@ internal fun BasicTextField(
                 ) {
                     Box(
                         modifier =
-                            Modifier.bringIntoViewRequester(textLayoutState.bringIntoViewRequester)
-                                .then(
-                                    TextFieldTextLayoutModifier(
-                                        textLayoutState = textLayoutState,
-                                        textFieldState = transformedState,
-                                        textStyle = textStyle,
-                                        singleLine = singleLine,
-                                        onTextLayout = onTextLayout,
-                                        keyboardOptions = resolvedKeyboardOptions,
-                                    )
-                                )
+                            TextFieldTextLayoutModifier(
+                                textLayoutState = textLayoutState,
+                                textFieldState = transformedState,
+                                textStyle = textStyle,
+                                singleLine = singleLine,
+                                onTextLayout = onTextLayout,
+                                keyboardOptions = resolvedKeyboardOptions,
+                            )
                     )
 
                     if (

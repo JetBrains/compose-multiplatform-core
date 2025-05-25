@@ -188,10 +188,7 @@ internal constructor(
      */
     // TextField does not implement UndoState because Undo related APIs should be able to remain
     // separately experimental than TextFieldState
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalFoundationApi
-    @get:ExperimentalFoundationApi
-    val undoState: UndoState = UndoState(this)
+    @ExperimentalFoundationApi val undoState: UndoState = UndoState(this)
 
     @Suppress("ShowingMemberInHiddenClass")
     @PublishedApi

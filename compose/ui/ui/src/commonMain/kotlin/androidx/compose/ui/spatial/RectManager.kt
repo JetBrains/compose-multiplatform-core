@@ -66,7 +66,9 @@ internal class RectManager(
     fun updateOffsets(
         screenOffset: IntOffset,
         windowOffset: IntOffset,
-        viewToWindowMatrix: Matrix
+        viewToWindowMatrix: Matrix,
+        windowWidth: Int,
+        windowHeight: Int,
     ) {
         val analysis = viewToWindowMatrix.analyzeComponents()
         isScreenOrWindowDirty =
@@ -74,6 +76,8 @@ internal class RectManager(
                 screenOffset,
                 windowOffset,
                 if (analysis.hasNonTranslationComponents) viewToWindowMatrix else null,
+                windowWidth,
+                windowHeight,
             ) || isScreenOrWindowDirty
     }
 
@@ -137,22 +141,6 @@ internal class RectManager(
         scheduledDispatchDeadline = deadline
         val delay = deadline - currentTime
         dispatchToken = postDelayed(delay, dispatchLambda)
-    }
-
-    fun currentRectInfo(id: Int, node: DelegatableNode): RelativeLayoutBounds? {
-        var result: RelativeLayoutBounds? = null
-        rects.withRect(id) { l, t, r, b ->
-            result =
-                rectInfoFor(
-                    node = node,
-                    topLeft = packXY(l, t),
-                    bottomRight = packXY(r, b),
-                    windowOffset = throttledCallbacks.windowOffset,
-                    screenOffset = throttledCallbacks.screenOffset,
-                    viewToWindowMatrix = throttledCallbacks.viewToWindowMatrix,
-                )
-        }
-        return result
     }
 
     fun registerOnChangedCallback(callback: () -> Unit): Any? {

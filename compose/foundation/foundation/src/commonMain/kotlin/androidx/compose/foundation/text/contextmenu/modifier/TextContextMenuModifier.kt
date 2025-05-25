@@ -37,7 +37,9 @@ import androidx.compose.ui.platform.InspectorInfo
  *
  * @param builder a snapshot-aware builder function for adding components to the context menu. In
  *   this function you can use member functions from the receiver [TextContextMenuBuilderScope],
- *   such as [item][TextContextMenuBuilderScope.item], to add components.
+ *   such as [separator()][TextContextMenuBuilderScope.separator], to add components. The `item`
+ *   function is not in the common source set, but is instead defined as an extension function in
+ *   the platform specific source sets.
  */
 // TODO(grantapher-cm-api-publicize) Make function public
 internal fun Modifier.addTextContextMenuComponents(

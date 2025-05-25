@@ -261,7 +261,7 @@ class RememberSaveableTest {
                     }
                 }
             ) {
-                val v = rememberSaveable(key = key) { 1 }
+                @Suppress("DEPRECATION") val v = rememberSaveable(key = key) { 1 }
                 assertEquals(1, v)
             }
         }
@@ -355,7 +355,7 @@ class RememberSaveableTest {
                     }
                 }
             ) {
-                val v = rememberSaveable(key = passedKey) { 2 }
+                @Suppress("DEPRECATION") val v = rememberSaveable(key = passedKey) { 2 }
                 assertEquals(2, v)
             }
         }
@@ -380,7 +380,7 @@ class RememberSaveableTest {
                     }
                 }
             ) {
-                val v = rememberSaveable(key = "") { 2 }
+                @Suppress("DEPRECATION") val v = rememberSaveable(key = "") { 2 }
                 assertEquals(2, v)
             }
         }

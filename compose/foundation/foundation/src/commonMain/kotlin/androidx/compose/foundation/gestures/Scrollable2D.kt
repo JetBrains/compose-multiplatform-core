@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastAny
 import kotlin.math.abs
-import kotlin.math.atan
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sign
@@ -69,6 +69,7 @@ import kotlinx.coroutines.launch
  * scrolling logic. Use [androidx.compose.foundation.rememberOverscrollEffect] to create an instance
  * of the current provided overscroll implementation.
  *
+ * @sample androidx.compose.foundation.samples.Scrollable2DSample
  * @param state [Scrollable2DState] state of the scrollable. Defines how scroll events will be
  *   interpreted by the user land logic and contains useful information about on-going events.
  * @param enabled whether or not scrolling is enabled
@@ -81,7 +82,7 @@ import kotlinx.coroutines.launch
  *   this scrollable is being dragged.
  */
 @Stable
-internal fun Modifier.scrollable2D(
+fun Modifier.scrollable2D(
     state: Scrollable2DState,
     enabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = null,
@@ -353,7 +354,7 @@ private class ScrollingLogic2D(
         return consumedByPreScroll + consumedBySelfScroll + consumedByPostScroll
     }
 
-    fun shouldDispatchOverscroll(offset: Offset) = scrollableState.canScroll(offset.angle)
+    fun shouldDispatchOverscroll(offset: Offset) = scrollableState.canScroll(offset)
 
     fun shouldDispatchOverscroll(velocity: Velocity) = scrollableState.canScroll(velocity.angle)
 
@@ -396,7 +397,7 @@ private class ScrollingLogic2D(
     // is detached during a fling.
     private fun shouldCancelFling(pixels: Offset): Boolean {
         // tries to scroll but cannot.
-        return !scrollableState.canScroll(pixels.angle) ||
+        return !scrollableState.canScroll(pixels) ||
             // node is detached.
             !isScrollableNodeAttached.invoke()
     }
@@ -526,9 +527,4 @@ private suspend fun ScrollingLogic2D.semanticsScrollBy(offset: Offset): Offset {
 private val Velocity.magnitude
     get() = sqrt(x.pow(2) + y.pow(2))
 private val Velocity.angle
-    get() = atan(y / x)
-
-private val Offset.magnitude
-    get() = sqrt(x.pow(2) + y.pow(2))
-private val Offset.angle
-    get() = atan(y / x)
+    get() = atan2(x = x, y = y)

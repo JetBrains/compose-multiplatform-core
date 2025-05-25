@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATED") // Deprecated import WindowWidthSizeClass.
-
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -29,6 +27,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 import kotlin.jvm.JvmInline
 
 /**
@@ -40,31 +39,39 @@ import kotlin.jvm.JvmInline
  * (https://m3.material.io/foundations/layout/applying-layout/window-size-classes).
  *
  * @param windowAdaptiveInfo [WindowAdaptiveInfo] that collects useful information in making layout
- *   adaptation decisions like [WindowSizeClass].
+ *   adaptation decisions like [androidx.window.core.layout.WindowSizeClass].
  * @param verticalHingePolicy [HingePolicy] that decides how layouts are supposed to address
  *   vertical hinges.
  * @return an [PaneScaffoldDirective] to be used to decide adaptive layout states.
  */
 @ExperimentalMaterial3AdaptiveApi
-@Suppress("DEPRECATION") // WindowWidthSizeClass is deprecated
 fun calculatePaneScaffoldDirective(
     windowAdaptiveInfo: WindowAdaptiveInfo,
     verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating
 ): PaneScaffoldDirective {
     val maxHorizontalPartitions: Int
     val horizontalPartitionSpacerSize: Dp
-    when (windowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
-        androidx.window.core.layout.WindowWidthSizeClass.COMPACT -> {
+    val defaultPanePreferredWidth: Dp
+    when (windowAdaptiveInfo.windowSizeClass.minWidth) {
+        WindowSizeClass.WidthSizeClasses.Compact -> {
             maxHorizontalPartitions = 1
             horizontalPartitionSpacerSize = 0.dp
+            defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidth
         }
-        androidx.window.core.layout.WindowWidthSizeClass.MEDIUM -> {
+        WindowSizeClass.WidthSizeClasses.Medium -> {
             maxHorizontalPartitions = 1
             horizontalPartitionSpacerSize = 0.dp
+            defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidth
         }
-        else -> {
+        WindowSizeClass.WidthSizeClasses.Expanded -> {
             maxHorizontalPartitions = 2
             horizontalPartitionSpacerSize = 24.dp
+            defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidth
+        }
+        else -> {
+            maxHorizontalPartitions = 3
+            horizontalPartitionSpacerSize = 24.dp
+            defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidthXL
         }
     }
     val maxVerticalPartitions: Int
@@ -74,8 +81,8 @@ fun calculatePaneScaffoldDirective(
     if (
         windowAdaptiveInfo.windowPosture.isTabletop ||
             (maxHorizontalPartitions == 1 &&
-                windowAdaptiveInfo.windowSizeClass.windowHeightSizeClass ==
-                    androidx.window.core.layout.WindowHeightSizeClass.EXPANDED)
+                windowAdaptiveInfo.windowSizeClass.minHeight ==
+                    WindowSizeClass.HeightSizeClasses.Expanded)
     ) {
         maxVerticalPartitions = 2
         verticalPartitionSpacerSize = 24.dp
@@ -83,9 +90,6 @@ fun calculatePaneScaffoldDirective(
         maxVerticalPartitions = 1
         verticalPartitionSpacerSize = 0.dp
     }
-
-    // TODO(conradchen): add 412.dp for L/XL window size class when they are available
-    val defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidth
 
     val defaultPanePreferredHeight = PaneScaffoldDirective.DefaultPreferredHeight
 
@@ -105,7 +109,7 @@ fun calculatePaneScaffoldDirective(
  * Calculates the recommended [PaneScaffoldDirective] from a given [WindowAdaptiveInfo]. Use this
  * method with [currentWindowAdaptiveInfo] to acquire Material-recommended dense-mode adaptive
  * layout settings of the current activity window. Note that this function results in a dual-pane
- * layout when the [WindowWidthSizeClass] is [WindowWidthSizeClass.MEDIUM], while
+ * layout when the window width falls in the Medium size bucket, while
  * [calculatePaneScaffoldDirective] results in a single-pane layout instead. We recommend to use
  * [calculatePaneScaffoldDirective], unless you have a strong use case to show two panes on a
  * medium-width window, which can make your layout look too packed.
@@ -114,20 +118,18 @@ fun calculatePaneScaffoldDirective(
  * (https://m3.material.io/foundations/layout/applying-layout/window-size-classes).
  *
  * @param windowAdaptiveInfo [WindowAdaptiveInfo] that collects useful information in making layout
- *   adaptation decisions like [WindowSizeClass].
+ *   adaptation decisions like [androidx.window.core.layout.WindowSizeClass].
  * @param verticalHingePolicy [HingePolicy] that decides how layouts are supposed to address
  *   vertical hinges.
  * @return an [PaneScaffoldDirective] to be used to decide adaptive layout states.
  */
 @ExperimentalMaterial3AdaptiveApi
-@Suppress("DEPRECATION") // WindowWidthSizeClass is deprecated
 fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
     windowAdaptiveInfo: WindowAdaptiveInfo,
     verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating
 ): PaneScaffoldDirective {
     val isMediumWidth =
-        windowAdaptiveInfo.windowSizeClass.windowWidthSizeClass ==
-            androidx.window.core.layout.WindowWidthSizeClass.MEDIUM
+        windowAdaptiveInfo.windowSizeClass.minWidth == WindowSizeClass.WidthSizeClasses.Medium
     val isTableTop = windowAdaptiveInfo.windowPosture.isTabletop
     return with(calculatePaneScaffoldDirective(windowAdaptiveInfo, verticalHingePolicy)) {
         copy(
@@ -318,6 +320,7 @@ class PaneScaffoldDirective(
 
     companion object {
         internal val DefaultPreferredWidth = 360.dp
+        internal val DefaultPreferredWidthXL = 412.dp
         internal val DefaultPreferredHeight = 420.dp
 
         /**

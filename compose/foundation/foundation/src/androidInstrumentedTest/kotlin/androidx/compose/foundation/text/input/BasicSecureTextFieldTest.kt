@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -60,8 +61,10 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
@@ -584,5 +587,41 @@ internal class BasicSecureTextFieldTest {
         }
 
         rule.onNodeWithTag(Tag).assertWidthIsEqualTo(with(rule.density) { width.toDp() })
+    }
+
+    @Test
+    fun hoistedScrollState_passedToBasicTextField() {
+        val scrollState = ScrollState(0)
+        rule.setContent {
+            BasicSecureTextField(
+                rememberTextFieldState("abcd ".repeat(100)),
+                Modifier.testTag(Tag),
+                scrollState = scrollState
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(scrollState.maxValue).isNotEqualTo(0)
+            assertThat(scrollState.value).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun hoistedScrollState_passedToBasicTextField_afterScroll() {
+        val scrollState = ScrollState(0)
+        rule.setContent {
+            BasicSecureTextField(
+                rememberTextFieldState("abcd ".repeat(100)),
+                Modifier.testTag(Tag),
+                scrollState = scrollState
+            )
+        }
+
+        rule.onNodeWithTag(Tag).performTouchInput { swipeLeft() }
+
+        rule.runOnIdle {
+            assertThat(scrollState.maxValue).isNotEqualTo(0)
+            assertThat(scrollState.value).isNotEqualTo(0)
+        }
     }
 }

@@ -145,11 +145,17 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 )
         if (extensionVersion >= 5) {
             val animationBackground = splitAttributes.animationBackground
-            builder.setAnimationBackground(
+            builder.setAnimationParams(
                 if (animationBackground is OEMEmbeddingAnimationBackground.ColorBackground) {
-                    EmbeddingAnimationBackground.createColorBackground(animationBackground.color)
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(
+                                animationBackground.color
+                            )
+                        )
+                        .build()
                 } else {
-                    EmbeddingAnimationBackground.DEFAULT
+                    EmbeddingAnimationParams.Builder().build()
                 }
             )
         }
@@ -163,7 +169,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
 
     @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
     @OptIn(ExperimentalWindowApi::class)
-    @SuppressLint("NewApi", "ClassVerificationFailure")
+    @SuppressLint("NewApi")
     internal fun translate(
         parentContainerInfo: OEMParentContainerInfo,
     ): ParentContainerInfo {
@@ -183,7 +189,6 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 windowMetrics,
                 parentContainerInfo.windowLayoutInfo
             ),
-            windowMetrics.getWindowInsets(),
             configuration,
             density
         )
@@ -317,7 +322,9 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
             builder
                 .setWindowAttributes(translateWindowAttributes())
                 .setAnimationBackground(
-                    translateAnimationBackground(splitAttributes.animationBackground)
+                    translateAnimationBackground(
+                        splitAttributes.animationParams.animationBackground
+                    )
                 )
         }
         if (extensionVersion >= 6) {
@@ -489,6 +496,11 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 .setPrimaryMinRatio(dividerAttributes.dragRange.minRatio)
                 .setPrimaryMaxRatio(dividerAttributes.dragRange.maxRatio)
         }
+        if (extensionVersion == 7 && dividerAttributes.widthDp == 0) {
+            // A known compatibility issue causes incorrect rendering of 0-width divider in
+            // extensions v7. In this case, the divider width is set to 1dp as a mitigation.
+            builder.setWidthDp(1)
+        }
         return builder.build()
     }
 
@@ -641,7 +653,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 )
                 .build()
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityPairPredicates(splitPairFilters: Set<SplitPairFilter>): Any {
             return predicateAdapter.buildPairPredicate(Activity::class, Activity::class) {
                 first: Activity,
@@ -650,7 +662,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityIntentPredicates(splitPairFilters: Set<SplitPairFilter>): Any {
             return predicateAdapter.buildPairPredicate(Activity::class, Intent::class) {
                 first,
@@ -700,21 +712,21 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 attrs.splitType.value != 1.0f &&
                 attrs.layoutDirection in arrayOf(LEFT_TO_RIGHT, RIGHT_TO_LEFT, LOCALE)
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityPredicates(activityFilters: Set<ActivityFilter>): Any {
             return predicateAdapter.buildPredicate(Activity::class) { activity ->
                 activityFilters.any { filter -> filter.matchesActivity(activity) }
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateIntentPredicates(activityFilters: Set<ActivityFilter>): Any {
             return predicateAdapter.buildPredicate(Intent::class) { intent ->
                 activityFilters.any { filter -> filter.matchesIntent(intent) }
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateParentMetricsPredicate(context: Context, splitRule: SplitRule): Any =
             predicateAdapter.buildPredicate(AndroidWindowMetrics::class) { windowMetrics ->
                 splitRule.checkParentMetrics(context, windowMetrics)

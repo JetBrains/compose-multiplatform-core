@@ -766,6 +766,34 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun testDrawOnlyUpdates() {
+        var rect: RelativeLayoutBounds? = null
+        var offset by mutableStateOf(IntOffset(0, 0))
+        rule.setContent {
+            FixedSize(
+                30,
+                Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it }
+            ) { /* no-op */
+            }
+        }
+
+        // Even though debounce is set to 2s, the callback should get called right away because
+        // throttle is non-zero
+        rule.runOnIdle {
+            val rect = rect!!
+            assertEquals(IntRect(0, 0, 30, 30), rect.boundsInRoot)
+            offset = IntOffset(10, 10)
+        }
+
+        // This ensures that, even though only draw got affected (through layer offset change), the
+        // rect should get updated immediately because throttle is set to 1
+        rule.runOnIdle {
+            val rect = rect!!
+            assertEquals(IntRect(10, 10, 40, 40), rect.boundsInRoot)
+        }
+    }
+
+    @Test
     fun testLayerBoundsPositionInMovedWindow() {
         var coords: IntRect? = null
         var alignment by mutableStateOf(Alignment.Center)

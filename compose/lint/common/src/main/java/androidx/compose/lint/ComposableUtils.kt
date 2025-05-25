@@ -94,12 +94,9 @@ fun UExpression.isInvokedWithinComposable(): Boolean {
     return ComposableBodyVisitor(this).isComposable()
 }
 
-// TODO: https://youtrack.jetbrains.com/issue/KT-45406
-// KotlinUMethodWithFakeLightDelegate.hasAnnotation() (for reified functions for example)
-// doesn't find annotations, so just look at the annotations directly.
 /** Returns whether this method is @Composable or not */
 val PsiMethod.isComposable
-    get() = annotations.any { it.qualifiedName == Names.Runtime.Composable.javaFqn }
+    get() = hasAnnotation(Names.Runtime.Composable.javaFqn)
 
 /** Returns whether this variable's type is @Composable or not */
 val UVariable.isComposable: Boolean

@@ -1600,7 +1600,7 @@ internal class IndicatorLineNode(
                 targetValue = colors.indicatorColor(enabled, isError, focused),
                 animationSpec =
                     if (enabled) {
-                        currentValueOf(LocalMotionScheme)
+                        currentValueOf(MaterialTheme.LocalMotionScheme)
                             .fromToken(MotionSchemeKeyTokens.FastEffects)
                     } else {
                         snap()
@@ -1613,7 +1613,7 @@ internal class IndicatorLineNode(
                     if (focused && enabled) focusedIndicatorWidth else unfocusedIndicatorWidth,
                 animationSpec =
                     if (enabled) {
-                        currentValueOf(LocalMotionScheme)
+                        currentValueOf(MaterialTheme.LocalMotionScheme)
                             .fromToken(MotionSchemeKeyTokens.FastSpatial)
                     } else {
                         snap()

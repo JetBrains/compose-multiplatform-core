@@ -130,12 +130,6 @@ abstract interface androidx.compose.ui.text.input/PlatformTextInputService { // 
     open fun updateTextLayoutResult(androidx.compose.ui.text.input/TextFieldValue, androidx.compose.ui.text.input/OffsetMapping, androidx.compose.ui.text/TextLayoutResult, kotlin/Function1<androidx.compose.ui.graphics/Matrix, kotlin/Unit>, androidx.compose.ui.geometry/Rect, androidx.compose.ui.geometry/Rect) // androidx.compose.ui.text.input/PlatformTextInputService.updateTextLayoutResult|updateTextLayoutResult(androidx.compose.ui.text.input.TextFieldValue;androidx.compose.ui.text.input.OffsetMapping;androidx.compose.ui.text.TextLayoutResult;kotlin.Function1<androidx.compose.ui.graphics.Matrix,kotlin.Unit>;androidx.compose.ui.geometry.Rect;androidx.compose.ui.geometry.Rect){}[0]
 }
 
-abstract interface androidx.compose.ui.text.input/PlatformTextInputService2 { // androidx.compose.ui.text.input/PlatformTextInputService2|null[0]
-    abstract fun focusedRectChanged(androidx.compose.ui.geometry/Rect) // androidx.compose.ui.text.input/PlatformTextInputService2.focusedRectChanged|focusedRectChanged(androidx.compose.ui.geometry.Rect){}[0]
-    abstract fun startInput(androidx.compose.ui.text.input/TextEditorState, androidx.compose.ui.text.input/ImeOptions, kotlin/Function1<kotlin/Function1<androidx.compose.ui.text.input/TextEditingScope, kotlin/Unit>, kotlin/Unit>) // androidx.compose.ui.text.input/PlatformTextInputService2.startInput|startInput(androidx.compose.ui.text.input.TextEditorState;androidx.compose.ui.text.input.ImeOptions;kotlin.Function1<kotlin.Function1<androidx.compose.ui.text.input.TextEditingScope,kotlin.Unit>,kotlin.Unit>){}[0]
-    abstract fun stopInput() // androidx.compose.ui.text.input/PlatformTextInputService2.stopInput|stopInput(){}[0]
-}
-
 abstract interface androidx.compose.ui.text.input/TextEditingScope { // androidx.compose.ui.text.input/TextEditingScope|null[0]
     abstract fun commitText(kotlin/CharSequence, kotlin/Int) // androidx.compose.ui.text.input/TextEditingScope.commitText|commitText(kotlin.CharSequence;kotlin.Int){}[0]
     abstract fun deleteSurroundingTextInCodePoints(kotlin/Int, kotlin/Int) // androidx.compose.ui.text.input/TextEditingScope.deleteSurroundingTextInCodePoints|deleteSurroundingTextInCodePoints(kotlin.Int;kotlin.Int){}[0]

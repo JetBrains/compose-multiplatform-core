@@ -17,9 +17,10 @@
 package androidx.window.extensions.embedding;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -90,9 +91,8 @@ public final class WindowAttributes {
         return Objects.hash(mDimAreaBehavior);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "dimAreaBehavior=" + mDimAreaBehavior;
     }
 }

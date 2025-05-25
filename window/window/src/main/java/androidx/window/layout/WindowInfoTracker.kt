@@ -42,10 +42,10 @@ interface WindowInfoTracker {
      * A [Flow] of [WindowLayoutInfo] that contains all the available features. A [WindowLayoutInfo]
      * contains a [List] of [DisplayFeature] that intersect the associated [android.view.Window].
      *
-     * This method exports the same content as
-     * [WindowLayoutInfo.windowLayoutInfo(activity: Activity)], but also supports non-Activity
-     * windows to receive [WindowLayoutInfo] updates. A [WindowLayoutInfo] value should be published
-     * when [DisplayFeature] have changed, but the behavior is ultimately decided by the hardware
+     * This method exports the same content as the [windowLayoutInfo] method that accepts an
+     * [Activity] as a parameter, but also supports non-Activity windows to receive
+     * [WindowLayoutInfo] updates. A [WindowLayoutInfo] value should be published when
+     * [DisplayFeature] have changed, but the behavior is ultimately decided by the hardware
      * implementation. It is recommended to test the following scenarios:
      * * Values are emitted immediately after subscribing to this function.
      * * There is a long delay between subscribing and receiving the first value.
@@ -60,8 +60,8 @@ interface WindowInfoTracker {
      *
      * @param context a [UiContext] such as an [Activity], an [InputMethodService], or an instance
      *   created via [Context.createWindowContext] that listens to configuration changes.
-     * @throws NotImplementedError when [Context] is not an [UiContext] or this method has no
-     *   supporting implementation.
+     * @throws IllegalArgumentException when [context] is not an [UiContext].
+     * @throws NotImplementedError when this method has no supporting implementation.
      * @see WindowLayoutInfo
      * @see DisplayFeature
      */
@@ -109,6 +109,7 @@ interface WindowInfoTracker {
      * @see windowLayoutInfo
      */
     @RequiresWindowSdkExtension(version = 6)
+    @get:RequiresWindowSdkExtension(version = 6)
     val supportedPostures: List<SupportedPosture>
         get() {
             throw NotImplementedError("Method was not implemented.")

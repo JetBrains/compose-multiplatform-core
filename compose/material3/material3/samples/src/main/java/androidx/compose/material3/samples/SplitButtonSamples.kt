@@ -21,6 +21,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
@@ -139,6 +140,7 @@ fun SplitButtonWithUnCheckableTrailingButtonSample() {
 @Preview
 fun SplitButtonWithDropdownMenuSample() {
     var checked by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize().wrapContentSize()) {
         SplitButtonLayout(
             leadingButton = {
@@ -433,6 +435,222 @@ fun SplitButtonWithIconSample() {
                         Modifier.size(SplitButtonDefaults.TrailingIconSize).graphicsLayer {
                             this.rotationZ = rotation
                         },
+                    contentDescription = "Localized description"
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Sampled
+@Composable
+@Preview
+fun XSmallFilledSplitButtonSample() {
+    var checked by remember { mutableStateOf(false) }
+    val size = SplitButtonDefaults.ExtraSmallContainerHeight
+
+    SplitButtonLayout(
+        leadingButton = {
+            SplitButtonDefaults.LeadingButton(
+                onClick = { /* Do Nothing */ },
+                modifier = Modifier.heightIn(size),
+                shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    modifier = Modifier.size(SplitButtonDefaults.leadingButtonIconSizeFor(size)),
+                    contentDescription = "Localized description",
+                )
+                Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+            }
+        },
+        trailingButton = {
+            SplitButtonDefaults.TrailingButton(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier =
+                    Modifier.heightIn(size).semantics {
+                        stateDescription = if (checked) "Expanded" else "Collapsed"
+                        contentDescription = "Toggle Button"
+                    },
+                shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+            ) {
+                val rotation: Float by
+                    animateFloatAsState(
+                        targetValue = if (checked) 180f else 0f,
+                        label = "Trailing Icon Rotation"
+                    )
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    modifier =
+                        Modifier.size(SplitButtonDefaults.trailingButtonIconSizeFor(size))
+                            .graphicsLayer { this.rotationZ = rotation },
+                    contentDescription = "Localized description"
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Sampled
+@Composable
+@Preview
+fun MediumFilledSplitButtonSample() {
+    var checked by remember { mutableStateOf(false) }
+    val size = SplitButtonDefaults.MediumContainerHeight
+
+    SplitButtonLayout(
+        leadingButton = {
+            SplitButtonDefaults.LeadingButton(
+                onClick = { /* Do Nothing */ },
+                modifier = Modifier.heightIn(size),
+                shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    modifier = Modifier.size(SplitButtonDefaults.leadingButtonIconSizeFor(size)),
+                    contentDescription = "Localized description",
+                )
+                Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+            }
+        },
+        trailingButton = {
+            SplitButtonDefaults.TrailingButton(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier =
+                    Modifier.heightIn(size).semantics {
+                        stateDescription = if (checked) "Expanded" else "Collapsed"
+                        contentDescription = "Toggle Button"
+                    },
+                shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+            ) {
+                val rotation: Float by
+                    animateFloatAsState(
+                        targetValue = if (checked) 180f else 0f,
+                        label = "Trailing Icon Rotation"
+                    )
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    modifier =
+                        Modifier.size(SplitButtonDefaults.trailingButtonIconSizeFor(size))
+                            .graphicsLayer { this.rotationZ = rotation },
+                    contentDescription = "Localized description"
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Sampled
+@Composable
+@Preview
+fun LargeFilledSplitButtonSample() {
+    var checked by remember { mutableStateOf(false) }
+    val size = SplitButtonDefaults.LargeContainerHeight
+
+    SplitButtonLayout(
+        leadingButton = {
+            SplitButtonDefaults.LeadingButton(
+                onClick = { /* Do Nothing */ },
+                modifier = Modifier.heightIn(size),
+                shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    modifier = Modifier.size(SplitButtonDefaults.leadingButtonIconSizeFor(size)),
+                    contentDescription = "Localized description",
+                )
+                Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+            }
+        },
+        trailingButton = {
+            SplitButtonDefaults.TrailingButton(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier =
+                    Modifier.heightIn(size).semantics {
+                        stateDescription = if (checked) "Expanded" else "Collapsed"
+                        contentDescription = "Toggle Button"
+                    },
+                shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+            ) {
+                val rotation: Float by
+                    animateFloatAsState(
+                        targetValue = if (checked) 180f else 0f,
+                        label = "Trailing Icon Rotation"
+                    )
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    modifier =
+                        Modifier.size(SplitButtonDefaults.trailingButtonIconSizeFor(size))
+                            .graphicsLayer { this.rotationZ = rotation },
+                    contentDescription = "Localized description"
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Sampled
+@Composable
+@Preview
+fun ExtraLargeFilledSplitButtonSample() {
+    var checked by remember { mutableStateOf(false) }
+    val size = SplitButtonDefaults.ExtraLargeContainerHeight
+
+    SplitButtonLayout(
+        leadingButton = {
+            SplitButtonDefaults.LeadingButton(
+                onClick = { /* Do Nothing */ },
+                modifier = Modifier.heightIn(size),
+                shapes = SplitButtonDefaults.leadingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(size),
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    modifier = Modifier.size(SplitButtonDefaults.leadingButtonIconSizeFor(size)),
+                    contentDescription = "Localized description",
+                )
+                Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
+                Text("Button", style = ButtonDefaults.textStyleFor(size))
+            }
+        },
+        trailingButton = {
+            SplitButtonDefaults.TrailingButton(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier =
+                    Modifier.heightIn(size).semantics {
+                        stateDescription = if (checked) "Expanded" else "Collapsed"
+                        contentDescription = "Toggle Button"
+                    },
+                shapes = SplitButtonDefaults.trailingButtonShapesFor(size),
+                contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(size),
+            ) {
+                val rotation: Float by
+                    animateFloatAsState(
+                        targetValue = if (checked) 180f else 0f,
+                        label = "Trailing Icon Rotation"
+                    )
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    modifier =
+                        Modifier.size(SplitButtonDefaults.trailingButtonIconSizeFor(size))
+                            .graphicsLayer { this.rotationZ = rotation },
                     contentDescription = "Localized description"
                 )
             }

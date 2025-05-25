@@ -21,9 +21,10 @@ import android.graphics.Color;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -203,9 +204,8 @@ public final class DividerAttributes {
         return Objects.hash(mDividerType, mWidthDp, mPrimaryMinRatio, mPrimaryMaxRatio);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return DividerAttributes.class.getSimpleName() + "{"
                 + "dividerType=" + mDividerType
                 + ", width=" + mWidthDp
@@ -262,8 +262,7 @@ public final class DividerAttributes {
          * @throws IllegalArgumentException if the provided value is invalid.
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public Builder setWidthDp(@Dimension int widthDp) {
+        public @NonNull Builder setWidthDp(@Dimension int widthDp) {
             if (widthDp != WIDTH_SYSTEM_DEFAULT && widthDp < 0) {
                 throw new IllegalArgumentException(
                         "widthDp must be greater than or equal to 0 or WIDTH_SYSTEM_DEFAULT.");
@@ -284,8 +283,7 @@ public final class DividerAttributes {
          * @see SplitAttributes.SplitType.RatioSplitType#getRatio()
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public Builder setPrimaryMinRatio(float primaryMinRatio) {
+        public @NonNull Builder setPrimaryMinRatio(float primaryMinRatio) {
             if (primaryMinRatio != RATIO_SYSTEM_DEFAULT
                     && (primaryMinRatio >= 1.0 || primaryMinRatio < 0.0)) {
                 throw new IllegalArgumentException(
@@ -307,8 +305,7 @@ public final class DividerAttributes {
          * @see SplitAttributes.SplitType.RatioSplitType#getRatio()
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public Builder setPrimaryMaxRatio(float primaryMaxRatio) {
+        public @NonNull Builder setPrimaryMaxRatio(float primaryMaxRatio) {
             if (primaryMaxRatio != RATIO_SYSTEM_DEFAULT
                     && (primaryMaxRatio > 1.0 || primaryMaxRatio <= 0.0)) {
                 throw new IllegalArgumentException(
@@ -323,8 +320,7 @@ public final class DividerAttributes {
          * used.
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public Builder setDividerColor(@ColorInt int dividerColor) {
+        public @NonNull Builder setDividerColor(@ColorInt int dividerColor) {
             mDividerColor = dividerColor;
             return this;
         }
@@ -336,8 +332,7 @@ public final class DividerAttributes {
          * @throws IllegalArgumentException if the provided values are invalid.
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public DividerAttributes build() {
+        public @NonNull DividerAttributes build() {
             return new DividerAttributes(mDividerType, mWidthDp, mPrimaryMinRatio,
                     mPrimaryMaxRatio, mDividerColor);
         }

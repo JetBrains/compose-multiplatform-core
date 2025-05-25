@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.InspectorInfo
  */
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun <T> List<T>.trimRootModifierNodes(): List<T> =
-    dropLast(if (ComposeUiFlags.areWindowInsetsRulersEnabled) 8 else 6)
+    dropLast(if (ComposeUiFlags.areWindowInsetsRulersEnabled) 7 else 6)
 
 internal fun Modifier.elementOf(node: Modifier.Node): Modifier {
     return this.then(ElementOf { node })

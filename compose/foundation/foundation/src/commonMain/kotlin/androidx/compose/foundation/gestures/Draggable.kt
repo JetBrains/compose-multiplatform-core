@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.gestures
 
+import androidx.compose.foundation.ComposeFoundationFlags.isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
@@ -39,7 +40,10 @@ import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectorInfo
@@ -362,7 +366,7 @@ internal abstract class DragGestureNode(
     enabled: Boolean,
     interactionSource: MutableInteractionSource?,
     private var orientationLock: Orientation?
-) : DelegatingNode(), PointerInputModifierNode {
+) : DelegatingNode(), PointerInputModifierNode, GlobalPositionAwareModifierNode {
 
     protected var canDrag = canDrag
         private set
@@ -380,6 +384,21 @@ internal abstract class DragGestureNode(
     private var channel: Channel<DragEvent>? = null
     private var dragInteraction: DragInteraction.Start? = null
     private var isListeningForEvents = false
+
+    /**
+     * Accumulated position offset of this [Modifier.Node] that happened during a drag cycle. This
+     * is used to correct the pointer input events that are added to the Velocity Tracker. If this
+     * Node is static during the drag cycle, nothing will happen. On the other hand, if the position
+     * of this node changes during the drag cycle, we need to correct the Pointer Input used for the
+     * drag events, this is because Velocity Tracker doesn't have the knowledge about changes in the
+     * position of the container that uses it, and because each Pointer Input event is related to
+     * the container's root. This new behavior relies on
+     * [androidx.compose.foundation.ComposeFoundationFlags.isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled]
+     */
+    private var nodeOffset = Offset.Zero
+
+    /** The last kwown layout coordinates of this node. */
+    private var layoutCoordinates: LayoutCoordinates? = null
 
     /**
      * Responsible for the dragging behavior between the start and the end of the drag. It
@@ -405,6 +424,10 @@ internal abstract class DragGestureNode(
      * recognizing drag events immediately without waiting for touch slop.
      */
     abstract fun startDragImmediately(): Boolean
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        layoutCoordinates = coordinates
+    }
 
     private fun startListeningForEvents() {
         isListeningForEvents = true
@@ -445,6 +468,8 @@ internal abstract class DragGestureNode(
     override fun onDetach() {
         isListeningForEvents = false
         disposeInteractionSource()
+        layoutCoordinates = null
+        nodeOffset = Offset.Zero
     }
 
     override fun onPointerEvent(
@@ -464,7 +489,7 @@ internal abstract class DragGestureNode(
             // re-create tracker when pointer input block restarts. This lazily creates the tracker
             // only when it is need.
             val velocityTracker = VelocityTracker()
-
+            var previousPositionOnScreen = layoutCoordinates?.positionOnScreen() ?: Offset.Zero
             val onDragStart:
                 (
                     down: PointerInputChange,
@@ -472,6 +497,7 @@ internal abstract class DragGestureNode(
                     postSlopOffset: Offset
                 ) -> Unit =
                 { down, slopTriggerChange, postSlopOffset ->
+                    nodeOffset = Offset.Zero // restart node offset
                     if (canDrag.invoke(down)) {
                         if (!isListeningForEvents) {
                             if (channel == null) {
@@ -503,7 +529,20 @@ internal abstract class DragGestureNode(
 
             val onDrag: (change: PointerInputChange, dragAmount: Offset) -> Unit =
                 { change, delta ->
-                    velocityTracker.addPointerInputChange(change)
+                    val coordinates = layoutCoordinates
+                    if (
+                        isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled &&
+                            coordinates != null
+                    ) {
+                        val currentPositionOnScreen = coordinates.positionOnScreen()
+                        // container changed positions
+                        if (currentPositionOnScreen != previousPositionOnScreen) {
+                            val delta = currentPositionOnScreen - previousPositionOnScreen
+                            nodeOffset += delta
+                        }
+                        previousPositionOnScreen = currentPositionOnScreen
+                    }
+                    velocityTracker.addPointerInputChange(event = change, offset = nodeOffset)
                     channel?.trySend(DragDelta(delta))
                 }
 

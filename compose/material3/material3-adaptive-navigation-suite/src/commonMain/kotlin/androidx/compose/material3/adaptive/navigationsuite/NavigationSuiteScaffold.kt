@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // Suppress for imports of WindowWidthSizeClass
-
 package androidx.compose.material3.adaptive.navigationsuite
 
 import androidx.compose.animation.core.Animatable
@@ -94,8 +92,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirst
-import androidx.window.core.layout.WindowHeightSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import kotlin.jvm.JvmInline
 
 /** Possible values of [NavigationSuiteScaffoldState]. */
@@ -1195,16 +1192,13 @@ object NavigationSuiteScaffoldDefaults {
      * @param adaptiveInfo the provided [WindowAdaptiveInfo]
      * @see NavigationSuiteScaffold
      */
-    @Suppress("DEPRECATION") // WindowWidthSizeClass deprecated
     fun navigationSuiteType(adaptiveInfo: WindowAdaptiveInfo): NavigationSuiteType {
         return with(adaptiveInfo) {
-            if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) {
+            if (windowSizeClass.minWidth == WindowSizeClass.WidthSizeClasses.Compact) {
                 NavigationSuiteType.ShortNavigationBarCompact
             } else if (
                 windowPosture.isTabletop ||
-                    windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT &&
-                        (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.MEDIUM ||
-                            windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED)
+                    windowSizeClass.minHeight == WindowSizeClass.HeightSizeClasses.Compact
             ) {
                 NavigationSuiteType.ShortNavigationBarMedium
             } else {
@@ -1229,8 +1223,8 @@ object NavigationSuiteScaffoldDefaults {
         return with(adaptiveInfo) {
             if (
                 windowPosture.isTabletop ||
-                    windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT ||
-                    windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+                    windowSizeClass.minHeight == WindowSizeClass.HeightSizeClasses.Compact ||
+                    windowSizeClass.minWidth == WindowSizeClass.WidthSizeClasses.Compact
             ) {
                 NavigationSuiteType.NavigationBar
             } else {
@@ -1662,8 +1656,6 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [NavigationSuiteScaffoldOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3AdaptiveComponentOverrideApi
 @ExperimentalMaterial3AdaptiveComponentOverrideApi
 val LocalNavigationSuiteScaffoldOverride:
     ProvidableCompositionLocal<NavigationSuiteScaffoldOverride> =

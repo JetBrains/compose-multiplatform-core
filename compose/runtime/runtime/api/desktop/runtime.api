@@ -97,6 +97,7 @@ public final class androidx/compose/runtime/ComposablesKt {
 	public static final fun getCurrentComposer (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/Composer;
 	public static final fun getCurrentCompositeKeyHash (Landroidx/compose/runtime/Composer;I)I
 	public static final fun getCurrentCompositeKeyHashCode (Landroidx/compose/runtime/Composer;I)J
+	public static final fun getCurrentCompositionContext (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/CompositionContext;
 	public static final fun getCurrentCompositionLocalContext (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/CompositionLocalContext;
 	public static final fun getCurrentRecomposeScope (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/RecomposeScope;
 	public static final fun invalidApplier ()V

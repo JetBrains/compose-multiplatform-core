@@ -450,12 +450,14 @@ internal constructor(
         composition: TextRange? = this.composition,
         composingAnnotations: List<PlacedAnnotation>? =
             this.composingAnnotations?.asMutableList()?.takeIf { it.isNotEmpty() },
+        outputAnnotations: List<PlacedAnnotation>? = null
     ): TextFieldCharSequence =
         TextFieldCharSequence(
             text = buffer.toString(),
             selection = selection,
             composition = composition,
-            composingAnnotations = composingAnnotations
+            composingAnnotations = composingAnnotations,
+            outputAnnotations = outputAnnotations
         )
 
     private fun requireValidIndex(index: Int, startExclusive: Boolean, endExclusive: Boolean) {

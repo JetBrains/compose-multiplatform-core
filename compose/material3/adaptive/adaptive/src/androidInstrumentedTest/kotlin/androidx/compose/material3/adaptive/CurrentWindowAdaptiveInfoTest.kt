@@ -16,11 +16,10 @@
 
 package androidx.compose.material3.adaptive
 
-import android.content.res.Configuration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -31,7 +30,6 @@ import androidx.window.core.layout.WindowSizeClass
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.testing.layout.WindowLayoutInfoPublisherRule
-import androidx.window.testing.layout.WindowMetricsCalculatorRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -39,18 +37,14 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 
-@Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CurrentWindowAdaptiveInfoTest {
     private val composeRule = createComposeRule()
     private val layoutInfoRule = WindowLayoutInfoPublisherRule()
-    private val windowMetricsCalculatorRule = WindowMetricsCalculatorRule()
 
-    @get:Rule
-    val testRule: TestRule =
-        RuleChain.outerRule(windowMetricsCalculatorRule).around(layoutInfoRule).around(composeRule)
+    @get:Rule val testRule: TestRule = RuleChain.outerRule(layoutInfoRule).around(composeRule)
 
     @Test
     fun test_currentWindowAdaptiveInfo() {
@@ -58,13 +52,9 @@ class CurrentWindowAdaptiveInfoTest {
         val mockWindowSize = mutableStateOf(MockWindowSize1)
 
         composeRule.setContent {
-            val testConfiguration = Configuration(LocalConfiguration.current)
-            testConfiguration.screenWidthDp = mockWindowSize.value.width
-            testConfiguration.screenHeightDp = mockWindowSize.value.height
-            windowMetricsCalculatorRule.overrideWindowSize(mockWindowSize)
             CompositionLocalProvider(
                 LocalDensity provides MockDensity,
-                LocalConfiguration provides testConfiguration
+                LocalWindowInfo provides MockWindowInfo(mockWindowSize)
             ) {
                 actualAdaptiveInfo = currentWindowAdaptiveInfo()
             }
@@ -75,7 +65,7 @@ class CurrentWindowAdaptiveInfoTest {
         composeRule.runOnIdle {
             val mockSize = with(MockDensity) { MockWindowSize1.toSize().toDpSize() }
             assertThat(actualAdaptiveInfo.windowSizeClass)
-                .isEqualTo(WindowSizeClass.compute(mockSize.width.value, mockSize.height.value))
+                .isEqualTo(WindowSizeClass.computeFromDpSize(mockSize))
             assertThat(actualAdaptiveInfo.windowPosture)
                 .isEqualTo(calculatePosture(MockFoldingFeatures1))
         }
@@ -86,7 +76,7 @@ class CurrentWindowAdaptiveInfoTest {
         composeRule.runOnIdle {
             val mockSize = with(MockDensity) { MockWindowSize2.toSize().toDpSize() }
             assertThat(actualAdaptiveInfo.windowSizeClass)
-                .isEqualTo(WindowSizeClass.compute(mockSize.width.value, mockSize.height.value))
+                .isEqualTo(WindowSizeClass.computeFromDpSize(mockSize))
             assertThat(actualAdaptiveInfo.windowPosture)
                 .isEqualTo(calculatePosture(MockFoldingFeatures2))
         }

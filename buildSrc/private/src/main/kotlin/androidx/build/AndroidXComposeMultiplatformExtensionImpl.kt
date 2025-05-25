@@ -206,8 +206,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         iosArm64("uikitArm64")
         iosSimulatorArm64("uikitSimArm64")
 
-        val commonMain = sourceSets.getByName("commonMain")
-        val nativeMain = sourceSets.create("nativeMain")
+        val nativeMain = getOrCreateNativeMain()
         val darwinMain = sourceSets.create("darwinMain")
         val macosMain = sourceSets.create("macosMain")
         val macosX64Main = sourceSets.getByName("macosX64Main")
@@ -216,7 +215,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val uikitX64Main = sourceSets.getByName("uikitX64Main")
         val uikitArm64Main = sourceSets.getByName("uikitArm64Main")
         val uikitSimArm64Main = sourceSets.getByName("uikitSimArm64Main")
-        nativeMain.dependsOn(commonMain)
         darwinMain.dependsOn(nativeMain)
         macosMain.dependsOn(darwinMain)
         macosX64Main.dependsOn(macosMain)
@@ -226,8 +224,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         uikitArm64Main.dependsOn(uikitMain)
         uikitSimArm64Main.dependsOn(uikitMain)
 
-        val commonTest = sourceSets.getByName("commonTest")
-        val nativeTest = sourceSets.create("nativeTest")
+        val nativeTest = getOrCreateNativeTest()
         val darwinTest = sourceSets.create("darwinTest")
         val macosTest = sourceSets.create("macosTest")
         val macosX64Test = sourceSets.getByName("macosX64Test")
@@ -236,7 +233,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val uikitX64Test = sourceSets.getByName("uikitX64Test")
         val uikitArm64Test = sourceSets.getByName("uikitArm64Test")
         val uikitSimArm64Test = sourceSets.getByName("uikitSimArm64Test")
-        nativeTest.dependsOn(commonTest)
         darwinTest.dependsOn(nativeTest)
         macosTest.dependsOn(darwinTest)
         macosX64Test.dependsOn(macosTest)
@@ -247,12 +243,25 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         uikitSimArm64Test.dependsOn(uikitTest)
     }
 
-    override fun linuxX64(): Unit = multiplatformExtension.run {
+    override fun linux(): Unit = multiplatformExtension.run {
         linuxX64()
-    }
-
-    override fun linuxArm64(): Unit = multiplatformExtension.run {
         linuxArm64()
+
+        val nativeMain = getOrCreateNativeMain()
+        val linuxMain = sourceSets.create("linuxMain")
+        val linuxX64Main = sourceSets.getByName("linuxX64Main")
+        val linuxArm64Main = sourceSets.getByName("linuxArm64Main")
+        linuxMain.dependsOn(nativeMain)
+        linuxX64Main.dependsOn(linuxMain)
+        linuxArm64Main.dependsOn(linuxMain)
+
+        val nativeTest = getOrCreateNativeTest()
+        val linuxTest = sourceSets.create("linuxTest")
+        val linuxX64Test = sourceSets.getByName("linuxX64Test")
+        val linuxArm64Test = sourceSets.getByName("linuxArm64Test")
+        linuxTest.dependsOn(nativeTest)
+        linuxX64Test.dependsOn(linuxTest)
+        linuxArm64Test.dependsOn(linuxTest)
     }
 
     private fun getOrCreateJvmMain(): KotlinSourceSet =
@@ -260,6 +269,12 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
 
     private fun getOrCreateJvmTest(): KotlinSourceSet =
         getOrCreateSourceSet("jvmTest", "commonTest")
+
+    private fun getOrCreateNativeMain(): KotlinSourceSet =
+        getOrCreateSourceSet("nativeMain", "commonMain")
+
+    private fun getOrCreateNativeTest(): KotlinSourceSet =
+        getOrCreateSourceSet("nativeTest", "commonTest")
 
     private fun getOrCreateSourceSet(
         name: String,

@@ -20,8 +20,6 @@ import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.ComposeFeatureFlags
-import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -51,7 +49,6 @@ import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -93,9 +90,6 @@ import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.ClipRectangle
@@ -714,23 +708,10 @@ internal class ComposeSceneMediator(
         override val textInputService = this@ComposeSceneMediator.textInputService
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-            coroutineScope {
-                launch {
-                    request.focusedRectInRoot.collect {
-                        textInputService2.focusedRectChanged(it)
-                    }
-                }
-
-                suspendCancellableCoroutine<Nothing> { continuation ->
-                    textInputService2.startInput(
-                        state = request.state,
-                        imeOptions = request.imeOptions,
-                        editText = request.editText,
-                    )
-
-                    continuation.invokeOnCancellation {
-                        textInputService2.stopInput()
-                    }
+            suspendCancellableCoroutine<Nothing> { continuation ->
+                textInputService2.startInput(request)
+                continuation.invokeOnCancellation {
+                    textInputService2.stopInput()
                 }
             }
         }

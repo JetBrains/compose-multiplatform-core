@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.contextmenu.internal
 
+import android.content.res.Resources
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.contextmenu.ContextMenuColumnBuilder
 import androidx.compose.foundation.contextmenu.ContextMenuPopupPositionProvider
@@ -126,15 +127,14 @@ private fun DefaultTextContextMenuDropdown(
                     item(
                         label = { component.label },
                         leadingIcon =
-                            component.leadingIcon?.let { resId ->
-                                { color -> IconBox(resId, color) }
+                            if (component.leadingIcon == Resources.ID_NULL) {
+                                null
+                            } else {
+                                { color -> IconBox(component.leadingIcon, color) }
                             },
-                        onClick = { with(component) { session.onClick() } },
+                        onClick = { component.onClick(session) },
                     )
                 is TextContextMenuSeparator -> separator()
-                else -> {
-                    // Ignore unknown items
-                }
             }
         }
     }

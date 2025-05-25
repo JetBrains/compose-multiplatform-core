@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -31,7 +31,7 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.6.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     testApi(libs.kotlinStdlib)
     testImplementation(libs.kotlinTest)
@@ -42,7 +42,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.window.extensions.core"
+    namespace = "androidx.window.extensions.core"
 }
 
 tasks.withType(KotlinCompile).configureEach {
@@ -53,9 +53,8 @@ tasks.withType(KotlinCompile).configureEach {
 
 androidx {
     name = "WindowManager Core Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "The Core APIs for Window Manager Library Extensions"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
 }

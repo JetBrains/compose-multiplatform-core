@@ -419,6 +419,22 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
         rule.runOnIdle { assertThat(activeNodes).doesNotContain(3) }
     }
 
+    @Test
+    fun overflowFromLargePageCountDoesNotPrefetchStartPages() {
+        composePager(
+            pageCount = Int.MAX_VALUE,
+            initialPage = Int.MAX_VALUE - 3,
+        )
+
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
+
+        waitForPrefetch()
+
+        rule.onNodeWithTag("${Int.MAX_VALUE - 1}").assertExists()
+        rule.onNodeWithTag("0").assertDoesNotExist()
+        rule.onNodeWithTag("1").assertDoesNotExist()
+    }
+
     private suspend fun PagerState.scrollBy(delta: Float): Float {
         val consumed = (this as ScrollableState).scrollBy(delta)
         scroll {} // cancel fling animation
@@ -432,6 +448,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
     private val activeNodes = mutableSetOf<Int>()
 
     private fun composePager(
+        pageCount: Int = 100,
         initialPage: Int = 0,
         initialPageOffsetFraction: Float = 0f,
         reverseLayout: Boolean = false,
@@ -445,7 +462,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
             initialPage = initialPage,
             initialPageOffsetFraction = initialPageOffsetFraction,
             prefetchScheduler = scheduler,
-            pageCount = { 100 },
+            pageCount = { pageCount },
             pageSize = {
                 object : PageSize {
                     override fun Density.calculateMainAxisPageSize(

@@ -31,7 +31,7 @@ internal abstract class LazyGridMeasuredItemProvider(
     private val itemProvider: LazyGridItemProvider,
     private val measureScope: LazyLayoutMeasureScope,
     private val defaultMainAxisSpacing: Int
-) : LazyLayoutMeasuredItemProvider<LazyGridMeasuredItem> {
+) : LazyLayoutMeasuredItemProvider<LazyGridMeasuredItem>() {
     override fun getAndMeasure(
         index: Int,
         lane: Int,
@@ -59,7 +59,7 @@ internal abstract class LazyGridMeasuredItemProvider(
     ): LazyGridMeasuredItem {
         val key = itemProvider.getKey(index)
         val contentType = itemProvider.getContentType(index)
-        val placeables = measureScope.measure(index, constraints)
+        val placeables = measureScope.getPlaceables(index, constraints)
         val crossAxisSize =
             if (constraints.hasFixedWidth) {
                 constraints.minWidth

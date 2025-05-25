@@ -863,176 +863,126 @@ object IconButtonDefaults {
     val outlinedShape: Shape
         @Composable get() = SmallIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default round shape for any extra small icon button. */
     val extraSmallRoundShape: Shape
         @Composable get() = XSmallIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default square shape for any extra small icon button. */
     val extraSmallSquareShape: Shape
         @Composable get() = XSmallIconButtonTokens.ContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default pressed shape for any extra small icon button. */
     val extraSmallPressedShape: Shape
         @Composable get() = XSmallIconButtonTokens.PressedContainerShape.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any extra small icon button. */
     val extraSmallSelectedRoundShape: Shape
         @Composable get() = XSmallIconButtonTokens.SelectedContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any extra small, square icon button. */
     val extraSmallSelectedSquareShape: Shape
         @Composable get() = XSmallIconButtonTokens.SelectedContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any small icon button. */
     val smallRoundShape: Shape
         @Composable get() = SmallIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default square shape for any small icon button. */
     val smallSquareShape: Shape
         @Composable get() = SmallIconButtonTokens.ContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default pressed shape for any small icon button. */
     val smallPressedShape: Shape
         @Composable get() = SmallIconButtonTokens.PressedContainerShape.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any small icon button. */
     val smallSelectedRoundShape: Shape
         @Composable get() = SmallIconButtonTokens.SelectedContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any small, square icon button. */
     val SmallSelectedSquareShape: Shape
         @Composable get() = SmallIconButtonTokens.SelectedContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any medium icon button. */
     val mediumRoundShape: Shape
         @Composable get() = MediumIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any medium icon button. */
     val mediumSquareShape: Shape
         @Composable get() = MediumIconButtonTokens.ContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default pressed shape for any medium icon button. */
     val mediumPressedShape: Shape
         @Composable get() = MediumIconButtonTokens.PressedContainerShape.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any medium icon button. */
     val mediumSelectedRoundShape: Shape
         @Composable get() = MediumIconButtonTokens.SelectedContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any medium, square icon button. */
     val mediumSelectedSquareShape: Shape
         @Composable get() = MediumIconButtonTokens.SelectedContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any large icon button. */
     val largeRoundShape: Shape
         @Composable get() = LargeIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any large icon button. */
     val largeSquareShape: Shape
         @Composable get() = LargeIconButtonTokens.ContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default pressed shape for any large icon button. */
     val largePressedShape: Shape
         @Composable get() = LargeIconButtonTokens.PressedContainerShape.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any large icon button. */
     val largeSelectedRoundShape: Shape
         @Composable get() = LargeIconButtonTokens.SelectedContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any large, square icon button. */
     val largeSelectedSquareShape: Shape
         @Composable get() = LargeIconButtonTokens.SelectedContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any extra large icon button. */
     val extraLargeRoundShape: Shape
         @Composable get() = XLargeIconButtonTokens.ContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default shape for any extra large icon button. */
     val extraLargeSquareShape: Shape
         @Composable get() = XLargeIconButtonTokens.ContainerShapeSquare.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default pressed shape for any extra large icon button. */
     val extraLargePressedShape: Shape
         @Composable get() = XLargeIconButtonTokens.PressedContainerShape.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any extra large icon button. */
     val extraLargeSelectedRoundShape: Shape
         @Composable get() = XLargeIconButtonTokens.SelectedContainerShapeRound.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default selected shape for any extra large, square icon button. */
     val extraLargeSelectedSquareShape: Shape
@@ -1118,35 +1068,24 @@ object IconButtonDefaults {
                     .also { defaultIconToggleButtonShapesCached = it }
         }
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default container for any extra small icon button. */
     val extraSmallIconSize: Dp = XSmallIconButtonTokens.IconSize
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default size for any small icon button. */
     val smallIconSize: Dp = SmallIconButtonTokens.IconSize
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default container size for any medium icon button. */
     val mediumIconSize: Dp = MediumIconButtonTokens.IconSize
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Default size for any large icon button. */
     val largeIconSize: Dp = LargeIconButtonTokens.IconSize
 
     /** Default size for any xlarge icon button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val extraLargeIconSize: Dp = XLargeIconButtonTokens.IconSize
+    @ExperimentalMaterial3ExpressiveApi val extraLargeIconSize: Dp = XLargeIconButtonTokens.IconSize
 
     /**
      * Default container size for any extra small icon button.

@@ -18,7 +18,6 @@ package androidx.compose.foundation.gestures
 
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
-import androidx.compose.foundation.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,8 +25,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.coroutineScope
 
-@JvmDefaultWithCompatibility
-internal interface Scrollable2DState {
+interface Scrollable2DState {
     /**
      * Call this function to take control of scrolling and gain the ability to send scroll events
      * via [Scroll2DScope.scrollBy]. All actions that change the logical scroll position must be
@@ -66,7 +64,9 @@ internal interface Scrollable2DState {
     val isScrollInProgress: Boolean
 
     /**
-     * Whether this [Scrollable2DState] can scroll at a given vector [angle] in rads.
+     * Whether this [Scrollable2DState] can scroll at a given vector [angle] in rads. We also
+     * provide Scrollable2DState.canScroll(offset: Offset) as an utility for checking against an
+     * angle provided through an [Offset].
      *
      * Note that `true` here does not imply that delta *will* be consumed - the Scrollable2DState
      * may decide not to handle the incoming delta (such as if it is already being scrolled
@@ -76,7 +76,7 @@ internal interface Scrollable2DState {
 }
 
 /** Scope used for suspending scroll blocks */
-internal interface Scroll2DScope {
+interface Scroll2DScope {
     /**
      * Attempts to scroll forward by [delta] px.
      *
@@ -99,7 +99,7 @@ internal interface Scroll2DScope {
  *   receives the delta in pixels. Callers should update their state in this lambda and return the
  *   amount of delta consumed
  */
-internal fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
+fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
     return DefaultScrollable2DState(consumeScrollDelta)
 }
 
@@ -118,7 +118,7 @@ internal fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollab
  *   amount of delta consumed
  */
 @Composable
-internal fun rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
+fun rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
     val lambdaState = rememberUpdatedState(consumeScrollDelta)
     return remember { Scrollable2DState { lambdaState.value.invoke(it) } }
 }

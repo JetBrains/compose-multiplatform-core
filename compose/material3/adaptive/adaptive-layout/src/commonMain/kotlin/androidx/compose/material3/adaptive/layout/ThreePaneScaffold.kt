@@ -16,8 +16,6 @@
 
 package androidx.compose.material3.adaptive.layout
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
 import androidx.compose.runtime.Composable
@@ -29,12 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Measurable
@@ -48,6 +45,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
@@ -135,7 +134,11 @@ internal fun ThreePaneScaffold(
     val paneMotions = scaffoldState.calculateThreePaneMotion(ltrPaneOrder)
     val motionDataProvider =
         remember { ThreePaneScaffoldMotionDataProvider() }
-            .apply { update(paneMotions, ltrPaneOrder) }
+            .apply {
+                // TODO(conradchen): Find a better way to provide predictive back state
+                this.scaffoldState = scaffoldState
+                update(paneMotions, ltrPaneOrder)
+            }
 
     val currentTransition = scaffoldState.rememberTransition()
     val transitionScope =
@@ -214,19 +217,29 @@ private object DefaultThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
         val layoutDirection = LocalLayoutDirection.current
         val ltrPaneOrder =
             remember(paneOrder, layoutDirection) { paneOrder.toLtrOrder(layoutDirection) }
+        val scaffoldValue = scaffoldState.targetState
         val contents =
             listOf<@Composable () -> Unit>(
                 primaryPane,
                 secondaryPane,
                 tertiaryPane ?: {},
-                { paneExpansionDragHandle?.invoke(paneExpansionState) }
+                { paneExpansionDragHandle?.invoke(paneExpansionState) },
+                {
+                    // A default scrim when no AnimatedPane is being used.
+                    scaffoldValue.forEach { _, value ->
+                        (value as? PaneAdaptedValue.Levitated)
+                            ?.scrim
+                            ?.Content(ThreePaneScaffoldDefaults.ScrimColor, true)
+                        return@listOf
+                    }
+                }
             )
 
         val measurePolicy =
             remember(paneExpansionState) {
                     ThreePaneContentMeasurePolicy(
                         scaffoldDirective,
-                        scaffoldState.targetState,
+                        scaffoldValue,
                         paneExpansionState,
                         ltrPaneOrder,
                         motionDataProvider
@@ -234,14 +247,15 @@ private object DefaultThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
                 }
                 .apply {
                     this.scaffoldDirective = this@ThreePaneScaffold.scaffoldDirective
-                    this.scaffoldValue = scaffoldState.targetState
+                    this.scaffoldValue = scaffoldValue
                     this.paneOrder = ltrPaneOrder
                 }
 
-        // TODO(b/371450910): add predictive back scaling
+        scaffoldState.CollectPredictiveBackScale(motionDataProvider.predictiveBackScaleState)
+
         Layout(
             contents = contents,
-            modifier = modifier,
+            modifier = modifier.predictiveBackScale(motionDataProvider.predictiveBackScaleState),
             measurePolicy = measurePolicy,
         )
     }
@@ -267,6 +281,7 @@ private class ThreePaneContentMeasurePolicy(
         val secondaryMeasurable = measurables[1].firstOrNull()
         val tertiaryMeasurable = measurables[2].firstOrNull()
         val dragHandleMeasurable = measurables[3].firstOrNull()
+        val scrimMeasurable = getScrimMeasurable(measurables)
         return layout(constraints.maxWidth, constraints.maxHeight) {
             if (coordinates == null) {
                 return@layout
@@ -290,6 +305,16 @@ private class ThreePaneContentMeasurePolicy(
                     tertiaryMeasurable = tertiaryMeasurable,
                 ) {
                     it is PaneAdaptedValue.Reflowed
+                }
+            val levitatedPanes =
+                getPanesMeasurables(
+                    paneOrder = paneOrder,
+                    primaryMeasurable = primaryMeasurable,
+                    scaffoldValue = scaffoldValue,
+                    secondaryMeasurable = secondaryMeasurable,
+                    tertiaryMeasurable = tertiaryMeasurable,
+                ) {
+                    it is PaneAdaptedValue.Levitated
                 }
             val hiddenPanes =
                 getPanesMeasurablesWithValue(
@@ -558,6 +583,14 @@ private class ThreePaneContentMeasurePolicy(
                 paneExpansionState.onExpansionOffsetMeasured(PaneExpansionState.Unspecified)
             }
 
+            placeLevitatedPanes(
+                measurables = levitatedPanes,
+                scaffoldBounds = outerBounds,
+                layoutDirection = layoutDirection,
+                density = this@measure,
+                isLookingAhead = isLookingAhead
+            )
+
             // Place the hidden panes to ensure a proper motion at the AnimatedVisibility,
             // otherwise the pane will be gone immediately when it's hidden.
             // The placement is done using the outerBounds, as the placementsCache holds
@@ -567,6 +600,10 @@ private class ThreePaneContentMeasurePolicy(
             expandedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             reflowedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             dragHandle?.apply { doMeasureAndPlace() }
+            scrimMeasurable?.apply {
+                measure(Constraints.fixed(outerBounds.width, outerBounds.height)).place(0, 0)
+            }
+            levitatedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             hiddenPanes.fastForEach { with(it) { doMeasureAndPlace() } }
         }
     }
@@ -743,8 +780,45 @@ private class ThreePaneContentMeasurePolicy(
         paneBounds: IntRect,
         measurable: PaneMeasurable,
         isLookingAhead: Boolean
+    ) =
+        measurable.apply {
+            measuredBounds = paneBounds
+            recordMeasureResult(isLookingAhead)
+        }
+
+    private fun placeLevitatedPanes(
+        measurables: List<PaneMeasurable>,
+        scaffoldBounds: IntRect,
+        layoutDirection: LayoutDirection,
+        density: Density,
+        isLookingAhead: Boolean
     ) {
-        measurable.measuredBounds = paneBounds.also { it.save(measurable.role, isLookingAhead) }
+        measurables.fastForEach {
+            val paneSize =
+                IntSize(
+                    width =
+                        it.dragToResizeState?.getDraggedWidth(
+                            measuringWidth = it.measuringWidth,
+                            defaultMinWidth =
+                                with(density) {
+                                    ThreePaneScaffoldDefaults.MinPaneWidth.roundToPx()
+                                },
+                            scaffoldWidth = scaffoldBounds.width
+                        ) ?: min(it.measuringWidth, scaffoldBounds.width),
+                    height =
+                        it.dragToResizeState?.getDraggedHeight(
+                            measuringHeight = it.measuringHeight,
+                            defaultMinHeight =
+                                with(density) {
+                                    ThreePaneScaffoldDefaults.MinPaneHeight.roundToPx()
+                                },
+                            scaffoldHeight = scaffoldBounds.height
+                        ) ?: min(it.measuringHeight, scaffoldBounds.height)
+                )
+            val alignment = (it.value as? PaneAdaptedValue.Levitated)?.alignment ?: Alignment.Center
+            val offset = alignment.align(paneSize, scaffoldBounds.size, layoutDirection)
+            measureAndPlacePane(IntRect(offset, paneSize), it, isLookingAhead)
+        }
     }
 
     @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -764,35 +838,42 @@ private class ThreePaneContentMeasurePolicy(
                     measuredData.targetRight,
                     measuredData.targetBottom,
                 )
+            it.zIndex = measuredData.zIndex + ThreePaneScaffoldDefaults.HiddenPaneZIndexOffset
         }
     }
 
-    private fun IntRect.save(role: ThreePaneScaffoldRole, isLookingAhead: Boolean) {
-        if (!isLookingAhead) {
+    private fun PaneMeasurable.recordMeasureResult(isLookingAhead: Boolean) {
+        val paneMotionData = motionDataProvider[role]
+        if (!isLookingAhead && value != PaneAdaptedValue.Hidden) {
+            // Save zIndex for visible panes, so when it's hidden we can keep them at the same
+            // zIndex level.
+            paneMotionData.zIndex = zIndex
             return
         }
-        val paneMotionData = motionDataProvider[role]
-        if (!paneMotionData.isOriginSizeAndPositionSet) {
-            // During animation remeasuring can happen multiple times, with the measuring result
-            // equals to the lookahead measure. We don't want to override the original measurement
-            // so we only use the very first measurement
-            paneMotionData.originSize =
-                if (paneMotionData.isTargetSizeAndPositionSet) {
-                    paneMotionData.targetSize
-                } else {
-                    size
-                }
-            paneMotionData.originPosition =
-                if (paneMotionData.isTargetSizeAndPositionSet) {
-                    paneMotionData.targetPosition
-                } else {
-                    topLeft
-                }
-            paneMotionData.isOriginSizeAndPositionSet = true
+        measuredBounds?.apply {
+            if (!paneMotionData.isOriginSizeAndPositionSet) {
+                // During animation remeasuring can happen multiple times, with the measuring result
+                // equals to the lookahead measure. We don't want to override the original
+                // measurement
+                // so we only use the very first measurement
+                paneMotionData.originSize =
+                    if (paneMotionData.isTargetSizeAndPositionSet) {
+                        paneMotionData.targetSize
+                    } else {
+                        size
+                    }
+                paneMotionData.originPosition =
+                    if (paneMotionData.isTargetSizeAndPositionSet) {
+                        paneMotionData.targetPosition
+                    } else {
+                        topLeft
+                    }
+                paneMotionData.isOriginSizeAndPositionSet = true
+            }
+            paneMotionData.targetSize = size
+            paneMotionData.targetPosition = topLeft
+            paneMotionData.isTargetSizeAndPositionSet = true
         }
-        paneMotionData.targetSize = size
-        paneMotionData.targetPosition = topLeft
-        paneMotionData.isTargetSizeAndPositionSet = true
     }
 
     private fun Placeable.PlacementScope.getLocalBounds(bounds: Rect): IntRect {
@@ -844,6 +925,15 @@ private class ThreePaneContentMeasurePolicy(
             else -> PaneExpansionState.Unspecified
         }
     }
+
+    private fun getScrimMeasurable(measurables: List<List<Measurable>>): Measurable? {
+        measurables.subList(0, 3).fastForEach {
+            if (it.size > 1) {
+                return it[1]
+            }
+        }
+        return measurables[4].firstOrNull()
+    }
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -890,8 +980,14 @@ private class PaneMeasurable(
     val placedPositionY
         get() = measuredBounds?.top ?: 0
 
-    val zIndex: Float =
-        if (value == PaneAdaptedValue.Hidden) ThreePaneScaffoldDefaults.HiddenPaneZIndex else 0f
+    var zIndex: Float =
+        when {
+            (value is PaneAdaptedValue.Levitated) -> ThreePaneScaffoldDefaults.LevitatedPaneZIndex
+            else -> 0f
+        }
+
+    val dragToResizeState
+        get() = data.dragToResizeState
 
     val measuredAndPlaced
         get() = measuredBounds != null
@@ -961,52 +1057,20 @@ internal object ThreePaneScaffoldDefaults {
             tertiaryPaneAdaptStrategy
         )
 
+    const val LevitatedPaneZIndex = 1f
+
     /**
-     * The negative z-index of hidden panes to make visible panes always show upon hidden panes
-     * during pane animations.
+     * The z-index offset of hidden panes to make visible panes always show upon the hidden panes at
+     * the same z-index level during pane animations.
      */
-    const val HiddenPaneZIndex = -0.1f
+    const val HiddenPaneZIndexOffset = -0.1f
+
+    val ScrimColor = Color.Black.copy(alpha = 0.32f)
+
+    val MinPaneWidth = 48.dp
+
+    val MinPaneHeight = 48.dp
 }
-
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-@Composable
-private fun PredictiveBackScaleEffect(
-    scaffoldState: ThreePaneScaffoldState,
-    scaleAnimatable: Animatable<Float, AnimationVector1D>,
-) {
-    LaunchedEffect(scaffoldState) {
-        snapshotFlow { scaffoldState.progressFraction }
-            .collect { value ->
-                if (scaffoldState.isPredictiveBackInProgress) {
-                    val scale = convertStateProgressToPredictiveBackScale(value)
-                    scaleAnimatable.snapTo(scale)
-                } else {
-                    scaleAnimatable.animateTo(1f)
-                }
-            }
-    }
-}
-
-private const val PredictiveBackMinScale: Float = 0.95f
-
-private fun convertStateProgressToPredictiveBackScale(fraction: Float): Float {
-    // A decay curve such that: When fraction = 0, function returns 1.
-    // When fraction -> 1, function asymptotically approaches PredictiveBackMinScale
-    val delta = 1f - PredictiveBackMinScale
-    val shift = delta / 2
-    val curveScale = delta * delta / 2
-    return curveScale / (fraction + shift) + PredictiveBackMinScale
-}
-
-private fun Modifier.predictiveBackTransform(scale: () -> Float): Modifier = graphicsLayer {
-    val scaleValue = scale()
-    scaleX = scaleValue
-    scaleY = scaleValue
-    transformOrigin = TransformOriginTopCenter
-}
-
-// TODO(371450910): Investigate why animation fails if transform origin has y != 0.
-private val TransformOriginTopCenter = TransformOrigin(pivotFractionX = 0.5f, pivotFractionY = 0f)
 
 /**
  * Interface that allows libraries to override the behavior of [ThreePaneScaffold].
@@ -1054,8 +1118,6 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [ThreePaneScaffoldOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3AdaptiveComponentOverrideApi
 @ExperimentalMaterial3AdaptiveComponentOverrideApi
 val LocalThreePaneScaffoldOverride: ProvidableCompositionLocal<ThreePaneScaffoldOverride> =
     compositionLocalOf {

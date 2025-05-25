@@ -98,7 +98,7 @@ package androidx.compose.material {
     method public suspend Object? expand(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public androidx.compose.material.BottomDrawerValue getCurrentValue();
     method public float getOffset();
-    method @Deprecated @FloatRange(from=0.0, to=1.0) public float getProgress();
+    method @Deprecated @SuppressCompatibility @FloatRange(from=0.0, to=1.0) @androidx.compose.material.ExperimentalMaterialApi public float getProgress();
     method public androidx.compose.material.BottomDrawerValue getTargetValue();
     method public boolean isClosed();
     method public boolean isExpanded();
@@ -168,7 +168,7 @@ package androidx.compose.material {
     method public suspend Object? collapse(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? expand(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public androidx.compose.material.BottomSheetValue getCurrentValue();
-    method @Deprecated @FloatRange(from=0.0, to=1.0) public float getProgress();
+    method @Deprecated @SuppressCompatibility @FloatRange(from=0.0, to=1.0) @androidx.compose.material.ExperimentalMaterialApi public float getProgress();
     method public androidx.compose.material.BottomSheetValue getTargetValue();
     method public boolean isCollapsed();
     method public boolean isExpanded();
@@ -499,7 +499,7 @@ package androidx.compose.material {
   @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Immutable public final class FractionalThreshold implements androidx.compose.material.ThresholdConfig {
     ctor @Deprecated public FractionalThreshold(float fraction);
     method @Deprecated public float computeThreshold(androidx.compose.ui.unit.Density, float fromValue, float toValue);
-    method @Deprecated public androidx.compose.material.FractionalThreshold copy(float fraction);
+    method @Deprecated public androidx.compose.material.FractionalThreshold copy(optional float fraction);
   }
 
   public final class IconButtonKt {
@@ -563,7 +563,7 @@ package androidx.compose.material {
   public final class ModalBottomSheetState {
     ctor public ModalBottomSheetState(androidx.compose.material.ModalBottomSheetValue initialValue, androidx.compose.ui.unit.Density density, optional kotlin.jvm.functions.Function1<? super androidx.compose.material.ModalBottomSheetValue,java.lang.Boolean> confirmValueChange, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, optional boolean isSkipHalfExpanded);
     method public androidx.compose.material.ModalBottomSheetValue getCurrentValue();
-    method @Deprecated @FloatRange(from=0.0, to=1.0) public float getProgress();
+    method @Deprecated @SuppressCompatibility @FloatRange(from=0.0, to=1.0) @androidx.compose.material.ExperimentalMaterialApi public float getProgress();
     method public androidx.compose.material.ModalBottomSheetValue getTargetValue();
     method public suspend Object? hide(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public boolean isVisible();
@@ -834,11 +834,11 @@ package androidx.compose.material {
     ctor @Deprecated public SwipeableState(T initialValue, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, optional kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> confirmStateChange);
     method @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public final suspend Object? animateTo(T targetValue, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> anim, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public final T getCurrentValue();
-    method @Deprecated public final float getDirection();
+    method @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public final float getDirection();
     method @Deprecated public final androidx.compose.runtime.State<java.lang.Float> getOffset();
     method @Deprecated public final androidx.compose.runtime.State<java.lang.Float> getOverflow();
-    method @Deprecated public final androidx.compose.material.SwipeProgress<T> getProgress();
-    method @Deprecated public final T getTargetValue();
+    method @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public final androidx.compose.material.SwipeProgress<T> getProgress();
+    method @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public final T getTargetValue();
     method @Deprecated public final boolean isAnimationRunning();
     method @Deprecated public final float performDrag(float delta);
     method @Deprecated public final suspend Object? performFling(float velocity, kotlin.coroutines.Continuation<? super kotlin.Unit>);

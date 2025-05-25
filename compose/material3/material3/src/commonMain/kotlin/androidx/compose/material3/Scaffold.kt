@@ -198,20 +198,20 @@ private fun ScaffoldLayout(
                     when (fabPosition) {
                         FabPosition.Start -> {
                             if (layoutDirection == LayoutDirection.Ltr) {
-                                FabSpacing.roundToPx()
+                                FabSpacing.roundToPx() + leftInset
                             } else {
-                                layoutWidth - FabSpacing.roundToPx() - fabWidth
+                                layoutWidth - FabSpacing.roundToPx() - fabWidth - rightInset
                             }
                         }
                         FabPosition.End,
                         FabPosition.EndOverlay -> {
                             if (layoutDirection == LayoutDirection.Ltr) {
-                                layoutWidth - FabSpacing.roundToPx() - fabWidth
+                                layoutWidth - FabSpacing.roundToPx() - fabWidth - rightInset
                             } else {
-                                FabSpacing.roundToPx()
+                                FabSpacing.roundToPx() + leftInset
                             }
                         }
-                        else -> (layoutWidth - fabWidth) / 2
+                        else -> (layoutWidth - fabWidth + leftInset - rightInset) / 2
                     }
 
                 FabPlacement(left = fabLeftOffset, width = fabWidth, height = fabHeight)
@@ -280,9 +280,10 @@ private fun ScaffoldLayout(
             bodyContentPlaceable.place(0, 0)
             topBarPlaceable.place(0, 0)
             snackbarPlaceable.place(
-                (layoutWidth - snackbarPlaceable.width) / 2 +
-                    contentWindowInsets.getLeft(this@SubcomposeLayout, layoutDirection),
-                layoutHeight - snackbarOffsetFromBottom
+                (layoutWidth - snackbarPlaceable.width +
+                    contentWindowInsets.getLeft(this@SubcomposeLayout, layoutDirection) -
+                    contentWindowInsets.getRight(this@SubcomposeLayout, layoutDirection)) / 2,
+                layoutHeight - snackbarOffsetFromBottom,
             )
             // The bottom bar is always at the bottom of the layout
             bottomBarPlaceable.place(0, layoutHeight - (bottomBarPlaceable.height))

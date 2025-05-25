@@ -56,14 +56,14 @@ class AppBarRowScreenshotTest {
     fun appBarRow_fullWidth() {
         rule.setContent { AppBarRowTest(itemCount = 2) }
 
-        assertAgainstGolden("no_overflow")
+        assertAgainstGolden("appBarRow_no_overflow")
     }
 
     @Test
     fun appBarRow_withOverflow() {
         rule.setContent { AppBarRowTest(itemCount = 5) }
 
-        assertAgainstGolden("overflow")
+        assertAgainstGolden("appBarRow_overflow")
     }
 
     @Test
@@ -72,7 +72,10 @@ class AppBarRowScreenshotTest {
 
         rule.onNodeWithTag("Overflow").performClick()
 
-        rule.onNode(isPopup()).captureToImage().assertAgainstGolden(screenshotRule, "overflow_menu")
+        rule
+            .onNode(isPopup())
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "appBarRow_overflow_menu")
     }
 
     private fun assertAgainstGolden(goldenName: String) {

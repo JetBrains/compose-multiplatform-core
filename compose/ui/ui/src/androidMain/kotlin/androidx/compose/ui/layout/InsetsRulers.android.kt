@@ -30,6 +30,7 @@ import androidx.collection.ScatterMap
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,6 @@ import androidx.compose.ui.layout.InsetsRulers.DisplayCutout
 import androidx.compose.ui.layout.InsetsRulers.Ime
 import androidx.compose.ui.layout.InsetsRulers.MandatorySystemGestures
 import androidx.compose.ui.layout.InsetsRulers.NavigationBars
-import androidx.compose.ui.layout.InsetsRulers.SafeContent
 import androidx.compose.ui.layout.InsetsRulers.SafeDrawing
 import androidx.compose.ui.layout.InsetsRulers.SafeGestures
 import androidx.compose.ui.layout.InsetsRulers.StatusBars
@@ -647,52 +647,27 @@ internal class WindowInsetsValues {
     var interpolator: Interpolator? by mutableStateOf(null)
 
     /** The duration of the animation. */
-    var durationMillis by mutableLongStateOf(0)
+    var durationMillis by mutableLongStateOf(0L)
 
     /** The translucency of the animating window */
     var alpha by mutableFloatStateOf(1f)
 
-    private var _insets by mutableLongStateOf(0L)
-
     /** The current Window Insets values. */
-    var insets: ValueInsets
-        get() = ValueInsets(_insets)
-        set(value) {
-            _insets = value.packedValue
-        }
-
-    private var _ignoringVisibility by mutableLongStateOf(UnsetValueInsets.packedValue)
+    var insets = ValueInsets(0L)
 
     /** The value of thw Window Insets when they are visible. [Ime] never provides this value. */
-    var ignoringVisibility: ValueInsets
-        get() = ValueInsets(_ignoringVisibility)
-        set(value) {
-            _ignoringVisibility = value.packedValue
-        }
-
-    private var _source by mutableLongStateOf(UnsetValueInsets.packedValue)
+    var ignoringVisibility = UnsetValueInsets
 
     /** The starting insets value of the animation when [isAnimating] is `true`. */
-    var source: ValueInsets
-        get() = ValueInsets(_source)
-        set(value) {
-            _source = value.packedValue
-        }
-
-    private var _target by mutableLongStateOf(UnsetValueInsets.packedValue)
+    var source = UnsetValueInsets
 
     /** The ending insets value of the animation when [isAnimating] is `true`. */
-    var target: ValueInsets
-        get() = ValueInsets(_target)
-        set(value) {
-            _target = value.packedValue
-        }
+    var target = UnsetValueInsets
 }
 
 /** Applies the rulers for window insets. */
 internal fun Modifier.applyWindowInsetsRulers(insetsListener: InsetsListener) =
     this.then(RulerProviderModifierElement(insetsListener))
-        .then(ImeRulerProviderModifierElement(insetsListener))
 
 /** [ModifierNodeElement] that provides all [RectRulers] except for [Ime]. */
 private class RulerProviderModifierElement(val insetsListener: InsetsListener) :
@@ -721,6 +696,8 @@ private val RulerKey = "androidx.compose.ui.layout.WindowInsetsRulers"
 private class RulerProviderModifierNode(insetsListener: InsetsListener) :
     Modifier.Node(), LayoutModifierNode, TraversableNode {
     val insetsValues = insetsListener.insetsValues
+    val generation = insetsListener.generation
+    var previousGeneration = -1
 
     val cutoutRects: MutableObjectList<MutableState<Rect>> = insetsListener.displayCutouts
     val cutoutRulers: List<RectRulers> = insetsListener.displayCutoutRulers
@@ -734,14 +711,27 @@ private class RulerProviderModifierNode(insetsListener: InsetsListener) :
         }
 
     val rulerLambda: RulerScope.() -> Unit = {
+        previousGeneration = generation.intValue // just read the value so it is observed
         val size = coordinates.size
-        provideValuesForRulers(
-            size.width,
-            size.height,
-            insetsListener,
-            NonImeWindowInsetsRulers,
-            AnimatableNonImeWindowInsetsRulers
-        )
+        val insetsValues = insetsListener.insetsValues
+        val (width, height) = size
+        AllWindowInsetsRulers.forEach { rulers ->
+            val values = insetsValues[rulers]!!
+            provideInsetsValues(rulers, values.insets, width, height)
+        }
+        AnimatableNonImeWindowInsetsRulers.forEach { rulers ->
+            val values = insetsValues[rulers]!!
+            if (values.isAnimating) {
+                provideInsetsValues(rulers.source, values.source, width, height)
+                provideInsetsValues(rulers.target, values.target, width, height)
+            }
+            provideInsetsValues(
+                rulers.rulersIgnoringVisibility,
+                values.ignoringVisibility,
+                width,
+                height
+            )
+        }
         if (cutoutRects.isNotEmpty()) {
             cutoutRects.forEachIndexed { index, rectState ->
                 val rulers = cutoutRulers[index]
@@ -768,85 +758,6 @@ private class RulerProviderModifierNode(insetsListener: InsetsListener) :
         get() = RulerKey
 }
 
-/** [ModifierNodeElement] that provides [Ime], [SafeDrawing], and [SafeContent] values. */
-private class ImeRulerProviderModifierElement(val insetsListener: InsetsListener) :
-    ModifierNodeElement<ImeRulerProviderModifierNode>() {
-    override fun create(): ImeRulerProviderModifierNode =
-        ImeRulerProviderModifierNode(insetsListener)
-
-    override fun hashCode(): Int = 0
-
-    override fun equals(other: Any?): Boolean = other === this
-
-    override fun update(node: ImeRulerProviderModifierNode) {
-        node.insetsListener = insetsListener
-    }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "animatedWindowInsetsRulers"
-    }
-}
-
-/** [Modifier.Node] that provides [Ime], [SafeDrawing], and [SafeContent] values. */
-private class ImeRulerProviderModifierNode(insetsListener: InsetsListener) :
-    Modifier.Node(), LayoutModifierNode {
-    var insetsListener: InsetsListener = insetsListener
-        set(value) {
-            if (field !== value) {
-                field = value
-                requestRemeasure()
-            }
-        }
-
-    val rulerLambda: RulerScope.() -> Unit = {
-        val size = coordinates.size
-        provideValuesForRulers(
-            size.width,
-            size.height,
-            insetsListener,
-            ImeWindowInsetsRulers,
-            ImeWindowInsetsRulers
-        )
-    }
-
-    override fun MeasureScope.measure(
-        measurable: Measurable,
-        constraints: Constraints
-    ): MeasureResult {
-        val placeable = measurable.measure(constraints)
-        val width = placeable.width
-        val height = placeable.height
-        return layout(width, height, rulers = rulerLambda) { placeable.place(0, 0) }
-    }
-}
-
-private fun <T : RectRulers> RulerScope.provideValuesForRulers(
-    width: Int,
-    height: Int,
-    insetsListener: InsetsListener,
-    allRulers: Array<T>,
-    animatableRulers: Array<AnimatableInsetsRulers>
-) {
-    val insetsValues = insetsListener.insetsValues
-    allRulers.forEach { rulers ->
-        val values = insetsValues[rulers]!!
-        provideInsetsValues(rulers, values.insets, width, height)
-    }
-    animatableRulers.forEach { rulers ->
-        val values = insetsValues[rulers]!!
-        if (values.isAnimating) {
-            provideInsetsValues(rulers.source, values.source, width, height)
-            provideInsetsValues(rulers.target, values.target, width, height)
-        }
-        provideInsetsValues(
-            rulers.rulersIgnoringVisibility,
-            values.ignoringVisibility,
-            width,
-            height
-        )
-    }
-}
-
 /** Provide values for a [RectRulers]. */
 private fun RulerScope.provideInsetsValues(
     rulers: RectRulers,
@@ -855,15 +766,15 @@ private fun RulerScope.provideInsetsValues(
     height: Int
 ) {
     if (insets != UnsetValueInsets) {
-        val left = maxOf(0, insets.left)
-        val top = maxOf(0, insets.top)
-        val right = maxOf(0, insets.right)
-        val bottom = maxOf(0, insets.bottom)
+        val left = insets.left.toFloat()
+        val top = insets.top.toFloat()
+        val right = (width - insets.right).toFloat()
+        val bottom = (height - insets.bottom).toFloat()
 
-        rulers.left provides left.toFloat()
-        rulers.top provides top.toFloat()
-        rulers.right provides (width - right).toFloat()
-        rulers.bottom provides (height - bottom).toFloat()
+        rulers.left provides left
+        rulers.top provides top
+        rulers.right provides right
+        rulers.bottom provides bottom
     }
 }
 
@@ -911,6 +822,8 @@ internal class InsetsListener(
             it[Waterfall] = WindowInsetsValues()
         }
 
+    val generation = mutableIntStateOf(0)
+
     val displayCutouts = MutableObjectList<MutableState<Rect>>(4)
     val displayCutoutRulers = mutableStateListOf<RectRulers>()
 
@@ -924,6 +837,9 @@ internal class InsetsListener(
         bounds: BoundsCompat
     ): BoundsCompat {
         val insets = savedInsets
+        prepared = false
+        savedInsets = null
+
         if (animation.durationMillis > 0L && insets != null) {
             val type = animation.typeMask
             runningAnimationMask = runningAnimationMask or type
@@ -939,22 +855,13 @@ internal class InsetsListener(
                     insetsValue.target = target
                     insetsValue.isAnimating = true
                     updateInsetAnimationInfo(insetsValue, animation)
+                    generation.intValue++
+                    Snapshot.sendApplyNotifications()
                 }
             }
         }
 
-        prepared = false
-        savedInsets = null
-        Snapshot.sendApplyNotifications()
         return super.onStart(animation, bounds)
-    }
-
-    private fun WindowInsetsValues.targetValues(): ValueInsets {
-        return if (isAnimating) {
-            target
-        } else {
-            insets
-        }
     }
 
     private fun updateInsetAnimationInfo(
@@ -992,6 +899,8 @@ internal class InsetsListener(
     override fun onEnd(animation: WindowInsetsAnimationCompat) {
         prepared = false
         val type = animation.typeMask
+        runningAnimationMask = runningAnimationMask and type.inv()
+        savedInsets = null
         val rulers = AnimatableRulers[type]
         if (rulers != null) {
             val insetsValue = insetsValues[rulers]!!
@@ -1004,10 +913,9 @@ internal class InsetsListener(
             insetsValue.interpolatedFraction = 0f
             insetsValue.interpolator = null
             stopAnimationForRuler(insetsValue)
+            generation.intValue++
+            Snapshot.sendApplyNotifications()
         }
-        runningAnimationMask = runningAnimationMask and type.inv()
-        savedInsets = null
-        Snapshot.sendApplyNotifications()
         super.onEnd(animation)
     }
 
@@ -1040,6 +948,7 @@ internal class InsetsListener(
     }
 
     private fun updateInsets(insets: WindowInsetsCompat) {
+        generation.intValue++
         WindowInsetsTypeMap.forEach { type, rulers ->
             val insetsValue = ValueInsets(insets.getInsets(type))
             val values = insetsValues[rulers]!!
@@ -1142,7 +1051,7 @@ private val WindowInsetsTypeMap: IntObjectMap<RectRulers> =
     }
 
 /** Rulers that don't animate with the IME */
-private val NonImeWindowInsetsRulers =
+private val AllWindowInsetsRulers =
     arrayOf(
         StatusBars,
         NavigationBars,
@@ -1151,7 +1060,8 @@ private val NonImeWindowInsetsRulers =
         TappableElement,
         MandatorySystemGestures,
         DisplayCutout,
-        Waterfall
+        Waterfall,
+        Ime,
     )
 
 /** Rulers that can animate, but don't always animate with the IME */
@@ -1163,10 +1073,8 @@ private val AnimatableNonImeWindowInsetsRulers =
         TappableElement,
         SystemGestures,
         MandatorySystemGestures,
+        Ime,
     )
-
-/** Rulers that animate with the IME */
-private val ImeWindowInsetsRulers = arrayOf(Ime)
 
 /**
  * Mapping the [WindowInsetsCompat.Type] to the [RectRulers] for only the insets that can animate.

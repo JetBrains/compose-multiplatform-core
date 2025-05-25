@@ -53,6 +53,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
@@ -1594,6 +1595,51 @@ class NestedScrollModifierTest {
                 .isEqualTo(outerDispatcher.nestedScrollNode)
             assertThat(innerDispatcher.nestedScrollNode?.parentNestedScrollNode).isNull()
         }
+    }
+
+    @Test
+    fun modifierIsRemoved_thenReadded_scopeIsCorrect() {
+        val innerDispatcher = NestedScrollDispatcher()
+        val outerDispatcher = NestedScrollDispatcher()
+        var keepAround by mutableStateOf(true)
+
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.nestedScroll(
+                        dispatcher = outerDispatcher,
+                        connection = object : NestedScrollConnection {}
+                    )
+            ) {
+                Box(
+                    Modifier.size(400.dp)
+                        .then(
+                            if (keepAround)
+                                Modifier.nestedScroll(
+                                    dispatcher = innerDispatcher,
+                                    connection = object : NestedScrollConnection {}
+                                )
+                            else Modifier
+                        )
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotNull()
+        assertThat(innerDispatcher.coroutineScope).isNotNull()
+        assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
+        keepAround = false
+        rule.waitForIdle()
+        val calculatedScope = innerDispatcher.calculateNestedScrollScope()
+        val coroutineScope = innerDispatcher.coroutineScope
+        keepAround = true
+        outerDispatcher.coroutineScope.cancel() // cancelling parent node
+        rule.waitForIdle()
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotEqualTo(calculatedScope)
+        assertThat(innerDispatcher.calculateNestedScrollScope()?.isActive).isTrue()
+        assertThat(innerDispatcher.coroutineScope).isNotEqualTo(coroutineScope)
+        assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
     }
 }
 

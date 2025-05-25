@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.LayoutDirection
@@ -1008,6 +1009,7 @@ class WindowInsetsPaddingTest {
         lateinit var coordinates: LayoutCoordinates
 
         setContent {
+            (LocalView.current.parent as ComposeView).consumeWindowInsets = true
             Box(Modifier.fillMaxSize().background(Color.Blue).then(insetsModifier())) {
                 Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates = it })
             }
@@ -1025,6 +1027,7 @@ class WindowInsetsPaddingTest {
                     val view = InsetsView(context)
                     insetsView = view
                     val composeView = ComposeView(rule.activity)
+                    composeView.consumeWindowInsets = true
                     view.addView(
                         composeView,
                         ViewGroup.LayoutParams(

@@ -560,8 +560,11 @@ object SegmentedButtonDefaults {
                         disabledActiveBorderColor =
                             fromToken(OutlineColor).copy(alpha = DisabledOutlineOpacity),
                         disabledInactiveContainerColor = Color.Transparent,
-                        disabledInactiveContentColor = fromToken(DisabledLabelTextColor),
-                        disabledInactiveBorderColor = fromToken(OutlineColor),
+                        disabledInactiveContentColor =
+                            fromToken(DisabledLabelTextColor)
+                                .copy(alpha = DisabledLabelTextOpacity),
+                        disabledInactiveBorderColor =
+                            fromToken(OutlineColor).copy(alpha = DisabledOutlineOpacity),
                     )
                     .also { defaultSegmentedButtonColorsCached = it }
         }

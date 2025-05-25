@@ -18,8 +18,10 @@ package androidx.compose.material3.samples
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Sampled
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -71,7 +73,12 @@ fun FloatingActionButtonMenuSample() {
     Box {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             for (index in 0 until 100) {
-                item { Text(text = "List item - $index", modifier = Modifier.padding(24.dp)) }
+                item {
+                    Text(
+                        text = "List item - $index",
+                        modifier = Modifier.clickable {}.fillMaxWidth().padding(24.dp)
+                    )
+                }
             }
         }
 

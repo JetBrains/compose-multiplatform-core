@@ -142,8 +142,12 @@ public final class androidx/compose/ui/ComposeUiFlags {
 	public static field isAdaptiveRefreshRateEnabled Z
 	public static field isClearFocusOnResetEnabled Z
 	public static field isFocusActionExitsTouchModeEnabled Z
+	public static field isGetFocusedRectReturnEmptyEnabled Z
+	public static field isNestedScrollDispatcherNodeFixEnabled Z
+	public static field isNestedScrollInteropPostFlingFixEnabled Z
 	public static field isNoPinningInFocusRestorationEnabled Z
 	public static field isOutOfFrameDeactivationEnabled Z
+	public static field isPointerInteropFilterDispatchingFixEnabled Z
 	public static field isRectTrackingEnabled Z
 	public static field isRemoveFocusedViewFixEnabled Z
 	public static field isSemanticAutofillEnabled Z
@@ -2439,6 +2443,7 @@ public final class androidx/compose/ui/input/pointer/util/VelocityTracker1D {
 
 public final class androidx/compose/ui/input/pointer/util/VelocityTrackerKt {
 	public static final fun addPointerInputChange (Landroidx/compose/ui/input/pointer/util/VelocityTracker;Landroidx/compose/ui/input/pointer/PointerInputChange;)V
+	public static final fun addPointerInputChange-0AR0LA0 (Landroidx/compose/ui/input/pointer/util/VelocityTracker;Landroidx/compose/ui/input/pointer/PointerInputChange;J)V
 	public static final fun getVelocityTrackerAddPointsFix ()Z
 	public static final fun getVelocityTrackerStrategyUseImpulse ()Z
 	public static final fun setVelocityTrackerAddPointsFix (Z)V
@@ -2596,6 +2601,16 @@ public abstract interface class androidx/compose/ui/layout/IntrinsicMeasurable {
 public abstract interface class androidx/compose/ui/layout/IntrinsicMeasureScope : androidx/compose/ui/unit/Density {
 	public abstract fun getLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
 	public fun isLookingAhead ()Z
+}
+
+public final class androidx/compose/ui/layout/LayoutBoundsHolder {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getBounds ()Landroidx/compose/ui/spatial/RelativeLayoutBounds;
+}
+
+public final class androidx/compose/ui/layout/LayoutBoundsHolderKt {
+	public static final fun layoutBounds (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/layout/LayoutBoundsHolder;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/ui/layout/LayoutCoordinates {
@@ -2800,6 +2815,11 @@ public final class androidx/compose/ui/layout/MultiContentMeasurePolicyKt {
 	public static final fun createMeasurePolicy (Landroidx/compose/ui/layout/MultiContentMeasurePolicy;)Landroidx/compose/ui/layout/MeasurePolicy;
 }
 
+public final class androidx/compose/ui/layout/OnFirstVisibleModifierKt {
+	public static final fun onFirstVisible (Landroidx/compose/ui/Modifier;JFLandroidx/compose/ui/layout/LayoutBoundsHolder;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/Modifier;
+	public static synthetic fun onFirstVisible$default (Landroidx/compose/ui/Modifier;JFLandroidx/compose/ui/layout/LayoutBoundsHolder;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/ui/layout/OnGlobalLayoutListenerKt {
 	public static final fun registerOnGlobalLayoutListener (Landroidx/compose/ui/node/DelegatableNode;JJLkotlin/jvm/functions/Function1;)Landroidx/compose/ui/node/DelegatableNode$RegistrationHandle;
 }
@@ -2856,6 +2876,11 @@ public final class androidx/compose/ui/layout/OnRemeasuredModifier$DefaultImpls 
 
 public final class androidx/compose/ui/layout/OnRemeasuredModifierKt {
 	public static final fun onSizeChanged (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/ui/layout/OnVisibilityChangedModifierKt {
+	public static final fun onVisibilityChanged (Landroidx/compose/ui/Modifier;JFLandroidx/compose/ui/layout/LayoutBoundsHolder;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static synthetic fun onVisibilityChanged$default (Landroidx/compose/ui/Modifier;JFLandroidx/compose/ui/layout/LayoutBoundsHolder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/ui/layout/ParentDataModifier : androidx/compose/ui/Modifier$Element {
@@ -3702,15 +3727,14 @@ public abstract interface class androidx/compose/ui/platform/PlatformTextInputIn
 
 public abstract interface class androidx/compose/ui/platform/PlatformTextInputMethodRequest {
 	public abstract fun getEditText ()Lkotlin/jvm/functions/Function1;
-	public abstract fun getFocusedRectInRoot ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun getFocusedRectInRoot ()Lkotlin/jvm/functions/Function0;
 	public abstract fun getImeOptions ()Landroidx/compose/ui/text/input/ImeOptions;
 	public abstract fun getOnEditCommand ()Lkotlin/jvm/functions/Function1;
 	public abstract fun getOnImeAction ()Lkotlin/jvm/functions/Function1;
-	public abstract fun getOutputValue ()Lkotlinx/coroutines/flow/Flow;
 	public abstract fun getState ()Landroidx/compose/ui/text/input/TextEditorState;
-	public abstract fun getTextClippingRectInRoot ()Lkotlinx/coroutines/flow/Flow;
-	public abstract fun getTextFieldRectInRoot ()Lkotlinx/coroutines/flow/Flow;
-	public abstract fun getTextLayoutResult ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun getTextClippingRectInRoot ()Lkotlin/jvm/functions/Function0;
+	public abstract fun getTextFieldRectInRoot ()Lkotlin/jvm/functions/Function0;
+	public abstract fun getTextLayoutResult ()Lkotlin/jvm/functions/Function0;
 	public abstract fun getValue ()Lkotlin/jvm/functions/Function0;
 }
 
@@ -3797,6 +3821,7 @@ public abstract interface class androidx/compose/ui/platform/ViewConfiguration {
 	public fun getHandwritingSlop ()F
 	public abstract fun getLongPressTimeoutMillis ()J
 	public fun getMaximumFlingVelocity ()F
+	public fun getMinimumFlingVelocity ()F
 	public fun getMinimumTouchTargetSize-MYxV2XQ ()J
 	public abstract fun getTouchSlop ()F
 }
@@ -3805,6 +3830,7 @@ public final class androidx/compose/ui/platform/ViewConfiguration$DefaultImpls {
 	public static fun getHandwritingGestureLineMargin (Landroidx/compose/ui/platform/ViewConfiguration;)F
 	public static fun getHandwritingSlop (Landroidx/compose/ui/platform/ViewConfiguration;)F
 	public static fun getMaximumFlingVelocity (Landroidx/compose/ui/platform/ViewConfiguration;)F
+	public static fun getMinimumFlingVelocity (Landroidx/compose/ui/platform/ViewConfiguration;)F
 	public static fun getMinimumTouchTargetSize-MYxV2XQ (Landroidx/compose/ui/platform/ViewConfiguration;)J
 }
 
@@ -4202,6 +4228,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getIsDialog ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsEditable ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsPopup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getIsSensitiveData ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsShowingTextSubstitution ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsTraversalGroup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getLinkTestMarker ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4278,6 +4305,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun invisibleToUser (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
 	public static final fun isContainer (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isEditable (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
+	public static final fun isSensitiveData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isShowingTextSubstitution (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun isTraversalGroup (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun onAutofillText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
@@ -4333,6 +4361,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun setSelected (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setSelection (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)V
 	public static synthetic fun setSelection$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static final fun setSensitiveData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setShape (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/graphics/Shape;)V
 	public static final fun setShowingTextSubstitution (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setStateDescription (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V
@@ -4370,6 +4399,11 @@ public abstract interface class androidx/compose/ui/semantics/SemanticsPropertyR
 public final class androidx/compose/ui/spatial/RelativeLayoutBounds {
 	public static final field $stable I
 	public final fun calculateOcclusions ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun fractionVisibleIn (Landroidx/compose/ui/spatial/RelativeLayoutBounds;)F
+	public final fun fractionVisibleInRect (IIII)F
+	public final fun fractionVisibleInWindow ()F
+	public final fun fractionVisibleInWindowWithInsets-E1MhUcY (JJ)F
 	public final fun getBoundsInRoot ()Landroidx/compose/ui/unit/IntRect;
 	public final fun getBoundsInScreen ()Landroidx/compose/ui/unit/IntRect;
 	public final fun getBoundsInWindow ()Landroidx/compose/ui/unit/IntRect;
@@ -4378,6 +4412,7 @@ public final class androidx/compose/ui/spatial/RelativeLayoutBounds {
 	public final fun getPositionInScreen-nOcc-ac ()J
 	public final fun getPositionInWindow-nOcc-ac ()J
 	public final fun getWidth ()I
+	public fun hashCode ()I
 }
 
 public final class androidx/compose/ui/state/ToggleableState : java/lang/Enum {

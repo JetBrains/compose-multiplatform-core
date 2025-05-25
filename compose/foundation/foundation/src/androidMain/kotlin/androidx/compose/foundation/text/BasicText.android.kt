@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -73,16 +74,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        ParagraphIntrinsics(
-                            text = text,
-                            style = resolvedStyle,
-                            density = density,
-                            fontFamilyResolver = fontFamilyResolver,
-                            annotations = emptyList()
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            ParagraphIntrinsics(
+                                text = text,
+                                style = resolvedStyle,
+                                density = density,
+                                fontFamilyResolver = fontFamilyResolver,
+                                annotations = emptyList()
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}
@@ -105,16 +108,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        MultiParagraphIntrinsics(
-                            annotatedString = text,
-                            style = resolvedStyle,
-                            density = density,
-                            placeholders = placeholders ?: emptyList(),
-                            fontFamilyResolver = fontFamilyResolver
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            MultiParagraphIntrinsics(
+                                annotatedString = text,
+                                style = resolvedStyle,
+                                density = density,
+                                placeholders = placeholders ?: emptyList(),
+                                fontFamilyResolver = fontFamilyResolver
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}

@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,20 +29,19 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    implementation("androidx.annotation:annotation:1.8.1")
 }
 
 androidx {
     name = "WindowManager Sidecar"
-    type = LibraryType.PUBLISHED_LIBRARY // Only to generate per-project-zips
-    runApiTasks = new RunApiTasks.Yes("Need to track API surface but should never publish")
+    type = SoftwareType.PUBLISHED_LIBRARY // Only to generate per-project-zips
     inceptionYear = "2020"
     description = "This version of the OEM extension is deprecated. Please use window:extensions:extensions." +
             "module instead."
-    metalavaK2UastEnabled = true
     doNotDocumentReason = "Should not be published"
 }
 
 android {
-    namespace "androidx.window.sidecar"
+    namespace = "androidx.window.sidecar"
 }

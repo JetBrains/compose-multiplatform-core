@@ -105,7 +105,8 @@ object ComposeUiFlags {
      * * `SafeGesturesRulers`
      * * `SafeContentRulers`
      */
-    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
+    // off for b/410868572
+    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = false
 
     /**
      * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
@@ -135,4 +136,32 @@ object ComposeUiFlags {
      * Modifier.requestedFrameRate(frameRate: Float)
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
+
+    /**
+     * Flag for enabling the fix for correctly dispatching interop pointer events during the
+     * [PointerEventPass.Main] pass and not the final pass.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isPointerInteropFilterDispatchingFixEnabled: Boolean = true
+
+    /**
+     * Flag for enabling the fix for calling the correct nested scrolling methods from the
+     * connection created by [rememberNestedScrollInteropConnection].
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollInteropPostFlingFixEnabled: Boolean = true
+
+    /** Flag for enabling the fix for using the correct node for nested scroll operations. */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollDispatcherNodeFixEnabled: Boolean = true
+
+    /**
+     * Changes ComposeView's getFocusedRect() call to return an empty rect when nothing is
+     * focusable. When this flag is disabled, if the ComposeView has nothing focusable,
+     * getFocusedRect() will call super.getFocusRect().
+     */
+    @Suppress("MutableBareField") @JvmField var isGetFocusedRectReturnEmptyEnabled: Boolean = true
 }

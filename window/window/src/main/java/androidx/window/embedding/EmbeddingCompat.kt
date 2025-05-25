@@ -29,10 +29,10 @@ import androidx.window.core.ConsumerAdapter
 import androidx.window.core.VerificationMode
 import androidx.window.embedding.EmbeddingInterfaceCompat.EmbeddingCallbackInterface
 import androidx.window.embedding.OverlayController.Companion.OVERLAY_FEATURE_VERSION
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
 import androidx.window.embedding.SplitController.SplitSupportStatus.Companion.SPLIT_AVAILABLE
 import androidx.window.extensions.WindowExtensionsProvider
 import androidx.window.extensions.embedding.ActivityEmbeddingComponent
-import androidx.window.extensions.embedding.ActivityStack as OEMActivityStack
 import androidx.window.extensions.embedding.ActivityStackAttributes
 import androidx.window.extensions.embedding.SplitInfo as OEMSplitInfo
 import androidx.window.reflection.Consumer2
@@ -102,13 +102,9 @@ internal class EmbeddingCompat(
                 registerSplitInfoCallback(embeddingCallback)
 
                 // Register ActivityStack callback
-                val activityStackCallback =
-                    Consumer2<List<OEMActivityStack>> { activityStacks ->
-                        embeddingCallback.onActivityStackChanged(adapter.translate(activityStacks))
-                    }
                 embeddingExtension.registerActivityStackCallback(
                     Runnable::run,
-                    activityStackCallback
+                    ActivityStackConsumer(embeddingCallback, adapter)
                 )
             }
         }
@@ -189,7 +185,14 @@ internal class EmbeddingCompat(
                 adapter.embeddingConfiguration != null
         ) {
             embeddingExtension.setSplitAttributesCalculator { params ->
-                adapter.translateSplitAttributes(adapter.translate(params.defaultSplitAttributes))
+                if (params.areDefaultConstraintsSatisfied())
+                    adapter.translateSplitAttributes(
+                        adapter.translate(params.defaultSplitAttributes)
+                    )
+                else
+                    adapter.translateSplitAttributes(
+                        SplitAttributes.Builder().setSplitType(SPLIT_TYPE_EXPAND).build()
+                    )
             }
         }
     }

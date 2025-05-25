@@ -2566,10 +2566,10 @@ class CompositionTests {
         assertArrayEquals(listOf(observed), abandonedObjects)
     }
 
-    // The test is properly implemented in CompositionTests.web.kt
+    @Test
+    // The test for web is properly implemented in CompositionTests.web.kt
     @IgnoreJsTarget
     @IgnoreWasmTarget
-    @Test
     fun testRememberObserver_Abandon_Recompose() {
         val abandonedObjects = mutableListOf<RememberObserver>()
         val observed =

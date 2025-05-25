@@ -44,7 +44,8 @@ internal class TextFieldCharSequence(
     selection: TextRange = TextRange.Zero,
     composition: TextRange? = null,
     highlight: Pair<TextHighlightType, TextRange>? = null,
-    val composingAnnotations: List<PlacedAnnotation>? = null
+    val composingAnnotations: List<PlacedAnnotation>? = null,
+    val outputAnnotations: List<PlacedAnnotation>? = null,
 ) : CharSequence {
 
     override val length: Int

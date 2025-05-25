@@ -34,8 +34,8 @@ import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_FULLSCREEN_IN_PORTRAIT
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_HORIZONTAL_LAYOUT_IN_TABLETOP
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_LAYOUT_FOLLOWING_HINGE_WHEN_SEPARATING
-import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_USE_DEFAULT_SPLIT_ATTRIBUTES
 import androidx.window.embedding.ActivityEmbeddingController
+import androidx.window.embedding.EmbeddingAnimationParams
 import androidx.window.embedding.EmbeddingBounds
 import androidx.window.embedding.EmbeddingConfiguration
 import androidx.window.embedding.EmbeddingConfiguration.DimAreaBehavior.Companion.ON_TASK
@@ -118,11 +118,13 @@ class ExampleWindowInitializer : Initializer<RuleController> {
         // Make a copy of the default splitAttributes, but replace the animation background
         // to what is configured in the Demo app.
         val animationBackground = demoActivityEmbeddingController.animationBackground
+        val animationParams =
+            EmbeddingAnimationParams.Builder().setAnimationBackground(animationBackground).build()
         val defaultSplitAttributes =
             SplitAttributes.Builder()
                 .setLayoutDirection(params.defaultSplitAttributes.layoutDirection)
                 .setSplitType(params.defaultSplitAttributes.splitType)
-                .setAnimationBackground(animationBackground)
+                .setAnimationParams(animationParams)
                 .apply {
                     if (extensionVersion >= 6) {
                         setDividerAttributes(params.defaultSplitAttributes.dividerAttributes)
@@ -134,14 +136,6 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                 ?.removePrefix(PREFIX_PLACEHOLDER)
                 ?.removeSuffix(SUFFIX_REVERSED)
         ) {
-            TAG_USE_DEFAULT_SPLIT_ATTRIBUTES,
-            null -> {
-                return if (params.areDefaultConstraintsSatisfied) {
-                    defaultSplitAttributes
-                } else {
-                    expandContainersAttrs
-                }
-            }
             TAG_SHOW_FULLSCREEN_IN_PORTRAIT -> {
                 if (isPortrait) {
                     return expandContainersAttrs
@@ -158,7 +152,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else if (isPortrait) {
                     return expandContainersAttrs
@@ -175,7 +169,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -190,7 +184,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -202,7 +196,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -219,7 +213,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -231,7 +225,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -253,7 +247,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 if (shouldReversed) RIGHT_TO_LEFT else LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -261,11 +255,16 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                 return SplitAttributes.Builder()
                     .setSplitType(demoActivityEmbeddingController.customizedSplitType)
                     .setLayoutDirection(demoActivityEmbeddingController.customizedLayoutDirection)
-                    .setAnimationBackground(animationBackground)
+                    .setAnimationParams(animationParams)
                     .build()
             }
         }
-        return defaultSplitAttributes
+
+        return if (params.areDefaultConstraintsSatisfied) {
+            defaultSplitAttributes
+        } else {
+            expandContainersAttrs
+        }
     }
 
     private fun sampleOverlayAttributesCalculator(

@@ -22,6 +22,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.ui.geometry.Offset
+import kotlin.math.atan2
 
 /**
  * Scroll by [value] pixels with animation.
@@ -54,7 +55,7 @@ suspend fun ScrollableState.animateScrollBy(
  * @param animationSpec [AnimationSpec] to be used for this scrolling
  * @return the amount of scroll consumed
  */
-internal suspend fun Scrollable2DState.animateScrollBy(
+suspend fun Scrollable2DState.animateScrollBy(
     value: Offset,
     animationSpec: AnimationSpec<Offset> = spring()
 ): Offset {
@@ -93,7 +94,7 @@ suspend fun ScrollableState.scrollBy(value: Float): Float {
  * @return the amount of scroll consumed
  * @see animateScrollBy for an animated version
  */
-internal suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
+suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
     var consumed = Offset.Zero
     scroll { consumed = scrollBy(value) }
     return consumed
@@ -117,10 +118,17 @@ suspend fun ScrollableState.stopScroll(scrollPriority: MutatePriority = MutatePr
  *
  * @param scrollPriority scrolls that run with this priority or lower will be stopped
  */
-internal suspend fun Scrollable2DState.stopScroll(
-    scrollPriority: MutatePriority = MutatePriority.Default
-) {
+suspend fun Scrollable2DState.stopScroll(scrollPriority: MutatePriority = MutatePriority.Default) {
     scroll(scrollPriority) {
         // do nothing, just lock the mutex so other scroll actors are cancelled
     }
+}
+
+/**
+ * If this [Scrollable2DState] can scroll using the angle in the given [offset].
+ *
+ * @param offset An offset in pixels representing the 2D vector to check against.
+ */
+fun Scrollable2DState.canScroll(offset: Offset): Boolean {
+    return canScroll(atan2(x = offset.x, y = offset.y))
 }

@@ -16,8 +16,10 @@
 
 package androidx.compose.foundation.text.input
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.text.AnnotatedString
 
 /**
  * A function ([transformOutput]) that transforms the text presented to a user by a
@@ -49,4 +51,58 @@ fun interface OutputTransformation {
      * @sample androidx.compose.foundation.samples.BasicTextFieldOutputTransformationSample
      */
     fun TextFieldBuffer.transformOutput()
+}
+
+/**
+ * A special type of [OutputTransformation] that enables adding styling and annotations to the
+ * rendered text.
+ */
+fun interface AnnotatedOutputTransformation : OutputTransformation {
+
+    // this is not necessary but it gives a better order to automatically added required override
+    // functions. We want to emphasize that transformOutput is executed before annotateOutput.
+    override fun TextFieldBuffer.transformOutput() = Unit
+
+    /**
+     * Provides the ability to style and annotate the final rendered text. This always runs after
+     * [OutputTransformation.transformOutput].
+     */
+    fun OutputTransformationAnnotationScope.annotateOutput()
+}
+
+sealed interface OutputTransformationAnnotationScope {
+
+    /** The text content of the buffer after [OutputTransformation.transformOutput] is called. */
+    val text: CharSequence
+
+    /**
+     * Adds the given [annotation] to the text range between [start] (inclusive) and [end]
+     * (exclusive).
+     */
+    fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int)
+}
+
+/**
+ * This class is responsible for defining an [OutputTransformationAnnotationScope] for
+ * [AnnotatedOutputTransformation] without requiring an allocation everytime a transform is called.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+internal class MutableOutputTransformationAnnotationScope : OutputTransformationAnnotationScope {
+
+    val annotationRangeList = mutableListOf<PlacedAnnotation>()
+
+    override var text: CharSequence = ""
+
+    override fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
+        annotationRangeList.add(AnnotatedString.Range(annotation, start, end))
+    }
+
+    /**
+     * Call this function after [OutputTransformation.transformOutput], before
+     * [AnnotatedOutputTransformation.annotateOutput].
+     */
+    fun reset(buffer: TextFieldBuffer) {
+        annotationRangeList.clear()
+        this.text = buffer.asCharSequence()
+    }
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.util.fastForEach
 import com.google.common.truth.Truth.assertThat
@@ -711,10 +712,13 @@ class SelectionManagerTest {
                 ),
             )
 
-        val result =
-            annotatedString.subSequence(startOffset, annotatedString.length) +
-                annotatedString +
-                annotatedString.subSequence(0, endOffset)
+        val result = buildAnnotatedString {
+            append(annotatedString.subSequence(startOffset, annotatedString.length))
+            append("\n")
+            append(annotatedString)
+            append("\n")
+            append(annotatedString.subSequence(0, endOffset))
+        }
         assertThat(selectionManager.getSelectedText()).isEqualTo(result)
         assertThat(selectable.getTextCalledTimes).isEqualTo(0)
         verify(startSelectable, times(1)).getText()
@@ -807,10 +811,13 @@ class SelectionManagerTest {
                 ),
             )
 
-        val result =
-            annotatedString.subSequence(endOffset, annotatedString.length) +
-                annotatedString +
-                annotatedString.subSequence(0, startOffset)
+        val result = buildAnnotatedString {
+            append(annotatedString.subSequence(endOffset, annotatedString.length))
+            append("\n")
+            append(annotatedString)
+            append("\n")
+            append(annotatedString.subSequence(0, startOffset))
+        }
         assertThat(selectionManager.getSelectedText()).isEqualTo(result)
         assertThat(selectable.getTextCalledTimes).isEqualTo(0)
         verify(startSelectable, times(1)).getText()

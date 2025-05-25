@@ -175,6 +175,19 @@ val currentComposer: Composer
     }
 
 /**
+ * Returns the [CompositionContext] associated for the current composer.
+ *
+ * This API is exposed for internal usages only. It should not be invoked outside of the Compose
+ * Runtime
+ */
+@InternalComposeApi
+val currentCompositionContext: CompositionContext
+    @TestOnly
+    @ReadOnlyComposable
+    @Composable
+    get() = (currentComposer.composition as CompositionImpl).parent
+
+/**
  * Returns an object which can be used to invalidate the current scope at this point in composition.
  * This object can be used to manually cause recompositions.
  */

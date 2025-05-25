@@ -19,7 +19,9 @@ package androidx.compose.material3
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material3.MotionScheme.Companion.standard
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
@@ -97,7 +99,7 @@ fun MaterialTheme(
     val selectionColors = rememberTextSelectionColors(colorScheme)
     CompositionLocalProvider(
         LocalColorScheme provides colorScheme,
-        LocalMotionScheme provides motionScheme,
+        _localMotionScheme provides motionScheme,
         LocalIndication provides rippleIndication,
         LocalShapes provides shapes,
         LocalTextSelectionColors provides selectionColors,
@@ -140,6 +142,21 @@ object MaterialTheme {
     @ExperimentalMaterial3ExpressiveApi
     val motionScheme: MotionScheme
         @Composable @ReadOnlyComposable get() = LocalMotionScheme.current
+
+    /**
+     * A read-only `CompositionLocal` that provides the current [MotionScheme] to Material 3
+     * components.
+     *
+     * The motion scheme is typically supplied by [MaterialTheme.motionScheme] and can be overridden
+     * for specific UI subtrees by wrapping it with another [MaterialTheme].
+     *
+     * This API is exposed to allow retrieving motion values from inside
+     * `CompositionLocalConsumerModifierNode` implementations, but in most cases it's recommended to
+     * read the motion values from [MaterialTheme.motionScheme].
+     */
+    @ExperimentalMaterial3ExpressiveApi
+    val LocalMotionScheme: CompositionLocal<MotionScheme>
+        get() = _localMotionScheme
 }
 
 /**
@@ -215,3 +232,8 @@ internal fun rememberTextSelectionColors(colorScheme: ColorScheme): TextSelectio
 
 /*@VisibleForTesting*/
 internal const val TextSelectionBackgroundOpacity = 0.4f
+
+/** Use [MaterialTheme.LocalMotionScheme] to access this publicly. */
+@Suppress("CompositionLocalNaming")
+@ExperimentalMaterial3ExpressiveApi
+private val _localMotionScheme = staticCompositionLocalOf { standard() }

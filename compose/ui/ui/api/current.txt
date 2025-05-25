@@ -74,7 +74,7 @@ package androidx.compose.ui {
     method public long align(long size, long space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.BiasAbsoluteAlignment copy(float horizontalBias, float verticalBias);
+    method public androidx.compose.ui.BiasAbsoluteAlignment copy(optional float horizontalBias, optional float verticalBias);
     method public float getHorizontalBias();
     method public float getVerticalBias();
     property public float horizontalBias;
@@ -85,7 +85,7 @@ package androidx.compose.ui {
     ctor public BiasAbsoluteAlignment.Horizontal(float bias);
     method public int align(int size, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public float component1();
-    method public androidx.compose.ui.BiasAbsoluteAlignment.Horizontal copy(float bias);
+    method public androidx.compose.ui.BiasAbsoluteAlignment.Horizontal copy(optional float bias);
     method public float getBias();
     method public androidx.compose.ui.Alignment plus(androidx.compose.ui.Alignment.Vertical other);
     property public float bias;
@@ -96,7 +96,7 @@ package androidx.compose.ui {
     method public long align(long size, long space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public float component1();
     method public float component2();
-    method public androidx.compose.ui.BiasAlignment copy(float horizontalBias, float verticalBias);
+    method public androidx.compose.ui.BiasAlignment copy(optional float horizontalBias, optional float verticalBias);
     method public float getHorizontalBias();
     method public float getVerticalBias();
     property public float horizontalBias;
@@ -107,7 +107,7 @@ package androidx.compose.ui {
     ctor public BiasAlignment.Horizontal(float bias);
     method public int align(int size, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public float component1();
-    method public androidx.compose.ui.BiasAlignment.Horizontal copy(float bias);
+    method public androidx.compose.ui.BiasAlignment.Horizontal copy(optional float bias);
     method public float getBias();
     method public androidx.compose.ui.Alignment plus(androidx.compose.ui.Alignment.Vertical other);
     property public float bias;
@@ -117,7 +117,7 @@ package androidx.compose.ui {
     ctor public BiasAlignment.Vertical(float bias);
     method public int align(int size, int space);
     method public float component1();
-    method public androidx.compose.ui.BiasAlignment.Vertical copy(float bias);
+    method public androidx.compose.ui.BiasAlignment.Vertical copy(optional float bias);
     method public float getBias();
     method public androidx.compose.ui.Alignment plus(androidx.compose.ui.Alignment.Horizontal other);
     property public float bias;
@@ -136,8 +136,12 @@ package androidx.compose.ui {
     property public boolean isAdaptiveRefreshRateEnabled;
     property public boolean isClearFocusOnResetEnabled;
     property public boolean isFocusActionExitsTouchModeEnabled;
+    property public boolean isGetFocusedRectReturnEmptyEnabled;
+    property public boolean isNestedScrollDispatcherNodeFixEnabled;
+    property public boolean isNestedScrollInteropPostFlingFixEnabled;
     property public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOutOfFrameDeactivationEnabled;
+    property public boolean isPointerInteropFilterDispatchingFixEnabled;
     property public boolean isRectTrackingEnabled;
     property public boolean isRemoveFocusedViewFixEnabled;
     property public boolean isSemanticAutofillEnabled;
@@ -148,8 +152,12 @@ package androidx.compose.ui {
     field public static boolean isAdaptiveRefreshRateEnabled;
     field public static boolean isClearFocusOnResetEnabled;
     field public static boolean isFocusActionExitsTouchModeEnabled;
+    field public static boolean isGetFocusedRectReturnEmptyEnabled;
+    field public static boolean isNestedScrollDispatcherNodeFixEnabled;
+    field public static boolean isNestedScrollInteropPostFlingFixEnabled;
     field public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOutOfFrameDeactivationEnabled;
+    field public static boolean isPointerInteropFilterDispatchingFixEnabled;
     field public static boolean isRectTrackingEnabled;
     field public static boolean isRemoveFocusedViewFixEnabled;
     field public static boolean isSemanticAutofillEnabled;
@@ -2340,6 +2348,7 @@ package androidx.compose.ui.input.pointer.util {
 
   public final class VelocityTrackerKt {
     method public static void addPointerInputChange(androidx.compose.ui.input.pointer.util.VelocityTracker, androidx.compose.ui.input.pointer.PointerInputChange event);
+    method public static void addPointerInputChange(androidx.compose.ui.input.pointer.util.VelocityTracker, androidx.compose.ui.input.pointer.PointerInputChange event, long offset);
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean getVelocityTrackerAddPointsFix();
     method @SuppressCompatibility @androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi public static boolean getVelocityTrackerStrategyUseImpulse();
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void setVelocityTrackerAddPointsFix(boolean);
@@ -2526,7 +2535,7 @@ package androidx.compose.ui.layout {
     ctor public FixedScale(float value);
     method public float component1();
     method public long computeScaleFactor(long srcSize, long dstSize);
-    method public androidx.compose.ui.layout.FixedScale copy(float value);
+    method public androidx.compose.ui.layout.FixedScale copy(optional float value);
     method public float getValue();
     property public float value;
   }
@@ -2617,6 +2626,16 @@ package androidx.compose.ui.layout {
     method public default boolean isLookingAhead();
     property public default boolean isLookingAhead;
     property public abstract androidx.compose.ui.unit.LayoutDirection layoutDirection;
+  }
+
+  public final class LayoutBoundsHolder {
+    ctor public LayoutBoundsHolder();
+    method @androidx.compose.runtime.annotation.FrequentlyChangingValue public androidx.compose.ui.spatial.RelativeLayoutBounds? getBounds();
+    property @androidx.compose.runtime.annotation.FrequentlyChangingValue public androidx.compose.ui.spatial.RelativeLayoutBounds? bounds;
+  }
+
+  public final class LayoutBoundsHolderKt {
+    method public static androidx.compose.ui.Modifier layoutBounds(androidx.compose.ui.Modifier, androidx.compose.ui.layout.LayoutBoundsHolder holder);
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface LayoutCoordinates {
@@ -2789,6 +2808,10 @@ package androidx.compose.ui.layout {
     method public default int minIntrinsicWidth(androidx.compose.ui.layout.IntrinsicMeasureScope, java.util.List<? extends java.util.List<? extends androidx.compose.ui.layout.IntrinsicMeasurable>> measurables, int height);
   }
 
+  public final class OnFirstVisibleModifierKt {
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onFirstVisible(androidx.compose.ui.Modifier, optional @IntRange(from=0L) long minDurationMs, optional @FloatRange(from=0.0, to=1.0) float minFractionVisible, optional androidx.compose.ui.layout.LayoutBoundsHolder? viewportBounds, kotlin.jvm.functions.Function0<kotlin.Unit> callback);
+  }
+
   public final class OnGlobalLayoutListenerKt {
     method public static androidx.compose.ui.node.DelegatableNode.RegistrationHandle registerOnGlobalLayoutListener(androidx.compose.ui.node.DelegatableNode, long throttleMillis, long debounceMillis, kotlin.jvm.functions.Function1<? super androidx.compose.ui.spatial.RelativeLayoutBounds,kotlin.Unit> callback);
   }
@@ -2820,6 +2843,10 @@ package androidx.compose.ui.layout {
 
   public final class OnRemeasuredModifierKt {
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onSizeChanged(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.unit.IntSize,kotlin.Unit> onSizeChanged);
+  }
+
+  public final class OnVisibilityChangedModifierKt {
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onVisibilityChanged(androidx.compose.ui.Modifier, optional @IntRange(from=0L) long minDurationMs, optional @FloatRange(from=0.0, to=1.0) float minFractionVisible, optional androidx.compose.ui.layout.LayoutBoundsHolder? viewportBounds, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> callback);
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface ParentDataModifier extends androidx.compose.ui.Modifier.Element {
@@ -3342,11 +3369,11 @@ package androidx.compose.ui.platform {
     method public final void disposeComposition();
     method public final boolean getHasComposition();
     method protected boolean getShouldCreateCompositionOnAttachedToWindow();
-    method public final boolean getShowLayoutBounds();
+    method @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public final boolean getShowLayoutBounds();
     method protected final void onLayout(boolean changed, int left, int top, int right, int bottom);
     method protected final void onMeasure(int widthMeasureSpec, int heightMeasureSpec);
     method public final void setParentCompositionContext(androidx.compose.runtime.CompositionContext? parent);
-    method public final void setShowLayoutBounds(boolean);
+    method @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public final void setShowLayoutBounds(boolean);
     method public final void setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy strategy);
     property public final boolean hasComposition;
     property protected boolean shouldCreateCompositionOnAttachedToWindow;
@@ -3423,6 +3450,7 @@ package androidx.compose.ui.platform {
     property public float handwritingSlop;
     property public long longPressTimeoutMillis;
     property public float maximumFlingVelocity;
+    property public float minimumFlingVelocity;
     property public float touchSlop;
   }
 
@@ -3637,7 +3665,7 @@ package androidx.compose.ui.platform {
     ctor public ValueElement(String name, Object? value);
     method public String component1();
     method public Object? component2();
-    method public androidx.compose.ui.platform.ValueElement copy(String name, Object? value);
+    method public androidx.compose.ui.platform.ValueElement copy(optional String name, optional Object? value);
     method public String getName();
     method public Object? getValue();
     property public String name;
@@ -3688,6 +3716,7 @@ package androidx.compose.ui.platform {
     method public default float getHandwritingSlop();
     method public long getLongPressTimeoutMillis();
     method public default float getMaximumFlingVelocity();
+    method public default float getMinimumFlingVelocity();
     method public default long getMinimumTouchTargetSize();
     method public float getTouchSlop();
     property public abstract long doubleTapMinTimeMillis;
@@ -3696,6 +3725,7 @@ package androidx.compose.ui.platform {
     property public default float handwritingSlop;
     property public abstract long longPressTimeoutMillis;
     property public default float maximumFlingVelocity;
+    property public default float minimumFlingVelocity;
     property public default long minimumTouchTargetSize;
     property public abstract float touchSlop;
   }
@@ -4078,6 +4108,7 @@ package androidx.compose.ui.semantics {
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getIsDialog();
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsEditable();
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getIsPopup();
+    method public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsSensitiveData();
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsShowingTextSubstitution();
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsTraversalGroup();
     method public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getLinkTestMarker();
@@ -4118,6 +4149,7 @@ package androidx.compose.ui.semantics {
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> IsDialog;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsEditable;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> IsPopup;
+    property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsSensitiveData;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsShowingTextSubstitution;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsTraversalGroup;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> LinkTestMarker;
@@ -4194,6 +4226,7 @@ package androidx.compose.ui.semantics {
     method @Deprecated public static void invisibleToUser(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method @Deprecated public static boolean isContainer(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public static boolean isEditable(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    method public static boolean isSensitiveData(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public static boolean isShowingTextSubstitution(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public static boolean isTraversalGroup(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public static void onAutofillText(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString,java.lang.Boolean>? action);
@@ -4234,6 +4267,7 @@ package androidx.compose.ui.semantics {
     method public static void setRole(androidx.compose.ui.semantics.SemanticsPropertyReceiver, int);
     method public static void setSelected(androidx.compose.ui.semantics.SemanticsPropertyReceiver, boolean);
     method public static void setSelection(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function3<? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Boolean,java.lang.Boolean>? action);
+    method public static void setSensitiveData(androidx.compose.ui.semantics.SemanticsPropertyReceiver, boolean);
     method public static void setShape(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.graphics.Shape);
     method public static void setShowingTextSubstitution(androidx.compose.ui.semantics.SemanticsPropertyReceiver, boolean);
     method public static void setStateDescription(androidx.compose.ui.semantics.SemanticsPropertyReceiver, String);
@@ -4261,6 +4295,7 @@ package androidx.compose.ui.semantics {
     property public static androidx.compose.ui.text.AnnotatedString androidx.compose.ui.semantics.SemanticsPropertyReceiver.inputText;
     property @Deprecated public static boolean androidx.compose.ui.semantics.SemanticsPropertyReceiver.isContainer;
     property public static boolean androidx.compose.ui.semantics.SemanticsPropertyReceiver.isEditable;
+    property public static boolean androidx.compose.ui.semantics.SemanticsPropertyReceiver.isSensitiveData;
     property public static boolean androidx.compose.ui.semantics.SemanticsPropertyReceiver.isShowingTextSubstitution;
     property public static boolean androidx.compose.ui.semantics.SemanticsPropertyReceiver.isTraversalGroup;
     property public static int androidx.compose.ui.semantics.SemanticsPropertyReceiver.liveRegion;
@@ -4308,6 +4343,10 @@ package androidx.compose.ui.spatial {
 
   public final class RelativeLayoutBounds {
     method public java.util.List<androidx.compose.ui.unit.IntRect> calculateOcclusions();
+    method public float fractionVisibleIn(androidx.compose.ui.spatial.RelativeLayoutBounds viewport);
+    method public float fractionVisibleInRect(int left, int top, int right, int bottom);
+    method public float fractionVisibleInWindow();
+    method public float fractionVisibleInWindowWithInsets(long topLeftInset, long bottomRightInset);
     method public androidx.compose.ui.unit.IntRect getBoundsInRoot();
     method public androidx.compose.ui.unit.IntRect getBoundsInScreen();
     method public androidx.compose.ui.unit.IntRect getBoundsInWindow();
@@ -4402,18 +4441,21 @@ package androidx.compose.ui.window {
   @androidx.compose.runtime.Immutable public final class DialogProperties {
     ctor public DialogProperties();
     ctor @Deprecated public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy);
-    ctor public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean usePlatformDefaultWidth, optional boolean decorFitsSystemWindows);
+    ctor @Deprecated public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean usePlatformDefaultWidth, optional boolean decorFitsSystemWindows);
+    ctor public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean usePlatformDefaultWidth, optional boolean decorFitsSystemWindows, optional String windowTitle);
     ctor public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth);
     method public boolean getDecorFitsSystemWindows();
     method public boolean getDismissOnBackPress();
     method public boolean getDismissOnClickOutside();
     method public androidx.compose.ui.window.SecureFlagPolicy getSecurePolicy();
     method public boolean getUsePlatformDefaultWidth();
+    method public String getWindowTitle();
     property public boolean decorFitsSystemWindows;
     property public boolean dismissOnBackPress;
     property public boolean dismissOnClickOutside;
     property public androidx.compose.ui.window.SecureFlagPolicy securePolicy;
     property public boolean usePlatformDefaultWidth;
+    property public String windowTitle;
   }
 
   public interface DialogWindowProvider {

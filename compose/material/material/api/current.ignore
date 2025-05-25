@@ -1,3 +1,11 @@
 // Baseline format: 1.0
+BecameUnchecked: androidx.compose.material.BottomDrawerState#getProgress():
+    Removed method androidx.compose.material.BottomDrawerState.getProgress() from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.BottomSheetState#getProgress():
+    Removed method androidx.compose.material.BottomSheetState.getProgress() from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.ModalBottomSheetState#getProgress():
+    Removed method androidx.compose.material.ModalBottomSheetState.getProgress() from compatibility checked API surface
+
+
 RemovedClass: androidx.compose.material.ExposedDropdownMenuKt:
     Removed class androidx.compose.material.ExposedDropdownMenuKt

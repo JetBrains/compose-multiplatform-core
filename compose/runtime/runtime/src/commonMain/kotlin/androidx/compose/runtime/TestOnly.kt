@@ -17,7 +17,7 @@
 package androidx.compose.runtime
 
 @MustBeDocumented
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.CONSTRUCTOR,

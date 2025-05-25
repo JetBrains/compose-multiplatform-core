@@ -86,8 +86,9 @@ import kotlinx.coroutines.launch
  * A connected button group is a variant of a button group that have leading and trailing buttons
  * that are asymmetric in shape and are used to make a selection.
  *
- * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
  * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
+ * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
+ * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
  * @param modifier the [Modifier] to be applied to the button group.
  * @param expandedRatio the percentage, represented by a float, of the width of the interacted child
  *   element that will be used to expand the interacted child element as well as compress the

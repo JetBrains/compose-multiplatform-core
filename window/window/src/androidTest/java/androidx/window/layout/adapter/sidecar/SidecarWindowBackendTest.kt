@@ -45,17 +45,17 @@ import org.mockito.kotlin.verify
 /** Tests for [SidecarWindowBackend] class. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-public class SidecarWindowBackendTest : WindowTestBase() {
+class SidecarWindowBackendTest : WindowTestBase() {
     private lateinit var context: Context
 
     @Before
-    public fun setUp() {
+    fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         SidecarWindowBackend.resetInstance()
     }
 
     @Test
-    public fun testGetInstance() {
+    fun testGetInstance() {
         val backend = SidecarWindowBackend.getInstance(context)
         assertNotNull(backend)
 
@@ -65,7 +65,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testInitAndVerifySidecar() {
+    fun testInitAndVerifySidecar() {
         val sidecarVersion = SidecarCompat.sidecarVersion
         assumeTrue(sidecarVersion != null)
         assertTrue(SidecarWindowBackend.isSidecarVersionSupported(sidecarVersion))
@@ -76,7 +76,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testRegisterLayoutChangeCallback() {
+    fun testRegisterLayoutChangeCallback() {
         activityTestRule.scenario.onActivity { activity ->
             val backend = SidecarWindowBackend.getInstance(context)
             backend.windowExtension = mock()
@@ -95,7 +95,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testRegisterLayoutChangeCallback_callsExtensionOnce() {
+    fun testRegisterLayoutChangeCallback_callsExtensionOnce() {
         activityTestRule.scenario.onActivity { activity ->
             val backend = SidecarWindowBackend.getInstance(context)
             backend.windowExtension = mock()
@@ -117,7 +117,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testRegisterLayoutChangeCallback_clearListeners() {
+    fun testRegisterLayoutChangeCallback_clearListeners() {
         activityTestRule.scenario.onActivity { activity ->
             val backend = SidecarWindowBackend.getInstance(context)
             backend.windowExtension = mock()
@@ -146,7 +146,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testLayoutChangeCallback_emitNewValue() {
+    fun testLayoutChangeCallback_emitNewValue() {
         activityTestRule.scenario.onActivity { activity ->
             val backend = SidecarWindowBackend.getInstance(context)
             backend.windowExtension = mock()
@@ -163,7 +163,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testWindowLayoutInfo_updatesOnSubsequentRegistration() {
+    fun testWindowLayoutInfo_updatesOnSubsequentRegistration() {
         val interfaceCompat = SwitchOnUnregisterExtensionInterfaceCompat()
         val backend = SidecarWindowBackend(interfaceCompat)
         val activity = mock<Activity>()
@@ -179,7 +179,7 @@ public class SidecarWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testWindowLayoutInfo_secondCallbackUpdatesOnRegistration() {
+    fun testWindowLayoutInfo_secondCallbackUpdatesOnRegistration() {
         val interfaceCompat = SwitchOnUnregisterExtensionInterfaceCompat()
         val backend = SidecarWindowBackend(interfaceCompat)
         val activity = mock<Activity>()

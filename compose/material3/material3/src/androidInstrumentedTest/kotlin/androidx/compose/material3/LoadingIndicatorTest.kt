@@ -186,33 +186,23 @@ class LoadingIndicatorTest {
 
     @Test
     fun indeterminateLoadingIndicator_Progress() {
-        rule.mainClock.autoAdvance = false
         rule.setMaterialContent(lightColorScheme()) {
             LoadingIndicator(modifier = Modifier.testTag(TestTag))
         }
-
-        rule.mainClock.advanceTimeByFrame() // Kick off the animation
         rule.onNodeWithTag(TestTag).assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
     }
 
     @Test
     fun indeterminateContainedLoadingIndicator_Progress() {
-        rule.mainClock.autoAdvance = false
         rule.setMaterialContent(lightColorScheme()) {
             ContainedLoadingIndicator(modifier = Modifier.testTag(TestTag))
         }
-
-        rule.mainClock.advanceTimeByFrame() // Kick off the animation
         rule.onNodeWithTag(TestTag).assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
     }
 
     @Test
     fun indeterminateLoadingIndicator_Size() {
-        rule.mainClock.autoAdvance = false
         val contentToTest = rule.setMaterialContentForSizeAssertions { LoadingIndicator() }
-
-        rule.mainClock.advanceTimeByFrame() // Kick off the animation
-
         contentToTest
             .assertWidthIsEqualTo(LoadingIndicatorDefaults.ContainerWidth)
             .assertHeightIsEqualTo(LoadingIndicatorDefaults.ContainerHeight)
@@ -220,11 +210,7 @@ class LoadingIndicatorTest {
 
     @Test
     fun indeterminateContainedLoadingIndicator_Size() {
-        rule.mainClock.autoAdvance = false
         val contentToTest = rule.setMaterialContentForSizeAssertions { ContainedLoadingIndicator() }
-
-        rule.mainClock.advanceTimeByFrame() // Kick off the animation
-
         contentToTest
             .assertWidthIsEqualTo(LoadingIndicatorDefaults.ContainerWidth)
             .assertHeightIsEqualTo(LoadingIndicatorDefaults.ContainerHeight)

@@ -102,6 +102,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -380,22 +381,24 @@ internal class RootNodeOwner(
 
             @OptIn(InternalTextApi::class)
             override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-                innerSessionMutex.withSessionCancellingPrevious(
+                innerSessionMutex.withSessionCancellingPrevious<Nothing>(
                     sessionInitializer = { null }
                 ) {
-                    // Currently TextInputService is used for keyboard show/hide actions and for
-                    // backward compatibility by the LocalTextInputService.
-                    // startInput and stopInput calls are required to properly configure the service
-                    // and allow it to pass keyboard show/hide calls to the PlatformTextInputService.
-                    textInputService.startInput()
-                    launch(start = CoroutineStart.UNDISPATCHED) {
-                        suspendCancellableCoroutine<Nothing> {
-                            it.invokeOnCancellation {
-                                textInputService.stopInput()
+                    coroutineScope {
+                        // Currently TextInputService is used for keyboard show/hide actions and for
+                        // backward compatibility by the LocalTextInputService.
+                        // startInput and stopInput calls are required to properly configure the service
+                        // and allow it to pass keyboard show/hide calls to the PlatformTextInputService.
+                        launch(start = CoroutineStart.UNDISPATCHED) {
+                            suspendCancellableCoroutine<Nothing> {
+                                textInputService.startInput()
+                                it.invokeOnCancellation {
+                                    textInputService.stopInput()
+                                }
                             }
                         }
+                        platformContext.startInputMethod(request)
                     }
-                    platformContext.startInputMethod(request)
                 }
             }
         }
@@ -403,7 +406,7 @@ internal class RootNodeOwner(
         override suspend fun textInputSession(
             session: suspend PlatformTextInputSessionScope.() -> Nothing
         ) : Nothing {
-            textInputSessionMutex.withSessionCancellingPrevious(
+            textInputSessionMutex.withSessionCancellingPrevious<Nothing>(
                 sessionInitializer = ::TextInputSession,
                 session = session
             )

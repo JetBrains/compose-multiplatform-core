@@ -18,8 +18,8 @@ package androidx.window.sidecar;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A stub implementation for the class that will instantiate the Sidecar.
@@ -38,8 +38,7 @@ public class SidecarProvider {
      * @return A compatible version of the {@link SidecarInterface} for the provided library
      *         version string, or {@code null} if not available.
      */
-    @Nullable
-    public static SidecarInterface getSidecarImpl(@NonNull Context context) {
+    public static @Nullable SidecarInterface getSidecarImpl(@NonNull Context context) {
         throw new UnsupportedOperationException("Stub, replace with implementation.");
     }
 
@@ -68,8 +67,7 @@ public class SidecarProvider {
      * @return the version that vendor supported in this device. The MAJOR.MINOR.PATCH format
      * should be used.
      */
-    @Nullable
-    public static String getApiVersion() {
+    public static @Nullable String getApiVersion() {
         throw new UnsupportedOperationException("Stub, replace with implementation.");
     }
 }

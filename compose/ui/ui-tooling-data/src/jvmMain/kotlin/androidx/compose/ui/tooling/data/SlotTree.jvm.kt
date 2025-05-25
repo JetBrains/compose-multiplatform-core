@@ -861,7 +861,7 @@ private const val STABLE_BITS = 0b100
 /** The source position of the group extracted from the key, if one exists for the group. */
 @UiToolingDataApi
 val Group.position: String?
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET") @UiToolingDataApi get() = keyPosition(key)
+    get() = keyPosition(key)
 
 private fun Class<*>.accessibleField(name: String): Field? =
     declaredFields.firstOrNull { it.name == name }?.apply { isAccessible = true }

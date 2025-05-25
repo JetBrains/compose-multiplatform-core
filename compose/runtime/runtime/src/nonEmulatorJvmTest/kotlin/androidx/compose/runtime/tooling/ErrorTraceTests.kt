@@ -19,6 +19,7 @@ package androidx.compose.runtime.tooling
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.ReusableContentHost
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalComposeRuntimeApi::class)
 class ErrorTraceTests {
     @BeforeTest
     fun setUp() {

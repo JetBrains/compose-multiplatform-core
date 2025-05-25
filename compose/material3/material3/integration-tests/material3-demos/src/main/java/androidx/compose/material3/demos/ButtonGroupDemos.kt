@@ -16,6 +16,7 @@
 
 package androidx.compose.material3.demos
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,11 +30,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.FlashlightOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DoNotDisturbOn
@@ -44,13 +47,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButtonDefaults.IconButtonWidthOption.Companion.Narrow
 import androidx.compose.material3.IconButtonDefaults.IconButtonWidthOption.Companion.Wide
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -59,6 +61,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -74,8 +77,9 @@ fun ButtonGroupDemos() {
         Box {
             ButtonGroup(
                 overflowIndicator = { menuState ->
-                    IconButton(
-                        onClick = {
+                    FilledIconToggleButton(
+                        checked = false,
+                        onCheckedChange = {
                             if (menuState.isExpanded) {
                                 menuState.dismiss()
                             } else {
@@ -114,18 +118,26 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Bluetooth") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[0]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[0]) {
                                     Icon(
-                                        Icons.Filled.Bluetooth,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Bluetooth,
+                                        Icons.Filled.Bluetooth,
                                         contentDescription = "Localized description"
                                     )
                                 }
@@ -139,28 +151,57 @@ fun ButtonGroupDemos() {
                 )
                 customItem(
                     buttonGroupContent = {
-                        FilledIconButton(
+                        FilledIconToggleButton(
                             interactionSource = interactionSources[1],
-                            onClick = { /* doSomething() */ },
-                            shapes = IconButtonDefaults.shapes(),
+                            checked = checked[1],
+                            onCheckedChange = { checked[1] = it },
+                            shapes = IconButtonDefaults.toggleableShapes(),
                             modifier =
                                 Modifier.width(IconButtonDefaults.smallContainerSize(Wide).width)
                                     .animateWidth(interactionSources[1])
                         ) {
-                            Icon(Icons.Filled.Alarm, contentDescription = "Localized description")
-                        }
-                    },
-                    menuContent = { state ->
-                        DropdownMenuItem(
-                            enabled = true,
-                            text = { Text("Alarm") },
-                            leadingIcon = {
+                            if (checked[1]) {
                                 Icon(
                                     Icons.Filled.Alarm,
                                     contentDescription = "Localized description"
                                 )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Alarm,
+                                    contentDescription = "Localized description"
+                                )
+                            }
+                        }
+                    },
+                    menuContent = { state ->
+                        // Use expressive menu when available
+                        DropdownMenuItem(
+                            text = { Text("Alarm") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[1]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
+                            leadingIcon = {
+                                if (checked[0]) {
+                                    Icon(
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description"
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Filled.Alarm,
+                                        contentDescription = "Localized description"
+                                    )
+                                }
                             },
-                            onClick = { state.dismiss() }
+                            onClick = {
+                                checked[1] = !checked[1]
+                                state.dismiss()
+                            }
                         )
                     }
                 )
@@ -183,23 +224,36 @@ fun ButtonGroupDemos() {
                                     contentDescription = "Localized description"
                                 )
                             }
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Spacer(
+                                modifier =
+                                    Modifier.size(
+                                        ButtonDefaults.iconSpacingFor(ButtonDefaults.MinHeight)
+                                    )
+                            )
                             Text("focus")
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Focus") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[2]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[2]) {
                                     Icon(
-                                        Icons.Filled.DoNotDisturbOn,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.DoNotDisturbOn,
+                                        Icons.Filled.DoNotDisturbOn,
                                         contentDescription = "Localized description"
                                     )
                                 }
@@ -235,18 +289,26 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Flashlight") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[3]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[3]) {
                                     Icon(
-                                        Icons.Filled.FlashlightOn,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.FlashlightOn,
+                                        Icons.Filled.FlashlightOn,
                                         contentDescription = "Localized description"
                                     )
                                 }
@@ -286,18 +348,26 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
+                            modifier =
+                                Modifier.background(
+                                    if (checked[4]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             text = { Text("Wifi") },
                             leadingIcon = {
                                 if (checked[4]) {
                                     Icon(
-                                        Icons.Filled.Wifi,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Wifi,
+                                        Icons.Filled.Wifi,
                                         contentDescription = "Localized description"
                                     )
                                 }
@@ -337,18 +407,26 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Wallet") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[5]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[5]) {
                                     Icon(
-                                        Icons.Filled.Wallet,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Wallet,
+                                        Icons.Filled.Wallet,
                                         contentDescription = "Localized description"
                                     )
                                 }
@@ -388,18 +466,27 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
                             enabled = true,
                             text = { Text("Calculator") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[6]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[6]) {
                                     Icon(
-                                        Icons.Filled.Calculate,
+                                        Icons.Filled.Check,
                                         contentDescription = "Localized description"
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Calculate,
+                                        Icons.Filled.Calculate,
                                         contentDescription = "Localized description"
                                     )
                                 }

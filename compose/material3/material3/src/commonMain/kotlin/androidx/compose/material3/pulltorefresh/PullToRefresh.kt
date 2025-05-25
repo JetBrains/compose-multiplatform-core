@@ -38,6 +38,8 @@ import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.IndicatorBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.LoadingIndicator
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.value
@@ -70,13 +72,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScrollModifierNode
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -253,7 +253,7 @@ internal class PullToRefreshModifierNode(
     var enabled: Boolean,
     var state: PullToRefreshState,
     var threshold: Dp,
-) : DelegatingNode(), CompositionLocalConsumerModifierNode, NestedScrollConnection {
+) : DelegatingNode(), NestedScrollConnection {
 
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -271,7 +271,7 @@ internal class PullToRefreshModifierNode(
         get() = distancePulled * DragMultiplier
 
     private val thresholdPx
-        get() = with(currentValueOf(LocalDensity)) { threshold.roundToPx() }
+        get() = with(requireDensity()) { threshold.roundToPx() }
 
     private val progress
         get() = adjustedDistancePulled / thresholdPx
@@ -394,8 +394,12 @@ internal class PullToRefreshModifierNode(
         try {
             state.animateToThreshold()
         } finally {
-            distancePulled = thresholdPx.toFloat()
-            verticalOffset = thresholdPx.toFloat()
+            if (isAttached) {
+                // Don't read density if the node is not attached. This will get updated next
+                // time the node is attached
+                distancePulled = thresholdPx.toFloat()
+                verticalOffset = thresholdPx.toFloat()
+            }
         }
     }
 

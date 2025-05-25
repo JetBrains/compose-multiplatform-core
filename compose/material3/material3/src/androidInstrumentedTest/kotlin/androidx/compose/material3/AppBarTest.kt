@@ -1556,8 +1556,13 @@ class AppBarTest {
             rule.onNodeWithText("Item $trackedItemIndex").getBoundsInRoot().top
 
         // Swipe down to trigger a top app bar expansion without scrolling much the content.
+        // Do a slow swipe so the list doesn't fling.
         rule.onNodeWithTag(LazyListTag).performTouchInput {
-            swipeDown(startY = height - 1000f, endY = height - (1000f - appBarHeightPx / 1.5f))
+            swipeDown(
+                startY = height - 1000f,
+                endY = height - (1000f - appBarHeightPx / 1.5f),
+                durationMillis = 1000L
+            )
         }
         rule.waitForIdle()
 

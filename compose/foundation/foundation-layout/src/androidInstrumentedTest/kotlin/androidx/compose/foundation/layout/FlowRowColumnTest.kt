@@ -18,6 +18,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.collection.mutableFloatListOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -5619,6 +5620,80 @@ class FlowRowColumnTest {
         rule.waitForIdle()
         Truth.assertThat(height).isEqualTo(200)
         Truth.assertThat(noOfItemsPlaced).isEqualTo(0)
+    }
+
+    @Test
+    fun testFlowColumn_crossAxisPositioning_withWeightAndAspectRatio() {
+        val positionsInParentX = mutableFloatListOf()
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(Modifier.height(50.toDp())) {
+                    FlowColumn(
+                        maxItemsInEachColumn = 2,
+                        horizontalArrangement = Arrangement.spacedBy(10.toDp())
+                    ) {
+                        repeat(5) { index ->
+                            Box(
+                                Modifier.weight(1f).aspectRatio(1f, true).onPlaced {
+                                    positionsInParentX.add(it.positionInParent().x)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        // Cross axis offset for first column
+        Truth.assertThat(positionsInParentX[0]).isEqualTo(0)
+        Truth.assertThat(positionsInParentX[1]).isEqualTo(0)
+
+        // Cross axis offset for second column
+        Truth.assertThat(positionsInParentX[2]).isEqualTo(35)
+        Truth.assertThat(positionsInParentX[3]).isEqualTo(35)
+
+        // Cross axis offset for third column
+        Truth.assertThat(positionsInParentX[4]).isEqualTo(70)
+    }
+
+    @Test
+    fun testFlowRow_crossAxisPositioning_withWeightAndAspectRatio() {
+        val positionsInParentY = mutableFloatListOf()
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(Modifier.width(50.toDp())) {
+                    FlowRow(
+                        maxItemsInEachRow = 2,
+                        verticalArrangement = Arrangement.spacedBy(10.toDp())
+                    ) {
+                        repeat(5) { index ->
+                            Box(
+                                Modifier.weight(1f).aspectRatio(1f, true).onPlaced {
+                                    positionsInParentY.add(it.positionInParent().y)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        // Cross axis offset for first column
+        Truth.assertThat(positionsInParentY[0]).isEqualTo(0)
+        Truth.assertThat(positionsInParentY[1]).isEqualTo(0)
+
+        // Cross axis offset for second column
+        Truth.assertThat(positionsInParentY[2]).isEqualTo(35)
+        Truth.assertThat(positionsInParentY[3]).isEqualTo(35)
+
+        // Cross axis offset for third column
+        Truth.assertThat(positionsInParentY[4]).isEqualTo(70)
     }
 }
 

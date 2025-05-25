@@ -985,10 +985,8 @@ internal constructor(
      * be maintained after a parent target state has changed, but the child target state hasn't
      * changed.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @get:Suppress("GetterSetterNames") // Don't care about Java name for this property
     @InternalAnimationApi
-    @get:InternalAnimationApi
     public val hasInitialValueAnimations: Boolean
         get() =
             _animations.fastAny { it.initialValueState != null } ||

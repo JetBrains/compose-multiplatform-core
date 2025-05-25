@@ -25,14 +25,13 @@ import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
-import kotlinx.coroutines.flow.Flow
 
 actual interface PlatformTextInputMethodRequest {
-    /** The editor state. */
+    /** Returns a snapshot text field state, as a [TextFieldValue]. */
     @ExperimentalComposeUiApi
     val value: () -> TextFieldValue
 
-    /** The editor state. */
+    /** The text field state. */
     @ExperimentalComposeUiApi
     val state: TextEditorState
 
@@ -48,42 +47,40 @@ actual interface PlatformTextInputMethodRequest {
     @ExperimentalComposeUiApi
     val onImeAction: ((ImeAction) -> Unit)?
 
-    @ExperimentalComposeUiApi
-    val outputValue: Flow<TextFieldValue>
-
     /**
-     * A flow with the layout of text in the editor's.
+     * Returns the snapshot layout of text in the text field.
      *
-     * When the layout changes, new values will be emitted by the flow.
+     * `null` return values mean that the text has not been laid out yet. They may be ignored.
      */
     @ExperimentalComposeUiApi
-    val textLayoutResult: Flow<TextLayoutResult>
+    val textLayoutResult: () -> TextLayoutResult?
 
     /**
-     * A flow with the rectangle (relative to root) of the area where the actual editing occurs.
+     * Returns the snapshot rectangle (relative to root) of the area where the actual editing
+     * occurs.
      *
-     * As the area changes, new values will be emitted by the flow.
+     * `null` return values mean that the text has not been laid out yet. They may be ignored.
      */
     @ExperimentalComposeUiApi
-    val focusedRectInRoot: Flow<Rect>
+    val focusedRectInRoot: () -> Rect?
 
     /**
-     * A flow that emits the rectangular area of the text field relative to the root layout.
+     * Returns the snapshot rectangle of the text field relative to the root layout.
      *
-     * When the size or position of the text field changes, new values are emitted by the flow.
+     * `null` return values mean that the text has not been laid out yet. They may be ignored.
      */
     @ExperimentalComposeUiApi
-    val textFieldRectInRoot: Flow<Rect>
+    val textFieldRectInRoot: () -> Rect?
 
     /**
-     * A flow that emits the rectangular area of the text core clipping region relative to the root
-     * layout. This region defines the visual bounds of the text that is currently displayed within
-     * the text field.
+     * Returns the snapshot rectangle of the text core clipping region relative to the root layout.
+     * This region defines the visual bounds of the text that is currently displayed within the text
+     * field.
      *
-     * When the size or position of this region changes, new values are emitted by the flow.
+     * `null` return values mean that the text has not been laid out yet. They may be ignored.
      */
     @ExperimentalComposeUiApi
-    val textClippingRectInRoot: Flow<Rect>
+    val textClippingRectInRoot: () -> Rect?
 
     /**
      * Allows the text input service to edit the text.

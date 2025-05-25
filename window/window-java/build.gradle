@@ -21,8 +21,9 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -35,7 +36,7 @@ dependencies {
     api(libs.kotlinCoroutinesCore)
     api(project(":window:window"))
     implementation("androidx.core:core:1.8.0")
-    implementation("androidx.annotation:annotation:1.7.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
@@ -47,20 +48,20 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoKotlin, excludes.bytebuddy)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.mockitoKotlin)
 }
 
 androidx {
     name = "WindowManager Java"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "WindowManager Java Support"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
-    namespace "androidx.window.java"
+    namespace = "androidx.window.java"
 }

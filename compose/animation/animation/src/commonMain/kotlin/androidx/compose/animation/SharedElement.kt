@@ -19,12 +19,15 @@
 package androidx.compose.animation
 
 import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -63,15 +66,15 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
         private set
 
     /** *********** Properties below should only be accessed during placement. ************* */
-    internal var targetBounds: Rect?
-        get() = if (foundMatch) _targetBoundsWhenMatched else null
+    internal var targetData: TargetData?
+        get() = if (foundMatch) _targetData else null
         set(value) {
             if (foundMatch) {
-                _targetBoundsWhenMatched = value
+                _targetData = value
             }
         }
 
-    private var _targetBoundsWhenMatched: Rect? by mutableStateOf(null)
+    private var _targetData: TargetData? by mutableStateOf(null)
 
     // This gets called in approach measurement.
     fun tryInitializingCurrentBounds(): Rect? {
@@ -127,6 +130,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
             if (newTargetBoundsProvider != targetBoundsProvider) {
                 lastTargetBoundsProvider = targetBoundsProvider
                 targetBoundsProvider = newTargetBoundsProvider
+                targetBoundsProviderChanged = true
             }
             if (newTargetBoundsProvider == null) targetBoundsProvider = null
             lastHandledTargetProviderUpdateRequestId = targetBoundsProviderUpdateRequestId
@@ -150,6 +154,11 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
         }
     }
 
+    // This will change during the measure/layout process. It is intended not to be observed
+    // because bounds provider change is already observed through bounds provider update request,
+    // which also has been optimized to not incur additional layout passes.
+    private var targetBoundsProviderChanged = false
+
     fun onLookaheadPlaced(
         placementScope: Placeable.PlacementScope,
         state: SharedElementInternalState
@@ -163,15 +172,48 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
                         with(state.sharedElement.scope) {
                             state.sharedElement.scope.lookaheadRoot.localLookaheadPositionOf(it)
                         }
+                    val structuralOffset =
+                        with(state.sharedElement.scope) {
+                            state.sharedElement.scope.lookaheadRoot.localPositionOf(
+                                it,
+                                includeMotionFrameOfReference = false
+                            )
+                        }
+
+                    // Initialize targetData if needed. From here on until the transition finishes
+                    // the target data should be non null.
+                    val targetData =
+                        this@SharedElement.targetData
+                            ?: TargetData(
+                                lookaheadSize,
+                                topLeft - structuralOffset,
+                                structuralOffset
+                            )
+
                     // Only update bounds when offset is updated so as to not accidentally fire
                     // up animations, only to interrupt them in the same frame later on.
-                    if (targetBounds?.topLeft != topLeft || targetBounds?.size != lookaheadSize) {
-                        val target = Rect(topLeft, lookaheadSize)
-                        targetBounds = target
+                    if (
+                        targetData.targetStructuralOffset != structuralOffset ||
+                            targetData.size != lookaheadSize ||
+                            targetBoundsProviderChanged
+                    ) {
+                        // update existing target data
+                        targetData.size = lookaheadSize
+                        targetData.targetStructuralOffset = structuralOffset
+                        if (targetBoundsProviderChanged) {
+                            targetData.initialMfrOffset =
+                                (topLeft - structuralOffset) -
+                                    (targetData.currentMfrOffset - targetData.initialMfrOffset)
+                        }
                         if (currentBoundsWhenMatched == null) {
-                            currentBoundsWhenMatched = obtainBoundsFromLastTarget() ?: target
+                            currentBoundsWhenMatched =
+                                obtainBoundsFromLastTarget() ?: Rect(topLeft, lookaheadSize)
                         }
                     }
+                    targetData.currentMfrOffset = topLeft - structuralOffset
+
+                    this@SharedElement.targetData = targetData
+                    targetBoundsProviderChanged = false
                 }
             }
         }
@@ -213,7 +255,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
     fun onSharedTransitionFinished() {
         foundMatch = states.size > 1 && hasVisibleContent()
         lastTargetBoundsProvider = null
-        _targetBoundsWhenMatched = null
+        _targetData = null
     }
 
     private val updateMatch: (SharedElement) -> Unit = { updateMatch() }
@@ -316,3 +358,60 @@ internal class SharedElementInternalState(
 internal interface BoundsProvider {
     val lastBoundsInSharedTransitionScope: Rect?
 }
+
+/**
+ * TargetData includes fine grained information to calculate bounds. Instead of a single target
+ * offset, it tracks structural offset and MFR (i.e. motion frame of reference) offset: structural
+ * offset + MFR offset = target offset.
+ *
+ * By tracking them separately, we are able to animate structural changes while applying MFR changes
+ * directly to accommodate changing MFRs during scrolling, instead of animating the scrolled amount.
+ */
+@Stable
+internal class TargetData(size: Size, initialMfrOffset: Offset, targetStructuralOffset: Offset) {
+    var size: Size by mutableStateOf(size)
+
+    /**
+     * Initial motion frame of reference offset when the target changes, obtained from lookahead
+     * placement.
+     */
+    var initialMfrOffset: Offset by mutableStateOf(initialMfrOffset)
+
+    /**
+     * Structural offset obtained from lookahead placement, this is equivalent to: target offset -
+     * motion frame of reference offset.
+     *
+     * Structural offset is intended to only track offsets from structural changes, as opposed to
+     * scrolling/dragging offset changes.
+     */
+    var targetStructuralOffset: Offset by mutableStateOf(targetStructuralOffset)
+
+    /**
+     * Current motion frame of reference offset for the current frame, obtained from lookahead
+     * placement.
+     *
+     * Note: This assumes MFR offset is the same for lookahead and approach. If/When we need to
+     * support use cases where this isn't true, we need to add an API to allow disabling MFR
+     * support.
+     */
+    var currentMfrOffset: Offset by mutableStateOf(initialMfrOffset)
+}
+
+/**
+ * targetBounds here is the combination of target structural offset and initialMfrOffset. This
+ * ensures:
+ * 1) We don't update the target when MFR offset changes. The MFR changes will be directly applied
+ *    to the animated value in [calculateOffsetFromDirectManipulation] below. And
+ * 2) When target structural offset changes, we animate that change.
+ */
+internal val TargetData.targetBounds: Rect
+    get() = Rect(initialMfrOffset + targetStructuralOffset, size)
+
+/**
+ * Once the animation starts, we will only change target bounds when the target structural offset
+ * changes. When MFR (e.g. scrolling) changes, we will track the current MFR, and apply the total
+ * offset incurred since the start of the animation (i.e. currentMFR - initialMFR) directly to the
+ * animated value.
+ */
+internal fun TargetData.calculateOffsetFromDirectManipulation(animatedBounds: Rect): Offset =
+    animatedBounds.topLeft - initialMfrOffset + currentMfrOffset

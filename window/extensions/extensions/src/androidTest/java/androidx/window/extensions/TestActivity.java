@@ -20,7 +20,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha02)" variant="all" version="8.11.0-alpha02">
+<issues format="6" by="lint 8.11.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha05)" variant="all" version="8.11.0-alpha05">
 
     <issue
         id="BanThreadSleep"
@@ -434,6 +434,87 @@
     </issue>
 
     <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    LocalConfiguration.current.screenHeightDp.dp"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/material3/SearchBar.android.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="                currentDensity.density * (currentConfiguration.screenWidthDp.dp / simulatedWidth)"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ShortNavigationBarScreenshotTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="                currentDensity.density * (currentConfiguration.screenWidthDp.dp / simulatedWidth)"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ShortNavigationBarTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenHeightDp = 800"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenWidthDp = 500"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenHeightDp = 500"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenWidthDp = 800"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
         id="CoroutineCreationDuringComposition"
         message="Calls to launch should happen inside a LaunchedEffect and not composition"
         errorLine1="            scope.launch { topState.show() }"
@@ -467,6 +548,42 @@
         errorLine2="                  ~~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TooltipTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val resScreenWidth = context.resources.configuration.screenWidthDp"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/AlertDialogTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val resScreenWidth = context.resources.configuration.screenWidthDp"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/AlertDialogTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
     </issue>
 
     <issue
