@@ -419,14 +419,11 @@ internal class ComposeAccessible(
             AccessibilityController.AccessibilityUsage.notifyInUse()
             val fromSemanticRole = when (semanticsConfig.getOrNull(SemanticsProperties.Role)) {
                 Role.Button -> AccessibleRole.PUSH_BUTTON
-                Role.Checkbox -> AccessibleRole.CHECK_BOX
+                Role.Checkbox, Role.Switch -> AccessibleRole.CHECK_BOX
                 Role.RadioButton -> AccessibleRole.RADIO_BUTTON
                 Role.Tab -> AccessibleRole.PAGE_TAB
                 Role.DropdownList -> AccessibleRole.COMBO_BOX
                 else -> null
-                // ?
-                //  Role.Switch ->
-                //  Role.Image ->
             }
 
             return when {
@@ -474,7 +471,7 @@ internal class ComposeAccessible(
                 when (semanticsConfig.getOrNull(SemanticsProperties.Role)) {
                     // Note that this is not executed on macOS (for checkboxes or radio buttons),
                     // where the system inspects the value returned by getAccessibleValue instead.
-                    Role.Checkbox -> addCheckedStateForCheckbox()
+                    Role.Checkbox, Role.Switch -> addCheckedStateForCheckboxOrSwitch()
                     Role.RadioButton -> addCheckedStateForRadioButton()
                     else -> {  // Default case, for other (possibly null) roles
                         addDefaultStateForToggleableState()
@@ -489,8 +486,10 @@ internal class ComposeAccessible(
             }
         }
 
-        private fun AccessibleStateSet.addCheckedStateForCheckbox() {
+        private fun AccessibleStateSet.addCheckedStateForCheckboxOrSwitch() {
             // Checkbox uses Modifier.triStateToggleable, which sets
+            // SemanticsPropertyReceiver.toggleableState
+            // Switch uses Modifier.toggleable, which also sets
             // SemanticsPropertyReceiver.toggleableState
             addDefaultStateForToggleableState()
         }
