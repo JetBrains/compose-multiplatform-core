@@ -103,4 +103,9 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
         backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
     }
 
+
+    override fun notifyFocusedRect(rect: Rect) {
+        val newRect = getNewGeometryForBackingInput(rect)
+        backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
+    }
 }
