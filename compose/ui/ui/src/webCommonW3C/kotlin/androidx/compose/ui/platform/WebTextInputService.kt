@@ -91,19 +91,6 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
         backingDomInput?.updateState(newValue)
     }
 
-    override fun updateTextLayoutResult(
-        textFieldValue: TextFieldValue,
-        offsetMapping: OffsetMapping,
-        textLayoutResult: TextLayoutResult,
-        textFieldToRootTransform: (Matrix) -> Unit,
-        innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
-    ) {
-        val newRect = getNewGeometryForBackingInput(innerTextFieldBounds)
-        backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
-    }
-
-
     override fun notifyFocusedRect(rect: Rect) {
         val newRect = getNewGeometryForBackingInput(rect)
         backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
