@@ -255,7 +255,7 @@ private class CanvasLayersComposeSceneImpl(
         focusedLayer?.onKeyEvent(keyEvent) ?: mainOwner.onKeyEvent(keyEvent)
 
     override fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean =
-        mainOwner.focusOwner.dispatchRotaryEvent(event)
+        focusedLayer?.onRotaryEvent(event) ?: mainOwner.onRotaryEvent(event)
 
     override fun measureAndLayout() {
         forEachOwner { it.measureAndLayout() }
@@ -576,6 +576,10 @@ private class CanvasLayersComposeSceneImpl(
             return onPreviewKeyEvent?.invoke(keyEvent) == true ||
                 owner.onKeyEvent(keyEvent) ||
                 onKeyEvent?.invoke(keyEvent) == true
+        }
+
+        fun onRotaryEvent(event: RotaryScrollEvent): Boolean {
+            return owner.onRotaryEvent(event)
         }
 
         override fun setOutsidePointerEventListener(

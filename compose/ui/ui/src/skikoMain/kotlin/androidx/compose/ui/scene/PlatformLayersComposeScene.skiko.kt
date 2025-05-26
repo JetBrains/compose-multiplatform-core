@@ -174,7 +174,7 @@ private class PlatformLayersComposeSceneImpl(
         mainOwner.onKeyEvent(keyEvent)
 
     override fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean =
-        mainOwner.focusOwner.dispatchRotaryEvent(event)
+        mainOwner.onRotaryEvent(event)
 
     override fun measureAndLayout() {
         mainOwner.measureAndLayout()
