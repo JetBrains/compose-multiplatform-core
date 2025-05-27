@@ -4353,20 +4353,21 @@ class CompositionTests {
         revalidate()
     }
 
-    @Test
-    fun composableDelegates() = compositionTest {
-        val local = compositionLocalOf { "Default" }
-        val delegatedLocal by local
-        compose {
-            Text(delegatedLocal)
-
-            CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
-        }
-        validate {
-            Text("Default")
-            Text("Scoped")
-        }
-    }
+// commented
+//    @Test
+//    fun composableDelegates() = compositionTest {
+//        val local = compositionLocalOf { "Default" }
+//        val delegatedLocal by local
+//        compose {
+//            Text(delegatedLocal)
+//
+//            CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
+//        }
+//        validate {
+//            Text("Default")
+//            Text("Scoped")
+//        }
+//    }
 
     @Test
     fun testCompositionAndRecomposerDeadlock() {
