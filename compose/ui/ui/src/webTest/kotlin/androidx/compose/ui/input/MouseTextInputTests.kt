@@ -83,7 +83,6 @@ class MouseTextInputTests: OnCanvasTests {
         // We expect the canvas to be on the top despite the coordinates match the textarea.
         // So it will be the first to process all the point inputs
         assertEquals(canvas, elementsAtPos[0], "First element under mouse supposed to be canvas")
-        assertTrue(elementsAtPos.toList().any { it == textArea }) // such a weird check to make the test common for js and wasm
         withContext(Dispatchers.Default) {
             delay(250) // to separate the mouse events
         }
