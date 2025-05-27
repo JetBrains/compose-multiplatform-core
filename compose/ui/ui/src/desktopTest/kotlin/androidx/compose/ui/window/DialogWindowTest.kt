@@ -695,6 +695,22 @@ class DialogWindowTest {
 
         assertDialogStateEquals(expectedState, restoredState)
     }
+
+    @Test
+    fun `swing dialog init called before it is displayable`() = runApplicationTest {
+        var isDisplayableInInit: Boolean? = null
+        launchTestApplication {
+            SwingDialog(
+                onCloseRequest = ::exitApplication,
+                init = {
+                    isDisplayableInInit = it.isDisplayable
+                }
+            ) { }
+        }
+
+        awaitIdle()
+        assertThat(isDisplayableInInit).isFalse()
+    }
 }
 
 private fun assertDialogStateEquals(expected: DialogState, actual: DialogState) {

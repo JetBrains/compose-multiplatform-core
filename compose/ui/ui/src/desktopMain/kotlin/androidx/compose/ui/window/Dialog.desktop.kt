@@ -18,30 +18,12 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.SwingDialog
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.ComponentUpdater
-import androidx.compose.ui.util.componentListenerRef
-import androidx.compose.ui.util.setIcon
-import androidx.compose.ui.util.setPositionSafely
-import androidx.compose.ui.util.setSizeSafely
-import androidx.compose.ui.util.setUndecoratedSafely
-import androidx.compose.ui.util.windowListenerRef
-import java.awt.Dialog.ModalityType
 import java.awt.Window
-import java.awt.event.ComponentAdapter
-import java.awt.event.ComponentEvent
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
-import javax.swing.JDialog
 
 @Deprecated(
     message = "Replaced by DialogWindow",
@@ -286,112 +268,22 @@ fun DialogWindow(
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     content: @Composable DialogWindowScope.() -> Unit
 ) {
-    val owner = LocalWindow.current
-
-    val currentState by rememberUpdatedState(state)
-    val currentTitle by rememberUpdatedState(title)
-    val currentIcon by rememberUpdatedState(icon)
-    val currentDecoration by rememberUpdatedState(decoration)
-    val currentTransparent by rememberUpdatedState(transparent)
-    val currentResizable by rememberUpdatedState(resizable)
-    val currentEnabled by rememberUpdatedState(enabled)
-    val currentFocusable by rememberUpdatedState(focusable)
-    val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
-    val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
-
-    val updater = remember(::ComponentUpdater)
-
-    // the state applied to the dialog. exist to avoid races between DialogState changes and the state stored inside the native dialog
-    val appliedState = remember {
-        object {
-            var size: DpSize? = null
-            var position: WindowPosition? = null
-        }
-    }
-
-    val listeners = remember {
-        object {
-            var windowListenerRef = windowListenerRef()
-            var componentListenerRef = componentListenerRef()
-
-            fun removeFromAndClear(window: ComposeDialog) {
-                windowListenerRef.unregisterFromAndClear(window)
-                componentListenerRef.unregisterFromAndClear(window)
-            }
-        }
-    }
-
     SwingDialog(
+        onCloseRequest = onCloseRequest,
+        state = state,
         visible = visible,
+        title = title,
+        icon = icon,
+        decoration = decoration,
+        transparent = transparent,
+        resizable = resizable,
+        enabled = enabled,
+        focusable = focusable,
+        alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        create = {
-            val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
-            val dialog = if (owner != null) {
-                ComposeDialog(owner, ModalityType.DOCUMENT_MODAL, graphicsConfiguration = graphicsConfiguration)
-            } else {
-                ComposeDialog(graphicsConfiguration = graphicsConfiguration)
-            }
-            dialog.apply {
-                // close state is controlled by DialogState.isOpen
-                defaultCloseOperation = JDialog.DO_NOTHING_ON_CLOSE
-                listeners.windowListenerRef.registerWithAndSet(
-                    this,
-                    object : WindowAdapter() {
-                        override fun windowClosing(e: WindowEvent?) {
-                            currentOnCloseRequest()
-                        }
-                    }
-                )
-                listeners.componentListenerRef.registerWithAndSet(
-                    this,
-                    object : ComponentAdapter() {
-                        override fun componentResized(e: ComponentEvent) {
-                            currentState.size = DpSize(width.dp, height.dp)
-                            appliedState.size = currentState.size
-                        }
-
-                        override fun componentMoved(e: ComponentEvent) {
-                            currentState.position = WindowPosition(x.dp, y.dp)
-                            appliedState.position = currentState.position
-                        }
-                    }
-                )
-                WindowLocationTracker.onWindowCreated(this)
-            }
-        },
-        dispose = {
-            WindowLocationTracker.onWindowDisposed(it)
-            // We need to remove them because AWT can still call them after dispose()
-            listeners.removeFromAndClear(it)
-            it.dispose()
-        },
-        update = { dialog ->
-            updater.update {
-                set(currentTitle, dialog::setTitle)
-                set(currentIcon, dialog::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, dialog::setUndecoratedSafely)
-                set(currentTransparent, dialog::isTransparent::set)
-                set(currentResizable, dialog::setResizable)
-                set(currentEnabled, dialog::setEnabled)
-                set(currentFocusable, dialog::setFocusableWindowState)
-                set(currentAlwaysOnTop, dialog::setAlwaysOnTop)
-                set(currentDecoration.resizerThickness, dialog::undecoratedResizerThickness::set)
-            }
-            if (state.size != appliedState.size) {
-                dialog.setSizeSafely(state.size, WindowPlacement.Floating)
-                appliedState.size = state.size
-            }
-            if (state.position != appliedState.position) {
-                dialog.setPositionSafely(
-                    state.position,
-                    WindowPlacement.Floating,
-                    platformDefaultPosition = { WindowLocationTracker.getCascadeLocationFor(dialog) }
-                )
-                appliedState.position = state.position
-            }
-        },
-        content = content
+        init = { },
+        content = content,
     )
 }
 

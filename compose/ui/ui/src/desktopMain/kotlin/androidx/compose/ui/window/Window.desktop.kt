@@ -20,31 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.ComponentUpdater
-import androidx.compose.ui.util.componentListenerRef
-import androidx.compose.ui.util.setIcon
-import androidx.compose.ui.util.setPositionSafely
-import androidx.compose.ui.util.setSizeSafely
-import androidx.compose.ui.util.setUndecoratedSafely
-import androidx.compose.ui.util.windowListenerRef
-import androidx.compose.ui.util.windowStateListenerRef
 import java.awt.Window
-import java.awt.event.ComponentAdapter
-import java.awt.event.ComponentEvent
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
-import javax.swing.JFrame
 import javax.swing.JMenuBar
 
 // TODO(demin): support focus management
@@ -135,128 +117,22 @@ fun Window(
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     content: @Composable FrameWindowScope.() -> Unit
 ) {
-    val currentState by rememberUpdatedState(state)
-    val currentTitle by rememberUpdatedState(title)
-    val currentIcon by rememberUpdatedState(icon)
-    val currentDecoration by rememberUpdatedState(decoration)
-    val currentTransparent by rememberUpdatedState(transparent)
-    val currentResizable by rememberUpdatedState(resizable)
-    val currentEnabled by rememberUpdatedState(enabled)
-    val currentFocusable by rememberUpdatedState(focusable)
-    val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
-    val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
-
-    val updater = remember(::ComponentUpdater)
-
-    // the state applied to the window. exist to avoid races between WindowState changes and the state stored inside the native window
-    val appliedState = remember {
-        object {
-            var size: DpSize? = null
-            var position: WindowPosition? = null
-            var placement: WindowPlacement? = null
-            var isMinimized: Boolean? = null
-        }
-    }
-
-    val listeners = remember {
-        object {
-            var windowListenerRef = windowListenerRef()
-            var windowStateListenerRef = windowStateListenerRef()
-            var componentListenerRef = componentListenerRef()
-
-            fun removeFromAndClear(window: ComposeWindow) {
-                windowListenerRef.unregisterFromAndClear(window)
-                windowStateListenerRef.unregisterFromAndClear(window)
-                componentListenerRef.unregisterFromAndClear(window)
-            }
-        }
-    }
-
     SwingWindow(
+        onCloseRequest = onCloseRequest,
+        state = state,
         visible = visible,
+        title = title,
+        icon = icon,
+        decoration = decoration,
+        transparent = transparent,
+        resizable = resizable,
+        enabled = enabled,
+        focusable = focusable,
+        alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        create = {
-            val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
-            ComposeWindow(graphicsConfiguration = graphicsConfiguration).apply {
-                // close state is controlled by WindowState.isOpen
-                defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
-                listeners.windowListenerRef.registerWithAndSet(
-                    this,
-                    object : WindowAdapter() {
-                        override fun windowClosing(e: WindowEvent) {
-                            currentOnCloseRequest()
-                        }
-                    }
-                )
-                listeners.windowStateListenerRef.registerWithAndSet(this) {
-                    currentState.placement = placement
-                    currentState.isMinimized = isMinimized
-                    appliedState.placement = currentState.placement
-                    appliedState.isMinimized = currentState.isMinimized
-                }
-                listeners.componentListenerRef.registerWithAndSet(
-                    this,
-                    object : ComponentAdapter() {
-                        override fun componentResized(e: ComponentEvent) {
-                            // we check placement here and in windowStateChanged,
-                            // because fullscreen changing doesn't
-                            // fire windowStateChanged, only componentResized
-                            currentState.placement = placement
-                            currentState.size = DpSize(width.dp, height.dp)
-                            appliedState.placement = currentState.placement
-                            appliedState.size = currentState.size
-                        }
-
-                        override fun componentMoved(e: ComponentEvent) {
-                            currentState.position = WindowPosition(x.dp, y.dp)
-                            appliedState.position = currentState.position
-                        }
-                    }
-                )
-                WindowLocationTracker.onWindowCreated(this)
-            }
-        },
-        dispose = {
-            WindowLocationTracker.onWindowDisposed(it)
-            // We need to remove them because AWT can still call them after dispose()
-            listeners.removeFromAndClear(it)
-            it.dispose()
-        },
-        update = { window ->
-            updater.update {
-                set(currentTitle, window::setTitle)
-                set(currentIcon, window::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, window::setUndecoratedSafely)
-                set(currentTransparent, window::isTransparent::set)
-                set(currentResizable, window::setResizable)
-                set(currentEnabled, window::setEnabled)
-                set(currentFocusable, window::setFocusableWindowState)
-                set(currentAlwaysOnTop, window::setAlwaysOnTop)
-                set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
-            }
-            if (state.size != appliedState.size) {
-                window.setSizeSafely(state.size, state.placement)
-                appliedState.size = state.size
-            }
-            if (state.position != appliedState.position) {
-                window.setPositionSafely(
-                    state.position,
-                    state.placement,
-                    platformDefaultPosition = { WindowLocationTracker.getCascadeLocationFor(window) }
-                )
-                appliedState.position = state.position
-            }
-            if (state.placement != appliedState.placement) {
-                window.placement = state.placement
-                appliedState.placement = state.placement
-            }
-            if (state.isMinimized != appliedState.isMinimized) {
-                window.isMinimized = state.isMinimized
-                appliedState.isMinimized = state.isMinimized
-            }
-        },
-        content = content
+        init = { },
+        content = content,
     )
 }
 

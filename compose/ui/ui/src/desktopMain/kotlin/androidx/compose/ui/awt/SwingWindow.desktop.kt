@@ -35,79 +35,71 @@ import androidx.compose.ui.util.setPositionSafely
 import androidx.compose.ui.util.setSizeSafely
 import androidx.compose.ui.util.setUndecoratedSafely
 import androidx.compose.ui.util.windowListenerRef
-import androidx.compose.ui.window.DialogState
-import androidx.compose.ui.window.DialogWindow
-import androidx.compose.ui.window.DialogWindowScope
-import androidx.compose.ui.window.LocalWindow
+import androidx.compose.ui.util.windowStateListenerRef
+import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.UndecoratedWindowDecoration
+import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.componentOrientation
-import androidx.compose.ui.window.rememberDialogState
+import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.resizerThickness
-import java.awt.Dialog.ModalityType
-import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import javax.swing.JDialog
+import javax.swing.JFrame
 
-// TODO(demin): fix mouse hover after opening a dialog.
-//  When we open a modal dialog, ComposeLayer/mouseExited will
-//  never be called for the parent window. See ./gradlew run3
 /**
- * Compose [ComposeDialog] obtained from [create]. The [create] block will be called
- * exactly once to obtain the [ComposeDialog] to be composed, and it is also guaranteed to
+ * Compose [ComposeWindow] obtained from [create]. The [create] block will be called
+ * exactly once to obtain the [ComposeWindow] to be composed, and it is also guaranteed to
  * be invoked on the UI thread (Event Dispatch Thread).
  *
- * Once [SwingDialog] leaves the composition, [dispose] will be called to free resources that were
- * obtained by the [ComposeDialog].
- *
- * Dialog is a modal window. It means it blocks the parent [Window] / [DialogWindow] in whose
- * composition context it was created.
+ * Once [SwingWindow] leaves the composition, [dispose] will be called to free resources that
+ * obtained by the [ComposeWindow].
  *
  * The [update] block can be run multiple times (on the UI thread as well) due to recomposition,
- * and it is the right place to set [ComposeDialog] properties depending on state.
- * When state changes, the block will be reexecuted to set the new properties.
- * Note the block will also be ran once right after the [create] block completes.
+ * and it is the right place to set [ComposeWindow] properties depending on state.
+ * When state changes, the block will be re-executed to set the new properties.
+ * Note the block will also be run once right after the [create] block completes.
  *
- * [SwingDialog] is needed for creating dialogs that can't be created with the default Compose
- * function [DialogWindow]
+ * [SwingWindow] is needed for creating windows that can't be created with the default Compose
+ * function [androidx.compose.ui.window.Window]
  *
- * @param visible Whether the dialog is visible to the user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
- * - internal state of [ComposeDialog] is preserved and will be restored next time the dialog
+ * - internal state of [ComposeWindow] is preserved and will be restored next time the window
  * will be visible;
- * - native resources will not be released. They will be released only when [SwingDialog] leaves
+ * - native resources will not be released. They will be released only when [SwingWindow] leaves
  * the composition.
  * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the [onKeyEvent] callback.
+ * it will be sent back up to the root using the onKeyEvent callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
- * @param create The block creating the [ComposeDialog] to be composed.
- * @param dispose The block to dispose [ComposeDialog] and free native resources.
- * Usually it is simple `ComposeDialog::dispose`
- * @param update The callback to be invoked to update dialog properties.
- * @param content Composable content of the dialog.
+ * @param create The block creating the [ComposeWindow] to be composed.
+ * @param dispose The block to dispose [ComposeWindow] and free native resources.
+ * Usually it is simple `ComposeWindow::dispose`
+ * @param update The callback to be invoked to update window properties.
+ * @param content Composable content of the window.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SwingDialog(
+fun SwingWindow(
     visible: Boolean = true,
-    onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    onKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    create: () -> ComposeDialog,
-    dispose: (ComposeDialog) -> Unit,
-    update: (ComposeDialog) -> Unit = {},
-    content: @Composable DialogWindowScope.() -> Unit
+    onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
+    onKeyEvent: (KeyEvent) -> Boolean = { false },
+    create: () -> ComposeWindow,
+    dispose: (ComposeWindow) -> Unit,
+    update: (ComposeWindow) -> Unit = {},
+    content: @Composable FrameWindowScope.() -> Unit
 ) {
     val compositionLocalContext by rememberUpdatedState(currentCompositionLocalContext)
     val windowExceptionHandlerFactory by rememberUpdatedState(
@@ -138,10 +130,10 @@ fun SwingDialog(
             update(it)
 
             // If displaying for the first time, make sure we draw the first frame before making
-            // the dialog visible, to avoid showing the dialog background.
+            // the window visible, to avoid showing the window background
             // It's the responsibility of setSizeSafely to
-            // - Make the dialog displayable
-            // - Size the dialog and the ComposeLayer correctly, so that we can draw it here
+            // - Make the window displayable
+            // - Size the window and the ComposeLayer correctly, so that we can draw it here
             if (!wasDisplayable && it.isDisplayable) {
                 it.contentPane.paint(it.contentPane.graphics)
             }
@@ -149,14 +141,15 @@ fun SwingDialog(
     )
 }
 
+
 /**
- * Similar to the corresponding [DialogWindow] function, but additionally allows configuring the
- * underlying AWT dialog before it has been made displayable, by providing an [init] block.
+ * Similar to the corresponding [Window] function, but additionally allows configuring the
+ * underlying AWT window before it has been made displayable by providing an [init] block.
  *
  * This is useful to:
- * - Set dialog properties which cannot be changed after it has been made displayable, such as
+ * - Set window properties which cannot be changed after it has been made displayable, such as
  *   [java.awt.Window.setType].
- * - Adding listeners for events that can occur when the dialog becomes displayable/visible.
+ * - Adding listeners for events that can occur when the window becomes displayable/visible.
  *
  * IMPORTANT: this function should not be used to set properties which can be changed after the
  * window has been made displayable. Doing so can cause your code to stop working in the future if
@@ -166,21 +159,21 @@ fun SwingDialog(
  *
  * To set these kinds of properties, use this pattern instead:
  * ```
- * WindowDialog( ... ) {
- *     // Dialog content here
+ * Window( ... ) {
+ *     // Window content here
  *     LaunchedEffect(window) {
- *         // Configure dialog here
+ *         // Configure window here
  *     }
  * }
  * ```
  *
- * @see DialogWindow
+ * @see Window
  */
 @ExperimentalComposeUiApi
 @Composable
-fun SwingDialog(
+fun SwingWindow(
     onCloseRequest: () -> Unit,
-    state: DialogState = rememberDialogState(),
+    state: WindowState = rememberWindowState(),
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -190,13 +183,11 @@ fun SwingDialog(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    onKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    init: (ComposeDialog) -> Unit,
-    content: @Composable DialogWindowScope.() -> Unit
+    onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
+    onKeyEvent: (KeyEvent) -> Boolean = { false },
+    init: (ComposeWindow) -> Unit,
+    content: @Composable FrameWindowScope.() -> Unit
 ) {
-    val owner = LocalWindow.current
-
     val currentState by rememberUpdatedState(state)
     val currentTitle by rememberUpdatedState(title)
     val currentIcon by rememberUpdatedState(icon)
@@ -210,57 +201,63 @@ fun SwingDialog(
 
     val updater = remember(::ComponentUpdater)
 
-    // the state applied to the dialog. exist to avoid races between DialogState changes and the state stored inside the native dialog
+    // the state applied to the window. exist to avoid races between WindowState changes and the state stored inside the native window
     val appliedState = remember {
         object {
             var size: DpSize? = null
             var position: WindowPosition? = null
+            var placement: WindowPlacement? = null
+            var isMinimized: Boolean? = null
         }
     }
 
     val listeners = remember {
         object {
             var windowListenerRef = windowListenerRef()
+            var windowStateListenerRef = windowStateListenerRef()
             var componentListenerRef = componentListenerRef()
 
-            fun removeFromAndClear(window: ComposeDialog) {
+            fun removeFromAndClear(window: ComposeWindow) {
                 windowListenerRef.unregisterFromAndClear(window)
+                windowStateListenerRef.unregisterFromAndClear(window)
                 componentListenerRef.unregisterFromAndClear(window)
             }
         }
     }
 
-    SwingDialog(
+    SwingWindow(
         visible = visible,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
             val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
-            val dialog = if (owner != null) {
-                ComposeDialog(
-                    owner,
-                    ModalityType.DOCUMENT_MODAL,
-                    graphicsConfiguration = graphicsConfiguration
-                )
-            } else {
-                ComposeDialog(graphicsConfiguration = graphicsConfiguration)
-            }
-            dialog.apply {
-                // close state is controlled by DialogState.isOpen
-                defaultCloseOperation = JDialog.DO_NOTHING_ON_CLOSE
+            ComposeWindow(graphicsConfiguration = graphicsConfiguration).apply {
+                // close state is controlled by WindowState.isOpen
+                defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
                 listeners.windowListenerRef.registerWithAndSet(
                     this,
                     object : WindowAdapter() {
-                        override fun windowClosing(e: WindowEvent?) {
+                        override fun windowClosing(e: WindowEvent) {
                             currentOnCloseRequest()
                         }
                     }
                 )
+                listeners.windowStateListenerRef.registerWithAndSet(this) {
+                    currentState.placement = placement
+                    currentState.isMinimized = isMinimized
+                    appliedState.placement = currentState.placement
+                    appliedState.isMinimized = currentState.isMinimized
+                }
                 listeners.componentListenerRef.registerWithAndSet(
                     this,
                     object : ComponentAdapter() {
                         override fun componentResized(e: ComponentEvent) {
+                            // we check placement here and in windowStateChanged,
+                            // because fullscreen changing doesn't
+                            // fire windowStateChanged, only componentResized
+                            currentState.placement = placement
                             currentState.size = DpSize(width.dp, height.dp)
+                            appliedState.placement = currentState.placement
                             appliedState.size = currentState.size
                         }
 
@@ -272,7 +269,7 @@ fun SwingDialog(
                 )
                 WindowLocationTracker.onWindowCreated(this)
 
-                init(dialog)
+                init(this)
             }
         },
         dispose = {
@@ -281,31 +278,40 @@ fun SwingDialog(
             listeners.removeFromAndClear(it)
             it.dispose()
         },
-        update = { dialog ->
+        update = { window ->
             updater.update {
-                set(currentTitle, dialog::setTitle)
-                set(currentIcon, dialog::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, dialog::setUndecoratedSafely)
-                set(currentTransparent, dialog::isTransparent::set)
-                set(currentResizable, dialog::setResizable)
-                set(currentEnabled, dialog::setEnabled)
-                set(currentFocusable, dialog::setFocusableWindowState)
-                set(currentAlwaysOnTop, dialog::setAlwaysOnTop)
-                set(currentDecoration.resizerThickness, dialog::undecoratedResizerThickness::set)
+                set(currentTitle, window::setTitle)
+                set(currentIcon, window::setIcon)
+                set(currentDecoration is UndecoratedWindowDecoration, window::setUndecoratedSafely)
+                set(currentTransparent, window::isTransparent::set)
+                set(currentResizable, window::setResizable)
+                set(currentEnabled, window::setEnabled)
+                set(currentFocusable, window::setFocusableWindowState)
+                set(currentAlwaysOnTop, window::setAlwaysOnTop)
+                set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
             }
             if (state.size != appliedState.size) {
-                dialog.setSizeSafely(state.size, WindowPlacement.Floating)
+                window.setSizeSafely(state.size, state.placement)
                 appliedState.size = state.size
             }
             if (state.position != appliedState.position) {
-                dialog.setPositionSafely(
+                window.setPositionSafely(
                     state.position,
-                    WindowPlacement.Floating,
-                    platformDefaultPosition = { WindowLocationTracker.getCascadeLocationFor(dialog) }
+                    state.placement,
+                    platformDefaultPosition = { WindowLocationTracker.getCascadeLocationFor(window) }
                 )
                 appliedState.position = state.position
+            }
+            if (state.placement != appliedState.placement) {
+                window.placement = state.placement
+                appliedState.placement = state.placement
+            }
+            if (state.isMinimized != appliedState.isMinimized) {
+                window.isMinimized = state.isMinimized
+                appliedState.isMinimized = state.isMinimized
             }
         },
         content = content
     )
 }
+

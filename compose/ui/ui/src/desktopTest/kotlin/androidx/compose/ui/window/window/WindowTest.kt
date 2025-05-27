@@ -750,4 +750,20 @@ class WindowTest {
         awaitIdle()
         assertEquals(1, compositions)
     }
+
+    @Test
+    fun `swing frame init called before it is displayable`() = runApplicationTest {
+        var isDisplayableInInit: Boolean? = null
+        launchTestApplication {
+            SwingFrame(
+                onCloseRequest = ::exitApplication,
+                init = {
+                    isDisplayableInInit = it.isDisplayable
+                }
+            ) { }
+        }
+
+        awaitIdle()
+        assertThat(isDisplayableInInit).isFalse()
+    }
 }
