@@ -476,8 +476,8 @@ class WindowTest {
 
         awaitIdle()
 
-        assertThat(isComposed)
-        assertThat(isDrawn)
+        assertThat(isComposed).isTrue()
+        assertThat(isDrawn).isTrue()
         assertThat(isVisibleOnFirstComposition).isFalse()
         assertThat(isVisibleOnFirstDraw).isFalse()
         assertEquals(expectedCanvasSizePx, actualCanvasSize)
