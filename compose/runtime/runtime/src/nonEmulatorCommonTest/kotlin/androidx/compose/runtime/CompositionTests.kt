@@ -4353,7 +4353,8 @@ class CompositionTests {
         revalidate()
     }
 
-// commented
+// commented because of compilation failure on k2.1.21 (https://youtrack.jetbrains.com/projects/KT/issues/KT-77508)
+// should be restored with migration to k2.2
 //    @Test
 //    fun composableDelegates() = compositionTest {
 //        val local = compositionLocalOf { "Default" }
