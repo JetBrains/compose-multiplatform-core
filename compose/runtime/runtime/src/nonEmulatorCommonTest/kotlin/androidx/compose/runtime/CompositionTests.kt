@@ -4353,7 +4353,8 @@ class CompositionTests {
         revalidate()
     }
 
-// commented because of compilation failure on k2.1.21 (https://youtrack.jetbrains.com/projects/KT/issues/KT-77508)
+// workaround for https://youtrack.jetbrains.com/projects/KT/issues/KT-77508 (compilation failure on k2.1.21)
+// as of now test moved to `androidx.compose.runtime.CompositionJvmTests.composableDelegates`
 // should be restored with migration to k2.2
 //    @Test
 //    fun composableDelegates() = compositionTest {
