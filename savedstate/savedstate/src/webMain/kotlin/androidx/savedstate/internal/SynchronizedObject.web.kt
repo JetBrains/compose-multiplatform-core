@@ -16,6 +16,11 @@
 
 package androidx.savedstate.internal
 
-import platform.posix.PTHREAD_MUTEX_RECURSIVE
+// https://github.com/JetBrains/compose-multiplatform-core/blob/aedff98279a9e778d13c67fc5c7bb1797e2f8a99/savedstate/savedstate/src/webMain/kotlin/androidx/savedstate/internal/SynchronizedObject.web.kt#L18
+internal actual class SynchronizedObject actual constructor()
 
-internal actual val PTHREAD_MUTEX_RECURSIVE: Int = PTHREAD_MUTEX_RECURSIVE.toInt()
+// https://github.com/JetBrains/compose-multiplatform-core/blob/aedff98279a9e778d13c67fc5c7bb1797e2f8a99/savedstate/savedstate/src/webMain/kotlin/androidx/savedstate/internal/SynchronizedObject.web.kt#L20
+internal actual inline fun <T> synchronizedImpl(
+    lock: SynchronizedObject,
+    crossinline action: () -> T,
+): T = action() // `synchronized` API is not supported yet in Web
