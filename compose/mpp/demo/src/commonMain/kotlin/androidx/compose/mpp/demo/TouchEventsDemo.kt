@@ -16,6 +16,11 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +40,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,18 +71,23 @@ fun TouchEventsDemo() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Simple tap detection
-        TapDemo()
+//        // Simple tap detection
+//        TapDemo()
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Drag gesture demo
+//        DragDemo()
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Multi-touch transform demo
+//        TransformDemo()
+//
+//        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Drag gesture demo
-        DragDemo()
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Multi-touch transform demo
-        TransformDemo()
+        // Five-finger multitouch demo
+        FiveFingerTouchDemo()
     }
 }
 
@@ -265,6 +276,115 @@ fun TransformDemo() {
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FiveFingerTouchDemo() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Five-Finger Multitouch", fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Touch the area below with up to five fingers:")
+
+            // Track the offset for every pointer ID that is currently "down"
+            val touchPoints = remember { mutableStateOf(mapOf<Int, Offset>()) }
+            var touchInfo by remember { mutableStateOf("No touches yet") }
+
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .border(2.dp, Color.Black)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                // Get all touch points from the pointer event
+                                val pointerEvent = awaitPointerEvent()
+
+                                // Convert the changes to a map of index to position
+                                val currentTouches = pointerEvent.changes
+                                    .filter { it.pressed }
+                                    .mapIndexed { index, change -> 
+                                        index to change.position
+                                    }
+                                    .toMap()
+
+                                // Update the touch points
+                                touchPoints.value = currentTouches
+
+                                // Update the touch info text
+                                touchInfo = if (currentTouches.isEmpty()) {
+                                    "No touches"
+                                } else {
+                                    "Detected ${currentTouches.size} finger${if (currentTouches.size > 1) "s" else ""}"
+                                }
+
+                                // Consume all changes
+                                pointerEvent.changes.forEach { it.consume() }
+                            }
+                        }
+                    }
+            ) {
+                // Display touch info text
+                Text(
+                    text = touchInfo,
+                    modifier = Modifier.padding(8.dp),
+                    color = Color.Black
+                )
+
+                val radius = remember { Animatable(50f) }
+
+                LaunchedEffect(radius) {
+                    radius.animateTo(
+                        targetValue = 150f,
+                        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1000, easing = LinearEasing), repeatMode = RepeatMode.Reverse)
+                    )
+                }
+
+                // Draw circles for each touch point
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    touchPoints.value.forEach { (index, position) ->
+                        // Use different colors for each finger (up to 5)
+                        val color = when (index) {
+                            0 -> Color.Red
+                            1 -> Color.Blue
+                            2 -> Color.Green
+                            3 -> Color.Yellow
+                            4 -> Color.Magenta
+                            else -> Color.Gray
+                        }
+
+                        // Draw a circle at the touch position
+                        drawCircle(
+                            color = color,
+                            radius = radius.value,
+                            center = position,
+                            alpha = 0.7f
+                        )
+
+                        // Draw the finger number
+                        drawCircle(
+                            color = Color.White,
+                            radius = 20f,
+                            center = position
+                        )
+
+                        // Draw text for finger number (platform-agnostic approach)
+                        drawCircle(
+                            color = Color.Black,
+                            radius = 20f,
+                            center = position.copy(x = position.x, y = position.y),
+                            style = Stroke(width = 2f)
+                        )
                     }
                 }
             }
