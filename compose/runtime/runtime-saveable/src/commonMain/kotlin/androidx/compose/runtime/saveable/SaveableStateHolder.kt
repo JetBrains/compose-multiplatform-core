@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.remember
-import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
  * Allows to save the state defined with [rememberSaveable] for the subtree before disposing it to
@@ -75,13 +74,10 @@ private class SaveableStateHolderImpl(
                     "Type of the key $key is not supported. On Android you can only use types " +
                         "which can be stored inside the Bundle."
                 }
-                SaveableStateRegistryWrapper(
-                    base = SaveableStateRegistry(restoredValues = savedStates[key], canBeSaved)
-                )
+                SaveableStateRegistry(savedStates[key], canBeSaved)
             }
             CompositionLocalProvider(
                 LocalSaveableStateRegistry provides registry,
-                LocalSavedStateRegistryOwner provides registry,
                 content = content
             )
             DisposableEffect(Unit) {

@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalPlatformScreenReader
@@ -265,6 +266,21 @@ internal abstract class BaseComposeScene(
         }
     }
 
+    override fun sendRotaryScrollEvent(
+        verticalScrollPixels: Float,
+        horizontalScrollPixels: Float,
+        timeMillis: Long
+    ): Boolean = postponeInvalidation("BaseComposeScene:sendRotaryScrollEvent") {
+        val event = RotaryScrollEvent(
+            verticalScrollPixels = verticalScrollPixels,
+            horizontalScrollPixels = horizontalScrollPixels,
+            uptimeMillis = timeMillis
+        )
+        processRotaryScrollEvent(event).also {
+            recomposer.performScheduledEffects()
+        }
+    }
+
     override suspend fun withMonotonicFrameClock(block: suspend () -> Unit) {
         val monotonicFrameClock = compositionContext.effectCoroutineContext[MonotonicFrameClock]
             ?: error("No MonotonicFrameClock found in compositionContext")
@@ -285,6 +301,8 @@ internal abstract class BaseComposeScene(
     protected abstract fun processCancelPointerInput()
 
     protected abstract fun processKeyEvent(keyEvent: KeyEvent): Boolean
+
+    protected abstract fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean
 
     protected abstract fun measureAndLayout()
 

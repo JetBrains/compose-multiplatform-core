@@ -211,20 +211,8 @@ internal class ComposeWindow(
             override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
                 val viewportRect = canvas.getBoundingClientRect()
                 val dpRect = rect.toDpRect(density)
-                var left = viewportRect.left.toFloat() + dpRect.left.value
-                var top = viewportRect.top.toFloat() + dpRect.top.value
-
-                if (left < viewportRect.left) {
-                    left = viewportRect.left.toFloat()
-                } else if (left + dpRect.width.value > viewportRect.right) {
-                    left = viewportRect.right.toFloat() - dpRect.width.value
-                }
-
-                if (top < viewportRect.top) {
-                    top = viewportRect.top.toFloat()
-                } else if (top + dpRect.height.value > viewportRect.bottom) {
-                    top = viewportRect.bottom.toFloat() - dpRect.height.value
-                }
+                val left = viewportRect.left.toFloat() + dpRect.left.value
+                val top = viewportRect.top.toFloat() + dpRect.top.value
 
                 return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
             }

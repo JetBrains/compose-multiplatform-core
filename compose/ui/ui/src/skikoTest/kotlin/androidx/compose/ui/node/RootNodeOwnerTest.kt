@@ -22,7 +22,6 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.PointerEventResult
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
@@ -41,11 +40,9 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 
-@OptIn(ExperimentalTestApi::class)
 class RootNodeOwnerTest {
 
     @Test
@@ -184,10 +181,9 @@ private class TestInputRequest: PlatformTextInputMethodRequest {
     override val imeOptions: ImeOptions get() = error("Test method")
     override val onEditCommand: (List<EditCommand>) -> Unit get() = error("Test method")
     override val onImeAction: ((ImeAction) -> Unit)? get() = error("Test method")
-    override val outputValue: Flow<TextFieldValue> get() = error("Test method")
-    override val textLayoutResult: Flow<TextLayoutResult> get() = error("Test method")
-    override val focusedRectInRoot: Flow<Rect> get() = error("Test method")
-    override val textFieldRectInRoot: Flow<Rect> get() = error("Test method")
-    override val textClippingRectInRoot: Flow<Rect> get() = error("Test method")
+    override val textLayoutResult: () -> TextLayoutResult? get() = error("Test method")
+    override val focusedRectInRoot: () -> Rect? get() = error("Test method")
+    override val textFieldRectInRoot: () -> Rect? get() = error("Test method")
+    override val textClippingRectInRoot: () -> Rect? get() = error("Test method")
     override val editText: (TextEditingScope.() -> Unit) -> Unit get() = error("Test method")
 }

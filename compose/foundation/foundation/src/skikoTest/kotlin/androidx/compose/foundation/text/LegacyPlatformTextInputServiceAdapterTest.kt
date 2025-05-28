@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Test
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 class LegacyPlatformTextInputServiceAdapterTest {
@@ -55,7 +56,6 @@ class LegacyPlatformTextInputServiceAdapterTest {
         var value: TextFieldValue? = null
         var state: TextEditorState? = null
         var imeOptions: ImeOptions? = null
-        var outputValue: TextFieldValue? = null
         var textLayoutResult: TextLayoutResult? = null
         var focusedRectInRoot: Rect? = null
         var textFieldRectInRoot: Rect? = null
@@ -74,19 +74,24 @@ class LegacyPlatformTextInputServiceAdapterTest {
                         snapshotFlow { request.imeOptions }.collect { imeOptions = it }
                     }
                     launch {
-                        request.outputValue.collect { outputValue = it }
+                        snapshotFlow { request.textLayoutResult() }.filterNotNull().collect {
+                            textLayoutResult = it
+                        }
                     }
                     launch {
-                        request.textLayoutResult.collect { textLayoutResult = it }
+                        snapshotFlow { request.focusedRectInRoot() }.filterNotNull().collect {
+                            focusedRectInRoot = it
+                        }
                     }
                     launch {
-                        request.focusedRectInRoot.collect { focusedRectInRoot = it }
+                        snapshotFlow { request.textFieldRectInRoot() }.filterNotNull().collect {
+                            textFieldRectInRoot = it
+                        }
                     }
                     launch {
-                        request.textFieldRectInRoot.collect { textFieldRectInRoot = it }
-                    }
-                    launch {
-                        request.textClippingRectInRoot.collect { textClippingRectInRoot = it }
+                        snapshotFlow { request.textClippingRectInRoot() }.filterNotNull().collect {
+                            textClippingRectInRoot = it
+                        }
                     }
                 }
                 awaitCancellation()
@@ -107,12 +112,11 @@ class LegacyPlatformTextInputServiceAdapterTest {
         waitForIdle()
 
         assertThat(value?.text).isEqualTo("abc")
+        assertThat(value?.selection).isEqualTo(TextRange(3, 3))
         assertThat(state?.length).isEqualTo(3)
         assertThat(state?.selection).isEqualTo(TextRange(3, 3))
         assertThat(state?.let { it.substring(startIndex = 0, it.length) }).isEqualTo("abc")
         assertThat(imeOptions).isNotNull()
-        assertThat(outputValue?.text).isEqualTo("abc")
-        assertThat(outputValue?.selection).isEqualTo(TextRange(3, 3))
         assertThat(textLayoutResult?.layoutInput?.text?.text).isEqualTo("abc")
         assertThat(focusedRectInRoot).isNotNull()
         assertThat(textFieldRectInRoot?.isEmpty).isFalse()

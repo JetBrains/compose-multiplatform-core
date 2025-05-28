@@ -17,12 +17,8 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.awt.toAwtRectangleRounded
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.text.input.PlatformTextInputService2
-import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.substring
 import java.awt.Rectangle
@@ -40,33 +36,25 @@ import org.jetbrains.skiko.hostOs
 
 internal class DesktopTextInputService2(
     private val component: PlatformComponent
-) : PlatformTextInputService2 {
+) {
 
     private var inputMethodSession: InputMethodSession? = null
 
     private var receivedInputMethodEventsSinceStartInput = false
 
-    override fun startInput(
-        state: TextEditorState,
-        imeOptions: ImeOptions,
-        editText: (block: TextEditingScope.() -> Unit) -> Unit
-    ) {
+    fun startInput(request: PlatformTextInputMethodRequest) {
         receivedInputMethodEventsSinceStartInput = false
         component.enableInput(
-            InputMethodSession(component, state, editText).also {
+            InputMethodSession(component, request).also {
                 inputMethodSession = it
             }
         )
     }
 
-    override fun stopInput() {
+    fun stopInput() {
         component.disableInput()
 
         this.inputMethodSession = null
-    }
-
-    override fun focusedRectChanged(rect: Rect) {
-        inputMethodSession?.focusedRect = rect
     }
 
     fun onKeyEvent(keyEvent: KeyEvent) {
@@ -117,17 +105,17 @@ internal class DesktopTextInputService2(
 
 private class InputMethodSession(
     private val component: PlatformComponent,
-    private val state: TextEditorState,
-    private val editText: (block: TextEditingScope.() -> Unit) -> Unit
+    private val request: PlatformTextInputMethodRequest
 ) : InputMethodRequests {
+
+    private val state: TextEditorState
+        get() = request.state
 
     private val selection: TextRange
         get() = state.selection
 
     private val composition: TextRange?
         get() = state.composition
-
-    var focusedRect: Rect? = null
 
     // This is required to support input of accented characters using press-and-hold method (http://support.apple.com/kb/PH11264).
     // JDK currently properly supports this functionality only for TextComponent/JTextComponent descendants.
@@ -179,7 +167,8 @@ private class InputMethodSession(
     }
 
     override fun getTextLocation(offset: TextHitInfo?): Rectangle? {
-        val awtRect = focusedRect?.let {
+        val awtRect = request.focusedRectInRoot()?.let {
+            println("focusedRect: $it")
             val centerX = it.topCenter.x
             it.copy(left = centerX, right = centerX).toAwtRectangleRounded(component.density)
         } ?: return null
@@ -219,7 +208,7 @@ private class InputMethodSession(
         val committed = event.committedText
         val composing = event.composingText
 
-        editText {
+        request.editText {
             if (needToDeletePreviousChar && selection.min > 0 && composing.isEmpty()) {
                 needToDeletePreviousChar = false
                 deleteSurroundingTextInCodePoints(1, 0)

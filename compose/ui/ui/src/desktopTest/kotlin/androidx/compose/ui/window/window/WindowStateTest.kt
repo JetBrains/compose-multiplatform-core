@@ -268,11 +268,11 @@ class WindowStateTest {
         val position = Point(242, 242)
         state.position = position.toWindowPosition()
         awaitIdle()
-        assertThat(window1?.location == position)
+        assertThat(window1?.location).isEqualTo(position)
 
         isWindow1 = false
         awaitIdle()
-        assertThat(window2?.location == position)
+        assertThat(window2?.location).isEqualTo(position)
     }
 
     @Test

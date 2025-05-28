@@ -16,11 +16,13 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.WebTextInputService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -34,12 +36,12 @@ internal class WebTextInputSession(
     ): Nothing = coroutineScope {
         // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7831/Web-Adopt-PlatformTextInputService2)
         launch {
-            request.outputValue.collect {
+            snapshotFlow { request.value() }.collect {
                 webTextInputService.updateState(oldValue = null, newValue = it)
             }
         }
         launch {
-            request.focusedRectInRoot.collect {
+            snapshotFlow { request.focusedRectInRoot() }.filterNotNull().collect {
                 webTextInputService.notifyFocusedRect(it)
             }
         }

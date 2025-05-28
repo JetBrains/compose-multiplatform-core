@@ -58,6 +58,7 @@ import androidx.compose.ui.input.pointer.PointerInputEventProcessor
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
@@ -102,6 +103,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -310,6 +312,10 @@ internal class RootNodeOwner(
         return focusOwner.moveFocus(focusDirection)
     }
 
+    fun onRotaryEvent(event: RotaryScrollEvent): Boolean {
+        return focusOwner.dispatchRotaryEvent(event)
+    }
+
     /**
      * Perform hit test and return the [InteropView] associated with the resulting
      * [PointerInputModifierNode] node in case it is a [Modifier.pointerInteropFilter],
@@ -380,22 +386,24 @@ internal class RootNodeOwner(
 
             @OptIn(InternalTextApi::class)
             override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-                innerSessionMutex.withSessionCancellingPrevious(
+                innerSessionMutex.withSessionCancellingPrevious<Nothing>(
                     sessionInitializer = { null }
                 ) {
-                    // Currently TextInputService is used for keyboard show/hide actions and for
-                    // backward compatibility by the LocalTextInputService.
-                    // startInput and stopInput calls are required to properly configure the service
-                    // and allow it to pass keyboard show/hide calls to the PlatformTextInputService.
-                    textInputService.startInput()
-                    launch(start = CoroutineStart.UNDISPATCHED) {
-                        suspendCancellableCoroutine<Nothing> {
-                            it.invokeOnCancellation {
-                                textInputService.stopInput()
+                    coroutineScope {
+                        // Currently TextInputService is used for keyboard show/hide actions and for
+                        // backward compatibility by the LocalTextInputService.
+                        // startInput and stopInput calls are required to properly configure the service
+                        // and allow it to pass keyboard show/hide calls to the PlatformTextInputService.
+                        launch(start = CoroutineStart.UNDISPATCHED) {
+                            suspendCancellableCoroutine<Nothing> {
+                                textInputService.startInput()
+                                it.invokeOnCancellation {
+                                    textInputService.stopInput()
+                                }
                             }
                         }
+                        platformContext.startInputMethod(request)
                     }
-                    platformContext.startInputMethod(request)
                 }
             }
         }
@@ -403,7 +411,7 @@ internal class RootNodeOwner(
         override suspend fun textInputSession(
             session: suspend PlatformTextInputSessionScope.() -> Nothing
         ) : Nothing {
-            textInputSessionMutex.withSessionCancellingPrevious(
+            textInputSessionMutex.withSessionCancellingPrevious<Nothing>(
                 sessionInitializer = ::TextInputSession,
                 session = session
             )
