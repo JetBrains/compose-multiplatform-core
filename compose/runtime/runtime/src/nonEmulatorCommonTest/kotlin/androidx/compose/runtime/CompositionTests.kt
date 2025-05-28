@@ -5073,7 +5073,7 @@ private inline fun InlineSubcomposition(crossinline content: @Composable () -> U
     }
 
 @Composable
-operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
+private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
 
 // for 274185312
 
