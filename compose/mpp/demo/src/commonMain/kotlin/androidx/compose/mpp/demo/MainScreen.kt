@@ -33,6 +33,7 @@ val MainScreen = Screen.Selection(
     Screen.Example("GraphicsLayerSettings") { GraphicsLayerSettings() },
     Screen.Example("Blending") { Blending() },
     Screen.Example("InteropOrder") { InteropOrder() },
+    Screen.Example("TouchEventsDemo") { TouchEventsDemo() },
     AndroidTextFieldSamples,
     Screen.Example("Android TextBrushDemo") { TextBrushDemo() },
     AndroidAccessibilityDemos
