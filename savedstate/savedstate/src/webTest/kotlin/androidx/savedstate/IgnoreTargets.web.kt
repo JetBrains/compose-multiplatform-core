@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package androidx.savedstate.internal
+package androidx.savedstate
 
-import platform.posix.PTHREAD_MUTEX_RECURSIVE
+import kotlin.test.Ignore
 
-internal actual val PTHREAD_MUTEX_RECURSIVE: Int = PTHREAD_MUTEX_RECURSIVE.toInt()
+internal actual typealias IgnoreWebTarget = Ignore
