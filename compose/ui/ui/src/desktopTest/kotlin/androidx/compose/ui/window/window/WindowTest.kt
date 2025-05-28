@@ -80,7 +80,7 @@ class WindowTest {
             }
 
             if (isOpen) {
-                Window(
+                SwingWindow(
                     create = ::createWindow,
                     dispose = ComposeWindow::dispose
                 ) {
@@ -115,7 +115,7 @@ class WindowTest {
             }
 
             if (isOpen) {
-                Window(
+                SwingWindow(
                     create = ::createWindow,
                     dispose = ComposeWindow::dispose,
                     update = { it.title = title }

@@ -321,7 +321,7 @@ fun DialogWindow(
         }
     }
 
-    DialogWindow(
+    SwingDialog(
         visible = visible,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
@@ -396,8 +396,8 @@ fun DialogWindow(
 }
 
 @Deprecated(
-    message = "Replaced by DialogWindow",
-    replaceWith = ReplaceWith("DialogWindow(visible, onPreviewKeyEvent, onKeyEvent, create, dispose, update, content)")
+    message = "Replaced by SwingDialog",
+    replaceWith = ReplaceWith("SwingDialog(visible, onPreviewKeyEvent, onKeyEvent, create, dispose, update, content)")
 )
 @Composable
 fun Dialog(
@@ -408,7 +408,7 @@ fun Dialog(
     dispose: (ComposeDialog) -> Unit,
     update: (ComposeDialog) -> Unit = {},
     content: @Composable DialogWindowScope.() -> Unit
-) = DialogWindow(
+) = SwingDialog(
     visible,
     onPreviewKeyEvent,
     onKeyEvent,
@@ -460,8 +460,14 @@ fun Dialog(
  * @param update The callback to be invoked after the layout is inflated.
  * @param content Composable content of the creating dialog.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("unused")
+@Deprecated(
+    message = "Renamed to SwingDialog",
+    replaceWith = ReplaceWith(
+        expression = "SwingDialog(visible, onPreviewKeyEvent, onKeyEvent, create, dispose, update, content)",
+        "androidx.compose.ui.window.SwingDialog"
+    )
+)
 @Composable
 fun DialogWindow(
     visible: Boolean = true,
@@ -472,43 +478,14 @@ fun DialogWindow(
     update: (ComposeDialog) -> Unit = {},
     content: @Composable DialogWindowScope.() -> Unit
 ) {
-    val compositionLocalContext by rememberUpdatedState(currentCompositionLocalContext)
-    val windowExceptionHandlerFactory by rememberUpdatedState(
-        LocalWindowExceptionHandlerFactory.current
-    )
-    val parentPlatformContext = LocalComposeSceneContext.current?.platformContext
-    val layoutDirection = LocalLayoutDirection.current
-    AwtWindow(
+    SwingDialog(
         visible = visible,
-        create = {
-            create().apply {
-                this.rootForTestListener = parentPlatformContext?.rootForTestListener
-                this.compositionLocalContext = compositionLocalContext
-                this.exceptionHandler = windowExceptionHandlerFactory.exceptionHandler(this)
-                setContent(onPreviewKeyEvent, onKeyEvent, content)
-            }
-        },
-        dispose = {
-            dispose(it)
-        },
-        update = {
-            it.compositionLocalContext = compositionLocalContext
-            it.exceptionHandler = windowExceptionHandlerFactory.exceptionHandler(it)
-            it.componentOrientation = layoutDirection.componentOrientation
-
-            val wasDisplayable = it.isDisplayable
-
-            update(it)
-
-            // If displaying for the first time, make sure we draw the first frame before making
-            // the dialog visible, to avoid showing the dialog background.
-            // It's the responsibility of setSizeSafely to
-            // - Make the dialog displayable
-            // - Size the dialog and the ComposeLayer correctly, so that we can draw it here
-            if (!wasDisplayable && it.isDisplayable) {
-                it.contentPane.paint(it.contentPane.graphics)
-            }
-        },
+        onPreviewKeyEvent = onPreviewKeyEvent,
+        onKeyEvent = onKeyEvent,
+        create = create,
+        dispose = dispose,
+        update = update,
+        content = content,
     )
 }
 

@@ -50,6 +50,7 @@ import androidx.compose.ui.window.AwtWindow
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Notification
+import androidx.compose.ui.window.SwingWindow
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.TrayState
 import androidx.compose.ui.window.Window
@@ -231,7 +232,7 @@ fun customWindow() = GlobalScope.launchApplication {
     }
 
     if (isShowing) {
-        Window(
+        SwingWindow(
             create = {
                 ComposeWindow().apply {
                     size = Dimension(200, 200)

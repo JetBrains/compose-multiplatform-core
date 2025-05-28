@@ -82,7 +82,7 @@ class DialogWindowTest {
             }
 
             if (isOpen) {
-                DialogWindow(
+                SwingDialog(
                     create = ::createWindow,
                     dispose = ComposeDialog::dispose
                 ) {
@@ -117,7 +117,7 @@ class DialogWindowTest {
             }
 
             if (isOpen) {
-                DialogWindow(
+                SwingDialog(
                     create = ::createWindow,
                     dispose = ComposeDialog::dispose,
                     update = { it.title = title }
