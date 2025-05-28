@@ -4353,23 +4353,25 @@ class CompositionTests {
         revalidate()
     }
 
-// workaround for https://youtrack.jetbrains.com/projects/KT/issues/KT-77508 (compilation failure on k2.1.21)
-// as of now test moved to `androidx.compose.runtime.CompositionJvmTests.composableDelegates`
-// should be restored with migration to k2.2
-//    @Test
-//    fun composableDelegates() = compositionTest {
-//        val local = compositionLocalOf { "Default" }
-//        val delegatedLocal by local
-//        compose {
-//            Text(delegatedLocal)
-//
-//            CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
-//        }
-//        validate {
-//            Text("Default")
-//            Text("Scoped")
-//        }
-//    }
+    /* TODO: Restore after updating to Kotlin 2.2
+            Due to a bug in Kotlin 2.1.2x https://youtrack.jetbrains.com/issue/KT-77508, compilation of
+            the tests for K/JS and K/Native fails with
+            "Wrong number of parameters in wrapper: expected: 0 bound and 2 unbound, but 0 found".
+            So ignoring doesn't really work for this case. For now the test is moved to CompositionJvmTests
+    @Test
+    fun composableDelegates() = compositionTest {
+        val local = compositionLocalOf { "Default" }
+        val delegatedLocal by local
+        compose {
+            Text(delegatedLocal)
+            CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
+        }
+        validate {
+            Text("Default")
+            Text("Scoped")
+        }
+    }
+    */
 
     @Test
     fun testCompositionAndRecomposerDeadlock() {
