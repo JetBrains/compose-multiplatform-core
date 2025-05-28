@@ -31,6 +31,8 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -495,7 +497,7 @@ internal fun NavHost(
     (@JvmSuppressWildcards
     AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?,
     drawOnBottomEntryDuringAnimation:
-    (@Composable (isBackAnimation: Boolean, progress: Float) -> Unit)?,
+    (@Composable BoxScope.(isBackAnimation: Boolean, progress: Float) -> Unit)?,
     limitBackGestureSwipeEdge: Int?
 ) {
 
@@ -719,28 +721,33 @@ internal fun NavHost(
             // while in the scope of the composable, we provide the navBackStackEntry as the
             // ViewModelStoreOwner and LifecycleOwner
             currentEntry?.LocalOwnersProvider(saveableStateHolder) {
-                (currentEntry.destination as ComposeNavigator.Destination).content(
-                    this,
-                    currentEntry
-                )
-            }
+                val destination = (currentEntry.destination as ComposeNavigator.Destination)
+                if (drawOnBottomEntryDuringAnimation == null) {
+                    destination.content(this, currentEntry)
+                } else {
+                    Box {
+                        with(this@AnimatedContent) {
+                            destination.content(this, currentEntry)
+                        }
 
-            if (currentEntry != null && drawOnBottomEntryDuringAnimation != null) {
-                val currentEntryId = currentEntry.id
-                val initialEntryId = transition.segment.initialState.id
-                val targetEntryId = transition.segment.targetState.id
-                if (
-                    zIndices.contains(currentEntryId) &&
-                    zIndices.contains(initialEntryId) &&
-                    zIndices.contains(targetEntryId)
-                ) {
-                    val currentEntryZ = zIndices[currentEntryId]
-                    val initialEntryZ = zIndices[initialEntryId]
-                    val targetEntryZ = zIndices[targetEntryId]
-                    val isDrawBehind = currentEntryZ < initialEntryZ || currentEntryZ < targetEntryZ
-                    if (isDrawBehind) {
-                        val isGoBack = currentEntryZ == targetEntryZ
-                        drawOnBottomEntryDuringAnimation(isGoBack, transitionState.fraction)
+                        val currentEntryId = currentEntry.id
+                        val initialEntryId = transition.segment.initialState.id
+                        val targetEntryId = transition.segment.targetState.id
+                        if (
+                            zIndices.contains(currentEntryId) &&
+                            zIndices.contains(initialEntryId) &&
+                            zIndices.contains(targetEntryId)
+                        ) {
+                            val currentEntryZ = zIndices[currentEntryId]
+                            val initialEntryZ = zIndices[initialEntryId]
+                            val targetEntryZ = zIndices[targetEntryId]
+                            val isDrawBehind =
+                                currentEntryZ < initialEntryZ || currentEntryZ < targetEntryZ
+                            if (isDrawBehind) {
+                                val isGoBack = currentEntryZ == targetEntryZ
+                                drawOnBottomEntryDuringAnimation(isGoBack, transitionState.fraction)
+                            }
+                        }
                     }
                 }
             }
