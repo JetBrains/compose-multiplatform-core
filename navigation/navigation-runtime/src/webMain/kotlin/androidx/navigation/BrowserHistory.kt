@@ -66,7 +66,7 @@ internal suspend fun BrowserWindow.bindToNavigation(
                 val restoredRoutes = state.lines()
                 val currentBackStack = navController.currentBackStack.value
                 val currentRoutes = currentBackStack.filter { it.destination !is NavGraph }
-                    .mapNotNull { it.getRouteWithArgs() }
+                    .mapNotNull { it.getRouteWithEncodedArgs() }
 
                 var commonTail = -1
                 restoredRoutes.forEachIndexed { index, restoredRoute ->
@@ -81,18 +81,23 @@ internal suspend fun BrowserWindow.bindToNavigation(
                 if (commonTail == -1) {
                     //clear full stack
                     currentRoutes.firstOrNull()?.let { root ->
-                        navController.popBackStack(root, true)
+                        val decodedRoute = decodeURIComponent(root)
+                        navController.popBackStack(decodedRoute, true)
                     }
                 } else {
                     currentRoutes[commonTail].let { lastCommon ->
-                        navController.popBackStack(lastCommon, false)
+                        val decodedRoute = decodeURIComponent(lastCommon)
+                        navController.popBackStack(decodedRoute, false)
                     }
                 }
 
                 //restore stack
                 if (commonTail < restoredRoutes.size - 1) {
                     val newRoutes = restoredRoutes.subList(commonTail + 1, restoredRoutes.size)
-                    newRoutes.forEach { route -> navController.navigate(route) }
+                    newRoutes.forEach { route ->
+                        val decodedRoute = decodeURIComponent(route)
+                        navController.navigate(decodedRoute)
+                    }
                 }
             }
         }
@@ -103,7 +108,7 @@ internal suspend fun BrowserWindow.bindToNavigation(
 
                 val entries = stack.filter { it.destination !is NavGraph }
                 if (entries.isEmpty()) return@collect
-                val routes = entries.map { it.getRouteWithArgs() ?: return@collect }
+                val routes = entries.map { it.getRouteWithEncodedArgs() ?: return@collect }
 
                 val currentDestination = entries.last()
                 val currentRoute = if (getBackStackEntryRoute != null) {
@@ -157,7 +162,7 @@ private fun BrowserWindow.popStateEvents(): Flow<BrowserPopStateEvent> = callbac
 }
 
 private val argPlaceholder = Regex("""\{.*?\}""")
-private fun NavBackStackEntry.getRouteWithArgs(): String? {
+private fun NavBackStackEntry.getRouteWithEncodedArgs(): String? {
     val entry = this
     val route = entry.destination.route ?: return null
     if (!route.contains(argPlaceholder)) return route
@@ -179,7 +184,7 @@ private fun NavBackStackEntry.getRouteWithArgs(): String? {
 }
 
 private fun NavBackStackEntry.getRouteAsUrlFragment() =
-    getRouteWithArgs()?.let { r -> "#$r" }.orEmpty()
+    getRouteWithEncodedArgs()?.let { r -> "#$r" }.orEmpty()
 
 private fun NavController.tryToNavigateToUrlFragment(localWindow: BrowserWindow) {
     val route = decodeURIComponent(localWindow.location.hash.substringAfter('#', ""))
