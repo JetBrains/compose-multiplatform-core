@@ -47,6 +47,9 @@ class BrowserHistoryTest {
                 test("screen_6/{pathId}?q={queryId}") {
                     argument("pathId") { type = NavType.IntType }
                 }
+                test("screen_7/{txt}") {
+                    argument("txt") { type = NavType.StringType }
+                }
             }
         }
 
@@ -305,6 +308,47 @@ class BrowserHistoryTest {
         println("window.location.toString(): ${window.location}")
         assertThat(window.location.toString()).isEqualTo("$appAddress#${nextAddressWithEncoded}")
         assertThat(navController.currentDestination?.route.orEmpty()).isEqualTo("screen_6/{pathId}?q={queryId}")
+
+        bind.cancel()
+    }
+
+    @Test
+    fun checkBrowserNavigationWithEncodedParams() = runTest {
+        val initHistoryLength = goToBrowserRoot()
+        val navController = NavHostController().apply {
+            navigatorProvider.addNavigator(TestNavigator())
+        }
+        navController.setGraph(navController.createGraph(), null)
+
+        val appAddress = with(window.location) { origin + pathname }
+        val bind = launch { window.bindToNavigation(navController) }
+        advanceUntilIdle()
+
+        assertThat(window.history.length).isEqualTo(initHistoryLength)
+        assertThat(window.history.state.toString()).isEqualTo("screen_1")
+        assertThat(window.location.toString()).isEqualTo("$appAddress#screen_1")
+
+        navController.navigate("screen_7/hello world")
+        advanceUntilIdle()
+
+        assertThat(window.history.length).isEqualTo(2)
+        assertThat(window.history.state.toString().lines())
+            .containsExactly("screen_1", "screen_7/hello%2520world")
+            .inOrder()
+        assertThat(window.location.toString()).isEqualTo("$appAddress#screen_7/hello%2520world")
+        assertThat(navController.currentDestination?.route.orEmpty()).isEqualTo("screen_7/{txt}")
+
+        repeat(3) {
+            browserBack()
+            browserForward()
+        }
+
+        assertThat(window.history.length).isEqualTo(2)
+        assertThat(window.history.state.toString().lines())
+            .containsExactly("screen_1", "screen_7/hello%2520world")
+            .inOrder()
+        assertThat(window.location.toString()).isEqualTo("$appAddress#screen_7/hello%2520world")
+        assertThat(navController.currentDestination?.route.orEmpty()).isEqualTo("screen_7/{txt}")
 
         bind.cancel()
     }
