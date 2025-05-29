@@ -150,13 +150,7 @@ class FocusViewInteropTest {
             }
         }
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        val expectedRect =
-            if (ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled) {
-                IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
-            } else {
-                IntRect(0, 0, 90, 100)
-            }
+        val expectedRect = IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
         assertThat(view.getFocusedRect()).isEqualTo(expectedRect)
     }
 
@@ -197,13 +191,7 @@ class FocusViewInteropTest {
             }
         }
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        val expectedRect =
-            if (ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled) {
-                IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
-            } else {
-                IntRect(0, 0, 90, 100)
-            }
+        val expectedRect = IntRect(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
         assertThat(view.getFocusedRect()).isEqualTo(expectedRect)
     }
 
@@ -322,11 +310,8 @@ class FocusViewInteropTest {
         assertThat(thirdFocused).isTrue()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun nonFocusableComposeViewDoesNotCrashOnFocusMove() {
-        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
-
         lateinit var topEditText: EditText
         lateinit var composeView: ComposeView
         lateinit var bottomEditText: EditText
@@ -369,11 +354,8 @@ class FocusViewInteropTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun composeViewDoesNotCrashWithCanFocusFalseOnFocusMove() {
-        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
-
         lateinit var topEditText: EditText
         lateinit var composeView: ComposeView
         lateinit var bottomEditText: EditText
@@ -422,11 +404,8 @@ class FocusViewInteropTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun composeViewDoesNotCrashWithCanceledFocusOnFocusMove() {
-        assumeTrue(ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled)
-
         lateinit var topEditText: EditText
         lateinit var composeView: ComposeView
         lateinit var bottomEditText: EditText
