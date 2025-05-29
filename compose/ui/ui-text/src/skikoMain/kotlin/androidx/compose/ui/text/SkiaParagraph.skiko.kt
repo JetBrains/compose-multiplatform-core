@@ -392,7 +392,26 @@ internal class SkiaParagraph(
         }
 
     override fun getOffsetForPosition(position: Offset): Int {
-        val glyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+        val initialGlyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+
+        // Check if the position is inside a complex character with non-spacing marks
+        // If it is, adjust the position to the next possible space
+        var glyphPosition = initialGlyphPosition
+        if (glyphPosition in 0 until text.length) {
+            // Check if the current position has a non-spacing mark
+            val isNonSpacingMark = text.codePointAt(glyphPosition).isNonSpacingMark()
+
+            if (isNonSpacingMark) {
+                // Find the boundaries of the complex character
+                val precedingBreak = text.findPrecedingBreak(glyphPosition)
+                val followingBreak = text.findFollowingBreak(glyphPosition)
+
+                // If we're inside a complex character, jump to the end of it
+                if (precedingBreak != glyphPosition && followingBreak != glyphPosition) {
+                    glyphPosition = followingBreak
+                }
+            }
+        }
 
         // Below we apply a workaround for skiko/skia issue:
         //
