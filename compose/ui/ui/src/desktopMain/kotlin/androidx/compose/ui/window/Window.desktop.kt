@@ -20,17 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.scene.LocalComposeSceneContext
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.ComponentUpdater
@@ -48,13 +46,12 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import javax.swing.JMenuBar
-import kotlin.math.exp
 
 // TODO(demin): support focus management
 /**
- * Composes platform window in the current composition. When Window enters the composition,
- * a new platform window will be created and receives the focus. When Window leaves the
- * composition, window will be disposed and closed.
+ * Composes platform window in the current composition. When [Window] enters the composition,
+ * a new platform window will be created and receive focus. When [Window] leaves the composition,
+ * the window will be disposed and closed.
  *
  * Initial size of the window is controlled by [WindowState.size].
  * Initial position of the window is controlled by [WindowState.position].
@@ -90,34 +87,35 @@ import kotlin.math.exp
  * recomposition, [WindowState.size] will be changed to correspond the real size of the window.
  * If [WindowState.position] is not [WindowPosition.isSpecified], then after the first show on the
  * screen [WindowState.position] will be set to the absolute values.
- * @param visible Is [Window] visible to user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
  * - internal state of [Window] is preserved and will be restored next time the window
  * will be visible;
  * - native resources will not be released. They will be released only when [Window]
  * will leave the composition.
  * @param title Title in the title bar of the window
- * @param icon Icon in the title bar of the window (for platforms which support this).
+ * @param icon Icon in the title bar of the window (for platforms that support this).
  * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
  * set it via `iconFile` in build.gradle
  * (https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#platform-specific-options)
  * @param decoration Specifies the decoration for this window.
- * @param transparent Disables or enables window transparency. Transparency should be set
- * only if window is undecorated, otherwise an exception will be thrown.
- * @param resizable Can window be resized by the user (application still can resize the window
- * changing [state])
- * @param enabled Can window react to input events
- * @param focusable Can window receive focus
- * @param alwaysOnTop Should window always be on top of another windows
+ * @param transparent Disables or enables window transparency. Transparency may be set only if the
+ * window is undecorated, otherwise an exception will be thrown.
+ * @param resizable Whether the window can be resized by the user (application still can resize the
+ * window by changing [state]).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
  * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the onKeyEvent callback.
+ * it will be sent back up to the root using the [onKeyEvent] callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
- * @param content Content of the window
+ * @param content Composable content of the window.
  */
 @ExperimentalComposeUiApi
 @Composable
@@ -301,34 +299,35 @@ fun Window(
  * recomposition, [WindowState.size] will be changed to correspond the real size of the window.
  * If [WindowState.position] is not [WindowPosition.isSpecified], then after the first show on the
  * screen [WindowState.position] will be set to the absolute values.
- * @param visible Is [Window] visible to user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
  * - internal state of [Window] is preserved and will be restored next time the window
  * will be visible;
  * - native resources will not be released. They will be released only when [Window]
  * will leave the composition.
  * @param title Title in the title bar of the window
- * @param icon Icon in the title bar of the window (for platforms which support this).
+ * @param icon Icon in the title bar of the window (for platforms that support this).
  * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
  * set it via `iconFile` in build.gradle
  * (https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#platform-specific-options)
  * @param undecorated Disables or enables decorations for this window.
- * @param transparent Disables or enables window transparency. Transparency should be set
- * only if window is undecorated, otherwise an exception will be thrown.
- * @param resizable Can window be resized by the user (application still can resize the window
- * changing [state])
- * @param enabled Can window react to input events
- * @param focusable Can window receive focus
- * @param alwaysOnTop Should window always be on top of another windows
+ * @param transparent Disables or enables window transparency. Transparency may be set only if the
+ * window is undecorated, otherwise an exception will be thrown.
+ * @param resizable Whether the window can be resized by the user (application still can resize the
+ * window by changing [state]).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
  * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the onKeyEvent callback.
+ * it will be sent back up to the root using the [onKeyEvent] callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
- * @param content Content of the window
+ * @param content Composable content of the window.
  */
 @Composable
 fun Window(
@@ -365,7 +364,6 @@ fun Window(
     )
 }
 
-
 /**
  * An entry point for the Compose application with single window.
  *
@@ -388,30 +386,31 @@ fun Window(
  * recomposition, [WindowState.size] will be changed to correspond the real size of the window.
  * If [WindowState.position] is not [WindowPosition.isSpecified], then after the first show on the
  * screen [WindowState.position] will be set to the absolute values.
- * @param visible Is [Window] visible to user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
  * - internal state of [Window] is preserved and will be restored next time the window
  * will be visible;
  * - native resources will not be released. They will be released only when [Window]
  * will leave the composition.
  * @param title Title in the title bar of the window
- * @param icon Icon in the title bar of the window (for platforms which support this).
+ * @param icon Icon in the title bar of the window (for platforms that support this).
  * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
  * set it via `iconFile` in build.gradle
  * (https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#platform-specific-options)
  * @param decoration Specifies the decoration for this window.
- * @param transparent Disables or enables window transparency. Transparency should be set
- * only if window is undecorated, otherwise an exception will be thrown.
- * @param resizable Can window be resized by the user (application still can resize the window
- * changing [state])
- * @param enabled Can window react to input events
- * @param focusable Can window receive focus
- * @param alwaysOnTop Should window always be on top of another windows
+ * @param transparent Disables or enables window transparency. Transparency may be set only if the
+ * window is undecorated, otherwise an exception will be thrown.
+ * @param resizable Whether the window can be resized by the user (application still can resize the
+ * window by changing [state]).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
  * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the onKeyEvent callback.
+ * it will be sent back up to the root using the [onKeyEvent] callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
@@ -419,7 +418,7 @@ fun Window(
  * exitProcess speedup process exit (instant instead of 1-4sec).
  * If `false`, the execution of the function will be unblocked after application is exited
  * (when the last window is closed, and all [LaunchedEffect]s are complete).
- * @param content Content of the window
+ * @param content Composable content of the window.
  */
 @ExperimentalComposeUiApi
 fun singleWindowApplication(
@@ -478,30 +477,31 @@ fun singleWindowApplication(
  * recomposition, [WindowState.size] will be changed to correspond the real size of the window.
  * If [WindowState.position] is not [WindowPosition.isSpecified], then after the first show on the
  * screen [WindowState.position] will be set to the absolute values.
- * @param visible Is [Window] visible to user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
  * - internal state of [Window] is preserved and will be restored next time the window
  * will be visible;
  * - native resources will not be released. They will be released only when [Window]
  * will leave the composition.
  * @param title Title in the title bar of the window
- * @param icon Icon in the title bar of the window (for platforms which support this).
+ * @param icon Icon in the title bar of the window (for platforms that support this).
  * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
  * set it via `iconFile` in build.gradle
  * (https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#platform-specific-options)
  * @param undecorated Disables or enables decorations for this window.
- * @param transparent Disables or enables window transparency. Transparency should be set
- * only if window is undecorated, otherwise an exception will be thrown.
- * @param resizable Can window be resized by the user (application still can resize the window
- * changing [state])
- * @param enabled Can window react to input events
- * @param focusable Can window receive focus
- * @param alwaysOnTop Should window always be on top of another windows
+ * @param transparent Disables or enables window transparency. Transparency may be set only if the
+ * window is undecorated, otherwise an exception will be thrown.
+ * @param resizable Whether the window can be resized by the user (application still can resize the
+ * window by changing [state]).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
  * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the onKeyEvent callback.
+ * it will be sent back up to the root using the [onKeyEvent] callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
@@ -509,7 +509,7 @@ fun singleWindowApplication(
  * exitProcess speedup process exit (instant instead of 1-4sec).
  * If `false`, the execution of the function will be unblocked after application is exited
  * (when the last window is closed, and all [LaunchedEffect]s are complete).
- * @param content Content of the window
+ * @param content Composable content of the window.
  */
 fun singleWindowApplication(
     state: WindowState = WindowState(),
@@ -561,7 +561,7 @@ fun singleWindowApplication(
  * Window is needed for creating window's that still can't be created with
  * the default Compose function [androidx.compose.ui.window.Window]
  *
- * @param visible Is [ComposeWindow] visible to user.
+ * @param visible Whether the window is visible to the user.
  * If `false`:
  * - internal state of [ComposeWindow] is preserved and will be restored next time the window
  * will be visible;
@@ -571,22 +571,22 @@ fun singleWindowApplication(
  * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
  * Return true to stop propagation of this event. If you return false, the key event will be
  * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
- * it will be sent back up to the root using the onKeyEvent callback.
+ * it will be sent back up to the root using the [onKeyEvent] callback.
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
  * @param create The block creating the [ComposeWindow] to be composed.
  * @param dispose The block to dispose [ComposeWindow] and free native resources.
  * Usually it is simple `ComposeWindow::dispose`
- * @param update The callback to be invoked after the layout is inflated.
- * @param content Composable content of the creating window.
+ * @param update The callback to be invoked to update dialog properties.
+ * @param content Composable content of the window.
  */
 @Suppress("unused")
 @Deprecated(
     message = "Renamed to SwingWindow",
     replaceWith = ReplaceWith(
-        expression = "SwingWindow(visible, onPreviewKeyEvent, onKeyEvent, create, dispose, update, content)",
-        "androidx.compose.ui.window.SwingWindow"
+        "SwingWindow(visible, onPreviewKeyEvent, onKeyEvent, create, dispose, update, content)",
+        "androidx.compose.ui.awt.SwingWindow"
     )
 )
 @Composable
