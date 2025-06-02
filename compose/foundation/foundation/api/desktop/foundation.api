@@ -2046,23 +2046,23 @@ public final class androidx/compose/foundation/text/ClickableTextKt {
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-2$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-3$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-4$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-665310900$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$444370233$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$486633673$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$759698998$foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda-1$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-2$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-580413359$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1808468638$foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$559628295$foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ContextMenu_desktopKt {
@@ -2417,7 +2417,7 @@ public final class androidx/compose/foundation/v2/Scrollbar_desktopKt {
 public final class androidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda-1$foundation ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$358499693$foundation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/foundation/window/WindowDraggableArea_desktopKt {

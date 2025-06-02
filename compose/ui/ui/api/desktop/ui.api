@@ -131,8 +131,8 @@ public final class androidx/compose/ui/CombinedModifier : androidx/compose/ui/Mo
 public final class androidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt {
 	public static final field INSTANCE Landroidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-120220721$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1296475654$ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/ui/ComposeUiFlags {
@@ -2541,7 +2541,7 @@ public final class androidx/compose/ui/layout/BeyondBoundsLayoutKt {
 public final class androidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt {
 	public static final field INSTANCE Landroidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$641200809$ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/layout/ContentScale {
@@ -4478,7 +4478,7 @@ public final class androidx/compose/ui/window/AwtWindow_desktopKt {
 public final class androidx/compose/ui/window/ComposableSingletons$Tray_desktopKt {
 	public static final field INSTANCE Landroidx/compose/ui/window/ComposableSingletons$Tray_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2071755610$ui ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/ui/window/DefaultWindowExceptionHandlerFactory : androidx/compose/ui/window/WindowExceptionHandlerFactory {
