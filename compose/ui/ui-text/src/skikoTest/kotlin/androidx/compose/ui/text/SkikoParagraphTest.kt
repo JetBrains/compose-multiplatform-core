@@ -388,12 +388,15 @@ class SkikoParagraphTest {
         val complexCharBox = paragraph.getBoundingBox(complexCharStart)
 
         // Try to position the caret inside the complex character
-        val insideOffset = Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
+        val insideOffset =
+            Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
         val position = paragraph.getOffsetForPosition(insideOffset)
 
-        // The position should be at the end of the complex character, not inside it
-        assertEquals(5, position) // after 'क्'
-        assertNotEquals(4, position) // not between 'क' and '्'
+        assertEquals(
+            5, // after 'क्'
+            position,
+            message = "The position should be at the end of the complex character, not inside it"
+        )
     }
 
     /**
@@ -411,8 +414,12 @@ class SkikoParagraphTest {
         val afterOffset = Offset(complexCharBox.right + 5, complexCharBox.center.y)
         val position = paragraph.getOffsetForPosition(afterOffset)
 
-        // The position should be at the end of the text
-        assertEquals(5, position)
+
+        assertEquals(
+            5,
+            position,
+            message = "The position should be at the end of the text"
+        )
     }
 
 
