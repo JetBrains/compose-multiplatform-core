@@ -75,7 +75,7 @@ internal class InteropTest {
         assertEquals(0, beganCount)
         assertEquals(0, endedCount)
 
-        delay(UIKitInteropInteractionMode.Cooperative.DefaultDelayMillis + 5)
+        delay(UIKitInteropInteractionMode.Cooperative.DefaultDelayMillis + 5L)
 
         assertEquals(1, beganCount)
         assertEquals(0, endedCount)
