@@ -16,11 +16,458 @@
 
 package androidx.compose.ui.interop
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.findNodeWithLabel
+import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
+import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlinx.cinterop.CValue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.readValue
+import platform.CoreGraphics.CGPoint
+import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIAction
+import platform.UIKit.UIButton
+import platform.UIKit.UIColor
+import platform.UIKit.UIContextMenuConfiguration
+import platform.UIKit.UIContextMenuInteraction
+import platform.UIKit.UIContextMenuInteractionAnimatingProtocol
+import platform.UIKit.UIContextMenuInteractionDelegateProtocol
+import platform.UIKit.UIEvent
+import platform.UIKit.UIMenu
 
 internal class InteropTest {
-    @Test
-    fun test() {
 
+    @Test
+    fun testUIButtonTapCooperativeDefault() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(
+                    UIKitInteropInteractionMode.Cooperative()
+                )
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+
+        delay(UIKitInteropInteractionMode.Cooperative.DefaultDelayMillis + 5)
+
+        assertEquals(1, beganCount)
+        assertEquals(0, endedCount)
+
+        touch.up()
+
+        assertEquals(1, beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testUIButtonCooperativeTouchUpBeforeDelay() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(
+                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 1000)
+                )
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+
+        delay(500)
+
+        touch.up()
+
+        assertEquals(1, beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testUIButtonCooperativeTouchUpAfterDelay() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(
+                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 800)
+                )
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+
+        delay(500)
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+
+        delay(350)
+
+        assertEquals(1, beganCount)
+        assertEquals(0, endedCount)
+
+        touch.up()
+
+        assertEquals(1, beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testUIButtonNonInteractive() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(null)
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+
+        touch.up()
+
+        assertEquals(0, beganCount)
+        assertEquals(0, endedCount)
+    }
+
+    @Test
+    fun testUIButtonTapNonCooperative() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(1, beganCount)
+        assertEquals(0, endedCount)
+
+        touch.up()
+
+        assertEquals(1,beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testUIButtonLongTapNonCooperative() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
+            )
+        }
+
+        val touch = findNodeWithTag("Button")
+            .touchDown()
+
+        assertEquals(1, beganCount)
+        assertEquals(0, endedCount)
+
+        delay(500)
+
+        touch.up()
+
+        assertEquals(1,beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testUIButtonDoubleTapNonCooperative() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
+            )
+        }
+
+        findNodeWithTag("Button")
+            .doubleTap()
+
+        assertEquals(2, beganCount)
+        assertEquals(2, endedCount)
+    }
+
+    @Test
+    fun testUIMenuDismissByTapOnComposeView() = runUIKitInstrumentedTest {
+        var isMenuOpen: () -> Boolean = { false }
+
+        setContent {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp)
+                        .background(Color.Green)
+                        .testTag("Box")
+                )
+                UIKitView(
+                    factory = {
+                        val button = ContextMenuButton()
+                        isMenuOpen = { button.isMenuOpen }
+                        button
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .testTag("MenuButton"),
+                )
+            }
+        }
+
+        findNodeWithTag("MenuButton")
+            .tap()
+
+        delay(800)
+
+        assertTrue(isMenuOpen())
+
+        findNodeWithTag("Box")
+            .tap()
+
+        delay(800)
+
+        assertFalse(isMenuOpen())
+    }
+
+    @Test
+    fun testUIMenuEmbeddedInComposeViewDismissByTapOnOtherComposeView() = runUIKitInstrumentedTest {
+        var isMenuOpen: () -> Boolean = { false }
+
+        setContent {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp)
+                        .background(Color.Green)
+                        .testTag("Box")
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    UIKitView(
+                        factory = {
+                            val button = ContextMenuButton()
+                            isMenuOpen = { button.isMenuOpen }
+                            button
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                            .testTag("MenuButton"),
+                    )
+                }
+            }
+        }
+
+        findNodeWithTag("MenuButton")
+            .tap()
+
+        delay(800)
+
+        assertTrue(isMenuOpen())
+
+        findNodeWithTag("Box")
+            .tap()
+
+        delay(800)
+
+        assertFalse(isMenuOpen())
+    }
+
+    @Test
+    fun testUIMenuDismissByTapOnUIButton() = runUIKitInstrumentedTest {
+        var isMenuOpen: () -> Boolean = { false }
+
+        setContent {
+            Column {
+                UIKitView(
+                    factory = {
+                        val button = UIButton()
+                        button.backgroundColor = UIColor.yellowColor
+                        button
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp)
+                        .testTag("UIButton")
+                )
+                UIKitView(
+                    factory = {
+                        val button = ContextMenuButton()
+                        isMenuOpen = { button.isMenuOpen }
+                        button
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .testTag("MenuButton"),
+                )
+            }
+        }
+
+        findNodeWithTag("MenuButton")
+            .tap()
+
+        delay(800)
+
+        assertTrue(isMenuOpen())
+
+        findNodeWithTag("UIButton")
+            .tap()
+
+        delay(800)
+
+        assertFalse(isMenuOpen())
+    }
+
+    @Test
+    fun testUIMenuDismissByTapOnUIAction() = runUIKitInstrumentedTest {
+        var isMenuOpen: () -> Boolean = { false }
+
+        setContent {
+            UIKitView(
+                factory = {
+                    val button = ContextMenuButton()
+                    isMenuOpen = { button.isMenuOpen }
+                    button
+                },
+                modifier = Modifier.fillMaxWidth().height(400.dp).testTag("MenuButton"),
+            )
+        }
+
+        findNodeWithTag("MenuButton")
+            .tap()
+
+        delay(800)
+
+        assertTrue(isMenuOpen())
+
+        findNodeWithLabel("MenuItem2")
+            .tap()
+
+        delay(800)
+
+        assertFalse(isMenuOpen())
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class ContextMenuButton(
+    var isMenuOpen: Boolean = false,
+): UIButton(frame = CGRectZero.readValue()), UIContextMenuInteractionDelegateProtocol {
+    init {
+        backgroundColor = UIColor.redColor
+        showsMenuAsPrimaryAction = true
+        menu = UIMenu()
+    }
+
+    override fun contextMenuInteraction(
+        interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation: CValue<CGPoint>
+    ): UIContextMenuConfiguration? {
+        isMenuOpen = true
+        return UIContextMenuConfiguration.configurationWithIdentifier(
+            identifier = null,
+            previewProvider = null,
+            actionProvider = {
+                UIMenu.menuWithChildren(
+                    listOf(
+                        UIAction.actionWithTitle("MenuItem1", null, null) {},
+                        UIAction.actionWithTitle("MenuItem2", null, null) {},
+                        UIAction.actionWithTitle("MenuItem3", null, null) {},
+                    )
+                )
+            }
+        )
+    }
+
+    override fun contextMenuInteraction(
+        interaction: UIContextMenuInteraction,
+        willEndForConfiguration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimatingProtocol?
+    ) {
+        isMenuOpen = false
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class TouchReactingView(
+    val onTouchBegin: () -> Unit,
+    val onTouchEnd: () -> Unit,
+): UIButton(frame = CGRectZero.readValue()) {
+    override fun touchesBegan(touches: Set<*>, withEvent: UIEvent?) {
+        super.touchesBegan(touches, withEvent)
+        onTouchBegin()
+    }
+
+    override fun touchesEnded(touches: Set<*>, withEvent: UIEvent?) {
+        super.touchesEnded(touches, withEvent)
+        onTouchEnd()
     }
 }
