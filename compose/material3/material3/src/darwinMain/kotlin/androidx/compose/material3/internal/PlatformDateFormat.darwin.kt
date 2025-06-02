@@ -112,7 +112,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         skeleton: String,
         cache: MutableMap<String, Any>
     ): NSDateFormatter {
-        return cache.getOrPut("S:$skeleton${locale.localeIdentifier}") {
+        return cache.getOrPut("S:$skeleton${this@PlatformDateFormat.locale.localeIdentifier}") {
             createBaseFormatter().apply {
                 setLocalizedDateFormatFromTemplate(skeleton)
             }
@@ -124,7 +124,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         useLocale: Boolean,
         cache: MutableMap<String, Any>
     ): NSDateFormatter {
-        val localeKey = if (useLocale) locale.localeIdentifier else "NO_LOC"
+        val localeKey = if (useLocale) this@PlatformDateFormat.locale.localeIdentifier else "NO_LOC"
         return cache.getOrPut("P:$pattern:$localeKey") {
             createBaseFormatter(useLocale).apply {
                 setDateFormat(pattern)
@@ -136,7 +136,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         return NSDateFormatter().apply {
             setTimeZone(TimeZone.UTC.toNSTimeZone())
             if (useLocale) {
-                setLocale(locale)
+                setLocale(this@PlatformDateFormat.locale)
             }
         }
     }
