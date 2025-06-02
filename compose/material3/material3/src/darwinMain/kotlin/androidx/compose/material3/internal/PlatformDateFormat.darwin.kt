@@ -51,7 +51,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     ): String {
         val nsDate = NSDate.dateWithTimeIntervalSince1970(utcTimeMillis / 1000.0)
 
-        return getCachedDateFormatterForPattern(pattern, cache).stringFromDate(nsDate)
+        return getCachedDateFormatterForPattern(pattern, true, cache).stringFromDate(nsDate)
     }
 
     actual fun formatWithSkeleton(
@@ -61,7 +61,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     ): String {
         val nsDate = NSDate.dateWithTimeIntervalSince1970(utcTimeMillis / 1000.0)
 
-        return getCachedDateFormatterForSkeleton(skeleton, cache).stringFromDate(nsDate)
+        return getCachedDateFormatterForSkeleton(skeleton = skeleton, cache = cache).stringFromDate(nsDate)
     }
 
     actual fun parse(
@@ -71,7 +71,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         cache: MutableMap<String, Any>
     ): CalendarDate? {
         // TODO https://youtrack.jetbrains.com/issue/CMP-7146/Properly-use-locale-in-CalendarModel.parse-implementations
-        val nsDate = getCachedDateFormatterForPattern(pattern, cache).dateFromString(date) ?: return null
+        val nsDate = getCachedDateFormatterForPattern(pattern = pattern, useLocale = false, cache = cache).dateFromString(date) ?: return null
 
         return Instant
             .fromEpochMilliseconds((nsDate.timeIntervalSince1970 * 1000).toLong())
@@ -108,26 +108,36 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
             ?.contains('a') == false
     }
 
-    private fun getCachedDateFormatterForSkeleton(skeleton: String, cache: MutableMap<String, Any>): NSDateFormatter {
-        return cache.getOrPut("S:$skeleton${this@PlatformDateFormat.locale.localeIdentifier}") {
+    private fun getCachedDateFormatterForSkeleton(
+        skeleton: String,
+        cache: MutableMap<String, Any>
+    ): NSDateFormatter {
+        return cache.getOrPut("S:$skeleton${locale.localeIdentifier}") {
             createBaseFormatter().apply {
                 setLocalizedDateFormatFromTemplate(skeleton)
             }
         } as NSDateFormatter
     }
 
-    private fun getCachedDateFormatterForPattern(pattern: String, cache: MutableMap<String, Any>): NSDateFormatter {
-        return cache.getOrPut("P:$pattern${this@PlatformDateFormat.locale.localeIdentifier}") {
-            createBaseFormatter().apply {
+    private fun getCachedDateFormatterForPattern(
+        pattern: String,
+        useLocale: Boolean,
+        cache: MutableMap<String, Any>
+    ): NSDateFormatter {
+        val localeKey = if (useLocale) locale.localeIdentifier else "NO_LOC"
+        return cache.getOrPut("P:$pattern:$localeKey") {
+            createBaseFormatter(useLocale).apply {
                 setDateFormat(pattern)
             }
         } as NSDateFormatter
     }
 
-    private fun createBaseFormatter(): NSDateFormatter {
+    private fun createBaseFormatter(useLocale: Boolean = true): NSDateFormatter {
         return NSDateFormatter().apply {
             setTimeZone(TimeZone.UTC.toNSTimeZone())
-            setLocale(this@PlatformDateFormat.locale)
+            if (useLocale) {
+                setLocale(locale)
+            }
         }
     }
 }
