@@ -378,9 +378,16 @@ internal class ContextMenuColors(
 
 @VisibleForTesting
 @Composable
+internal actual fun computeContextMenuColors() = computeContextMenuColors(
+    R.style.Widget_PopupMenu,
+    R.style.TextAppearance_Widget_PopupMenu_Large
+)
+
+@VisibleForTesting
+@Composable
 internal fun computeContextMenuColors(
-    @StyleRes backgroundStyleId: Int = R.style.Widget_PopupMenu,
-    @StyleRes foregroundStyleId: Int = R.style.TextAppearance_Widget_PopupMenu_Large,
+    @StyleRes backgroundStyleId: Int,
+    @StyleRes foregroundStyleId: Int,
 ): ContextMenuColors {
     val context = LocalContext.current
     return remember(context, LocalConfiguration.current) {
