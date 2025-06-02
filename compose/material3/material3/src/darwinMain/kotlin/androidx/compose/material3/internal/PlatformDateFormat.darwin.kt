@@ -51,7 +51,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     ): String {
         val nsDate = NSDate.dateWithTimeIntervalSince1970(utcTimeMillis / 1000.0)
 
-        return getCachedDateFormatterForPattern(pattern, true, cache).stringFromDate(nsDate)
+        return getCachedDateFormatterForPattern(pattern = pattern, useLocale = true, cache = cache).stringFromDate(nsDate)
     }
 
     actual fun formatWithSkeleton(
