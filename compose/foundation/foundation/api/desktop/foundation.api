@@ -526,6 +526,12 @@ public final class androidx/compose/foundation/content/TransferableContent_skiko
 	public static final fun hasMediaType (Landroidx/compose/foundation/content/TransferableContent;Landroidx/compose/foundation/content/MediaType;)Z
 }
 
+public final class androidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt {
+	public static final field INSTANCE Landroidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt;
+	public fun <init> ()V
+	public final fun getLambda-1$foundation ()Lkotlin/jvm/functions/Function3;
+}
+
 public final class androidx/compose/foundation/draganddrop/DragAndDropSourceKt {
 	public static final fun dragAndDropSource (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun dragAndDropSource (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;

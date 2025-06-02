@@ -35,4 +35,7 @@ internal expect fun ContextMenuArea(
 )
 
 @Composable
-internal expect fun ContextMenuArea(manager: SelectionManager, content: @Composable () -> Unit)
+internal expect fun ContextMenuArea(
+    manager: SelectionManager,
+    content: @Composable () -> Unit
+)

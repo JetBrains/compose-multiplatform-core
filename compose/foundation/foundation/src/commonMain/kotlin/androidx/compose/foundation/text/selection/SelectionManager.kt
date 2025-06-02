@@ -23,6 +23,8 @@ import androidx.collection.mutableLongIntMapOf
 import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.contextmenu.ContextMenuScope
+import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitAllPointersUpWithSlopDetection
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -31,7 +33,11 @@ import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextDragObserver
+import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
@@ -1018,6 +1024,19 @@ internal fun merge(lhs: Selection?, rhs: Selection?): Selection? {
 internal expect fun isCopyKeyEvent(keyEvent: KeyEvent): Boolean
 
 internal expect fun Modifier.selectionMagnifier(manager: SelectionManager): Modifier
+
+internal fun SelectionManager.contextMenuBuilder(
+    state: ContextMenuState,
+): ContextMenuScope.() -> Unit = {
+    fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
+        TextItem(state, label, enabled, operation)
+    }
+
+    listOf(
+        selectionItem(Copy, enabled = isNonEmptySelection()) { copy() },
+        selectionItem(SelectAll, enabled = !isEntireContainerSelected()) { selectAll() },
+    )
+}
 
 internal expect fun Modifier.addSelectionContainerTextContextMenuComponents(
     selectionManager: SelectionManager
