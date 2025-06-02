@@ -313,8 +313,10 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
         .filterComposePlatforms(klibPlatforms)
 }
 
-fun allTasksWith(name: String) =
-    rootProject.subprojects.flatMap { it.tasks.filter { it.name == name } }
+fun allTasksWith(name: String): List<Task> =
+    rootProject.subprojects.mapNotNull { project ->
+        project.tasks.findByName(name)
+    }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle
 // or just ./gradlew printAllArtifactRedirectionVersions
