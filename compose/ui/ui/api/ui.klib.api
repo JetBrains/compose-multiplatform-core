@@ -5627,6 +5627,11 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_UserInputView$st
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter|androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
+abstract fun interface androidx.compose.ui.window/DisposeComposeWindow { // androidx.compose.ui.window/DisposeComposeWindow|null[0]
+    abstract fun dispose() // androidx.compose.ui.window/DisposeComposeWindow.dispose|dispose(){}[0]
+}
+
+// Targets: [js, wasmJs]
 final class androidx.compose.ui.platform/W3CTemporaryClipboard { // androidx.compose.ui.platform/W3CTemporaryClipboard|null[0]
     constructor <init>() // androidx.compose.ui.platform/W3CTemporaryClipboard.<init>|<init>(){}[0]
 
@@ -5766,13 +5771,13 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporary
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter|androidx_compose_ui_platform_WebTextInputService$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
-final fun androidx.compose.ui.window/CanvasBasedWindow(kotlin/String? = ..., kotlin/String = ..., kotlin.coroutines/SuspendFunction0<androidx.compose.ui.unit/IntSize>? = ..., kotlin/Boolean = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/CanvasBasedWindow|CanvasBasedWindow(kotlin.String?;kotlin.String;kotlin.coroutines.SuspendFunction0<androidx.compose.ui.unit.IntSize>?;kotlin.Boolean;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+final fun androidx.compose.ui.window/CanvasBasedWindow(kotlin/String? = ..., kotlin/String = ..., kotlin.coroutines/SuspendFunction0<androidx.compose.ui.unit/IntSize>? = ..., kotlin/Boolean = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...): androidx.compose.ui.window/DisposeComposeWindow // androidx.compose.ui.window/CanvasBasedWindow|CanvasBasedWindow(kotlin.String?;kotlin.String;kotlin.coroutines.SuspendFunction0<androidx.compose.ui.unit.IntSize>?;kotlin.Boolean;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
-final fun androidx.compose.ui.window/ComposeViewport(kotlin/String, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(kotlin.String;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+final fun androidx.compose.ui.window/ComposeViewport(kotlin/String, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...): androidx.compose.ui.window/DisposeComposeWindow // androidx.compose.ui.window/ComposeViewport|ComposeViewport(kotlin.String;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
-final fun androidx.compose.ui.window/ComposeViewport(org.w3c.dom/Element, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(org.w3c.dom.Element;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+final fun androidx.compose.ui.window/ComposeViewport(org.w3c.dom/Element, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...): androidx.compose.ui.window/DisposeComposeWindow // androidx.compose.ui.window/ComposeViewport|ComposeViewport(org.w3c.dom.Element;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop_getter|androidx_compose_ui_window_ComposeWindow$stableprop_getter(){}[0]
