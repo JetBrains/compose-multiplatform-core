@@ -44,7 +44,7 @@ import org.w3c.dom.events.EventTarget
  * An interface with helper functions to initialise the tests
  */
 
-private const val containerId: String = "canvasApp"
+internal const val containerId: String = "canvasApp"
 
 private external interface CanReplaceChildren {
     // this is a standard method for (among other things) emptying DOM element content
