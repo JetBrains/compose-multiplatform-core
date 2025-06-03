@@ -4246,13 +4246,17 @@ class CompositionTests {
         revalidate()
     }
 
+    /* TODO: Restore after updating to Kotlin 2.2
+            Due to a bug in Kotlin 2.1.2x https://youtrack.jetbrains.com/issue/KT-77508, compilation of
+            the tests for K/JS and K/Native fails with
+            "Wrong number of parameters in wrapper: expected: 0 bound and 2 unbound, but 0 found".
+            So ignoring doesn't really work for this case. For now the test is moved to CompositionJvmTests
     @Test
     fun composableDelegates() = compositionTest {
         val local = compositionLocalOf { "Default" }
         val delegatedLocal by local
         compose {
             Text(delegatedLocal)
-
             CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
         }
         validate {
@@ -4260,6 +4264,7 @@ class CompositionTests {
             Text("Scoped")
         }
     }
+    */
 
     @Test
     fun testCompositionAndRecomposerDeadlock() {
@@ -4964,7 +4969,7 @@ private inline fun InlineSubcomposition(crossinline content: @Composable () -> U
     }
 
 @Composable
-operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
+private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
 
 // for 274185312
 
