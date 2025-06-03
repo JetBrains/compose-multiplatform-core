@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.RootNodeOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.setContent
@@ -252,6 +253,9 @@ private class CanvasLayersComposeSceneImpl(
 
     override fun processKeyEvent(keyEvent: KeyEvent): Boolean =
         focusedLayer?.onKeyEvent(keyEvent) ?: mainOwner.onKeyEvent(keyEvent)
+
+    override fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean =
+        focusedLayer?.onRotaryEvent(event) ?: mainOwner.onRotaryEvent(event)
 
     override fun measureAndLayout() {
         forEachOwner { it.measureAndLayout() }
@@ -572,6 +576,10 @@ private class CanvasLayersComposeSceneImpl(
             return onPreviewKeyEvent?.invoke(keyEvent) == true ||
                 owner.onKeyEvent(keyEvent) ||
                 onKeyEvent?.invoke(keyEvent) == true
+        }
+
+        fun onRotaryEvent(event: RotaryScrollEvent): Boolean {
+            return owner.onRotaryEvent(event)
         }
 
         override fun setOutsidePointerEventListener(

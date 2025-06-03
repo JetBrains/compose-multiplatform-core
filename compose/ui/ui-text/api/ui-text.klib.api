@@ -1,6 +1,7 @@
 // Klib ABI Dump
 // Targets: [iosArm64.uikitArm64, iosSimulatorArm64.uikitSimArm64, iosX64.uikitX64, js, macosArm64, macosX64, wasmJs]
 // Alias: apple => [iosArm64.uikitArm64, iosSimulatorArm64.uikitSimArm64, iosX64.uikitX64, macosArm64, macosX64]
+// Alias: ios => [iosArm64.uikitArm64, iosSimulatorArm64.uikitSimArm64, iosX64.uikitX64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -503,10 +504,6 @@ final class androidx.compose.ui.text.input/PasswordVisualTransformation : androi
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.input/PasswordVisualTransformation.equals|equals(kotlin.Any?){}[0]
     final fun filter(androidx.compose.ui.text/AnnotatedString): androidx.compose.ui.text.input/TransformedText // androidx.compose.ui.text.input/PasswordVisualTransformation.filter|filter(androidx.compose.ui.text.AnnotatedString){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.ui.text.input/PasswordVisualTransformation.hashCode|hashCode(){}[0]
-}
-
-final class androidx.compose.ui.text.input/PlatformImeOptions { // androidx.compose.ui.text.input/PlatformImeOptions|null[0]
-    constructor <init>() // androidx.compose.ui.text.input/PlatformImeOptions.<init>|<init>(){}[0]
 }
 
 final class androidx.compose.ui.text.input/SetComposingRegionCommand : androidx.compose.ui.text.input/EditCommand { // androidx.compose.ui.text.input/SetComposingRegionCommand|null[0]
@@ -1816,6 +1813,10 @@ final value class androidx.compose.ui.text/TextRange { // androidx.compose.ui.te
     }
 }
 
+open class androidx.compose.ui.text.input/PlatformImeOptions { // androidx.compose.ui.text.input/PlatformImeOptions|null[0]
+    constructor <init>() // androidx.compose.ui.text.input/PlatformImeOptions.<init>|<init>(){}[0]
+}
+
 open class androidx.compose.ui.text.input/TextInputService { // androidx.compose.ui.text.input/TextInputService|null[0]
     constructor <init>(androidx.compose.ui.text.input/PlatformTextInputService) // androidx.compose.ui.text.input/TextInputService.<init>|<init>(androidx.compose.ui.text.input.PlatformTextInputService){}[0]
 
@@ -2184,6 +2185,63 @@ final fun androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_Na
 
 // Targets: [apple]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_WeakKeysCache$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_WeakKeysCache$stableprop_getter|androidx_compose_ui_text_WeakKeysCache$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final class androidx.compose.ui.text.input/PlatformImeOptionsConfiguration { // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration|null[0]
+    final fun autocapitalizationType(platform.UIKit/UITextAutocapitalizationType?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.autocapitalizationType|autocapitalizationType(platform.UIKit.UITextAutocapitalizationType?){}[0]
+    final fun autocorrectionType(platform.UIKit/UITextAutocorrectionType?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.autocorrectionType|autocorrectionType(platform.UIKit.UITextAutocorrectionType?){}[0]
+    final fun enablesReturnKeyAutomatically(kotlin/Boolean): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.enablesReturnKeyAutomatically|enablesReturnKeyAutomatically(kotlin.Boolean){}[0]
+    final fun isSecureTextEntry(kotlin/Boolean?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.isSecureTextEntry|isSecureTextEntry(kotlin.Boolean?){}[0]
+    final fun keyboardAppearance(kotlin/Long): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.keyboardAppearance|keyboardAppearance(kotlin.Long){}[0]
+    final fun keyboardType(kotlin/Long?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.keyboardType|keyboardType(kotlin.Long?){}[0]
+    final fun returnKeyType(platform.UIKit/UIReturnKeyType?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.returnKeyType|returnKeyType(platform.UIKit.UIReturnKeyType?){}[0]
+    final fun textContentType(kotlin/String?): androidx.compose.ui.text.input/PlatformImeOptionsConfiguration // androidx.compose.ui.text.input/PlatformImeOptionsConfiguration.textContentType|textContentType(kotlin.String?){}[0]
+}
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop // androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop|#static{}androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/autocapitalizationType // androidx.compose.ui.text.input/autocapitalizationType|@androidx.compose.ui.text.input.PlatformImeOptions{}autocapitalizationType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-autocapitalizationType>(): platform.UIKit/UITextAutocapitalizationType? // androidx.compose.ui.text.input/autocapitalizationType.<get-autocapitalizationType>|<get-autocapitalizationType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/autocorrectionType // androidx.compose.ui.text.input/autocorrectionType|@androidx.compose.ui.text.input.PlatformImeOptions{}autocorrectionType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-autocorrectionType>(): platform.UIKit/UITextAutocorrectionType? // androidx.compose.ui.text.input/autocorrectionType.<get-autocorrectionType>|<get-autocorrectionType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/enablesReturnKeyAutomatically // androidx.compose.ui.text.input/enablesReturnKeyAutomatically|@androidx.compose.ui.text.input.PlatformImeOptions{}enablesReturnKeyAutomatically[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-enablesReturnKeyAutomatically>(): kotlin/Boolean // androidx.compose.ui.text.input/enablesReturnKeyAutomatically.<get-enablesReturnKeyAutomatically>|<get-enablesReturnKeyAutomatically>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/hasExplicitTextContentType // androidx.compose.ui.text.input/hasExplicitTextContentType|@androidx.compose.ui.text.input.PlatformImeOptions{}hasExplicitTextContentType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-hasExplicitTextContentType>(): kotlin/Boolean // androidx.compose.ui.text.input/hasExplicitTextContentType.<get-hasExplicitTextContentType>|<get-hasExplicitTextContentType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/isSecureTextEntry // androidx.compose.ui.text.input/isSecureTextEntry|@androidx.compose.ui.text.input.PlatformImeOptions{}isSecureTextEntry[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-isSecureTextEntry>(): kotlin/Boolean? // androidx.compose.ui.text.input/isSecureTextEntry.<get-isSecureTextEntry>|<get-isSecureTextEntry>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/keyboardAppearance // androidx.compose.ui.text.input/keyboardAppearance|@androidx.compose.ui.text.input.PlatformImeOptions{}keyboardAppearance[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-keyboardAppearance>(): kotlin/Long // androidx.compose.ui.text.input/keyboardAppearance.<get-keyboardAppearance>|<get-keyboardAppearance>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/keyboardType // androidx.compose.ui.text.input/keyboardType|@androidx.compose.ui.text.input.PlatformImeOptions{}keyboardType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-keyboardType>(): kotlin/Long? // androidx.compose.ui.text.input/keyboardType.<get-keyboardType>|<get-keyboardType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/returnKeyType // androidx.compose.ui.text.input/returnKeyType|@androidx.compose.ui.text.input.PlatformImeOptions{}returnKeyType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-returnKeyType>(): platform.UIKit/UIReturnKeyType? // androidx.compose.ui.text.input/returnKeyType.<get-returnKeyType>|<get-returnKeyType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.text.input/textContentType // androidx.compose.ui.text.input/textContentType|@androidx.compose.ui.text.input.PlatformImeOptions{}textContentType[0]
+    final fun (androidx.compose.ui.text.input/PlatformImeOptions).<get-textContentType>(): kotlin/String? // androidx.compose.ui.text.input/textContentType.<get-textContentType>|<get-textContentType>@androidx.compose.ui.text.input.PlatformImeOptions(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.text.input/PlatformImeOptions(kotlin/Function1<androidx.compose.ui.text.input/PlatformImeOptionsConfiguration, kotlin/Unit>? = ...): androidx.compose.ui.text.input/PlatformImeOptions // androidx.compose.ui.text.input/PlatformImeOptions|PlatformImeOptions(kotlin.Function1<androidx.compose.ui.text.input.PlatformImeOptionsConfiguration,kotlin.Unit>?){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter|androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final class androidx.compose.ui.text.intl/PlatformLocale { // androidx.compose.ui.text.intl/PlatformLocale|null[0]

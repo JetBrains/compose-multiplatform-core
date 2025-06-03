@@ -16,14 +16,12 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
 import kotlinx.browser.window
-
 
 internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
@@ -32,6 +30,12 @@ internal interface ComposeCommandCommunicator {
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
+private fun setBackingInputBox(left: Float, top: Float, width: Float, height: Float) { js("""
+    document.documentElement.style.setProperty("--compose-internal-web-backing-input-left", left);
+    document.documentElement.style.setProperty("--compose-internal-web-backing-input-top", top);
+    document.documentElement.style.setProperty("--compose-internal-web-backing-input-width", width);
+    document.documentElement.style.setProperty("--compose-internal-web-backing-input-height", height)
+""") }
 
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
@@ -46,6 +50,12 @@ internal class BackingDomInput(
         imeOptions,
         composeCommunicator
     )
+
+    private companion object {
+        init {
+            setBackingInputBox(0f, 0f, 0f, 0f)
+        }
+    }
 
     private val backingElement = inputStrategy.htmlInput
 
@@ -69,14 +79,8 @@ internal class BackingDomInput(
         backingElement.blur()
     }
 
-    fun updateHtmlInputPosition(offset: Offset) {
-        backingElement.style.left = "${offset.x}px"
-        backingElement.style.top = "${offset.y}px"
-    }
-
-    fun updateHtmlInputGeometry(width: Int, height: Int) {
-        backingElement.style.width = "${width}px"
-        backingElement.style.height = "${height}px"
+    fun updateHtmlInputBox(left: Float, top: Float, width: Float, height: Float) {
+        setBackingInputBox(left, top, width, height)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {

@@ -20,6 +20,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.autocapitalizationType
+import androidx.compose.ui.text.input.autocorrectionType
+import androidx.compose.ui.text.input.enablesReturnKeyAutomatically
+import androidx.compose.ui.text.input.hasExplicitTextContentType
+import androidx.compose.ui.text.input.isSecureTextEntry
+import androidx.compose.ui.text.input.keyboardAppearance
+import androidx.compose.ui.text.input.keyboardType
+import androidx.compose.ui.text.input.returnKeyType
+import androidx.compose.ui.text.input.textContentType
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardAppearanceDefault
 import platform.UIKit.UIKeyboardType
@@ -37,10 +46,6 @@ import platform.UIKit.UITextContentType
 import platform.UIKit.UITextContentTypeEmailAddress
 import platform.UIKit.UITextContentTypePassword
 import platform.UIKit.UITextContentTypeTelephoneNumber
-import platform.UIKit.UITextSmartDashesType
-import platform.UIKit.UITextSmartInsertDeleteType
-import platform.UIKit.UITextSmartQuotesType
-import platform.UIKit.UITextSpellCheckingType
 
 internal interface SkikoUITextInputTraits {
     fun keyboardType(): UIKeyboardType =
@@ -52,7 +57,7 @@ internal interface SkikoUITextInputTraits {
     fun returnKeyType(): UIReturnKeyType =
         UIReturnKeyType.UIReturnKeyDefault
 
-    fun textContentType(): UITextContentType? =
+    fun textContentType(): UITextContentType =
         null
 
     fun isSecureTextEntry(): Boolean =
@@ -66,27 +71,18 @@ internal interface SkikoUITextInputTraits {
 
     fun autocorrectionType(): UITextAutocorrectionType =
         UITextAutocorrectionType.UITextAutocorrectionTypeYes
-
-    fun spellCheckingType(): UITextSpellCheckingType =
-        UITextSpellCheckingType.UITextSpellCheckingTypeDefault
-
-    fun smartQuotesType(): UITextSmartQuotesType =
-        UITextSmartQuotesType.UITextSmartQuotesTypeDefault
-
-    fun smartDashesType(): UITextSmartDashesType =
-        UITextSmartDashesType.UITextSmartDashesTypeDefault
-
-    fun smartInsertDeleteType(): UITextSmartInsertDeleteType =
-        UITextSmartInsertDeleteType.UITextSmartInsertDeleteTypeDefault
-
 }
 
 internal object EmptyInputTraits : SkikoUITextInputTraits
 
 internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
     object : SkikoUITextInputTraits {
-        override fun keyboardType(): UIKeyboardType =
-            when (currentImeOptions?.keyboardType) {
+        override fun keyboardType(): UIKeyboardType {
+            currentImeOptions?.platformImeOptions?.keyboardType?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.keyboardType) {
                 KeyboardType.Text -> UIKeyboardTypeDefault
                 KeyboardType.Ascii -> UIKeyboardTypeASCIICapable
                 KeyboardType.Number -> UIKeyboardTypeNumberPad
@@ -98,10 +94,18 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
                 KeyboardType.Decimal -> UIKeyboardTypeDecimalPad
                 else -> UIKeyboardTypeDefault
             }
+        }
 
-        override fun keyboardAppearance(): UIKeyboardAppearance = UIKeyboardAppearanceDefault
-        override fun returnKeyType(): UIReturnKeyType =
-            when (currentImeOptions?.imeAction) {
+        override fun keyboardAppearance(): UIKeyboardAppearance {
+            return currentImeOptions?.platformImeOptions?.keyboardAppearance ?: UIKeyboardAppearanceDefault
+        }
+
+        override fun returnKeyType(): UIReturnKeyType {
+            currentImeOptions?.platformImeOptions?.returnKeyType?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.imeAction) {
                 ImeAction.Default -> UIReturnKeyType.UIReturnKeyDefault
                 ImeAction.None -> UIReturnKeyType.UIReturnKeyDefault
                 ImeAction.Go -> UIReturnKeyType.UIReturnKeyGo
@@ -112,25 +116,44 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
                 ImeAction.Done -> UIReturnKeyType.UIReturnKeyDone
                 else -> UIReturnKeyType.UIReturnKeyDefault
             }
+        }
 
-        override fun textContentType(): UITextContentType? =
-            when (currentImeOptions?.keyboardType) {
+        override fun textContentType(): UITextContentType {
+            val platformImeOptions = currentImeOptions?.platformImeOptions
+
+            if (platformImeOptions != null && platformImeOptions.hasExplicitTextContentType) {
+                return platformImeOptions.textContentType
+            }
+
+            return when (currentImeOptions?.keyboardType) {
                 KeyboardType.Password, KeyboardType.NumberPassword -> UITextContentTypePassword
                 KeyboardType.Email -> UITextContentTypeEmailAddress
                 KeyboardType.Phone -> UITextContentTypeTelephoneNumber
                 else -> null
             }
+        }
 
-        override fun isSecureTextEntry(): Boolean =
-            when (currentImeOptions?.keyboardType) {
+        override fun isSecureTextEntry(): Boolean {
+            currentImeOptions?.platformImeOptions?.isSecureTextEntry?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.keyboardType) {
                 KeyboardType.Password, KeyboardType.NumberPassword -> true
                 else -> false
             }
+        }
 
-        override fun enablesReturnKeyAutomatically(): Boolean = false
+        override fun enablesReturnKeyAutomatically(): Boolean {
+            return currentImeOptions?.platformImeOptions?.enablesReturnKeyAutomatically ?: false
+        }
 
-        override fun autocapitalizationType(): UITextAutocapitalizationType =
-            when (currentImeOptions?.capitalization) {
+        override fun autocapitalizationType(): UITextAutocapitalizationType {
+            currentImeOptions?.platformImeOptions?.autocapitalizationType?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.capitalization) {
                 KeyboardCapitalization.None ->
                     UITextAutocapitalizationType.UITextAutocapitalizationTypeNone
 
@@ -146,13 +169,18 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
                 else ->
                     UITextAutocapitalizationType.UITextAutocapitalizationTypeNone
             }
+        }
 
-        override fun autocorrectionType(): UITextAutocorrectionType =
-            when (currentImeOptions?.autoCorrect) {
+        override fun autocorrectionType(): UITextAutocorrectionType {
+            currentImeOptions?.platformImeOptions?.autocorrectionType?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.autoCorrect) {
                 true -> UITextAutocorrectionType.UITextAutocorrectionTypeYes
                 false -> UITextAutocorrectionType.UITextAutocorrectionTypeNo
                 else -> UITextAutocorrectionType.UITextAutocorrectionTypeDefault
             }
-
+        }
     }
 

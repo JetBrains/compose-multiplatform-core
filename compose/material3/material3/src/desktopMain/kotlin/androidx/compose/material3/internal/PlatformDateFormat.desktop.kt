@@ -39,13 +39,15 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithPattern(
         utcTimeMillis: Long,
         pattern: String,
+        cache: MutableMap<String, Any>
     ): String {
         return delegate.formatWithPattern(utcTimeMillis, pattern, locale)
     }
 
     actual fun formatWithSkeleton(
         utcTimeMillis: Long,
-        skeleton: String
+        skeleton: String,
+        cache: MutableMap<String, Any>
     ): String {
         // Note: there is no equivalent in Java for Android's DateFormat.getBestDateTimePattern.
         // The JDK SimpleDateFormat expects a pattern, so the results for unrecognized skeletons will be "2023Jan7",
@@ -70,10 +72,15 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
             DatePickerDefaults.YearMonthSkeleton -> "LLLL yyyy" // L is a pattern for standalone month (without day)
             else -> skeleton
         }
-        return formatWithPattern(utcTimeMillis, pattern)
+        return formatWithPattern(utcTimeMillis, pattern, cache)
     }
 
-    actual fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate? {
+    actual fun parse(
+        date: String,
+        pattern: String,
+        locale: CalendarLocale,
+        cache: MutableMap<String, Any>
+    ): CalendarDate? {
         return delegate.parse(date, pattern, locale)
     }
 

@@ -3894,6 +3894,8 @@ public abstract interface class androidx/compose/ui/scene/ComposeScene {
 	public static synthetic fun sendPointerEvent--c_cFIg$default (Landroidx/compose/ui/scene/ComposeScene;ILjava/util/List;IIJJLjava/lang/Object;Landroidx/compose/ui/input/pointer/PointerButton;ILjava/lang/Object;)Z
 	public abstract fun sendPointerEvent-lDgZiSw (IJJJILandroidx/compose/ui/input/pointer/PointerButtons;Landroidx/compose/ui/input/pointer/PointerKeyboardModifiers;Ljava/lang/Object;Landroidx/compose/ui/input/pointer/PointerButton;)Z
 	public static synthetic fun sendPointerEvent-lDgZiSw$default (Landroidx/compose/ui/scene/ComposeScene;IJJJILandroidx/compose/ui/input/pointer/PointerButtons;Landroidx/compose/ui/input/pointer/PointerKeyboardModifiers;Ljava/lang/Object;Landroidx/compose/ui/input/pointer/PointerButton;ILjava/lang/Object;)Z
+	public abstract fun sendRotaryScrollEvent (FFJ)Z
+	public static synthetic fun sendRotaryScrollEvent$default (Landroidx/compose/ui/scene/ComposeScene;FFJILjava/lang/Object;)Z
 	public abstract fun setCompositionLocalContext (Landroidx/compose/runtime/CompositionLocalContext;)V
 	public abstract fun setContent (Lkotlin/jvm/functions/Function2;)V
 	public abstract fun setDensity (Landroidx/compose/ui/unit/Density;)V
