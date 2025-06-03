@@ -21,17 +21,15 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackEventCompat
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph
@@ -58,16 +56,11 @@ actual fun NavHost(
         sizeTransform == DefaultNavTransitions.sizeTransform
 
     if (isDefaultTransition) {
-        val iosBlackout = @Composable { isBackAnimation: Boolean, progress: Float ->
+        val iosBlackout = @Composable fun BoxScope.(isBackAnimation: Boolean, progress: Float) {
             val blackoutFraction = if (isBackAnimation) 1 - progress else progress
             Box(
                 modifier = Modifier
-                    .layout { m, c ->
-                        val placeable = m.measure(
-                            Constraints.fixed(c.maxWidth, c.maxHeight)
-                        )
-                        layout(c.minWidth, c.minHeight) { placeable.place(0, 0) }
-                    }
+                    .matchParentSize()
                     .drawBehind {
                         drawRect(Color.Black, alpha = 0.106f * blackoutFraction)
                     }
@@ -106,7 +99,4 @@ actual fun NavHost(
             null
         )
     }
-
-
-
 }
