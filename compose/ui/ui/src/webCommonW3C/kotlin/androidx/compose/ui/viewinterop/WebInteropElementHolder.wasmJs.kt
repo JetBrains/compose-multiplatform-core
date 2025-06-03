@@ -55,11 +55,9 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
         interopContainer = interopContainer,
         interopWrapper =
             (document.createElement("div") as HTMLDivElement)
-                .apply { style.position = "absolute " },
+                .apply { style.position = "absolute" },
         compositeKeyHash = compositeKeyHash
     )
-
-    private var currentRect: IntRect? = null
 
     private var isHidden: Boolean = false
 
@@ -87,26 +85,14 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
             .localBoundingBoxOf(layoutCoordinates, clipBounds = true)
             .round(density)
 
-        val newRect = IntRect(
-            newPosition.x.toInt(),
-            newPosition.y.toInt(),
-            clippedRect.width,
-            clippedRect.height
+        setSizeAndPosition(
+            interopWrapper,
+            newPosition.x.toDouble(),
+            newPosition.y.toDouble(),
+            unclippedRect.width,
+            unclippedRect.height
         )
-
-        if (currentRect != newRect) {
-            setSizeAndPosition(
-                interopWrapper,
-                newPosition.x.toDouble(),
-                newPosition.y.toDouble(),
-                unclippedRect.width,
-                unclippedRect.height
-            )
-            currentRect = newRect
-        }
-
         updateClipPath(clippedRect, unclippedRect)
-        currentRect = newRect
     }
 
     override fun changeInteropViewIndex(root: InteropViewGroup, index: Int) {
