@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.IntRect
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlinx.browser.document
-import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 
@@ -85,14 +84,20 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
             .localBoundingBoxOf(layoutCoordinates, clipBounds = true)
             .round(density)
 
-        setSizeAndPosition(
-            interopWrapper,
-            newPosition.x.toDouble(),
-            newPosition.y.toDouble(),
-            unclippedRect.width,
-            unclippedRect.height
-        )
-        updateClipPath(clippedRect, unclippedRect)
+        // update the css properties only for visible interop views
+        if (!clippedRect.isEmpty) {
+            setSizeAndPosition(
+                interopWrapper,
+                newPosition.x.toDouble(),
+                newPosition.y.toDouble(),
+                unclippedRect.width,
+                unclippedRect.height
+            )
+            updateClipPath(clippedRect, unclippedRect)
+        } else if (!isHidden) {
+            toggleVisibility(interopWrapper, true)
+            isHidden = true
+        }
     }
 
     override fun changeInteropViewIndex(root: InteropViewGroup, index: Int) {
