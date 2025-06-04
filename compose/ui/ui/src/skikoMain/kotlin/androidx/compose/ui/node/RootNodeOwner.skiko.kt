@@ -35,6 +35,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusOwnerImpl
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.PlatformFocusOwner
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -122,22 +123,7 @@ internal class RootNodeOwner(
     private val snapshotInvalidationTracker: SnapshotInvalidationTracker,
     private val inputHandler: ComposeSceneInputHandler,
 ) {
-    val focusOwner: FocusOwner = FocusOwnerImpl(
-        onRequestFocusForOwner = { _, _ ->
-            platformContext.requestFocus()
-        },
-        onRequestApplyChangesListener = {
-            owner.registerOnEndApplyChangesListener(it)
-        },
-        // onMoveFocusInterop's purpose is to move focus inside embed interop views.
-        // Another logic is used in our child-interop views (SwingPanel, etc)
-        onMoveFocusInterop = { false },
-        onFocusRectInterop = { null },
-        onLayoutDirection = { _layoutDirection },
-        onClearFocusForOwner = {
-            platformContext.parentFocusManager.clearFocus(true)
-        },
-    )
+    val focusOwner: FocusOwner get() = _owner.focusOwner
     val dragAndDropOwner = DragAndDropOwner(platformContext.dragAndDropManager)
 
     private val rootSemanticsNode = EmptySemanticsModifier()
@@ -145,26 +131,9 @@ internal class RootNodeOwner(
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
     private val coroutineScope = CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
-    private val rootModifier = EmptySemanticsElement(rootSemanticsNode)
-        .focusProperties {
-            exit = {
-                // if focusDirection is forward/backward,
-                // it will move the focus after/before ComposePanel
-                if (platformContext.parentFocusManager.moveFocus(it)) {
-                    FocusRequester.Cancel
-                } else {
-                    FocusRequester.Default
-                }
-            }
-        }
-        .then(focusOwner.modifier)
-        .then(dragAndDropOwner.modifier)
-        .semantics {
-            // This makes the reported role of the root node "PANEL", which is ignored by VoiceOver
-            // (which is what we want).
-            isTraversalGroup = true
-        }
-    val owner: Owner = OwnerImpl(layoutDirection, coroutineContext)
+    private val _owner = OwnerImpl(layoutDirection, coroutineContext)
+    val owner: Owner get() = _owner
+
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
@@ -260,7 +229,7 @@ internal class RootNodeOwner(
     }
 
     fun setRootModifier(modifier: Modifier) {
-        owner.root.modifier = rootModifier then modifier
+        owner.root.modifier = _owner.rootModifier then modifier
     }
 
     private fun onRootConstrainsChanged(constraints: Constraints?) {
@@ -304,7 +273,7 @@ internal class RootNodeOwner(
     private fun handleFocusKeys(keyEvent: KeyEvent): Boolean {
         // TODO(b/177931787) : Consider creating a KeyInputManager like we have for FocusManager so
         //  that this common logic can be used by all owners.
-        val focusDirection = owner.getFocusDirection(keyEvent)
+        val focusDirection = getFocusDirection(keyEvent)
         if (focusDirection == null || keyEvent.type != KeyEventType.KeyDown) return false
 
         platformContext.inputModeManager.requestInputMode(InputMode.Keyboard)
@@ -312,8 +281,17 @@ internal class RootNodeOwner(
         return focusOwner.moveFocus(focusDirection)
     }
 
+    private fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
+        return when (keyEvent.key) {
+            Key.Tab -> if (keyEvent.isShiftPressed) FocusDirection.Previous else FocusDirection.Next
+            Key.DirectionCenter -> FocusDirection.Enter
+            Key.Back -> FocusDirection.Exit
+            else -> null
+        }
+    }
+
     fun onRotaryEvent(event: RotaryScrollEvent): Boolean {
-        return focusOwner.dispatchRotaryEvent(event)
+        return _owner.focusOwner.dispatchRotaryEvent(event)
     }
 
     /**
@@ -351,6 +329,46 @@ internal class RootNodeOwner(
         layoutDirection: LayoutDirection,
         override val coroutineContext: CoroutineContext,
     ) : Owner {
+        private val platformFocusOwner = object : PlatformFocusOwner {
+            override fun requestOwnerFocus(
+                focusDirection: FocusDirection?,
+                previouslyFocusedRect: Rect?
+            ): Boolean {
+                return platformContext.requestFocus()
+            }
+
+            override fun clearOwnerFocus() {
+                platformContext.parentFocusManager.clearFocus(true)
+            }
+
+            // onMoveFocusInterop's purpose is to move focus inside embed interop views.
+            // Another logic is used in our child-interop views (SwingPanel, etc)
+            override fun moveFocusInChildren(focusDirection: FocusDirection) = false
+
+            override fun getEmbeddedViewFocusRect(): Rect? = null
+        }
+
+        override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
+
+        val rootModifier = EmptySemanticsElement(rootSemanticsNode)
+            .focusProperties {
+                onExit = {
+                    // if focusDirection is forward/backward,
+                    // it will move the focus after/before ComposePanel
+                    if (platformContext.parentFocusManager.moveFocus(requestedFocusDirection)) {
+                        FocusRequester.Cancel
+                    } else {
+                        FocusRequester.Default
+                    }
+                }
+            }
+            .then(focusOwner.modifier)
+            .then(dragAndDropOwner.modifier)
+            .semantics {
+                // This makes the reported role of the root node "PANEL", which is ignored by VoiceOver
+                // (which is what we want).
+                isTraversalGroup = true
+            }
 
         override val root = LayoutNode().also {
             it.layoutDirection = layoutDirection
@@ -420,7 +438,6 @@ internal class RootNodeOwner(
         override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
         override val pointerIconService = PointerIconServiceImpl()
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
-        override val focusOwner get() = this@RootNodeOwner.focusOwner
         override val windowInfo get() = platformContext.windowInfo
         // TODO: 1.8.0-alpha02 Implement ComposeUiFlags.isRectTrackingEnabled
         //  https://youtrack.jetbrains.com/issue/CMP-6715/Support-ComposeUiFlags.isRectTrackingEnabled
@@ -439,7 +456,6 @@ internal class RootNodeOwner(
         override val viewConfiguration get() = platformContext.viewConfiguration
         override val measureIteration: Long get() = measureAndLayoutDelegate.measureIteration
 
-        override fun requestFocus() = platformContext.requestFocus()
         override fun requestAutofill(node: LayoutNode) {
             // TODO: 1.8.0-beta01 Adopt requestAutofill API
             //  https://youtrack.jetbrains.com/issue/CMP-7485
@@ -551,7 +567,6 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?,
-            forceUseOldLayers: Boolean // It's added for temporary workaround on Android, no need to support that
         ) = ownedLayerManager.createLayer(
             drawBlock = drawBlock,
             invalidateParentLayer = invalidateParentLayer,
@@ -591,15 +606,6 @@ internal class RootNodeOwner(
         @InternalComposeUiApi
         override fun onInteropViewLayoutChange(view: InteropView) {
             // TODO dispatch platform re-layout
-        }
-
-        override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
-            return when (keyEvent.key) {
-                Key.Tab -> if (keyEvent.isShiftPressed) FocusDirection.Previous else FocusDirection.Next
-                Key.DirectionCenter -> FocusDirection.Enter
-                Key.Back -> FocusDirection.Exit
-                else -> null
-            }
         }
 
         override fun calculatePositionInWindow(localPosition: Offset): Offset =
