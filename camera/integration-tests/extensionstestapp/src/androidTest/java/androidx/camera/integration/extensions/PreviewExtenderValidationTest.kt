@@ -132,7 +132,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // NoSuchMethodError will be thrown if getSupportedResolutions is not implemented in
@@ -149,7 +149,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         assertThat(impl.onPresetSession()).isNull()
     }
@@ -160,7 +160,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         when (impl.processorType) {

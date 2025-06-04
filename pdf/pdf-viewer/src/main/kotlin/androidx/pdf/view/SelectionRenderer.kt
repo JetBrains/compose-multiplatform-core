@@ -42,7 +42,7 @@ internal class SelectionRenderer(
             it.colorFilter =
                 PorterDuffColorFilter(
                     context.getColor(R.color.pdf_viewer_selection_handles),
-                    Mode.SRC_ATOP
+                    Mode.SRC_ATOP,
                 )
         }
     },
@@ -51,10 +51,10 @@ internal class SelectionRenderer(
             it.colorFilter =
                 PorterDuffColorFilter(
                     context.getColor(R.color.pdf_viewer_selection_handles),
-                    Mode.SRC_ATOP
+                    Mode.SRC_ATOP,
                 )
         }
-    }
+    },
 ) {
     private val rightHandle: Drawable by lazy { rightHandleFactory() }
 
@@ -65,12 +65,12 @@ internal class SelectionRenderer(
         pageNum: Int,
         canvas: Canvas,
         locationInView: Rect,
-        currentZoom: Float
+        currentZoom: Float,
     ) {
         // Draw the bounds first so the handles appear on top of them
-        model.selection.bounds
-            .filter { it.pageNum == pageNum }
-            .forEach { drawBoundsOnPage(canvas, it, locationInView) }
+        model.documentSelection.selectedContents[pageNum]?.forEach {
+            it.bounds.forEach { drawBoundsOnPage(canvas, it, locationInView) }
+        }
 
         model.startBoundary.let {
             val startLoc = it.location
@@ -78,7 +78,7 @@ internal class SelectionRenderer(
                 val pointInView =
                     PointF(
                         locationInView.left + startLoc.pagePoint.x,
-                        locationInView.top + startLoc.pagePoint.y
+                        locationInView.top + startLoc.pagePoint.y,
                     )
 
                 drawHandleAtPosition(canvas, pointInView, isRight = false xor it.isRtl, currentZoom)
@@ -91,7 +91,7 @@ internal class SelectionRenderer(
                 val pointInView =
                     PointF(
                         locationInView.left + endLoc.pagePoint.x,
-                        locationInView.top + endLoc.pagePoint.y
+                        locationInView.top + endLoc.pagePoint.y,
                     )
                 drawHandleAtPosition(canvas, pointInView, isRight = true xor it.isRtl, currentZoom)
             }
@@ -102,7 +102,7 @@ internal class SelectionRenderer(
         canvas: Canvas,
         pointInView: PointF,
         isRight: Boolean,
-        currentZoom: Float
+        currentZoom: Float,
     ) {
         // The sharp point of the handle is found at a particular point in the image - (25%, 10%)
         // for the right handle, and (75%, 10%) for a left handle. We apply these as negative
@@ -118,7 +118,7 @@ internal class SelectionRenderer(
             left.roundToInt(),
             top.roundToInt(),
             (left + drawable.intrinsicWidth * scale).roundToInt(),
-            (top + drawable.intrinsicHeight * scale).roundToInt()
+            (top + drawable.intrinsicHeight * scale).roundToInt(),
         )
         drawable.draw(canvas)
     }

@@ -76,7 +76,7 @@ class DirectBootDataStoreFactoryTest {
                 context = deContext,
                 serializer = TestingSerializer(),
                 scope = dataStoreScope,
-                fileName = "testFile"
+                fileName = "testFile",
             )
         val expectedByte = 123.toByte()
 

@@ -22,6 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 
@@ -57,13 +59,13 @@ public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
      * For example a panel entity 1x1 dimensions in local space will look 2x2 meters in real world
      * if the relative scale applied to this entity in the world space is 2.
      */
-    public fun getSize(): Dimensions {
-        return rtPanelEntity.size.toDimensions()
+    public fun getSize(): FloatSize3d {
+        return rtPanelEntity.size.toFloatSize3d()
     }
 
     /** Returns the dimensions in Pixels for this panel entity. */
-    public fun getSizeInPixels(): PixelDimensions {
-        return rtPanelEntity.sizeInPixels.toPixelDimensions()
+    public fun getSizeInPixels(): IntSize2d {
+        return rtPanelEntity.sizeInPixels.toIntSize2d()
     }
 
     /**
@@ -90,7 +92,7 @@ public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
      *
      * @param dimensions Dimensions in meters in local space.
      */
-    public fun setSize(dimensions: Dimensions) {
+    public fun setSize(dimensions: FloatSize3d) {
         rtPanelEntity.size = dimensions.toRtDimensions()
     }
 
@@ -103,7 +105,7 @@ public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
      *
      * @param pixelDimensions Dimensions in pixels.
      */
-    public fun setSizeInPixels(pixelDimensions: PixelDimensions) {
+    public fun setSizeInPixels(pixelDimensions: IntSize2d) {
         rtPanelEntity.sizeInPixels = pixelDimensions.toRtPixelDimensions()
     }
 }
@@ -124,7 +126,7 @@ internal constructor(
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
             view: View,
-            dimensions: Dimensions,
+            dimensions: FloatSize3d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
@@ -145,7 +147,7 @@ internal constructor(
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
             view: View,
-            pixelDimensions: PixelDimensions,
+            pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
@@ -176,7 +178,7 @@ internal constructor(
         public fun create(
             session: Session,
             view: View,
-            dimensions: Dimensions,
+            dimensions: FloatSize3d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
@@ -206,7 +208,7 @@ internal constructor(
         public fun create(
             session: Session,
             view: View,
-            pixelDimensions: PixelDimensions,
+            pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
@@ -226,5 +228,29 @@ internal constructor(
             entityManager: EntityManager,
         ): PanelEntity =
             PanelEntity(adapter.mainPanelEntity, entityManager, isMainPanelEntity = true)
+    }
+
+    /**
+     * Gets the perceived resolution of the entity in the camera view.
+     *
+     * This API is only intended for use in Full Space Mode and will return
+     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode.
+     *
+     * The entity's own rotation and the camera's viewing direction are disregarded; this value
+     * represents the dimensions of the entity on the camera view if its largest surface was facing
+     * the camera without changing the distance of the entity to the camera.
+     *
+     * @return A [PerceivedResolutionResult] which encapsulates the outcome:
+     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
+     *       is successful.
+     *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
+     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
+     *       the calculation is invalid or unavailable.
+     *
+     * @throws IllegalStateException if HEAD_TRACKING permission is not configured.
+     * @see PerceivedResolutionResult
+     */
+    public fun getPerceivedResolution(): PerceivedResolutionResult {
+        return rtEntity.getPerceivedResolution().toPerceivedResolutionResult()
     }
 }

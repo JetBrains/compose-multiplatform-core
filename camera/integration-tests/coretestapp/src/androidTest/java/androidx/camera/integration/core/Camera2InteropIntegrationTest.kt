@@ -57,8 +57,11 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
@@ -75,23 +78,18 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-class Camera2InteropIntegrationTest(
-    val implName: String,
-    val cameraConfig: CameraXConfig,
-) {
+class Camera2InteropIntegrationTest(val implName: String, val cameraConfig: CameraXConfig) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
     private var processCameraProvider: ProcessCameraProvider? = null
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private lateinit var cameraSelector: CameraSelector
     lateinit var captureCallback: Camera2InteropUtil.CaptureCallback
 
     companion object {
@@ -100,13 +98,16 @@ class Camera2InteropIntegrationTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
     @Before
     fun setUp() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
+
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
         // Configures the test target config
         ProcessCameraProvider.configureInstance(cameraConfig)
         processCameraProvider = ProcessCameraProvider.awaitInstance(context)
@@ -126,7 +127,7 @@ class Camera2InteropIntegrationTest(
             processCameraProvider!!.bindToLifecycle(
                 TestLifecycleOwner(Lifecycle.State.RESUMED),
                 cameraSelector,
-                previewBuilder.build()
+                previewBuilder.build(),
             )
         }
 
@@ -163,7 +164,7 @@ class Camera2InteropIntegrationTest(
             processCameraProvider!!.bindToLifecycle(
                 TestLifecycleOwner(Lifecycle.State.RESUMED),
                 cameraSelector,
-                imageCaptureBuilder.build()
+                imageCaptureBuilder.build(),
             )
         }
 
@@ -213,7 +214,7 @@ class Camera2InteropIntegrationTest(
                 val camera =
                     processCameraProvider!!.bindToLifecycle(
                         TestLifecycleOwner(Lifecycle.State.CREATED),
-                        cameraSelector
+                        cameraSelector,
                     )
                 assertThat(Camera2InteropUtil.getCameraId(implName, camera.cameraInfo))
                     .isEqualTo(id)
@@ -240,7 +241,7 @@ class Camera2InteropIntegrationTest(
                 val camera =
                     processCameraProvider!!.bindToLifecycle(
                         TestLifecycleOwner(Lifecycle.State.CREATED),
-                        cameraSelector!!
+                        cameraSelector!!,
                     )
                 assertThat(Camera2InteropUtil.getCameraId(implName, camera.cameraInfo))
                     .isEqualTo(id)
@@ -348,7 +349,7 @@ class Camera2InteropIntegrationTest(
             Camera2InteropUtil.getCamera2CameraInfoCharacteristics(
                 implName,
                 cameraInfo,
-                CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM
+                CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
             )
 
         assertThat(maxZoom)
@@ -371,10 +372,10 @@ class Camera2InteropIntegrationTest(
                         listOf(
                             android.util.Pair(
                                 CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
-                                zoomRange
+                                zoomRange,
                             )
                         )
-                )
+                ),
             )
         val cameraInfoWithExtensions =
             processCameraProvider!!.getCameraInfo(cameraSelectorWithExtensions)
@@ -382,7 +383,7 @@ class Camera2InteropIntegrationTest(
                 Camera2InteropUtil.getCamera2CameraInfoCharacteristics(
                     implName,
                     cameraInfoWithExtensions,
-                    CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
+                    CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
                 )
             )
             .isEqualTo(zoomRange)
@@ -393,7 +394,7 @@ class Camera2InteropIntegrationTest(
                 Camera2InteropUtil.getCamera2CameraInfoCharacteristics(
                     implName,
                     cameraInfoWithoutExtensions,
-                    CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
+                    CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
                 )
             )
             .isEqualTo(
@@ -404,7 +405,7 @@ class Camera2InteropIntegrationTest(
 
     private fun ProcessCameraProvider.bindAnalysis(
         lifecycleOwner: LifecycleOwner,
-        physicalCameraId: String? = null
+        physicalCameraId: String? = null,
     ): Camera {
         val imageAnalysis =
             ImageAnalysis.Builder()
@@ -413,7 +414,7 @@ class Camera2InteropIntegrationTest(
                         implName = implName,
                         builder = imageAnalysisBuilder,
                         captureCallback = captureCallback,
-                        physicalCameraId = physicalCameraId
+                        physicalCameraId = physicalCameraId,
                     )
                 }
                 .build()
@@ -502,7 +503,7 @@ class Camera2InteropIntegrationTest(
                 Camera2InteropUtil.setDeviceStateCallback(
                     implName,
                     this@createDeviceStateFlow,
-                    stateCallback
+                    stateCallback,
                 )
             }
             .asStateFlow()
@@ -510,8 +511,8 @@ class Camera2InteropIntegrationTest(
     /**
      * Returns a [StateFlow] which will signal the states of the camera defined in [SessionState].
      */
-    private fun <T> ExtendableBuilder<T>.createSessionStateFlow(): StateFlow<SessionState> =
-        MutableStateFlow<SessionState>(SessionState.Unknown)
+    private fun <T> ExtendableBuilder<T>.createSessionStateFlow(): SharedFlow<SessionState> =
+        MutableSharedFlow<SessionState>(extraBufferCapacity = 10)
             .apply {
                 val stateCallback =
                     object : CameraCaptureSession.StateCallback() {
@@ -534,10 +535,10 @@ class Camera2InteropIntegrationTest(
                 Camera2InteropUtil.setSessionStateCallback(
                     implName,
                     this@createSessionStateFlow,
-                    stateCallback
+                    stateCallback,
                 )
             }
-            .asStateFlow()
+            .asSharedFlow()
 
     private fun isBackwardCompatible(cameraManager: CameraManager, cameraId: String): Boolean {
         val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)

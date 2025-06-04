@@ -177,6 +177,10 @@ public abstract class PasswordDialog extends DialogFragment {
                     sendPassword(passwordField);
                     return true;
                 }
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    showErrorOnDialogCancel();
+                    return true;
+                }
                 return false;
             }
         });

@@ -137,7 +137,7 @@ class TextContextMenuModifierTraversalTest {
     }
 
     private fun setContentAndInvokeContextMenuData(
-        outerContent: @Composable (dataReadingContent: @Composable () -> Unit) -> Unit,
+        outerContent: @Composable (dataReadingContent: @Composable () -> Unit) -> Unit
     ) {
         val reader = TestTextContextMenuDataInvoker()
         rule.setContent { outerContent { Box(Modifier.testTextContextMenuDataReader(reader)) } }

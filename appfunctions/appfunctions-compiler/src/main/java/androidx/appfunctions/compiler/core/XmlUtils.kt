@@ -55,7 +55,7 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
 
 internal fun AppFunctionComponentsMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         for (dataType in dataTypes) {
@@ -66,7 +66,7 @@ internal fun AppFunctionComponentsMetadataDocument.toXmlElement(
 
 private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         for (property in allOf) {
@@ -99,7 +99,7 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
 
 private fun AppFunctionNamedDataTypeMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(dataTypeMetadata.toXmlElement(doc, "dataTypeMetadata"))
@@ -109,7 +109,7 @@ private fun AppFunctionNamedDataTypeMetadataDocument.toXmlElement(
 
 private fun AppFunctionResponseMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(doc.createElementWithTextNode("id", id))
@@ -118,7 +118,7 @@ private fun AppFunctionResponseMetadataDocument.toXmlElement(
 
 private fun AppFunctionParameterMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(dataTypeMetadata.toXmlElement(doc, "dataTypeMetadata"))

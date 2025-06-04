@@ -69,7 +69,7 @@ class DateRangeInputTest {
             state =
                 rememberDateRangePickerState(
                     initialDisplayedMonthMillis = monthInUtcMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -112,7 +112,7 @@ class DateRangeInputTest {
                 rememberDateRangePickerState(
                     initialSelectedStartDateMillis = initialStartDateMillis,
                     initialSelectedEndDateMillis = initialEndDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -136,7 +136,7 @@ class DateRangeInputTest {
                     rememberDateRangePickerState(
                         initialSelectedStartDateMillis = initialStartDateMillis,
                         initialSelectedEndDateMillis = initialEndDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
             // Update the delayCompleted till after the focus is acquired. Note that we request the
@@ -165,10 +165,10 @@ class DateRangeInputTest {
                     rememberDateRangePickerState(
                         initialSelectedStartDateMillis = initialStartDateMillis,
                         initialSelectedEndDateMillis = initialEndDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     ),
                 // Prevent the focus from being requested.
-                focusRequester = null
+                focusRequester = null,
             )
             // Although a focus request is not made, apply a delay to ensure that the test checks
             // for focus after that delay.
@@ -195,7 +195,7 @@ class DateRangeInputTest {
                     locale = Locale.forLanguageTag("HE"),
                     initialSelectedStartDateMillis = initialStartDateMillis,
                     initialSelectedEndDateMillis = initialEndDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -229,7 +229,7 @@ class DateRangeInputTest {
                         object : SelectableDates {
                             // All dates are invalid for the sake of this test.
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DateRangePicker(state = state)
         }
@@ -266,7 +266,7 @@ class DateRangeInputTest {
                 rememberDateRangePickerState(
                     // Limit the years selection to 2018-2023
                     yearRange = IntRange(2018, 2023),
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -328,7 +328,7 @@ class DateRangeInputTest {
                     rememberDateRangePickerState(
                         initialSelectedStartDateMillis = startDateMillis,
                         initialSelectedEndDateMillis = endDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -338,14 +338,14 @@ class DateRangeInputTest {
                 startDateMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache
+                cache,
             )
         val fullEndDateDescription =
             formatWithSkeleton(
                 endDateMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache
+                cache,
             )
 
         val startHeadlineDescription = "$pickerStartDateHeadline: $fullStartDateDescription"

@@ -58,12 +58,12 @@ fun SetFrameRateCategorySample() {
             onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f },
             modifier =
                 Modifier.testTag("frameRateTag")
-                    .background(LocalContentColor.current.copy(alpha = alpha))
+                    .background(LocalContentColor.current.copy(alpha = alpha)),
         ) {
             Text(
                 text = "Click Me for alpha change with frame rate category High",
                 color = LocalContentColor.current.copy(alpha = alpha),
-                modifier = Modifier.requestedFrameRate(FrameRateCategory.High)
+                modifier = Modifier.requestedFrameRate(FrameRateCategory.High),
             )
         }
     }

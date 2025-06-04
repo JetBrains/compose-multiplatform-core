@@ -47,7 +47,7 @@ internal class FocusTransactionManager {
      */
     inline fun <T> withNewTransaction(
         noinline onCancelled: (() -> Unit)? = null,
-        block: () -> T
+        block: () -> T,
     ): T =
         try {
             if (ongoingTransaction) cancelTransaction()
@@ -67,7 +67,7 @@ internal class FocusTransactionManager {
      */
     inline fun <T> withExistingTransaction(
         noinline onCancelled: (() -> Unit)? = null,
-        block: () -> T
+        block: () -> T,
     ): T {
         onCancelled?.let { cancellationListener += it }
         return if (ongoingTransaction) block()

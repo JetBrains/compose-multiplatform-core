@@ -173,7 +173,7 @@ class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
 
     private fun StateMapStateRecord<K, V>.attemptUpdate(
         currentModification: Int,
-        newMap: PersistentMap<K, V>
+        newMap: PersistentMap<K, V>,
     ) =
         synchronized(sync) {
             if (modification == currentModification) {
@@ -328,7 +328,7 @@ private val sync = makeSynchronizedObject()
 
 private abstract class StateMapMutableIterator<K, V>(
     val map: SnapshotStateMap<K, V>,
-    val iterator: Iterator<Map.Entry<K, V>>
+    val iterator: Iterator<Map.Entry<K, V>>,
 ) {
     protected var modification = map.modification
     protected var current: Map.Entry<K, V>? = null
@@ -366,7 +366,7 @@ private abstract class StateMapMutableIterator<K, V>(
 
 private class StateMapMutableEntriesIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<MutableMap.MutableEntry<K, V>> {
     override fun next(): MutableMap.MutableEntry<K, V> {
         advance()
@@ -390,7 +390,7 @@ private class StateMapMutableEntriesIterator<K, V>(
 
 private class StateMapMutableKeysIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<K> {
     override fun next(): K {
         val result = next ?: throw IllegalStateException()
@@ -401,7 +401,7 @@ private class StateMapMutableKeysIterator<K, V>(
 
 private class StateMapMutableValuesIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<V> {
     override fun next(): V {
         val result = next ?: throw IllegalStateException()

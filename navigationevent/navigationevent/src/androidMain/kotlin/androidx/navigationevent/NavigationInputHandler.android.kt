@@ -53,7 +53,7 @@ public class NavigationInputHandler(private val dispatcher: NavigationEventDispa
                         { navEvent -> dispatcher.dispatchOnStarted(navEvent) },
                         { navEvent -> dispatcher.dispatchOnProgressed(navEvent) },
                         { dispatcher.dispatchOnCompleted() },
-                        { dispatcher.dispatchOnCancelled() }
+                        { dispatcher.dispatchOnCancelled() },
                     )
                 } else {
                     Api33Impl.createOnBackInvokedCallback { dispatcher.dispatchOnCompleted() }
@@ -72,7 +72,7 @@ public class NavigationInputHandler(private val dispatcher: NavigationEventDispa
                 Api33Impl.registerOnBackInvokedCallback(
                     dispatcher,
                     OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                    onBackInvokedCallback
+                    onBackInvokedCallback,
                 )
                 backInvokedCallbackRegistered = true
             } else if (!shouldBeRegistered && backInvokedCallbackRegistered) {
@@ -109,7 +109,7 @@ public class NavigationInputHandler(private val dispatcher: NavigationEventDispa
             onBackStarted: (event: NavigationEvent) -> Unit,
             onBackProgressed: (event: NavigationEvent) -> Unit,
             onBackInvoked: () -> Unit,
-            onBackCancelled: () -> Unit
+            onBackCancelled: () -> Unit,
         ): OnBackInvokedCallback {
             return object : OnBackAnimationCallback {
                 override fun onBackStarted(backEvent: BackEvent) {

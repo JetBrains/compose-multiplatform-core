@@ -101,8 +101,8 @@ class SpatialComposeSceneTest {
                     jxrSession = session,
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
-                    rootVolumeConstraints = testConstraints,
                 )
+            scene.rootVolumeConstraints = testConstraints
 
             owner = AndroidComposeSpatialElement()
             owner.spatialComposeScene = scene

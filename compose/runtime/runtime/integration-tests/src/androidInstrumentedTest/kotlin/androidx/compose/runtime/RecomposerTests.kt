@@ -82,7 +82,7 @@ class RecomposerTests : BaseComposeTest() {
                 assertEquals(
                     "The unused child got removed from the view hierarchy",
                     1,
-                    activity.root.childCount
+                    activity.root.childCount,
                 )
             }
     }
@@ -108,7 +108,7 @@ class RecomposerTests : BaseComposeTest() {
                     is ClickAction.Recompose -> scope.invalidate()
                     is ClickAction.PerformOnView -> listener.action.invoke(it)
                 }
-            }
+            },
         )
     }
 

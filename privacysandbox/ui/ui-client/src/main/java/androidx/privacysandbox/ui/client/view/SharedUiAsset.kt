@@ -38,13 +38,13 @@ class SharedUiAsset
 constructor(
     val view: View,
     val assetId: String,
-    val sandboxedUiAdapter: SandboxedUiAdapter? = null
+    val sandboxedUiAdapter: SandboxedUiAdapter? = null,
 ) {
     init {
         if (sandboxedUiAdapter != null)
             Preconditions.checkArgument(
                 view is SandboxedSdkView,
-                "${SandboxedUiAdapter::class.qualifiedName} can only be set for ${SandboxedSdkView::class.qualifiedName} assets"
+                "${SandboxedUiAdapter::class.qualifiedName} can only be set for ${SandboxedSdkView::class.qualifiedName} assets",
             )
     }
 

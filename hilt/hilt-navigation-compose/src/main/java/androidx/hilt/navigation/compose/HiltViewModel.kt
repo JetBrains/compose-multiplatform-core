@@ -47,7 +47,7 @@ inline fun <reified VM : ViewModel> hiltViewModel(
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
-    key: String? = null
+    key: String? = null,
 ): VM {
     val factory = createHiltViewModelFactory(viewModelStoreOwner)
     return viewModel(viewModelStoreOwner, key, factory = factory)
@@ -72,7 +72,7 @@ inline fun <reified VM : ViewModel, reified VMF> hiltViewModel(
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
     key: String? = null,
-    noinline creationCallback: (VMF) -> VM
+    noinline creationCallback: (VMF) -> VM,
 ): VM {
     val factory = createHiltViewModelFactory(viewModelStoreOwner)
     return viewModel(
@@ -86,7 +86,7 @@ inline fun <reified VM : ViewModel, reified VMF> hiltViewModel(
                 } else {
                     CreationExtras.Empty.withCreationCallback(creationCallback)
                 }
-            }
+            },
     )
 }
 
@@ -98,7 +98,7 @@ internal fun createHiltViewModelFactory(
     if (viewModelStoreOwner is HasDefaultViewModelProviderFactory) {
         HiltViewModelFactory(
             context = LocalContext.current,
-            delegateFactory = viewModelStoreOwner.defaultViewModelProviderFactory
+            delegateFactory = viewModelStoreOwner.defaultViewModelProviderFactory,
         )
     } else {
         // Use the default factory provided by the ViewModelStoreOwner

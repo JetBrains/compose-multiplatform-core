@@ -57,7 +57,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
         BeginSignInRequest,
         SignInCredential,
         GetCredentialResponse,
-        GetCredentialException
+        GetCredentialException,
     >(context) {
 
     /** The callback object state, used in the protected handleResponse method. */
@@ -83,14 +83,14 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
                             getCredentialExceptionTypeToException,
                         executor = executor,
                         callback = callback,
-                        cancellationSignal
+                        cancellationSignal,
                     )
                 )
                     return
                 handleResponse(
                     resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
                     resultCode,
-                    resultData.getParcelable(RESULT_DATA_TAG)
+                    resultData.getParcelable(RESULT_DATA_TAG),
                 )
             }
         }
@@ -99,7 +99,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
         request: GetCredentialRequest,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -146,7 +146,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
         }
         return getCredentialExceptionTypeToException(
             errName,
-            "During begin sign in, failure response from one tap: ${e.message}"
+            "During begin sign in, failure response from one tap: ${e.message}",
         )
     }
 
@@ -155,7 +155,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
             Log.w(
                 TAG,
                 "Returned request code ${CONTROLLER_REQUEST_CODE} which " +
-                    " does not match what was given $uniqueRequestCode"
+                    " does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -164,7 +164,7 @@ internal class CredentialProviderBeginSignInController(private val context: Cont
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                cancellationSignal,
             )
         )
             return

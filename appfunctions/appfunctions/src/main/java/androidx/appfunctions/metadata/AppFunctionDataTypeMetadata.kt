@@ -57,7 +57,7 @@ internal annotation class AppFunctionPrimitiveType
 public abstract class AppFunctionDataTypeMetadata
 internal constructor(
     /** Whether the data type is nullable. */
-    public val isNullable: Boolean,
+    public val isNullable: Boolean
 ) {
     /** Converts this [AppFunctionDataTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -109,7 +109,7 @@ internal constructor(
                 TYPE_LONG,
                 TYPE_INT,
                 TYPE_STRING,
-                TYPE_PENDING_INTENT
+                TYPE_PENDING_INTENT,
             )
     }
 
@@ -279,7 +279,7 @@ public class AppFunctionAllOfTypeMetadata(
             type = TYPE,
             allOf = allOfDocuments,
             isNullable = isNullable,
-            objectQualifiedName = qualifiedName
+            objectQualifiedName = qualifiedName,
         )
     }
 
@@ -353,7 +353,7 @@ public class AppFunctionObjectTypeMetadata(
             properties.map { (name, dataType) ->
                 AppFunctionNamedDataTypeMetadataDocument(
                     name = checkNotNull(name),
-                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
                 )
             }
         return AppFunctionDataTypeMetadataDocument(
@@ -380,7 +380,7 @@ public class AppFunctionReferenceTypeMetadata(
     /** The string referencing a data type defined in [AppFunctionComponentsMetadata]. */
     public val referenceDataType: String,
     /** Whether the data type is nullable. */
-    isNullable: Boolean
+    isNullable: Boolean,
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
@@ -421,7 +421,7 @@ public class AppFunctionReferenceTypeMetadata(
 /** Defines the schema of a primitive data type. */
 public class AppFunctionPrimitiveTypeMetadata(
     @AppFunctionPrimitiveType public val type: Int,
-    isNullable: Boolean
+    isNullable: Boolean,
 ) : AppFunctionDataTypeMetadata(isNullable) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
@@ -541,7 +541,7 @@ public data class AppFunctionDataTypeMetadataDocument(
                 val itemType = checkNotNull(itemType) { "Item type must be present for array type" }
                 AppFunctionArrayTypeMetadata(
                     itemType = itemType.toAppFunctionDataTypeMetadata(),
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_OBJECT -> {
@@ -556,7 +556,7 @@ public data class AppFunctionDataTypeMetadataDocument(
                     properties = propertiesMap,
                     required = required,
                     qualifiedName = objectQualifiedName,
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_REFERENCE ->
@@ -565,13 +565,13 @@ public data class AppFunctionDataTypeMetadataDocument(
                         checkNotNull(dataTypeReference) {
                             "Data type reference must be present for reference type"
                         },
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             AppFunctionDataTypeMetadata.TYPE_ALL_OF ->
                 AppFunctionAllOfTypeMetadata(
                     matchAll = allOf.map { it.toAppFunctionDataTypeMetadata() },
                     qualifiedName = objectQualifiedName,
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             in AppFunctionDataTypeMetadata.PRIMITIVE_TYPES ->
                 AppFunctionPrimitiveTypeMetadata(type = type, isNullable = isNullable)

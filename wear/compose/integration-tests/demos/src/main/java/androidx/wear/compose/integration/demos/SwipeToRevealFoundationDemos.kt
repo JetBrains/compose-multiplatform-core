@@ -94,9 +94,9 @@ fun SwipeToRevealDemoBothDirections() {
                     coroutineScope.launch { revealState.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
-        }
+        },
     ) {
         Chip(
             modifier =
@@ -107,12 +107,12 @@ fun SwipeToRevealDemoBothDirections() {
                             CustomAccessibilityAction("Delete") {
                                 /* Add the primary action click handler */
                                 true
-                            },
+                            }
                         )
                 },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }
@@ -160,7 +160,7 @@ fun SwipeToRevealDemoTwoActions() {
                     coroutineScope.launch { state.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
         },
     ) {
@@ -177,12 +177,12 @@ fun SwipeToRevealDemoTwoActions() {
                             CustomAccessibilityAction("More") {
                                 /* Add the secondary action click handler */
                                 true
-                            }
+                            },
                         )
                 },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }

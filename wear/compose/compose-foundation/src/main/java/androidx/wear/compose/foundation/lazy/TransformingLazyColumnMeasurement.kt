@@ -38,7 +38,7 @@ internal fun interface MeasuredItemProvider {
         index: Int,
         offset: Int,
         measurementDirection: MeasurementDirection,
-        progressProvider: (Int) -> TransformingLazyColumnItemScrollProgress
+        progressProvider: (Int) -> TransformingLazyColumnItemScrollProgress,
     ): TransformingLazyColumnMeasuredItem
 }
 
@@ -57,7 +57,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
         coroutineScope,
         horizontalAlignment,
         verticalArrangement,
-        measurementStrategy
+        measurementStrategy,
     ) {
         { containerConstraints ->
             val childConstraints =
@@ -66,7 +66,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                     maxWidth =
                         containerConstraints.maxWidth -
                             measurementStrategy.leftContentPadding -
-                            measurementStrategy.rightContentPadding
+                            measurementStrategy.rightContentPadding,
                 )
             val itemProvider = itemProviderLambda()
 
@@ -89,7 +89,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                         spacing = verticalArrangement.spacing.roundToPx(),
                         leftPadding = measurementStrategy.leftContentPadding,
                         rightPadding = measurementStrategy.rightContentPadding,
-                        animationProvider = { state.animator.getAnimation(key, 0) },
+                        animationProvider = { state.animator.getAnimation(key) },
                         contentType = itemProvider.getContentType(index),
                     )
                 }
@@ -127,9 +127,9 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                                     containerConstraints.constrainWidth(width),
                                     containerConstraints.constrainHeight(height),
                                     emptyMap(),
-                                    placement
+                                    placement,
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -140,13 +140,13 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
 internal enum class MeasurementDirection {
     /**
      * Indicates that the item is being measured downward. This corresponds to using
-     * [TransformingLazyColumnItemScrollProgress.bottomItemScrollProgress].
+     * [TransformingLazyColumnItemScrollProgress.downwardMeasuredItemScrollProgress].
      */
     DOWNWARD,
 
     /**
      * Indicates that the item is being measured upward This corresponds to using
-     * [TransformingLazyColumnItemScrollProgress.topItemScrollProgress].
+     * [TransformingLazyColumnItemScrollProgress.upwardMeasuredItemScrollProgress].
      */
-    UPWARD
+    UPWARD,
 }

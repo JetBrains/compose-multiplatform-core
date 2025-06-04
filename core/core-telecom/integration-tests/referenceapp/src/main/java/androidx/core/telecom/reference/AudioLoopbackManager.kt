@@ -98,7 +98,7 @@ class AudioLoopbackManager(private val context: Context) {
                             Log.d(TAG, "AudioManager mode: ${audioManager.mode}")
                             Log.d(
                                 TAG,
-                                "Initial global mute state: ${audioManager.isMicrophoneMute}"
+                                "Initial global mute state: ${audioManager.isMicrophoneMute}",
                             )
 
                             audioRecord?.startRecording()
@@ -111,7 +111,7 @@ class AudioLoopbackManager(private val context: Context) {
                                 if (audioManager.isMicrophoneMute) {
                                     Log.i(
                                         TAG,
-                                        "Global mute detected active during loopback. Stopping."
+                                        "Global mute detected active during loopback. Stopping.",
                                     )
                                     // Setting isLooping false will gracefully exit the loop
                                     // and trigger the finally block for cleanup.

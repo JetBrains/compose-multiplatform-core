@@ -70,9 +70,7 @@ class VideoRecordingMetadataTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -203,7 +201,7 @@ class VideoRecordingMetadataTest(
         cameraProvider =
             ProcessCameraProviderWrapper(
                 ProcessCameraProvider.getInstance(context).get(),
-                forceEnableStreamSharing
+                forceEnableStreamSharing,
             )
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
@@ -265,7 +263,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file
+                file = result.file,
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -294,7 +292,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file
+                file = result.file,
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }

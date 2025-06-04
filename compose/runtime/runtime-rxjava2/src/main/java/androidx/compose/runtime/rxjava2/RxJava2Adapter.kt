@@ -123,7 +123,7 @@ fun Completable.subscribeAsState(): State<Boolean> =
 @Composable
 private inline fun <T, S> S.asState(
     initial: T,
-    crossinline subscribe: S.((T) -> Unit) -> Disposable
+    crossinline subscribe: S.((T) -> Unit) -> Disposable,
 ): State<T> {
     val state = remember { mutableStateOf(initial) }
     DisposableEffect(this) {

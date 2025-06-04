@@ -121,7 +121,7 @@ class PrimaryLayoutTest {
                         bottomSlot = {
                             text(
                                 bottomSlot.layoutString,
-                                modifier = LayoutModifier.clearSemantics()
+                                modifier = LayoutModifier.clearSemantics(),
                             )
                         },
                         onClick = CLICKABLE,

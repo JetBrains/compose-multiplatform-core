@@ -54,5 +54,5 @@ public annotation class AppFunctionSchemaDefinition(
     /** The version of the schema. */
     val version: Int,
     /** The category of the schema. */
-    val category: String
+    val category: String,
 )

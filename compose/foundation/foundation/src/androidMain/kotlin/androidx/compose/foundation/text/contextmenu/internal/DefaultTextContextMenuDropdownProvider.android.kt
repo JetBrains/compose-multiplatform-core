@@ -63,14 +63,14 @@ internal fun ProvideDefaultTextContextMenuDropdown(content: @Composable () -> Un
         contextMenu = { session, dataProvider, anchorLayoutCoordinates ->
             OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
         },
-        content = content
+        content = content,
     )
 }
 
 @Composable
 internal fun ProvideDefaultTextContextMenuDropdown(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ProvideBasicTextContextMenu(
         modifier = modifier,
@@ -78,7 +78,7 @@ internal fun ProvideDefaultTextContextMenuDropdown(
         contextMenu = { session, dataProvider, anchorLayoutCoordinates ->
             OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
         },
-        content = content
+        content = content,
     )
 }
 
@@ -118,7 +118,7 @@ private fun OpenContextMenu(
 @Composable
 private fun DefaultTextContextMenuDropdown(
     session: TextContextMenuSession,
-    data: TextContextMenuData
+    data: TextContextMenuData,
 ) {
     ContextMenuColumnBuilder {
         data.components.fastForEach { component ->
@@ -182,7 +182,7 @@ private class MaintainWindowPositionPopupPositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val position = previousPosition
         if (
@@ -199,7 +199,7 @@ private class MaintainWindowPositionPopupPositionProvider(
                 anchorBounds,
                 windowSize,
                 layoutDirection,
-                popupContentSize
+                popupContentSize,
             )
 
         previousWindowSize = windowSize

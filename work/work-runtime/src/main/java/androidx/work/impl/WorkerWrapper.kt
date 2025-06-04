@@ -136,7 +136,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                 // Use hashCode() instead of a generational id given we want to allow concurrent
                 // execution of Workers with the same name. Additionally `generation` is already
                 // a part of the WorkSpec's hashCode.
-                workSpec.hashCode()
+                workSpec.hashCode(),
             )
         }
         // Needed for nested transactions, such as when we're in a dependent work request when
@@ -223,7 +223,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                 workTaskExecutor,
                 configuration.workerFactory,
                 WorkProgressUpdater(workDatabase, workTaskExecutor),
-                WorkForegroundUpdater(workDatabase, foregroundProcessor, workTaskExecutor)
+                WorkForegroundUpdater(workDatabase, foregroundProcessor, workTaskExecutor),
             )
 
         // Not always creating a worker here, as the WorkerWrapper.Builder can set a worker override
@@ -234,14 +234,14 @@ class WorkerWrapper internal constructor(builder: Builder) {
                     configuration.workerFactory.createWorkerWithDefaultFallback(
                         appContext,
                         workSpec.workerClassName,
-                        params
+                        params,
                     )
                 } catch (e: Throwable) {
                     loge(TAG) { "Could not create Worker ${workSpec.workerClassName}" }
 
                     configuration.workerInitializationExceptionHandler?.safeAccept(
                         WorkerExceptionInfo(workSpec.workerClassName, params, e),
-                        TAG
+                        TAG,
                     )
                     return Resolution.Failed()
                 }
@@ -302,7 +302,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                         workSpec,
                         worker,
                         foregroundUpdater,
-                        workTaskExecutor
+                        workTaskExecutor,
                     )
                     logd(TAG) { "Starting work for ${workSpec.workerClassName}" }
                     // *important* we can't pass future around suspension points
@@ -318,7 +318,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
             loge(TAG, throwable) { "$workDescription failed because it threw an exception/error" }
             configuration.workerExecutionExceptionHandler?.safeAccept(
                 WorkerExceptionInfo(workSpec.workerClassName, params, throwable),
-                TAG
+                TAG,
             )
             return Resolution.Failed()
         }
@@ -421,7 +421,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         val output = failure.outputData
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.setOutput(workSpecId, output)
         return false
@@ -444,7 +444,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         workSpecDao.setLastEnqueueTime(workSpecId, clock.currentTimeMillis())
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
         workSpecDao.setStopReason(workSpecId, stopReason)
@@ -461,7 +461,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         workSpecDao.resetWorkSpecRunAttemptCount(workSpecId)
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.incrementPeriodCount(workSpecId)
         workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
@@ -505,7 +505,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         val foregroundProcessor: ForegroundProcessor,
         val workDatabase: WorkDatabase,
         val workSpec: WorkSpec,
-        val tags: List<String>
+        val tags: List<String>,
     ) {
         val appContext: Context = context.applicationContext
         var worker: ListenableWorker? = null
@@ -575,7 +575,7 @@ class WorkerStoppedException(val reason: Int) : CancellationException()
 
 private class ToContinuation<T>(
     val futureToObserve: ListenableFuture<T>,
-    val continuation: CancellableContinuation<T>
+    val continuation: CancellableContinuation<T>,
 ) : Runnable {
     override fun run() {
         if (futureToObserve.isCancelled) {

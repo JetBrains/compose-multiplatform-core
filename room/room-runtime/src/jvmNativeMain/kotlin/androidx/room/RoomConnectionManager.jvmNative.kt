@@ -34,7 +34,7 @@ internal actual class RoomConnectionManager(
             // If the driver already has a connection pool then use a pass-through pool.
             PassthroughConnectionPool(
                 driver = sqliteDriver,
-                fileName = configuration.name ?: ":memory:"
+                fileName = configuration.name ?: ":memory:",
             )
         } else if (configuration.name == null) {
             // An in-memory database must use a single connection pool.
@@ -44,7 +44,7 @@ internal actual class RoomConnectionManager(
                 driver = DriverWrapper(sqliteDriver),
                 fileName = configuration.name,
                 maxNumOfReaders = configuration.journalMode.getMaxNumberOfReaders(),
-                maxNumOfWriters = configuration.journalMode.getMaxNumberOfWriters()
+                maxNumOfWriters = configuration.journalMode.getMaxNumberOfWriters(),
             )
         }
 

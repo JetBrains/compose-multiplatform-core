@@ -58,7 +58,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
         com.google.android.gms.identitycredentials.GetCredentialRequest,
         com.google.android.gms.identitycredentials.GetCredentialResponse,
         GetCredentialResponse,
-        GetCredentialException
+        GetCredentialException,
     >(context) {
 
     /** The callback object state, used in the protected handleResponse method. */
@@ -85,7 +85,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
                             getCredentialExceptionTypeToException,
                         executor,
                         callback,
-                        cancellationSignal
+                        cancellationSignal,
                     )
                 ) {
                     return
@@ -93,7 +93,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
                     handleResponse(
                         resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
                         resultCode,
-                        resultData.getParcelable(RESULT_DATA_TAG)
+                        resultData.getParcelable(RESULT_DATA_TAG),
                     )
                 }
             }
@@ -104,7 +104,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
             Log.w(
                 TAG,
                 "Returned request code $CONTROLLER_REQUEST_CODE which " +
-                    " does not match what was given $uniqueRequestCode"
+                    " does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -114,7 +114,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                cancellationSignal,
             )
         ) {
             return
@@ -152,7 +152,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
         request: GetCredentialRequest,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -173,7 +173,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
                 hiddenIntent.flags = Intent.FLAG_ACTIVITY_NO_ANIMATION
                 hiddenIntent.putExtra(
                     RESULT_RECEIVER_TAG,
-                    toIpcFriendlyResultReceiver(resultReceiver)
+                    toIpcFriendlyResultReceiver(resultReceiver),
                 )
                 hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result.pendingIntent)
                 hiddenIntent.putExtra(EXTRA_ERROR_NAME, GET_UNKNOWN)
@@ -229,7 +229,7 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
             credOptions,
             GetCredentialRequest.getRequestMetadataBundle(request),
             request.origin,
-            ResultReceiver(null) // No-op
+            ResultReceiver(null), // No-op
         )
     }
 

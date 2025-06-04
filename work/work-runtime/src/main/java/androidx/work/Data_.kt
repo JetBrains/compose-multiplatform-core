@@ -58,7 +58,7 @@ class Data {
 
     private inline fun <reified T : Any, TArray> getTypedArray(
         key: String,
-        constructor: (size: Int, init: (index: Int) -> T) -> TArray
+        constructor: (size: Int, init: (index: Int) -> T) -> TArray,
     ): TArray? {
         val value = values[key]
         return if (value is Array<*> && value.isArrayOf<T>())
@@ -574,7 +574,7 @@ class Data {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated(
             message = "This is kept for testing migration",
-            replaceWith = ReplaceWith("toByteArrayInternalV1")
+            replaceWith = ReplaceWith("toByteArrayInternalV1"),
         )
         fun toByteArrayInternalV0(data: Data): ByteArray {
             return try {

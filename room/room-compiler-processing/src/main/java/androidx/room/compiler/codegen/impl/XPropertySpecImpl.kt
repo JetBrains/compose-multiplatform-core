@@ -36,7 +36,7 @@ internal class XPropertySpecImpl(
         private val name: String,
         private val type: XTypeName,
         internal val java: JavaPropertySpec.Builder,
-        internal val kotlin: KotlinPropertySpec.Builder
+        internal val kotlin: KotlinPropertySpec.Builder,
     ) : XSpec.Builder(), XPropertySpec.Builder {
         private val delegates: List<XPropertySpec.Builder> = listOf(java, kotlin)
 

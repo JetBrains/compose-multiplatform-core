@@ -49,7 +49,7 @@ internal object SavedStateCodecTestUtils {
         checkDecoded: (T, T) -> Unit = { decoded, original ->
             assertThat(decoded).isEqualTo(original)
         },
-        checkEncoded: SavedStateReader.() -> Unit = { assertThat(size()).isEqualTo(0) }
+        checkEncoded: SavedStateReader.() -> Unit = { assertThat(size()).isEqualTo(0) },
     ) {
         val encoded =
             if (serializer == null) {

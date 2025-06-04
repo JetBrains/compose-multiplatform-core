@@ -47,7 +47,7 @@ public fun FreeformTemplate(data: FreeformTemplateData) {
 private fun WidgetLayoutCollapsed(data: FreeformTemplateData) {
     Column(
         modifier = createTopLevelModifier(data.backgroundColor, data.backgroundImage),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AppWidgetTextSection(textList(data.title, data.subtitle))
     }
@@ -58,7 +58,7 @@ private fun WidgetLayoutCollapsed(data: FreeformTemplateData) {
 private fun WidgetLayoutVertical(data: FreeformTemplateData) {
     Column(
         modifier = createTopLevelModifier(data.backgroundColor, data.backgroundImage),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AppWidgetTemplateHeader(data.headerIcon, data.header)
         AppWidgetTextSection(textList(data.title, data.subtitle))
@@ -70,7 +70,7 @@ private fun WidgetLayoutVertical(data: FreeformTemplateData) {
 private fun WidgetLayoutHorizontal(data: FreeformTemplateData) {
     Column(
         modifier = createTopLevelModifier(data.backgroundColor, data.backgroundImage),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AppWidgetTemplateHeader(data.headerIcon, data.header)
         AppWidgetTextSection(textList(data.title, data.subtitle))
@@ -80,7 +80,7 @@ private fun WidgetLayoutHorizontal(data: FreeformTemplateData) {
 
 private fun createTopLevelModifier(
     backgroundColor: ColorProvider,
-    backgroundImage: ImageProvider?
+    backgroundImage: ImageProvider?,
 ): GlanceModifier {
     var modifier = GlanceModifier.fillMaxSize().padding(16.dp).background(backgroundColor)
     backgroundImage?.let { image -> modifier = modifier.background(image, ContentScale.Crop) }
@@ -90,7 +90,7 @@ private fun createTopLevelModifier(
 
 private fun textList(
     title: TemplateText? = null,
-    subtitle: TemplateText? = null
+    subtitle: TemplateText? = null,
 ): List<TemplateText> {
     val result = mutableListOf<TemplateText>()
     title?.let { result.add(TemplateText(it.text, TextType.Title)) }

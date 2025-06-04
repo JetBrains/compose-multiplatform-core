@@ -45,6 +45,7 @@ package androidx.collection {
     method public boolean removeAll(java.util.Collection<? extends E> elements);
     method public E removeAt(int index);
     method public boolean retainAll(java.util.Collection<? extends E> elements);
+    method @BytecodeOnly public int size();
     method public Object?[] toArray();
     method public <T> T[] toArray(T[] array);
     method public E valueAt(int index);
@@ -231,8 +232,15 @@ package androidx.collection {
 
   @kotlin.jvm.JvmInline public final value class FloatFloatPair {
     ctor public FloatFloatPair(float first, float second);
+    method @BytecodeOnly public static androidx.collection.FloatFloatPair! box-impl(long);
     method public inline operator float component1();
+    method @BytecodeOnly public static float component1-impl(long);
     method public inline operator float component2();
+    method @BytecodeOnly public static float component2-impl(long);
+    method @BytecodeOnly public static long constructor-impl(float, float);
+    method @BytecodeOnly public static float getFirst-impl(long);
+    method @BytecodeOnly public static float getSecond-impl(long);
+    method @BytecodeOnly public long unbox-impl();
     property public inline float first;
     property public long packedValue;
     property public inline float second;
@@ -675,8 +683,15 @@ package androidx.collection {
 
   @kotlin.jvm.JvmInline public final value class IntIntPair {
     ctor public IntIntPair(int first, int second);
+    method @BytecodeOnly public static androidx.collection.IntIntPair! box-impl(long);
     method public inline operator int component1();
+    method @BytecodeOnly public static int component1-impl(long);
     method public inline operator int component2();
+    method @BytecodeOnly public static int component2-impl(long);
+    method @BytecodeOnly public static long constructor-impl(int, int);
+    method @BytecodeOnly public static int getFirst-impl(long);
+    method @BytecodeOnly public static int getSecond-impl(long);
+    method @BytecodeOnly public long unbox-impl();
     property public int first;
     property public long packedValue;
     property public int second;

@@ -123,7 +123,7 @@ class SecurityPatchStateTest {
         val cves =
             securityState.getPatchedCves(
                 SecurityPatchState.COMPONENT_SYSTEM,
-                SecurityPatchState.DateBasedSecurityPatchLevel(2022, 1, 1)
+                SecurityPatchState.DateBasedSecurityPatchLevel(2022, 1, 1),
             )
 
         assertEquals(1, cves[SecurityPatchState.Severity.HIGH]?.size)
@@ -211,7 +211,7 @@ class SecurityPatchStateTest {
                 mockContext,
                 listOf(),
                 mockSecurityStateManagerCompat,
-                vulnerabilityReportJsonString = generateMockReport("system", "2023-01-01")
+                vulnerabilityReportJsonString = generateMockReport("system", "2023-01-01"),
             )
         securityState.getPublishedSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
     }
@@ -559,7 +559,7 @@ class SecurityPatchStateTest {
         assertEquals(2, cves[SecurityPatchState.Severity.HIGH]?.size)
         assertEquals(
             setOf("CVE-2023-0001", "CVE-2023-0002"),
-            cves[SecurityPatchState.Severity.HIGH]
+            cves[SecurityPatchState.Severity.HIGH],
         )
 
         assertEquals(null, cves[SecurityPatchState.Severity.MODERATE])

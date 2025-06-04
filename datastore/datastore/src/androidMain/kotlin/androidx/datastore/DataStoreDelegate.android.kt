@@ -85,7 +85,7 @@ public fun <T> dataStore(
         corruptionHandler,
         produceMigrations,
         scope,
-        createInDeviceProtectedStorage = false
+        createInDeviceProtectedStorage = false,
     )
 }
 
@@ -113,7 +113,7 @@ public fun <T> deviceProtectedDataStore(
     serializer: Serializer<T>,
     corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
     produceMigrations: (Context) -> List<DataMigration<T>> = { listOf() },
-    scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
 ): ReadOnlyProperty<Context, DataStore<T>> {
     return DataStoreSingletonDelegate(
         fileName,
@@ -121,7 +121,7 @@ public fun <T> deviceProtectedDataStore(
         corruptionHandler,
         produceMigrations,
         scope,
-        createInDeviceProtectedStorage = true
+        createInDeviceProtectedStorage = true,
     )
 }
 
@@ -133,7 +133,7 @@ internal constructor(
     private val corruptionHandler: ReplaceFileCorruptionHandler<T>?,
     private val produceMigrations: (Context) -> List<DataMigration<T>>,
     private val scope: CoroutineScope,
-    private val createInDeviceProtectedStorage: Boolean
+    private val createInDeviceProtectedStorage: Boolean,
 ) : ReadOnlyProperty<Context, DataStore<T>> {
 
     private val lock = Any()
@@ -179,7 +179,7 @@ internal constructor(
                                 },
                             corruptionHandler = corruptionHandler,
                             migrations = produceMigrations(applicationContext),
-                            scope = scope
+                            scope = scope,
                         )
                 }
                 INSTANCE!!

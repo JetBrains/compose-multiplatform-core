@@ -21,7 +21,6 @@ import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_ON
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-import android.hardware.camera2.params.DynamicRangeProfiles
 import android.os.Build
 import android.util.Range
 import android.util.Size
@@ -59,12 +58,6 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.DynamicRange.DOLBY_VISION_10_BIT
-import androidx.camera.core.DynamicRange.DOLBY_VISION_8_BIT
-import androidx.camera.core.DynamicRange.HDR10_10_BIT
-import androidx.camera.core.DynamicRange.HDR10_PLUS_10_BIT
-import androidx.camera.core.DynamicRange.HLG_10_BIT
-import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.ExposureState
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.UseCase
@@ -101,7 +94,7 @@ constructor(
     private val encoderProfilesProvider: EncoderProfilesProvider,
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
     private val cameraFovInfo: CameraFovInfo,
-    private val streamSpecsCalculator: StreamSpecsCalculator
+    private val streamSpecsCalculator: StreamSpecsCalculator,
 ) : CameraInfoInternal, UnsafeWrapper {
     init {
         DeviceInfoLogger.logDeviceInfo(cameraProperties)
@@ -113,7 +106,7 @@ constructor(
             val cameraProperties =
                 CameraPipeCameraProperties(
                     CameraConfig(physicalCameraId),
-                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId)
+                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId),
                 )
             PhysicalCameraInfoAdapter(cameraProperties)
         }
@@ -179,7 +172,7 @@ constructor(
         return CameraOrientationUtil.getRelativeImageRotation(
             relativeRotationDegrees,
             sensorOrientation,
-            isOppositeFacingScreen
+            isOppositeFacingScreen,
         )
     }
 
@@ -211,7 +204,7 @@ constructor(
 
     override fun addSessionCaptureCallback(
         executor: Executor,
-        callback: CameraCaptureCallback
+        callback: CameraCaptureCallback,
     ): Unit = cameraCallbackMap.addCaptureCallback(callback, executor)
 
     override fun removeSessionCaptureCallback(callback: CameraCaptureCallback): Unit =
@@ -370,7 +363,7 @@ constructor(
                 cameraInfoInternal = this,
                 newUseCases = useCases,
                 cameraConfig = cameraConfig,
-                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions
+                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions,
             )
         } catch (e: IllegalArgumentException) {
             debug(e) {
@@ -382,32 +375,7 @@ constructor(
         return true
     }
 
-    private fun profileSetToDynamicRangeSet(profileSet: Set<Long>): Set<DynamicRange> {
-        return profileSet.map { profileToDynamicRange(it) }.toSet()
-    }
-
-    private fun profileToDynamicRange(profile: Long): DynamicRange {
-        return checkNotNull(PROFILE_TO_DR_MAP[profile]) {
-            "Dynamic range profile cannot be converted to a DynamicRange object: $profile"
-        }
-    }
-
     public companion object {
-        private val PROFILE_TO_DR_MAP: Map<Long, DynamicRange> =
-            mapOf(
-                DynamicRangeProfiles.STANDARD to SDR,
-                DynamicRangeProfiles.HLG10 to HLG_10_BIT,
-                DynamicRangeProfiles.HDR10 to HDR10_10_BIT,
-                DynamicRangeProfiles.HDR10_PLUS to HDR10_PLUS_10_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM to DOLBY_VISION_10_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM_PO to DOLBY_VISION_10_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF to DOLBY_VISION_10_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF_PO to DOLBY_VISION_10_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM to DOLBY_VISION_8_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM_PO to DOLBY_VISION_8_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF to DOLBY_VISION_8_BIT,
-                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF_PO to DOLBY_VISION_8_BIT,
-            )
 
         public fun <T : Any> CameraInfo.unwrapAs(type: KClass<T>): T? =
             when (this) {

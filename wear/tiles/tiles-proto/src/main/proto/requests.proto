@@ -21,6 +21,9 @@ message TileRequest {
 
   // The ID of the tile being requested.
   uint32 tile_id = 3;
+
+  // The timestamp of the last time the tile was visible.
+  uint64 last_visible_millis = 4;
 }
 
 // Parameters passed to a Tile Service when the renderer is requesting a

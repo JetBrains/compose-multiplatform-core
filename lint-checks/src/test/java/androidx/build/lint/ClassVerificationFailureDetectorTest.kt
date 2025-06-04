@@ -39,7 +39,7 @@ class ClassVerificationFailureDetectorTest :
         stubs =
             arrayOf(
                 // AndroidManifest with minSdkVersion=14
-                manifest().minSdk(14),
+                manifest().minSdk(14)
             ),
     ) {
 
@@ -75,10 +75,7 @@ src/androidx/ClassVerificationFailureFromJava.java:56: Error: This call referenc
 
     @Test
     fun `Detection and auto-fix of unsafe references in real-world Java sources`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.sample.core.widget.ListViewCompat"),
-            )
+        val input = arrayOf(javaSample("androidx.sample.core.widget.ListViewCompat"))
 
         val expected =
             """
@@ -148,10 +145,7 @@ Fix for src/androidx/sample/core/widget/ListViewCompat.java line 69: Extract to 
 
     @Test
     fun `Detection and auto-fix of unsafe references in real-world Kotlin sources`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.sample.core.widget.ListViewCompatKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.sample.core.widget.ListViewCompatKotlin"))
 
         val expected =
             """
@@ -253,10 +247,7 @@ src/androidx/RequiresApiKotlinOuter19Passes.kt:98: Error: This call references a
 
     @Test
     fun `Auto-fix unsafe void-type method reference in Java source`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.AutofixUnsafeVoidMethodReferenceJava"),
-            )
+        val input = arrayOf(javaSample("androidx.AutofixUnsafeVoidMethodReferenceJava"))
 
         val expectedFix =
             """
@@ -288,10 +279,7 @@ Fix for src/androidx/AutofixUnsafeVoidMethodReferenceJava.java line 34: Extract 
 
     @Test
     fun `Auto-fix unsafe void-type method reference in Kotlin source`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.AutofixUnsafeVoidMethodReferenceKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.AutofixUnsafeVoidMethodReferenceKotlin"))
 
         val expectedFix =
             """
@@ -321,10 +309,7 @@ Fix for src/androidx/AutofixUnsafeVoidMethodReferenceKotlin.kt line 28: Extract 
 
     @Test
     fun `Auto-fix unsafe constructor reference in Java source`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.AutofixUnsafeConstructorReferenceJava"),
-            )
+        val input = arrayOf(javaSample("androidx.AutofixUnsafeConstructorReferenceJava"))
 
         val expectedFix =
             """
@@ -356,10 +341,7 @@ Fix for src/androidx/AutofixUnsafeConstructorReferenceJava.java line 35: Extract
 
     @Test
     fun `Auto-fix unsafe constructor reference in Kotlin source`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.AutofixUnsafeConstructorReferenceKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.AutofixUnsafeConstructorReferenceKotlin"))
 
         val expectedFix =
             """
@@ -389,10 +371,7 @@ Fix for src/androidx/AutofixUnsafeConstructorReferenceKotlin.kt line 29: Extract
 
     @Test
     fun `Auto-fix unsafe static method reference in Java source`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.AutofixUnsafeStaticMethodReferenceJava"),
-            )
+        val input = arrayOf(javaSample("androidx.AutofixUnsafeStaticMethodReferenceJava"))
 
         val expectedFix =
             """
@@ -424,10 +403,7 @@ Fix for src/androidx/AutofixUnsafeStaticMethodReferenceJava.java line 33: Extrac
 
     @Test
     fun `Auto-fix unsafe static method reference in Kotlin source`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.AutofixUnsafeStaticMethodReferenceKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.AutofixUnsafeStaticMethodReferenceKotlin"))
 
         val expectedFix =
             """
@@ -457,10 +433,7 @@ Fix for src/androidx/AutofixUnsafeStaticMethodReferenceKotlin.kt line 27: Extrac
 
     @Test
     fun `Auto-fix unsafe generic-type method reference in Java source`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.AutofixUnsafeGenericMethodReferenceJava"),
-            )
+        val input = arrayOf(javaSample("androidx.AutofixUnsafeGenericMethodReferenceJava"))
 
         val expectedFix =
             """
@@ -492,10 +465,7 @@ Fix for src/androidx/AutofixUnsafeGenericMethodReferenceJava.java line 34: Extra
 
     @Test
     fun `Auto-fix unsafe generic-type method reference in Kotlin source`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.AutofixUnsafeGenericMethodReferenceKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.AutofixUnsafeGenericMethodReferenceKotlin"))
 
         val expectedFix =
             """
@@ -591,7 +561,7 @@ Fix for src/androidx/AutofixUnsafeReferenceWithExistingClassKotlin.kt line 29: E
             arrayOf(
                 ktSample("androidx.AutofixUnsafeReferenceWithExistingTopLevelFixKotlin"),
                 RequiresApi,
-                DoNotInline
+                DoNotInline,
             )
 
         val expectedFix =
@@ -634,7 +604,7 @@ Fix for src/androidx/Api21Impl.kt line 38: Extract to static inner class:
             arrayOf(
                 javaSample("androidx.AutofixUnsafeReferenceWithExistingFix"),
                 RequiresApi,
-                DoNotInline
+                DoNotInline,
             )
 
         val expected =
@@ -677,7 +647,7 @@ Fix for src/androidx/AutofixUnsafeReferenceWithExistingFix.java line 45: Extract
             arrayOf(
                 ktSample("androidx.AutofixUnsafeReferenceWithExistingFixKotlin"),
                 RequiresApi,
-                DoNotInline
+                DoNotInline,
             )
 
         val expectedFix =
@@ -722,7 +692,7 @@ Fix for src/androidx/AutofixUnsafeReferenceWithExistingFixKotlin.kt line 38: Ext
         val input =
             arrayOf(
                 javaSample("androidx.sample.appcompat.widget.ActionBarBackgroundDrawable"),
-                RequiresApi
+                RequiresApi,
             )
 
         val expected =
@@ -1503,7 +1473,7 @@ Fix for src/androidx/AutofixOnUnsafeCallWithImplicitVarArgsCast.java line 52: Ex
         val input =
             arrayOf(
                 ktSample("androidx.AutofixOnUnsafeCallWithImplicitVarArgsCastKotlin"),
-                RequiresApi
+                RequiresApi,
             )
 
         val expectedFix =
@@ -1710,7 +1680,7 @@ Fix for src/com/example/MyClass.java line 7: Extract to static inner class:
                 ktSample("flaggedapi.FlaggedUsageWithoutOutline"),
                 FlaggedApi,
                 RequiresAconfigFlag,
-                Flags
+                Flags,
             )
 
         val expected =
@@ -1780,7 +1750,7 @@ Fix for src/flaggedapi/FlaggedUsageWithoutOutline.kt line 31: Extract to static 
                 ktSample("flaggedapi.FlaggedUsageInOutline"),
                 FlaggedApi,
                 RequiresAconfigFlag,
-                Flags
+                Flags,
             )
 
         val expected =
@@ -1800,7 +1770,7 @@ No warnings.
                 ktSample("flaggedapi.AutofixUnsafeUsageWithTypeConversion"),
                 FlaggedApi,
                 RequiresAconfigFlag,
-                Flags
+                Flags,
             )
 
         // Due to b/417243329 these do not reflect actual IDE auto-fix behavior. The flag string

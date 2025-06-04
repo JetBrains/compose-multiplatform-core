@@ -88,14 +88,12 @@ class ImageCaptureEffectTest(
     private val implName: String,
     val selectorName: String,
     private val cameraSelector: CameraSelector,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -119,25 +117,25 @@ class ImageCaptureEffectTest(
                     Camera2Config::class.simpleName,
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     Camera2Config::class.simpleName,
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     CameraPipeConfig::class.simpleName,
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     CameraPipeConfig::class.simpleName,
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
             )
         }
@@ -169,7 +167,7 @@ class ImageCaptureEffectTest(
     @RequiresApi(29)
     private fun runSolidColorImageCaptureTest(
         colorChannelBeforeEffect: ColorChannel,
-        colorChannelAfterEffect: ColorChannel
+        colorChannelAfterEffect: ColorChannel,
     ) =
         runCameraTest(cameraConfig) { provider ->
             val camInfo = provider.getCameraInfo(cameraSelector)
@@ -183,7 +181,7 @@ class ImageCaptureEffectTest(
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,
-                        result: TotalCaptureResult
+                        result: TotalCaptureResult,
                     ) {
                         result.get(SENSOR_TEST_PATTERN_MODE)?.let { testPatternModeFlow.value = it }
                     }
@@ -260,7 +258,7 @@ class ImageCaptureEffectTest(
 
     private inline fun runCameraTest(
         cameraConfig: CameraXConfig,
-        crossinline block: suspend CoroutineScope.(ProcessCameraProvider) -> Unit
+        crossinline block: suspend CoroutineScope.(ProcessCameraProvider) -> Unit,
     ): Unit = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
         val context: Context = ApplicationProvider.getApplicationContext()
@@ -278,7 +276,7 @@ class ImageCaptureEffectTest(
             IMAGE_CAPTURE,
             CameraXExecutors.directExecutor(),
             TestImageProcessor(targetOutputColorChannel),
-            Throwable::printStackTrace
+            Throwable::printStackTrace,
         ) {
 
         suspend fun awaitInputPrimaryColor(timeoutMillis: Long): Int? {
@@ -308,7 +306,7 @@ class ImageCaptureEffectTest(
                     Bitmap.createBitmap(
                         inputImage.width,
                         inputImage.height,
-                        Bitmap.Config.ARGB_8888
+                        Bitmap.Config.ARGB_8888,
                     )
                 val canvas = Canvas(outputBitmap)
                 canvas.drawColor(targetOutputColorChannel.toColor())
@@ -319,7 +317,7 @@ class ImageCaptureEffectTest(
                         inputImage.cropRect,
                         inputImage.imageInfo.getRotationDegrees(),
                         inputImage.imageInfo.sensorToBufferTransformMatrix,
-                        inputImage.imageInfo.getTimestamp()
+                        inputImage.imageInfo.getTimestamp(),
                     )
                 }
             }

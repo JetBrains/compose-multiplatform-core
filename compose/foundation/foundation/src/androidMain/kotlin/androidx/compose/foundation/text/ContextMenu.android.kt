@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal actual fun ContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
@@ -78,7 +78,7 @@ internal actual fun ContextMenuArea(
 internal actual fun ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier =
@@ -108,7 +108,7 @@ internal actual fun ContextMenuArea(
                             TextContextMenuItems.Autofill -> autofill()
                         }
                     }
-                }
+                },
             )
 
         androidx.compose.foundation.contextmenu.ContextMenuArea(
@@ -151,22 +151,22 @@ internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val dr
     Cut(
         key = TextContextMenuKeys.CutKey,
         stringId = android.R.string.cut,
-        drawableId = android.R.attr.actionModeCutDrawable
+        drawableId = android.R.attr.actionModeCutDrawable,
     ),
     Copy(
         key = TextContextMenuKeys.CopyKey,
         stringId = android.R.string.copy,
-        drawableId = android.R.attr.actionModeCopyDrawable
+        drawableId = android.R.attr.actionModeCopyDrawable,
     ),
     Paste(
         key = TextContextMenuKeys.PasteKey,
         stringId = android.R.string.paste,
-        drawableId = android.R.attr.actionModePasteDrawable
+        drawableId = android.R.attr.actionModePasteDrawable,
     ),
     SelectAll(
         key = TextContextMenuKeys.SelectAllKey,
         stringId = android.R.string.selectAll,
-        drawableId = android.R.attr.actionModeSelectAllDrawable
+        drawableId = android.R.attr.actionModeSelectAllDrawable,
     ),
     Autofill(
         key = TextContextMenuKeys.AutofillKey,
@@ -177,7 +177,7 @@ internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val dr
                 android.R.string.autofill
             },
         // Platform also doesn't have an icon for the autofill item.
-        drawableId = Resources.ID_NULL
+        drawableId = Resources.ID_NULL,
     );
 
     @ReadOnlyComposable @Composable fun resolvedString(): String = stringResource(stringId)
@@ -189,7 +189,7 @@ internal inline fun ContextMenuScope.TextItem(
     state: ContextMenuState,
     label: TextContextMenuItems,
     enabled: Boolean,
-    crossinline operation: () -> Unit
+    crossinline operation: () -> Unit,
 ) {
     // b/365619447 - instead of setting `enabled = enabled` in `item`,
     //  just remove the item from the menu.
@@ -205,14 +205,14 @@ internal fun TextContextMenuBuilderScope.textItem(
     resources: Resources,
     item: TextContextMenuItems,
     enabled: Boolean,
-    onClick: TextContextMenuSession.() -> Unit
+    onClick: TextContextMenuSession.() -> Unit,
 ) {
     if (enabled) {
         item(
             key = item.key,
             label = item.resolveString(resources),
             leadingIcon = item.drawableId,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 }
@@ -225,7 +225,7 @@ internal suspend fun TextFieldSelectionState.getContextMenuItemsAvailability():
         canPaste = canPaste(),
         canCut = canCut(),
         canSelectAll = canSelectAll(),
-        canAutofill = canAutofill()
+        canAutofill = canAutofill(),
     )
 }
 
@@ -237,7 +237,7 @@ internal suspend fun TextFieldSelectionManager.getContextMenuItemsAvailability()
         canPaste = canPaste(),
         canCut = canCut(),
         canSelectAll = canSelectAll(),
-        canAutofill = canAutofill()
+        canAutofill = canAutofill(),
     )
 }
 
@@ -248,7 +248,7 @@ internal value class MenuItemsAvailability private constructor(val value: Int) {
         canPaste: Boolean,
         canCut: Boolean,
         canSelectAll: Boolean,
-        canAutofill: Boolean
+        canAutofill: Boolean,
     ) : this(
         (if (canCopy) COPY else 0) or
             (if (canPaste) PASTE else 0) or

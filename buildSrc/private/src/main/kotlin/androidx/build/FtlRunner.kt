@@ -90,7 +90,7 @@ abstract class FtlRunner : DefaultTask() {
     @get:Input
     @get:Option(
         option = "instrumentationArgs",
-        description = "instrumentation arguments to pass to FTL test runner"
+        description = "instrumentation arguments to pass to FTL test runner",
     )
     abstract val instrumentationArgs: Property<String>
 
@@ -100,7 +100,7 @@ abstract class FtlRunner : DefaultTask() {
         option = "api",
         description =
             "repeatable argument for which apis to run ftl tests on. " +
-                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34, 35."
+                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34, 35.",
     )
     abstract val apis: ListProperty<Int>
 
@@ -108,7 +108,7 @@ abstract class FtlRunner : DefaultTask() {
     @get:Input
     @get:Option(
         option = "shardCount",
-        description = "Number of shards to split tests into (requires gcloud beta)"
+        description = "Number of shards to split tests into (requires gcloud beta)",
     )
     abstract val shardCount: Property<Int>
 
@@ -118,7 +118,7 @@ abstract class FtlRunner : DefaultTask() {
         option = "excludeAnnotation",
         description =
             "Repeatable argument to exclude annotations. " +
-                "Example: `--excludeAnnotation androidx.test.filters.FlakyTest`"
+                "Example: `--excludeAnnotation androidx.test.filters.FlakyTest`",
     )
     abstract val excludeAnnotations: ListProperty<String>
 
@@ -276,7 +276,7 @@ private val devicesToRunOn =
 internal fun Project.registerRunner(
     name: String,
     artifacts: Artifacts,
-    namespace: Provider<String>
+    namespace: Provider<String>,
 ) {
     devicesToRunOn.forEach { (taskPrefix, model) ->
         tasks.register("$taskPrefix$name", FtlRunner::class.java) { task ->

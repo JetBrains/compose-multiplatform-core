@@ -50,6 +50,6 @@ internal interface IRemoteInteractionsManager {
         dataUri: Uri,
         additionalCategories: List<String>,
         executor: Executor,
-        outcomeReceiver: OutcomeReceiver<Void?, Throwable>
+        outcomeReceiver: OutcomeReceiver<Void?, Throwable>,
     )
 }

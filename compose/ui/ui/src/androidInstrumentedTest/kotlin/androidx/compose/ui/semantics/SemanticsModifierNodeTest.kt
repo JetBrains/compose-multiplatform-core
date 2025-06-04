@@ -16,6 +16,7 @@
 package androidx.compose.ui.semantics
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -33,7 +34,10 @@ import androidx.compose.ui.node.elementOf
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
@@ -361,6 +365,255 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
         } else {
             assertThat(semanticsModifier.applySemanticsInvocations).isEqualTo(1)
         }
+    }
+
+    @Test
+    fun isImportantForBounds_defaultValue_semanticsModifierInfluencesBounds() {
+        // Arrange.
+        val semanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(Modifier.elementOf(semanticsModifier).size(10.dp).padding(1.dp).testTag("tag"))
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
+            .assertWidthIsEqualTo(10.dp)
+            .assertHeightIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_notImportant_semanticsModifierDoesNotInfluenceBounds() {
+        // Arrange.
+        val semanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds: Boolean = false
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(Modifier.elementOf(semanticsModifier).size(10.dp).padding(1.dp).testTag("tag"))
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
+            .assertWidthIsEqualTo(8.dp)
+            .assertHeightIsEqualTo(8.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_innerShouldMergeDescendants_innerTakesPriority() {
+        // Arrange.
+        val outerSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsMergingModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
+            .assertWidthIsEqualTo(8.dp)
+            .assertHeightIsEqualTo(8.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_innerShouldMergeDescendantsNotImportant_outerTakesPriority() {
+        // Arrange.
+        val outerSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds = false
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsMergingModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
+            .assertWidthIsEqualTo(10.dp)
+            .assertHeightIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_outerShouldMergeDescendants_outerTakesPriority() {
+        // Arrange.
+        val outerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsMergingModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
+            .assertWidthIsEqualTo(10.dp)
+            .assertHeightIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_outerShouldMergeDescendantsNotImportant_innerTakesPriority() {
+        // Arrange.
+        val outerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds = false
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsMergingModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
+            .assertWidthIsEqualTo(8.dp)
+            .assertHeightIsEqualTo(8.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_multipleShouldMergeDescendantsModifiers_outerTakesPriority() {
+        // Arrange.
+        val outerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsMergingModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsMergingModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
+            .assertWidthIsEqualTo(10.dp)
+            .assertHeightIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun isImportantForBounds_multipleShouldMergeDescendantsModifiers_outerNotImportant_innerTakesPriority() {
+        // Arrange.
+        val outerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds = false
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val innerSemanticsMergingModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val shouldMergeDescendantSemantics = true
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+
+        // Act.
+        rule.setContent {
+            Box(
+                Modifier.elementOf(outerSemanticsMergingModifier)
+                    .size(10.dp)
+                    .padding(1.dp)
+                    .elementOf(innerSemanticsMergingModifier)
+                    .testTag("tag")
+            )
+        }
+
+        // Assert.
+        rule
+            .onNodeWithTag("tag")
+            .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
+            .assertWidthIsEqualTo(8.dp)
+            .assertHeightIsEqualTo(8.dp)
     }
 
     private class TestSemanticsModifier(

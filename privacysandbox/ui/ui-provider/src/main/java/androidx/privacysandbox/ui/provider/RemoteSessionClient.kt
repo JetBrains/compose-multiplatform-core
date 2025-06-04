@@ -26,20 +26,20 @@ import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
  */
 internal class RemoteSessionClient(
     private val clientVersion: Int,
-    private val remoteSessionClient: IRemoteSessionClient
+    private val remoteSessionClient: IRemoteSessionClient,
 ) : androidx.privacysandbox.ui.provider.IRemoteSessionClient {
     override fun onRemoteSessionOpened(
         surfacePackage: SurfaceControlViewHost.SurfacePackage,
         remoteSessionController: IRemoteSessionController,
         isZOrderOnTop: Boolean,
-        signalOptions: List<String>
+        signalOptions: List<String>,
     ) {
         tryToCallRemoteObject(remoteSessionClient) {
             this.onRemoteSessionOpened(
                 surfacePackage,
                 remoteSessionController,
                 isZOrderOnTop,
-                signalOptions
+                signalOptions,
             )
         }
     }

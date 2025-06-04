@@ -482,7 +482,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                 val initialSelection = selection
                 replace(0, length, originalValue.toString())
                 selection = initialSelection
-            }
+            },
         ) {
             requestTextFieldFocus()
             setSelectionViaSemanticsShowingToolbar(1 to 5)
@@ -566,7 +566,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
         clipboard: suspend () -> Clipboard = { FakeClipboard() },
         modifier: Modifier = Modifier,
         inputTransformation: InputTransformation? = null,
-        block: suspend TestScope.() -> Unit
+        block: suspend TestScope.() -> Unit,
     ) = coroutineRunTest {
         TestScope(
                 initialTextFieldState = textFieldState,
@@ -618,7 +618,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                                     textStyle =
                                         TextStyle(
                                             fontFamily = TEST_FONT_FAMILY,
-                                            fontSize = fontSize
+                                            fontSize = fontSize,
                                         ),
                                     enabled = enabled,
                                     lineLimits =
@@ -628,7 +628,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                                             TextFieldLineLimits.Default
                                         },
                                     inputTransformation = filter,
-                                    readOnly = readOnly
+                                    readOnly = readOnly,
                                 )
                             }
                         }
@@ -761,7 +761,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                     /* deviceId = */ KeyCharacterMap.VIRTUAL_KEYBOARD,
                     /* scancode= */ 0,
                     /* flags= */ 0,
-                    /* source= */ InputDevice.SOURCE_KEYBOARD
+                    /* source= */ InputDevice.SOURCE_KEYBOARD,
                 )
             )
         }

@@ -19,7 +19,6 @@ package androidx.camera.core.featurecombination.impl
 import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.Logger
 import androidx.camera.core.SessionConfig
-import androidx.camera.core.UseCase
 import androidx.camera.core.featurecombination.Feature
 import androidx.camera.core.featurecombination.impl.resolver.DefaultFeatureCombinationResolver
 import androidx.camera.core.featurecombination.impl.resolver.FeatureCombinationResolutionResult.Supported
@@ -34,12 +33,9 @@ import androidx.camera.core.impl.CameraInfoInternal
  *
  * In future, this can be used to contain resolved use case configs or stream specs as well.
  */
-public class ResolvedFeatureCombination(
-    public val useCases: Set<UseCase>,
-    public val features: Set<Feature>
-) {
+public class ResolvedFeatureCombination(public val features: Set<Feature>) {
     override fun toString(): String {
-        return "ResolvedFeatureCombination(features=$features, useCases=$useCases)"
+        return "ResolvedFeatureCombination(features=$features)"
     }
 
     public companion object {
@@ -65,15 +61,16 @@ public class ResolvedFeatureCombination(
          */
         @OptIn(ExperimentalSessionConfig::class)
         @JvmOverloads
+        @JvmStatic
         public fun SessionConfig.resolveFeatureCombination(
             cameraInfoInternal: CameraInfoInternal,
             resolver: FeatureCombinationResolver =
-                DefaultFeatureCombinationResolver(cameraInfoInternal)
+                DefaultFeatureCombinationResolver(cameraInfoInternal),
         ): ResolvedFeatureCombination? {
             Logger.d(
                 TAG,
                 "resolveFeatureCombination: sessionConfig = $this," +
-                    " lensFacing = ${cameraInfoInternal.lensFacing}"
+                    " lensFacing = ${cameraInfoInternal.lensFacing}",
             )
 
             if (requiredFeatures.isEmpty() && preferredFeatures.isEmpty()) {
@@ -81,10 +78,7 @@ public class ResolvedFeatureCombination(
                 return null
             }
 
-            val useCases = this.useCases.toSet() // SessionConfig already removes duplicity
-
-            val result =
-                resolver.resolveFeatureCombination(useCases, requiredFeatures, preferredFeatures)
+            val result = resolver.resolveFeatureCombination(this)
 
             when (result) {
                 is Supported -> {

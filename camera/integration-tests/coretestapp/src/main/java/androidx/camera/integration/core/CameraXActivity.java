@@ -115,6 +115,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DisplayOrientedMeteringPointFactory;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalLensFacing;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
@@ -126,9 +127,9 @@ import androidx.camera.core.ImageProxy;
 import androidx.camera.core.LowLightBoostState;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SessionConfig;
 import androidx.camera.core.TorchState;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Quirks;
@@ -319,13 +320,6 @@ public class CameraXActivity extends AppCompatActivity {
     public static final String INTENT_EXTRA_FORCE_ENABLE_STREAM_SHARING =
             "force_enable_stream_sharing";
 
-    static final CameraSelector BACK_SELECTOR =
-            new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
-    static final CameraSelector FRONT_SELECTOR =
-            new CameraSelector.Builder().requireLensFacing(
-                    CameraSelector.LENS_FACING_FRONT).build();
-    private CameraSelector mExternalCameraSelector = null;
-
     private final AtomicLong mImageAnalysisFrameCount = new AtomicLong(0);
     private final AtomicLong mPreviewFrameCount = new AtomicLong(0);
     // Automatically stops the video recording when this length value is set to be non-zero and
@@ -352,7 +346,8 @@ public class CameraXActivity extends AppCompatActivity {
     private int mTargetAspectRatio = AspectRatio.RATIO_DEFAULT;
     private Recording mActiveRecording;
     /** The camera to use */
-    CameraSelector mCurrentCameraSelector = BACK_SELECTOR;
+    private final CameraSwitcher mCameraSwitcher = new CameraSwitcher();
+    private CameraSelector mCurrentCameraSelector = mCameraSwitcher.getCurrentSelector();
     ProcessCameraProvider mCameraProvider;
     private CameraXViewModel.CameraProviderResult mCameraProviderResult;
 
@@ -366,9 +361,6 @@ public class CameraXActivity extends AppCompatActivity {
     private Recorder mRecorder;
     Camera mCamera;
 
-    private CameraSelector mLaunchingCameraIdSelector = null;
-    private int mLaunchingCameraLensFacing = CameraSelector.LENS_FACING_UNKNOWN;
-
     private ToggleButton mVideoToggle;
     private ToggleButton mPhotoToggle;
     private ToggleButton mAnalysisToggle;
@@ -376,6 +368,7 @@ public class CameraXActivity extends AppCompatActivity {
 
     private Button mTakePicture;
     private ImageButton mCameraDirectionButton;
+    private ImageButton mCameraIterateButton;
     private ImageButton mFlashButton;
     private ScreenFlashView mScreenFlashView;
     private TextView mTextView;
@@ -1159,59 +1152,31 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @SuppressWarnings("ObjectToString")
-    private void setUpCameraDirectionButton() {
-        mCameraDirectionButton.setOnClickListener(v -> {
-            Log.d(TAG, "Change camera direction: " + mCurrentCameraSelector);
-            CameraSelector switchedCameraSelector =
-                    getSwitchedCameraSelector(mCurrentCameraSelector);
-            try {
-                if (isUseCasesCombinationSupported(switchedCameraSelector, mUseCases)) {
-                    mCurrentCameraSelector = switchedCameraSelector;
-                    tryBindUseCases();
-                } else {
-                    String msg = "Camera of the other lens facing can't support current use case "
-                            + "combination.";
-                    Log.d(TAG, msg);
-                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-                }
-            } catch (IllegalArgumentException e) {
-                Toast.makeText(this, "Failed to switch Camera. Error:" + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+    private void setUpCameraSwitchButton() {
+        mCameraDirectionButton.setOnClickListener(
+                v -> switchCamera(mCameraSwitcher.getNextLensFacingSelector()));
+        mCameraIterateButton.setOnClickListener(
+                v -> switchCamera(mCameraSwitcher.getNextSelector()));
     }
 
-    private @NonNull CameraSelector getSwitchedCameraSelector(
-            @NonNull CameraSelector currentCameraSelector) {
-        CameraSelector switchedCameraSelector;
-        // When the activity is launched with a specific camera id, camera switch function
-        // will switch the cameras between the camera of the specified camera id and the
-        // default camera of the opposite lens facing.
-        if (mLaunchingCameraIdSelector != null) {
-            if (currentCameraSelector != mLaunchingCameraIdSelector) {
-                switchedCameraSelector = mLaunchingCameraIdSelector;
+    private void switchCamera(@NonNull CameraSelector switchedCameraSelector) {
+        Log.d(TAG,
+                "Current camera selector: " + mCurrentCameraSelector + " Try next camera selector: "
+                        + switchedCameraSelector);
+        try {
+            if (isUseCasesCombinationSupported(switchedCameraSelector, mUseCases)) {
+                mCurrentCameraSelector = switchedCameraSelector;
+                tryBindUseCases();
             } else {
-                if (mLaunchingCameraLensFacing == CameraSelector.LENS_FACING_BACK) {
-                    switchedCameraSelector = FRONT_SELECTOR;
-                } else {
-                    switchedCameraSelector = BACK_SELECTOR;
-                }
+                String msg = "Camera of the other lens facing can't support current use case "
+                        + "combination.";
+                Log.d(TAG, msg);
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
             }
-        } else {
-            if (currentCameraSelector == BACK_SELECTOR) {
-                switchedCameraSelector = FRONT_SELECTOR;
-            } else if (currentCameraSelector == FRONT_SELECTOR) {
-                if (mExternalCameraSelector != null) {
-                    switchedCameraSelector = mExternalCameraSelector;
-                } else {
-                    switchedCameraSelector = BACK_SELECTOR;
-                }
-            } else {
-                switchedCameraSelector = BACK_SELECTOR;
-            }
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, "Failed to switch Camera. Error:" + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
         }
-
-        return switchedCameraSelector;
     }
 
     private boolean isUseCasesCombinationSupported(@NonNull CameraSelector cameraSelector,
@@ -1340,6 +1305,7 @@ public class CameraXActivity extends AppCompatActivity {
             mLowLightBoostToggle.setVisibility(View.GONE);
             if (!testCase.equals(SWITCH_TEST_CASE)) {
                 mCameraDirectionButton.setVisibility(View.GONE);
+                mCameraIterateButton.setVisibility(View.GONE);
             }
         }
     }
@@ -1408,6 +1374,7 @@ public class CameraXActivity extends AppCompatActivity {
                 && getCameraInfo().isZslSupported() ? View.VISIBLE : View.GONE);
         mZslToggle.setEnabled(mPhotoToggle.isChecked());
         mCameraDirectionButton.setEnabled(getCameraInfo() != null);
+        mCameraIterateButton.setEnabled(getCameraInfo() != null);
         mPreviewStabilizationToggle.setEnabled(mCamera != null
                 && Preview.getPreviewCapabilities(getCameraInfo()).isStabilizationSupported());
         mLowLightBoostToggle.setEnabled(
@@ -1495,7 +1462,7 @@ public class CameraXActivity extends AppCompatActivity {
         setUpImageOutputFormatButton();
         setUpFlashButton();
         setUpTakePictureButton();
-        setUpCameraDirectionButton();
+        setUpCameraSwitchButton();
         setUpTorchButton();
         setUpEVButton();
         setUpZoomButton();
@@ -1630,6 +1597,7 @@ public class CameraXActivity extends AppCompatActivity {
         mFlashButton = findViewById(R.id.flash_toggle);
         mScreenFlashView = findViewById(R.id.screen_flash_view);
         mCameraDirectionButton = findViewById(R.id.direction_toggle);
+        mCameraIterateButton = findViewById(R.id.iterate_camera_toggle);
         mTorchButton = findViewById(R.id.torch_toggle);
         mTorchStrengthText = findViewById(R.id.torchStrength);
         mTorchStrengthSeekBar = findViewById(R.id.torchStrengthBar);
@@ -1707,17 +1675,10 @@ public class CameraXActivity extends AppCompatActivity {
             String launchingCameraId = bundle.getString(INTENT_EXTRA_CAMERA_ID, null);
 
             if (launchingCameraId != null) {
-                mLaunchingCameraIdSelector = createCameraSelectorById(launchingCameraId);
-                mCurrentCameraSelector = mLaunchingCameraIdSelector;
+                mCameraSwitcher.onLaunchCameraIdUpdated(launchingCameraId);
             } else {
-                String newCameraDirection = bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION);
-                if (newCameraDirection != null) {
-                    if (newCameraDirection.equals(BACKWARD)) {
-                        mCurrentCameraSelector = BACK_SELECTOR;
-                    } else {
-                        mCurrentCameraSelector = FRONT_SELECTOR;
-                    }
-                }
+                String newCameraDirection = bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION, null);
+                mCameraSwitcher.onLaunchDirectionUpdated(newCameraDirection);
             }
 
             String cameraImplementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
@@ -1751,14 +1712,9 @@ public class CameraXActivity extends AppCompatActivity {
             if (cameraProviderResult.hasProvider()) {
                 mCameraProvider = cameraProviderResult.getProvider();
 
-                //initialize mExternalCameraSelector
-                CameraSelector externalCameraSelectorLocal = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL).build();
-                List<CameraInfo> cameraInfos = externalCameraSelectorLocal.filter(
-                        mCameraProvider.getAvailableCameraInfos());
-                if (cameraInfos.size() > 0) {
-                    mExternalCameraSelector = externalCameraSelectorLocal;
-                }
+                // Initialize CameraSelectorList
+                mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
+                mCurrentCameraSelector = mCameraSwitcher.getCurrentSelector();
 
                 updateVideoQualityByIntent(getIntent());
                 tryBindUseCases();
@@ -1935,18 +1891,10 @@ public class CameraXActivity extends AppCompatActivity {
             mRecordUi.setState(RecordUi.State.STOPPING);
         }
 
-        mCameraProvider.unbindAll();
         try {
             // Binds to lifecycle without use cases to make sure mCamera can be retrieved for
             // tests to do necessary checks.
             mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector);
-
-            // Retrieves the lens facing info when the activity is launched with a specified
-            // camera id.
-            if (mCurrentCameraSelector == mLaunchingCameraIdSelector
-                    && mLaunchingCameraLensFacing == CameraSelector.LENS_FACING_UNKNOWN) {
-                mLaunchingCameraLensFacing = getLensFacing(mCamera.getCameraInfo());
-            }
 
             List<UseCase> useCases = buildUseCases();
             mCamera = bindToLifecycleSafely(useCases);
@@ -2234,32 +2182,30 @@ public class CameraXActivity extends AppCompatActivity {
     /**
      * Binds use cases to the current lifecycle.
      */
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private Camera bindToLifecycleSafely(List<UseCase> useCases) {
         Log.d(TAG, "bindToLifecycleSafely: mDisableViewPort = " + mDisableViewPort
                 + ", mForceEnableStreamSharing = " + mForceEnableStreamSharing);
 
-        UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder();
-        for (UseCase useCase : useCases) {
-            useCaseGroupBuilder.addUseCase(useCase);
-        }
+        SessionConfig.Builder sessionConfigBuilder = new SessionConfig.Builder(useCases);
 
         if (!mDisableViewPort) {
-            ViewPort viewPort = new ViewPort.Builder(new Rational(mViewFinder.getWidth(),
-                    mViewFinder.getHeight()),
-                    mViewFinder.getDisplay().getRotation())
-                    .setScaleType(ViewPort.FILL_CENTER).build();
-            useCaseGroupBuilder.setViewPort(viewPort);
+            ViewPort viewPort = new ViewPort.Builder(
+                    new Rational(mViewFinder.getWidth(), mViewFinder.getHeight()),
+                    mViewFinder.getDisplay().getRotation()
+            ).setScaleType(ViewPort.FILL_CENTER).build();
+            sessionConfigBuilder.setViewPort(viewPort);
         }
 
         // Force-enable stream sharing
         if (mForceEnableStreamSharing) {
             @SuppressLint("RestrictedApiAndroidX")
             StreamSharingForceEnabledEffect effect = new StreamSharingForceEnabledEffect();
-            useCaseGroupBuilder.addEffect(effect);
+            sessionConfigBuilder.addEffect(effect);
         }
 
         mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
-                useCaseGroupBuilder.build());
+                sessionConfigBuilder.build());
         setupZoomSeeker();
         setupTorchStrengthSeeker();
         setUpLowLightBoostButton();
@@ -2977,49 +2923,9 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
-    private static CameraSelector createCameraSelectorById(@Nullable String cameraId) {
-        return new CameraSelector.Builder().addCameraFilter(cameraInfos -> {
-            for (CameraInfo cameraInfo : cameraInfos) {
-                if (Objects.equals(cameraId, getCameraId(cameraInfo))) {
-                    return Collections.singletonList(cameraInfo);
-                }
-            }
-
-            throw new IllegalArgumentException("No camera can be find for id: " + cameraId);
-        }).build();
-    }
-
-    private static int getLensFacing(@NonNull CameraInfo cameraInfo) {
-        try {
-            return getCamera2LensFacing(cameraInfo);
-        } catch (IllegalArgumentException e) {
-            return getCamera2PipeLensFacing(cameraInfo);
-        }
-    }
-
     private boolean isFrontCamera() {
-        return getLensFacing(Objects.requireNonNull(getCameraInfo()))
+        return Objects.requireNonNull(getCameraInfo()).getLensFacing()
                 == CameraSelector.LENS_FACING_FRONT;
-    }
-
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    private static int getCamera2LensFacing(@NonNull CameraInfo cameraInfo) {
-        Integer lensFacing = Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
-                CameraCharacteristics.LENS_FACING);
-
-        return lensFacing == null ? CameraCharacteristics.LENS_FACING_BACK : lensFacing;
-    }
-
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass =
-            androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
-    private static int getCamera2PipeLensFacing(@NonNull CameraInfo cameraInfo) {
-        Integer lensFacing =
-                androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo.from(
-                        cameraInfo).getCameraCharacteristic(CameraCharacteristics.LENS_FACING);
-
-        return lensFacing == null ? CameraCharacteristics.LENS_FACING_BACK : lensFacing;
     }
 
     private static boolean isLegacyDevice(@NonNull CameraInfo cameraInfo) {
@@ -3095,5 +3001,118 @@ public class CameraXActivity extends AppCompatActivity {
             window.setColorMode(colorMode);
         }
 
+    }
+
+    private static final class CameraSwitcher {
+        private int mCurrentSelectorIndex = 0;
+        private String mLaunchCameraId = null;
+        private String mLaunchDirection = null;
+        private final ArrayList<CameraSelectorInfo> mCameraSelectorInfos = new ArrayList<>();
+
+        public void updateCameraInfos(@Nullable List<CameraInfo> cameraInfos) {
+            mCameraSelectorInfos.clear();
+            if (cameraInfos != null) {
+                for (CameraInfo info : cameraInfos) {
+                    mCameraSelectorInfos.add(
+                            new CameraSelectorInfo(info.getCameraSelector(), info.getLensFacing(),
+                                    getCameraId(info)));
+                }
+            }
+            updateIndex();
+        }
+
+        public void onLaunchCameraIdUpdated(@Nullable String launchCameraId) {
+            mLaunchCameraId = launchCameraId;
+            updateIndex();
+        }
+
+        public void onLaunchDirectionUpdated(@Nullable String launchDirection) {
+            mLaunchDirection = launchDirection;
+            updateIndex();
+        }
+
+        private void updateIndex() {
+            if (mCameraSelectorInfos.isEmpty()) {
+                mCurrentSelectorIndex = 0;
+                return;
+            }
+
+            if (mLaunchCameraId != null) {
+                for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
+                    if (Objects.equals(mLaunchCameraId, mCameraSelectorInfos.get(i).mCameraId)) {
+                        mCurrentSelectorIndex = i;
+                        break;
+                    }
+                }
+            } else if (mLaunchDirection != null) {
+                int targetLensFacing = mLaunchDirection.equals(BACKWARD)
+                        ? CameraSelector.LENS_FACING_BACK : CameraSelector.LENS_FACING_FRONT;
+                for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
+                    if (targetLensFacing == mCameraSelectorInfos.get(i).mLensFacing) {
+                        mCurrentSelectorIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (mCurrentSelectorIndex >= mCameraSelectorInfos.size()) {
+                mCurrentSelectorIndex = mCameraSelectorInfos.size() - 1;
+            }
+        }
+
+        public @NonNull CameraSelector getCurrentSelector() {
+            if (mCameraSelectorInfos.isEmpty()) {
+                return CameraSelector.DEFAULT_BACK_CAMERA;
+            }
+
+            return mCameraSelectorInfos.get(mCurrentSelectorIndex).mSelector;
+        }
+
+        public @NonNull CameraSelector getNextSelector() {
+            if (mCameraSelectorInfos.isEmpty()) {
+                return CameraSelector.DEFAULT_BACK_CAMERA;
+            }
+
+            mCurrentSelectorIndex = (mCurrentSelectorIndex + 1) % mCameraSelectorInfos.size();
+            return mCameraSelectorInfos.get(mCurrentSelectorIndex).mSelector;
+        }
+
+        @NonNull
+        public CameraSelector getNextLensFacingSelector() {
+            if (mCameraSelectorInfos.isEmpty()) {
+                return CameraSelector.DEFAULT_BACK_CAMERA;
+            }
+            if (mCameraSelectorInfos.size() == 1) {
+                return mCameraSelectorInfos.get(mCurrentSelectorIndex).mSelector; // Only one camera
+            }
+
+            int initialIndex = mCurrentSelectorIndex;
+            @CameraSelector.LensFacing int currentLensFacing =
+                    mCameraSelectorInfos.get(initialIndex).mLensFacing;
+            int newIndex = (initialIndex + 1) % mCameraSelectorInfos.size();
+            while (newIndex != initialIndex) {
+                if (currentLensFacing != mCameraSelectorInfos.get(newIndex).mLensFacing) {
+                    mCurrentSelectorIndex = newIndex;
+                    return mCameraSelectorInfos.get(newIndex).mSelector;
+                }
+                newIndex = (newIndex + 1) % mCameraSelectorInfos.size();
+            }
+            // If loop completes, no camera with a different lens facing was found.
+            return mCameraSelectorInfos.get(initialIndex).mSelector;
+        }
+
+        private static final class CameraSelectorInfo {
+            public final CameraSelector mSelector;
+            public @CameraSelector.LensFacing final int mLensFacing;
+            public final String mCameraId;
+
+            CameraSelectorInfo(@NonNull CameraSelector selector,
+                    @CameraSelector.LensFacing int lensFacing,
+                    @NonNull String cameraId) {
+                mSelector = selector;
+                mLensFacing = lensFacing;
+                mCameraId = cameraId;
+            }
+        }
     }
 }

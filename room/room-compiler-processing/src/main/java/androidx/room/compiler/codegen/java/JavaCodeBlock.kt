@@ -59,7 +59,7 @@ internal class JavaCodeBlock(override val actual: JCodeBlock) : JavaSpec<JCodeBl
             name: String,
             typeName: XTypeName,
             isMutable: Boolean,
-            assignExpr: XCodeBlock?
+            assignExpr: XCodeBlock?,
         ) = apply {
             val finalKeyword = if (isMutable) "" else "final "
             if (assignExpr != null) {

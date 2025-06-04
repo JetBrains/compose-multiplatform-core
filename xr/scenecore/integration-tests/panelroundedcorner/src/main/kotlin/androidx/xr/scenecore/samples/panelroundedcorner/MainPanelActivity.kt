@@ -26,11 +26,11 @@ import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SpatialCapabilities
 import androidx.xr.scenecore.samples.commontestview.CommonTestView
 import androidx.xr.scenecore.scene
@@ -67,7 +67,7 @@ class MainPanelActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panelEntityView,
-                PixelDimensions(640, 880),
+                IntSize2d(640, 880),
                 "panel_entity",
                 Pose(Vector3(0f, 0f, 0.0f)),
             )

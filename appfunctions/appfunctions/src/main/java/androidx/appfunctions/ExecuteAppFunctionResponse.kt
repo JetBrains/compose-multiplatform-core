@@ -29,7 +29,7 @@ public sealed interface ExecuteAppFunctionResponse {
          * The return value of the executed function. An [AppFunctionData.EMPTY] indicates that the
          * function does not produce a return value.
          */
-        public val returnValue: AppFunctionData,
+        public val returnValue: AppFunctionData
     ) : ExecuteAppFunctionResponse {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun toPlatformExtensionClass():
@@ -83,7 +83,7 @@ public sealed interface ExecuteAppFunctionResponse {
     /** Represents a failed execution of an app function. */
     public class Error(
         /** The [AppFunctionException] when the function execution failed. */
-        public val error: AppFunctionException,
+        public val error: AppFunctionException
     ) : ExecuteAppFunctionResponse {
         override fun toString(): String {
             return "AppFunctionResponse.Error(error=$error)"

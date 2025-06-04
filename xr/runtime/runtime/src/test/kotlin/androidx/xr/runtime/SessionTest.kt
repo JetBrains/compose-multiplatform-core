@@ -164,19 +164,20 @@ class SessionTest {
     fun configure_returnsSuccessAndChangesConfig() {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         check(
-            underTest.config.equals(
+            underTest.config ==
                 Config(
                     Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    Config.HandTrackingMode.ENABLED,
-                    Config.DepthEstimationMode.ENABLED,
-                    Config.AnchorPersistenceMode.ENABLED,
+                    Config.HandTrackingMode.BOTH,
+                    Config.HeadTrackingMode.LAST_KNOWN,
+                    Config.DepthEstimationMode.SMOOTH_AND_RAW,
+                    Config.AnchorPersistenceMode.LOCAL,
                 )
-            )
         )
         val config =
             Config(
                 Config.PlaneTrackingMode.DISABLED,
                 Config.HandTrackingMode.DISABLED,
+                Config.HeadTrackingMode.DISABLED,
                 Config.DepthEstimationMode.DISABLED,
                 Config.AnchorPersistenceMode.DISABLED,
             )
@@ -192,7 +193,7 @@ class SessionTest {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         val currentConfig = underTest.config
-        check(currentConfig.depthEstimation == Config.DepthEstimationMode.ENABLED)
+        check(currentConfig.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW)
         lifecycleManager.hasMissingPermission = true
 
         val result =

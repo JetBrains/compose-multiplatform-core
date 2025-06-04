@@ -86,8 +86,8 @@ class TestUseCaseCamera(
             cameraMetadata,
             StreamConfigurationMapCompat(
                 streamConfigurationMap,
-                OutputSizesCorrector(cameraMetadata, streamConfigurationMap)
-            )
+                OutputSizesCorrector(cameraMetadata, streamConfigurationMap),
+            ),
         )
     val sessionConfigAdapter = SessionConfigAdapter(useCases)
     val useCaseCameraGraphConfig: UseCaseGraphConfig
@@ -124,11 +124,11 @@ class TestUseCaseCamera(
                     CameraStateAdapter(),
                     cameraGraph,
                     streamConfigMap,
-                    sessionProcessorManager = null
+                    sessionProcessorManager = null,
                 )
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,
-                    cameraInteropStateCallbackRepository = CameraInteropStateCallbackRepository()
+                    cameraInteropStateCallbackRepository = CameraInteropStateCallbackRepository(),
                 )
     }
 
@@ -144,7 +144,7 @@ class TestUseCaseCamera(
                             sessionConfigOptions: Config,
                             @ImageCapture.CaptureMode captureMode: Int,
                             @ImageCapture.FlashType flashType: Int,
-                            @ImageCapture.FlashMode flashMode: Int
+                            @ImageCapture.FlashMode flashMode: Int,
                         ): List<Deferred<Void?>> {
                             throw NotImplementedError("Not implemented")
                         }
@@ -152,7 +152,7 @@ class TestUseCaseCamera(
                         override suspend fun getCameraCapturePipeline(
                             captureMode: Int,
                             flashMode: Int,
-                            flashType: Int
+                            flashType: Int,
                         ): CameraCapturePipeline = FakeCameraCapturePipeline()
                     },
                 state =
@@ -176,7 +176,7 @@ class TestUseCaseCamera(
                             setOf(
                                 CameraCallbackMap.createFor(
                                     sessionConfig.repeatingCameraCaptureCallbacks,
-                                    threads.backgroundExecutor
+                                    threads.backgroundExecutor,
                                 )
                             ),
                         template =
@@ -193,7 +193,7 @@ class TestUseCaseCamera(
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,
         flashMode: Int,
-        flashType: Int
+        flashType: Int,
     ): CameraCapturePipeline = FakeCameraCapturePipeline()
 
     override fun close(): Job {

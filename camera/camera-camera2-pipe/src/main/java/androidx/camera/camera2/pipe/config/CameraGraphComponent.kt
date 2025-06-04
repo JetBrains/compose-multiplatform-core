@@ -124,7 +124,7 @@ internal abstract class SharedCameraGraphModules {
         fun provideRequestListeners(
             graphConfig: CameraGraph.Config,
             listener3A: Listener3A,
-            frameDistributor: FrameDistributor
+            frameDistributor: FrameDistributor,
         ): List<@JvmSuppressWildcards Request.Listener> {
             val listeners = mutableListOf<Request.Listener>(listener3A)
 
@@ -147,13 +147,13 @@ internal abstract class SharedCameraGraphModules {
             streamGraphImpl: StreamGraphImpl,
             cameraController: Provider<CameraController>,
             cameraSurfaceManager: CameraSurfaceManager,
-            imageSourceMap: ImageSourceMap
+            imageSourceMap: ImageSourceMap,
         ): SurfaceGraph {
             return SurfaceGraph(
                 streamGraphImpl,
                 cameraController,
                 cameraSurfaceManager,
-                imageSourceMap.imageSources
+                imageSourceMap.imageSources,
             )
         }
 
@@ -161,7 +161,7 @@ internal abstract class SharedCameraGraphModules {
         @Provides
         fun provideFrameDistributor(
             imageSourceMap: ImageSourceMap,
-            frameCaptureQueue: FrameCaptureQueue
+            frameCaptureQueue: FrameCaptureQueue,
         ): FrameDistributor {
             return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
         }
@@ -176,7 +176,7 @@ internal abstract class InternalCameraGraphModules {
         fun provideCameraBackend(
             cameraBackends: CameraBackends,
             graphConfig: CameraGraph.Config,
-            cameraContext: CameraContext
+            cameraContext: CameraContext,
         ): CameraBackend {
             val customCameraBackend = graphConfig.customCameraBackend
             if (customCameraBackend != null) {
@@ -196,7 +196,7 @@ internal abstract class InternalCameraGraphModules {
         @Provides
         fun provideCameraMetadata(
             graphConfig: CameraGraph.Config,
-            cameraBackend: CameraBackend
+            cameraBackend: CameraBackend,
         ): CameraMetadata {
             // TODO: It might be a good idea to cache and go through caches for some of these calls
             //   instead of reading it directly from the backend.

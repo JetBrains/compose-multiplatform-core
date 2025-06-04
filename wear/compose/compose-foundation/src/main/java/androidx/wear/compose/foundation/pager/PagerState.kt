@@ -45,7 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 public fun rememberPagerState(
     @IntRange(from = 0) initialPage: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) initialPageOffsetFraction: Float = 0f,
-    @IntRange(from = 1) pageCount: () -> Int
+    @IntRange(from = 1) pageCount: () -> Int,
 ): PagerState {
     return rememberSaveable(saver = PagerState.Saver) {
             PagerState(initialPage, initialPageOffsetFraction, pageCount)
@@ -64,7 +64,7 @@ public fun rememberPagerState(
 public class PagerState(
     @IntRange(from = 0) currentPage: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) currentPageOffsetFraction: Float = 0f,
-    @IntRange(from = 1) pageCount: () -> Int
+    @IntRange(from = 1) pageCount: () -> Int,
 ) : ScrollableState {
     internal var pagerState = PagerStateImpl(currentPage, currentPageOffsetFraction, pageCount)
 
@@ -123,7 +123,7 @@ public class PagerState(
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         pagerState.scroll(scrollPriority, block)
     }
@@ -137,7 +137,7 @@ public class PagerState(
      */
     public suspend fun scrollToPage(
         page: Int,
-        @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f
+        @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f,
     ): Unit = pagerState.scrollToPage(page, pageOffsetFraction)
 
     /**
@@ -154,7 +154,7 @@ public class PagerState(
     public suspend fun animateScrollToPage(
         page: Int,
         @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f,
-        animationSpec: AnimationSpec<Float> = spring()
+        animationSpec: AnimationSpec<Float> = spring(),
     ) {
         pagerState.animateScrollToPage(page, pageOffsetFraction, animationSpec)
     }
@@ -184,7 +184,7 @@ public class PagerState(
                         currentPageOffsetFraction = it[1] as Float,
                         pageCount = { it[2] as Int },
                     )
-                }
+                },
             )
     }
 }
@@ -192,7 +192,7 @@ public class PagerState(
 internal class PagerStateImpl(
     currentPage: Int,
     currentPageOffsetFraction: Float,
-    updatedPageCount: () -> Int
+    updatedPageCount: () -> Int,
 ) : ComposePagerState(currentPage, currentPageOffsetFraction) {
     var pageCountState = mutableStateOf(updatedPageCount)
     override val pageCount: Int
@@ -206,16 +206,16 @@ internal class PagerStateImpl(
                     listOf(
                         it.currentPage,
                         (it.currentPageOffsetFraction).coerceIn(MinPageOffset, MaxPageOffset),
-                        it.pageCount
+                        it.pageCount,
                     )
                 },
                 restore = {
                     PagerStateImpl(
                         currentPage = it[0] as Int,
                         currentPageOffsetFraction = it[1] as Float,
-                        updatedPageCount = { it[2] as Int }
+                        updatedPageCount = { it[2] as Int },
                     )
-                }
+                },
             )
     }
 }

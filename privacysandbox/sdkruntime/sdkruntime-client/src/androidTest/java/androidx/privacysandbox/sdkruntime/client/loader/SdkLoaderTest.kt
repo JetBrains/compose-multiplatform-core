@@ -46,11 +46,7 @@ class SdkLoaderTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        sdkLoader =
-            SdkLoader.create(
-                context = context,
-                controllerFactory = NoOpFactory,
-            )
+        sdkLoader = SdkLoader.create(context = context, controllerFactory = NoOpFactory)
         testSdkConfig = TestSdkConfigs.CURRENT_WITH_RESOURCES
 
         // Clean extracted SDKs between tests
@@ -164,7 +160,7 @@ class SdkLoaderTest {
             SdkLoader.create(
                 context = context,
                 controllerFactory = NoOpFactory,
-                lowSpaceThreshold = Long.MAX_VALUE
+                lowSpaceThreshold = Long.MAX_VALUE,
             )
 
         assertThrows(LoadSdkCompatException::class.java) {
@@ -181,7 +177,7 @@ class SdkLoaderTest {
             SdkLoader.create(
                 context = ApplicationProvider.getApplicationContext(),
                 controllerFactory = NoOpFactory,
-                lowSpaceThreshold = Long.MAX_VALUE
+                lowSpaceThreshold = Long.MAX_VALUE,
             )
 
         val loadedSdk = sdkLoaderWithLowSpaceMode.loadSdk(testSdkConfig)

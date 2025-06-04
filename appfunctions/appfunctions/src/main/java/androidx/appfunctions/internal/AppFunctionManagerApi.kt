@@ -28,9 +28,7 @@ internal interface AppFunctionManagerApi {
      * @param request the app function details and the arguments.
      * @return the result of the attempt to execute the function.
      */
-    suspend fun executeAppFunction(
-        request: ExecuteAppFunctionRequest,
-    ): ExecuteAppFunctionResponse
+    suspend fun executeAppFunction(request: ExecuteAppFunctionRequest): ExecuteAppFunctionResponse
 
     /**
      * Checks if [functionId] in [packageName] is enabled.

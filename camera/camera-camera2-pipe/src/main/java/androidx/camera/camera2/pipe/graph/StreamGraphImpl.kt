@@ -69,7 +69,7 @@ constructor(
 
     override fun getOutputLatency(
         streamId: StreamId,
-        outputId: OutputId?
+        outputId: OutputId?,
     ): StreamGraph.OutputLatency? {
         val cameraController = cameraControllerProvider.get()
         val outputLatency = cameraController.getOutputLatency(streamId)
@@ -168,7 +168,7 @@ constructor(
                             outputConfig.dynamicRangeProfile,
                             outputConfig.streamUseCase,
                             outputConfig.deferredOutputType,
-                            outputConfig.streamUseHint
+                            outputConfig.streamUseHint,
                         )
                     outputStream
                 }
@@ -184,13 +184,8 @@ constructor(
             }
         }
         inputs =
-            graphConfig.input?.map {
-                InputStreamImpl(
-                    nextInputId(),
-                    it.maxImages,
-                    it.streamFormat,
-                )
-            } ?: emptyList()
+            graphConfig.input?.map { InputStreamImpl(nextInputId(), it.maxImages, it.streamFormat) }
+                ?: emptyList()
 
         val streamSortedByPreview = sortOutputsByPreviewStream(streamListBuilder)
         val streamSortedByVideo = sortOutputsByVideoStream(streamSortedByPreview)
@@ -243,7 +238,7 @@ constructor(
         override val dynamicRangeProfile: OutputStream.DynamicRangeProfile?,
         override val streamUseCase: OutputStream.StreamUseCase?,
         override val outputType: OutputStream.OutputType?,
-        override val streamUseHint: OutputStream.StreamUseHint?
+        override val streamUseHint: OutputStream.StreamUseHint?,
     ) : OutputStream {
         override lateinit var stream: CameraStream
 
@@ -253,7 +248,7 @@ constructor(
     private class InputStreamImpl(
         override val id: InputStreamId,
         override val maxImages: Int,
-        override val format: StreamFormat
+        override val format: StreamFormat,
     ) : InputStream
 
     interface SurfaceListener {
@@ -301,7 +296,7 @@ constructor(
 
     private fun computeIfDeferredStreamsAreSupported(
         cameraMetadata: CameraMetadata,
-        graphConfig: CameraGraph.Config
+        graphConfig: CameraGraph.Config,
     ): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             graphConfig.sessionMode == CameraGraph.OperatingMode.NORMAL &&

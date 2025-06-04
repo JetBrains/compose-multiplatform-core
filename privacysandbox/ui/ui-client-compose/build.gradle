@@ -35,7 +35,7 @@ dependencies {
     api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.12.0")
-    api("androidx.compose.ui:ui:1.8.0")
+    api("androidx.compose.ui:ui:1.8.2")
     implementation(project(":privacysandbox:ui:ui-client"))
 
     androidTestImplementation(project(":internal-testutils-runtime"))

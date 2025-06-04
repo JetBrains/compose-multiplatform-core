@@ -39,11 +39,13 @@ import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
 import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
+import androidx.xr.runtime.internal.PerceivedResolutionResult as RtPerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.Space as RtSpace
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
-import androidx.xr.runtime.internal.SystemSpaceEntity as RtSystemSpaceEntity
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntimeFactory
@@ -233,10 +235,7 @@ class EntityTest {
         override fun <T : RtComponent> getComponentsOfType(type: Class<out T>): List<T> =
             emptyList()
 
-        override fun setOnSpaceUpdatedListener(
-            listener: RtSystemSpaceEntity.OnSpaceUpdatedListener?,
-            executor: Executor?,
-        ) {}
+        override fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?) {}
     }
 
     private val testActivitySpace = TestRtActivitySpace()
@@ -301,23 +300,23 @@ class EntityTest {
                 adapter = mockPlatformAdapter,
                 entityManager = entityManager,
                 view = TextView(activity),
-                pixelDimensions = PixelDimensions(720, 480),
+                pixelDimensions = IntSize2d(720, 480),
                 name = "test",
             )
         anchorEntity =
             AnchorEntity.create(
                 mockPlatformAdapter,
                 entityManager,
-                Dimensions(),
-                PlaneType.ANY,
-                PlaneSemantic.ANY,
+                FloatSize3d(),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
                 10.seconds.toJavaDuration(),
             )
         activityPanelEntity =
             ActivityPanelEntity.create(
                 mockPlatformAdapter,
                 entityManager = entityManager,
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "test",
                 activity,
             )
@@ -340,9 +339,9 @@ class EntityTest {
             AnchorEntity.create(
                 mockPlatformAdapter,
                 entityManager,
-                Dimensions(),
-                PlaneType.ANY,
-                PlaneSemantic.ANY,
+                FloatSize3d(),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
             )
 
         assertThat(anchorEntity).isNotNull()
@@ -353,7 +352,7 @@ class EntityTest {
         session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
         assertFailsWith<IllegalStateException> {
-            AnchorEntity.create(session, Dimensions(), PlaneType.ANY, PlaneSemantic.ANY)
+            AnchorEntity.create(session, FloatSize3d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
         }
     }
 
@@ -479,10 +478,10 @@ class EntityTest {
         whenever(mockActivityPanelEntity.activitySpacePose).thenReturn(Pose())
         val pose = Pose.Identity
 
-        assertThat(panelEntity.getActivitySpacePose()).isEqualTo(pose)
-        assertThat(gltfModelEntity.getActivitySpacePose()).isEqualTo(pose)
-        assertThat(anchorEntity.getActivitySpacePose()).isEqualTo(pose)
-        assertThat(activityPanelEntity.getActivitySpacePose()).isEqualTo(pose)
+        assertThat(panelEntity.activitySpacePose).isEqualTo(pose)
+        assertThat(gltfModelEntity.activitySpacePose).isEqualTo(pose)
+        assertThat(anchorEntity.activitySpacePose).isEqualTo(pose)
+        assertThat(activityPanelEntity.activitySpacePose).isEqualTo(pose)
 
         verify(mockPanelEntityImpl).activitySpacePose
         verify(mockGltfModelEntityImpl).activitySpacePose
@@ -638,7 +637,7 @@ class EntityTest {
 
     @Test
     fun allPanelEntitySetSizeInPixels_callsRuntimeEntityImplsetSizeInPixels() {
-        val dimensions = PixelDimensions(320, 240)
+        val dimensions = IntSize2d(320, 240)
         panelEntity.setSizeInPixels(dimensions)
         activityPanelEntity.setSizeInPixels(dimensions)
 
@@ -649,7 +648,7 @@ class EntityTest {
     @Test
     fun allPanelEntityGetSizeInPixels_callsRuntimeEntityImplgetSizeInPixels() {
         val pixelDimensions = RtPixelDimensions(320, 240)
-        val expectedPixelDimensions = pixelDimensions.toPixelDimensions()
+        val expectedPixelDimensions = pixelDimensions.toIntSize2d()
 
         whenever(mockPanelEntityImpl.sizeInPixels).thenReturn(pixelDimensions)
         whenever(mockActivityPanelEntity.sizeInPixels).thenReturn(pixelDimensions)
@@ -659,6 +658,46 @@ class EntityTest {
 
         verify(mockPanelEntityImpl).sizeInPixels
         verify(mockActivityPanelEntity).sizeInPixels
+    }
+
+    @Test
+    fun panelEntityGetPerceivedResolution_callsRuntimeAndConverts() {
+        // Arrange
+        val runtimePixelDimensions = RtPixelDimensions(100, 200)
+        val runtimeResult = RtPerceivedResolutionResult.Success(runtimePixelDimensions)
+        whenever(mockPanelEntityImpl.getPerceivedResolution()).thenReturn(runtimeResult)
+
+        val result = panelEntity.getPerceivedResolution()
+        assertThat(result).isInstanceOf(PerceivedResolutionResult.Success::class.java)
+        val successResult = result as PerceivedResolutionResult.Success
+        assertThat(successResult.perceivedResolution.width).isEqualTo(100)
+        assertThat(successResult.perceivedResolution.height).isEqualTo(200)
+        verify(mockPanelEntityImpl).getPerceivedResolution()
+
+        val runtimeResult2 = RtPerceivedResolutionResult.InvalidCameraView()
+        whenever(mockPanelEntityImpl.getPerceivedResolution()).thenReturn(runtimeResult2)
+        assertThat(panelEntity.getPerceivedResolution())
+            .isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
+
+        val runtimeResult3 = RtPerceivedResolutionResult.EntityTooClose()
+        whenever(mockPanelEntityImpl.getPerceivedResolution()).thenReturn(runtimeResult3)
+        assertThat(panelEntity.getPerceivedResolution())
+            .isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
+    }
+
+    @Test
+    fun activityPanelEntityGetPerceivedResolution_callsRuntimeAndConverts() {
+        // Arrange
+        val runtimePixelDimensions = RtPixelDimensions(100, 200)
+        val runtimeResult = RtPerceivedResolutionResult.Success(runtimePixelDimensions)
+        whenever(mockActivityPanelEntity.getPerceivedResolution()).thenReturn(runtimeResult)
+
+        val result = activityPanelEntity.getPerceivedResolution()
+        assertThat(result).isInstanceOf(PerceivedResolutionResult.Success::class.java)
+        val successResult = result as PerceivedResolutionResult.Success
+        assertThat(successResult.perceivedResolution.width).isEqualTo(100)
+        assertThat(successResult.perceivedResolution.height).isEqualTo(200)
+        verify(mockActivityPanelEntity).getPerceivedResolution()
     }
 
     @Test
@@ -702,7 +741,7 @@ class EntityTest {
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
         var called = false
         val boundsChangedListener =
-            Consumer<Dimensions> { newBounds ->
+            Consumer<FloatSize3d> { newBounds ->
                 assertThat(newBounds.width).isEqualTo(0.3f)
                 assertThat(newBounds.height).isEqualTo(0.2f)
                 assertThat(newBounds.depth).isEqualTo(0.1f)
@@ -726,7 +765,7 @@ class EntityTest {
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
 
         activitySpace.setOnSpaceUpdatedListener(null)
-        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(any(), eq(null))
+        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
     }
 
     @Test
@@ -736,10 +775,10 @@ class EntityTest {
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
 
         var listenerCalled = false
-        val captor = argumentCaptor<RtSystemSpaceEntity.OnSpaceUpdatedListener>()
+        val captor = argumentCaptor<Runnable>()
         activitySpace.setOnSpaceUpdatedListener({ listenerCalled = true }, directExecutor())
         verify(mockRtActivitySpace).setOnSpaceUpdatedListener(captor.capture(), any())
-        captor.firstValue.onSpaceUpdated()
+        captor.firstValue.run()
         assertThat(listenerCalled).isTrue()
     }
 
@@ -752,12 +791,12 @@ class EntityTest {
     @Test
     fun setOnSpaceUpdatedListener_anchorEntity_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
         var listenerCalled = false
-        val captor = argumentCaptor<RtSystemSpaceEntity.OnSpaceUpdatedListener>()
+        val captor = argumentCaptor<Runnable>()
         anchorEntity.setOnSpaceUpdatedListener({ listenerCalled = true }, directExecutor())
 
         verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(captor.capture(), any())
         assertThat(listenerCalled).isFalse()
-        captor.firstValue.onSpaceUpdated()
+        captor.firstValue.run()
         assertThat(listenerCalled).isTrue()
     }
 
@@ -815,7 +854,7 @@ class EntityTest {
         val entity = ContentlessEntity.create(session, "test")
         val pose = Pose.Identity
 
-        assertThat(entity.getActivitySpacePose()).isEqualTo(pose)
+        assertThat(entity.activitySpacePose).isEqualTo(pose)
         verify(mockContentlessEntity).activitySpacePose
     }
 
@@ -1146,6 +1185,21 @@ class EntityTest {
     }
 
     @Test
+    fun surfaceEntity_getPerceivedResolution_callsRuntimeAndConverts() {
+        // Arrange
+        val runtimePixelDimensions = RtPixelDimensions(100, 200)
+        val runtimeResult = RtPerceivedResolutionResult.Success(runtimePixelDimensions)
+        whenever(mockSurfaceEntity.getPerceivedResolution()).thenReturn(runtimeResult)
+
+        val scenecoreResult = surfaceEntity.getPerceivedResolution()
+        verify(mockSurfaceEntity).getPerceivedResolution()
+        assertThat(scenecoreResult).isInstanceOf(PerceivedResolutionResult.Success::class.java)
+        val successResult = scenecoreResult as PerceivedResolutionResult.Success
+        assertThat(successResult.perceivedResolution.width).isEqualTo(100)
+        assertThat(successResult.perceivedResolution.height).isEqualTo(200)
+    }
+
+    @Test
     fun setCornerRadius() {
         val radius = 2.0f
         panelEntity.setCornerRadius(radius)
@@ -1190,7 +1244,7 @@ class EntityTest {
             )
             .thenReturn(mock())
         @Suppress("UNUSED_VARIABLE")
-        val unused = PanelEntity.create(entitySession, view, PixelDimensions(720, 480), "test")
+        val unused = PanelEntity.create(entitySession, view, IntSize2d(720, 480), "test")
 
         verify(mockEntityPlatformAdapter)
             .createPanelEntity(
@@ -1209,7 +1263,12 @@ class EntityTest {
             .thenReturn(mockAnchorEntityImpl)
         @Suppress("UNUSED_VARIABLE")
         val unused =
-            AnchorEntity.create(entitySession, Dimensions(), PlaneType.ANY, PlaneSemantic.ANY)
+            AnchorEntity.create(
+                entitySession,
+                FloatSize3d(),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
+            )
 
         verify(mockEntityPlatformAdapter).createAnchorEntity(any(), any(), any(), anyOrNull())
     }
@@ -1222,7 +1281,7 @@ class EntityTest {
                     any(),
                     any(),
                     any(),
-                    any()
+                    any(),
                 )
             )
             .thenReturn(mock())

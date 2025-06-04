@@ -30,7 +30,7 @@ import com.google.devtools.ksp.symbol.KSTypeReference
  */
 class AnnotatedParameterizedAppFunctionSerializable(
     private val appFunctionSerializableClass: KSClassDeclaration,
-    private val arguments: List<KSTypeArgument>
+    private val arguments: List<KSTypeArgument>,
 ) : AnnotatedAppFunctionSerializable(appFunctionSerializableClass) {
     /** A map of type parameter name to its parameterized type. */
     val typeParameterMap: Map<String, KSTypeReference> = buildMap {
@@ -40,7 +40,7 @@ class AnnotatedParameterizedAppFunctionSerializable(
                 arguments.getOrNull(index)?.type
                     ?: throw ProcessingException(
                         "Missing type argument for $typeParameterName",
-                        typeParameter
+                        typeParameter,
                     )
             this[typeParameterName] = actualType
         }
@@ -87,11 +87,11 @@ class AnnotatedParameterizedAppFunctionSerializable(
                     typeParameterMap[valueTypeDeclaration.name.asString()]
                         ?: throw ProcessingException(
                             "Unable to resolve actual type",
-                            valueParameter
+                            valueParameter,
                         )
                 AppFunctionPropertyDeclaration(
                     checkNotNull(valueParameter.name).asString(),
-                    actualType
+                    actualType,
                 )
             } else {
                 AppFunctionPropertyDeclaration(valueParameter)

@@ -40,7 +40,7 @@ public fun LinearProgressIndicator(
     progress: Float,
     modifier: GlanceModifier = GlanceModifier,
     color: ColorProvider = ProgressIndicatorDefaults.IndicatorColorProvider,
-    backgroundColor: ColorProvider = ProgressIndicatorDefaults.BackgroundColorProvider
+    backgroundColor: ColorProvider = ProgressIndicatorDefaults.BackgroundColorProvider,
 ) {
     GlanceNode(
         factory = ::EmittableLinearProgressIndicator,
@@ -49,7 +49,7 @@ public fun LinearProgressIndicator(
             this.set(progress) { this.progress = it }
             this.set(color) { this.color = it }
             this.set(backgroundColor) { this.backgroundColor = it }
-        }
+        },
     )
 }
 
@@ -65,7 +65,7 @@ public fun LinearProgressIndicator(
 public fun LinearProgressIndicator(
     modifier: GlanceModifier = GlanceModifier,
     color: ColorProvider = ProgressIndicatorDefaults.IndicatorColorProvider,
-    backgroundColor: ColorProvider = ProgressIndicatorDefaults.BackgroundColorProvider
+    backgroundColor: ColorProvider = ProgressIndicatorDefaults.BackgroundColorProvider,
 ) {
     GlanceNode(
         factory = ::EmittableLinearProgressIndicator,
@@ -74,7 +74,7 @@ public fun LinearProgressIndicator(
             this.set(true) { this.indeterminate = it }
             this.set(color) { this.color = it }
             this.set(backgroundColor) { this.backgroundColor = it }
-        }
+        },
     )
 }
 

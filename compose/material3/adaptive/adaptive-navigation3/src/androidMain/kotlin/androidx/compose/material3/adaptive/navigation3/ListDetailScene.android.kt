@@ -104,7 +104,7 @@ internal class ListDetailScene<T : Any>(
                 // Back event leaves the scaffold
                 return OnBackResult(
                     previousScaffoldValue = null,
-                    previousEntries = allEntries.subList(0, index + 1).toList()
+                    previousEntries = allEntries.subList(0, index + 1).toList(),
                 )
             }
             if (index == prevDestAbsoluteIndex) {
@@ -115,16 +115,13 @@ internal class ListDetailScene<T : Any>(
                     )
                 return OnBackResult(
                     previousScaffoldValue = previousScaffoldValue,
-                    previousEntries = allEntries.subList(0, index + 1).toList()
+                    previousEntries = allEntries.subList(0, index + 1).toList(),
                 )
             }
         }
 
         // No previous entry in backstack
-        return OnBackResult(
-            previousScaffoldValue = null,
-            previousEntries = emptyList(),
-        )
+        return OnBackResult(previousScaffoldValue = null, previousEntries = emptyList())
     }
 
     private fun getPreviousDestinationIndex(): Int {
@@ -142,7 +139,7 @@ internal class ListDetailScene<T : Any>(
                     val previousValue =
                         calculateScaffoldValue(
                             destinationHistory =
-                                entriesAsNavItems.subList(0, previousDestinationIndex + 1),
+                                entriesAsNavItems.subList(0, previousDestinationIndex + 1)
                         )
                     if (previousValue != currentScaffoldValue) {
                         return previousDestinationIndex
@@ -165,7 +162,7 @@ internal class ListDetailScene<T : Any>(
                     val previousValue =
                         calculateScaffoldValue(
                             destinationHistory =
-                                entriesAsNavItems.subList(0, previousDestinationIndex + 1),
+                                entriesAsNavItems.subList(0, previousDestinationIndex + 1)
                         )
                     if (previousValue != currentScaffoldValue) {
                         return previousDestinationIndex
@@ -243,10 +240,7 @@ private val <T : Any> NavEntry<T>.paneRole: ThreePaneScaffoldRole?
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private fun <T : Any> NavEntry<T>.toNavItem(): ThreePaneScaffoldDestinationItem<T>? {
     val role = this.paneRole ?: return null
-    return ThreePaneScaffoldDestinationItem(
-        pane = role,
-        contentKey = this.key,
-    )
+    return ThreePaneScaffoldDestinationItem(pane = role, contentKey = this.key)
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

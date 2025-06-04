@@ -43,7 +43,7 @@ public class DynamicNavGraphBuilderTest {
             addNavigator(
                 DynamicGraphNavigator(
                     this,
-                    AndroidTestDynamicInstallManager(ApplicationProvider.getApplicationContext())
+                    AndroidTestDynamicInstallManager(ApplicationProvider.getApplicationContext()),
                 )
             )
             addNavigator(NoOpNavigator())
@@ -254,7 +254,7 @@ private const val MODULE_NAME = "myModule"
 @Suppress("DEPRECATION")
 public fun DynamicNavGraphBuilder.navDestination(
     @IdRes id: Int,
-    builder: NavDestinationBuilder<NavDestination>.() -> Unit
+    builder: NavDestinationBuilder<NavDestination>.() -> Unit,
 ): Unit = destination(NavDestinationBuilder(provider[NoOpNavigator::class], id).apply(builder))
 
 /**
@@ -263,7 +263,7 @@ public fun DynamicNavGraphBuilder.navDestination(
  */
 public fun DynamicNavGraphBuilder.navDestination(
     route: String,
-    builder: NavDestinationBuilder<NavDestination>.() -> Unit
+    builder: NavDestinationBuilder<NavDestination>.() -> Unit,
 ): Unit = destination(NavDestinationBuilder(provider[NoOpNavigator::class], route).apply(builder))
 
 /**

@@ -130,7 +130,7 @@ class ClientVersionBackwardCompatibilityTest(private val config: CameraXExtensio
 
     private suspend fun assertPreviewAndImageCaptureWorking(
         clientVersion: String,
-        verifyPostview: Boolean = false
+        verifyPostview: Boolean = false,
     ) {
         extensionsManager =
             ExtensionsManager.getInstanceAsync(context, cameraProvider, clientVersion)[
@@ -139,7 +139,7 @@ class ClientVersionBackwardCompatibilityTest(private val config: CameraXExtensio
         extensionCameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(
                 baseCameraSelector,
-                config.extensionMode
+                config.extensionMode,
             )
 
         val expectCaptureProcessProgress =
@@ -170,7 +170,7 @@ class ClientVersionBackwardCompatibilityTest(private val config: CameraXExtensio
                 lifecycleOwner,
                 extensionCameraSelector,
                 preview,
-                imageCapture
+                imageCapture,
             )
         }
 
@@ -189,7 +189,7 @@ class ClientVersionBackwardCompatibilityTest(private val config: CameraXExtensio
                 override fun onPostviewBitmapAvailable(bitmap: Bitmap) {
                     postviewLatch.countDown()
                 }
-            }
+            },
         )
         if (expectPostview) {
             assertThat(postviewLatch.await(10, TimeUnit.SECONDS)).isTrue()

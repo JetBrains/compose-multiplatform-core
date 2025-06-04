@@ -29,7 +29,7 @@ internal actual fun EmptyPointerKeyboardModifiers(): PointerKeyboardModifiers =
 actual data class PointerEvent
 internal actual constructor(
     actual val changes: List<PointerInputChange>,
-    internal val internalPointerEvent: InternalPointerEvent?
+    internal val internalPointerEvent: InternalPointerEvent?,
 ) {
     actual val buttons: PointerButtons
         get() = implementedInJetBrainsFork()

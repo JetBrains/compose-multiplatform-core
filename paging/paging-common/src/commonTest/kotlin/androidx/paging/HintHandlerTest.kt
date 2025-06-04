@@ -57,7 +57,7 @@ class HintHandlerTest {
                     presentedItemsAfter = 0,
                     presentedItemsBefore = 0,
                     originalPageOffsetFirst = 0,
-                    originalPageOffsetLast = 0
+                    originalPageOffsetLast = 0,
                 )
                 .also(hintHandler::processHint)
         hintHandler.assertValues(prepend = initialHint, append = initialHint, lastAccessHint = null)
@@ -70,14 +70,14 @@ class HintHandlerTest {
                     presentedItemsBefore = 100,
                     presentedItemsAfter = 100,
                     originalPageOffsetLast = 0,
-                    originalPageOffsetFirst = 0
+                    originalPageOffsetFirst = 0,
                 )
                 .also(hintHandler::processHint)
 
         hintHandler.assertValues(
             prepend = accessHint1,
             append = accessHint1,
-            lastAccessHint = accessHint1
+            lastAccessHint = accessHint1,
         )
 
         // new access that only affects prepend
@@ -88,32 +88,24 @@ class HintHandlerTest {
         hintHandler.assertValues(
             prepend = accessHintPrepend,
             append = accessHint1,
-            lastAccessHint = accessHintPrepend
+            lastAccessHint = accessHintPrepend,
         )
 
         // new access hints that should be ignored
         val ignoredPrependHint =
-            accessHintPrepend
-                .copy(
-                    presentedItemsBefore = 90,
-                )
-                .also(hintHandler::processHint)
+            accessHintPrepend.copy(presentedItemsBefore = 90).also(hintHandler::processHint)
         hintHandler.assertValues(
             prepend = accessHintPrepend,
             append = accessHint1,
-            lastAccessHint = ignoredPrependHint
+            lastAccessHint = ignoredPrependHint,
         )
 
         val accessHintAppend =
-            accessHintPrepend
-                .copy(
-                    presentedItemsAfter = 80,
-                )
-                .also(hintHandler::processHint)
+            accessHintPrepend.copy(presentedItemsAfter = 80).also(hintHandler::processHint)
         hintHandler.assertValues(
             prepend = accessHintPrepend,
             append = accessHintAppend,
-            lastAccessHint = accessHintAppend
+            lastAccessHint = accessHintAppend,
         )
 
         // more ignored access hints
@@ -121,13 +113,13 @@ class HintHandlerTest {
         hintHandler.assertValues(
             prepend = accessHintPrepend,
             append = accessHintAppend,
-            lastAccessHint = accessHint1
+            lastAccessHint = accessHint1,
         )
         hintHandler.processHint(initialHint)
         hintHandler.assertValues(
             prepend = accessHintPrepend,
             append = accessHintAppend,
-            lastAccessHint = accessHint1
+            lastAccessHint = accessHint1,
         )
 
         // try changing original page offsets
@@ -136,14 +128,14 @@ class HintHandlerTest {
         hintHandler.assertValues(
             prepend = newFirstOffset,
             append = newFirstOffset,
-            lastAccessHint = newFirstOffset
+            lastAccessHint = newFirstOffset,
         )
         val newLastOffset =
             newFirstOffset.copy(originalPageOffsetLast = 5).also(hintHandler::processHint)
         hintHandler.assertValues(
             prepend = newLastOffset,
             append = newLastOffset,
-            lastAccessHint = newLastOffset
+            lastAccessHint = newLastOffset,
         )
     }
 
@@ -156,7 +148,7 @@ class HintHandlerTest {
                 presentedItemsBefore = 10,
                 presentedItemsAfter = 10,
                 originalPageOffsetFirst = 0,
-                originalPageOffsetLast = 0
+                originalPageOffsetLast = 0,
             )
         hintHandler.processHint(initial)
 
@@ -169,7 +161,7 @@ class HintHandlerTest {
         hintHandler.assertValues(
             prepend = prependReset,
             append = appendReset,
-            lastAccessHint = initial
+            lastAccessHint = initial,
         )
     }
 
@@ -215,7 +207,7 @@ class HintHandlerTest {
     private fun HintHandler.assertValues(
         prepend: ViewportHint,
         append: ViewportHint,
-        lastAccessHint: ViewportHint.Access?
+        lastAccessHint: ViewportHint.Access?,
     ) {
         assertThat(currentValue(PREPEND)).isEqualTo(prepend)
         assertThat(currentValue(APPEND)).isEqualTo(append)
@@ -262,7 +254,7 @@ class HintHandlerTest {
         presentedItemsBefore: Int = this@copy.presentedItemsBefore,
         presentedItemsAfter: Int = this@copy.presentedItemsAfter,
         originalPageOffsetFirst: Int = this@copy.originalPageOffsetFirst,
-        originalPageOffsetLast: Int = this@copy.originalPageOffsetLast
+        originalPageOffsetLast: Int = this@copy.originalPageOffsetLast,
     ) =
         ViewportHint.Access(
             pageOffset = pageOffset,
@@ -270,6 +262,6 @@ class HintHandlerTest {
             presentedItemsBefore = presentedItemsBefore,
             presentedItemsAfter = presentedItemsAfter,
             originalPageOffsetFirst = originalPageOffsetFirst,
-            originalPageOffsetLast = originalPageOffsetLast
+            originalPageOffsetLast = originalPageOffsetLast,
         )
 }

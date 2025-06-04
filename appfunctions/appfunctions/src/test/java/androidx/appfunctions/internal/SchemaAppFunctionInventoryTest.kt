@@ -53,7 +53,7 @@ class SchemaAppFunctionInventoryTest {
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap())
+                components = AppFunctionComponentsMetadata(emptyMap()),
             )
         val schemaInventory =
             object : SchemaAppFunctionInventory() {
@@ -78,7 +78,7 @@ class SchemaAppFunctionInventoryTest {
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap())
+                components = AppFunctionComponentsMetadata(emptyMap()),
             )
         val schemaInventory =
             object : SchemaAppFunctionInventory() {

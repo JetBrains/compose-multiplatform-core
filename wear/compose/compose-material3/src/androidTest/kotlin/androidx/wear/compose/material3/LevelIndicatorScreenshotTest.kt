@@ -93,7 +93,7 @@ class LevelIndicatorScreenshotTest {
             value = 25f,
             strokeWidth = LevelIndicatorDefaults.StrokeWidth * 2,
             shape = shape,
-            testName = testName
+            testName = testName,
         )
 
     @Test
@@ -102,7 +102,7 @@ class LevelIndicatorScreenshotTest {
             value = 25f,
             sweepAngle = LevelIndicatorDefaults.SweepAngle / 2f,
             shape = shape,
-            testName = testName
+            testName = testName,
         )
 
     private fun verifyScreenshot(
@@ -133,7 +133,7 @@ class LevelIndicatorScreenshotTest {
                 }
             CompositionLocalProvider(
                 LocalLayoutDirection provides actualLayoutDirection,
-                LocalConfiguration provides updatedConfig
+                LocalConfiguration provides updatedConfig,
             ) {
                 Box(
                     modifier =

@@ -47,7 +47,7 @@ internal fun KSTypeReference?.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSTypeReference?.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     return if (this == null) {
         ERROR_KTYPE_NAME
@@ -61,7 +61,7 @@ internal fun KSDeclaration.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSDeclaration.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     if (this is KSTypeAlias) {
         return this.type.asKTypeName(resolver, typeArgumentTypeLookup)
@@ -96,7 +96,7 @@ private fun KSDeclaration.asKTypeName(
 
 private fun KSTypeParameter.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     typeArgumentTypeLookup[name]?.let {
         return it
@@ -118,7 +118,7 @@ internal fun KSTypeArgument.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSTypeArgument.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     fun resolveTypeName() = type.asKTypeName(resolver, typeArgumentTypeLookup)
     return when (variance) {
@@ -141,7 +141,7 @@ internal fun KSType.asKTypeName(resolver: Resolver): KTypeName =
 @OptIn(KspExperimental::class)
 private fun KSType.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     if (declaration is KSTypeAlias) {
         return replaceTypeAliases(resolver).asKTypeName(resolver, typeArgumentTypeLookup)
@@ -154,7 +154,7 @@ private fun KSType.asKTypeName(
                 this.innerArguments.map { typeArg ->
                     typeArg.asKTypeName(
                         resolver = resolver,
-                        typeArgumentTypeLookup = typeArgumentTypeLookup
+                        typeArgumentTypeLookup = typeArgumentTypeLookup,
                     )
                 }
             val outerType = this.outerType
@@ -192,7 +192,7 @@ private val typeVarNameCompanionInstance by lazy {
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
                 .trimIndent(),
-            ex
+            ex,
         )
     }
 }
@@ -220,7 +220,7 @@ private val typeVarNameFactoryMethod by lazy {
             Room couldn't find the method it is looking for in KotlinPoet.
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
-                .trimIndent(),
+                .trimIndent()
         )
     }
 }
@@ -231,7 +231,7 @@ private val typeVarNameFactoryMethod by lazy {
  */
 private fun createModifiableTypeVariableName(
     name: String,
-    bounds: List<KTypeName>
+    bounds: List<KTypeName>,
 ): KTypeVariableName =
     try {
         KTypeVariableNameFactory.newInstance(name, bounds)

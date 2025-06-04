@@ -22,7 +22,6 @@ package androidx.navigationevent
  * This class maintains its own [isEnabled] state and will only receive callbacks when enabled.
  *
  * @param isEnabled The default enabled state for this callback.
- * @param priority The priority this callback should be registered with.
  * @see NavigationEventDispatcher
  */
 public abstract class NavigationEventCallback(
@@ -30,9 +29,7 @@ public abstract class NavigationEventCallback(
      * The enabled state of the callback. Only when this callback is enabled will it receive
      * callbacks to [onEventCompleted].
      */
-    isEnabled: Boolean,
-    /** The priority of this callback. */
-    public val priority: NavigationEventPriority = NavigationEventPriority.Default
+    isEnabled: Boolean
 ) {
 
     public var isEnabled: Boolean = isEnabled
@@ -66,7 +63,9 @@ public abstract class NavigationEventCallback(
      * event registrations or resources remain active.
      */
     public fun remove() {
-        for (closeable in closeables) {
+        // Iterate over a copy of the closeables list to prevent `ConcurrentModificationException`,
+        // as closing a closeable might lead to its removal from the original list during iteration.
+        for (closeable in closeables.toList()) {
             closeable.close()
         }
         // Don't clear `closeables`; each closeable may remove itself via `removeCloseable`.

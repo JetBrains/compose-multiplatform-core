@@ -58,7 +58,7 @@ object SwipeToDismissBoxBenchmark : MacrobenchmarkScreen {
                 } else {
                     Box(
                         modifier =
-                            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary),
+                            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary)
                     )
                 }
             }

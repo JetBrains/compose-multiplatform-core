@@ -42,7 +42,7 @@ private const val NoActiveChild = "ActiveParent must have a focusedChild"
 
 internal fun FocusTargetNode.oneDimensionalFocusSearch(
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean =
     when (direction) {
         Next -> forwardFocusSearch(onFound)
@@ -107,7 +107,7 @@ private fun FocusTargetNode.backwardFocusSearch(onFound: (FocusTargetNode) -> Bo
 private fun FocusTargetNode.generateAndSearchChildren(
     focusedItem: FocusTargetNode,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
     // Search among the currently available children.
     if (searchChildren(focusedItem, direction, onFound)) {
@@ -140,7 +140,7 @@ private fun FocusTargetNode.generateAndSearchChildren(
 private fun FocusTargetNode.searchChildren(
     focusedItem: FocusTargetNode,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
     check(focusState == ActiveParent) {
         "This function should only be used within a parent that has focus."

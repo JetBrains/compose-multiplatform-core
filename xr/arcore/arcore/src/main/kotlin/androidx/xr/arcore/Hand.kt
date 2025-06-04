@@ -118,7 +118,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
 
         private class JointsMap(
             val trackingState: TrackingState,
-            val handJointsBuffer: FloatBuffer
+            val handJointsBuffer: FloatBuffer,
         ) : Map<HandJointType, Pose> {
             override val entries: Set<Map.Entry<HandJointType, Pose>>
                 get() =

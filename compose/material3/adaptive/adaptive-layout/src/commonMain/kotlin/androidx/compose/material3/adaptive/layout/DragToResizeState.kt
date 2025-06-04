@@ -57,13 +57,13 @@ import kotlinx.coroutines.coroutineScope
 fun rememberDragToResizeState(
     dockedEdge: DockedEdge,
     minSize: Dp = Dp.Unspecified,
-    maxSize: Dp = Dp.Unspecified
+    maxSize: Dp = Dp.Unspecified,
 ): DragToResizeState {
     val layoutDirection = LocalLayoutDirection.current
     val density = LocalDensity.current
     return rememberSaveable(
             dockedEdge,
-            saver = DragToResizeState.Saver(dockedEdge, layoutDirection)
+            saver = DragToResizeState.Saver(dockedEdge, layoutDirection),
         ) {
             DragToResizeState(dockedEdge, layoutDirection)
         }
@@ -77,7 +77,7 @@ fun rememberDragToResizeState(
 
 private fun DragToResizeState(
     dockedEdge: DockedEdge,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
 ): DragToResizeState =
     when (dockedEdge) {
         DockedEdge.Top -> DragToResizeState.Top()
@@ -116,13 +116,13 @@ abstract class DragToResizeState private constructor() : DraggableState {
     internal open fun getDraggedWidth(
         measuringWidth: Int,
         defaultMinWidth: Int,
-        scaffoldWidth: Int
+        scaffoldWidth: Int,
     ) = measuringWidth
 
     internal open fun getDraggedHeight(
         measuringHeight: Int,
         defaultMinHeight: Int,
-        scaffoldHeight: Int
+        scaffoldHeight: Int,
     ) = measuringHeight
 
     internal abstract val sizeRange: ClosedFloatingPointRange<Float>
@@ -166,7 +166,7 @@ abstract class DragToResizeState private constructor() : DraggableState {
         override fun getDraggedWidth(
             measuringWidth: Int,
             defaultMinWidth: Int,
-            scaffoldWidth: Int
+            scaffoldWidth: Int,
         ): Int {
             val minWidth = if (minSize == Int.MIN_VALUE) defaultMinWidth else minSize
             this.widthRange = (minWidth..min(maxSize, scaffoldWidth)).toFloatRange()
@@ -188,7 +188,7 @@ abstract class DragToResizeState private constructor() : DraggableState {
         override fun getDraggedHeight(
             measuringHeight: Int,
             defaultMinHeight: Int,
-            scaffoldHeight: Int
+            scaffoldHeight: Int,
         ): Int {
             val minHeight = if (minSize == Int.MIN_VALUE) defaultMinHeight else minSize
             this.heightRange = (minHeight..min(maxSize, scaffoldHeight)).toFloatRange()
@@ -216,7 +216,7 @@ abstract class DragToResizeState private constructor() : DraggableState {
     companion object {
         internal fun Saver(
             dockedEdge: DockedEdge,
-            layoutDirection: LayoutDirection
+            layoutDirection: LayoutDirection,
         ): Saver<DragToResizeState, *> =
             Saver(
                 save = {
@@ -236,7 +236,7 @@ abstract class DragToResizeState private constructor() : DraggableState {
                         state.widthRange = (it[2] as Float)..(it[3] as Float)
                         state.heightRange = (it[4] as Float)..(it[5] as Float)
                     }
-                }
+                },
             )
     }
 }
@@ -262,7 +262,7 @@ enum class DockedEdge {
     /** The start edge of the pane is fixed, and resizing happens by moving the end edge. */
     Start,
     /** The end edge of the pane is fixed, and resizing happens by moving the start edge. */
-    End
+    End,
 }
 
 private fun IntRange.toFloatRange() = first.toFloat()..last.toFloat()

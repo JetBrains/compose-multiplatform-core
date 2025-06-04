@@ -16,6 +16,8 @@
 
 package androidx.credentials
 
+import android.os.Bundle
+import androidx.credentials.internal.FrameworkClassParsingException
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Test
@@ -24,45 +26,139 @@ import org.junit.Test
 class CreateDigitalCredentialRequestTest {
 
     @Test
-    fun constructor_emptyJson_throws() {
+    fun createFrom_emptyJson_throws() {
         Assert.assertThrows(
             "requestJson must not be empty, and must be a valid JSON",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
-            CreateDigitalCredentialRequest(requestJson = "")
+            CreateDigitalCredentialRequest.createFrom(
+                Bundle().apply {
+                    putString(CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON, "")
+                },
+                "",
+                Bundle(),
+            )
         }
     }
 
     @Test
-    fun constructor_invalidJson_throws() {
+    fun createFrom_invalidJson_throws() {
         Assert.assertThrows(
             "requestJson must not be empty, and must be a valid JSON",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
-            CreateDigitalCredentialRequest(requestJson = "dsfliuh4akdsjhbf")
+            CreateDigitalCredentialRequest.createFrom(
+                Bundle().apply {
+                    putString(
+                        CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON,
+                        "dsfliuh4akdsjhbf",
+                    )
+                },
+                "",
+                Bundle(),
+            )
         }
     }
 
     @Test
-    fun constructor_valid() {
+    fun createFrom_valid() {
         val json = "{key: value}"
-
-        val request = CreateDigitalCredentialRequest(json)
+        val origin = "origin"
+        val request =
+            CreateDigitalCredentialRequest.createFrom(
+                Bundle().apply {
+                    putString(CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON, json)
+                },
+                origin,
+                Bundle(),
+            )
 
         assertThat(request.type).isEqualTo(DigitalCredential.TYPE_DIGITAL_CREDENTIAL)
         assertThat(request.requestJson).isEqualTo(json)
-        assertThat(request.credentialData.getString("androidx.credentials.BUNDLE_KEY_REQUEST_JSON"))
-            .isEqualTo(json)
-        assertThat(request.displayInfo.userId).isEqualTo("unused")
         assertThat(
-                request.candidateQueryData.getBoolean(
-                    "androidx.credentials.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED"
+                request.credentialData.getString(
+                    CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON
                 )
             )
-            .isFalse()
+            .isEqualTo(json)
+        assertThat(request.displayInfo.userId)
+            .isEqualTo(CreateDigitalCredentialRequest.UNUSED_USER_ID)
         assertThat(request.isSystemProviderRequired).isFalse()
         assertThat(request.isAutoSelectAllowed).isFalse()
-        assertThat(request.origin).isNull()
+        assertThat(request.origin).isEqualTo(origin)
         assertThat(request.preferImmediatelyAvailableCredentials).isFalse()
+    }
+
+    @Test
+    fun createFrom_missingRequestJson_throwsFrameworkClassParsingException() {
+        Assert.assertThrows(FrameworkClassParsingException::class.java) {
+            CreateDigitalCredentialRequest.createFrom(Bundle(), "origin", Bundle())
+        }
+    }
+
+    @Test
+    fun createFrom_withCandidateQueryData() {
+        val json = "{key: value}"
+        val origin = "origin"
+        val candidateQueryData = Bundle().apply { putBoolean("test_key", true) }
+        val request =
+            CreateDigitalCredentialRequest.createFrom(
+                Bundle().apply {
+                    putString(CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON, json)
+                },
+                origin,
+                candidateQueryData,
+            )
+
+        assertThat(request.candidateQueryData.getBoolean("test_key")).isTrue()
+    }
+
+    @Test
+    fun constructor_developer_emptyJson_throws() {
+        Assert.assertThrows(
+            "requestJson must not be empty, and must be a valid JSON",
+            IllegalArgumentException::class.java,
+        ) {
+            CreateDigitalCredentialRequest(requestJson = "", origin = "origin")
+        }
+    }
+
+    @Test
+    fun constructor_developer_invalidJson_throws() {
+        Assert.assertThrows(
+            "requestJson must not be empty, and must be a valid JSON",
+            IllegalArgumentException::class.java,
+        ) {
+            CreateDigitalCredentialRequest(requestJson = "not a json", origin = "origin")
+        }
+    }
+
+    @Test
+    fun constructor_developer_valid() {
+        val json = "{key: value}"
+        val origin = "developer_origin"
+        val request = CreateDigitalCredentialRequest(requestJson = json, origin = origin)
+
+        assertThat(request.type).isEqualTo(DigitalCredential.TYPE_DIGITAL_CREDENTIAL)
+        assertThat(request.requestJson).isEqualTo(json)
+        assertThat(
+                request.credentialData.getString(
+                    CreateDigitalCredentialRequest.BUNDLE_KEY_REQUEST_JSON
+                )
+            )
+            .isEqualTo(json)
+        assertThat(request.displayInfo.userId)
+            .isEqualTo(CreateDigitalCredentialRequest.UNUSED_USER_ID)
+        assertThat(request.isSystemProviderRequired).isFalse()
+        assertThat(request.isAutoSelectAllowed).isFalse()
+        assertThat(request.origin).isEqualTo(origin)
+        assertThat(request.preferImmediatelyAvailableCredentials).isFalse()
+    }
+
+    @Test
+    fun constructor_developer_nullOrigin_valid() {
+        val json = "{key: value}"
+        val request = CreateDigitalCredentialRequest(requestJson = json, origin = null)
+        assertThat(request.origin).isNull()
     }
 }

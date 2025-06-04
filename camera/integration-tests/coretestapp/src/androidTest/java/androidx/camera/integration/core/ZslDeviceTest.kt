@@ -68,9 +68,7 @@ class ZslDeviceTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -177,7 +175,7 @@ class ZslDeviceTest(
         // Assert. Verify captures.
         callback.awaitCapturesAndAssert(
             timeout = captureTimeout.times(numImages),
-            capturedImagesCount = numImages
+            capturedImagesCount = numImages,
         )
     }
 
@@ -212,7 +210,7 @@ class ZslDeviceTest(
         // Assert. Verify captures.
         callback.awaitCapturesAndAssert(
             timeout = captureTimeout.times(numImages),
-            capturedImagesCount = numImages
+            capturedImagesCount = numImages,
         )
     }
 

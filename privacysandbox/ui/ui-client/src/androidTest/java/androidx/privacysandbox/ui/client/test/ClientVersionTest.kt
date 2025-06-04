@@ -115,12 +115,12 @@ class ClientVersionTest {
 
     private fun getSandboxedUiAdapterBundle(
         stubBinderAdapterDelegate: StubBinderDelegateAdapter,
-        useRemoteAdapter: Boolean = false
+        useRemoteAdapter: Boolean = false,
     ): Bundle {
         val bundle = Bundle()
         bundle.putInt(
             ProtocolConstants.uiProviderVersionKey,
-            SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel
+            SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
         )
         bundle.putBinder(ProtocolConstants.uiAdapterBinderKey, stubBinderAdapterDelegate)
         bundle.putBoolean(TestProtocolConstants.testOnlyUseRemoteAdapterKey, useRemoteAdapter)
@@ -148,7 +148,7 @@ class ClientVersionTest {
             initialHeight: Int,
             isZOrderOnTop: Boolean,
             clientExecutor: Executor,
-            client: SessionClient
+            client: SessionClient,
         ) {
             this.clientVersion = clientVersion
             openLocalSessionLatch.countDown()
@@ -161,7 +161,7 @@ class ClientVersionTest {
             initialWidth: Int,
             initialHeight: Int,
             isZOrderOnTop: Boolean,
-            remoteSessionClient: IRemoteSessionClient?
+            remoteSessionClient: IRemoteSessionClient?,
         ) {
             this.clientVersion = clientVersion
             openRemoteSessionLatch.countDown()
@@ -180,16 +180,16 @@ class ClientVersionTest {
 
     private fun getSharedUiAdapterBundle(
         stubSharedBinderAdapterDelegate: StubSharedBinderDelegateAdapter,
-        useRemoteAdapter: Boolean = false
+        useRemoteAdapter: Boolean = false,
     ): Bundle {
         val bundle = Bundle()
         bundle.putInt(
             ProtocolConstants.uiProviderVersionKey,
-            SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel
+            SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
         )
         bundle.putBinder(
             ProtocolConstants.sharedUiAdapterBinderKey,
-            stubSharedBinderAdapterDelegate
+            stubSharedBinderAdapterDelegate,
         )
         bundle.putBoolean(TestProtocolConstants.testOnlyUseRemoteAdapterKey, useRemoteAdapter)
         return bundle
@@ -204,7 +204,7 @@ class ClientVersionTest {
         override fun openLocalSession(
             clientVersion: Int,
             clientExecutor: Executor,
-            client: SharedUiAdapter.SessionClient
+            client: SharedUiAdapter.SessionClient,
         ) {
             this.clientVersion = clientVersion
             openLocalSessionLatch.countDown()
@@ -212,7 +212,7 @@ class ClientVersionTest {
 
         override fun openRemoteSession(
             clientVersion: Int,
-            remoteSessionClient: IRemoteSharedUiSessionClient?
+            remoteSessionClient: IRemoteSharedUiSessionClient?,
         ) {
             this.clientVersion = clientVersion
             openRemoteSessionLatch.countDown()

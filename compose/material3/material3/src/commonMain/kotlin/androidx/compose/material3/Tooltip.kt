@@ -132,7 +132,7 @@ import kotlinx.coroutines.withTimeout
  */
 @Deprecated(
     "Deprecated in favor of TooltipBox API that contains onDismissRequest.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -153,7 +153,7 @@ fun TooltipBox(
         onDismissRequest = null,
         focusable = focusable,
         enableUserInput = enableUserInput,
-        content = content
+        content = content,
     )
 
 /**
@@ -238,7 +238,7 @@ fun TooltipBox(
         onDismissRequest = onDismissRequest,
         state = state,
         modifier = modifier,
-        content = wrappedContent
+        content = wrappedContent,
     )
 }
 
@@ -302,7 +302,7 @@ fun TooltipScope.PlainTooltip(
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val caretPath = remember { mutableStateOf(Path()) }
     val drawCaretModifier =
@@ -314,7 +314,7 @@ fun TooltipScope.PlainTooltip(
                     density,
                     windowContainerWidthInPx,
                     caretSize,
-                    { obtainAnchorBounds() }
+                    { obtainAnchorBounds() },
                 )
                 .then(modifier)
         } else modifier
@@ -324,14 +324,14 @@ fun TooltipScope.PlainTooltip(
         shape = tooltipCaretShape,
         color = containerColor,
         tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation
+        shadowElevation = shadowElevation,
     ) {
         Box(
             modifier =
                 Modifier.sizeIn(
                         minWidth = TooltipMinWidth,
                         maxWidth = maxWidth,
-                        minHeight = TooltipMinHeight
+                        minHeight = TooltipMinHeight,
                     )
                     .padding(PlainTooltipContentPadding)
         ) {
@@ -340,7 +340,7 @@ fun TooltipScope.PlainTooltip(
             CompositionLocalProvider(
                 LocalContentColor provides contentColor,
                 LocalTextStyle provides textStyle,
-                content = content
+                content = content,
             )
         }
     }
@@ -377,7 +377,7 @@ fun TooltipScope.RichTooltip(
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     tonalElevation: Dp = ElevationTokens.Level0,
     shadowElevation: Dp = RichTooltipTokens.ContainerElevation,
-    text: @Composable () -> Unit
+    text: @Composable () -> Unit,
 ) {
     val caretPath = remember { mutableStateOf(Path()) }
     val drawCaretModifier =
@@ -389,7 +389,7 @@ fun TooltipScope.RichTooltip(
                     density,
                     windowContainerWidthInPx,
                     caretSize,
-                    { obtainAnchorBounds() }
+                    { obtainAnchorBounds() },
                 )
                 .then(modifier)
         } else modifier
@@ -399,12 +399,12 @@ fun TooltipScope.RichTooltip(
             drawCaretModifier.sizeIn(
                 minWidth = TooltipMinWidth,
                 maxWidth = maxWidth,
-                minHeight = TooltipMinHeight
+                minHeight = TooltipMinHeight,
             ),
         shape = tooltipCaretShape,
         color = colors.containerColor,
         tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation
+        shadowElevation = shadowElevation,
     ) {
         val actionLabelTextStyle = RichTooltipTokens.ActionLabelTextFont.value
         val subheadTextStyle = RichTooltipTokens.SubheadFont.value
@@ -416,7 +416,7 @@ fun TooltipScope.RichTooltip(
                     CompositionLocalProvider(
                         LocalContentColor provides colors.titleContentColor,
                         LocalTextStyle provides subheadTextStyle,
-                        content = it
+                        content = it,
                     )
                 }
             }
@@ -424,7 +424,7 @@ fun TooltipScope.RichTooltip(
                 CompositionLocalProvider(
                     LocalContentColor provides colors.contentColor,
                     LocalTextStyle provides supportingTextStyle,
-                    content = text
+                    content = text,
                 )
             }
             action?.let {
@@ -436,7 +436,7 @@ fun TooltipScope.RichTooltip(
                     CompositionLocalProvider(
                         LocalContentColor provides colors.actionContentColor,
                         LocalTextStyle provides actionLabelTextStyle,
-                        content = it
+                        content = it,
                     )
                 }
             }
@@ -493,7 +493,7 @@ object TooltipDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             titleContentColor = titleContentColor,
-            actionContentColor = actionContentColor
+            actionContentColor = actionContentColor,
         )
 
     internal val ColorScheme.defaultRichTooltipColors: RichTooltipColors
@@ -518,7 +518,7 @@ object TooltipDefaults {
         "Deprecated in favor of rememberTooltipPositionProvider API.",
         replaceWith =
             ReplaceWith("rememberTooltipPositionProvider(spacingBetweenTooltipAndAnchor)"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     @Composable
     fun rememberPlainTooltipPositionProvider(
@@ -532,7 +532,7 @@ object TooltipDefaults {
                     anchorBounds: IntRect,
                     windowSize: IntSize,
                     layoutDirection: LayoutDirection,
-                    popupContentSize: IntSize
+                    popupContentSize: IntSize,
                 ): IntOffset {
                     val x = anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
 
@@ -557,7 +557,7 @@ object TooltipDefaults {
         "Deprecated in favor of rememberTooltipPositionProvider API.",
         replaceWith =
             ReplaceWith("rememberTooltipPositionProvider(spacingBetweenTooltipAndAnchor)"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     @Composable
     fun rememberRichTooltipPositionProvider(
@@ -571,7 +571,7 @@ object TooltipDefaults {
                     anchorBounds: IntRect,
                     windowSize: IntSize,
                     layoutDirection: LayoutDirection,
-                    popupContentSize: IntSize
+                    popupContentSize: IntSize,
                 ): IntOffset {
                     var x = anchorBounds.left
                     // Try to shift it to the left of the anchor
@@ -614,7 +614,7 @@ object TooltipDefaults {
                     anchorBounds: IntRect,
                     windowSize: IntSize,
                     layoutDirection: LayoutDirection,
-                    popupContentSize: IntSize
+                    popupContentSize: IntSize,
                 ): IntOffset {
                     // Horizontal alignment preference: middle -> start -> end
                     // Vertical preference: above -> below
@@ -651,7 +651,7 @@ class RichTooltipColors(
     val containerColor: Color,
     val contentColor: Color,
     val titleContentColor: Color,
-    val actionContentColor: Color
+    val actionContentColor: Color,
 ) {
     /**
      * Returns a copy of this RichTooltipColors, optionally overriding some of the values. This uses
@@ -708,13 +708,13 @@ class RichTooltipColors(
 fun rememberTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = false,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): TooltipState =
     remember(isPersistent, mutatorMutex) {
         TooltipStateImpl(
             initialIsVisible = initialIsVisible,
             isPersistent = isPersistent,
-            mutatorMutex = mutatorMutex
+            mutatorMutex = mutatorMutex,
         )
     }
 
@@ -734,12 +734,12 @@ fun rememberTooltipState(
 fun TooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): TooltipState =
     TooltipStateImpl(
         initialIsVisible = initialIsVisible,
         isPersistent = isPersistent,
-        mutatorMutex = mutatorMutex
+        mutatorMutex = mutatorMutex,
     )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -747,7 +747,7 @@ fun TooltipState(
 private class TooltipStateImpl(
     initialIsVisible: Boolean,
     override val isPersistent: Boolean,
-    private val mutatorMutex: MutatorMutex
+    private val mutatorMutex: MutatorMutex,
 ) : TooltipState {
     override val transition: MutableTransitionState<Boolean> =
         MutableTransitionState(initialIsVisible)
@@ -864,7 +864,7 @@ internal fun Modifier.animateTooltip(transition: Transition<Boolean>): Modifier 
         val scale by
             transition.animateFloat(
                 transitionSpec = { inOutScaleAnimationSpec },
-                label = "tooltip transition: scaling"
+                label = "tooltip transition: scaling",
             ) {
                 if (it) 1f else 0.8f
             }
@@ -872,7 +872,7 @@ internal fun Modifier.animateTooltip(transition: Transition<Boolean>): Modifier 
         val alpha by
             transition.animateFloat(
                 transitionSpec = { inOutAlphaAnimationSpec },
-                label = "tooltip transition: alpha"
+                label = "tooltip transition: alpha",
             ) {
                 if (it) 1f else 0f
             }
@@ -913,7 +913,7 @@ private fun Modifier.layoutCaret(
     density: Density,
     windowContainerWidthInPx: Int,
     caretSize: DpSize,
-    getAnchorLayoutCoordinates: MeasureScope.() -> LayoutCoordinates?
+    getAnchorLayoutCoordinates: MeasureScope.() -> LayoutCoordinates?,
 ): Modifier =
     this.layout { measurables, constraints ->
         val placeable = measurables.measure(constraints)
@@ -975,7 +975,7 @@ private fun Modifier.layoutCaret(
 
 private class TooltipCaretShape(
     private val tooltipShape: Shape,
-    private val caretPath: MutableState<Path>
+    private val caretPath: MutableState<Path>,
 ) : Shape {
     val tooltipPath = Path()
     val combinedPath = Path()
@@ -983,7 +983,7 @@ private class TooltipCaretShape(
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         tooltipPath.reset()
         combinedPath.reset()
@@ -999,7 +999,7 @@ private class TooltipCaretShape(
         combinedPath.op(
             path1 = tooltipPath,
             path2 = caretPath.value,
-            operation = PathOperation.Union
+            operation = PathOperation.Union,
         )
 
         return Outline.Generic(combinedPath)

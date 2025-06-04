@@ -37,7 +37,7 @@ import com.squareup.kotlinpoet.TypeName
 // TODO(b/410764334): Re-evaluate the abstraction layer.
 /** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializable]. */
 open class AnnotatedAppFunctionSerializable(
-    private val appFunctionSerializableClass: KSClassDeclaration,
+    private val appFunctionSerializableClass: KSClassDeclaration
 ) {
     /** The JVM qualified name of the class being annotated with AppFunctionSerializable. */
     open val jvmQualifiedName: String by lazy { appFunctionSerializableClass.getJvmQualifiedName() }
@@ -90,7 +90,7 @@ open class AnnotatedAppFunctionSerializable(
         }
         return AnnotatedParameterizedAppFunctionSerializable(
             appFunctionSerializableClass,
-            arguments
+            arguments,
         )
     }
 
@@ -279,7 +279,7 @@ open class AnnotatedAppFunctionSerializable(
 
     private fun traverseSerializableClassSourceFiles(
         sourceFileSet: MutableSet<KSFile>,
-        visitedSerializableSet: MutableSet<ClassName>
+        visitedSerializableSet: MutableSet<ClassName>,
     ) {
         for (serializableAfType in getSerializablePropertyTypeReferences()) {
             val appFunctionSerializableDefinition =

@@ -44,7 +44,7 @@ import androidx.glance.layout.wrapContentHeight
 public fun LazyColumn(
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableLazyColumn,
@@ -55,8 +55,8 @@ public fun LazyColumn(
         content =
             applyListScope(
                 Alignment(horizontalAlignment, Alignment.Vertical.CenterVertically),
-                content
-            )
+                content,
+            ),
     )
 }
 
@@ -78,7 +78,7 @@ public fun LazyColumn(
     activityOptions: Bundle,
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableLazyColumn,
@@ -90,14 +90,14 @@ public fun LazyColumn(
         content =
             applyListScope(
                 Alignment(horizontalAlignment, Alignment.Vertical.CenterVertically),
-                content
-            )
+                content,
+            ),
     )
 }
 
 private fun applyListScope(
     alignment: Alignment,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ): @Composable () -> Unit {
     val itemList = mutableListOf<Pair<Long?, @Composable LazyItemScope.() -> Unit>>()
     val listScopeImpl =
@@ -118,7 +118,7 @@ private fun applyListScope(
             override fun items(
                 count: Int,
                 itemId: ((index: Int) -> Long),
-                itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+                itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
             ) {
                 repeat(count) { index -> item(itemId(index)) { itemContent(index) } }
             }
@@ -146,7 +146,7 @@ private fun LazyListItem(itemId: Long, alignment: Alignment, content: @Composabl
                 this.set(itemId) { this.itemId = it }
                 this.set(alignment) { this.alignment = it }
             },
-            content = content
+            content = content,
         )
     }
 }
@@ -190,7 +190,7 @@ public interface LazyListScope {
     public fun items(
         count: Int,
         itemId: ((index: Int) -> Long) = { UnspecifiedItemId },
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     )
 
     public companion object {
@@ -211,8 +211,8 @@ public interface LazyListScope {
 public inline fun <T> LazyListScope.items(
     items: List<T>,
     crossinline itemId: ((item: T) -> Long) = { LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
 
 /**
  * Adds a list of items where the content of an item is aware of its index.
@@ -229,8 +229,9 @@ public inline fun <T> LazyListScope.itemsIndexed(
     crossinline itemId: ((index: Int, item: T) -> Long) = { _, _ ->
         LazyListScope.UnspecifiedItemId
     },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
+    items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
 
 /**
  * Adds an array of items.
@@ -245,8 +246,8 @@ public inline fun <T> LazyListScope.itemsIndexed(
 public inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline itemId: ((item: T) -> Long) = { LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
 
 /**
  * Adds a array of items where the content of an item is aware of its index.
@@ -261,8 +262,9 @@ public inline fun <T> LazyListScope.items(
 public inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline itemId: ((index: Int, item: T) -> Long) = { _, _ -> LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
+    items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
 
 internal abstract class EmittableLazyList : EmittableWithChildren(resetsDepthForChildren = true) {
     override var modifier: GlanceModifier = GlanceModifier

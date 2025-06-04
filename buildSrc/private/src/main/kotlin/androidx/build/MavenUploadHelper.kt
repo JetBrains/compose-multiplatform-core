@@ -58,7 +58,7 @@ fun Project.configureMavenArtifactUpload(
     androidXExtension: AndroidXExtension,
     androidXKmpExtension: AndroidXMultiplatformExtension,
     componentFactory: SoftwareComponentFactory,
-    afterConfigure: () -> Unit
+    afterConfigure: () -> Unit,
 ) {
     apply(mapOf("plugin" to "maven-publish"))
     var registered = false
@@ -69,7 +69,7 @@ fun Project.configureMavenArtifactUpload(
                 androidXKmpExtension,
                 component,
                 componentFactory,
-                afterConfigure
+                afterConfigure,
             )
             Release.register(this, androidXExtension)
             registered = true
@@ -128,7 +128,7 @@ private fun Project.configureComponentPublishing(
     androidxKmpExtension: AndroidXMultiplatformExtension,
     component: SoftwareComponent,
     componentFactory: SoftwareComponentFactory,
-    afterConfigure: () -> Unit
+    afterConfigure: () -> Unit,
 ) {
     val androidxGroup = validateCoordinatesAndGetGroup(extension)
     val projectArchiveDir =
@@ -144,14 +144,17 @@ private fun Project.configureComponentPublishing(
         // Check every project is the project map to see if they are an Android Library
         val projectModules = extension.mavenCoordinatesToProjectPathMap
         for ((mavenCoordinates, projectPath) in projectModules) {
-            project.findProject(projectPath)?.plugins?.let { plugins ->
-                if (plugins.hasPlugin(LibraryPlugin::class.java)) {
-                    if (plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
+            project.findProject(projectPath)?.let { project ->
+                if (project.plugins.hasPlugin(LibraryPlugin::class.java)) {
+                    if (project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
                         // For KMP projects, android AAR is published under -android
                         androidxAndroidProjects.add("$mavenCoordinates-android")
                     } else {
                         androidxAndroidProjects.add(mavenCoordinates)
                     }
+                }
+                if (project.hasAndroidMultiplatformPlugin()) {
+                    androidxAndroidProjects.add("$mavenCoordinates-android")
                 }
             }
         }
@@ -235,7 +238,7 @@ private fun Project.configureComponentPublishing(
                     pom,
                     androidLibrariesSetProvider,
                     isKmpAnchor,
-                    pomPlatform
+                    pomPlatform,
                 )
             }
         }
@@ -369,7 +372,7 @@ private fun Project.isMultiplatformPublicationEnabled(): Boolean {
 
 private fun Project.configureMultiplatformPublication(
     componentFactory: SoftwareComponentFactory,
-    afterConfigure: () -> Unit
+    afterConfigure: () -> Unit,
 ) {
     val multiplatformExtension = extensions.findByType<KotlinMultiplatformExtension>()!!
 
@@ -461,7 +464,7 @@ private fun tweakDependenciesMetadata(
     pom: MavenPom,
     androidLibrariesSetProvider: Provider<Set<String>>,
     kmpAnchor: Boolean,
-    pomPlatform: String?
+    pomPlatform: String?,
 ) {
     pom.withXml { xml ->
         // The following code depends on getProjectsMap which is only available late in
@@ -527,7 +530,7 @@ fun insertDefaultMultiplatformDependencies(xml: XmlProvider, platformId: String)
 
 private fun org.w3c.dom.Node.appendElement(
     tagName: String,
-    textValue: String? = null
+    textValue: String? = null,
 ): org.w3c.dom.Element {
     val element = ownerDocument.createElement(tagName)
     appendChild(element)

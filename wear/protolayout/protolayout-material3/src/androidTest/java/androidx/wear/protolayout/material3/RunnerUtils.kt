@@ -39,7 +39,7 @@ object RunnerUtils {
         rule: AndroidXScreenshotTestRule,
         layout: LayoutElementBuilders.Layout,
         expected: String,
-        isRtlDirection: Boolean
+        isRtlDirection: Boolean,
     ) {
         val layoutPayload = layout.toByteArray()
 
@@ -47,7 +47,7 @@ object RunnerUtils {
             Intent(
                 androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                     .targetContext,
-                GoldenTestActivity::class.java
+                GoldenTestActivity::class.java,
             )
         startIntent.putExtra("layout", layoutPayload)
         startIntent.putExtra(GoldenTestActivity.USE_RTL_DIRECTION, isRtlDirection)
@@ -84,7 +84,7 @@ object RunnerUtils {
                     screenWidthStart,
                     0,
                     SCREEN_SIZE_SMALL,
-                    SCREEN_SIZE_SMALL
+                    SCREEN_SIZE_SMALL,
                 )
             // Increase the threshold of Structural Similarity Index for image comparison to 0.995,
             // so that we do not miss the image differences.
@@ -106,7 +106,7 @@ object RunnerUtils {
     fun convertToTestParameters(
         testCases: Map<String, LayoutElementBuilders.Layout>,
         isForRtr: Boolean,
-        isForLtr: Boolean
+        isForLtr: Boolean,
     ): List<Array<Any>> {
         return testCases.entries
             .stream()
@@ -120,6 +120,6 @@ object RunnerUtils {
     class TestCase(
         val layout: LayoutElementBuilders.Layout,
         val isForRtl: Boolean,
-        val isForLtr: Boolean
+        val isForLtr: Boolean,
     )
 }

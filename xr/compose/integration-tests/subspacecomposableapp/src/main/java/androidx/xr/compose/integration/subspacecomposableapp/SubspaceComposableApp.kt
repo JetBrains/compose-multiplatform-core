@@ -71,8 +71,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
@@ -192,7 +192,7 @@ class SubspaceComposableApp : ComponentActivity() {
     @Composable
     fun MainContent(text: String, navController: NavController) {
         Row {
-            Orbiter(OrbiterEdge.Start, offset = (-24).dp) {
+            Orbiter(ContentEdge.Start, offset = (-24).dp) {
                 NavigationRail(
                     modifier =
                         if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
@@ -250,7 +250,7 @@ class SubspaceComposableApp : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
-                        text = "Panel Bottom Left (View)"
+                        text = "Panel Bottom Left (View)",
                     )
                 }
                 SpatialColumn(
@@ -260,7 +260,7 @@ class SubspaceComposableApp : ComponentActivity() {
                     SpatialPanel(modifier = SubspaceModifier.fillMaxSize()) {
                         MainContent(
                             text = "This is a 3D Panel Layout!",
-                            navController = navController
+                            navController = navController,
                         )
                     }
                 }
@@ -296,7 +296,7 @@ class SubspaceComposableApp : ComponentActivity() {
                     Text(text = item, fontSize = 20.sp)
                 }
             }
-            Orbiter(position = OrbiterEdge.End, offset = 24.dp) {
+            Orbiter(position = ContentEdge.End, offset = 24.dp) {
                 IconButton(
                     onClick = { addHighlight = !addHighlight },
                     modifier = Modifier.background(Color.Gray),

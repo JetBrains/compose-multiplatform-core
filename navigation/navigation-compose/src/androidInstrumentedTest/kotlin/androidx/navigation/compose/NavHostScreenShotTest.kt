@@ -70,7 +70,7 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { slideInHorizontally { it / 2 } },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -123,7 +123,7 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { EnterTransition.None },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -180,7 +180,7 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { slideInHorizontally { it / 2 } },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -241,11 +241,11 @@ class NavHostScreenShotTest {
                                     durationMillis = 500
                                     IntSize(
                                         initialSize.width,
-                                        (initialSize.height + targetSize.height) / 2
+                                        (initialSize.height + targetSize.height) / 2,
                                     ) at 150
                                 }
                             }
-                        }
+                        },
                     ) {
                         Box(Modifier.size(40.dp).background(Green)) { BasicText(FIRST) }
                     }
@@ -260,7 +260,7 @@ class NavHostScreenShotTest {
                                     IntSize(targetSize.width, initialSize.height + 400) at 150
                                 }
                             }
-                        }
+                        },
                     ) {
                         Box(Modifier.size(500.dp).background(Blue)) { BasicText(SECOND) }
                     }

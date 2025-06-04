@@ -42,7 +42,7 @@ import com.google.common.util.concurrent.ListenableFuture
  */
 class RemoteListenableDelegatingWorker(
     private val context: Context,
-    private val workerParameters: WorkerParameters
+    private val workerParameters: WorkerParameters,
 ) : ListenableWorker(context, workerParameters) {
 
     internal val client = ListenableWorkerImplClient(context, workerParameters.backgroundExecutor)
@@ -66,7 +66,7 @@ class RemoteListenableDelegatingWorker(
                 val parcelableResult =
                     ParcelConverters.unmarshall(response, ParcelableResult.CREATOR)
                 parcelableResult.result
-            }
+            },
         )
     }
 
@@ -86,7 +86,7 @@ class RemoteListenableDelegatingWorker(
                 val parcelableResult =
                     ParcelConverters.unmarshall(response, ParcelableForegroundInfo.CREATOR)
                 parcelableResult.foregroundInfo
-            }
+            },
         )
     }
 
@@ -106,9 +106,9 @@ class RemoteListenableDelegatingWorker(
     private inline fun <T> executeRemote(
         crossinline block:
             (
-                iListenableWorkerImpl: IListenableWorkerImpl, callback: IWorkManagerImplCallback
+                iListenableWorkerImpl: IListenableWorkerImpl, callback: IWorkManagerImplCallback,
             ) -> Unit,
-        crossinline transformation: (input: ByteArray) -> T
+        crossinline transformation: (input: ByteArray) -> T,
     ): ListenableFuture<T> {
         val workManager = WorkManagerImpl.getInstance(context.applicationContext)
         val dispatcher = workManager.workTaskExecutor.taskCoroutineDispatcher

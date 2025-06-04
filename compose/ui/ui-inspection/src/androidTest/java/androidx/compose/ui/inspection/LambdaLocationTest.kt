@@ -40,7 +40,7 @@ class LambdaLocationTest {
                     "androidx.compose.ui.inspection.testdata.TestLambdas\$short\$1",
                     "TestLambdas.kt",
                     22,
-                    22
+                    22,
                 )
             )
         assertThat(LambdaLocation.resolve(TestLambdas.long))
@@ -49,7 +49,7 @@ class LambdaLocationTest {
                     "androidx.compose.ui.inspection.testdata.TestLambdas\$long\$1",
                     "TestLambdas.kt",
                     24,
-                    26
+                    26,
                 )
             )
         assertThat(LambdaLocation.resolve(TestLambdas.inlined))
@@ -58,7 +58,7 @@ class LambdaLocationTest {
                     "androidx.compose.ui.inspection.testdata.TestLambdas\$inlined\$1",
                     "TestLambdas.kt",
                     29,
-                    30
+                    30,
                 )
             )
         assertThat(LambdaLocation.resolve(TestLambdas.inlinedParameter))
@@ -67,7 +67,7 @@ class LambdaLocationTest {
                     "androidx.compose.ui.inspection.testdata.TestLambdas\$inlinedParameter\$1",
                     "TestLambdas.kt",
                     32,
-                    32
+                    32,
                 )
             )
         assertThat(LambdaLocation.resolve(TestLambdas.unnamed))
@@ -76,7 +76,7 @@ class LambdaLocationTest {
                     "androidx.compose.ui.inspection.testdata.TestLambdas\$unnamed\$1",
                     "TestLambdas.kt",
                     33,
-                    33
+                    33,
                 )
             )
     }

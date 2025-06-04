@@ -170,7 +170,7 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
 
     private fun provideTestOnlyThreads(
         testDispatcher: CoroutineDispatcher,
-        testScope: CoroutineScope
+        testScope: CoroutineScope,
     ): Threads {
         val testExecutor = testDispatcher.asExecutor()
 

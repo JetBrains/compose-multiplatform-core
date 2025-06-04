@@ -55,11 +55,11 @@ public class DatabaseBundle(
     override fun isSchemaEqual(other: DatabaseBundle): Boolean {
         return checkSchemaEquality(
             entitiesByTableName.filterValuesInstance<String, EntityBundle>(),
-            other.entitiesByTableName.filterValuesInstance<String, EntityBundle>()
+            other.entitiesByTableName.filterValuesInstance<String, EntityBundle>(),
         ) &&
             checkSchemaEquality(
                 entitiesByTableName.filterValuesInstance<String, FtsEntityBundle>(),
-                other.entitiesByTableName.filterValuesInstance<String, FtsEntityBundle>()
+                other.entitiesByTableName.filterValuesInstance<String, FtsEntityBundle>(),
             ) &&
             checkSchemaEquality(viewsByName, other.viewsByName)
     }

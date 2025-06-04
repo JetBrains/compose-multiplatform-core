@@ -27,6 +27,7 @@ import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.internal.StreamSpecQueryResult
 import androidx.camera.core.internal.StreamSpecsCalculator
 
 /** A fake [StreamSpecsCalculator] implementation for testing purposes. */
@@ -50,8 +51,9 @@ public class FakeStreamSpecsCalculator : StreamSpecsCalculator {
         attachedUseCases: List<UseCase>,
         cameraConfig: CameraConfig,
         targetHighSpeedFrameRate: Range<Int>,
-        allowFeatureCombinationResolutions: Boolean
-    ): Map<UseCase, ExtendedStreamSpec> {
+        allowFeatureCombinationResolutions: Boolean,
+        findMaxSupportedFrameRate: Boolean,
+    ): StreamSpecQueryResult {
         Logger.d(TAG, "calculateSuggestedStreamSpecs: supportedStreamSpecs = $supportedStreamSpecs")
 
         val streamSpecs = mutableMapOf<UseCase, ExtendedStreamSpec>()
@@ -104,7 +106,7 @@ public class FakeStreamSpecsCalculator : StreamSpecsCalculator {
             }
         }
 
-        return streamSpecs
+        return StreamSpecQueryResult(streamSpecs, MAX_SUPPORTED_FRAME_RATE)
     }
 
     /**
@@ -171,5 +173,6 @@ public class FakeStreamSpecsCalculator : StreamSpecsCalculator {
 
     public companion object {
         private const val TAG = "FakeStreamSpecsCalculator"
+        private const val MAX_SUPPORTED_FRAME_RATE = 60
     }
 }

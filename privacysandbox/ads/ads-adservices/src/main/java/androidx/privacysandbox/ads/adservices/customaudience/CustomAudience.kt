@@ -127,7 +127,7 @@ public constructor(
         activationTime: Instant? = null,
         expirationTime: Instant? = null,
         userBiddingSignals: AdSelectionSignals? = null,
-        trustedBiddingSignals: TrustedBiddingData? = null
+        trustedBiddingSignals: TrustedBiddingData? = null,
     ) : this(
         buyer,
         name,
@@ -139,7 +139,7 @@ public constructor(
         userBiddingSignals,
         trustedBiddingSignals,
         0,
-        0.0
+        0.0,
     )
 
     /**
@@ -191,7 +191,7 @@ public constructor(
         trustedBiddingSignals: TrustedBiddingData? = null,
         auctionServerRequestFlags: Int = 0,
         priority: Double = 0.0,
-        componentAds: List<ComponentAdData> = emptyList()
+        componentAds: List<ComponentAdData> = emptyList(),
     ) : this(
         buyer,
         name,
@@ -203,7 +203,7 @@ public constructor(
         userBiddingSignals,
         trustedBiddingSignals,
         auctionServerRequestFlags,
-        priority
+        priority,
     ) {
         this.componentAds = componentAds.toList()
     }
@@ -258,7 +258,7 @@ public constructor(
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         flag = true,
-        value = [FLAG_AUCTION_SERVER_REQUEST_DEFAULT, FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS]
+        value = [FLAG_AUCTION_SERVER_REQUEST_DEFAULT, FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS],
     )
     annotation class AuctionServerRequestFlag
 
@@ -306,7 +306,7 @@ public constructor(
         private var name: String,
         private var dailyUpdateUri: Uri,
         private var biddingLogicUri: Uri,
-        private var ads: List<AdData>
+        private var ads: List<AdData>,
     ) {
         private var activationTime: Instant? = null
         private var expirationTime: Instant? = null

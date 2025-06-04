@@ -78,7 +78,7 @@ class ResizeComposeFragment : BaseFragment() {
         adFormat: Int,
         adType: Int,
         mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -90,7 +90,7 @@ class ResizeComposeFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         setAdAdapter()
         return ComposeView(requireContext()).apply {
@@ -102,7 +102,7 @@ class ResizeComposeFragment : BaseFragment() {
                     bannerDimension,
                     onBannerDimensionChanged,
                     bannerPadding,
-                    onChangePaddingClicked
+                    onChangePaddingClicked,
                 )
             }
         }
@@ -119,7 +119,7 @@ class ResizeComposeFragment : BaseFragment() {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             val localDensity = LocalDensity.current
             var ssvHeight by remember { mutableStateOf(0.dp) }
@@ -134,16 +134,12 @@ class ResizeComposeFragment : BaseFragment() {
                     }
                     .padding(
                         horizontal = bannerPadding.horizontalPadding,
-                        vertical = bannerPadding.verticalPadding
+                        vertical = bannerPadding.verticalPadding,
                     )
 
             sandboxedSdkUiModifier =
                 if (bannerDimension.height != 0.dp && bannerDimension.width != 0.dp) {
-                    sandboxedSdkUiModifier
-                        .width(bannerDimension.width)
-                        .weight(
-                            1f,
-                        )
+                    sandboxedSdkUiModifier.width(bannerDimension.width).weight(1f)
                 } else {
                     sandboxedSdkUiModifier.fillMaxWidth().weight(1f)
                 }

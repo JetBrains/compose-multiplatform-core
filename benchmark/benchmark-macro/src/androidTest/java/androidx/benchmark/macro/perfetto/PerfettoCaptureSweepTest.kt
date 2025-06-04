@@ -95,13 +95,13 @@ class PerfettoCaptureSweepTest(
         perfettoCapture.start(
             PerfettoConfig.Benchmark(
                 appTagPackages = listOf(Packages.TEST),
-                useStackSamplingConfig = false
+                useStackSamplingConfig = false,
             )
         )
 
         assertTrue(
             "In-process tracing should be enabled immediately after trace capture is started",
-            Trace.isEnabled()
+            Trace.isEnabled(),
         )
 
         /**

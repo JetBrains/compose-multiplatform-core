@@ -97,7 +97,7 @@ public actual abstract class RoomDatabase {
     @JvmField
     @Deprecated(
         message = "This property is always null and will be removed in a future version.",
-        level = DeprecationLevel.ERROR
+        level = DeprecationLevel.ERROR,
     )
     protected var mDatabase: SupportSQLiteDatabase? = null
 
@@ -167,7 +167,7 @@ public actual abstract class RoomDatabase {
     @JvmField
     @Deprecated(
         message = "This property is always null and will be removed in a future version.",
-        level = DeprecationLevel.ERROR
+        level = DeprecationLevel.ERROR,
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     protected var mCallbacks: List<Callback>? = null
@@ -300,7 +300,7 @@ public actual abstract class RoomDatabase {
             invalidationTracker.initMultiInstanceInvalidation(
                 configuration.context,
                 configuration.name,
-                configuration.multiInstanceInvalidationServiceIntent
+                configuration.multiInstanceInvalidationServiceIntent,
             )
         }
     }
@@ -329,13 +329,13 @@ public actual abstract class RoomDatabase {
             RoomConnectionManager(
                 config = configuration,
                 supportOpenHelperFactory = { config -> createOpenHelper(config) },
-                transactionWrapper = ::compatTransactionCoroutineExecute
+                transactionWrapper = ::compatTransactionCoroutineExecute,
             )
         } else {
             RoomConnectionManager(
                 config = configuration,
                 openDelegate = openDelegate,
-                transactionWrapper = ::compatTransactionCoroutineExecute
+                transactionWrapper = ::compatTransactionCoroutineExecute,
             )
         }
     }
@@ -362,7 +362,8 @@ public actual abstract class RoomDatabase {
         // For backwards compatibility when newer runtime is used with older generated code,
         // call the Java version of getAutoMigrations()
         val javaClassesMap = autoMigrationSpecs.mapKeys { it.key.java }
-        @Suppress("DEPRECATION") return getAutoMigrations(javaClassesMap)
+        @Suppress("DEPRECATION")
+        return getAutoMigrations(javaClassesMap)
     }
 
     /**
@@ -497,7 +498,8 @@ public actual abstract class RoomDatabase {
         Set<KClass<out AutoMigrationSpec>> {
         // For backwards compatibility when newer runtime is used with older generated code,
         // call the Java version of this function.
-        @Suppress("DEPRECATION") return getRequiredAutoMigrationSpecs().map { it.kotlin }.toSet()
+        @Suppress("DEPRECATION")
+        return getRequiredAutoMigrationSpecs().map { it.kotlin }.toSet()
     }
 
     /**
@@ -612,7 +614,7 @@ public actual abstract class RoomDatabase {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
         return connectionManager.useConnection(isReadOnly, block)
     }
@@ -727,7 +729,7 @@ public actual abstract class RoomDatabase {
      */
     @Deprecated(
         "setTransactionSuccessful() is deprecated",
-        ReplaceWith("runInTransaction(Runnable)")
+        ReplaceWith("runInTransaction(Runnable)"),
     )
     public open fun setTransactionSuccessful() {
         openHelper.writableDatabase.setTransactionSuccessful()
@@ -877,7 +879,7 @@ public actual abstract class RoomDatabase {
             klass: KClass<T>,
             name: String?,
             factory: (() -> T)?,
-            context: Context
+            context: Context,
         ) {
             this.klass = klass
             this.context = context
@@ -993,7 +995,7 @@ public actual abstract class RoomDatabase {
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
         public open fun createFromAsset(
             databaseFilePath: String,
-            callback: PrepackagedDatabaseCallback
+            callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
             this.prepackagedDatabaseCallback = callback
             this.copyFromAssetPath = databaseFilePath
@@ -1045,7 +1047,7 @@ public actual abstract class RoomDatabase {
         @SuppressLint("BuilderSetStyle", "StreamFiles") // To keep naming consistency.
         public open fun createFromFile(
             databaseFile: File,
-            callback: PrepackagedDatabaseCallback
+            callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
             this.prepackagedDatabaseCallback = callback
             this.copyFromFile = databaseFile
@@ -1108,7 +1110,7 @@ public actual abstract class RoomDatabase {
         @SuppressLint("BuilderSetStyle", "LambdaLast") // To keep naming consistency.
         public open fun createFromInputStream(
             inputStreamCallable: Callable<InputStream>,
-            callback: PrepackagedDatabaseCallback
+            callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
             this.prepackagedDatabaseCallback = callback
             this.copyFromInputStream = inputStreamCallable
@@ -1330,7 +1332,7 @@ public actual abstract class RoomDatabase {
             message =
                 "Replace by overloaded version with parameter to indicate if all tables " +
                     "should be dropped or not.",
-            replaceWith = ReplaceWith("fallbackToDestructiveMigration(false)")
+            replaceWith = ReplaceWith("fallbackToDestructiveMigration(false)"),
         )
         @Suppress("BuilderSetStyle") // Overload of exsisting API
         public open fun fallbackToDestructiveMigration(): Builder<T> = apply {
@@ -1380,7 +1382,7 @@ public actual abstract class RoomDatabase {
             message =
                 "Replace by overloaded version with parameter to indicate if all tables " +
                     "should be dropped or not.",
-            replaceWith = ReplaceWith("fallbackToDestructiveMigrationOnDowngrade(false)")
+            replaceWith = ReplaceWith("fallbackToDestructiveMigrationOnDowngrade(false)"),
         )
         public open fun fallbackToDestructiveMigrationOnDowngrade(): Builder<T> = apply {
             this.requireMigration = true
@@ -1432,7 +1434,7 @@ public actual abstract class RoomDatabase {
             message =
                 "Replace by overloaded version with parameter to indicate if all tables " +
                     "should be dropped or not.",
-            replaceWith = ReplaceWith("fallbackToDestructiveMigrationFrom(false, startVersions)")
+            replaceWith = ReplaceWith("fallbackToDestructiveMigrationFrom(false, startVersions)"),
         )
         public open fun fallbackToDestructiveMigrationFrom(vararg startVersions: Int): Builder<T> =
             apply {
@@ -1471,7 +1473,7 @@ public actual abstract class RoomDatabase {
         public actual open fun fallbackToDestructiveMigrationFrom(
             @Suppress("KotlinDefaultParameterOrder") // There is a vararg that must be last
             dropAllTables: Boolean,
-            vararg startVersions: Int
+            vararg startVersions: Int,
         ): Builder<T> = apply {
             for (startVersion in startVersions) {
                 this.migrationsNotRequiredFrom.add(startVersion)
@@ -1508,7 +1510,7 @@ public actual abstract class RoomDatabase {
         @Suppress("MissingGetterMatchingBuilder")
         public open fun setQueryCallback(
             queryCallback: QueryCallback,
-            executor: Executor
+            executor: Executor,
         ): Builder<T> = apply {
             this.queryCallback = queryCallback
             this.queryCallbackExecutor = executor
@@ -1535,7 +1537,7 @@ public actual abstract class RoomDatabase {
         @Suppress("MissingGetterMatchingBuilder")
         public fun setQueryCallback(
             context: CoroutineContext,
-            queryCallback: QueryCallback
+            queryCallback: QueryCallback,
         ): Builder<T> = apply {
             this.queryCallback = queryCallback
             this.queryCallbackExecutor = null
@@ -1587,7 +1589,7 @@ public actual abstract class RoomDatabase {
         @Suppress("MissingGetterMatchingBuilder")
         public open fun setAutoCloseTimeout(
             @IntRange(from = 0) autoCloseTimeout: Long,
-            autoCloseTimeUnit: TimeUnit
+            autoCloseTimeUnit: TimeUnit,
         ): Builder<T> = apply {
             require(autoCloseTimeout >= 0) { "autoCloseTimeout must be >= 0" }
             this.autoCloseTimeout = autoCloseTimeout
@@ -1714,7 +1716,7 @@ public actual abstract class RoomDatabase {
                             val autoCloser =
                                 AutoCloser(
                                     timeoutAmount = autoCloseTimeout,
-                                    timeUnit = requireNotNull(autoCloseTimeUnit)
+                                    timeUnit = requireNotNull(autoCloseTimeUnit),
                                 )
                             AutoClosingRoomOpenHelperFactory(delegate = it, autoCloser = autoCloser)
                         } else {
@@ -1746,7 +1748,7 @@ public actual abstract class RoomDatabase {
                                 copyFromAssetPath = copyFromAssetPath,
                                 copyFromFile = copyFromFile,
                                 copyFromInputStream = copyFromInputStream,
-                                delegate = it
+                                delegate = it,
                             )
                         } else {
                             it
@@ -1760,7 +1762,7 @@ public actual abstract class RoomDatabase {
                             QueryInterceptorOpenHelperFactory(
                                 delegate = it,
                                 queryCallbackScope = CoroutineScope(queryCallbackContext),
-                                queryCallback = requireNotNull(queryCallback)
+                                queryCallback = requireNotNull(queryCallback),
                             )
                         } else {
                             it
@@ -2094,7 +2096,7 @@ private suspend fun <R> RoomDatabase.startTransactionCoroutine(
         continuation.cancel(
             IllegalStateException(
                 "Unable to acquire a thread to perform the database transaction.",
-                ex
+                ex,
             )
         )
     }
@@ -2165,11 +2167,11 @@ internal class TransactionElement(internal val transactionDispatcher: Continuati
  */
 @Deprecated(
     message = "Replaced by equivalent API in InvalidationTracker.",
-    replaceWith = ReplaceWith("this.invalidationTracker.createFlow(*tables)")
+    replaceWith = ReplaceWith("this.invalidationTracker.createFlow(*tables)"),
 )
 public fun RoomDatabase.invalidationTrackerFlow(
     vararg tables: String,
-    emitInitialState: Boolean = true
+    emitInitialState: Boolean = true,
 ): Flow<Set<String>> = invalidationTracker.createFlow(*tables, emitInitialState = emitInitialState)
 
 /**

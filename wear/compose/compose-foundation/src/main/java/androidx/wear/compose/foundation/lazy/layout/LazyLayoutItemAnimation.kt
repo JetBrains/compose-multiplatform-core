@@ -48,7 +48,7 @@ internal class LazyLayoutItemAnimation(
     /** Updated by the item as needed. */
     var transformedHeight: Int,
     var measuredHeight: Int,
-    var measurementDirection: MeasurementDirection
+    var measurementDirection: MeasurementDirection,
 ) {
     var fadeInSpec: FiniteAnimationSpec<Float>? = null
     var placementSpec: FiniteAnimationSpec<IntOffset>? = null
@@ -116,16 +116,16 @@ internal class LazyLayoutItemAnimation(
             if (rawOffset != NotInitialized) {
                 when (measurementDirection) {
                     MeasurementDirection.UPWARD ->
-                        TransformingLazyColumnItemScrollProgress.topItemScrollProgress(
+                        TransformingLazyColumnItemScrollProgress.upwardMeasuredItemScrollProgress(
                             rawOffset.y + placementDelta.y + transformedHeight,
                             measuredHeight,
-                            containerHeight
+                            containerHeight,
                         )
                     MeasurementDirection.DOWNWARD ->
-                        TransformingLazyColumnItemScrollProgress.bottomItemScrollProgress(
+                        TransformingLazyColumnItemScrollProgress.downwardMeasuredItemScrollProgress(
                             rawOffset.y + placementDelta.y,
                             measuredHeight,
-                            containerHeight
+                            containerHeight,
                         )
                 }
             } else TransformingLazyColumnItemScrollProgress.Unspecified
@@ -274,7 +274,7 @@ internal class LazyLayoutItemAnimation(
 internal data class LazyLayoutAnimateItemElement(
     private val fadeInSpec: FiniteAnimationSpec<Float>?,
     private val placementSpec: FiniteAnimationSpec<IntOffset>?,
-    private val fadeOutSpec: FiniteAnimationSpec<Float>?
+    private val fadeOutSpec: FiniteAnimationSpec<Float>?,
 ) : ModifierNodeElement<LazyLayoutAnimationSpecsNode>() {
 
     override fun create(): LazyLayoutAnimationSpecsNode =
@@ -297,7 +297,7 @@ internal data class LazyLayoutAnimateItemElement(
 internal class LazyLayoutAnimationSpecsNode(
     var fadeInSpec: FiniteAnimationSpec<Float>?,
     var placementSpec: FiniteAnimationSpec<IntOffset>?,
-    var fadeOutSpec: FiniteAnimationSpec<Float>?
+    var fadeOutSpec: FiniteAnimationSpec<Float>?,
 ) : Modifier.Node(), ParentDataModifierNode {
 
     override fun Density.modifyParentData(parentData: Any?): Any = this@LazyLayoutAnimationSpecsNode
@@ -307,5 +307,5 @@ internal class LazyLayoutAnimationSpecsNode(
 private val InterruptionSpec =
     spring(
         stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = IntOffset.VisibilityThreshold
+        visibilityThreshold = IntOffset.VisibilityThreshold,
     )

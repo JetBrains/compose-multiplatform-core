@@ -113,7 +113,7 @@ abstract class ProtectedSignalsManager internal constructor() {
             } else {
                 Log.d(
                     TAG,
-                    "Adservices less than 12, returning null for ProtectedSignalsManager.obtain."
+                    "Adservices less than 12, returning null for ProtectedSignalsManager.obtain.",
                 )
                 null
             }

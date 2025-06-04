@@ -86,7 +86,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
                         // Enforce to be read only (might be disabled by a YOLO developer)
                         newConnection.execSQL("PRAGMA query_only = 1")
                     }
-                }
+                },
             )
         this.writers =
             Pool(capacity = maxNumOfWriters, connectionFactory = { driver.open(fileName) })
@@ -94,7 +94,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
         if (isClosed) {
             throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
@@ -105,7 +105,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
             if (!isReadOnly && confinedConnection.isReadOnly) {
                 throwSQLiteException(
                     SQLITE_ERROR,
-                    "Cannot upgrade connection from reader to writer"
+                    "Cannot upgrade connection from reader to writer",
                 )
             }
             return if (coroutineContext[ConnectionElement] == null) {
@@ -135,7 +135,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
                 acquiredConnection?.let {
                     PooledConnectionImpl(
                         delegate = it.markAcquired(currentContext),
-                        isReadOnly = readers !== writers && isReadOnly
+                        isReadOnly = readers !== writers && isReadOnly,
                     )
                 }
             if (acquireError is TimeoutCancellationException) {
@@ -272,7 +272,7 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
 
 private class ConnectionWithLock(
     private val delegate: SQLiteConnection,
-    private val lock: Mutex = Mutex()
+    private val lock: Mutex = Mutex(),
 ) : SQLiteConnection by delegate, Mutex by lock {
 
     private var acquireCoroutineContext: CoroutineContext? = null
@@ -324,10 +324,8 @@ private class ConnectionElement(val connectionWrapper: PooledConnectionImpl) :
  * statement and using it is serialized as to prevent a coroutine from concurrently using the
  * statement between multiple different threads.
  */
-private class PooledConnectionImpl(
-    val delegate: ConnectionWithLock,
-    val isReadOnly: Boolean,
-) : Transactor, RawConnectionAccessor {
+private class PooledConnectionImpl(val delegate: ConnectionWithLock, val isReadOnly: Boolean) :
+    Transactor, RawConnectionAccessor {
     private val transactionStack = ArrayDeque<TransactionItem>()
 
     private val _isRecycled = AtomicBoolean(false)
@@ -346,7 +344,7 @@ private class PooledConnectionImpl(
 
     override suspend fun <R> withTransaction(
         type: SQLiteTransactionType,
-        block: suspend TransactionScope<R>.() -> R
+        block: suspend TransactionScope<R>.() -> R,
     ): R = withStateCheck { transaction(type, block) }
 
     override suspend fun inTransaction(): Boolean = withStateCheck {
@@ -365,7 +363,7 @@ private class PooledConnectionImpl(
 
     private suspend fun <R> transaction(
         type: SQLiteTransactionType?,
-        block: suspend TransactionScope<R>.() -> R
+        block: suspend TransactionScope<R>.() -> R,
     ): R {
         beginTransaction(type ?: SQLiteTransactionType.DEFERRED)
         var success = true
@@ -377,7 +375,8 @@ private class PooledConnectionImpl(
             if (ex is ConnectionPool.RollbackException) {
                 // Type arguments in exception subclasses is not allowed but the exception is always
                 // created with the correct type.
-                @Suppress("UNCHECKED_CAST") return (ex.result as R)
+                @Suppress("UNCHECKED_CAST")
+                return (ex.result as R)
             } else {
                 exception = ex
                 throw ex
@@ -460,15 +459,13 @@ private class PooledConnectionImpl(
         if (connectionElement == null || connectionElement.connectionWrapper !== this) {
             throwSQLiteException(
                 SQLITE_MISUSE,
-                "Attempted to use connection on a different coroutine"
+                "Attempted to use connection on a different coroutine",
             )
         }
         return block.invoke()
     }
 
-    private inner class StatementWrapper(
-        private val delegate: SQLiteStatement,
-    ) : SQLiteStatement {
+    private inner class StatementWrapper(private val delegate: SQLiteStatement) : SQLiteStatement {
 
         private val threadId = currentThreadId()
 
@@ -521,7 +518,7 @@ private class PooledConnectionImpl(
             if (threadId != currentThreadId()) {
                 throwSQLiteException(
                     SQLITE_MISUSE,
-                    "Attempted to use statement on a different thread"
+                    "Attempted to use statement on a different thread",
                 )
             }
             return block.invoke()

@@ -70,7 +70,7 @@ class ProviderVersionTest {
             initialHeight: Int,
             isZOrderOnTop: Boolean,
             clientExecutor: Executor,
-            client: SandboxedUiAdapter.SessionClient
+            client: SandboxedUiAdapter.SessionClient,
         ) {}
     }
 

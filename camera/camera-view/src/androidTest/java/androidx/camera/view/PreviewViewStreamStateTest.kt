@@ -56,7 +56,7 @@ import org.junit.runners.Parameterized
 class PreviewViewStreamStateTest(
     private val implMode: PreviewView.ImplementationMode,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     private lateinit var previewView: PreviewView
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -74,9 +74,7 @@ class PreviewViewStreamStateTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private lateinit var defaultCameraSelector: CameraSelector
 
@@ -114,7 +112,7 @@ class PreviewViewStreamStateTest(
     private fun startPreview(
         lifecycleOwner: LifecycleOwner,
         previewView: PreviewView,
-        cameraSelector: CameraSelector
+        cameraSelector: CameraSelector,
     ): Preview {
         val preview = Preview.Builder().build()
         val imageAnalysis = ImageAnalysis.Builder().build()
@@ -217,23 +215,23 @@ class PreviewViewStreamStateTest(
                 arrayOf(
                     PreviewView.ImplementationMode.COMPATIBLE,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     PreviewView.ImplementationMode.COMPATIBLE,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     PreviewView.ImplementationMode.PERFORMANCE,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     PreviewView.ImplementationMode.PERFORMANCE,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
+                    CameraPipeConfig.defaultConfig(),
+                ),
             )
 
         @BeforeClass

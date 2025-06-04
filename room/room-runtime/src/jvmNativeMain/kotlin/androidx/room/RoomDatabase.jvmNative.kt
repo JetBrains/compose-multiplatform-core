@@ -106,7 +106,7 @@ public actual abstract class RoomDatabase {
             configuration = configuration,
             sqliteDriver = checkNotNull(configuration.sqliteDriver),
             openDelegate = createOpenDelegate() as RoomOpenDelegate,
-            callbacks = configuration.callbacks ?: emptyList()
+            callbacks = configuration.callbacks ?: emptyList(),
         )
 
     /**
@@ -250,7 +250,7 @@ public actual abstract class RoomDatabase {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
         return connectionManager.useConnection(isReadOnly, block)
     }
@@ -265,7 +265,7 @@ public actual abstract class RoomDatabase {
         TRUNCATE,
 
         /** Write-Ahead Logging mode. */
-        WRITE_AHEAD_LOGGING
+        WRITE_AHEAD_LOGGING,
     }
 
     /**
@@ -282,7 +282,7 @@ public actual abstract class RoomDatabase {
     internal constructor(
         private val klass: KClass<T>,
         private val name: String?,
-        private val factory: (() -> T)
+        private val factory: (() -> T),
     ) {
 
         private var driver: SQLiteDriver? = null
@@ -430,7 +430,7 @@ public actual abstract class RoomDatabase {
          */
         public actual fun fallbackToDestructiveMigrationFrom(
             dropAllTables: Boolean,
-            vararg startVersions: Int
+            vararg startVersions: Int,
         ): Builder<T> = apply {
             for (startVersion in startVersions) {
                 this.migrationsNotRequiredFrom.add(startVersion)

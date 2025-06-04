@@ -61,7 +61,7 @@ sealed class CompositionLocal<T>(defaultFactory: () -> T) {
 
     internal abstract fun updatedStateOf(
         value: ProvidedValue<T>,
-        previous: ValueHolder<T>?
+        previous: ValueHolder<T>?,
     ): ValueHolder<T>
 
     /**
@@ -134,12 +134,12 @@ abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory
             mutationPolicy = null,
             state = null,
             compute = compute,
-            isDynamic = false
+            isDynamic = false,
         )
 
     override fun updatedStateOf(
         value: ProvidedValue<T>,
-        previous: ValueHolder<T>?
+        previous: ValueHolder<T>?,
     ): ValueHolder<T> {
         return when (previous) {
             is DynamicValueHolder ->
@@ -161,7 +161,7 @@ abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory
                     value.state
                         ?: mutableStateOf(
                             value.value,
-                            value.mutationPolicy ?: structuralEqualityPolicy()
+                            value.mutationPolicy ?: structuralEqualityPolicy(),
                         )
                 )
             value.compute != null -> ComputedValueHolder(value.compute)
@@ -181,7 +181,7 @@ abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory
  */
 internal class DynamicProvidableCompositionLocal<T>(
     private val policy: SnapshotMutationPolicy<T>,
-    defaultFactory: () -> T
+    defaultFactory: () -> T,
 ) : ProvidableCompositionLocal<T>(defaultFactory) {
 
     override fun defaultProvidedValue(value: T) =
@@ -192,7 +192,7 @@ internal class DynamicProvidableCompositionLocal<T>(
             mutationPolicy = policy,
             state = null,
             compute = null,
-            isDynamic = true
+            isDynamic = true,
         )
 }
 
@@ -212,7 +212,7 @@ internal class StaticProvidableCompositionLocal<T>(defaultFactory: () -> T) :
             mutationPolicy = null,
             state = null,
             compute = null,
-            isDynamic = false
+            isDynamic = false,
         )
 }
 
@@ -238,7 +238,7 @@ internal class StaticProvidableCompositionLocal<T>(defaultFactory: () -> T) :
  */
 fun <T> compositionLocalOf(
     policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
-    defaultFactory: () -> T
+    defaultFactory: () -> T,
 ): ProvidableCompositionLocal<T> = DynamicProvidableCompositionLocal(policy, defaultFactory)
 
 /**
@@ -312,7 +312,7 @@ internal class ComputedProvidableCompositionLocal<T>(
             mutationPolicy = null,
             state = null,
             compute = null,
-            isDynamic = true
+            isDynamic = true,
         )
 }
 
@@ -400,6 +400,6 @@ fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composable () ->
 fun CompositionLocalProvider(context: CompositionLocalContext, content: @Composable () -> Unit) {
     CompositionLocalProvider(
         *context.compositionLocals.map { it.value.toProvided(it.key) }.toTypedArray(),
-        content = content
+        content = content,
     )
 }

@@ -71,7 +71,7 @@ class PerformanceMetricsState private constructor() {
         frameStartTime: Long,
         frameEndTime: Long,
         frameStates: MutableList<StateInfo>,
-        activeStates: MutableList<StateData>
+        activeStates: MutableList<StateData>,
     ) {
         for (i in activeStates.indices.reversed()) {
             // idea: add state if state was active during this frame
@@ -288,7 +288,7 @@ class PerformanceMetricsState private constructor() {
     internal fun getIntervalStates(
         startTime: Long,
         endTime: Long,
-        frameStates: MutableList<StateInfo>
+        frameStates: MutableList<StateInfo>,
     ) {
         synchronized(singleFrameStates) {
             frameStates.clear()

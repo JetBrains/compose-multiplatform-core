@@ -167,7 +167,7 @@ class LivePagedListTest {
 
             override fun onCreateViewHolder(
                 parent: ViewGroup,
-                viewType: Int
+                viewType: Int,
             ): RecyclerView.ViewHolder {
                 return object : RecyclerView.ViewHolder(View(parent.context)) {}
             }
@@ -178,7 +178,7 @@ class LivePagedListTest {
         val livePagedList =
             LivePagedListBuilder(
                     factory,
-                    PagedList.Config.Builder().setEnablePlaceholders(false).setPageSize(30).build()
+                    PagedList.Config.Builder().setEnablePlaceholders(false).setPageSize(30).build(),
                 )
                 .build()
 
@@ -241,12 +241,12 @@ class LivePagedListTest {
             object : PositionalDataSource<String>() {
                 override fun loadInitial(
                     params: LoadInitialParams,
-                    callback: LoadInitialCallback<String>
+                    callback: LoadInitialCallback<String>,
                 ) {}
 
                 override fun loadRange(
                     params: LoadRangeParams,
-                    callback: LoadRangeCallback<String>
+                    callback: LoadRangeCallback<String>,
                 ) {}
             }
 

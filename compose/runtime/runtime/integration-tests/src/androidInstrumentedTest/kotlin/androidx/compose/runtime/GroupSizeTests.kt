@@ -46,11 +46,7 @@ class GroupSizeTests : BaseComposeTest() {
     @MediumTest
     @Ignore("Only run explicitly to check framework")
     fun checkboxSize() {
-        slotExpect(
-            "checkboxSize",
-            noMoreGroupsThan = 154,
-            noMoreSlotsThan = 179,
-        ) {
+        slotExpect("checkboxSize", noMoreGroupsThan = 154, noMoreSlotsThan = 179) {
             Checkbox(true, onCheckedChange = {})
         }
     }
@@ -73,11 +69,7 @@ class GroupSizeTests : BaseComposeTest() {
     @MediumTest
     @Ignore("Only run explicitly to check framework")
     fun buttonSize() {
-        slotExpect(
-            "buttonSize",
-            noMoreGroupsThan = 165,
-            noMoreSlotsThan = 193,
-        ) {
+        slotExpect("buttonSize", noMoreGroupsThan = 165, noMoreSlotsThan = 193) {
             androidx.compose.material.Button({}) { Text("Click me") }
         }
     }
@@ -93,7 +85,7 @@ class GroupSizeTests : BaseComposeTest() {
         name: String,
         noMoreGroupsThan: Int,
         noMoreSlotsThan: Int,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         var compositionData: CompositionData? = null
         compose {

@@ -268,7 +268,7 @@ class FormEditRecordTest {
         assertEquals(null, createdRecord.clickPoint)
         assertEquals(
             intArrayOf(1, 2).contentToString(),
-            createdRecord.selectedIndices?.contentToString()
+            createdRecord.selectedIndices?.contentToString(),
         )
         assertEquals("text", createdRecord.text)
         parcel.recycle()

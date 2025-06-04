@@ -36,7 +36,7 @@ fun Modifier.onIndirectTouchEvent(onIndirectTouchEvent: (IndirectTouchEvent) -> 
     this then
         IndirectTouchInputElement(
             onIndirectTouchEvent = onIndirectTouchEvent,
-            onPreIndirectTouchEvent = null
+            onPreIndirectTouchEvent = null,
         )
 
 /**
@@ -57,13 +57,13 @@ fun Modifier.onPreIndirectTouchEvent(
     this then
         IndirectTouchInputElement(
             onIndirectTouchEvent = null,
-            onPreIndirectTouchEvent = onPreIndirectTouchEvent
+            onPreIndirectTouchEvent = onPreIndirectTouchEvent,
         )
 
 @ExperimentalComposeUiApi
 private class IndirectTouchInputElement(
     val onIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
-    val onPreIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?
+    val onPreIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
 ) : ModifierNodeElement<IndirectTouchInputNode>() {
     override fun create() =
         IndirectTouchInputNode(onEvent = onIndirectTouchEvent, onPreEvent = onPreIndirectTouchEvent)
@@ -104,7 +104,7 @@ private class IndirectTouchInputElement(
 @ExperimentalComposeUiApi
 private class IndirectTouchInputNode(
     var onEvent: ((IndirectTouchEvent) -> Boolean)?,
-    var onPreEvent: ((IndirectTouchEvent) -> Boolean)?
+    var onPreEvent: ((IndirectTouchEvent) -> Boolean)?,
 ) : IndirectTouchInputModifierNode, Modifier.Node() {
     override fun onIndirectTouchEvent(event: IndirectTouchEvent) = onEvent?.invoke(event) == true
 

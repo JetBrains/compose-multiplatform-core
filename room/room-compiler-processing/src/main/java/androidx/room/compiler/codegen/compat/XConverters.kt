@@ -351,11 +351,11 @@ object XConverters {
     @JvmStatic
     fun toXPoet(
         jAnnotationSpec: JAnnotationSpec,
-        kAnnotationSpec: KAnnotationSpec
+        kAnnotationSpec: KAnnotationSpec,
     ): XAnnotationSpec =
         XAnnotationSpecImpl(
             JavaAnnotationSpec(jAnnotationSpec),
-            KotlinAnnotationSpec(kAnnotationSpec)
+            KotlinAnnotationSpec(kAnnotationSpec),
         )
 
     @JvmStatic
@@ -365,18 +365,18 @@ object XConverters {
     @JvmStatic
     fun toXPoet(
         jCodeBlockBuilder: JCodeBlockBuilder,
-        kCodeBlockBuilder: KCodeBlockBuilder
+        kCodeBlockBuilder: KCodeBlockBuilder,
     ): XCodeBlock.Builder =
         XCodeBlockImpl.Builder(
             JavaCodeBlock.Builder(jCodeBlockBuilder),
-            KotlinCodeBlock.Builder(kCodeBlockBuilder)
+            KotlinCodeBlock.Builder(kCodeBlockBuilder),
         )
 
     @JvmStatic
     fun toXPoet(
         addJavaNullabilityAnnotation: Boolean,
         jFunSpec: JFunSpec,
-        kFunSpec: KFunSpec
+        kFunSpec: KFunSpec,
     ): XFunSpec =
         XFunSpecImpl(JavaFunSpec(addJavaNullabilityAnnotation, jFunSpec), KotlinFunSpec(kFunSpec))
 
@@ -384,11 +384,11 @@ object XConverters {
     fun toXPoet(
         addJavaNullabilityAnnotation: Boolean,
         jFunSpecBuilder: JFunSpecBuilder,
-        kFunSpecBuilder: KFunSpecBuilder
+        kFunSpecBuilder: KFunSpecBuilder,
     ): XFunSpec.Builder =
         XFunSpecImpl.Builder(
             JavaFunSpec.Builder(addJavaNullabilityAnnotation, jFunSpecBuilder),
-            KotlinFunSpec.Builder(kFunSpecBuilder)
+            KotlinFunSpec.Builder(kFunSpecBuilder),
         )
 
     @JvmStatic
@@ -398,11 +398,11 @@ object XConverters {
     @JvmStatic
     fun toXPoet(
         jTypeSpecBuilder: JTypeSpecBuilder,
-        kTypeSpecBuilder: KTypeSpecBuilder
+        kTypeSpecBuilder: KTypeSpecBuilder,
     ): XTypeSpec.Builder =
         XTypeSpecImpl.Builder(
             JavaTypeSpec.Builder(jTypeSpecBuilder),
-            KotlinTypeSpec.Builder(kTypeSpecBuilder)
+            KotlinTypeSpec.Builder(kTypeSpecBuilder),
         )
 
     @JvmStatic
@@ -412,11 +412,11 @@ object XConverters {
     @JvmStatic
     fun toXPoet(
         jFileSpecBuilder: JFileSpecBuilder,
-        kFileSpecBuilder: KFileSpecBuilder
+        kFileSpecBuilder: KFileSpecBuilder,
     ): XFileSpec.Builder =
         XFileSpecImpl.Builder(
             JavaFileSpec.Builder(jFileSpecBuilder),
-            KotlinFileSpec.Builder(kFileSpecBuilder)
+            KotlinFileSpec.Builder(kFileSpecBuilder),
         )
 
     @JvmStatic

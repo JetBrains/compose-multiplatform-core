@@ -225,6 +225,34 @@ abstract interface androidx.compose.ui.draw/DrawModifier : androidx.compose.ui/M
     abstract fun (androidx.compose.ui.graphics.drawscope/ContentDrawScope).draw() // androidx.compose.ui.draw/DrawModifier.draw|draw@androidx.compose.ui.graphics.drawscope.ContentDrawScope(){}[0]
 }
 
+abstract interface androidx.compose.ui.draw/DropShadowScope : androidx.compose.ui.draw/ShadowScope // androidx.compose.ui.draw/DropShadowScope|null[0]
+
+abstract interface androidx.compose.ui.draw/InnerShadowScope : androidx.compose.ui.draw/ShadowScope // androidx.compose.ui.draw/InnerShadowScope|null[0]
+
+abstract interface androidx.compose.ui.draw/ShadowScope : androidx.compose.ui.unit/Density { // androidx.compose.ui.draw/ShadowScope|null[0]
+    abstract var alpha // androidx.compose.ui.draw/ShadowScope.alpha|{}alpha[0]
+        abstract fun <get-alpha>(): kotlin/Float // androidx.compose.ui.draw/ShadowScope.alpha.<get-alpha>|<get-alpha>(){}[0]
+        abstract fun <set-alpha>(kotlin/Float) // androidx.compose.ui.draw/ShadowScope.alpha.<set-alpha>|<set-alpha>(kotlin.Float){}[0]
+    abstract var blendMode // androidx.compose.ui.draw/ShadowScope.blendMode|{}blendMode[0]
+        abstract fun <get-blendMode>(): androidx.compose.ui.graphics/BlendMode // androidx.compose.ui.draw/ShadowScope.blendMode.<get-blendMode>|<get-blendMode>(){}[0]
+        abstract fun <set-blendMode>(androidx.compose.ui.graphics/BlendMode) // androidx.compose.ui.draw/ShadowScope.blendMode.<set-blendMode>|<set-blendMode>(androidx.compose.ui.graphics.BlendMode){}[0]
+    abstract var brush // androidx.compose.ui.draw/ShadowScope.brush|{}brush[0]
+        abstract fun <get-brush>(): androidx.compose.ui.graphics/Brush? // androidx.compose.ui.draw/ShadowScope.brush.<get-brush>|<get-brush>(){}[0]
+        abstract fun <set-brush>(androidx.compose.ui.graphics/Brush?) // androidx.compose.ui.draw/ShadowScope.brush.<set-brush>|<set-brush>(androidx.compose.ui.graphics.Brush?){}[0]
+    abstract var color // androidx.compose.ui.draw/ShadowScope.color|{}color[0]
+        abstract fun <get-color>(): androidx.compose.ui.graphics/Color // androidx.compose.ui.draw/ShadowScope.color.<get-color>|<get-color>(){}[0]
+        abstract fun <set-color>(androidx.compose.ui.graphics/Color) // androidx.compose.ui.draw/ShadowScope.color.<set-color>|<set-color>(androidx.compose.ui.graphics.Color){}[0]
+    abstract var offset // androidx.compose.ui.draw/ShadowScope.offset|{}offset[0]
+        abstract fun <get-offset>(): androidx.compose.ui.geometry/Offset // androidx.compose.ui.draw/ShadowScope.offset.<get-offset>|<get-offset>(){}[0]
+        abstract fun <set-offset>(androidx.compose.ui.geometry/Offset) // androidx.compose.ui.draw/ShadowScope.offset.<set-offset>|<set-offset>(androidx.compose.ui.geometry.Offset){}[0]
+    abstract var radius // androidx.compose.ui.draw/ShadowScope.radius|{}radius[0]
+        abstract fun <get-radius>(): kotlin/Float // androidx.compose.ui.draw/ShadowScope.radius.<get-radius>|<get-radius>(){}[0]
+        abstract fun <set-radius>(kotlin/Float) // androidx.compose.ui.draw/ShadowScope.radius.<set-radius>|<set-radius>(kotlin.Float){}[0]
+    abstract var spread // androidx.compose.ui.draw/ShadowScope.spread|{}spread[0]
+        abstract fun <get-spread>(): kotlin/Float // androidx.compose.ui.draw/ShadowScope.spread.<get-spread>|<get-spread>(){}[0]
+        abstract fun <set-spread>(kotlin/Float) // androidx.compose.ui.draw/ShadowScope.spread.<set-spread>|<set-spread>(kotlin.Float){}[0]
+}
+
 abstract interface androidx.compose.ui.focus/FocusEventModifier : androidx.compose.ui/Modifier.Element { // androidx.compose.ui.focus/FocusEventModifier|null[0]
     abstract fun onFocusEvent(androidx.compose.ui.focus/FocusState) // androidx.compose.ui.focus/FocusEventModifier.onFocusEvent|onFocusEvent(androidx.compose.ui.focus.FocusState){}[0]
 }
@@ -855,6 +883,8 @@ abstract interface androidx.compose.ui.node/RootForTest { // androidx.compose.ui
 }
 
 abstract interface androidx.compose.ui.node/SemanticsModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.node/SemanticsModifierNode|null[0]
+    open val isImportantForBounds // androidx.compose.ui.node/SemanticsModifierNode.isImportantForBounds|{}isImportantForBounds[0]
+        open fun <get-isImportantForBounds>(): kotlin/Boolean // androidx.compose.ui.node/SemanticsModifierNode.isImportantForBounds.<get-isImportantForBounds>|<get-isImportantForBounds>(){}[0]
     open val shouldClearDescendantSemantics // androidx.compose.ui.node/SemanticsModifierNode.shouldClearDescendantSemantics|{}shouldClearDescendantSemantics[0]
         open fun <get-shouldClearDescendantSemantics>(): kotlin/Boolean // androidx.compose.ui.node/SemanticsModifierNode.shouldClearDescendantSemantics.<get-shouldClearDescendantSemantics>|<get-shouldClearDescendantSemantics>(){}[0]
     open val shouldMergeDescendantSemantics // androidx.compose.ui.node/SemanticsModifierNode.shouldMergeDescendantSemantics|{}shouldMergeDescendantSemantics[0]
@@ -1390,6 +1420,7 @@ final class androidx.compose.ui.draw/CacheDrawScope : androidx.compose.ui.unit/D
 
     final fun (androidx.compose.ui.graphics.layer/GraphicsLayer).record(androidx.compose.ui.unit/Density = ..., androidx.compose.ui.unit/LayoutDirection = ..., androidx.compose.ui.unit/IntSize = ..., kotlin/Function1<androidx.compose.ui.graphics.drawscope/ContentDrawScope, kotlin/Unit>) // androidx.compose.ui.draw/CacheDrawScope.record|record@androidx.compose.ui.graphics.layer.GraphicsLayer(androidx.compose.ui.unit.Density;androidx.compose.ui.unit.LayoutDirection;androidx.compose.ui.unit.IntSize;kotlin.Function1<androidx.compose.ui.graphics.drawscope.ContentDrawScope,kotlin.Unit>){}[0]
     final fun obtainGraphicsLayer(): androidx.compose.ui.graphics.layer/GraphicsLayer // androidx.compose.ui.draw/CacheDrawScope.obtainGraphicsLayer|obtainGraphicsLayer(){}[0]
+    final fun obtainShadowContext(): androidx.compose.ui.graphics.shadow/ShadowContext // androidx.compose.ui.draw/CacheDrawScope.obtainShadowContext|obtainShadowContext(){}[0]
     final fun onDrawBehind(kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>): androidx.compose.ui.draw/DrawResult // androidx.compose.ui.draw/CacheDrawScope.onDrawBehind|onDrawBehind(kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]
     final fun onDrawWithContent(kotlin/Function1<androidx.compose.ui.graphics.drawscope/ContentDrawScope, kotlin/Unit>): androidx.compose.ui.draw/DrawResult // androidx.compose.ui.draw/CacheDrawScope.onDrawWithContent|onDrawWithContent(kotlin.Function1<androidx.compose.ui.graphics.drawscope.ContentDrawScope,kotlin.Unit>){}[0]
 }
@@ -3714,6 +3745,10 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/clipToBounds()
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawBehind(kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawBehind|drawBehind@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawWithCache(kotlin/Function1<androidx.compose.ui.draw/CacheDrawScope, androidx.compose.ui.draw/DrawResult>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawWithCache|drawWithCache@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.draw.CacheDrawScope,androidx.compose.ui.draw.DrawResult>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawWithContent(kotlin/Function1<androidx.compose.ui.graphics.drawscope/ContentDrawScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawWithContent|drawWithContent@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.graphics.drawscope.ContentDrawScope,kotlin.Unit>){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/dropShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/DropShadow, androidx.compose.ui.unit/DpOffset = ...): androidx.compose.ui/Modifier // androidx.compose.ui.draw/dropShadow|dropShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.DropShadow;androidx.compose.ui.unit.DpOffset){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/dropShadow(androidx.compose.ui.graphics/Shape, kotlin/Function1<androidx.compose.ui.draw/DropShadowScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/dropShadow|dropShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;kotlin.Function1<androidx.compose.ui.draw.DropShadowScope,kotlin.Unit>){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/innerShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/InnerShadow): androidx.compose.ui/Modifier // androidx.compose.ui.draw/innerShadow|innerShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.InnerShadow){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/innerShadow(androidx.compose.ui.graphics/Shape, kotlin/Function1<androidx.compose.ui.draw/InnerShadowScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/innerShadow|innerShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;kotlin.Function1<androidx.compose.ui.draw.InnerShadowScope,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/paint(androidx.compose.ui.graphics.painter/Painter, kotlin/Boolean = ..., androidx.compose.ui/Alignment = ..., androidx.compose.ui.layout/ContentScale = ..., kotlin/Float = ..., androidx.compose.ui.graphics/ColorFilter? = ...): androidx.compose.ui/Modifier // androidx.compose.ui.draw/paint|paint@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.painter.Painter;kotlin.Boolean;androidx.compose.ui.Alignment;androidx.compose.ui.layout.ContentScale;kotlin.Float;androidx.compose.ui.graphics.ColorFilter?){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/rotate(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui.draw/rotate|rotate@androidx.compose.ui.Modifier(kotlin.Float){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/scale(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui.draw/scale|scale@androidx.compose.ui.Modifier(kotlin.Float){}[0]

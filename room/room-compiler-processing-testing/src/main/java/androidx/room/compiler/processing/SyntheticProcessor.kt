@@ -60,7 +60,7 @@ internal class SyntheticProcessorImpl(handlers: List<(XTestInvocation) -> Unit>)
                 override fun process(
                     env: XProcessingEnv,
                     elementsByAnnotation: Map<String, Set<XElement>>,
-                    isLastRound: Boolean
+                    isLastRound: Boolean,
                 ): Set<XTypeElement> = emptySet()
             }
         )

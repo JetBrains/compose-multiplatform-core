@@ -201,7 +201,7 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
         renderParameters: RenderParameters,
         instant: Instant,
         userStyle: UserStyle?,
-        idAndComplicationData: Map<Int, ComplicationData>?
+        idAndComplicationData: Map<Int, ComplicationData>?,
     ): Bitmap
 
     /** Whether or not the watch face supports [RemoteWatchFaceViewHost]. */
@@ -231,7 +231,7 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
     public fun createRemoteWatchFaceViewHost(
         hostToken: IBinder,
         @Px width: Int,
-        @Px height: Int
+        @Px height: Int,
     ): RemoteWatchFaceViewHost? = null
 
     /** The UTC reference preview time for this watch face in milliseconds since the epoch. */
@@ -365,7 +365,7 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
          */
         @Deprecated(
             "Deprecated, use an overload that passes the disconnectReason",
-            ReplaceWith("onClientDisconnected(Int)")
+            ReplaceWith("onClientDisconnected(Int)"),
         )
         public fun onClientDisconnected() {}
 
@@ -430,7 +430,7 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
     @WatchFaceClientExperimental
     public fun addOnWatchFaceColorsListener(
         executor: Executor,
-        listener: Consumer<WatchFaceColors?>
+        listener: Consumer<WatchFaceColors?>,
     ) {}
 
     /** Stops listening for events registered by [addOnWatchFaceColorsListener]. */
@@ -462,7 +462,7 @@ internal class InteractiveWatchFaceClientImpl
 internal constructor(
     private val iInteractiveWatchFace: IInteractiveWatchFace,
     private val previewImageUpdateRequestedExecutor: Executor?,
-    private val previewImageUpdateRequestedListener: Consumer<String>?
+    private val previewImageUpdateRequestedListener: Consumer<String>?,
 ) : InteractiveWatchFaceClient {
 
     private val lock = Any()
@@ -577,7 +577,7 @@ internal constructor(
         renderParameters: RenderParameters,
         instant: Instant,
         userStyle: UserStyle?,
-        idAndComplicationData: Map<Int, ComplicationData>?
+        idAndComplicationData: Map<Int, ComplicationData>?,
     ): Bitmap =
         TraceEvent("InteractiveWatchFaceClientImpl.renderWatchFaceToBitmap").use {
             SharedMemoryImage.ashmemReadImageBundle(
@@ -594,9 +594,9 @@ internal constructor(
                             ?.map {
                                 IdAndComplicationDataWireFormat(
                                     it.key,
-                                    it.value.asWireComplicationData()
+                                    it.value.asWireComplicationData(),
                                 )
-                            }
+                            },
                     )
                 )
             )
@@ -629,7 +629,7 @@ internal constructor(
     override fun createRemoteWatchFaceViewHost(
         hostToken: IBinder,
         @Px width: Int,
-        @Px height: Int
+        @Px height: Int,
     ): RemoteWatchFaceViewHost? {
         if (apiVersion < 8) {
             throw UnsupportedOperationException()
@@ -641,7 +641,7 @@ internal constructor(
                 renderParameters: RenderParameters,
                 instant: Instant,
                 userStyle: UserStyle?,
-                idAndComplicationData: Map<Int, ComplicationData>?
+                idAndComplicationData: Map<Int, ComplicationData>?,
             ) {
                 remoteWatchFaceView.renderWatchFace(
                     WatchFaceRenderParams(
@@ -651,9 +651,9 @@ internal constructor(
                         idAndComplicationData?.map {
                             IdAndComplicationDataWireFormat(
                                 it.key,
-                                it.value.asWireComplicationData()
+                                it.value.asWireComplicationData(),
                             )
-                        }
+                        },
                     )
                 )
             }
@@ -688,12 +688,12 @@ internal constructor(
             if (apiVersion >= 13) {
                 iInteractiveWatchFace.updateWatchfaceInstanceSync(
                     newInstanceId,
-                    userStyle.toWireFormat()
+                    userStyle.toWireFormat(),
                 )
             } else {
                 iInteractiveWatchFace.updateWatchfaceInstance(
                     newInstanceId,
-                    userStyle.toWireFormat()
+                    userStyle.toWireFormat(),
                 )
             }
         }
@@ -713,7 +713,7 @@ internal constructor(
         get() =
             iInteractiveWatchFace.complicationDetails.associateBy(
                 { it.id },
-                { ComplicationSlotState(it.complicationState) }
+                { ComplicationSlotState(it.complicationState) },
             )
 
     override fun close() =
@@ -750,7 +750,7 @@ internal constructor(
 
     override fun addClientDisconnectListener(
         listener: InteractiveWatchFaceClient.ClientDisconnectListener,
-        executor: Executor
+        executor: Executor,
     ) {
         val disconnectReasonCopy =
             synchronized(lock) {
@@ -824,7 +824,7 @@ internal constructor(
 
     override fun addOnWatchFaceReadyListener(
         executor: Executor,
-        listener: InteractiveWatchFaceClient.OnWatchFaceReadyListener
+        listener: InteractiveWatchFaceClient.OnWatchFaceReadyListener,
     ) {
         synchronized(lock) {
             if (watchFaceReady) {
@@ -849,7 +849,7 @@ internal constructor(
     @WatchFaceClientExperimental
     override fun addOnWatchFaceColorsListener(
         executor: Executor,
-        listener: Consumer<WatchFaceColors?>
+        listener: Consumer<WatchFaceColors?>,
     ) {
         val colors =
             synchronized(lock) {

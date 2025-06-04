@@ -185,7 +185,7 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
             Vector3(
                 lerp(start.x, end.x, ratio),
                 lerp(start.y, end.y, ratio),
-                lerp(start.z, end.z, ratio)
+                lerp(start.z, end.z, ratio),
             )
 
         /** Returns the minimum of each component of the two vectors. */

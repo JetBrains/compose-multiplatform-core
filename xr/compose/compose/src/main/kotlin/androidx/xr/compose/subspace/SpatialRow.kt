@@ -100,7 +100,7 @@ private fun SpatialRow(
                 ContentlessEntity.create(
                     this,
                     name = entityName("SpatialRow"),
-                    pose = Pose.Identity
+                    pose = Pose.Identity,
                 )
             },
         measurePolicy =

@@ -38,7 +38,7 @@ import androidx.camera.core.internal.StreamSpecsCalculator
  */
 public class CameraFactoryProvider(
     private val sharedAppContext: Context? = null,
-    private val sharedThreadConfig: CameraThreadConfig? = null
+    private val sharedThreadConfig: CameraThreadConfig? = null,
 ) : CameraFactory.Provider {
     private val sharedInteropCallbacks = CameraInteropStateCallbackRepository()
 
@@ -47,14 +47,14 @@ public class CameraFactoryProvider(
         threadConfig: CameraThreadConfig,
         availableCamerasLimiter: CameraSelector?,
         cameraOpenRetryMaxTimeoutInMs: Long,
-        streamSpecsCalculator: StreamSpecsCalculator
+        streamSpecsCalculator: StreamSpecsCalculator,
     ): CameraFactory {
 
         val openRetryMaxTimeout =
             if (cameraOpenRetryMaxTimeoutInMs != -1L) null
             else DurationNs(cameraOpenRetryMaxTimeoutInMs)
 
-        val lazyCameraPipe = lazy { createCameraPipe(context, openRetryMaxTimeout) }
+        val lazyCameraPipe = lazy { createCameraPipe(context, threadConfig, openRetryMaxTimeout) }
 
         return CameraFactoryAdapter(
             lazyCameraPipe,
@@ -62,11 +62,15 @@ public class CameraFactoryProvider(
             sharedThreadConfig ?: threadConfig,
             sharedInteropCallbacks,
             availableCamerasLimiter,
-            streamSpecsCalculator
+            streamSpecsCalculator,
         )
     }
 
-    private fun createCameraPipe(context: Context, openRetryMaxTimeout: DurationNs?): CameraPipe {
+    private fun createCameraPipe(
+        context: Context,
+        threadConfig: CameraThreadConfig,
+        openRetryMaxTimeout: DurationNs?,
+    ): CameraPipe {
         Debug.traceStart { "Create CameraPipe" }
         val timeSource = SystemTimeSource()
         val start = Timestamps.now(timeSource)
@@ -75,11 +79,15 @@ public class CameraFactoryProvider(
             CameraPipe(
                 CameraPipe.Config(
                     appContext = context.applicationContext,
+                    threadConfig =
+                        CameraPipe.ThreadConfig(
+                            defaultCameraExecutor = threadConfig.cameraExecutor
+                        ),
                     cameraInteropConfig =
                         CameraPipe.CameraInteropConfig(
                             sharedInteropCallbacks.deviceStateCallback,
                             sharedInteropCallbacks.sessionStateCallback,
-                            openRetryMaxTimeout
+                            openRetryMaxTimeout,
                         ),
                 )
             )

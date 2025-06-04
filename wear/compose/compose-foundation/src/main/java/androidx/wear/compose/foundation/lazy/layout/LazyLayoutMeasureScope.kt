@@ -96,7 +96,7 @@ internal sealed interface LazyLayoutMeasureScope : MeasureScope {
 internal class LazyLayoutMeasureScopeImpl
 internal constructor(
     private val itemContentFactory: LazyLayoutItemContentFactory,
-    private val subcomposeMeasureScope: SubcomposeMeasureScope
+    private val subcomposeMeasureScope: SubcomposeMeasureScope,
 ) : LazyLayoutMeasureScope, MeasureScope by subcomposeMeasureScope {
 
     private val itemProvider = itemContentFactory.itemProvider()

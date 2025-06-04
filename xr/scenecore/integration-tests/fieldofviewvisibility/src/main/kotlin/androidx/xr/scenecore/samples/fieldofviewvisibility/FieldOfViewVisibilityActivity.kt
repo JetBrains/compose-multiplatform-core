@@ -51,11 +51,12 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SpatialVisibility
 import androidx.xr.scenecore.samples.commontestview.DebugTextLinearView
 import androidx.xr.scenecore.scene
+import java.util.function.Consumer
 
 class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
@@ -66,17 +67,25 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
     private lateinit var mSurfaceEntityManager: SurfaceEntityManager
     private lateinit var mSpatialEnvironmentManager: SpatialEnvironmentManager
     private lateinit var mHeadLockedUIManager: HeadLockedUIManager
-    private lateinit var mHeadLockedPanelView: View
+
+    private lateinit var mPanelEntityManager: PanelEntityManager
+    private lateinit var mPerceivedResolutionManager: PerceivedResolutionManager
+    private lateinit var mHeadLockedPanelView: DebugTextLinearView
     private var mSpatialVisibility by mutableStateOf(SpatialVisibility(SpatialVisibility.UNKNOWN))
+    private var mPerceivedResolution by mutableStateOf(IntSize2d(0, 0))
+    private val mPerceivedResolutionListener: Consumer<IntSize2d> = Consumer {
+        mPerceivedResolution = it
+        Log.i(TAG, "Perceived Resolution listener called $mPerceivedResolution")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mActivity = this
         mSession.resume()
-        mSession.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        mSession.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 
         // Set the main panel size and make the main panel movable.
-        mSession.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(width = 1500, height = 1400))
+        mSession.scene.mainPanelEntity.setSizeInPixels(IntSize2d(width = 1500, height = 1400))
         val movableComponent =
             MovableComponent.create(mSession, systemMovable = true, scaleInZ = false)
         val unused = mSession.scene.mainPanelEntity.addComponent(movableComponent)
@@ -85,18 +94,22 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         mSpatialEnvironmentManager = SpatialEnvironmentManager(mSession)
         mSurfaceEntityManager = SurfaceEntityManager(mSession)
         mGltfManager = GltfManager(mSession)
+        mPanelEntityManager = PanelEntityManager(mSession)
+        mPerceivedResolutionManager =
+            PerceivedResolutionManager(mSession, mSurfaceEntityManager, mPanelEntityManager)
 
         // Create the headlocked panel
-        val debugPanelView = DebugTextLinearView(context = this)
-        debugPanelView.setName("Spatial Visibility")
-        debugPanelView.setLine("State", "UNKNOWN")
-        this.mHeadLockedUIManager = HeadLockedUIManager(mSession, debugPanelView)
+        mHeadLockedPanelView = DebugTextLinearView(context = this)
+        mHeadLockedPanelView.setName("Spatial Visibility")
+        mHeadLockedPanelView.setLine("State", "UNKNOWN")
+        this.mHeadLockedUIManager = HeadLockedUIManager(mSession, mHeadLockedPanelView)
 
         mSession.scene.setSpatialVisibilityChangedListener { visibility: SpatialVisibility ->
             mSpatialVisibility = visibility
             Log.i(TAG, "Spatial visibility changed listener called $visibility")
-            debugPanelView.setLine("State", "$visibility")
+            mHeadLockedPanelView.setLine("State", "$visibility")
         }
+        mSession.scene.addPerceivedResolutionChangedListener(mPerceivedResolutionListener)
 
         setContent { MainPanelContent(mSession, mActivity) }
     }
@@ -104,6 +117,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         mSession.scene.clearSpatialVisibilityChangedListener()
+        mSession.scene.removePerceivedResolutionChangedListener(mPerceivedResolutionListener)
     }
 
     @Composable
@@ -134,8 +148,13 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         Column(verticalArrangement = Arrangement.Top) {
             Text(
                 modifier = Modifier.padding(15.dp),
-                text = "SpatialVisibility: $mSpatialVisibility"
+                text = "SpatialVisibility: $mSpatialVisibility",
             )
+            Text(
+                modifier = Modifier.padding(15.dp),
+                text = "Perceived Resolution (HSM): $mPerceivedResolution",
+            )
+
             Text(
                 modifier = Modifier.padding(15.dp),
                 text =
@@ -156,6 +175,12 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
             HorizontalDivider(Modifier.padding(15.dp), 1.dp, Color.Black)
 
             mGltfManager.GltfEntitySettings()
+            HorizontalDivider(Modifier.padding(15.dp), 1.dp, Color.Black)
+
+            mPanelEntityManager.PanelEntitySettings()
+            HorizontalDivider(Modifier.padding(15.dp), 1.dp, Color.Black)
+
+            mPerceivedResolutionManager.PerceivedResolutionSettings()
             HorizontalDivider(Modifier.padding(15.dp), 1.dp, Color.Black)
 
             Row(verticalAlignment = Alignment.CenterVertically) {

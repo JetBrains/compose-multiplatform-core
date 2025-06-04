@@ -26,7 +26,7 @@ interface ISdkApi {
         adType: Int,
         mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle
 
     fun requestResize(width: Int, height: Int)

@@ -208,12 +208,12 @@ class FocusListenerTest {
     ) : FocusListener {
         override fun onFocusChanged(
             previous: FocusTargetModifierNode?,
-            current: FocusTargetModifierNode?
+            current: FocusTargetModifierNode?,
         ) {
             events +=
                 Pair(
                     previous?.requireSemanticsInfo()?.semanticsId,
-                    current?.requireSemanticsInfo()?.semanticsId
+                    current?.requireSemanticsInfo()?.semanticsId,
                 )
         }
 
@@ -224,7 +224,7 @@ class FocusListenerTest {
 
     private fun ComposeContentTestRule.setContent(
         focusListener: FocusListener,
-        content: @Composable (() -> Unit)
+        content: @Composable (() -> Unit),
     ) {
         setContent {
             val focusOwner = LocalFocusManager.current as FocusOwner

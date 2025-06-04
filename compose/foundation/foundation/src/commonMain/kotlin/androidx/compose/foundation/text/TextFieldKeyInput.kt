@@ -229,7 +229,7 @@ internal class TextFieldKeyInput(
                 currentValue = value,
                 offsetMapping = offsetMapping,
                 layoutResultProxy = state.layoutResult,
-                state = preparedSelectionState
+                state = preparedSelectionState,
             )
         block(preparedSelection)
         if (

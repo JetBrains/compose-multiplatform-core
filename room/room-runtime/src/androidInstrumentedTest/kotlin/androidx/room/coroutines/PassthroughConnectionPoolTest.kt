@@ -17,14 +17,18 @@
 package androidx.room.coroutines
 
 import androidx.kruth.assertThat
+import androidx.room.Room
+import androidx.room.test.TestDatabase
 import androidx.room.test.TestDatabase_Impl
 import androidx.room.test.createDefaultConfiguration
+import androidx.room.useReaderConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
 
 @SmallTest
 class PassthroughConnectionPoolTest {
@@ -33,8 +37,6 @@ class PassthroughConnectionPoolTest {
 
     @Test
     fun usePassthrough_support() {
-        val androidDriver = AndroidSQLiteDriver()
-        val myDriver = object : SQLiteDriver by androidDriver {}
         val connectionManager =
             TestDatabase_Impl()
                 .createConnectionManager(
@@ -65,5 +67,22 @@ class PassthroughConnectionPoolTest {
                     createDefaultConfiguration(instrumentation).copy(sqliteDriver = myDriver)
                 )
         assertThat(connectionManager.connectionPool).isInstanceOf<PassthroughConnectionPool>()
+    }
+
+    @Test
+    fun reusingConnection_instanceCheck() = runTest {
+        val db =
+            Room.inMemoryDatabaseBuilder<TestDatabase>(instrumentation.targetContext)
+                .setDriver(AndroidSQLiteDriver())
+                .build()
+        val connectionOne =
+            db.useReaderConnection { connectionOne ->
+                db.useReaderConnection { reusedConnection ->
+                    assertThat(connectionOne).isSameInstanceAs(reusedConnection)
+                }
+                connectionOne
+            }
+        val connectionTwo = db.useReaderConnection { it }
+        assertThat(connectionOne).isNotSameInstanceAs(connectionTwo)
     }
 }

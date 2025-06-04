@@ -82,7 +82,7 @@ internal class PdfDocumentRemoteImpl(
         pageWidth: Int,
         pageHeight: Int,
         offsetX: Int,
-        offsetY: Int
+        offsetY: Int,
     ): Bitmap {
         val output = Bitmap.createBitmap(tileWidth, tileHeight, Bitmap.Config.ARGB_8888)
         // Create a bitmap with a white background. PdfRenderer doesn't
@@ -108,7 +108,7 @@ internal class PdfDocumentRemoteImpl(
     override fun selectPageText(
         pageNum: Int,
         start: SelectionBoundary,
-        stop: SelectionBoundary
+        stop: SelectionBoundary,
     ): PageSelection? {
         return withPage(pageNum) { page -> page.selectPageText(start, stop) }
     }

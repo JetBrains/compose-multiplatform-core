@@ -142,7 +142,7 @@ constructor(
         journalMode: RoomDatabase.JournalMode,
         queryExecutor: Executor,
         requireMigration: Boolean,
-        migrationNotRequiredFrom: Set<Int>?
+        migrationNotRequiredFrom: Set<Int>?,
     ) : this(
         context = context,
         name = name,
@@ -165,7 +165,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -203,7 +203,7 @@ constructor(
         multiInstanceInvalidation: Boolean,
         requireMigration: Boolean,
         allowDestructiveMigrationOnDowngrade: Boolean,
-        migrationNotRequiredFrom: Set<Int>?
+        migrationNotRequiredFrom: Set<Int>?,
     ) : this(
         context = context,
         name = name,
@@ -229,7 +229,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -271,7 +271,7 @@ constructor(
         allowDestructiveMigrationOnDowngrade: Boolean,
         migrationNotRequiredFrom: Set<Int>?,
         copyFromAssetPath: String?,
-        copyFromFile: File?
+        copyFromFile: File?,
     ) : this(
         context = context,
         name = name,
@@ -297,7 +297,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -342,7 +342,7 @@ constructor(
         migrationNotRequiredFrom: Set<Int>?,
         copyFromAssetPath: String?,
         copyFromFile: File?,
-        copyFromInputStream: Callable<InputStream>?
+        copyFromInputStream: Callable<InputStream>?,
     ) : this(
         context = context,
         name = name,
@@ -368,7 +368,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -416,7 +416,7 @@ constructor(
         copyFromAssetPath: String?,
         copyFromFile: File?,
         copyFromInputStream: Callable<InputStream>?,
-        prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?
+        prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
     ) : this(
         context = context,
         name = name,
@@ -442,7 +442,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -492,7 +492,7 @@ constructor(
         copyFromFile: File?,
         copyFromInputStream: Callable<InputStream>?,
         prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
-        typeConverters: List<Any>
+        typeConverters: List<Any>,
     ) : this(
         context = context,
         name = name,
@@ -518,7 +518,7 @@ constructor(
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -570,7 +570,7 @@ constructor(
         copyFromInputStream: Callable<InputStream>?,
         prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
         typeConverters: List<Any>,
-        autoMigrationSpecs: List<AutoMigrationSpec>
+        autoMigrationSpecs: List<AutoMigrationSpec>,
     ) : this(
         context = context,
         name = name,
@@ -596,7 +596,7 @@ constructor(
         autoMigrationSpecs = autoMigrationSpecs,
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -648,7 +648,7 @@ constructor(
         copyFromInputStream: Callable<InputStream>?,
         prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
         typeConverters: List<Any>,
-        autoMigrationSpecs: List<AutoMigrationSpec>
+        autoMigrationSpecs: List<AutoMigrationSpec>,
     ) : this(
         context = context,
         name = name,
@@ -671,7 +671,7 @@ constructor(
         autoMigrationSpecs = autoMigrationSpecs,
         allowDestructiveMigrationForAllTables = false,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
@@ -719,7 +719,7 @@ constructor(
         autoMigrationSpecs = autoMigrationSpecs,
         allowDestructiveMigrationForAllTables = allowDestructiveMigrationForAllTables,
         sqliteDriver = null,
-        queryCoroutineContext = null
+        queryCoroutineContext = null,
     )
 
     /**
@@ -731,7 +731,7 @@ constructor(
     @Deprecated(
         """Use [isMigrationRequired(int, int)] which takes
       [allowDestructiveMigrationOnDowngrade] into account.""",
-        ReplaceWith("isMigrationRequired(version, version + 1)")
+        ReplaceWith("isMigrationRequired(version, version + 1)"),
     )
     public open fun isMigrationRequiredFrom(version: Int): Boolean {
         return isMigrationRequired(version, version + 1)
@@ -773,7 +773,7 @@ constructor(
         autoMigrationSpecs: List<AutoMigrationSpec> = this.autoMigrationSpecs,
         allowDestructiveMigrationForAllTables: Boolean = this.allowDestructiveMigrationForAllTables,
         sqliteDriver: SQLiteDriver? = this.sqliteDriver,
-        queryCoroutineContext: CoroutineContext? = this.queryCoroutineContext
+        queryCoroutineContext: CoroutineContext? = this.queryCoroutineContext,
     ): DatabaseConfiguration =
         DatabaseConfiguration(
             context,
@@ -797,6 +797,6 @@ constructor(
             autoMigrationSpecs,
             allowDestructiveMigrationForAllTables,
             sqliteDriver,
-            queryCoroutineContext
+            queryCoroutineContext,
         )
 }

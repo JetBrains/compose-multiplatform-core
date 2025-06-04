@@ -61,12 +61,27 @@ internal abstract class AppFunctionDataSpec {
                 ?: throw IllegalArgumentException("Value associated with $key is not an object")
         return when (childDataType) {
             is AppFunctionArrayTypeMetadata -> {
-                val itemObjectType =
-                    childDataType.itemType as? AppFunctionObjectTypeMetadata
-                        ?: throw IllegalArgumentException(
-                            "Value associated with $key is not an object array"
+                when (val itemType = childDataType.itemType) {
+                    is AppFunctionObjectTypeMetadata ->
+                        return ObjectSpec(itemType, componentMetadata)
+                    is AppFunctionReferenceTypeMetadata -> {
+                        val resolvedDataType =
+                            componentMetadata.dataTypes[itemType.referenceDataType]
+                        if (
+                            resolvedDataType == null ||
+                                resolvedDataType !is AppFunctionObjectTypeMetadata
+                        ) {
+                            throw IllegalArgumentException(
+                                "Unable to resolve the reference: " + itemType.referenceDataType
+                            )
+                        }
+                        ObjectSpec(resolvedDataType, componentMetadata)
+                    }
+                    else ->
+                        throw IllegalArgumentException(
+                            "Array itemType must be either an object or a reference"
                         )
-                ObjectSpec(itemObjectType, componentMetadata)
+                }
             }
             is AppFunctionObjectTypeMetadata -> {
                 ObjectSpec(childDataType, componentMetadata)
@@ -102,11 +117,7 @@ internal abstract class AppFunctionDataSpec {
      * @param isCollection Indicates if the write request is a collection of [targetClass].
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateWriteRequest(
-        targetKey: String,
-        targetClass: Class<*>,
-        isCollection: Boolean,
-    ) {
+    fun validateWriteRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -128,11 +139,7 @@ internal abstract class AppFunctionDataSpec {
      * @param isCollection Indicates if the write request is a collection of [targetClass].
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateReadRequest(
-        targetKey: String,
-        targetClass: Class<*>,
-        isCollection: Boolean,
-    ) {
+    fun validateReadRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -150,7 +157,7 @@ internal abstract class AppFunctionDataSpec {
 
     private data class ObjectSpec(
         private val objectTypeMetadata: AppFunctionObjectTypeMetadata,
-        override val componentMetadata: AppFunctionComponentsMetadata
+        override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
         override val objectQualifiedName: String
             get() = objectTypeMetadata.qualifiedName ?: ""
@@ -166,7 +173,7 @@ internal abstract class AppFunctionDataSpec {
 
     private data class ParametersSpec(
         private val parameterMetadataList: List<AppFunctionParameterMetadata>,
-        override val componentMetadata: AppFunctionComponentsMetadata
+        override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
         override val objectQualifiedName: String
             get() = ""
@@ -248,14 +255,14 @@ internal abstract class AppFunctionDataSpec {
     companion object {
         fun create(
             objectType: AppFunctionObjectTypeMetadata,
-            componentMetadata: AppFunctionComponentsMetadata
+            componentMetadata: AppFunctionComponentsMetadata,
         ): AppFunctionDataSpec {
             return ObjectSpec(objectType, componentMetadata)
         }
 
         fun create(
             parameterMetadataList: List<AppFunctionParameterMetadata>,
-            componentMetadata: AppFunctionComponentsMetadata
+            componentMetadata: AppFunctionComponentsMetadata,
         ): AppFunctionDataSpec {
             return ParametersSpec(parameterMetadataList, componentMetadata)
         }

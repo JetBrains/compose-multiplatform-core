@@ -30,6 +30,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -157,7 +158,7 @@ class InteractableComponentTest {
                 RtInputEvent.Companion.HitInfo(
                     mockContentlessEntity,
                     Vector3.One,
-                    Matrix4.Identity
+                    Matrix4.Identity,
                 ),
                 null,
             )
@@ -195,7 +196,7 @@ class InteractableComponentTest {
             )
             .thenReturn(mockPanelEntity)
         whenever(mockPanelEntity.addComponent(any())).thenReturn(true)
-        val panelEntity = PanelEntity.create(session, view, PixelDimensions(720, 480), "test")
+        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
         assertThat(panelEntity.addComponent(interactableComponent)).isTrue()
 
         verify(mockRuntime).createInteractableComponent(any(), anyOrNull())

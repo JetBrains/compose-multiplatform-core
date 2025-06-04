@@ -47,7 +47,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { text == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -62,7 +62,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { "Ok" == text }
                 }
-            """
+            """,
             )
         }
 
@@ -77,7 +77,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { text.toString() == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -92,7 +92,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { text == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -107,7 +107,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { someFunction(text) }
                 }
-            """
+            """,
             )
         }
 
@@ -122,7 +122,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { this.text == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -137,7 +137,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { textAsString == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -152,7 +152,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { text("something") == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -170,7 +170,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                         someOtherObject.text == "Ok"
                     }
                 }
-            """
+            """,
             )
         }
 
@@ -185,7 +185,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                 fun myTest() = uiAutomator {
                     $it { SomeObject().text == "Ok" }
                 }
-            """
+            """,
             )
         }
 
@@ -205,7 +205,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                         }
                     }
                 }
-            """
+            """,
             )
         }
 
@@ -225,7 +225,7 @@ class AccessibilityNodeInfoGetTextDetectorTest : LintDetectorTest() {
                         }
                     }
                 }
-            """
+            """,
             )
         }
 

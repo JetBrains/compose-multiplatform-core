@@ -24,15 +24,15 @@ import androidx.camera.core.featurecombination.Feature
  *
  * This feature can not be instantiated directly for usage, instead use the [Feature.FPS_60] object.
  */
-internal class FpsRangeFeature(val minFps: Int, val maxFps: Int) : Feature() {
+public class FpsRangeFeature(public val minFps: Int, public val maxFps: Int) : Feature() {
     override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.FPS_RANGE
 
     override fun toString(): String {
         return "FpsRangeFeature(minFps=$minFps, maxFps=$maxFps)"
     }
 
-    companion object {
-        @JvmField val DEFAULT_FPS_RANGE = Range(30, 30)
+    public companion object {
+        @JvmField public val DEFAULT_FPS_RANGE: Range<Int> = Range(30, 30)
 
         // TODO: b/402372530  - Add a function to create a FpsRangeFeature instance where min and
         //  max FPS values are different.

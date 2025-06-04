@@ -81,14 +81,12 @@ class VideoRecordingFrameDropTest(
     private val implName: String,
     private val cameraSelector: CameraSelector,
     private val perSelectorTestData: PerSelectorTestData,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -103,7 +101,7 @@ class VideoRecordingFrameDropTest(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
@@ -111,7 +109,7 @@ class VideoRecordingFrameDropTest(
     data class PerSelectorTestData(
         var hasResult: Boolean = false,
         var routineError: Exception? = null,
-        var numDroppedFrames: Int = 0
+        var numDroppedFrames: Int = 0,
     )
 
     companion object {
@@ -127,25 +125,25 @@ class VideoRecordingFrameDropTest(
                     "back+" + Camera2Config::class.simpleName,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     PerSelectorTestData(),
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "front+" + Camera2Config::class.simpleName,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     PerSelectorTestData(),
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     PerSelectorTestData(),
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     PerSelectorTestData(),
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
             )
         }
@@ -159,7 +157,7 @@ class VideoRecordingFrameDropTest(
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeueInput/Output buffer fails issue. Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
 
         if (!perSelectorTestData.hasResult) {
@@ -233,11 +231,11 @@ class VideoRecordingFrameDropTest(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
                     target: Surface,
-                    frameNumber: Long
+                    frameNumber: Long,
                 ) {
                     Logger.e(
                         TAG,
-                        "Frame drop detected! [Frame number: $frameNumber, Target: $target]"
+                        "Frame drop detected! [Frame number: $frameNumber, Target: $target]",
                     )
                     droppedFrameFlow.tryEmit(frameNumber)
                 }
@@ -291,7 +289,7 @@ class VideoRecordingFrameDropTest(
                                 TAG,
                                 "Skipping ImageCapture use case, because this device" +
                                     " doesn't support 3 use case combination" +
-                                    " (Preview, Video, ImageCapture)."
+                                    " (Preview, Video, ImageCapture).",
                             )
                         }
                     }

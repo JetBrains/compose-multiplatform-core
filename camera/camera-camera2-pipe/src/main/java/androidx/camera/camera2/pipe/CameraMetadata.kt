@@ -87,6 +87,11 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public const val CAPABILITIES_SECURE_IMAGE_DATA: Int = 13
         public const val CAPABILITIES_SYSTEM_CAMERA: Int = 14
         public const val CAPABILITIES_OFFLINE_REPROCESSING: Int = 15
+        public const val CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR: Int = 16
+        public const val CAPABILITIES_REMOSAIC_REPROCESSING: Int = 17
+        public const val CAPABILITIES_DYNAMIC_RANGE_TEN_BIT: Int = 18
+        public const val CAPABILITIES_STREAM_USE_CASE: Int = 19
+        public const val CAPABILITIES_COLOR_SPACE_PROFILES: Int = 20
 
         public val CameraMetadata.availableCapabilities: IntArray
             @JvmStatic
@@ -162,6 +167,25 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public val CameraMetadata.supportsOfflineReprocessing: Boolean
             @JvmStatic
             get() = this.availableCapabilities.contains(CAPABILITIES_OFFLINE_REPROCESSING)
+
+        public val CameraMetadata.supportsUltraHighResolutionSensor: Boolean
+            @JvmStatic
+            get() = this.availableCapabilities.contains(CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR)
+
+        public val CameraMetadata.supportsRemosaicProcessing: Boolean
+            @JvmStatic
+            get() = this.availableCapabilities.contains(CAPABILITIES_REMOSAIC_REPROCESSING)
+
+        public val CameraMetadata.supportsDynamicRangeTenBit: Boolean
+            @JvmStatic
+            get() = this.availableCapabilities.contains(CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+
+        public val CameraMetadata.supportsStreamUseCase: Boolean
+            @JvmStatic get() = this.availableCapabilities.contains(CAPABILITIES_STREAM_USE_CASE)
+
+        public val CameraMetadata.supportsColorSpaceProfiles: Boolean
+            @JvmStatic
+            get() = this.availableCapabilities.contains(CAPABILITIES_COLOR_SPACE_PROFILES)
 
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean
             @JvmStatic

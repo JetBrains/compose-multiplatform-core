@@ -71,7 +71,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         constructor(
             workerClass: Class<out ListenableWorker?>,
             repeatInterval: Long,
-            repeatIntervalTimeUnit: TimeUnit
+            repeatIntervalTimeUnit: TimeUnit,
         ) : super(workerClass) {
             workSpec.setPeriodic(repeatIntervalTimeUnit.toMillis(repeatInterval))
         }
@@ -92,7 +92,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         constructor(
             workerClass: KClass<out ListenableWorker>,
             repeatInterval: Long,
-            repeatIntervalTimeUnit: TimeUnit
+            repeatIntervalTimeUnit: TimeUnit,
         ) : super(workerClass.java) {
             workSpec.setPeriodic(repeatIntervalTimeUnit.toMillis(repeatInterval))
         }
@@ -112,7 +112,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         @RequiresApi(26)
         constructor(
             workerClass: Class<out ListenableWorker>,
-            repeatInterval: Duration
+            repeatInterval: Duration,
         ) : super(workerClass) {
             workSpec.setPeriodic(repeatInterval.toMillisCompat())
         }
@@ -132,7 +132,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         @RequiresApi(26)
         constructor(
             workerClass: KClass<out ListenableWorker>,
-            repeatInterval: Duration
+            repeatInterval: Duration,
         ) : super(workerClass.java) {
             workSpec.setPeriodic(repeatInterval.toMillisCompat())
         }
@@ -163,11 +163,11 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
             repeatInterval: Long,
             repeatIntervalTimeUnit: TimeUnit,
             flexInterval: Long,
-            flexIntervalTimeUnit: TimeUnit
+            flexIntervalTimeUnit: TimeUnit,
         ) : super(workerClass) {
             workSpec.setPeriodic(
                 repeatIntervalTimeUnit.toMillis(repeatInterval),
-                flexIntervalTimeUnit.toMillis(flexInterval)
+                flexIntervalTimeUnit.toMillis(flexInterval),
             )
         }
 
@@ -197,11 +197,11 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
             repeatInterval: Long,
             repeatIntervalTimeUnit: TimeUnit,
             flexInterval: Long,
-            flexIntervalTimeUnit: TimeUnit
+            flexIntervalTimeUnit: TimeUnit,
         ) : super(workerClass.java) {
             workSpec.setPeriodic(
                 repeatIntervalTimeUnit.toMillis(repeatInterval),
-                flexIntervalTimeUnit.toMillis(flexInterval)
+                flexIntervalTimeUnit.toMillis(flexInterval),
             )
         }
 
@@ -228,7 +228,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         constructor(
             workerClass: Class<out ListenableWorker?>,
             repeatInterval: Duration,
-            flexInterval: Duration
+            flexInterval: Duration,
         ) : super(workerClass) {
             workSpec.setPeriodic(repeatInterval.toMillisCompat(), flexInterval.toMillisCompat())
         }
@@ -256,7 +256,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
         constructor(
             workerClass: KClass<out ListenableWorker>,
             repeatInterval: Duration,
-            flexInterval: Duration
+            flexInterval: Duration,
         ) : super(workerClass.java) {
             workSpec.setPeriodic(repeatInterval.toMillisCompat(), flexInterval.toMillisCompat())
         }
@@ -363,7 +363,7 @@ class PeriodicWorkRequest internal constructor(builder: Builder) :
  */
 public inline fun <reified W : ListenableWorker> PeriodicWorkRequestBuilder(
     repeatInterval: Long,
-    repeatIntervalTimeUnit: TimeUnit
+    repeatIntervalTimeUnit: TimeUnit,
 ): PeriodicWorkRequest.Builder {
     return PeriodicWorkRequest.Builder(W::class.java, repeatInterval, repeatIntervalTimeUnit)
 }
@@ -392,7 +392,7 @@ public inline fun <reified W : ListenableWorker> PeriodicWorkRequestBuilder(
     repeatInterval: Long,
     repeatIntervalTimeUnit: TimeUnit,
     flexTimeInterval: Long,
-    flexTimeIntervalUnit: TimeUnit
+    flexTimeIntervalUnit: TimeUnit,
 ): PeriodicWorkRequest.Builder {
 
     return PeriodicWorkRequest.Builder(
@@ -400,7 +400,7 @@ public inline fun <reified W : ListenableWorker> PeriodicWorkRequestBuilder(
         repeatInterval,
         repeatIntervalTimeUnit,
         flexTimeInterval,
-        flexTimeIntervalUnit
+        flexTimeIntervalUnit,
     )
 }
 
@@ -413,7 +413,7 @@ public inline fun <reified W : ListenableWorker> PeriodicWorkRequestBuilder(
 @RequiresApi(26)
 public inline fun <reified W : ListenableWorker> PeriodicWorkRequestBuilder(
     repeatInterval: Duration,
-    flexTimeInterval: Duration
+    flexTimeInterval: Duration,
 ): PeriodicWorkRequest.Builder {
     return PeriodicWorkRequest.Builder(W::class.java, repeatInterval, flexTimeInterval)
 }

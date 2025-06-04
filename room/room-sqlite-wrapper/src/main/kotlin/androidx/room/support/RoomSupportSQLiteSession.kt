@@ -66,7 +66,7 @@ internal class RoomSupportSQLiteSession(val roomDatabase: RoomDatabase) {
      */
     private fun <T> useConnectionBlocking(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> T
+        block: suspend (Transactor) -> T,
     ): T {
         val context = roomDatabase.suspendingTransactionContext.get() ?: EmptyCoroutineContext
         return runBlockingNonInterruptible(context) {
@@ -77,7 +77,7 @@ internal class RoomSupportSQLiteSession(val roomDatabase: RoomDatabase) {
     /** A version of [runBlocking] that is not interruptible. */
     private fun <T> runBlockingNonInterruptible(
         context: CoroutineContext,
-        action: suspend CoroutineScope.() -> T
+        action: suspend CoroutineScope.() -> T,
     ): T {
         val result = AtomicReference<Result<T>>()
         try {
@@ -186,7 +186,7 @@ private constructor(
      */
     private class TransactionCompletable(
         private val delegate: CompletableDeferred<Boolean>,
-        private val latch: CountDownLatch
+        private val latch: CountDownLatch,
     ) : CompletableDeferred<Boolean> by delegate {
         override fun complete(value: Boolean): Boolean {
             check(delegate.complete(value))
@@ -220,7 +220,7 @@ private constructor(
                                 ThreadTransaction(
                                     connectionContext = coroutineContext,
                                     completable =
-                                        TransactionCompletable(successSignal, completionLatch)
+                                        TransactionCompletable(successSignal, completionLatch),
                                 )
                             completer.set(threadTransaction)
                             val success = successSignal.await()

@@ -47,7 +47,7 @@ import kotlinx.serialization.serializer
  */
 public inline fun <reified T : Any> decodeFromSavedState(
     savedState: SavedState,
-    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
 ): T = decodeFromSavedState(configuration.serializersModule.serializer(), savedState, configuration)
 
 /**
@@ -86,7 +86,7 @@ public fun <T : Any> decodeFromSavedState(
 @OptIn(ExperimentalSerializationApi::class)
 internal class SavedStateDecoder(
     internal val savedState: SavedState,
-    private val configuration: SavedStateConfiguration
+    private val configuration: SavedStateConfiguration,
 ) : AbstractDecoder() {
     internal var key: String = ""
         private set
@@ -185,7 +185,7 @@ internal class SavedStateDecoder(
         } else {
             SavedStateDecoder(
                 savedState = savedState.read { getSavedState(key) },
-                configuration = configuration
+                configuration = configuration,
             )
         }
 

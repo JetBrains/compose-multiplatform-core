@@ -87,19 +87,13 @@ internal open class BaseCurvedChildWrapper(val wrapped: CurvedChild) : CurvedChi
 
     override fun doEstimateThickness(maxRadius: Float) = wrapped.estimateThickness(maxRadius)
 
-    override fun doRadialPosition(
-        parentOuterRadius: Float,
-        parentThickness: Float,
-    ) =
-        wrapped.radialPosition(
-            parentOuterRadius,
-            parentThickness,
-        )
+    override fun doRadialPosition(parentOuterRadius: Float, parentThickness: Float) =
+        wrapped.radialPosition(parentOuterRadius, parentThickness)
 
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ) = wrapped.angularPosition(parentStartAngleRadians, parentSweepRadians, centerOffset)
 
     override fun (Placeable.PlacementScope).placeIfNeeded() = with(wrapped) { placeIfNeeded() }

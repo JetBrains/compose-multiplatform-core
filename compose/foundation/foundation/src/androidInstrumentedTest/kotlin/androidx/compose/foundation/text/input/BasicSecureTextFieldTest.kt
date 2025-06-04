@@ -100,7 +100,7 @@ internal class BasicSecureTextFieldTest {
         inputMethodInterceptor.setContent {
             BasicSecureTextField(
                 state = remember { TextFieldState("Hello", initialSelection = TextRange(0, 1)) },
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -197,7 +197,7 @@ internal class BasicSecureTextFieldTest {
             Column {
                 BasicSecureTextField(
                     state = rememberTextFieldState(),
-                    modifier = Modifier.testTag(Tag)
+                    modifier = Modifier.testTag(Tag),
                 )
                 Box(modifier = Modifier.size(1.dp).testTag("otherFocusable").focusable())
             }
@@ -238,7 +238,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.Visible,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -258,7 +258,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 state = rememberTextFieldState(),
                 textObfuscationMode = obfuscationMode,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -279,7 +279,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.Hidden,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -302,7 +302,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 state = rememberTextFieldState(),
                 textObfuscationMode = obfuscationMode,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -324,7 +324,7 @@ internal class BasicSecureTextFieldTest {
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.Hidden,
                 textObfuscationCharacter = '&',
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -345,7 +345,7 @@ internal class BasicSecureTextFieldTest {
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.RevealLastTyped,
                 textObfuscationCharacter = '&',
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -366,7 +366,7 @@ internal class BasicSecureTextFieldTest {
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.Hidden,
                 textObfuscationCharacter = character,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -388,7 +388,7 @@ internal class BasicSecureTextFieldTest {
                 state = rememberTextFieldState(),
                 textObfuscationMode = TextObfuscationMode.RevealLastTyped,
                 textObfuscationCharacter = character,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -442,7 +442,7 @@ internal class BasicSecureTextFieldTest {
                     copyOptionAvailable = onCopyRequested != null
                     cutOptionAvailable = onCutRequested != null
                 },
-                onHideMenu = {}
+                onHideMenu = {},
             )
         val state = TextFieldState("Hello")
         inputMethodInterceptor.setContent {
@@ -522,7 +522,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 state = state,
                 readOnly = true,
-                modifier = Modifier.fillMaxSize().testTag(Tag)
+                modifier = Modifier.fillMaxSize().testTag(Tag),
             )
         }
 
@@ -542,7 +542,7 @@ internal class BasicSecureTextFieldTest {
                 state = state,
                 modifier = Modifier.testTag(Tag),
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
         rule.onNodeWithTag(Tag).assert(isEditable())
@@ -581,7 +581,7 @@ internal class BasicSecureTextFieldTest {
                 width = constraints.maxWidth
                 BasicSecureTextField(
                     state = rememberTextFieldState(),
-                    modifier = Modifier.testTag(Tag)
+                    modifier = Modifier.testTag(Tag),
                 )
             }
         }
@@ -596,7 +596,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 rememberTextFieldState("abcd ".repeat(100)),
                 Modifier.testTag(Tag),
-                scrollState = scrollState
+                scrollState = scrollState,
             )
         }
 
@@ -613,7 +613,7 @@ internal class BasicSecureTextFieldTest {
             BasicSecureTextField(
                 rememberTextFieldState("abcd ".repeat(100)),
                 Modifier.testTag(Tag),
-                scrollState = scrollState
+                scrollState = scrollState,
             )
         }
 

@@ -58,7 +58,7 @@ internal interface PdfPageWrapper : AutoCloseable {
         scaledPageWidth: Float,
         scaledPageHeight: Float,
         pageWidth: Int,
-        pageHeight: Int
+        pageHeight: Int,
     ): Matrix {
         return Matrix().apply {
             setScale(scaledPageWidth / pageWidth, scaledPageHeight / pageHeight)

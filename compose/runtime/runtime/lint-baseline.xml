@@ -1,5 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha03" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha03)" variant="all" version="8.11.0-alpha03">
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="    if (suppressedExceptions.none { it is DiagnosticComposeException }) {"
+        errorLine2="                             ~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/tooling/ComposeStackTrace.kt"/>
+    </issue>
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="                .map { it.substringBefore(&apos;@&apos;).substringAfter(&apos;*&apos;).toInt() + 1 }"
+        errorLine2="                 ~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/tooling/ComposeStackTraceBuilder.kt"/>
+    </issue>
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="    getCurrentCompositionErrors().mapNotNull { (cause, recoverable) ->"
+        errorLine2="                                  ~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/HotReloader.kt"/>
+    </issue>
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="                    val tail = it.drop(1)"
+        errorLine2="                                  ~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/changelist/Operation.kt"/>
+    </issue>
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="            knownCompositionsLocked().forEach { composition ->"
+        errorLine2="                                      ~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/Recomposer.kt"/>
+    </issue>
+
+    <issue
+        id="ListIterator"
+        message="Creating an unnecessary Iterator to iterate through a List"
+        errorLine1="                                    pairs.map { pair ->"
+        errorLine2="                                          ~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/runtime/Recomposer.kt"/>
+    </issue>
 
     <issue
         id="PrimitiveInCollection"

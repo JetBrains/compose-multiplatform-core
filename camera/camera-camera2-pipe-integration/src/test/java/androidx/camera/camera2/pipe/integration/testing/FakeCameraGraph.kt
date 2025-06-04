@@ -68,7 +68,7 @@ class FakeCameraGraph(
 
     override fun <T> useSessionIn(
         scope: CoroutineScope,
-        action: suspend CoroutineScope.(CameraGraph.Session) -> T
+        action: suspend CoroutineScope.(CameraGraph.Session) -> T,
     ): Deferred<T> = scope.async { useSession(action) }
 
     override fun close() {

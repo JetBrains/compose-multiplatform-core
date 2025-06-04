@@ -534,7 +534,7 @@ class TextFieldKeyEventTest {
     fun textField_pageNavigationDown_exactFit() {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
-            modifier = Modifier.requiredSize(90.dp) // exactly 3 lines fit
+            modifier = Modifier.requiredSize(90.dp), // exactly 3 lines fit
         ) {
             pressKey(Key.PageDown)
             expectedSelection(TextRange(6))
@@ -546,7 +546,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
             initSelection = TextRange(8), // just before 5
-            modifier = Modifier.requiredSize(73.dp)
+            modifier = Modifier.requiredSize(73.dp),
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(4))
@@ -558,7 +558,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
             initSelection = TextRange(8), // just before 5
-            modifier = Modifier.requiredSize(90.dp) // exactly 3 lines fit
+            modifier = Modifier.requiredSize(90.dp), // exactly 3 lines fit
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(2))
@@ -570,7 +570,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "1\n2\n3\n4\n5",
             initSelection = TextRange(0),
-            modifier = Modifier.requiredSize(90.dp)
+            modifier = Modifier.requiredSize(90.dp),
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(0))
@@ -738,7 +738,7 @@ class TextFieldKeyEventTest {
                     modifier = Modifier.testTag(tag),
                     lineLimits = SingleLine,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    onKeyboardAction = { keyboardActionCount++ }
+                    onKeyboardAction = { keyboardActionCount++ },
                 )
             }
         }
@@ -765,7 +765,7 @@ class TextFieldKeyEventTest {
                     modifier = Modifier.testTag(tag),
                     lineLimits = MultiLine(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    onKeyboardAction = { keyboardActionCount++ }
+                    onKeyboardAction = { keyboardActionCount++ },
                 )
             }
         }
@@ -903,7 +903,7 @@ class TextFieldKeyEventTest {
             BasicTextField(
                 value = "text",
                 onValueChange = {},
-                modifier = Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle)
+                modifier = Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle),
             )
         }
 
@@ -955,7 +955,7 @@ class TextFieldKeyEventTest {
     private inner class SequenceScope(
         val state: TextFieldState,
         val clipboard: Clipboard,
-        private val keyInjectionScope: KeyInjectionScope
+        private val keyInjectionScope: KeyInjectionScope,
     ) : KeyInjectionScope by keyInjectionScope {
 
         fun press(keys: List<Key>) {
@@ -1020,7 +1020,7 @@ class TextFieldKeyEventTest {
                             if (!noTextLayout) {
                                 it()
                             }
-                        }
+                        },
                     )
                 } else {
                     BasicSecureTextField(
@@ -1031,7 +1031,7 @@ class TextFieldKeyEventTest {
                             if (!noTextLayout) {
                                 it()
                             }
-                        }
+                        },
                     )
                 }
             }

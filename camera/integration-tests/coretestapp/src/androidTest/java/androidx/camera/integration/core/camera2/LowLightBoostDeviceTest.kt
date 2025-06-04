@@ -73,13 +73,11 @@ class LowLightBoostDeviceTest(
     private val selectorName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -235,7 +233,7 @@ class LowLightBoostDeviceTest(
             setOf(
                 DynamicRange.HLG_10_BIT,
                 DynamicRange.HDR10_10_BIT,
-                DynamicRange.DOLBY_VISION_10_BIT
+                DynamicRange.DOLBY_VISION_10_BIT,
             )
         val supported10BitDynamicRange =
             camera.cameraInfo.querySupportedDynamicRanges(candidate10BitDynamicRanges).firstOrNull()
@@ -289,7 +287,7 @@ class LowLightBoostDeviceTest(
                     error = exception
                     capturedCountDownLatch.countDown()
                 }
-            }
+            },
         )
 
         // Checks the image is captured successfully with flash state NOT_FIRED
@@ -388,26 +386,26 @@ class LowLightBoostDeviceTest(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
+                    CameraPipeConfig.defaultConfig(),
+                ),
             )
     }
 }

@@ -47,7 +47,7 @@ public constructor(
     val inputEvent: InputEvent? = null,
     val appDestination: Uri? = null,
     val webDestination: Uri? = null,
-    val verifiedDestination: Uri? = null
+    val verifiedDestination: Uri? = null,
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -99,7 +99,7 @@ public constructor(
         android.adservices.measurement.WebSourceRegistrationRequest {
         return android.adservices.measurement.WebSourceRegistrationRequest.Builder(
                 convertWebSourceParams(webSourceParams),
-                topOriginUri
+                topOriginUri,
             )
             .setWebDestination(webDestination)
             .setAppDestination(appDestination)
@@ -117,7 +117,7 @@ public constructor(
      */
     public class Builder(
         private val webSourceParams: List<WebSourceParams>,
-        private val topOriginUri: Uri
+        private val topOriginUri: Uri,
     ) {
         private var inputEvent: InputEvent? = null
         private var appDestination: Uri? = null
@@ -173,7 +173,7 @@ public constructor(
                 inputEvent,
                 appDestination,
                 webDestination,
-                verifiedDestination
+                verifiedDestination,
             )
         }
     }

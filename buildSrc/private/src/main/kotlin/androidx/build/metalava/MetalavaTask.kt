@@ -61,7 +61,7 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
             args,
             k2UastEnabled.get(),
             kotlinSourceLevel.get(),
-            workerExecutor
+            workerExecutor,
         )
     }
 }
@@ -127,12 +127,7 @@ internal abstract class SourceMetalavaTask(workerExecutor: WorkerExecutor) :
         val sourceSets = sourceSets.get()
         check(sourceSets.isNotEmpty()) { "Project must have at least one source set." }
         val outputFile = File(temporaryDir, "project.xml")
-        ProjectXml.create(
-            sourceSets,
-            bootClasspath.files,
-            compiledSources.singleFile,
-            outputFile,
-        )
+        ProjectXml.create(sourceSets, bootClasspath.files, compiledSources.singleFile, outputFile)
         return outputFile
     }
 }

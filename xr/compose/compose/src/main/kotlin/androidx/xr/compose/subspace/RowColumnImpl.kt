@@ -66,7 +66,7 @@ internal class RowColumnAlignElement(
         RowColumnAlignNode(
             horizontalSpatialAlignment,
             verticalSpatialAlignment,
-            depthSpatialAlignment
+            depthSpatialAlignment,
         )
 
     override fun update(node: RowColumnAlignNode) {

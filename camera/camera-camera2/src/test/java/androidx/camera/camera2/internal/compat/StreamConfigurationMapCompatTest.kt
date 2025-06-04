@@ -61,7 +61,7 @@ class StreamConfigurationMapCompatTest {
         streamConfigurationMapCompat =
             StreamConfigurationMapCompat.toStreamConfigurationMapCompat(
                 builder.build(),
-                OutputSizesCorrector(cameraId)
+                OutputSizesCorrector(cameraId),
             )
     }
 
@@ -107,7 +107,7 @@ class StreamConfigurationMapCompatTest {
         val compat =
             StreamConfigurationMapCompat.toStreamConfigurationMapCompat(
                 StreamConfigurationMapBuilder.newBuilder().build(),
-                OutputSizesCorrector(cameraId)
+                OutputSizesCorrector(cameraId),
             )
 
         // b/361590210: check the workaround for NullPointerException issue (on API 23+) of

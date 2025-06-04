@@ -21,6 +21,7 @@ import android.os.Binder
 import android.os.IBinder
 import androidx.credentials.providerevents.CredentialEventsProvider
 import androidx.credentials.providerevents.service.CredentialProviderEventsService
+import androidx.credentials.providerevents.service.DeviceSetupService
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -38,7 +39,7 @@ class CredentialEventsProviderFactoryTest {
             Intent().apply {
                 putExtra(
                     CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY,
-                    DummyCredentialEventsProvider::class.java.name
+                    DummyCredentialEventsProvider::class.java.name,
                 )
             }
 
@@ -54,7 +55,7 @@ class CredentialEventsProviderFactoryTest {
             Intent().apply {
                 putExtra(
                     CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY,
-                    "com.example.InvalidProvider"
+                    "com.example.InvalidProvider",
                 )
             }
 
@@ -77,6 +78,10 @@ class CredentialEventsProviderFactoryTest {
 // Dummy implementation of CredentialEventsProvider for testing
 class DummyCredentialEventsProvider : CredentialEventsProvider {
     override fun getStubImplementation(service: CredentialProviderEventsService): IBinder? {
+        return Binder()
+    }
+
+    override fun getStubImplementation(service: DeviceSetupService): IBinder? {
         return Binder()
     }
 }

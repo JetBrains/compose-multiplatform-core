@@ -53,7 +53,7 @@ fun Scrollable2DSample() {
                     }
             )
             .background(Color.LightGray),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         // Modifier.scrollable is not opinionated about its children's layouts. It will however
         // promote nested scrolling capabilities if those children also use the modifier.
@@ -61,7 +61,7 @@ fun Scrollable2DSample() {
         // the delta values in the scrollable state
         Text(
             "X=${offset.value.x.roundToInt()} Y=${offset.value.y.roundToInt()}",
-            style = TextStyle(fontSize = 32.sp)
+            style = TextStyle(fontSize = 32.sp),
         )
     }
 }

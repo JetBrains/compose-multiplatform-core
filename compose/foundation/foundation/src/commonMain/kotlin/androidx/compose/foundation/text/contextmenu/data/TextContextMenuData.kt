@@ -24,16 +24,14 @@ import androidx.compose.ui.util.fastJoinToString
  *
  * @param components the list of components to be rendered in the context menu.
  */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuData
-internal constructor(val components: List<TextContextMenuComponent>) {
+class TextContextMenuData(val components: List<TextContextMenuComponent>) {
     override fun toString(): String {
         val componentsStr =
             components.fastJoinToString(prefix = "[\n\t", separator = "\n\t", postfix = "\n]")
         return "TextContextMenuData(components=$componentsStr)"
     }
 
-    internal companion object {
+    companion object {
         val Empty = TextContextMenuData(emptyList())
     }
 }
@@ -45,36 +43,32 @@ internal constructor(val components: List<TextContextMenuComponent>) {
  *   in [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]. It is advisable
  *   to use a `data object` as a key here.
  */
-// TODO(grantapher-cm-api-publicize) Make abstract class public
-internal abstract class TextContextMenuComponent internal constructor(val key: Any)
+abstract class TextContextMenuComponent internal constructor(val key: Any)
 
 /** A [TextContextMenuComponent] separator in a text context menu. */
-// TODO(grantapher-cm-api-publicize) Make object public
-internal data object TextContextMenuSeparator : TextContextMenuComponent(TextContextMenuSeparator)
+object TextContextMenuSeparator : TextContextMenuComponent(TextContextMenuSeparator)
 
 /** A session for an open text context menu that can be used to close the context menu. */
 @Suppress("NotCloseable") // AutoCloseable not available in common.
-// TODO(grantapher-cm-api-publicize) Make interface public
-internal interface TextContextMenuSession {
+interface TextContextMenuSession {
     /** Closes the text context menu. */
     fun close()
 }
 
 /** Contains the `object`s used as keys for the compose provided context menu items. */
-// TODO(grantapher-cm-api-publicize) Make object public
-internal object TextContextMenuKeys {
+object TextContextMenuKeys {
     /** Key for the context menu "Cut" item. */
-    data object CutKey
+    val CutKey = Any()
 
     /** Key for the context menu "Copy" item. */
-    data object CopyKey
+    val CopyKey = Any()
 
     /** Key for the context menu "Paste" item. */
-    data object PasteKey
+    val PasteKey = Any()
 
     /** Key for the context menu "Select All" item. */
-    data object SelectAllKey
+    val SelectAllKey = Any()
 
     /** Key for the context menu "Autofill" item. */
-    data object AutofillKey
+    val AutofillKey = Any()
 }

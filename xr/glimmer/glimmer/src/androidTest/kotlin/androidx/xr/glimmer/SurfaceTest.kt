@@ -32,8 +32,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.modifier.modifierLocalConsumer
-import androidx.compose.ui.modifier.modifierLocalProvider
+import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -82,21 +81,21 @@ class SurfaceTest {
                     shape = RectangleShape,
                     color = Color.Blue,
                     contentColor = Color.Magenta,
-                    border = BorderStroke(1.dp, Color.Red)
+                    border = BorderStroke(1.dp, Color.Red),
                 )
             surfaceWithSameParameters =
                 Modifier.surface(
                     shape = RectangleShape,
                     color = Color.Blue,
                     contentColor = Color.Magenta,
-                    border = BorderStroke(1.dp, Color.Red)
+                    border = BorderStroke(1.dp, Color.Red),
                 )
             surfaceWithDifferentParameters =
                 Modifier.surface(
                     shape = CircleShape,
                     color = Color.Blue,
                     contentColor = Color.Magenta,
-                    border = BorderStroke(1.dp, Color.Red)
+                    border = BorderStroke(1.dp, Color.Red),
                 )
         }
 
@@ -191,9 +190,9 @@ class SurfaceTest {
 
         rule.runOnIdle {
             assertThat((defaultBorder.brush as SolidColor).value).isEqualTo(outline)
-            assertThat(defaultBorder.width).isEqualTo(3.dp)
+            assertThat(defaultBorder.width).isEqualTo(2.dp)
             assertThat((customBorder.brush as SolidColor).value).isEqualTo(Color.Red)
-            assertThat(customBorder.width).isEqualTo(3.dp)
+            assertThat(customBorder.width).isEqualTo(2.dp)
         }
     }
 
@@ -202,9 +201,12 @@ class SurfaceTest {
         var color: Color = Color.Unspecified
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.modifierLocalProvider(ModifierLocalContentColor) { Color.Unspecified }
-                    .surface()
-                    .modifierLocalConsumer { color = ModifierLocalContentColor.current }
+                Modifier.surface()
+                    .then(
+                        DelegatableNodeProviderElement {
+                            color = it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
             )
         }
 
@@ -213,60 +215,57 @@ class SurfaceTest {
 
     @Test
     fun providesContentColor_calculatedFromBackground() {
-        var color: Color = Color.Unspecified
+        var node: DelegatableNode? = null
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.modifierLocalProvider(ModifierLocalContentColor) { Color.Unspecified }
-                    .surface(color = Color.White)
-                    .modifierLocalConsumer { color = ModifierLocalContentColor.current }
+                Modifier.surface(color = Color.White)
+                    .then(DelegatableNodeProviderElement { node = it })
             )
         }
 
         // Surface color is white, so the content color should be black
-        rule.runOnIdle { assertThat(color).isEqualTo(Color.Black) }
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.Black) }
     }
 
     @Test
     fun providesContentColor_updates_backgroundColor() {
         var backgroundColor by mutableStateOf(Color.White)
-        var contentColor: Color = Color.Unspecified
+        var node: DelegatableNode? = null
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.modifierLocalProvider(ModifierLocalContentColor) { Color.Unspecified }
-                    .surface(color = backgroundColor)
-                    .modifierLocalConsumer { contentColor = ModifierLocalContentColor.current }
+                Modifier.surface(color = backgroundColor)
+                    .then(DelegatableNodeProviderElement { node = it })
             )
         }
 
         rule.runOnIdle {
             // Surface color is white, so the content color should be black
-            assertThat(contentColor).isEqualTo(Color.Black)
+            assertThat(node!!.currentContentColor()).isEqualTo(Color.Black)
             backgroundColor = Color.Black
         }
 
         rule.runOnIdle {
             // Surface color is now black, so the content color should be white
-            assertThat(contentColor).isEqualTo(Color.White)
+            assertThat(node!!.currentContentColor()).isEqualTo(Color.White)
         }
     }
 
     @Test
     fun providesContentColor_updates_contentColor() {
         var expectedColor by mutableStateOf(Color.White)
-        var actualColor: Color = Color.Unspecified
+        var node: DelegatableNode? = null
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.modifierLocalProvider(ModifierLocalContentColor) { Color.Unspecified }
-                    .surface(contentColor = expectedColor)
-                    .modifierLocalConsumer { actualColor = ModifierLocalContentColor.current }
+                Modifier.surface(contentColor = expectedColor)
+                    .then(DelegatableNodeProviderElement { node = it })
             )
         }
 
         rule.runOnIdle {
-            assertThat(actualColor).isEqualTo(Color.White)
+            assertThat(node!!.currentContentColor()).isEqualTo(Color.White)
             expectedColor = Color.Blue
         }
 
-        rule.runOnIdle { assertThat(actualColor).isEqualTo(Color.Blue) }
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.Blue) }
     }
 }

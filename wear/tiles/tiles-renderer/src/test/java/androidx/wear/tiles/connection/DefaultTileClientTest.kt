@@ -90,7 +90,7 @@ public class DefaultTileClientTest {
                 appContext,
                 TILE_PROVIDER,
                 fakeCoroutineScope,
-                fakeCoroutineDispatcher
+                fakeCoroutineDispatcher,
             )
     }
 
@@ -341,7 +341,7 @@ public class DefaultTileClientTest {
         override fun onTileRequest(
             id: Int,
             requestData: TileRequestData?,
-            callback: TileCallback?
+            callback: TileCallback?,
         ) {
             if (shouldReturnTile) {
                 callback!!.updateTileData(TileData(returnTile, returnTileVersion))
@@ -351,7 +351,7 @@ public class DefaultTileClientTest {
         override fun onResourcesRequest(
             id: Int,
             requestData: ResourcesRequestData?,
-            callback: ResourcesCallback?
+            callback: ResourcesCallback?,
         ) {
             if (shouldReturnResources) {
                 callback!!.updateResources(ResourcesData(returnResources, returnResourcesVersion))
@@ -376,7 +376,7 @@ public class DefaultTileClientTest {
 
         override fun onRecentInteractionEvents(
             events: List<TileInteractionEventData?>?,
-            callback: InteractionEventsCallback?
+            callback: InteractionEventsCallback?,
         ) {
             callback!!.finish()
         }

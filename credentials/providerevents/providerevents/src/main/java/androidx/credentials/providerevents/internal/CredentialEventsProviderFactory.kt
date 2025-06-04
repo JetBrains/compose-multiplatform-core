@@ -17,6 +17,7 @@
 package androidx.credentials.providerevents.internal
 
 import android.content.Intent
+import android.util.Log
 import androidx.credentials.providerevents.CredentialEventsProvider
 
 internal class CredentialEventsProviderFactory() {
@@ -36,7 +37,13 @@ internal class CredentialEventsProviderFactory() {
             val klass = Class.forName(className)
             val p = klass.getConstructor().newInstance() as CredentialEventsProvider
             provider = p
-        } catch (_: Throwable) {}
+        } catch (e: Throwable) {
+            Log.e(TAG, "Exception thrown while instantiating provider class", e)
+        }
         return provider
+    }
+
+    companion object {
+        private const val TAG = "EventsProviderFactory"
     }
 }

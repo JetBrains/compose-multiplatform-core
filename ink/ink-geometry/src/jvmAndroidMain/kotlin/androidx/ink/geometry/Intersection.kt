@@ -258,7 +258,7 @@ public object Intersection {
     @JvmStatic
     public fun Triangle.intersects(
         mesh: PartitionedMesh,
-        meshToTriangle: AffineTransform
+        meshToTriangle: AffineTransform,
     ): Boolean {
         return nativeMeshTriangleIntersects(
             nativeMeshAddress = mesh.nativePointer,
@@ -591,7 +591,7 @@ public object Intersection {
     public fun PartitionedMesh.intersects(
         x: Float,
         y: Float,
-        meshToPoint: AffineTransform
+        meshToPoint: AffineTransform,
     ): Boolean =
         nativeMeshVecIntersects(
             nativeMeshAddress = nativePointer,
@@ -615,7 +615,7 @@ public object Intersection {
     @JvmStatic
     public fun PartitionedMesh.intersects(
         segment: Segment,
-        meshToSegment: AffineTransform
+        meshToSegment: AffineTransform,
     ): Boolean = segment.intersects(this, meshToSegment)
 
     /**

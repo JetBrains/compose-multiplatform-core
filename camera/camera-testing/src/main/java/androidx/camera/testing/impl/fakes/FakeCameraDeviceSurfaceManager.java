@@ -23,7 +23,6 @@ import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IM
 
 import static com.google.common.primitives.Ints.asList;
 
-import android.util.Pair;
 import android.util.Size;
 
 import androidx.camera.core.Logger;
@@ -35,6 +34,7 @@ import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.SurfaceConfig;
+import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.streamsharing.StreamSharingConfig;
@@ -55,6 +55,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     private static final String TAG = "FakeCameraDeviceSurfaceManager";
 
     public static final Size MAX_OUTPUT_SIZE = new Size(4032, 3024); // 12.2 MP
+    public static final int MAX_SUPPORTED_FRAME_RATE = 60;
 
     private final Map<String, Map<Class<? extends UseCaseConfig<?>>, StreamSpec>>
             mDefinedStreamSpecs = new HashMap<>();
@@ -90,14 +91,14 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     }
 
     @Override
-    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
-            getSuggestedStreamSpecs(
+    public @NonNull SurfaceStreamSpecQueryResult getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
-            boolean hasVideoCapture, boolean allowFeatureCombinationResolutions) {
+            boolean hasVideoCapture, boolean allowFeatureCombinationResolutions,
+            boolean findMaxSupportedFrameRate) {
         List<UseCaseConfig<?>> newUseCaseConfigs =
                 new ArrayList<>(newUseCaseConfigsSupportedSizeMap.keySet());
         checkSurfaceCombo(existingSurfaces, newUseCaseConfigs);
@@ -117,7 +118,8 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
                     hasVideoCapture));
         }
 
-        return new Pair<>(suggestedStreamSpecs, existingStreamSpecs);
+        return new SurfaceStreamSpecQueryResult(suggestedStreamSpecs, existingStreamSpecs,
+                MAX_SUPPORTED_FRAME_RATE);
     }
 
     private @NonNull StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,

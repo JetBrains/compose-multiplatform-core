@@ -44,7 +44,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.browser.customtabs.ExperimentalEphemeralBrowsing;
 import androidx.browser.customtabs.ExperimentalPendingSession;
 import androidx.core.content.IntentCompat;
 import androidx.core.os.BundleCompat;
@@ -195,7 +194,6 @@ public class AuthTabIntent {
     /**
      * Returns whether ephemeral browsing is enabled.
      */
-    @ExperimentalEphemeralBrowsing
     public boolean isEphemeralBrowsingEnabled() {
         return intent.getBooleanExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, false);
     }
@@ -316,7 +314,6 @@ public class AuthTabIntent {
          * @param enabled Whether ephemeral browsing is enabled.
          * @see CustomTabsIntent#EXTRA_ENABLE_EPHEMERAL_BROWSING
          */
-        @ExperimentalEphemeralBrowsing
         public AuthTabIntent.@NonNull Builder setEphemeralBrowsingEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, enabled);
             return this;

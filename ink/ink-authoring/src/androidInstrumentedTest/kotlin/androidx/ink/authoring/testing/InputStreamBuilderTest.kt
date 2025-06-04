@@ -51,7 +51,7 @@ class InputStreamBuilderTest {
             arrayOf(
                 MotionEvent.BUTTON_PRIMARY,
                 MotionEvent.BUTTON_SECONDARY,
-                MotionEvent.BUTTON_TERTIARY
+                MotionEvent.BUTTON_TERTIARY,
             )
         for (button in buttons) {
             val builder = InputStreamBuilder.mouseLine(button, 0F, 0F, 100F, 200F)

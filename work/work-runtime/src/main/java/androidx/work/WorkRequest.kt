@@ -37,7 +37,7 @@ internal constructor(
     /** The [WorkSpec] associated with this unit of work. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val workSpec: WorkSpec,
     /** The tags associated with this unit of work. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val tags: Set<String>
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val tags: Set<String>,
 ) {
 
     /**
@@ -91,7 +91,7 @@ internal constructor(
         fun setBackoffCriteria(
             backoffPolicy: BackoffPolicy,
             backoffDelay: Long,
-            timeUnit: TimeUnit
+            timeUnit: TimeUnit,
         ): B {
             backoffCriteriaSet = true
             workSpec.backoffPolicy = backoffPolicy

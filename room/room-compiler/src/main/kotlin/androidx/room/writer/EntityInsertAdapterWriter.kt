@@ -35,7 +35,7 @@ private constructor(
     val tableName: String,
     val dataClass: DataClass,
     val primitiveAutoGenerateColumn: String?,
-    val onConflict: String
+    val onConflict: String,
 ) {
     companion object {
         fun create(entity: ShortcutEntity, onConflict: String): EntityInsertAdapterWriter {
@@ -59,14 +59,12 @@ private constructor(
                 tableName = entity.tableName,
                 dataClass = entity.dataClass,
                 primitiveAutoGenerateColumn = primitiveAutoGenerateField?.columnName,
-                onConflict = onConflict
+                onConflict = onConflict,
             )
         }
     }
 
-    fun createAnonymous(
-        typeWriter: TypeWriter,
-    ): XTypeSpec {
+    fun createAnonymous(typeWriter: TypeWriter): XTypeSpec {
         return XTypeSpec.anonymousClassBuilder()
             .apply {
                 superclass(RoomTypeNames.INSERT_ADAPTER.parametrizedBy(dataClass.typeName))
@@ -74,7 +72,7 @@ private constructor(
                     XFunSpec.builder(
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(CommonTypeNames.STRING)
@@ -105,7 +103,7 @@ private constructor(
                     XFunSpec.builder(
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(XTypeName.UNIT_VOID)
@@ -119,7 +117,7 @@ private constructor(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
                                 propertiesWithIndices = mapped,
-                                scope = bindScope
+                                scope = bindScope,
                             )
                             addCode(bindScope.generate())
                         }

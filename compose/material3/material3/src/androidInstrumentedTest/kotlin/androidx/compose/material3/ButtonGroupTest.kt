@@ -131,7 +131,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -146,7 +146,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -161,7 +161,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -176,7 +176,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -226,7 +226,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -241,7 +241,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -256,7 +256,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -271,7 +271,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -321,7 +321,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -336,7 +336,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -351,7 +351,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -366,7 +366,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -416,7 +416,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -431,7 +431,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -446,7 +446,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -461,7 +461,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -511,7 +511,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -526,7 +526,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -541,7 +541,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -556,7 +556,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -606,7 +606,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -621,7 +621,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -636,7 +636,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -651,7 +651,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -701,7 +701,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -716,7 +716,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -731,7 +731,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -746,7 +746,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -796,7 +796,7 @@ class ButtonGroupTest {
                                 Text("A")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -811,7 +811,7 @@ class ButtonGroupTest {
                                 Text("B")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -826,7 +826,7 @@ class ButtonGroupTest {
                                 Text("C")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                     customItem(
                         buttonGroupContent = {
@@ -841,7 +841,7 @@ class ButtonGroupTest {
                                 Text("D")
                             }
                         },
-                        menuContent = {}
+                        menuContent = {},
                     )
                 }
             }
@@ -920,7 +920,7 @@ class ButtonGroupTest {
                                 } else {
                                     menuState.show()
                                 }
-                            }
+                            },
                         ) {}
                     }
                 ) {
@@ -932,9 +932,9 @@ class ButtonGroupTest {
                                     enabled = true,
                                     text = { Text("$i") },
                                     modifier = Modifier.testTag("$i MenuItem"),
-                                    onClick = {}
+                                    onClick = {},
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -956,7 +956,7 @@ class ButtonGroupTest {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(
                     overflowIndicator = {},
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
                         clickableItem(onClick = {}, label = "$i")
@@ -971,7 +971,7 @@ class ButtonGroupTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x - 1500f, this.center.y),
-                durationMillis = 100
+                durationMillis = 100,
             )
         }
 

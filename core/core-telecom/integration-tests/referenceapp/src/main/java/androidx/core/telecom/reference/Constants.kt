@@ -33,6 +33,7 @@ object Constants {
     // Intent Extras
     const val EXTRA_SIMULATED_NUMBER: String = "simulated_number"
     const val EXTRA_REMOTE_USER_NAME: String = "name"
+    const val EXTRA_IS_VIDEO: String = "isVideo"
 
     // Deep Link Base URI
     const val DEEP_LINK_BASE_URI = "androidx.core.telecom.reference://"

@@ -46,7 +46,7 @@ class PagerAsCarouselBenchmark(private val compilationMode: CompilationMode) {
                 val intent = Intent()
                 intent.action = Action
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             // Setting a gesture margin is important otherwise gesture nav is triggered.
             val pager = device.findObject(By.desc(ContentDescription))

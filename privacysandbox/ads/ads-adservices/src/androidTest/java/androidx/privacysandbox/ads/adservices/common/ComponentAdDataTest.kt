@@ -67,7 +67,7 @@ class ComponentAdDataTest {
         /* API is available */
         Assume.assumeTrue(
             "minSdkVersion = API 31 ext 16",
-            AdServicesInfo.adServicesVersion() >= 16 || AdServicesInfo.extServicesVersionS() >= 16
+            AdServicesInfo.adServicesVersion() >= 16 || AdServicesInfo.extServicesVersionS() >= 16,
         )
 
         val componentAdData = ComponentAdData(renderUri, adRenderId)

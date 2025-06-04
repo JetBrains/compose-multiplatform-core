@@ -77,8 +77,14 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    // TODO(grantapher-cm-api-publicize) Make field public
-    @Suppress("MutableBareField") @JvmField internal var isNewContextMenuEnabled = false
+    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = true
+
+    /**
+     * Whether to use the new smart selection feature in
+     * [androidx.compose.foundation.text.selection.SelectionContainer] and all
+     * [androidx.compose.foundation.text.BasicTextField]s.
+     */
+    @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
 
     /**
      * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This

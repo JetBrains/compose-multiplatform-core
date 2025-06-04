@@ -112,10 +112,8 @@ internal fun colorCorrespondence(tolerance: Double = 0.02): Correspondence<Color
 internal fun assertThatColor(actual: Color): ColorSubject =
     assertAbout(ColorSubject.INSTANCE).that(actual)
 
-internal class ColorSubject(
-    failureMetadata: FailureMetadata?,
-    private val subject: Color,
-) : Subject(failureMetadata, subject) {
+internal class ColorSubject(failureMetadata: FailureMetadata?, private val subject: Color) :
+    Subject(failureMetadata, subject) {
     companion object {
         val INSTANCE =
             Factory<ColorSubject, Color> { failureMetadata, subject ->
@@ -164,14 +162,13 @@ internal object ContextMenuItemLabels {
     internal const val AUTOFILL = "Autofill"
 }
 
-internal fun ComposeTestRule.contextMenuItemInteraction(
-    label: String,
-): SemanticsNodeInteraction = onNode(matcher = hasAnyAncestor(isPopup()) and hasText(label))
+internal fun ComposeTestRule.contextMenuItemInteraction(label: String): SemanticsNodeInteraction =
+    onNode(matcher = hasAnyAncestor(isPopup()) and hasText(label))
 
 internal enum class ContextMenuItemState {
     ENABLED,
     DISABLED,
-    DOES_NOT_EXIST
+    DOES_NOT_EXIST,
 }
 
 /**

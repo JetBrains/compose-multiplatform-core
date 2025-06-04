@@ -85,7 +85,7 @@ class WavyProgressIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             LinearWavyProgressIndicator(
                 modifier = Modifier.testTag(tag),
-                progress = { progress.value }
+                progress = { progress.value },
             )
         }
 
@@ -124,7 +124,7 @@ class WavyProgressIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             LinearWavyProgressIndicator(
                 modifier = Modifier.testTag(tag),
-                progress = { progress.value }
+                progress = { progress.value },
             )
         }
 
@@ -186,7 +186,7 @@ class WavyProgressIndicatorTest {
             rule.setMaterialContentForSizeAssertions {
                 LinearWavyProgressIndicator(
                     modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag),
-                    progress = { 0.5f }
+                    progress = { 0.5f },
                 )
             }
 
@@ -222,7 +222,7 @@ class WavyProgressIndicatorTest {
         val contentToTest =
             rule.setMaterialContentForSizeAssertions {
                 LinearWavyProgressIndicator(
-                    modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag),
+                    modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag)
                 )
             }
 
@@ -426,7 +426,7 @@ class WavyProgressIndicatorTest {
                 progress = { data.progress },
                 // Disable the stop indicator for this test as we check for just indicator colors.
                 stopSize = 0.dp,
-                modifier = Modifier.testTag(tag)
+                modifier = Modifier.testTag(tag),
             )
             indicatorColor = WavyProgressIndicatorDefaults.indicatorColor
         }
@@ -557,7 +557,7 @@ class WavyProgressIndicatorTest {
             val data = state.value.data
             CircularWavyProgressIndicator(
                 progress = { data.progress },
-                modifier = Modifier.testTag(tag)
+                modifier = Modifier.testTag(tag),
             )
             indicatorColor = WavyProgressIndicatorDefaults.indicatorColor
         }

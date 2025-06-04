@@ -37,12 +37,16 @@ import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
+import kotlin.math.roundToInt
 import kotlin.random.Random
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+
+/**
+ * Given a page number, a starting point on that page, and a stopping point on that page, produce a
+ * [PageSelection] corresponding to the content that would be selected between those points.
+ */
+fun interface PageSelector {
+    fun select(pageNum: Int, start: PointF, stop: PointF): PageSelection
+}
 
 /**
  * Fake implementation of [PdfDocument], for testing
@@ -72,7 +76,8 @@ internal open class FakePdfDocument(
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
-    private val textContents: List<PdfPageTextContent> = emptyList()
+    private val textContents: List<PdfPageTextContent> = emptyList(),
+    private val pageSelector: PageSelector = SIMPLE_SELECTOR,
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -101,7 +106,7 @@ internal open class FakePdfDocument(
         if (pageNumber in pages.indices && pageNumber < textContents.size) {
             return PdfDocument.PdfPageContent(
                 textContents = listOf(textContents[pageNumber]),
-                imageContents = emptyList()
+                imageContents = emptyList(),
             )
         }
 
@@ -113,10 +118,15 @@ internal open class FakePdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection {
-        // TODO(b/376136631) provide a useful implementation when it's needed for testing
-        return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
+        return pageSelector?.select(pageNumber, start, stop)
+            ?: PageSelection(
+                page = 0,
+                start = SelectionBoundary(0),
+                stop = SelectionBoundary(0),
+                selectedTextContents = listOf(),
+            )
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -124,13 +134,13 @@ internal open class FakePdfDocument(
             0,
             SelectionBoundary(0),
             SelectionBoundary(Int.MAX_VALUE),
-            listOf(textContents[pageNumber])
+            listOf(textContents[pageNumber]),
         )
     }
 
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         return searchResults
     }
@@ -141,7 +151,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): List<PdfDocument.PageInfo> {
         return pageRange.map { getPageInfo(it) }
     }
@@ -152,7 +162,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfo(
         pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): PdfDocument.PageInfo {
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
@@ -194,7 +204,7 @@ internal open class FakePdfDocument(
                         255,
                         colorRng.nextInt(256),
                         colorRng.nextInt(256),
-                        colorRng.nextInt(256)
+                        colorRng.nextInt(256),
                     )
                 )
             }
@@ -238,7 +248,7 @@ internal open class FakePdfDocument(
                     List(10) { index ->
                         PdfPageTextContent(
                             bounds = listOf(RectF(0f, 0f, 100f, 200f)),
-                            text = "Sample text for page ${index + 1}"
+                            text = "Sample text for page ${index + 1}",
                         )
                     },
                 pageLinks =
@@ -254,19 +264,19 @@ internal open class FakePdfDocument(
                                                     pageNumber = VALID_PAGE_NUMBER,
                                                     xCoordinate = 10f,
                                                     yCoordinate = 40f,
-                                                    zoom = 1f
-                                                )
+                                                    zoom = 1f,
+                                                ),
                                         )
                                     ),
                                 externalLinks =
                                     listOf(
                                         PdfPageLinkContent(
                                             bounds = listOf(RectF(25f, 60f, 75f, 80f)),
-                                            uri = Uri.parse(URI_WITH_VALID_SCHEME)
+                                            uri = Uri.parse(URI_WITH_VALID_SCHEME),
                                         )
                                     ),
                             )
-                    )
+                    ),
             )
     }
 }
@@ -300,44 +310,41 @@ internal const val PDF_FORM_TYPE_XFA_FULL = 2
 internal const val PDF_FORM_TYPE_XFA_FOREGROUND = 3
 
 /**
- * Laying out pages involves waiting for multiple coroutines that are started sequentially. It is
- * not possible to use TestScheduler alone to wait for a certain amount of layout to happen. This
- * uses a polling loop to wait for a certain number of pages to be laid out, up to [timeoutMillis]
+ * Simple [PageSelector] implementation that selects the entire area between the starting and
+ * stopping point
+ *
+ * If the starting and stopping point are equal to each other, this treats the selection as a 10
+ * pixel square centered on that point. The starting and stopping point are equal to each other for
+ * the initial selection (i.e. long press).
+ *
+ * The selected text is static and insignificant
  */
-@OptIn(ExperimentalCoroutinesApi::class)
-internal suspend fun FakePdfDocument.waitForLayout(untilPage: Int, timeoutMillis: Long = 1000) {
-    // Jump to Dispatchers.Default, as TestDispatcher will skip delays and timeouts
-    withContext(Dispatchers.Default.limitedParallelism(1)) {
-        withTimeout(timeoutMillis) {
-            while (layoutReach < untilPage) {
-                delay(100)
-            }
-        }
-    }
+internal val SIMPLE_SELECTOR = PageSelector { pageNum: Int, start: PointF, stop: PointF ->
+    // Adjust start upwards and leftwards if it's the same point as stop. start == stop is a
+    // signal that the implementation should select the word at that point; this approximates that
+    val adjustedStart =
+        if (start != stop) start else PointF(maxOf(start.x - 5F, 0F), maxOf(start.y - 5F, 0F))
+    // Adjust stop downwards and rightwards if it's the same point as start. start == stop is a
+    // signal that the implementation should select the word at that point; this approximates that
+    val adjustedStop = if (start != stop) stop else PointF(stop.x + 5F, stop.y + 5F)
+    val selectedBounds =
+        RectF(
+            minOf(adjustedStart.x, adjustedStop.x),
+            minOf(adjustedStart.y, adjustedStop.y),
+            maxOf(adjustedStart.x, adjustedStop.x),
+            maxOf(adjustedStart.y, adjustedStop.y),
+        )
+    PageSelection(
+        pageNum,
+        SelectionBoundary(
+            point = Point(selectedBounds.left.roundToInt(), selectedBounds.top.roundToInt())
+        ),
+        SelectionBoundary(
+            point = Point(selectedBounds.right.roundToInt(), selectedBounds.bottom.roundToInt())
+        ),
+        listOf(PdfPageTextContent(listOf(selectedBounds), SIMPLE_SELECTOR_STATIC_TEXT)),
+    )
 }
 
-/**
- * Rendering pages involves waiting for multiple coroutines that are started sequentially. It is not
- * possible to use TestScheduler alone to wait for a certain amount of rendering to happen. This
- * uses a polling loop to wait for a certain number of pages to be rendered, up to [timeoutMillis]
- */
-@OptIn(ExperimentalCoroutinesApi::class)
-internal suspend fun FakePdfDocument.waitForRender(untilPage: Int, timeoutMillis: Long = 1000) {
-    // Jump to Dispatchers.Default, as TestDispatcher will skip delays and timeouts
-    withContext(Dispatchers.Default.limitedParallelism(1)) {
-        withTimeout(timeoutMillis) {
-            while (!bitmapRequests.containsKeys(0..untilPage)) {
-                delay(100)
-            }
-        }
-    }
-}
-
-/** Returns true if every value in [keys] is a key in this [Map] */
-private fun <V> Map<Int, V>.containsKeys(keys: IntRange): Boolean {
-    for (key in keys) {
-        if (key in this) continue
-        return false
-    }
-    return true
-}
+/** The static text produced as the selection for every invocation of [SIMPLE_SELECTOR] */
+internal const val SIMPLE_SELECTOR_STATIC_TEXT = "The quick brown fox was too slow"

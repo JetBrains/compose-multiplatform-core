@@ -54,7 +54,7 @@ class ScrollComposeFragment : BaseFragment() {
         adFormat: Int,
         adType: Int,
         mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -66,7 +66,7 @@ class ScrollComposeFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         setAdapter()
         return ComposeView(requireContext()).apply {
@@ -76,14 +76,14 @@ class ScrollComposeFragment : BaseFragment() {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
                     verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
+                    horizontalAlignment = Alignment.Start,
                 ) {
                     Column(modifier = Modifier.weight(0.8f).verticalScroll(rememberScrollState())) {
                         scrollBannerAdapter?.let {
                             SandboxedSdkUi(
                                 it,
                                 Modifier.fillMaxWidth().height(200.dp),
-                                providerUiOnTop = providerUiOnTop
+                                providerUiOnTop = providerUiOnTop,
                             )
                         }
                         Text(stringResource(R.string.long_text), Modifier.padding(vertical = 16.dp))

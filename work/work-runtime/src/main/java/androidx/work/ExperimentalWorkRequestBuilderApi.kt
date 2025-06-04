@@ -22,7 +22,7 @@ package androidx.work
     AnnotationTarget.FUNCTION,
     AnnotationTarget.PROPERTY,
     AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.CLASS
+    AnnotationTarget.CLASS,
 )
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 annotation class ExperimentalWorkRequestBuilderApi

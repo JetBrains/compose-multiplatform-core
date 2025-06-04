@@ -35,7 +35,7 @@ import androidx.room.RoomDatabase
 public fun <K : Any, V> recursiveFetchHashMap(
     map: HashMap<K, V>,
     isRelationCollection: Boolean,
-    fetchBlock: (HashMap<K, V>) -> Unit
+    fetchBlock: (HashMap<K, V>) -> Unit,
 ) {
     val tmpMap = HashMap<K, V>(RoomDatabase.MAX_BIND_PARAMETER_CNT)
     var count = 0
@@ -75,7 +75,7 @@ public fun <K : Any, V> recursiveFetchHashMap(
 public fun <K : Any, V> recursiveFetchArrayMap(
     map: ArrayMap<K, V>,
     isRelationCollection: Boolean,
-    fetchBlock: (ArrayMap<K, V>) -> Unit
+    fetchBlock: (ArrayMap<K, V>) -> Unit,
 ) {
     val tmpMap = ArrayMap<K, V>(RoomDatabase.MAX_BIND_PARAMETER_CNT)
     var count = 0

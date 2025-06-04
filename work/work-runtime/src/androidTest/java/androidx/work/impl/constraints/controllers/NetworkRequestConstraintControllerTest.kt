@@ -104,7 +104,7 @@ class NetworkRequestConstraintControllerTest {
 
     private fun runBlockingWithWifi(
         enabled: Boolean,
-        block: suspend CoroutineScope.() -> Unit
+        block: suspend CoroutineScope.() -> Unit,
     ): Unit = runBlocking {
         val initialState = isWifiConnected()
         toggleWifi(enabled)
@@ -152,7 +152,7 @@ class NetworkRequestConstraintControllerTest {
                     Constraints.Builder()
                         .setRequiredNetworkRequest(
                             createWifiNetworkRequest(),
-                            NetworkType.CONNECTED
+                            NetworkType.CONNECTED,
                         )
                         .build()
             )

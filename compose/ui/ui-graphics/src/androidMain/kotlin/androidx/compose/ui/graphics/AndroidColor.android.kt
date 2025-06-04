@@ -16,7 +16,14 @@
 
 package androidx.compose.ui.graphics
 
-/** Converts the Color to a 64-bit value that can be used by Android's framework. */
+import androidx.annotation.ColorLong
+
+/**
+ * Converts the Color to a 64-bit [ColorLong] value that can be used by Android's framework.
+ * [Color.value] isn't fully compatible with Android's 64-bit [ColorLong] values as some color
+ * spaces differ, so this method handles the conversion.
+ */
+@ColorLong
 fun Color.toColorLong(): Long {
     return if ((value and 0x3FUL) < 16UL) {
             value
@@ -26,8 +33,14 @@ fun Color.toColorLong(): Long {
         .toLong()
 }
 
-/** Creates a Color from an Android 64-bit color value. */
-fun Color.Companion.fromColorLong(colorLong: Long): Color {
+/**
+ * Creates a Color from an Android 64-bit color value. This differs from the [Color] constructor
+ * accepting a [Long] in that the constructor assumes the incoming value is a 32-bit ARGB color,
+ * while this is a 64-bit [ColorLong] color from Android. [Color.value] isn't fully compatible with
+ * Android's 64-bit [ColorLong] values as some color spaces differ, so this method handles the
+ * conversion.
+ */
+fun Color.Companion.fromColorLong(@ColorLong colorLong: Long): Color {
     val color =
         if (colorLong and 0x3F < 16) {
             colorLong

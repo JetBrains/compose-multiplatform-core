@@ -69,15 +69,13 @@ fun ResizingButtons(frameRate: Float) {
     val size by
         animateDpAsState(
             targetValue = if (expanded) 300.dp else 200.dp,
-            animationSpec = tween(durationMillis = 5000)
+            animationSpec = tween(durationMillis = 5000),
         )
 
     Button(
         onClick = { expanded = !expanded },
-        modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size)
+        modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size),
     ) {
-        Text(
-            "Click Me for size change",
-        )
+        Text("Click Me for size change")
     }
 }

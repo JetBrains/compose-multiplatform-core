@@ -91,7 +91,7 @@ class AppWidgetSessionTest {
         val root =
             runCompositionUntil(
                 { state, _ -> state == Recomposer.State.Idle },
-                session.provideGlance(context)
+                session.provideGlance(context),
             )
         assertThat(root.shouldIgnoreResult()).isTrue()
     }
@@ -163,7 +163,7 @@ class AppWidgetSessionTest {
                                 ActionModifier(LambdaAction("123") { didRunSecond = true })
                             )
                     }
-            }
+            },
         )
         session.processEvent(context, AppWidgetSession.RunLambda("123+0"))
         assertTrue(didRunFirst)
@@ -201,7 +201,7 @@ class AppWidgetSessionTest {
                                 )
                             )
                     }
-            }
+            },
         )
 
         session.runLambda("123+0")
@@ -262,7 +262,7 @@ class AppWidgetSessionTest {
         override suspend fun <T> getValue(
             context: Context,
             definition: GlanceStateDefinition<T>,
-            fileKey: String
+            fileKey: String,
         ): T {
             assertIs<PreferencesGlanceStateDefinition>(definition)
             getValueCalls.add(fileKey)
@@ -277,7 +277,7 @@ class AppWidgetSessionTest {
             context: Context,
             definition: GlanceStateDefinition<T>,
             fileKey: String,
-            updateBlock: suspend (T) -> T
+            updateBlock: suspend (T) -> T,
         ): T {
             TODO("Not yet implemented")
         }
@@ -285,7 +285,7 @@ class AppWidgetSessionTest {
         override suspend fun deleteStore(
             context: Context,
             definition: GlanceStateDefinition<*>,
-            fileKey: String
+            fileKey: String,
         ) {
             TODO("Not yet implemented")
         }

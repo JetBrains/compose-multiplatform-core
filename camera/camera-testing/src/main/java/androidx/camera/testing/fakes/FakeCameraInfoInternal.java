@@ -33,6 +33,7 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
+import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
@@ -119,6 +120,8 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private @Nullable CameraManager mCameraManager;
 
     private final @NonNull StreamSpecsCalculator mStreamSpecsCalculator;
+
+    private @Nullable CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
 
     public FakeCameraInfoInternal() {
         this(/*sensorRotation=*/ 0, /*lensFacing=*/ CameraSelector.LENS_FACING_BACK);
@@ -556,6 +559,19 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         }
 
         return true;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public void setCameraUseCaseAdapterProvider(
+            @NonNull CameraUseCaseAdapterProvider cameraUseCaseAdapterProvider) {
+        CameraInfoInternal.super.setCameraUseCaseAdapterProvider(cameraUseCaseAdapterProvider);
+        mCameraUseCaseAdapterProvider = cameraUseCaseAdapterProvider;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @Nullable CameraUseCaseAdapterProvider getCameraUseCaseAdapterProvider() {
+        return mCameraUseCaseAdapterProvider;
     }
 
     static final class FakeExposureState implements ExposureState {

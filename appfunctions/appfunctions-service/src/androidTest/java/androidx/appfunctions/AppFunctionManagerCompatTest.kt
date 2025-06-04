@@ -90,7 +90,7 @@ class AppFunctionManagerCompatTest {
             for (functionIds in resetFunctionIds) {
                 appFunctionManagerCompat.setAppFunctionEnabled(
                     functionIds,
-                    AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DEFAULT
+                    AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DEFAULT,
                 )
             }
         }
@@ -129,7 +129,7 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
             )
         }
 
@@ -141,7 +141,7 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
             )
         }
 
@@ -153,11 +153,11 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
             )
         }
 
@@ -169,11 +169,11 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED,
             )
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
             )
         }
 
@@ -185,15 +185,15 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DEFAULT
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DEFAULT,
             )
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
             )
         }
 
@@ -205,15 +205,15 @@ class AppFunctionManagerCompatTest {
         val isEnabled = runBlocking {
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED,
             )
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DEFAULT
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DEFAULT,
             )
             appFunctionManagerCompat.isAppFunctionEnabled(
                 context.packageName,
-                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT
+                AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
             )
         }
 
@@ -320,14 +320,14 @@ class AppFunctionManagerCompatTest {
                                             AppFunctionReferenceTypeMetadata(
                                                 referenceDataType =
                                                     "com.testdata.RecursiveSerializable",
-                                                isNullable = true
-                                            )
+                                                isNullable = true,
+                                            ),
                                         )
                                     },
                                 required = listOf("nested"),
                                 qualifiedName = "com.testdata.RecursiveSerializable",
-                                isNullable = true
-                            )
+                                isNullable = true,
+                            ),
                         )
                     }
             )
@@ -479,7 +479,7 @@ class AppFunctionManagerCompatTest {
             assertThat(appFunctions)
                 .containsAtLeast(
                     AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA_PRINT,
-                    AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA2_PRINT
+                    AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA2_PRINT,
                 )
         }
 
@@ -502,7 +502,7 @@ class AppFunctionManagerCompatTest {
             val searchFunctionSpec = AppFunctionSearchSpec()
             appFunctionManagerCompat.setAppFunctionEnabled(
                 functionIdToTest,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
 
             val appFunctionMetadata =
@@ -520,7 +520,7 @@ class AppFunctionManagerCompatTest {
             val searchFunctionSpec = AppFunctionSearchSpec()
             appFunctionManagerCompat.setAppFunctionEnabled(
                 functionIdToTest,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED,
             )
 
             val appFunctionMetadata =
@@ -550,7 +550,7 @@ class AppFunctionManagerCompatTest {
             // Modify the runtime document.
             appFunctionManagerCompat.setAppFunctionEnabled(
                 functionIdToTest,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
@@ -597,11 +597,11 @@ class AppFunctionManagerCompatTest {
             // Modify the runtime document twice.
             appFunctionManagerCompat.setAppFunctionEnabled(
                 functionIdToTest,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
             appFunctionManagerCompat.setAppFunctionEnabled(
                 functionIdToTest,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_ENABLED,
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
@@ -631,7 +631,7 @@ class AppFunctionManagerCompatTest {
             delay(1000) // Avoid debounce
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
@@ -670,7 +670,7 @@ class AppFunctionManagerCompatTest {
             delay(1000) // Avoid debounce
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
@@ -689,9 +689,7 @@ class AppFunctionManagerCompatTest {
                 )
             // Second result contains functionId from additional app install as well.
             assertThat(emittedValues.replayCache[1].map { it.id })
-                .contains(
-                    AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE,
-                )
+                .contains(AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE)
             // Third result has modified value of isEnabled from the original package.
             assertThat(
                     emittedValues.replayCache[2]
@@ -725,7 +723,7 @@ class AppFunctionManagerCompatTest {
             delay(1000) // Avoid debounce
             appFunctionManagerCompat.setAppFunctionEnabled(
                 AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT,
-                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED
+                AppFunctionManagerCompat.APP_FUNCTION_STATE_DISABLED,
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
@@ -740,9 +738,7 @@ class AppFunctionManagerCompatTest {
                 )
             // Second result contains functionId from additional app install as well.
             assertThat(emittedValues.replayCache[1].map { it.id })
-                .contains(
-                    AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE,
-                )
+                .contains(AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE)
             // Third result has modified value of isEnabled from the original package.
             assertThat(
                     emittedValues.replayCache[2]
@@ -791,7 +787,7 @@ class AppFunctionManagerCompatTest {
                         val status =
                             intent.getIntExtra(
                                 PackageInstaller.EXTRA_STATUS,
-                                PackageInstaller.STATUS_FAILURE
+                                PackageInstaller.STATUS_FAILURE,
                             )
                         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
 
@@ -814,7 +810,7 @@ class AppFunctionManagerCompatTest {
                     context,
                     0,
                     intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
                 )
 
             this.commit(sender.intentSender)

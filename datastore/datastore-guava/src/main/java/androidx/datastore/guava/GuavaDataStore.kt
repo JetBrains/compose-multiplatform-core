@@ -99,7 +99,7 @@ internal constructor(
         public constructor(
             context: Context,
             fileName: String,
-            serializer: Serializer<T>
+            serializer: Serializer<T>,
         ) : this(serializer, produceFile = { context.dataStoreFile(fileName) })
 
         // Optional
@@ -174,7 +174,7 @@ internal constructor(
                         serializer = serializer,
                         corruptionHandler = corruptionHandler,
                         migrations = dataMigrations,
-                        scope = CoroutineScope(coroutineDispatcher)
+                        scope = CoroutineScope(coroutineDispatcher),
                     )
                 } else {
                     DataStoreFactory.create(
@@ -208,14 +208,14 @@ internal constructor(
         @JvmOverloads
         public fun <T : Any> from(
             dataStore: DataStore<T>,
-            coroutineContext: CoroutineContext = Dispatchers.IO
+            coroutineContext: CoroutineContext = Dispatchers.IO,
         ): GuavaDataStore<T> {
             return GuavaDataStore(
                 dataStore as? CurrentDataProviderStore
                     ?: error(
                         "Unexpected DataStore object that does not implement CurrentDataProviderStore"
                     ),
-                coroutineContext
+                coroutineContext,
             )
         }
     }

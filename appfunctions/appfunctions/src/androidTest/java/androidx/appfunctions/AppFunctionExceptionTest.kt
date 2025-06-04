@@ -57,49 +57,49 @@ class AppFunctionExceptionTest {
 
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_APP_UNKNOWN_ERROR,
-            AppFunctionAppUnknownException::class.java
+            AppFunctionAppUnknownException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_PERMISSION_REQUIRED,
-            AppFunctionPermissionRequiredException::class.java
+            AppFunctionPermissionRequiredException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_NOT_SUPPORTED,
-            AppFunctionNotSupportedException::class.java
+            AppFunctionNotSupportedException::class.java,
         )
 
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_DENIED,
-            AppFunctionDeniedException::class.java
+            AppFunctionDeniedException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_INVALID_ARGUMENT,
-            AppFunctionInvalidArgumentException::class.java
+            AppFunctionInvalidArgumentException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_DISABLED,
-            AppFunctionDisabledException::class.java
+            AppFunctionDisabledException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_FUNCTION_NOT_FOUND,
-            AppFunctionFunctionNotFoundException::class.java
+            AppFunctionFunctionNotFoundException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_LIMIT_EXCEEDED,
-            AppFunctionLimitExceededException::class.java
+            AppFunctionLimitExceededException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_RESOURCE_ALREADY_EXISTS,
-            AppFunctionElementAlreadyExistsException::class.java
+            AppFunctionElementAlreadyExistsException::class.java,
         )
 
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_SYSTEM_ERROR,
-            AppFunctionSystemUnknownException::class.java
+            AppFunctionSystemUnknownException::class.java,
         )
         testCreateFromPlatformExtensionsClass(
             AppFunctionException.ERROR_CANCELLED,
-            AppFunctionCancelledException::class.java
+            AppFunctionCancelledException::class.java,
         )
     }
 
@@ -108,49 +108,49 @@ class AppFunctionExceptionTest {
     fun testCreateFromPlatformClass_knownClasses() {
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_APP_UNKNOWN_ERROR,
-            AppFunctionAppUnknownException::class.java
+            AppFunctionAppUnknownException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_PERMISSION_REQUIRED,
-            AppFunctionPermissionRequiredException::class.java
+            AppFunctionPermissionRequiredException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_NOT_SUPPORTED,
-            AppFunctionNotSupportedException::class.java
+            AppFunctionNotSupportedException::class.java,
         )
 
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_DENIED,
-            AppFunctionDeniedException::class.java
+            AppFunctionDeniedException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_INVALID_ARGUMENT,
-            AppFunctionInvalidArgumentException::class.java
+            AppFunctionInvalidArgumentException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_DISABLED,
-            AppFunctionDisabledException::class.java
+            AppFunctionDisabledException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_FUNCTION_NOT_FOUND,
-            AppFunctionFunctionNotFoundException::class.java
+            AppFunctionFunctionNotFoundException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_LIMIT_EXCEEDED,
-            AppFunctionLimitExceededException::class.java
+            AppFunctionLimitExceededException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_RESOURCE_ALREADY_EXISTS,
-            AppFunctionElementAlreadyExistsException::class.java
+            AppFunctionElementAlreadyExistsException::class.java,
         )
 
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_SYSTEM_ERROR,
-            AppFunctionSystemUnknownException::class.java
+            AppFunctionSystemUnknownException::class.java,
         )
         testCreateFromPlatformClass(
             AppFunctionException.ERROR_CANCELLED,
-            AppFunctionCancelledException::class.java
+            AppFunctionCancelledException::class.java,
         )
     }
 
@@ -163,7 +163,7 @@ class AppFunctionExceptionTest {
 
     private fun <E : AppFunctionException> testCreateFromPlatformExtensionsClass(
         errorCode: Int,
-        exceptionClass: Class<E>
+        exceptionClass: Class<E>,
     ) {
         assumeAppFunctionExtensionLibraryAvailable()
         val extras = Bundle().apply { putString("testKey", "testValue") }
@@ -171,7 +171,7 @@ class AppFunctionExceptionTest {
             com.android.extensions.appfunctions.AppFunctionException(
                 errorCode,
                 "testMessage",
-                extras
+                extras,
             )
 
         val exception = AppFunctionException.fromPlatformExtensionsClass(platformException)
@@ -185,7 +185,7 @@ class AppFunctionExceptionTest {
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     private fun <E : AppFunctionException> testCreateFromPlatformClass(
         errorCode: Int,
-        exceptionClass: Class<E>
+        exceptionClass: Class<E>,
     ) {
         val extras = Bundle().apply { putString("testKey", "testValue") }
         val platformException =

@@ -99,7 +99,7 @@ fun BasicText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     color: ColorProducer? = null,
-    autoSize: TextAutoSize? = null
+    autoSize: TextAutoSize? = null,
 ) {
     validateMinMaxLines(minLines = minLines, maxLines = maxLines)
     val selectionRegistrar = LocalSelectionRegistrar.current
@@ -137,7 +137,7 @@ fun BasicText(
                 selectionController = selectionController,
                 color = color,
                 onShowTranslation = null,
-                autoSize = autoSize
+                autoSize = autoSize,
             )
         } else {
             modifier then
@@ -149,7 +149,7 @@ fun BasicText(
                     softWrap = softWrap,
                     maxLines = maxLines,
                     minLines = minLines,
-                    color = color
+                    color = color,
                 )
         }
     Layout(finalModifier, EmptyMeasurePolicy)
@@ -197,7 +197,7 @@ fun BasicText(
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     color: ColorProducer? = null,
-    autoSize: TextAutoSize? = null
+    autoSize: TextAutoSize? = null,
 ) {
     validateMinMaxLines(minLines = minLines, maxLines = maxLines)
     val selectionRegistrar = LocalSelectionRegistrar.current
@@ -224,7 +224,7 @@ fun BasicText(
             text = text,
             style = style,
             fontFamilyResolver = fontFamilyResolver,
-            placeholders = null
+            placeholders = null,
         )
 
         // this is the same as text: String, use all the early exits
@@ -244,9 +244,9 @@ fun BasicText(
                     selectionController = selectionController,
                     color = color,
                     onShowTranslation = null,
-                    autoSize = autoSize
+                    autoSize = autoSize,
                 ),
-            EmptyMeasurePolicy
+            EmptyMeasurePolicy,
         )
     } else {
         // takes into account text substitution (for translation) that is happening inside the
@@ -275,7 +275,7 @@ fun BasicText(
                         substitutionValue.original
                     }
             },
-            autoSize = autoSize
+            autoSize = autoSize,
         )
     }
 }
@@ -314,7 +314,7 @@ fun BasicText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
-    color: ColorProducer? = null
+    color: ColorProducer? = null,
 ) {
     BasicText(text, modifier, style, onTextLayout, overflow, softWrap, maxLines, minLines, color)
 }
@@ -356,7 +356,7 @@ fun BasicText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
-    color: ColorProducer? = null
+    color: ColorProducer? = null,
 ) {
     BasicText(
         text,
@@ -368,7 +368,7 @@ fun BasicText(
         maxLines,
         minLines,
         inlineContent,
-        color
+        color,
     )
 }
 
@@ -381,7 +381,7 @@ fun BasicText(
     onTextLayout: ((TextLayoutResult) -> Unit)? = null,
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     BasicText(
         text = text,
@@ -391,7 +391,7 @@ fun BasicText(
         overflow = overflow,
         softWrap = softWrap,
         minLines = 1,
-        maxLines = maxLines
+        maxLines = maxLines,
     )
 }
 
@@ -416,7 +416,7 @@ fun BasicText(
         softWrap = softWrap,
         maxLines = maxLines,
         minLines = 1,
-        inlineContent = inlineContent
+        inlineContent = inlineContent,
     )
 }
 
@@ -430,7 +430,7 @@ fun BasicText(
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
-    minLines: Int = 1
+    minLines: Int = 1,
 ) = BasicText(text, modifier, style, onTextLayout, overflow, softWrap, maxLines, minLines)
 
 @Deprecated("Maintained for binary compat", level = DeprecationLevel.HIDDEN)
@@ -444,7 +444,7 @@ fun BasicText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
-    inlineContent: Map<String, InlineTextContent> = mapOf()
+    inlineContent: Map<String, InlineTextContent> = mapOf(),
 ) =
     BasicText(
         text = text,
@@ -455,14 +455,14 @@ fun BasicText(
         softWrap = softWrap,
         maxLines = maxLines,
         minLines = minLines,
-        inlineContent = inlineContent
+        inlineContent = inlineContent,
     )
 
 /** A custom saver that won't save if no selection is active. */
 private fun selectionIdSaver(selectionRegistrar: SelectionRegistrar?) =
     Saver<Long, Long>(
         save = { if (selectionRegistrar.hasSelection(it)) it else null },
-        restore = { it }
+        restore = { it },
     )
 
 private object EmptyMeasurePolicy : MeasurePolicy {
@@ -470,7 +470,7 @@ private object EmptyMeasurePolicy : MeasurePolicy {
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return layout(constraints.maxWidth, constraints.maxHeight, placementBlock = placementBlock)
     }
@@ -479,11 +479,11 @@ private object EmptyMeasurePolicy : MeasurePolicy {
 /** Measure policy for inline content and links */
 private class TextMeasurePolicy(
     private val shouldMeasureLinks: () -> Boolean,
-    private val placements: () -> List<Rect?>?
+    private val placements: () -> List<Rect?>?,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // inline content
         val inlineContentMeasurables =
@@ -497,10 +497,10 @@ private class TextMeasurePolicy(
                         inlineContentMeasurables[index].measure(
                             Constraints(
                                 maxWidth = floor(it.width).toInt(),
-                                maxHeight = floor(it.height).toInt()
+                                maxHeight = floor(it.height).toInt(),
                             )
                         ),
-                        IntOffset(it.left.fastRoundToInt(), it.top.fastRoundToInt())
+                        IntOffset(it.left.fastRoundToInt(), it.top.fastRoundToInt()),
                     )
                 }
             }
@@ -510,7 +510,7 @@ private class TextMeasurePolicy(
         val linksToPlace =
             measureWithTextRangeMeasureConstraints(
                 measurables = linksMeasurables,
-                shouldMeasureLinks = shouldMeasureLinks
+                shouldMeasureLinks = shouldMeasureLinks,
             )
 
         return layout(constraints.maxWidth, constraints.maxHeight) {
@@ -529,13 +529,13 @@ private class LinksTextMeasurePolicy(private val shouldMeasureLinks: () -> Boole
     MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return layout(constraints.maxWidth, constraints.maxHeight) {
             val linksToPlace =
                 measureWithTextRangeMeasureConstraints(
                     measurables = measurables,
-                    shouldMeasureLinks = shouldMeasureLinks
+                    shouldMeasureLinks = shouldMeasureLinks,
                 )
             linksToPlace?.fastForEach { (placeable, measureResult) ->
                 placeable.place(measureResult?.invoke() ?: IntOffset.Zero)
@@ -561,7 +561,7 @@ private fun measureWithTextRangeMeasureConstraints(
                         minWidth = rangeMeasureResult.width,
                         maxWidth = rangeMeasureResult.width,
                         minHeight = rangeMeasureResult.height,
-                        maxHeight = rangeMeasureResult.height
+                        maxHeight = rangeMeasureResult.height,
                     )
                 )
             Pair(placeable, rangeMeasureResult.place)
@@ -603,7 +603,7 @@ private fun Modifier.textModifier(
                 null,
                 color,
                 autoSize,
-                onShowTranslation
+                onShowTranslation,
             )
         return this then Modifier /* selection position */ then staticTextModifier
     } else {
@@ -621,7 +621,7 @@ private fun Modifier.textModifier(
                 onPlaceholderLayout,
                 selectionController,
                 color,
-                autoSize
+                autoSize,
             )
         return this then selectionController.modifier then selectableTextModifier
     }
@@ -643,7 +643,7 @@ private fun LayoutWithLinksAndInlineContent(
     selectionController: SelectionController?,
     color: ColorProducer?,
     onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)?,
-    autoSize: TextAutoSize?
+    autoSize: TextAutoSize?,
 ) {
 
     val textScope =
@@ -680,7 +680,7 @@ private fun LayoutWithLinksAndInlineContent(
         text = text,
         style = style,
         fontFamilyResolver = fontFamilyResolver,
-        placeholders = placeholders
+        placeholders = placeholders,
     )
 
     Layout(
@@ -716,9 +716,9 @@ private fun LayoutWithLinksAndInlineContent(
             } else {
                 TextMeasurePolicy(
                     shouldMeasureLinks = { textScope?.let { it.shouldMeasureLinks() } ?: false },
-                    placements = { measuredPlaceholderPositions?.value }
+                    placements = { measuredPlaceholderPositions?.value },
                 )
-            }
+            },
     )
 }
 
@@ -731,7 +731,7 @@ private fun LayoutWithLinksAndInlineContent(
 internal expect fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 )
 
 /**
@@ -744,5 +744,5 @@ internal expect fun BackgroundTextMeasurement(
     text: AnnotatedString,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>?
+    placeholders: List<AnnotatedString.Range<Placeholder>>?,
 )

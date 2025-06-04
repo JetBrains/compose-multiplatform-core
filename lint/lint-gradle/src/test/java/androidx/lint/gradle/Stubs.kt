@@ -217,7 +217,7 @@ internal val STUBS =
                 inline fun <reified S : Any> DomainObjectCollection<in S>.withType(): DomainObjectCollection<S> = TODO()
                 inline fun <reified S : Any> DomainObjectCollection<in S>.withType(noinline configuration: S.() -> Unit): DomainObjectCollection<S> = TODO()
             """
-                .trimIndent()
+                .trimIndent(),
         ),
         kotlin(
             """

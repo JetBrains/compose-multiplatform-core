@@ -60,8 +60,8 @@ class CameraCoordinatorAdapterTest {
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
                         intArrayOf(
                             CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
-                        ),
-                )
+                        )
+                ),
         )
     private val cameraMetadata1 =
         FakeCameraMetadata(
@@ -71,8 +71,8 @@ class CameraCoordinatorAdapterTest {
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
                         intArrayOf(
                             CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
-                        ),
-                )
+                        )
+                ),
         )
 
     private val cameraMetadata2 = FakeCameraMetadata(cameraId = CameraId("2"))
@@ -83,13 +83,13 @@ class CameraCoordinatorAdapterTest {
             concurrentCameraBackendIds =
                 setOf(
                     setOf(CameraBackendId("0"), CameraBackendId("1")),
-                    setOf(CameraBackendId("0"), CameraBackendId("2"))
+                    setOf(CameraBackendId("0"), CameraBackendId("2")),
                 ),
             cameraMetadataMap =
                 mapOf(
                     CameraBackendId("0") to
                         listOf(cameraMetadata0, cameraMetadata1, cameraMetadata2)
-                )
+                ),
         )
 
     private val mockCameraInternalAdapter0: CameraInternalAdapter = mock()
@@ -110,7 +110,7 @@ class CameraCoordinatorAdapterTest {
                 mapOf(
                     cameraMetadata0.camera to cameraMetadata0,
                     cameraMetadata1.camera to cameraMetadata1,
-                    cameraMetadata2.camera to cameraMetadata2
+                    cameraMetadata2.camera to cameraMetadata2,
                 )
         )
     private val cameraPipe =
@@ -160,7 +160,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
             )
 
         assertThat(cameraCoordinatorAdapter.activeConcurrentCameraInfos.size).isEqualTo(2)
@@ -188,7 +188,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
             )
 
         assertThat(cameraCoordinatorAdapter.getPairedConcurrentCameraId("0")).isEqualTo("1")
@@ -208,7 +208,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
             )
 
         assertThat(cameraCoordinatorAdapter.getPairedConcurrentCameraId("0")).isEqualTo("1")
@@ -254,7 +254,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
             )
 
         cameraCoordinatorAdapter.shutdown()

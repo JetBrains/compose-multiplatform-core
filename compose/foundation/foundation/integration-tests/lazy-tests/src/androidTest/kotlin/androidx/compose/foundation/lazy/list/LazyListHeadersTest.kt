@@ -132,7 +132,7 @@ class LazyListHeadersTest {
         rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 Modifier.height(300.dp).testTag(LazyListTag),
-                rememberLazyListState().also { state = it }
+                rememberLazyListState().also { state = it },
             ) {
                 stickyHeader {
                     Spacer(Modifier.height(101.dp).fillParentMaxWidth().testTag(firstHeaderTag))
@@ -262,7 +262,7 @@ class LazyListHeadersTest {
         rule.setContentWithTestViewConfiguration {
             LazyRow(
                 Modifier.width(300.dp).testTag(LazyListTag),
-                rememberLazyListState().also { state = it }
+                rememberLazyListState().also { state = it },
             ) {
                 stickyHeader {
                     Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(firstHeaderTag))
@@ -335,7 +335,7 @@ class LazyListHeadersTest {
             LazyColumn(
                 Modifier.requiredSize(itemIndexDp * 4),
                 state = rememberLazyListState().also { state = it },
-                contentPadding = PaddingValues(top = itemIndexDp * 2)
+                contentPadding = PaddingValues(top = itemIndexDp * 2),
             ) {
                 stickyHeader { Spacer(Modifier.requiredSize(itemIndexDp).testTag(headerTag)) }
 
@@ -351,7 +351,7 @@ class LazyListHeadersTest {
             assertEquals(0, state.layoutInfo.visibleItemsInfo.first().index)
             assertEquals(
                 itemIndexPx / 2 - /* content padding size */ itemIndexPx * 2,
-                state.layoutInfo.visibleItemsInfo.first().offset
+                state.layoutInfo.visibleItemsInfo.first().offset,
             )
         }
 
@@ -406,7 +406,7 @@ private fun LazyColumn(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -420,7 +420,7 @@ private fun LazyColumn(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }
 
@@ -436,7 +436,7 @@ private fun LazyRow(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -450,6 +450,6 @@ private fun LazyRow(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }

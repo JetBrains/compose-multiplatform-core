@@ -78,6 +78,6 @@ internal class WindowMetricsCalculatorCompat(
             WindowInsetsCompat.Type.systemGestures(),
             WindowInsetsCompat.Type.mandatorySystemGestures(),
             WindowInsetsCompat.Type.tappableElement(),
-            WindowInsetsCompat.Type.displayCutout()
+            WindowInsetsCompat.Type.displayCutout(),
         )
 }

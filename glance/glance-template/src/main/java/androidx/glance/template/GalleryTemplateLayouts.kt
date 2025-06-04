@@ -111,7 +111,7 @@ private fun WidgetLayoutVertical(data: GalleryTemplateData) {
         Row(modifier = createCardModifier(), verticalAlignment = Alignment.CenterVertically) {
             LazyVerticalGrid(
                 modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                gridCells = gridCells
+                gridCells = gridCells,
             ) {
                 itemsIndexed(data.galleryImageBlock.images) { _, image ->
                     Image(
@@ -121,7 +121,7 @@ private fun WidgetLayoutVertical(data: GalleryTemplateData) {
                             GlanceModifier.padding((margin / 2).dp)
                                 .height(imageHeight.dp)
                                 .width(imageWidth.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
                     )
                 }
             }
@@ -132,7 +132,7 @@ private fun WidgetLayoutVertical(data: GalleryTemplateData) {
 @Composable
 private fun createTopLevelModifier(
     data: GalleryTemplateData,
-    isImmersive: Boolean = false
+    isImmersive: Boolean = false,
 ): GlanceModifier {
     var modifier =
         GlanceModifier.fillMaxSize()

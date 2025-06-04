@@ -61,7 +61,7 @@ import kotlin.reflect.KProperty
 @StateFactoryMarker
 fun <T> mutableStateOf(
     value: T,
-    policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy()
+    policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
 ): MutableState<T> = createSnapshotMutableState(value, policy)
 
 /**
@@ -116,7 +116,7 @@ inline operator fun <T> MutableState<T>.setValue(thisObj: Any?, property: KPrope
 /** Returns platform specific implementation based on [SnapshotMutableStateImpl]. */
 internal expect fun <T> createSnapshotMutableState(
     value: T,
-    policy: SnapshotMutationPolicy<T>
+    policy: SnapshotMutationPolicy<T>,
 ): SnapshotMutableState<T>
 
 /**
@@ -131,7 +131,7 @@ internal expect fun <T> createSnapshotMutableState(
  */
 internal open class SnapshotMutableStateImpl<T>(
     value: T,
-    override val policy: SnapshotMutationPolicy<T>
+    override val policy: SnapshotMutationPolicy<T>,
 ) : StateObjectImpl(), SnapshotMutableState<T> {
     @Suppress("UNCHECKED_CAST")
     override var value: T
@@ -164,7 +164,7 @@ internal open class SnapshotMutableStateImpl<T>(
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val previousRecord = previous as StateStateRecord<T>
         val currentRecord = current as StateStateRecord<T>

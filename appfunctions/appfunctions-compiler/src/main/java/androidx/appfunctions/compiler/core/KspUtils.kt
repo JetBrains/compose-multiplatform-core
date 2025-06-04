@@ -30,7 +30,6 @@ import com.google.devtools.ksp.symbol.Variance.CONTRAVARIANT
 import com.google.devtools.ksp.symbol.Variance.COVARIANT
 import com.google.devtools.ksp.symbol.Variance.INVARIANT
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
@@ -56,7 +55,7 @@ fun KSTypeReference.resolveSelfOrUpperBoundType(): KSTypeReference {
             declaration.bounds.singleOrNull()
                 ?: throw ProcessingException(
                     "AppFunction compiler does not support multi-bounds type parameter",
-                    declaration
+                    declaration,
                 )
         }
         else -> {
@@ -167,7 +166,7 @@ fun KSTypeReference.resolveListParameterizedType(): KSTypeReference {
     if (!isOfType(LIST)) {
         throw ProcessingException(
             "Unable to resolve list parameterized type for non list type",
-            this
+            this,
         )
     }
     return resolve().arguments.firstOrNull()?.type
@@ -211,7 +210,7 @@ fun KSTypeReference.ensureQualifiedTypeName(): KSName =
     resolve().declaration.qualifiedName
         ?: throw ProcessingException(
             "Unable to resolve the qualified type name for this reference",
-            this
+            this,
         )
 
 /** Returns the value of the annotation property if found. */
@@ -266,11 +265,3 @@ private fun ClassName.withTypeArguments(arguments: List<TypeName>): TypeName {
 }
 
 fun KClass<*>.ensureQualifiedName(): String = checkNotNull(qualifiedName)
-
-fun FileSpec.Builder.addGeneratedTimeStamp(): FileSpec.Builder {
-    this.addFileComment(
-        "Last generated time (Workaround for now, will be reverted): " +
-            "${System.currentTimeMillis()}"
-    )
-    return this
-}

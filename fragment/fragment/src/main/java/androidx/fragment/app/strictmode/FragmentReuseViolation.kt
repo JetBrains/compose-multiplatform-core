@@ -22,9 +22,9 @@ class FragmentReuseViolation
 internal constructor(
     fragment: Fragment,
     /** Gets the unique ID of the previous instance of the [Fragment] causing the Violation. */
-    val previousFragmentId: String
+    val previousFragmentId: String,
 ) :
     Violation(
         fragment,
-        "Attempting to reuse fragment $fragment with previous ID $previousFragmentId"
+        "Attempting to reuse fragment $fragment with previous ID $previousFragmentId",
     )

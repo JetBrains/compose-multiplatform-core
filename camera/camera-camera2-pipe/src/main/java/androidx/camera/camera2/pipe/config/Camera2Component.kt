@@ -110,7 +110,7 @@ internal abstract class Camera2Module {
         [
             Camera2ControllerConfig::class,
             Camera2ControllerModule::class,
-            Camera2CaptureSessionsModule::class
+            Camera2CaptureSessionsModule::class,
         ]
 )
 internal interface Camera2ControllerComponent {
@@ -175,7 +175,7 @@ internal abstract class Camera2ControllerModule {
         fun provideCameraStatusMonitor(
             cameraManager: Provider<CameraManager>,
             threads: Threads,
-            graphConfig: CameraGraph.Config
+            graphConfig: CameraGraph.Config,
         ): CameraStatusMonitor {
             return Camera2CameraStatusMonitor(cameraManager, threads, graphConfig.camera)
         }

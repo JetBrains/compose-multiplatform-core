@@ -26,10 +26,9 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
-import androidx.xr.compose.subspace.layout.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.ZeroFeatheringSize
+import androidx.xr.compose.subspace.layout.ZeroFeatheringEffect
 import androidx.xr.scenecore.SurfaceEntity
 
 private const val DEFAULT_SIZE_PX = 400
@@ -142,7 +141,7 @@ public value class ContentSecurityLevel private constructor(public val value: In
 public fun SpatialExternalSurface(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
-    featheringEffect: SpatialFeatheringEffect = SpatialSmoothFeatheringEffect(ZeroFeatheringSize),
+    featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     contentSecurityLevel: ContentSecurityLevel = ContentSecurityLevel.None,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {

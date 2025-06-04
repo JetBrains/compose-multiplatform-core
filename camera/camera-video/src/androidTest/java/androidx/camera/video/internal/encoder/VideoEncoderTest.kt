@@ -89,16 +89,11 @@ private const val I_FRAME_INTERVAL = 1
 @RunWith(Parameterized::class)
 @Suppress("DEPRECATION")
 @SdkSuppress(minSdkVersion = 21)
-class VideoEncoderTest(
-    private val implName: String,
-    private val cameraConfig: CameraXConfig,
-) {
+class VideoEncoderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -112,7 +107,7 @@ class VideoEncoderTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
 
         private val INPUT_TIMEBASE = Timebase.UPTIME
@@ -143,24 +138,24 @@ class VideoEncoderTest(
         assumeFalse(
             "Skip tests for Cuttlefish MediaCodec issues",
             Build.MODEL.contains("Cuttlefish") &&
-                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33)
+                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33),
         )
         // Skip for b/241876294
         assumeFalse(
             "Skip test for devices with ExtraSupportedResolutionQuirk, since the extra" +
                 " resolutions cannot be used when the provided surface is an encoder surface.",
-            DeviceQuirks.get(ExtraSupportedResolutionQuirk::class.java) != null
+            DeviceQuirks.get(ExtraSupportedResolutionQuirk::class.java) != null,
         )
         // Skip for b/331618729
         assumeFalse(
             "Emulator API 28 crashes running this test.",
-            Build.VERSION.SDK_INT == 28 && isEmulator()
+            Build.VERSION.SDK_INT == 28 && isEmulator(),
         )
 
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()
@@ -203,7 +198,7 @@ class VideoEncoderTest(
                         videoEncoder.release()
                     }
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
 
@@ -420,7 +415,7 @@ class VideoEncoderTest(
 
     private fun initVideoEncoder(
         captureFrameRate: Int = FRAME_RATE,
-        encodeFrameRate: Int = FRAME_RATE
+        encodeFrameRate: Int = FRAME_RATE,
     ) {
         // init video encoder
         val cameraInfo = camera.cameraInfo as CameraInfoInternal

@@ -21,5 +21,5 @@ import androidx.fragment.app.Fragment
 class GetRetainInstanceUsageViolation internal constructor(fragment: Fragment) :
     RetainInstanceUsageViolation(
         fragment,
-        "Attempting to get retain instance for fragment $fragment"
+        "Attempting to get retain instance for fragment $fragment",
     )

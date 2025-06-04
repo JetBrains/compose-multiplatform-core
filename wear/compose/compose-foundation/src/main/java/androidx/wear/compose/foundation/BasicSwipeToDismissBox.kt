@@ -111,7 +111,7 @@ public fun BasicSwipeToDismissBox(
     backgroundKey: Any = SwipeToDismissKeys.Background,
     contentKey: Any = SwipeToDismissKeys.Content,
     userSwipeEnabled: Boolean = true,
-    content: @Composable BoxScope.(isBackground: Boolean) -> Unit
+    content: @Composable BoxScope.(isBackground: Boolean) -> Unit,
 ) {
     val density = LocalDensity.current
     val maxWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
@@ -136,7 +136,7 @@ public fun BasicSwipeToDismissBox(
                 .swipeableV2(
                     state = state.swipeableState,
                     orientation = Orientation.Horizontal,
-                    enabled = userSwipeEnabled
+                    enabled = userSwipeEnabled,
                 )
     ) {
         val isRound = isRoundDevice()
@@ -196,7 +196,7 @@ public fun BasicSwipeToDismissBox(
                                                         lerp(
                                                             squeezeOffset,
                                                             maxWidthPx,
-                                                            max(0f, progress - 0.7f) / 0.3f
+                                                            max(0f, progress - 0.7f) / 0.3f,
                                                         )
                                                     }
 
@@ -299,7 +299,7 @@ public fun BasicSwipeToDismissBox(
     backgroundKey: Any = SwipeToDismissKeys.Background,
     contentKey: Any = SwipeToDismissKeys.Content,
     userSwipeEnabled: Boolean = true,
-    content: @Composable BoxScope.(isBackground: Boolean) -> Unit
+    content: @Composable BoxScope.(isBackground: Boolean) -> Unit,
 ) {
     LaunchedEffect(state.currentValue) {
         if (state.currentValue == SwipeToDismissValue.Dismissed) {
@@ -313,7 +313,7 @@ public fun BasicSwipeToDismissBox(
         backgroundKey = backgroundKey,
         contentKey = contentKey,
         userSwipeEnabled = userSwipeEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -407,7 +407,7 @@ public class SwipeToDismissBoxState(
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset = Offset.Zero
 
                 override suspend fun onPreFling(available: Velocity): Velocity {
@@ -424,7 +424,7 @@ public class SwipeToDismissBoxState(
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     settle(velocity = available.x)
                     return available
@@ -437,7 +437,7 @@ public class SwipeToDismissBoxState(
             initialValue = SwipeToDismissValue.Default,
             animationSpec = animationSpec,
             confirmValueChange = confirmStateChange,
-            positionalThreshold = fractionalPositionalThreshold(SWIPE_THRESHOLD)
+            positionalThreshold = fractionalPositionalThreshold(SWIPE_THRESHOLD),
         )
 }
 
@@ -485,7 +485,7 @@ public enum class SwipeToDismissKeys {
      * isBackground == false. Specifying a background key instead of using the default allows
      * remembered state to be correctly moved between background and foreground.
      */
-    Content
+    Content,
 }
 
 /** States used as targets for the anchor points for swipe-to-dismiss. */
@@ -494,7 +494,7 @@ public enum class SwipeToDismissValue {
     Default,
 
     /** The state of the SwipeToDismissBox after the swipe passes the swipe-to-dismiss threshold. */
-    Dismissed
+    Dismissed,
 }
 
 /**
@@ -528,7 +528,7 @@ public enum class SwipeToDismissValue {
  */
 public fun Modifier.edgeSwipeToDismiss(
     swipeToDismissBoxState: SwipeToDismissBoxState,
-    edgeWidth: Dp = SwipeToDismissBoxDefaults.EdgeWidth
+    edgeWidth: Dp = SwipeToDismissBoxDefaults.EdgeWidth,
 ): Modifier =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
         this // Edge swipe to dismiss doesn't work on API >= 35 for now
@@ -610,7 +610,7 @@ internal enum class EdgeSwipeState {
     SwipingToPage,
 
     // Swipe was finished, used to handle fling.
-    SwipeToDismissInProgress
+    SwipeToDismissInProgress,
 }
 
 private const val SWIPE_THRESHOLD = 0.5f

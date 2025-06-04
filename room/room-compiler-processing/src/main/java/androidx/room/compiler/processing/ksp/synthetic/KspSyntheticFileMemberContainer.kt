@@ -38,7 +38,7 @@ import kotlin.reflect.KClass
  */
 internal class KspSyntheticFileMemberContainer(
     internal val env: KspProcessingEnv,
-    private val binaryName: String
+    private val binaryName: String,
 ) : KspMemberContainer, XEquality {
     override val equalityItems: Array<out Any?> by lazy { arrayOf(binaryName) }
 
@@ -51,7 +51,7 @@ internal class KspSyntheticFileMemberContainer(
     @Deprecated(
         "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
         replaceWith =
-            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet")
+            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet"),
     )
     override val className: ClassName by lazy { xClassName.java }
 

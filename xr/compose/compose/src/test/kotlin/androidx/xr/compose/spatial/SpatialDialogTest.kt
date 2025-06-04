@@ -49,13 +49,9 @@ class SpatialDialogTest {
                 Subspace {
                     SpatialPanel(SubspaceModifier.testTag("panel")) {
                         Column {
-                            Text(
-                                "SpatialPanel Content",
-                            )
+                            Text("SpatialPanel Content")
                             if (showDialog.value) {
-                                SpatialDialog(
-                                    onDismissRequest = { showDialog.value = false },
-                                ) {
+                                SpatialDialog(onDismissRequest = { showDialog.value = false }) {
                                     Text("Spatial Dialog")
                                     val dispatcher =
                                         LocalOnBackPressedDispatcherOwner.current!!
@@ -93,7 +89,7 @@ class SpatialDialogTest {
                             if (showDialog.value) {
                                 SpatialDialog(
                                     onDismissRequest = { showDialog.value = false },
-                                    properties = SpatialDialogProperties(dismissOnBackPress = false)
+                                    properties = SpatialDialogProperties(dismissOnBackPress = false),
                                 ) {
                                     Text("Spatial Dialog")
                                     val dispatcher =

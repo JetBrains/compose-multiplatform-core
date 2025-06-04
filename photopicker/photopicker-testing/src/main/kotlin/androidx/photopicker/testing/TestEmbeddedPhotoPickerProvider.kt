@@ -73,7 +73,7 @@ public class TestEmbeddedPhotoPickerProvider(private val context: Context) :
         height: Int,
         featureInfo: EmbeddedPhotoPickerFeatureInfo,
         clientExecutor: Executor,
-        callback: EmbeddedPhotoPickerClient
+        callback: EmbeddedPhotoPickerClient,
     ) {
         checkNotNull(hostToken) { "hostToken must not be null." }
         checkNotNull(featureInfo) { "featureInfo must not be null." }

@@ -207,7 +207,7 @@ class BrushPaintCacheTest {
                 ComposeColor.Red,
                 brushSize = 10f,
                 StrokeInput(),
-                StrokeInput()
+                StrokeInput(),
             )
 
         val expectedLocalMatrix =
@@ -229,7 +229,7 @@ class BrushPaintCacheTest {
                     ComposeColor.Red,
                     brushSize = 20f,
                     StrokeInput(),
-                    StrokeInput()
+                    StrokeInput(),
                 )
             )
             .isSameInstanceAs(paint)
@@ -382,7 +382,7 @@ class BrushPaintCacheTest {
                     ComposeColor.Blue,
                     brushSize,
                     StrokeInput(),
-                    StrokeInput()
+                    StrokeInput(),
                 )
             )
             .isSameInstanceAs(paint)

@@ -42,7 +42,7 @@ public fun SandboxedSdkUi(
     sandboxedUiAdapter: SandboxedUiAdapter,
     modifier: Modifier = Modifier,
     providerUiOnTop: Boolean = false,
-    sandboxedSdkViewEventListener: SandboxedSdkViewEventListener? = null
+    sandboxedSdkViewEventListener: SandboxedSdkViewEventListener? = null,
 ) {
     AndroidView(
         modifier = modifier,
@@ -57,6 +57,6 @@ public fun SandboxedSdkUi(
             }
         },
         onReset = { view -> view.setEventListener(null) },
-        onRelease = { view -> view.setAdapter(null) }
+        onRelease = { view -> view.setAdapter(null) },
     )
 }

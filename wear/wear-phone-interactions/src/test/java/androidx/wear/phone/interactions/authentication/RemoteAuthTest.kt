@@ -106,7 +106,7 @@ public class RemoteAuthTest {
             remoteInteractionsManager,
             fakeServiceBinder,
             DIRECT_EXECUTOR,
-            appPackageName
+            appPackageName,
         )
     private val executor: Executor = SyncExecutor()
 
@@ -128,7 +128,7 @@ public class RemoteAuthTest {
                 .setCodeChallenge(CodeChallenge(CodeVerifier()))
                 .build(),
             executor,
-            mockCallback
+            mockCallback,
         )
         // THEN a connection is made to Clockwork Home's Auth service
         assertThat(fakeServiceBinder.state).isEqualTo(ConnectionState.CONNECTING)
@@ -223,7 +223,7 @@ public class RemoteAuthTest {
             listOf(
                 RemoteAuthClient.STATUS_AVAILABLE,
                 RemoteAuthClient.STATUS_UNAVAILABLE,
-                RemoteAuthClient.STATUS_TEMPORARILY_UNAVAILABLE
+                RemoteAuthClient.STATUS_TEMPORARILY_UNAVAILABLE,
             )) {
             whenever(remoteInteractionsManager.isAvailabilityStatusApiSupported).thenReturn(true)
             doAnswer {
@@ -246,7 +246,7 @@ public class RemoteAuthTest {
     internal enum class ConnectionState {
         DISCONNECTED,
         CONNECTING,
-        CONNECTED
+        CONNECTED,
     }
 
     /** Fakes binding to Clockwork Home. */
@@ -257,7 +257,7 @@ public class RemoteAuthTest {
         override fun bindService(
             intent: Intent,
             connection: ServiceConnection,
-            flags: Int
+            flags: Int,
         ): Boolean {
             if (intent.getPackage() != RemoteAuthClient.WEARABLE_PACKAGE_NAME) {
                 throw UnsupportedOperationException()
@@ -313,7 +313,7 @@ public class RemoteAuthTest {
 
             override fun sendAuthRequest(
                 request: OAuthRequest,
-                packageNameAndRequestId: kotlin.Pair<String, Int>
+                packageNameAndRequestId: kotlin.Pair<String, Int>,
             ) {
                 if (fakeServiceBinder.state != ConnectionState.CONNECTED) {
                     throw RemoteException("not connected")

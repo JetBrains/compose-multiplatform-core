@@ -27,21 +27,13 @@ class AppFunctionParameterMetadataTest {
             AppFunctionParameterMetadata(
                 name = "parameter1",
                 isRequired = true,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
             )
         val parameter1b =
             AppFunctionParameterMetadata(
                 name = "parameter1",
                 isRequired = true,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
             )
         val parameter2 =
             AppFunctionParameterMetadata(
@@ -53,7 +45,7 @@ class AppFunctionParameterMetadataTest {
                         required = emptyList(),
                         qualifiedName = "qualifedName",
                         isNullable = true,
-                    )
+                    ),
             )
 
         assertThat(parameter1a).isEqualTo(parameter1b)
@@ -68,11 +60,7 @@ class AppFunctionParameterMetadataTest {
             AppFunctionParameterMetadata(
                 name = "parameter1",
                 isRequired = false,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
             )
 
         val document = parameter.toAppFunctionParameterMetadataDocument()
@@ -83,10 +71,7 @@ class AppFunctionParameterMetadataTest {
                     name = "parameter1",
                     isRequired = false,
                     dataTypeMetadata =
-                        AppFunctionDataTypeMetadataDocument(
-                            type = TYPE_INT,
-                            isNullable = false,
-                        )
+                        AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false),
                 )
             )
     }
@@ -98,10 +83,7 @@ class AppFunctionParameterMetadataTest {
                 name = "parameter1",
                 isRequired = false,
                 dataTypeMetadata =
-                    AppFunctionDataTypeMetadataDocument(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                    AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false),
             )
 
         val parameterMetadata = parameterMetadataDocument.toAppFunctionParameterMetadata()
@@ -111,11 +93,7 @@ class AppFunctionParameterMetadataTest {
                 AppFunctionParameterMetadata(
                     name = "parameter1",
                     isRequired = false,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_INT,
-                            isNullable = false,
-                        )
+                    dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
                 )
             )
     }

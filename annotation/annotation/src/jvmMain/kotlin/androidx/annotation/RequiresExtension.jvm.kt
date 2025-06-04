@@ -48,7 +48,7 @@ import java.lang.annotation.ElementType.TYPE
     AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.FIELD,
-    AnnotationTarget.FILE
+    AnnotationTarget.FILE,
 )
 // Needed due to Kotlin's lack of PACKAGE annotation target
 // https://youtrack.jetbrains.com/issue/KT-45921
@@ -63,5 +63,5 @@ public annotation class RequiresExtension(
      */
     @IntRange(from = 1) val extension: Int,
     /** The minimum version to require */
-    @IntRange(from = 1) val version: Int
+    @IntRange(from = 1) val version: Int,
 )

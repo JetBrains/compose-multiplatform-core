@@ -29,7 +29,7 @@ class FakeAppFunctionReader : AppFunctionReader {
     fun addAppFunctionMetadata(
         functionId: String,
         packageName: String,
-        metadata: AppFunctionSchemaMetadata
+        metadata: AppFunctionSchemaMetadata,
     ) {
         appFunctionMetadataMap[Pair(functionId, packageName)] = metadata
     }
@@ -43,7 +43,7 @@ class FakeAppFunctionReader : AppFunctionReader {
 
     override suspend fun getAppFunctionSchemaMetadata(
         functionId: String,
-        packageName: String
+        packageName: String,
     ): AppFunctionSchemaMetadata? {
         val key = Pair(functionId, packageName)
         if (!appFunctionMetadataMap.containsKey(key)) throw AppFunctionFunctionNotFoundException()

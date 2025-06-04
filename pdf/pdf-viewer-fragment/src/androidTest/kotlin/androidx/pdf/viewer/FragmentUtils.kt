@@ -33,7 +33,7 @@ internal object FragmentUtils {
         filename: String = TEST_DOCUMENT_FILE,
         nextState: Lifecycle.State,
         orientation: Int,
-        onDocumentLoading: (() -> Unit)? = null
+        onDocumentLoading: (() -> Unit)? = null,
     ): FragmentScenario<TestPdfViewerFragment> {
         val context = InstrumentationRegistry.getInstrumentation().context
         val inputStream = context.assets.open(filename)

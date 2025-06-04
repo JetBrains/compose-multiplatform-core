@@ -60,7 +60,7 @@ public class NativeSQLiteConnection(private val dbPointer: CPointer<sqlite3>) : 
                 zSql = sqlUtf16,
                 nByte = sqlUtf16.size,
                 ppStmt = stmtPointer.ptr,
-                pzTail = null
+                pzTail = null,
             )
         if (resultCode != SQLITE_OK) {
             throwSQLiteException(resultCode, dbPointer.getErrorMsg())

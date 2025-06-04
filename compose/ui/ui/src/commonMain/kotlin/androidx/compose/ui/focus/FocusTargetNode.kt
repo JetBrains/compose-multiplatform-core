@@ -49,7 +49,7 @@ import androidx.compose.ui.util.trace
 internal class FocusTargetNode(
     focusability: Focusability = Focusability.Always,
     private val onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null,
-    private val onDispatchEventsCompleted: ((FocusTargetNode) -> Unit)? = null
+    private val onDispatchEventsCompleted: ((FocusTargetNode) -> Unit)? = null,
 ) :
     CompositionLocalConsumerModifierNode,
     FocusTargetModifierNode,
@@ -97,7 +97,7 @@ internal class FocusTargetNode(
     @Deprecated(
         message = "Use the version accepting FocusDirection",
         replaceWith = ReplaceWith("this.requestFocus()"),
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     override fun requestFocus(): Boolean {
         return requestFocus(FocusDirection.Enter)
@@ -183,7 +183,7 @@ internal class FocusTargetNode(
                     force = true,
                     refreshFocusEvents = true,
                     clearOwnerFocus = true,
-                    focusDirection = Exit
+                    focusDirection = Exit,
                 )
         }
     }
@@ -201,7 +201,7 @@ internal class FocusTargetNode(
                     force = true,
                     refreshFocusEvents = true,
                     clearOwnerFocus = false,
-                    focusDirection = Exit
+                    focusDirection = Exit,
                 )
                 // We don't clear the owner's focus yet, because this could trigger an initial
                 // focus scenario after the focus is cleared. Instead, we schedule invalidation
@@ -242,7 +242,7 @@ internal class FocusTargetNode(
     private inline fun fetchCustomEnterOrExit(
         focusDirection: FocusDirection,
         block: (FocusRequester) -> Unit,
-        enterOrExit: FocusProperties.(FocusEnterExitScope) -> Unit
+        enterOrExit: FocusProperties.(FocusEnterExitScope) -> Unit,
     ) {
         val focusProperties = fetchFocusProperties()
         val scope = CancelIndicatingFocusBoundaryScope(focusDirection)
@@ -276,7 +276,7 @@ internal class FocusTargetNode(
      */
     internal inline fun fetchCustomEnter(
         focusDirection: FocusDirection,
-        block: (FocusRequester) -> Unit
+        block: (FocusRequester) -> Unit,
     ) {
         if (!isProcessingCustomEnter) {
             isProcessingCustomEnter = true
@@ -300,7 +300,7 @@ internal class FocusTargetNode(
      */
     internal inline fun fetchCustomExit(
         focusDirection: FocusDirection,
-        block: (FocusRequester) -> Unit
+        block: (FocusRequester) -> Unit,
     ) {
         if (!isProcessingCustomExit) {
             isProcessingCustomExit = true

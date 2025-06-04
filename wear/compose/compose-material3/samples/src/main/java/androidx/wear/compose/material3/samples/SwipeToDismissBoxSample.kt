@@ -109,15 +109,14 @@ fun StatefulSwipeToDismissBox() {
                     Column(
                         modifier =
                             Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalArrangement =
-                            Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                     ) {
                         Row(
                             modifier =
                                 Modifier.height(40.dp)
                                     .background(
                                         color = MaterialTheme.colorScheme.surfaceContainer,
-                                        shape = CircleShape
+                                        shape = CircleShape,
                                     )
                                     .padding(horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -132,7 +131,7 @@ fun StatefulSwipeToDismissBox() {
                             )
                         }
                     }
-                }
+                },
             )
         } else {
             Column(

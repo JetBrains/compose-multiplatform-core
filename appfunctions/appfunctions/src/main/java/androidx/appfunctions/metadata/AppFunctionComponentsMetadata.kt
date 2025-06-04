@@ -34,7 +34,7 @@ constructor(
      *
      * @see [AppFunctionReferenceTypeMetadata.referenceDataType]
      */
-    public val dataTypes: Map<String, AppFunctionDataTypeMetadata> = emptyMap(),
+    public val dataTypes: Map<String, AppFunctionDataTypeMetadata> = emptyMap()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -65,7 +65,7 @@ constructor(
                 dataTypes.map { (name, dataType) ->
                     AppFunctionNamedDataTypeMetadataDocument(
                         name = name,
-                        dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+                        dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
                     )
                 }
         )

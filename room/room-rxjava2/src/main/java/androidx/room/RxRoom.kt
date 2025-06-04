@@ -52,7 +52,7 @@ constructor() {
             db: RoomDatabase,
             inTransaction: Boolean,
             tableNames: Array<String>,
-            block: (SQLiteConnection) -> T?
+            block: (SQLiteConnection) -> T?,
         ): Flowable<T> =
             createObservable(db, inTransaction, tableNames, block)
                 .toFlowable(BackpressureStrategy.LATEST)
@@ -64,7 +64,7 @@ constructor() {
             db: RoomDatabase,
             inTransaction: Boolean,
             tableNames: Array<String>,
-            block: (SQLiteConnection) -> T?
+            block: (SQLiteConnection) -> T?,
         ): Observable<T> =
             createFlow(db, inTransaction, tableNames, block)
                 .filterNotNull()
@@ -77,7 +77,7 @@ constructor() {
             db: RoomDatabase,
             isReadOnly: Boolean,
             inTransaction: Boolean,
-            block: (SQLiteConnection) -> T?
+            block: (SQLiteConnection) -> T?,
         ): Maybe<T> =
             rxMaybe(db.getQueryContext().minusKey(Job)) {
                 performSuspending(db, isReadOnly, inTransaction, block)
@@ -90,7 +90,7 @@ constructor() {
             db: RoomDatabase,
             isReadOnly: Boolean,
             inTransaction: Boolean,
-            block: (SQLiteConnection) -> Unit
+            block: (SQLiteConnection) -> Unit,
         ): Completable =
             rxCompletable(db.getQueryContext().minusKey(Job)) {
                 performSuspending(db, isReadOnly, inTransaction, block)
@@ -103,7 +103,7 @@ constructor() {
             db: RoomDatabase,
             isReadOnly: Boolean,
             inTransaction: Boolean,
-            block: (SQLiteConnection) -> T?
+            block: (SQLiteConnection) -> T?,
         ): Single<T> =
             rxSingle(db.getQueryContext().minusKey(Job)) {
                 performSuspending(db, isReadOnly, inTransaction, block)
@@ -128,7 +128,7 @@ constructor() {
         @JvmStatic
         public fun createFlowable(
             database: RoomDatabase,
-            vararg tableNames: String
+            vararg tableNames: String,
         ): Flowable<Any> {
             return Flowable.create(
                 { emitter ->
@@ -154,7 +154,7 @@ constructor() {
                         emitter.onNext(NOTHING)
                     }
                 },
-                BackpressureStrategy.LATEST
+                BackpressureStrategy.LATEST,
             )
         }
 
@@ -168,9 +168,10 @@ constructor() {
         public fun <T : Any> createFlowable(
             database: RoomDatabase,
             tableNames: Array<String>,
-            callable: Callable<out T>
+            callable: Callable<out T>,
         ): Flowable<T> {
-            @Suppress("DEPRECATION") return createFlowable(database, false, tableNames, callable)
+            @Suppress("DEPRECATION")
+            return createFlowable(database, false, tableNames, callable)
         }
 
         /**
@@ -184,7 +185,7 @@ constructor() {
             database: RoomDatabase,
             inTransaction: Boolean,
             tableNames: Array<String>,
-            callable: Callable<out T>
+            callable: Callable<out T>,
         ): Flowable<T> {
             val scheduler = Schedulers.from(getExecutor(database, inTransaction))
             val maybe = Maybe.fromCallable(callable)
@@ -213,7 +214,7 @@ constructor() {
         @JvmStatic
         public fun createObservable(
             database: RoomDatabase,
-            vararg tableNames: String
+            vararg tableNames: String,
         ): Observable<Any> {
             return Observable.create { emitter ->
                 val observer =
@@ -242,9 +243,10 @@ constructor() {
         public fun <T : Any> createObservable(
             database: RoomDatabase,
             tableNames: Array<String>,
-            callable: Callable<out T>
+            callable: Callable<out T>,
         ): Observable<T> {
-            @Suppress("DEPRECATION") return createObservable(database, false, tableNames, callable)
+            @Suppress("DEPRECATION")
+            return createObservable(database, false, tableNames, callable)
         }
 
         /**
@@ -258,7 +260,7 @@ constructor() {
             database: RoomDatabase,
             inTransaction: Boolean,
             tableNames: Array<String>,
-            callable: Callable<out T>
+            callable: Callable<out T>,
         ): Observable<T> {
             val scheduler = Schedulers.from(getExecutor(database, inTransaction))
             val maybe = Maybe.fromCallable(callable)

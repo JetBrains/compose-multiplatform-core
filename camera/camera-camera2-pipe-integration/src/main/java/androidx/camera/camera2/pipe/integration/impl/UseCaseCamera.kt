@@ -76,7 +76,7 @@ constructor(
     private val sessionProcessorManager: SessionProcessorManager?,
     private val sessionConfigAdapter: SessionConfigAdapter,
     override val requestControl: UseCaseCameraRequestControl,
-    private val capturePipeline: CapturePipeline
+    private val capturePipeline: CapturePipeline,
 ) : UseCaseCamera {
     private val debugId = useCaseCameraIds.incrementAndGet()
     private val closed = atomic(false)
@@ -113,7 +113,7 @@ constructor(
                             RequestProcessorAdapter(
                                 useCaseGraphConfig,
                                 sessionProcessorSurfaces,
-                                threads
+                                threads,
                             )
                         sessionProcessorManager.onCaptureSessionStart(requestProcessorAdapter)
                     }

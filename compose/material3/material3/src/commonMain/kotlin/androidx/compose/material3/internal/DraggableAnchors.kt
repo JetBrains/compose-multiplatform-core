@@ -60,7 +60,7 @@ private class DraggableAnchorsElementV2<T>(
     private val state: AnchoredDraggableStateV2<T>,
     private val anchors:
         (size: IntSize, constraints: Constraints) -> Pair<DraggableAnchorsV2<T>, T>,
-    private val orientation: Orientation
+    private val orientation: Orientation,
 ) : ModifierNodeElement<DraggableAnchorsNodeV2<T>>() {
 
     override fun create() = DraggableAnchorsNodeV2(state, anchors, orientation)
@@ -102,7 +102,7 @@ private class DraggableAnchorsElementV2<T>(
 private class DraggableAnchorsNodeV2<T>(
     var state: AnchoredDraggableStateV2<T>,
     var anchors: (size: IntSize, constraints: Constraints) -> Pair<DraggableAnchorsV2<T>, T>,
-    var orientation: Orientation
+    var orientation: Orientation,
 ) : Modifier.Node(), LayoutModifierNode {
     private var didLookahead: Boolean = false
 
@@ -116,7 +116,7 @@ private class DraggableAnchorsNodeV2<T>(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         // If we are in a lookahead pass, we only want to update the anchors here and not in
@@ -150,3 +150,9 @@ private class DraggableAnchorsNodeV2<T>(
         }
     }
 }
+
+internal const val ConfirmValueChangeDeprecated =
+    "confirmValueChange is deprecated without replacement. Rather than relying on a callback to " +
+        "veto state changes, the anchor set should not include disallowed anchors. See " +
+        "androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an " +
+        "example of using dynamic anchors over confirmValueChange."

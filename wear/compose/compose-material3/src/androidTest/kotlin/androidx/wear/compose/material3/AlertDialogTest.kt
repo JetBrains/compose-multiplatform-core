@@ -63,7 +63,7 @@ class AlertDialogTest {
                 edgeButton = {
                     AlertDialogDefaults.EdgeButton(
                         onClick = {},
-                        modifier = Modifier.testTag(ConfirmButtonTestTag)
+                        modifier = Modifier.testTag(ConfirmButtonTestTag),
                     )
                 },
             )
@@ -96,13 +96,13 @@ class AlertDialogTest {
                 confirmButton = {
                     AlertDialogDefaults.ConfirmButton(
                         onClick = {},
-                        modifier = Modifier.testTag(ConfirmButtonTestTag)
+                        modifier = Modifier.testTag(ConfirmButtonTestTag),
                     )
                 },
                 dismissButton = {
                     AlertDialogDefaults.DismissButton(
                         onClick = {},
-                        modifier = Modifier.testTag(DismissButtonTestTag)
+                        modifier = Modifier.testTag(DismissButtonTestTag),
                     )
                 },
             )
@@ -121,9 +121,9 @@ class AlertDialogTest {
                 edgeButton = {
                     AlertDialogDefaults.EdgeButton(
                         onClick = {},
-                        modifier = Modifier.testTag(ConfirmButtonTestTag)
+                        modifier = Modifier.testTag(ConfirmButtonTestTag),
                     )
-                }
+                },
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -133,10 +133,7 @@ class AlertDialogTest {
     @Test
     fun content_supports_testtag_with_no_buttons() {
         rule.setContentWithTheme {
-            AlertDialogContent(
-                modifier = Modifier.testTag(TEST_TAG),
-                title = {},
-            )
+            AlertDialogContent(modifier = Modifier.testTag(TEST_TAG), title = {})
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
@@ -150,13 +147,13 @@ class AlertDialogTest {
                 confirmButton = {
                     AlertDialogDefaults.ConfirmButton(
                         onClick = {},
-                        modifier = Modifier.testTag(ConfirmButtonTestTag)
+                        modifier = Modifier.testTag(ConfirmButtonTestTag),
                     )
                 },
                 dismissButton = {
                     AlertDialogDefaults.DismissButton(
                         onClick = {},
-                        modifier = Modifier.testTag(DismissButtonTestTag)
+                        modifier = Modifier.testTag(DismissButtonTestTag),
                     )
                 },
             )
@@ -169,11 +166,7 @@ class AlertDialogTest {
     @Test
     fun displays_icon_with_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialogContent(
-                icon = { TestImage(TEST_TAG) },
-                title = {},
-                edgeButton = {},
-            )
+            AlertDialogContent(icon = { TestImage(TEST_TAG) }, title = {}, edgeButton = {})
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
@@ -252,11 +245,7 @@ class AlertDialogTest {
     @Test
     fun displays_content_with_confirmDismissButtons() {
         rule.setContentWithTheme {
-            AlertDialogContent(
-                title = {},
-                confirmButton = {},
-                dismissButton = {},
-            ) {
+            AlertDialogContent(title = {}, confirmButton = {}, dismissButton = {}) {
                 item { Text("Text", modifier = Modifier.testTag(TEST_TAG)) }
             }
         }
@@ -312,7 +301,7 @@ class AlertDialogTest {
                     showDialog = false
                     dismissCounter++
                 },
-                visible = showDialog
+                visible = showDialog,
             )
         }
 
@@ -334,7 +323,7 @@ class AlertDialogTest {
                     showDialog = false
                     dismissCounter++
                 },
-                visible = showDialog
+                visible = showDialog,
             )
         }
 
@@ -354,7 +343,7 @@ class AlertDialogTest {
                 title = {},
                 edgeButton = {},
                 onDismissRequest = { dismissCounter++ },
-                visible = show.value
+                visible = show.value,
             )
         }
         rule.waitForIdle()
@@ -371,7 +360,7 @@ class AlertDialogTest {
                 title = {},
                 edgeButton = {},
                 onDismissRequest = {},
-                visible = false
+                visible = false,
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
@@ -523,7 +512,7 @@ class AlertDialogTest {
                                 containerColor = expectedDismissColor
                             ),
                     )
-                }
+                },
             )
         }
         rule
@@ -597,7 +586,7 @@ class AlertDialogTest {
                             // will be scrollable
                             modifier =
                                 Modifier.size(width = 100.dp, height = (SmallScreenSize + 50).dp)
-                                    .testTag(ContentTestTag)
+                                    .testTag(ContentTestTag),
                         )
                     }
                 }

@@ -54,7 +54,7 @@ public constructor(
     val adSelectionSignals: AdSelectionSignals,
     val sellerSignals: AdSelectionSignals,
     val perBuyerSignals: Map<AdTechIdentifier, AdSelectionSignals>,
-    val trustedScoringSignalsUri: Uri
+    val trustedScoringSignalsUri: Uri,
 ) {
 
     /** Checks whether two [AdSelectionConfig] objects contain the same information. */
@@ -123,12 +123,12 @@ public constructor(
     private fun Map<AdTechIdentifier, AdSelectionSignals>.convertToAdServices():
         MutableMap<
             android.adservices.common.AdTechIdentifier,
-            android.adservices.common.AdSelectionSignals?
+            android.adservices.common.AdSelectionSignals?,
         > {
         val map =
             HashMap<
                 android.adservices.common.AdTechIdentifier,
-                android.adservices.common.AdSelectionSignals?
+                android.adservices.common.AdSelectionSignals?,
             >()
         for (key in this.keys) {
             val id = key.convertToAdServices()
@@ -148,7 +148,7 @@ public constructor(
                 AdSelectionSignals(""),
                 AdSelectionSignals(""),
                 emptyMap(),
-                Uri.EMPTY
+                Uri.EMPTY,
             )
     }
 }

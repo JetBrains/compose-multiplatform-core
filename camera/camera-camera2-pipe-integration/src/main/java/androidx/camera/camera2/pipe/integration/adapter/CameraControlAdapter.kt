@@ -141,7 +141,7 @@ constructor(
                         .setLowLightBoostAsync(lowLightBoost)
                         .asVoidListenableFuture()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         )
     }
@@ -215,7 +215,7 @@ constructor(
 
     override fun getCameraCapturePipelineAsync(
         @ImageCapture.CaptureMode captureMode: Int,
-        @ImageCapture.FlashType flashType: Int
+        @ImageCapture.FlashType flashType: Int,
     ): ListenableFuture<CameraCapturePipeline> {
         val camera =
             useCaseManager.camera
@@ -226,7 +226,7 @@ constructor(
             camera.getCameraCapturePipeline(
                 captureMode,
                 flashControl.awaitFlashModeUpdate(),
-                flashType
+                flashType,
             )
         }
     }

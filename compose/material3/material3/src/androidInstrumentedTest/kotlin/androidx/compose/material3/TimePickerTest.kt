@@ -123,17 +123,11 @@ class TimePickerTest {
         rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
 
         rule
-            .onNodeWithTimeValue(
-                number = 2,
-                selection = TimePickerSelectionMode.Hour,
-            )
+            .onNodeWithTimeValue(number = 2, selection = TimePickerSelectionMode.Hour)
             .assertIsSelected()
 
         rule
-            .onNodeWithTimeValue(
-                number = 23,
-                selection = TimePickerSelectionMode.Minute,
-            )
+            .onNodeWithTimeValue(number = 23, selection = TimePickerSelectionMode.Minute)
             .assertExists()
 
         rule.onNodeWithText("AM").assertExists()
@@ -147,10 +141,7 @@ class TimePickerTest {
         rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
 
         rule
-            .onNodeWithTimeValue(
-                number = 23,
-                selection = TimePickerSelectionMode.Minute,
-            )
+            .onNodeWithTimeValue(number = 23, selection = TimePickerSelectionMode.Minute)
             .performClick()
 
         rule.runOnIdle { assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Minute) }
@@ -736,7 +727,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -768,7 +759,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -803,7 +794,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -850,7 +841,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -874,7 +865,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -896,7 +887,7 @@ internal fun SemanticsNodeInteractionsProvider.onNodeWithTimeValue(
                 InstrumentationRegistry.getInstrumentation().context.resources,
                 selection,
                 is24Hour,
-                number
+                number,
             )
         )
         .onFirst()
@@ -906,7 +897,7 @@ internal fun contentDescriptionForValue(
     resources: Resources,
     selection: TimePickerSelectionMode,
     is24Hour: Boolean,
-    number: Int
+    number: Int,
 ): String {
 
     val id =

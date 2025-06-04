@@ -47,7 +47,7 @@ public class ExtensionAppFunctionService : AppFunctionService() {
                 Dispatchers.Main,
                 ServiceDependencies.aggregatedAppFunctionInventory,
                 ServiceDependencies.aggregatedAppFunctionInvoker,
-                Dependencies.translatorSelector
+                Dependencies.translatorSelector,
             )
     }
 
@@ -56,17 +56,12 @@ public class ExtensionAppFunctionService : AppFunctionService() {
         callingPackage: String,
         cancellationSignal: CancellationSignal,
         callback:
-            OutcomeReceiver<ExtensionExecuteAppFunctionResponse, ExtensionAppFunctionException>
+            OutcomeReceiver<ExtensionExecuteAppFunctionResponse, ExtensionAppFunctionException>,
     ) {
         val executionJob =
             delegate.onExecuteFunction(
                 ExecuteAppFunctionRequest.fromPlatformExtensionClass(request),
-                callingPackage,
-                object :
-                    OutcomeReceiver<
-                        ExecuteAppFunctionResponse,
-                        AppFunctionException,
-                    > {
+                object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
                     override fun onResult(result: ExecuteAppFunctionResponse) {
                         when (result) {
                             is ExecuteAppFunctionResponse.Success -> {

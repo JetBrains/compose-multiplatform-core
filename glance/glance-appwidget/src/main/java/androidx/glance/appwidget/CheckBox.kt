@@ -103,7 +103,7 @@ public fun CheckBox(
         text,
         style,
         colors,
-        maxLines
+        maxLines,
     )
 
 /**
@@ -161,7 +161,7 @@ private fun CheckBoxElement(
             this.set(style) { this.style = it }
             this.set(colors) { this.colors = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 
@@ -181,7 +181,7 @@ public object CheckboxDefaults {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun checkBoxColors(
         checkedColor: ColorProvider,
-        uncheckedColor: ColorProvider
+        uncheckedColor: ColorProvider,
     ): CheckBoxColors =
         CheckBoxColorsImpl(
             createCheckableColorProvider(
@@ -201,7 +201,7 @@ public object CheckboxDefaults {
     public fun colors(checkedColor: Color, uncheckedColor: Color): CheckBoxColors =
         colors(
             checkedColor = FixedColorProvider(checkedColor),
-            uncheckedColor = FixedColorProvider(uncheckedColor)
+            uncheckedColor = FixedColorProvider(uncheckedColor),
         )
 
     /**
@@ -220,7 +220,7 @@ public object CheckboxDefaults {
                 createCheckableColorProvider(
                     source = "CheckBoxColors",
                     checked = GlanceTheme.colors.primary,
-                    unchecked = GlanceTheme.colors.onSurface
+                    unchecked = GlanceTheme.colors.onSurface,
                 )
             }
 

@@ -43,7 +43,7 @@ public constructor(
     val name: String? = null,
     val activationTime: Instant? = null,
     val expirationTime: Instant? = null,
-    val userBiddingSignals: AdSelectionSignals? = null
+    val userBiddingSignals: AdSelectionSignals? = null,
 ) {
     /**
      * Checks whether two [FetchAndJoinCustomAudienceRequest] objects contain the same information.

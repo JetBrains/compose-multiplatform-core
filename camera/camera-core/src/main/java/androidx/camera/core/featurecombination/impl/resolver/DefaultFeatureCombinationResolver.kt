@@ -16,10 +16,11 @@
 
 package androidx.camera.core.featurecombination.impl.resolver
 
+import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
 import androidx.camera.core.Preview
-import androidx.camera.core.UseCase
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.featurecombination.ExperimentalFeatureCombination
 import androidx.camera.core.featurecombination.Feature
 import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination
@@ -61,14 +62,17 @@ import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
  * @property cameraInfoInternal A [CameraInfoInternal] instance to query if a feature combination is
  *   supported.
  */
+@OptIn(ExperimentalSessionConfig::class)
 internal class DefaultFeatureCombinationResolver(
-    private val cameraInfoInternal: CameraInfoInternal,
+    private val cameraInfoInternal: CameraInfoInternal
 ) : FeatureCombinationResolver {
     override fun resolveFeatureCombination(
-        useCases: Set<UseCase>,
-        requiredFeatures: Set<Feature>,
-        orderedPreferredFeatures: List<Feature>
+        sessionConfig: SessionConfig
     ): FeatureCombinationResolutionResult {
+        val useCases = sessionConfig.useCases
+        val requiredFeatures = sessionConfig.requiredFeatures
+        val orderedPreferredFeatures = sessionConfig.preferredFeatures
+
         require(requiredFeatures.isNotEmpty() || orderedPreferredFeatures.isNotEmpty()) {
             "Must have at least one required or preferred feature"
         }
@@ -92,7 +96,7 @@ internal class DefaultFeatureCombinationResolver(
                     if (!supportsImageFeature) {
                         return UseCaseMissing(
                             requiredUseCases = IMAGE_CAPTURE.toString(),
-                            featureRequiring = feature
+                            featureRequiring = feature,
                         )
                     }
                 }
@@ -102,7 +106,7 @@ internal class DefaultFeatureCombinationResolver(
                     if (!supportsStreamFeature) {
                         return UseCaseMissing(
                             requiredUseCases = "$PREVIEW or $VIDEO_CAPTURE",
-                            featureRequiring = feature
+                            featureRequiring = feature,
                         )
                     }
                 }
@@ -119,8 +123,7 @@ internal class DefaultFeatureCombinationResolver(
             }
 
         return getFeatureListResolvedByPriority(
-            useCases = useCases,
-            requiredFeatures = requiredFeatures,
+            sessionConfig = sessionConfig,
             orderedPreferredFeatures = filteredPreferredFeatures,
         )
     }
@@ -138,8 +141,7 @@ internal class DefaultFeatureCombinationResolver(
     // probably due to some Java Kotlin interop issue
     @OptIn(ExperimentalFeatureCombination::class)
     private fun getFeatureListResolvedByPriority(
-        useCases: Set<UseCase>,
-        requiredFeatures: Set<Feature>,
+        sessionConfig: SessionConfig,
         orderedPreferredFeatures: List<Feature>,
         index: Int = 0,
         currentOptionalFeatures: List<Feature> = emptyList(),
@@ -147,17 +149,23 @@ internal class DefaultFeatureCombinationResolver(
         // TODO: Use bitmap iteration instead of recursion to optimize this further.
         if (index >= orderedPreferredFeatures.size) {
             // End of recursion, need to test the feature combination now
-            val features = requiredFeatures + currentOptionalFeatures
+            val features = sessionConfig.requiredFeatures + currentOptionalFeatures
 
             Logger.d(
                 TAG,
-                "getFeatureListResolvedByPriority: features = $features, useCases = $useCases"
+                "getFeatureListResolvedByPriority: features = $features" +
+                    ", useCases = ${sessionConfig.useCases}",
             )
 
-            return if (cameraInfoInternal.isFeatureCombinationSupported(useCases, features)) {
+            return if (
+                cameraInfoInternal.isResolvedFeatureCombinationSupported(
+                    ResolvedFeatureCombination(features),
+                    sessionConfig,
+                )
+            ) {
                 // TODO: Store the whole UseCase to StreamSpecs map in ResolvedFeatureCombination so
                 //  that we can skip this step while binding with a resolved feature combination.
-                Supported(ResolvedFeatureCombination(useCases, features))
+                Supported(ResolvedFeatureCombination(features))
             } else {
                 Unsupported
             }
@@ -165,8 +173,7 @@ internal class DefaultFeatureCombinationResolver(
 
         val resultTakingCurrentFeature =
             getFeatureListResolvedByPriority(
-                useCases,
-                requiredFeatures,
+                sessionConfig,
                 orderedPreferredFeatures,
                 index + 1,
                 currentOptionalFeatures + orderedPreferredFeatures[index],
@@ -177,8 +184,7 @@ internal class DefaultFeatureCombinationResolver(
         }
 
         return getFeatureListResolvedByPriority(
-            useCases,
-            requiredFeatures,
+            sessionConfig,
             orderedPreferredFeatures,
             index + 1,
             currentOptionalFeatures,

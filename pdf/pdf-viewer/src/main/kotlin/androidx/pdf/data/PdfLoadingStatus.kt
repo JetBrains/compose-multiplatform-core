@@ -24,5 +24,5 @@ internal enum class PdfLoadingStatus {
     SUCCESS, // The PDF was loaded successfully.
     WRONG_PASSWORD, // Incorrect password was provided for a password-protected PDF.
     PDF_ERROR, // Invalid or Corrupt pdf file was provided
-    LOADING_ERROR // A general error occurred while trying to load the PDF
+    LOADING_ERROR, // A general error occurred while trying to load the PDF
 }

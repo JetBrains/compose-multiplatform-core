@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 
 @Deprecated(
     "Replaced by Modifier.requestFocusOnHierarchyActive(), use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
+    level = DeprecationLevel.WARNING, // TODO: b/369332589 - Make hidden in a follow up cl
 )
 @Composable
 public fun rememberActiveFocusRequester(): FocusRequester =
@@ -40,19 +40,19 @@ public fun rememberActiveFocusRequester(): FocusRequester =
 
 @Deprecated(
     "Replaced by Modifier.hierarchicalFocusGroup(), use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
+    level = DeprecationLevel.WARNING, // TODO: b/369332589 - Make hidden in a follow up cl
 )
 @Composable
 public fun HierarchicalFocusCoordinator(
     requiresFocus: () -> Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(Modifier.hierarchicalFocusGroup(requiresFocus())) { content() }
 }
 
 @Deprecated(
     "Replaced by Modifier.requestFocusOnHierarchyActive(), or the new LocalScreenIsActive, use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
+    level = DeprecationLevel.WARNING, // TODO: b/369332589 - Make hidden in a follow up cl
 )
 @Composable
 public fun ActiveFocusListener(onFocusChanged: CoroutineScope.(Boolean) -> Unit) {

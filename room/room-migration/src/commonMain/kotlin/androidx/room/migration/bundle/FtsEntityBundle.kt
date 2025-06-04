@@ -36,7 +36,7 @@ public class FtsEntityBundle(
     @SerialName("foreignKeys") override val foreignKeys: List<ForeignKeyBundle> = emptyList(),
     @SerialName("ftsVersion") public val ftsVersion: String,
     @SerialName("ftsOptions") public val ftsOptions: FtsOptionsBundle,
-    @SerialName("contentSyncTriggers") public val contentSyncSqlTriggers: List<String>
+    @SerialName("contentSyncTriggers") public val contentSyncSqlTriggers: List<String>,
 ) : BaseEntityBundle(), SchemaEquality<FtsEntityBundle> {
 
     /** Creates the list of SQL queries that are necessary to create this entity. */

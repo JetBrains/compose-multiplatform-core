@@ -191,13 +191,13 @@ class DynamicRangeMatchedEncoderProfilesProviderTest {
                     VIDEO_PROFILES_1080P_HLG,
                     VIDEO_PROFILES_1080P_HDR10,
                     VIDEO_PROFILES_1080P_HDR10_PLUS,
-                    VIDEO_PROFILES_1080P_DOLBY_VISION
-                )
+                    VIDEO_PROFILES_1080P_DOLBY_VISION,
+                ),
             )
 
         private fun VideoProfileProxy.modifyDynamicRangeInfo(
             hdrFormat: Int,
-            bitDepth: Int
+            bitDepth: Int,
         ): VideoProfileProxy {
             return VideoProfileProxy.create(
                 this.codec,
@@ -209,7 +209,7 @@ class DynamicRangeMatchedEncoderProfilesProviderTest {
                 this.profile,
                 bitDepth,
                 this.chromaSubsampling,
-                hdrFormat
+                hdrFormat,
             )
         }
     }

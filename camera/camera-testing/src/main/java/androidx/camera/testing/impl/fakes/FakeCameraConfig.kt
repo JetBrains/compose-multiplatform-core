@@ -28,7 +28,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory
 public class FakeCameraConfig(
     private val sessionProcessor: SessionProcessor? = null,
     private val postviewSupported: Boolean = false,
-    private val captureProcessProgressSupported: Boolean = false
+    private val captureProcessProgressSupported: Boolean = false,
 ) : CameraConfig {
     private val useCaseConfigFactory = UseCaseConfigFactory { _, _ -> null }
     private val identifier = Identifier.create(Any())

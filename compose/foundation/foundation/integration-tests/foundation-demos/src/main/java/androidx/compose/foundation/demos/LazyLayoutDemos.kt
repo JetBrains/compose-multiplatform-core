@@ -52,7 +52,6 @@ import kotlin.math.sign
 private val tableItems: Array<Array<String>> =
     Array(20) { row -> Array(20) { column -> "$row,$column" } }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Preview
 @Composable
 fun Lazy2DGridDemo(modifier: Modifier = Modifier) {
@@ -63,11 +62,10 @@ fun Lazy2DGridDemo(modifier: Modifier = Modifier) {
     }
 }
 
-@ExperimentalFoundationApi
 private class Lazy2DGridItemProvider(
     rows: Int,
     private val columns: Int,
-    private val content: @Composable (row: Int, column: Int) -> Unit
+    private val content: @Composable (row: Int, column: Int) -> Unit,
 ) : LazyLayoutItemProvider {
     override val itemCount: Int = rows * columns
 
@@ -111,7 +109,7 @@ class Lazy2DGridState : Draggable2DState {
     internal fun updateScrollPosition(
         newPosition: IntPosition,
         newOffset: IntOffset,
-        consumedScroll: Offset
+        consumedScroll: Offset,
     ) {
         scrollToBeConsumed -= consumedScroll
         firstVisiblePosition = newPosition
@@ -123,24 +121,20 @@ class Lazy2DGridState : Draggable2DState {
     }
 }
 
-@ExperimentalFoundationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Lazy2DGrid(
     rows: Int,
     columns: Int,
     modifier: Modifier = Modifier,
     state: Lazy2DGridState = remember { Lazy2DGridState() },
-    content: @Composable (row: Int, column: Int) -> Unit
+    content: @Composable (row: Int, column: Int) -> Unit,
 ) {
     val itemProvider =
         remember(rows, columns) { { Lazy2DGridItemProvider(rows, columns, content) } }
     val measurePolicy =
         remember(rows, columns, state) {
-            measure2dGrid(
-                rows,
-                columns,
-                state,
-            ) { newPosition, newOffset, scrollConsumed ->
+            measure2dGrid(rows, columns, state) { newPosition, newOffset, scrollConsumed ->
                 state.updateScrollPosition(newPosition, newOffset, scrollConsumed)
             }
         }
@@ -149,7 +143,7 @@ fun Lazy2DGrid(
         itemProvider,
         modifier.draggable2D(state).then(state.remeasurementModifier),
         null,
-        measurePolicy
+        measurePolicy,
     )
 }
 
@@ -159,7 +153,7 @@ private fun measure2dGrid(
     rows: Int,
     columns: Int,
     state: Lazy2DGridState,
-    updateScrollPosition: (IntPosition, IntOffset, Offset) -> Unit
+    updateScrollPosition: (IntPosition, IntOffset, Offset) -> Unit,
 ): LazyLayoutMeasurePolicy = LazyLayoutMeasurePolicy { constraints ->
     var currentFirstVisibleRowIndex =
         Snapshot.withoutReadObservation { state.firstVisiblePosition.row }
@@ -208,7 +202,7 @@ private fun measure2dGrid(
                 columns = columns,
                 childConstraints = Constraints(),
                 layoutMaxWidth = constraints.maxWidth,
-                scrollToBeConsumed = state.scrollToBeConsumed.x
+                scrollToBeConsumed = state.scrollToBeConsumed.x,
             )
         measuredRows.add(0, measuredRow)
         maxWidthSize = maxOf(maxWidthSize, measuredRow.width)
@@ -259,7 +253,7 @@ private fun measure2dGrid(
                 columns = columns,
                 childConstraints = Constraints(),
                 layoutMaxWidth = constraints.maxWidth,
-                scrollToBeConsumed = state.scrollToBeConsumed.x
+                scrollToBeConsumed = state.scrollToBeConsumed.x,
             )
         currentLayoutHeightOffset += measuredRow.height
 
@@ -290,7 +284,7 @@ private fun measure2dGrid(
                     firstVisibleColumnScrollOffset = firstVisibleColumnOffset,
                     columns = columns,
                     childConstraints = Constraints(),
-                    layoutMaxWidth = constraints.maxWidth
+                    layoutMaxWidth = constraints.maxWidth,
                 )
             measuredRows.add(0, measuredRow)
             maxWidthSize = maxOf(maxWidthSize, measuredRow.width)
@@ -337,9 +331,9 @@ private fun measure2dGrid(
                 IntPosition(currentFirstVisibleRowIndex, currentFirstColumnIndex),
                 IntOffset(
                     x = currentFirstColumnScrollOffset,
-                    y = currentFirstVisibleRowScrollOffset
+                    y = currentFirstVisibleRowScrollOffset,
                 ),
-                Offset(x = consumedScrollHorizontal, y = consumedScrollVertical)
+                Offset(x = consumedScrollHorizontal, y = consumedScrollVertical),
             )
         }
 }
@@ -396,7 +390,7 @@ private fun LazyLayoutMeasureScope.applyScrollToRow(
                 columns,
                 childConstraints,
                 currentFirstVisibleColumnScrollOffset,
-                rowOffset
+                rowOffset,
             )
 
         measuredItems.add(0, measuredItem)
@@ -443,7 +437,7 @@ private fun LazyLayoutMeasureScope.applyScrollToRow(
                 columns,
                 childConstraints,
                 currentLayoutWidthOffset,
-                rowOffset
+                rowOffset,
             )
         currentLayoutWidthOffset += measuredItem.width
 
@@ -473,7 +467,7 @@ private fun LazyLayoutMeasureScope.applyScrollToRow(
                     columns,
                     childConstraints,
                     currentLayoutWidthOffset,
-                    rowOffset
+                    rowOffset,
                 )
             measuredItems.add(0, measuredItem)
             maxHeightSize = maxOf(maxHeightSize, measuredItem.height)
@@ -508,7 +502,7 @@ private fun LazyLayoutMeasureScope.applyScrollToRow(
         columns = measuredItems,
         consumedScroll = consumedScroll,
         firstColumnIndex = currentFirstVisibleColumnIndex,
-        firstColumnScrollOffset = currentFirstVisibleColumnScrollOffset
+        firstColumnScrollOffset = currentFirstVisibleColumnScrollOffset,
     )
 }
 
@@ -519,7 +513,7 @@ private fun LazyLayoutMeasureScope.measureItem(
     columns: Int,
     childConstraints: Constraints,
     currentFirstColumnScrollOffset: Int,
-    rowOffset: Int
+    rowOffset: Int,
 ): MeasuredItem {
     val index = indexGenerator(rowIndex, index, columns)
 
@@ -533,7 +527,7 @@ private fun LazyLayoutMeasureScope.measureItem(
         MeasuredItem(
             IntPosition(rowIndex, index),
             item,
-            IntOffset(currentFirstColumnScrollOffset, rowOffset)
+            IntOffset(currentFirstColumnScrollOffset, rowOffset),
         )
     return measuredItem
 }
@@ -555,7 +549,7 @@ class IntPosition(row: Int, column: Int) {
 internal data class MeasuredItem(
     val position: IntPosition,
     val placeable: Placeable,
-    val offset: IntOffset
+    val offset: IntOffset,
 ) {
     val height: Int
         get() = placeable.height

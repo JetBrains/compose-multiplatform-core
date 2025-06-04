@@ -107,7 +107,7 @@ object PerfettoSdkTrace {
         if (nativeVersion != javaVersion) {
             return Response(
                 RESULT_CODE_ERROR_BINARY_VERSION_MISMATCH,
-                "Binary and Java version mismatch. Binary: $nativeVersion. Java: $javaVersion"
+                "Binary and Java version mismatch. Binary: $nativeVersion. Java: $javaVersion",
             )
         }
 

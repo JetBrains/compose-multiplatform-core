@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadFactory
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class JxrPlatformAdapterFactoryAxr() : JxrPlatformAdapterFactory {
     override val requirements: Set<Feature> =
-        setOf(Feature.FullStack, Feature.OpenXr, Feature.Spatial)
+        setOf(Feature.FULLSTACK, Feature.OPEN_XR, Feature.SPATIAL)
 
     override fun createPlatformAdapter(
         activity: Activity,

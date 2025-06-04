@@ -51,7 +51,7 @@ import org.junit.runners.model.Statement
  */
 class ScreenshotTestRuleConfig(
     val repoRootPathForGoldens: String = "",
-    val pathToGoldensInRepo: String = ""
+    val pathToGoldensInRepo: String = "",
 )
 
 /** Type of file that can be produced by the [ScreenshotTestRule]. */
@@ -61,7 +61,7 @@ internal enum class OutputFileType {
     IMAGE_DIFF,
     TEXT_RESULT_PROTO,
     DIFF_TEXT_RESULT_PROTO,
-    RESULT_PROTO
+    RESULT_PROTO,
 }
 
 /**
@@ -82,7 +82,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
         get() =
             File(
                 InstrumentationRegistry.getInstrumentation().getContext().externalCacheDir,
-                "androidx_screenshots"
+                "androidx_screenshots",
             )
 
     private val repoRootPathForGoldens = config.repoRootPathForGoldens.trim('/')
@@ -169,7 +169,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
     fun assertBitmapAgainstGolden(
         actual: Bitmap,
         goldenIdentifier: String,
-        matcher: BitmapMatcher
+        matcher: BitmapMatcher,
     ) {
         if (!goldenIdentifier.matches("^[A-Za-z0-9_-]+$".toRegex())) {
             throw IllegalArgumentException(
@@ -183,7 +183,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
             reportResult(
                 status = Status.MISSING_REFERENCE,
                 goldenIdentifier = goldenIdentifier,
-                actual = actual
+                actual = actual,
             )
             throw AssertionError(
                 "Missing golden image " +
@@ -197,7 +197,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
                 status = Status.FAILED,
                 goldenIdentifier = goldenIdentifier,
                 actual = actual,
-                expected = expected
+                expected = expected,
             )
             throw AssertionError(
                 "Sizes are different! Expected: [${expected.width}, ${expected
@@ -210,7 +210,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
                 expected = expected.toIntArray(),
                 given = actual.toIntArray(),
                 width = actual.width,
-                height = actual.height
+                height = actual.height,
             )
 
         val status =
@@ -225,7 +225,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
             goldenIdentifier = goldenIdentifier,
             actual = actual,
             expected = expected,
-            diff = comparisonResult.diff
+            diff = comparisonResult.diff,
         )
 
         if (!comparisonResult.matches) {
@@ -241,7 +241,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
         goldenIdentifier: String,
         actual: Bitmap,
         expected: Bitmap? = null,
-        diff: Bitmap? = null
+        diff: Bitmap? = null,
     ) {
         val diffResultProto = DiffResultProto.DiffResult.newBuilder().setResultType(status)
 
@@ -279,7 +279,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
                     diffResultProto.imageLocationReference = it.name
                     report.putString(
                         bundleKeyPrefix + OutputFileType.IMAGE_EXPECTED,
-                        it.absolutePath
+                        it.absolutePath,
                     )
                 }
             }
@@ -291,7 +291,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
             .also {
                 report.putString(
                     bundleKeyPrefix + OutputFileType.DIFF_TEXT_RESULT_PROTO,
-                    it.absolutePath
+                    it.absolutePath,
                 )
             }
 
@@ -328,7 +328,7 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
     private fun writeToDevice(
         fileType: OutputFileType,
         status: Status,
-        writeAction: (FileOutputStream) -> Unit
+        writeAction: (FileOutputStream) -> Unit,
     ): File {
         if (!deviceOutputDirectory.exists() && !deviceOutputDirectory.mkdir()) {
             throw IOException("Could not create folder.")
@@ -383,7 +383,7 @@ internal fun Bitmap.toIntArray(): IntArray {
 fun Bitmap.assertAgainstGolden(
     rule: ScreenshotTestRule,
     goldenIdentifier: String,
-    matcher: BitmapMatcher = MSSIMMatcher()
+    matcher: BitmapMatcher = MSSIMMatcher(),
 ) {
     rule.assertBitmapAgainstGolden(this, goldenIdentifier, matcher = matcher)
 }

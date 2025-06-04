@@ -158,7 +158,7 @@ public fun AnimatedPage(
     pageIndex: Int,
     pagerState: PagerState,
     contentScrimColor: Color = MaterialTheme.colorScheme.background,
-    content: @Composable (() -> Unit)
+    content: @Composable (() -> Unit),
 ) {
     val isReduceMotionEnabled = LocalReduceMotion.current
     val isRtlEnabled = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -243,9 +243,7 @@ public object PagerScaffoldDefaults {
      *   applied to.
      */
     @Composable
-    public fun snapWithSpringFlingBehavior(
-        state: PagerState,
-    ): TargetedFlingBehavior {
+    public fun snapWithSpringFlingBehavior(state: PagerState): TargetedFlingBehavior {
         return PagerDefaults.snapFlingBehavior(
             state = state,
             maxFlingPages = 1,
@@ -308,7 +306,7 @@ private fun PagerScaffoldImpl(
 
 private fun getPageTransitionFraction(
     isCurrentPage: Boolean,
-    currentPageOffsetFraction: Float
+    currentPageOffsetFraction: Float,
 ): Float {
     return if (isCurrentPage) {
         currentPageOffsetFraction.absoluteValue

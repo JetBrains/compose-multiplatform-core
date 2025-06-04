@@ -84,7 +84,7 @@ fun helloWorldTextDefault(context: Context, deviceConfiguration: DeviceParameter
 @Sampled
 fun helloWorldTextDynamicCustom(
     context: Context,
-    deviceConfiguration: DeviceParameters
+    deviceConfiguration: DeviceParameters,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         this.text(
@@ -92,12 +92,12 @@ fun helloWorldTextDynamicCustom(
                 LayoutString(
                     "Static",
                     DynamicString.constant("Dynamic"),
-                    "LongestConstraint".asLayoutConstraint()
+                    "LongestConstraint".asLayoutConstraint(),
                 ),
             typography = Typography.DISPLAY_LARGE,
             color = colorScheme.tertiary,
             underline = true,
-            maxLines = 5
+            maxLines = 5,
         )
     }
 
@@ -105,12 +105,12 @@ fun helloWorldTextDynamicCustom(
 fun edgeButtonSampleIcon(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         iconEdgeButton(
             onClick = clickable,
-            modifier = LayoutModifier.contentDescription("Description of a button")
+            modifier = LayoutModifier.contentDescription("Description of a button"),
         ) {
             icon(protoLayoutResourceId = "id")
         }
@@ -120,12 +120,12 @@ fun edgeButtonSampleIcon(
 fun edgeButtonSampleText(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         textEdgeButton(
             onClick = clickable,
-            modifier = LayoutModifier.contentDescription("Description of a button")
+            modifier = LayoutModifier.contentDescription("Description of a button"),
         ) {
             text("Hello".layoutString)
         }
@@ -135,7 +135,7 @@ fun edgeButtonSampleText(
 fun topLevelLayout(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -163,11 +163,11 @@ fun topLevelLayout(
             bottomSlot = {
                 iconEdgeButton(
                     onClick = clickable,
-                    modifier = LayoutModifier.contentDescription("Description")
+                    modifier = LayoutModifier.contentDescription("Description"),
                 ) {
                     icon("id")
                 }
-            }
+            },
         )
     }
 
@@ -175,7 +175,7 @@ fun topLevelLayout(
 fun cardSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -187,7 +187,7 @@ fun cardSample(
                             .clickable(id = "card"),
                     width = expand(),
                     height = expand(),
-                    backgroundContent = { backgroundImage(protoLayoutResourceId = "id") }
+                    backgroundContent = { backgroundImage(protoLayoutResourceId = "id") },
                 ) {
                     text("Content of the Card!".layoutString)
                 }
@@ -199,7 +199,7 @@ fun cardSample(
 fun titleCardSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -212,7 +212,7 @@ fun titleCardSample(
                     style = largeTitleCardStyle(),
                     title = { text("This is title of the title card".layoutString) },
                     time = { text("NOW".layoutString) },
-                    content = { text("Content of the Card!".layoutString) }
+                    content = { text("Content of the Card!".layoutString) },
                 )
             }
         )
@@ -222,7 +222,7 @@ fun titleCardSample(
 fun appCardSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -246,7 +246,7 @@ fun appCardSample(
 fun dataCardSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -262,7 +262,7 @@ fun dataCardSample(
                             style = extraLargeDataCardStyle(),
                             title = { this.text("1km".layoutString) },
                             content = { this.text("Run".layoutString) },
-                            secondaryText = { this.text("Nice!".layoutString) }
+                            secondaryText = { this.text("Nice!".layoutString) },
                         )
                     }
                     buttonGroupItem {
@@ -302,7 +302,7 @@ fun dataCardSample(
 fun graphicDataCardSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -331,7 +331,7 @@ fun graphicDataCardSample(
 fun customButtonSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -347,7 +347,7 @@ fun customButtonSample(
                     labelContent = {
                         // This can be further built.
                         Box.Builder().build()
-                    }
+                    },
                 )
             }
         )
@@ -357,7 +357,7 @@ fun customButtonSample(
 fun oneSlotButtonsSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -372,7 +372,7 @@ fun oneSlotButtonsSample(
                                 ),
                             width = expand(),
                             height = expand(),
-                            iconContent = { icon("id1") }
+                            iconContent = { icon("id1") },
                         )
                     }
                     buttonGroupItem {
@@ -385,7 +385,7 @@ fun oneSlotButtonsSample(
                             width = expand(),
                             height = expand(),
                             shape = shapes.large,
-                            iconContent = { icon("id2") }
+                            iconContent = { icon("id2") },
                         )
                     }
                     buttonGroupItem {
@@ -398,7 +398,7 @@ fun oneSlotButtonsSample(
                             width = expand(),
                             height = expand(),
                             shape = shapes.large,
-                            labelContent = { text("Dec".layoutString) }
+                            labelContent = { text("Dec".layoutString) },
                         )
                     }
                 }
@@ -410,7 +410,7 @@ fun oneSlotButtonsSample(
 fun imageButtonSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -421,7 +421,7 @@ fun imageButtonSample(
                         LayoutModifier.contentDescription("Big button with image background"),
                     width = expand(),
                     height = expand(),
-                    backgroundContent = { backgroundImage(protoLayoutResourceId = "id") }
+                    backgroundContent = { backgroundImage(protoLayoutResourceId = "id") },
                 )
             }
         )
@@ -438,12 +438,12 @@ fun singleSegmentCircularProgressIndicator(
                 DynamicFloat.animate(
                     0.0F,
                     1.1F,
-                    CircularProgressIndicatorDefaults.recommendedAnimationSpec
+                    CircularProgressIndicatorDefaults.recommendedAnimationSpec,
                 ),
             startAngleDegrees = 200F,
             endAngleDegrees = 520F,
             colors = filledVariantProgressIndicatorColors(),
-            size = dp(85F)
+            size = dp(85F),
         )
     }
 
@@ -451,7 +451,7 @@ fun singleSegmentCircularProgressIndicator(
 fun pillShapeButtonsSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -463,7 +463,7 @@ fun pillShapeButtonsSample(
                     height = expand(),
                     labelContent = { text("First label".layoutString) },
                     secondaryLabelContent = { text("Second label".layoutString) },
-                    iconContent = { icon("id") }
+                    iconContent = { icon("id") },
                 )
             }
         )
@@ -483,7 +483,7 @@ fun MaterialScope.avatarButtonSample() =
 fun compactButtonsSample(
     context: Context,
     deviceConfiguration: DeviceParameters,
-    clickable: Clickable
+    clickable: Clickable,
 ): LayoutElement =
     materialScope(context, deviceConfiguration) {
         primaryLayout(
@@ -493,7 +493,7 @@ fun compactButtonsSample(
                     modifier = LayoutModifier.contentDescription("Compact button"),
                     width = expand(),
                     labelContent = { text("Action".layoutString) },
-                    iconContent = { icon("id") }
+                    iconContent = { icon("id") },
                 )
             }
         )
@@ -511,11 +511,11 @@ fun multipleSegmentsCircularProgressIndicator(
                 DynamicFloat.animate(
                     0.0F,
                     1.1F,
-                    CircularProgressIndicatorDefaults.recommendedAnimationSpec
+                    CircularProgressIndicatorDefaults.recommendedAnimationSpec,
                 ),
             startAngleDegrees = 200F,
             endAngleDegrees = 520F,
             colors = filledVariantProgressIndicatorColors(),
-            size = dp(85F)
+            size = dp(85F),
         )
     }

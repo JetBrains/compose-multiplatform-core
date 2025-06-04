@@ -51,7 +51,7 @@ internal abstract class LazyLayoutMeasuredItemProvider<T : LazyLayoutMeasuredIte
 
     fun LazyLayoutMeasureScope.getPlaceables(
         index: Int,
-        constraints: Constraints
+        constraints: Constraints,
     ): List<Placeable> {
         val cachedPlaceable = placeablesCache[index]
         return if (cachedPlaceable != null) {

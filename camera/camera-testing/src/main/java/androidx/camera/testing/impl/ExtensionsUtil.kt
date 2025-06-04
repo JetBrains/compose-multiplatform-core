@@ -45,7 +45,7 @@ public object ExtensionsUtil {
     private fun getOutputSizes(
         cameraProvider: CameraProvider,
         cameraSelector: CameraSelector,
-        format: Int
+        format: Int,
     ): Array<Size> {
         val cameraCharacteristics =
             (cameraProvider.getCameraInfo(cameraSelector) as CameraInfoInternal)
@@ -61,7 +61,7 @@ public object ExtensionsUtil {
         cameraProvider: CameraProvider,
         cameraSelector: CameraSelector,
         sessionProcessor: SessionProcessor,
-        outputYuvformatInCapture: Boolean = false
+        outputYuvformatInCapture: Boolean = false,
     ): CameraSelector {
         val identifier = Identifier.create("idStr")
         ExtendedCameraConfigProviderStore.addConfig(identifier) { _, _ ->
@@ -92,7 +92,7 @@ public object ExtensionsUtil {
                     object : UseCaseConfigFactory {
                         override fun getConfig(
                             captureType: UseCaseConfigFactory.CaptureType,
-                            captureMode: Int
+                            captureMode: Int,
                         ): Config? {
                             if (captureType == UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) {
                                 val builder = ImageCapture.Builder()
@@ -106,8 +106,8 @@ public object ExtensionsUtil {
                                             getOutputSizes(
                                                 cameraProvider,
                                                 cameraSelector,
-                                                ImageFormat.YUV_420_888
-                                            )
+                                                ImageFormat.YUV_420_888,
+                                            ),
                                         )
                                     )
                                 } else {
@@ -117,8 +117,8 @@ public object ExtensionsUtil {
                                             getOutputSizes(
                                                 cameraProvider,
                                                 cameraSelector,
-                                                ImageFormat.JPEG
-                                            )
+                                                ImageFormat.JPEG,
+                                            ),
                                         )
                                     )
                                 }

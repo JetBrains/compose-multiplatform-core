@@ -35,7 +35,7 @@ public object GlanceTheme {
 @Composable
 public fun GlanceTheme(
     colors: ColorProviders = LocalColors.current,
-    content: @GlanceComposable @Composable () -> Unit
+    content: @GlanceComposable @Composable () -> Unit,
 ) {
     CompositionLocalProvider(LocalColors provides colors, content = content)
 }

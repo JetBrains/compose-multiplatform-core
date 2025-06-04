@@ -85,7 +85,7 @@ public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionCo
                 else
                     android.adservices.adselection.ReportImpressionRequest(
                         request.adSelectionId,
-                        request.adSelectionConfig.convertToAdServices()
+                        request.adSelectionConfig.convertToAdServices(),
                     )
             }
         }
@@ -105,7 +105,7 @@ public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionCo
                 }
                 return android.adservices.adselection.ReportImpressionRequest(
                     request.adSelectionId,
-                    request.adSelectionConfig.convertToAdServices()
+                    request.adSelectionConfig.convertToAdServices(),
                 )
             }
         }

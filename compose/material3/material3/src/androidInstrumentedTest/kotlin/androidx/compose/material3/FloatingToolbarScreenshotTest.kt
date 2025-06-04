@@ -93,7 +93,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    leadingContent = { ToolbarLeadingContent() }
+                    leadingContent = { ToolbarLeadingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -112,7 +112,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -124,7 +124,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_trailing_${scheme.name}"
+                "horizontalFloatingToolbar_trailing_${scheme.name}",
             )
     }
 
@@ -135,7 +135,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 HorizontalFloatingToolbar(
                     expanded = true,
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -147,7 +147,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_${scheme.name}",
             )
     }
 
@@ -159,7 +159,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     expanded = true,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -171,7 +171,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_vibrant_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_vibrant_${scheme.name}",
             )
     }
 
@@ -182,7 +182,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 HorizontalFloatingToolbar(
                     expanded = false,
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -194,7 +194,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_collapsed_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_collapsed_${scheme.name}",
             )
     }
 
@@ -203,14 +203,14 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 HorizontalFloatingToolbar(
                     expanded = false,
                     leadingContent = { ToolbarLeadingContent() },
                     trailingContent = { ToolbarTrailingContent() },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -222,7 +222,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_collapsed_customShadowElevation_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_collapsed_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -231,14 +231,14 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 HorizontalFloatingToolbar(
                     expanded = true,
                     leadingContent = { ToolbarLeadingContent() },
                     trailingContent = { ToolbarTrailingContent() },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -250,7 +250,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_expanded_customShadowElevation_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_expanded_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -262,7 +262,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     expanded = false,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -274,7 +274,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_collapsed_vibrant_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_collapsed_vibrant_${scheme.name}",
             )
     }
 
@@ -286,7 +286,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     HorizontalFloatingToolbar(
                         expanded = true,
                         leadingContent = { ToolbarLeadingContent() },
-                        trailingContent = { ToolbarTrailingContent() }
+                        trailingContent = { ToolbarTrailingContent() },
                     ) {
                         ToolbarContent()
                     }
@@ -299,7 +299,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_leading_trailing_rtl_${scheme.name}"
+                "horizontalFloatingToolbar_leading_trailing_rtl_${scheme.name}",
             )
     }
 
@@ -308,17 +308,17 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 HorizontalFloatingToolbar(
                     expanded = false,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     FilledIconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.width(52.dp)
+                        modifier = Modifier.width(52.dp),
                     ) {
                         Icon(Icons.Outlined.Favorite, contentDescription = "Localized description")
                     }
@@ -331,7 +331,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_balancedPaddingWhenCollapsed${scheme.name}"
+                "horizontalFloatingToolbar_balancedPaddingWhenCollapsed${scheme.name}",
             )
     }
 
@@ -340,13 +340,11 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 val labels = listOf("S", "M", "T", "SA", "W", "All")
                 var selectedIndex = 2
-                HorizontalFloatingToolbar(
-                    expanded = false,
-                ) {
+                HorizontalFloatingToolbar(expanded = false) {
                     labels.forEachIndexed { index, labelString ->
                         if (selectedIndex == index) {
                             FilledIconButton(onClick = {}) { Text(text = labelString) }
@@ -363,7 +361,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_imbalancedPadding_${scheme.name}"
+                "horizontalFloatingToolbar_imbalancedPadding_${scheme.name}",
             )
     }
 
@@ -373,7 +371,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 VerticalFloatingToolbar(
                     expanded = true,
-                    leadingContent = { ToolbarLeadingContent() }
+                    leadingContent = { ToolbarLeadingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -392,7 +390,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 VerticalFloatingToolbar(
                     expanded = true,
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -412,7 +410,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 VerticalFloatingToolbar(
                     expanded = true,
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -424,7 +422,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_${scheme.name}",
             )
     }
 
@@ -433,14 +431,14 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 VerticalFloatingToolbar(
                     expanded = false,
                     leadingContent = { ToolbarLeadingContent() },
                     trailingContent = { ToolbarTrailingContent() },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -452,7 +450,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_collapsed_customShadowElevation_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_collapsed_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -461,14 +459,14 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 VerticalFloatingToolbar(
                     expanded = true,
                     leadingContent = { ToolbarLeadingContent() },
                     trailingContent = { ToolbarTrailingContent() },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -480,7 +478,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_expanded_customShadowElevation_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_expanded_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -492,7 +490,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     expanded = true,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -504,7 +502,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_vibrant_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_vibrant_${scheme.name}",
             )
     }
 
@@ -515,7 +513,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 VerticalFloatingToolbar(
                     expanded = false,
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -527,7 +525,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_collapsed_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_collapsed_${scheme.name}",
             )
     }
 
@@ -539,7 +537,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     expanded = false,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     ToolbarContent()
                 }
@@ -551,7 +549,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_leading_trailing_collapsed_vibrant_${scheme.name}"
+                "verticalFloatingToolbar_leading_trailing_collapsed_vibrant_${scheme.name}",
             )
     }
 
@@ -560,17 +558,17 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 VerticalFloatingToolbar(
                     expanded = false,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                     leadingContent = { ToolbarLeadingContent() },
-                    trailingContent = { ToolbarTrailingContent() }
+                    trailingContent = { ToolbarTrailingContent() },
                 ) {
                     FilledIconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.height(52.dp)
+                        modifier = Modifier.height(52.dp),
                     ) {
                         Icon(Icons.Outlined.Favorite, contentDescription = "Localized description")
                     }
@@ -583,7 +581,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_balancedPaddingWhenCollapsed_${scheme.name}"
+                "verticalFloatingToolbar_balancedPaddingWhenCollapsed_${scheme.name}",
             )
     }
 
@@ -592,13 +590,11 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 val labels = listOf("S", "M", "T", "SA", "W", "All")
                 var selectedIndex = 2
-                VerticalFloatingToolbar(
-                    expanded = false,
-                ) {
+                VerticalFloatingToolbar(expanded = false) {
                     labels.forEachIndexed { index, labelString ->
                         if (selectedIndex == index) {
                             FilledIconButton(onClick = {}) { Text(text = labelString) }
@@ -615,7 +611,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_imbalancedPadding_${scheme.name}"
+                "verticalFloatingToolbar_imbalancedPadding_${scheme.name}",
             )
     }
 
@@ -625,7 +621,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    floatingActionButton = { ToolbarFab(isVibrant = false) }
+                    floatingActionButton = { ToolbarFab(isVibrant = false) },
                 ) {
                     ToolbarContent()
                 }
@@ -637,7 +633,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_withFab_expanded_${scheme.name}"
+                "horizontalFloatingToolbar_withFab_expanded_${scheme.name}",
             )
     }
 
@@ -646,13 +642,13 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 HorizontalFloatingToolbar(
                     expanded = true,
                     floatingActionButton = { ToolbarFab(isVibrant = false) },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -664,7 +660,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_withFab_expanded_customShadowElevation_${scheme.name}"
+                "horizontalFloatingToolbar_withFab_expanded_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -676,7 +672,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 HorizontalFloatingToolbar(
                     expanded = true,
                     floatingActionButton = { ToolbarFab(isVibrant = true) },
-                    colors = colors
+                    colors = colors,
                 ) {
                     ToolbarContent()
                 }
@@ -688,7 +684,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_withFab_expanded_vibrant_${scheme.name}"
+                "horizontalFloatingToolbar_withFab_expanded_vibrant_${scheme.name}",
             )
     }
 
@@ -698,7 +694,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 HorizontalFloatingToolbar(
                     expanded = false,
-                    floatingActionButton = { ToolbarFab(isVibrant = false) }
+                    floatingActionButton = { ToolbarFab(isVibrant = false) },
                 ) {
                     ToolbarContent()
                 }
@@ -710,7 +706,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_withFab_collapsed_${scheme.name}"
+                "horizontalFloatingToolbar_withFab_collapsed_${scheme.name}",
             )
     }
 
@@ -719,13 +715,13 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 HorizontalFloatingToolbar(
                     expanded = false,
                     floatingActionButton = { ToolbarFab(isVibrant = false) },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -737,7 +733,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "horizontalFloatingToolbar_withFab_collapsed_customShadowElevation_${scheme.name}"
+                "horizontalFloatingToolbar_withFab_collapsed_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -747,7 +743,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 VerticalFloatingToolbar(
                     expanded = true,
-                    floatingActionButton = { ToolbarFab(isVibrant = false) }
+                    floatingActionButton = { ToolbarFab(isVibrant = false) },
                 ) {
                     ToolbarContent()
                 }
@@ -759,7 +755,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_withFab_expanded_${scheme.name}"
+                "verticalFloatingToolbar_withFab_expanded_${scheme.name}",
             )
     }
 
@@ -768,13 +764,13 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 VerticalFloatingToolbar(
                     expanded = true,
                     floatingActionButton = { ToolbarFab(isVibrant = false) },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -786,7 +782,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_withFab_expanded_customShadowElevation_${scheme.name}"
+                "verticalFloatingToolbar_withFab_expanded_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -798,7 +794,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 VerticalFloatingToolbar(
                     expanded = true,
                     floatingActionButton = { ToolbarFab(isVibrant = true) },
-                    colors = colors
+                    colors = colors,
                 ) {
                     ToolbarContent()
                 }
@@ -810,7 +806,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_withFab_expanded_vibrant_${scheme.name}"
+                "verticalFloatingToolbar_withFab_expanded_vibrant_${scheme.name}",
             )
     }
 
@@ -820,7 +816,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(Modifier.testTag(FloatingToolbarTestTag)) {
                 VerticalFloatingToolbar(
                     expanded = false,
-                    floatingActionButton = { ToolbarFab(isVibrant = false) }
+                    floatingActionButton = { ToolbarFab(isVibrant = false) },
                 ) {
                     ToolbarContent()
                 }
@@ -832,7 +828,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_withFab_collapsed_${scheme.name}"
+                "verticalFloatingToolbar_withFab_collapsed_${scheme.name}",
             )
     }
 
@@ -841,13 +837,13 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 Modifier.testTag(FloatingToolbarTestTag).padding(10.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 VerticalFloatingToolbar(
                     expanded = false,
                     floatingActionButton = { ToolbarFab(isVibrant = false) },
                     expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4
+                    collapsedShadowElevation = ElevationTokens.Level4,
                 ) {
                     ToolbarContent()
                 }
@@ -859,7 +855,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "verticalFloatingToolbar_withFab_collapsed_customShadowElevation_${scheme.name}"
+                "verticalFloatingToolbar_withFab_collapsed_customShadowElevation_${scheme.name}",
             )
     }
 
@@ -886,8 +882,8 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             colors =
                 IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                )
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                ),
         ) {
             Icon(Icons.Filled.Create, contentDescription = "Localized description")
         }
@@ -900,8 +896,8 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             colors =
                 IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ),
         ) {
             Icon(Icons.Filled.Delete, contentDescription = "Localized description")
         }
@@ -910,14 +906,12 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @Composable
     private fun ToolbarFab(isVibrant: Boolean) {
         if (isVibrant) {
-            FloatingToolbarDefaults.VibrantFloatingActionButton(
-                onClick = { /* doSomething() */ },
-            ) {
+            FloatingToolbarDefaults.VibrantFloatingActionButton(onClick = { /* doSomething() */ }) {
                 Icon(Icons.Filled.Add, contentDescription = "Localized description")
             }
         } else {
             FloatingToolbarDefaults.StandardFloatingActionButton(
-                onClick = { /* doSomething() */ },
+                onClick = { /* doSomething() */ }
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Localized description")
             }

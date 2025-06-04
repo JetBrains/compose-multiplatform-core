@@ -28,7 +28,7 @@ public class VideoStabilizationFeature(public val mode: StabilizationMode) : Fea
     public enum class StabilizationMode {
         OFF,
         ON,
-        PREVIEW
+        PREVIEW,
     }
 
     override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.VIDEO_STABILIZATION

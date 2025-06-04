@@ -108,7 +108,7 @@ internal fun createErrorMessage(
                 listOfNotNull(
                         "${allJobsInNamespace.size} jobs in \"$WORKMANAGER_NAMESPACE\" namespace",
                         nonWmJobsMessage,
-                        defaultNamespaceMessage
+                        defaultNamespaceMessage,
                     )
                     .joinToString(",\n")
             } else "<faulty JobScheduler failed to getPendingJobs>"

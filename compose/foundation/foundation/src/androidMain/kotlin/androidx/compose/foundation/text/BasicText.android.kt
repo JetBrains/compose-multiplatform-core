@@ -64,7 +64,7 @@ val LocalBackgroundTextMeasurementExecutor = staticCompositionLocalOf<Executor?>
 internal actual fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ) {
     val executor = LocalBackgroundTextMeasurementExecutor.current
     if (executor != null && shouldPrefetch(text.length)) {
@@ -82,7 +82,7 @@ internal actual fun BackgroundTextMeasurement(
                                 style = resolvedStyle,
                                 density = density,
                                 fontFamilyResolver = fontFamilyResolver,
-                                annotations = emptyList()
+                                annotations = emptyList(),
                             )
                         intrinsics.maxIntrinsicWidth
                     }
@@ -98,7 +98,7 @@ internal actual fun BackgroundTextMeasurement(
     text: AnnotatedString,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>?
+    placeholders: List<AnnotatedString.Range<Placeholder>>?,
 ) {
     val executor = LocalBackgroundTextMeasurementExecutor.current
     if (executor != null && shouldPrefetch(text.length)) {
@@ -116,7 +116,7 @@ internal actual fun BackgroundTextMeasurement(
                                 style = resolvedStyle,
                                 density = density,
                                 placeholders = placeholders ?: emptyList(),
-                                fontFamilyResolver = fontFamilyResolver
+                                fontFamilyResolver = fontFamilyResolver,
                             )
                         intrinsics.maxIntrinsicWidth
                     }

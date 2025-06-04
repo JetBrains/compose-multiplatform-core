@@ -17,6 +17,7 @@
 package androidx.pdf.testapp.ui.v2
 
 import android.app.AlertDialog
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -27,9 +28,9 @@ import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
 import androidx.pdf.content.ExternalLink
+import androidx.pdf.testapp.ConfigurationProvider
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.OpCancellationHandler
-import androidx.pdf.testapp.util.BehaviorFlags
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -43,12 +44,17 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class PdfViewerFragmentExtended : PdfViewerFragment() {
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
-    private lateinit var behaviorFlags: BehaviorFlags
+    private var configProvider: ConfigurationProvider? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ConfigurationProvider) configProvider = context
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val pdfContainer =
             super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
@@ -68,11 +74,6 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
         return hostView
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        behaviorFlags = BehaviorFlags.fromBundle(arguments)
-    }
-
     override fun onRequestImmersiveMode(enterImmersive: Boolean) {
         super.onRequestImmersiveMode(enterImmersive)
         if (!enterImmersive) search?.show() else search?.hide()
@@ -87,7 +88,7 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
     }
 
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
-        return if (behaviorFlags.isCustomLinkHandlingEnabled()) {
+        return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
             AlertDialog.Builder(requireContext())
                 .setTitle("Custom Link Handler")
                 .setMessage("Intercepted link:\n${externalLink.uri}")
@@ -96,12 +97,6 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
             true
         } else {
             false
-        }
-    }
-
-    companion object {
-        fun newInstance(flags: BehaviorFlags): PdfViewerFragmentExtended {
-            return PdfViewerFragmentExtended().apply { arguments = flags.toBundle() }
         }
     }
 }

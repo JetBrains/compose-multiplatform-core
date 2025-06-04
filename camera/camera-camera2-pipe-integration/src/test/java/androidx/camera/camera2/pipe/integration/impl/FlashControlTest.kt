@@ -70,11 +70,7 @@ class FlashControlTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(
-            cameraScope,
-            executor,
-            dispatcher,
-        )
+        UseCaseThreads(cameraScope, executor, dispatcher)
     }
     private val fakeRequestControl = FakeUseCaseCameraRequestControl()
     private lateinit var state3AControl: State3AControl
@@ -115,11 +111,9 @@ class FlashControlTest {
         val cameraProperties = FakeCameraProperties(metadata)
 
         state3AControl =
-            State3AControl(
-                    cameraProperties,
-                    NoOpAutoFlashAEModeDisabler,
-                )
-                .apply { requestControl = fakeRequestControl }
+            State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                requestControl = fakeRequestControl
+            }
 
         torchControl =
             TorchControl(cameraProperties, state3AControl, fakeUseCaseThreads).apply {
@@ -150,14 +144,12 @@ class FlashControlTest {
         val flashControl =
             FlashControl(
                 fakeCameraProperties,
-                State3AControl(
-                        fakeCameraProperties,
-                        NoOpAutoFlashAEModeDisabler,
-                    )
-                    .apply { requestControl = fakeRequestControl },
+                State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                    requestControl = fakeRequestControl
+                },
                 fakeUseCaseThreads,
                 TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads),
-                NotUseFlashModeTorchFor3aUpdate
+                NotUseFlashModeTorchFor3aUpdate,
             )
 
         assertThrows<CameraControl.OperationCanceledException> {

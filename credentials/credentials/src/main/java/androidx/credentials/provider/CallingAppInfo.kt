@@ -75,12 +75,12 @@ private constructor(
     constructor(
         packageName: String,
         signingInfo: SigningInfo,
-        origin: String? = null
+        origin: String? = null,
     ) : this(
         packageName = packageName,
         signingInfo = signingInfo,
         origin = origin,
-        signingInfoCompat = SigningInfoCompat.fromSigningInfo(signingInfo)
+        signingInfoCompat = SigningInfoCompat.fromSigningInfo(signingInfo),
     )
 
     /**
@@ -102,7 +102,7 @@ private constructor(
     constructor(
         packageName: String,
         signatures: List<Signature>,
-        origin: String? = null
+        origin: String? = null,
     ) : this(packageName, origin, SigningInfoCompat.fromSignatures(signatures), null)
 
     companion object {
@@ -158,7 +158,7 @@ private constructor(
             } else {
                 this.putParcelableArray(
                     EXTRA_CREDENTIAL_REQUEST_SIGNATURES,
-                    info.signingInfoCompat.signingCertificateHistory.toTypedArray()
+                    info.signingInfoCompat.signingCertificateHistory.toTypedArray(),
                 )
             }
         }

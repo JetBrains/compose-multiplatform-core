@@ -38,7 +38,7 @@ private constructor(
     public val paint: TextPaint,
     @Px public val height: Float,
     @OrientationMode public val orientation: Int,
-    private val result: LineBreaker.Result
+    private val result: LineBreaker.Result,
 ) {
     /** The width constraint of the vertical text in pixels. */
     @get:Px
@@ -70,7 +70,7 @@ private constructor(
         private val start: Int,
         private val end: Int,
         private val paint: TextPaint,
-        @Px private val height: Float
+        @Px private val height: Float,
     ) {
         private var _orientation: Int = TextOrientation.MIXED
 

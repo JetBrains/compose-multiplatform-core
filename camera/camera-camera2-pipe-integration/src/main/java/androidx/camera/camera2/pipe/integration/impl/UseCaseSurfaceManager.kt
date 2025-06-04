@@ -51,7 +51,7 @@ constructor(
     private val threads: UseCaseThreads,
     private val cameraPipe: CameraPipe,
     private val inactiveSurfaceCloser: InactiveSurfaceCloser,
-    private val sessionConfigAdapter: SessionConfigAdapter
+    private val sessionConfigAdapter: SessionConfigAdapter,
 ) : CameraSurfaceManager.SurfaceListener {
 
     private val lock = Any()

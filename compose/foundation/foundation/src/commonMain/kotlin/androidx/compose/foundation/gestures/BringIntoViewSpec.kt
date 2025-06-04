@@ -75,7 +75,7 @@ interface BringIntoViewSpec {
         internal fun defaultCalculateScrollDistance(
             offset: Float,
             size: Float,
-            containerSize: Float
+            containerSize: Float,
         ): Float {
             val trailingEdge = offset + size
             @Suppress("UnnecessaryVariable") val leadingEdge = offset

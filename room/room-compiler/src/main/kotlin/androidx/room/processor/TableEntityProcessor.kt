@@ -46,7 +46,7 @@ class TableEntityProcessor
 internal constructor(
     baseContext: Context,
     val element: XTypeElement,
-    private val referenceStack: LinkedHashSet<String> = LinkedHashSet()
+    private val referenceStack: LinkedHashSet<String> = LinkedHashSet(),
 ) : EntityProcessor {
     val context = baseContext.fork(element)
 
@@ -67,13 +67,13 @@ internal constructor(
                 primaryKey = PrimaryKey.MISSING,
                 foreignKeys = emptyList(),
                 constructor = null,
-                shadowTableName = null
+                shadowTableName = null,
             )
         }
         context.checker.hasAnnotation(
             element,
             androidx.room.Entity::class,
-            ProcessorErrors.ENTITY_MUST_BE_ANNOTATED_WITH_ENTITY
+            ProcessorErrors.ENTITY_MUST_BE_ANNOTATED_WITH_ENTITY,
         )
         val annotation = element.getAnnotation(androidx.room.Entity::class)
         val tableName: String
@@ -94,12 +94,12 @@ internal constructor(
         context.checker.notBlank(
             tableName,
             element,
-            ProcessorErrors.ENTITY_TABLE_NAME_CANNOT_BE_EMPTY
+            ProcessorErrors.ENTITY_TABLE_NAME_CANNOT_BE_EMPTY,
         )
         context.checker.check(
             !tableName.startsWith("sqlite_", true),
             element,
-            ProcessorErrors.ENTITY_TABLE_NAME_CANNOT_START_WITH_SQLITE
+            ProcessorErrors.ENTITY_TABLE_NAME_CANNOT_START_WITH_SQLITE,
         )
 
         val pojo =
@@ -108,7 +108,7 @@ internal constructor(
                     element = element,
                     bindingScope = PropertyProcessor.BindingScope.TWO_WAY,
                     parent = null,
-                    referenceStack = referenceStack
+                    referenceStack = referenceStack,
                 )
                 .process()
         context.checker.check(pojo.relations.isEmpty(), element, RELATION_IN_ENTITY)
@@ -124,8 +124,8 @@ internal constructor(
                             it.element,
                             ProcessorErrors.droppedEmbeddedPropertyIndex(
                                 it.getPath(),
-                                element.qualifiedName
-                            )
+                                element.qualifiedName,
+                            ),
                         )
                         null
                     } else if (it.element.enclosingElement != element && !inheritSuperIndices) {
@@ -137,8 +137,8 @@ internal constructor(
                                 element.qualifiedName,
                                 it.element.enclosingElement
                                     .asClassName()
-                                    .toString(context.codeLanguage)
-                            )
+                                    .toString(context.codeLanguage),
+                            ),
                         )
                         null
                     } else {
@@ -146,7 +146,7 @@ internal constructor(
                             name = createIndexName(listOf(it.columnName), tableName),
                             unique = false,
                             columnNames = listOf(it.columnName),
-                            orders = emptyList()
+                            orders = emptyList(),
                         )
                     }
                 }
@@ -159,7 +159,7 @@ internal constructor(
         context.checker.check(
             !primaryKey.autoGenerateId || affinity == SQLTypeAffinity.INTEGER,
             primaryKey.properties.firstOrNull()?.element ?: element,
-            ProcessorErrors.AUTO_INCREMENTED_PRIMARY_KEY_IS_NOT_INT
+            ProcessorErrors.AUTO_INCREMENTED_PRIMARY_KEY_IS_NOT_INT,
         )
 
         val entityForeignKeys = validateAndCreateForeignKeyReferences(foreignKeyInputs, pojo)
@@ -168,13 +168,13 @@ internal constructor(
         context.checker.check(
             SqlParser.isValidIdentifier(tableName),
             element,
-            ProcessorErrors.INVALID_TABLE_NAME
+            ProcessorErrors.INVALID_TABLE_NAME,
         )
         pojo.properties.forEach {
             context.checker.check(
                 SqlParser.isValidIdentifier(it.columnName),
                 it.element,
-                ProcessorErrors.INVALID_COLUMN_NAME
+                ProcessorErrors.INVALID_COLUMN_NAME,
             )
         }
 
@@ -189,7 +189,7 @@ internal constructor(
                 primaryKey = primaryKey,
                 foreignKeys = entityForeignKeys,
                 constructor = pojo.constructor,
-                shadowTableName = null
+                shadowTableName = null,
             )
 
         return entity
@@ -198,7 +198,7 @@ internal constructor(
     private fun checkIndicesForForeignKeys(
         entityForeignKeys: List<ForeignKey>,
         primaryKey: PrimaryKey,
-        indices: List<Index>
+        indices: List<Index>,
     ) {
         fun covers(columnNames: List<String>, properties: List<Property>): Boolean =
             properties.size >= columnNames.size &&
@@ -214,13 +214,13 @@ internal constructor(
                     context.logger.w(
                         Warning.MISSING_INDEX_ON_FOREIGN_KEY_CHILD,
                         element,
-                        ProcessorErrors.foreignKeyMissingIndexInChildColumn(columnNames[0])
+                        ProcessorErrors.foreignKeyMissingIndexInChildColumn(columnNames[0]),
                     )
                 } else {
                     context.logger.w(
                         Warning.MISSING_INDEX_ON_FOREIGN_KEY_CHILD,
                         element,
-                        ProcessorErrors.foreignKeyMissingIndexInChildColumns(columnNames)
+                        ProcessorErrors.foreignKeyMissingIndexInChildColumns(columnNames),
                     )
                 }
             }
@@ -230,7 +230,7 @@ internal constructor(
     /** Does a validation on foreign keys except the parent table's columns. */
     private fun validateAndCreateForeignKeyReferences(
         foreignKeyInputs: List<ForeignKeyInput>,
-        dataClass: DataClass
+        dataClass: DataClass,
     ): List<ForeignKey> {
         return foreignKeyInputs
             .map {
@@ -255,8 +255,8 @@ internal constructor(
                         element,
                         ProcessorErrors.foreignKeyColumnNumberMismatch(
                             it.childColumns,
-                            it.parentColumns
-                        )
+                            it.parentColumns,
+                        ),
                     )
                     return@map null
                 }
@@ -269,7 +269,7 @@ internal constructor(
                 if (parentAnnotation == null) {
                     context.logger.e(
                         element,
-                        ProcessorErrors.foreignKeyNotAnEntity(parentElement.qualifiedName)
+                        ProcessorErrors.foreignKeyNotAnEntity(parentElement.qualifiedName),
                     )
                     return@map null
                 }
@@ -282,8 +282,8 @@ internal constructor(
                                 dataClass.element,
                                 ProcessorErrors.foreignKeyChildColumnDoesNotExist(
                                     columnName,
-                                    dataClass.columnNames
-                                )
+                                    dataClass.columnNames,
+                                ),
                             )
                         }
                         property
@@ -297,7 +297,7 @@ internal constructor(
                     parentColumns = it.parentColumns,
                     onDelete = it.onDelete,
                     onUpdate = it.onUpdate,
-                    deferred = it.deferred
+                    deferred = it.deferred,
                 )
             }
             .filterNotNull()
@@ -305,7 +305,7 @@ internal constructor(
 
     private fun findAndValidatePrimaryKey(
         properties: List<Property>,
-        embeddedProperties: List<EmbeddedProperty>
+        embeddedProperties: List<EmbeddedProperty>,
     ): PrimaryKey {
         val candidates =
             collectPrimaryKeysFromEntityAnnotations(element, properties) +
@@ -334,7 +334,7 @@ internal constructor(
                             context.checker.check(
                                 property.nonNull,
                                 property.element,
-                                ProcessorErrors.primaryKeyNull(property.getPath())
+                                ProcessorErrors.primaryKeyNull(property.getPath()),
                             )
                             verifiedProperties.add(property)
                         }
@@ -346,7 +346,7 @@ internal constructor(
                                 context.checker.check(
                                     parentProperty.nonNull,
                                     parentProperty.element,
-                                    ProcessorErrors.primaryKeyNull(parentProperty.getPath())
+                                    ProcessorErrors.primaryKeyNull(parentProperty.getPath()),
                                 )
                                 verifiedProperties.add(parentProperty)
                             }
@@ -384,15 +384,15 @@ internal constructor(
                         grandParentField,
                         ProcessorErrors.embeddedPrimaryKeyIsDropped(
                             element.qualifiedName,
-                            field.name
-                        )
+                            field.name,
+                        ),
                     )
                 null
             } else {
                 PrimaryKey(
                     declaredIn = field.element.enclosingElement,
                     properties = Properties(field),
-                    autoGenerateId = primaryKeyAnnotation["autoGenerate"]?.asBoolean() == true
+                    autoGenerateId = primaryKeyAnnotation["autoGenerate"]?.asBoolean() == true,
                 )
             }
         }
@@ -401,7 +401,7 @@ internal constructor(
     /** Check classes for @Entity(primaryKeys = ?). */
     private fun collectPrimaryKeysFromEntityAnnotations(
         typeElement: XTypeElement,
-        availableProperties: List<Property>
+        availableProperties: List<Property>,
     ): List<PrimaryKey> {
         val myPkeys =
             typeElement.getAnnotation(androidx.room.Entity::class)?.let {
@@ -418,8 +418,8 @@ internal constructor(
                                 typeElement,
                                 ProcessorErrors.primaryKeyColumnDoesNotExist(
                                     pKeyColumnName,
-                                    availableProperties.map { it.columnName }
-                                )
+                                    availableProperties.map { it.columnName },
+                                ),
                             )
                             property
                         }
@@ -427,7 +427,7 @@ internal constructor(
                         PrimaryKey(
                             declaredIn = typeElement,
                             properties = Properties(properties),
-                            autoGenerateId = false
+                            autoGenerateId = false,
                         )
                     )
                 }
@@ -455,12 +455,12 @@ internal constructor(
                 context.checker.check(
                     !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
                     embeddedProperty.property.element,
-                    ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES
+                    ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES,
                 )
                 PrimaryKey(
                     declaredIn = embeddedProperty.property.element.enclosingElement,
                     properties = embeddedProperty.dataClass.properties,
-                    autoGenerateId = autoGenerate
+                    autoGenerateId = autoGenerate,
                 )
             }
         }
@@ -470,7 +470,7 @@ internal constructor(
     // pkey, if so, use it.
     private fun choosePrimaryKey(
         candidates: List<PrimaryKey>,
-        typeElement: XTypeElement
+        typeElement: XTypeElement,
     ): PrimaryKey {
         // If 1 of these primary keys is declared in this class, then it is the winner. Just print
         //    a note for the others.
@@ -483,7 +483,7 @@ internal constructor(
                 context.logger.d(
                     element,
                     "${it.toHumanReadableString()} is" +
-                        " overridden by ${myPKeys.first().toHumanReadableString()}"
+                        " overridden by ${myPKeys.first().toHumanReadableString()}",
                 )
             }
             myPKeys.first()
@@ -499,7 +499,7 @@ internal constructor(
                 element,
                 ProcessorErrors.multiplePrimaryKeyAnnotations(
                     myPKeys.map(PrimaryKey::toHumanReadableString)
-                )
+                ),
             )
             PrimaryKey.MISSING
         }
@@ -507,7 +507,7 @@ internal constructor(
 
     private fun validateAndCreateIndices(
         inputs: List<IndexInput>,
-        dataClass: DataClass
+        dataClass: DataClass,
     ): List<Index> {
         // check for columns
         val indices =
@@ -515,7 +515,7 @@ internal constructor(
                 context.checker.check(
                     input.columnNames.isNotEmpty(),
                     element,
-                    INDEX_COLUMNS_CANNOT_BE_EMPTY
+                    INDEX_COLUMNS_CANNOT_BE_EMPTY,
                 )
                 val properties =
                     input.columnNames.mapNotNull { columnName ->
@@ -525,8 +525,8 @@ internal constructor(
                             element,
                             ProcessorErrors.indexColumnDoesNotExist(
                                 columnName,
-                                dataClass.columnNames
-                            )
+                                dataClass.columnNames,
+                            ),
                         )
                         property
                     }
@@ -534,7 +534,7 @@ internal constructor(
                     context.checker.check(
                         input.columnNames.size == input.orders.size,
                         element,
-                        INVALID_INDEX_ORDERS_SIZE
+                        INVALID_INDEX_ORDERS_SIZE,
                     )
                 }
                 if (properties.isEmpty()) {
@@ -544,7 +544,7 @@ internal constructor(
                         name = input.name,
                         unique = input.unique,
                         properties = Properties(properties),
-                        orders = input.orders
+                        orders = input.orders,
                     )
                 }
             }
@@ -567,8 +567,8 @@ internal constructor(
                         ProcessorErrors.droppedEmbeddedIndex(
                             entityName = embedded.dataClass.typeName.toString(context.codeLanguage),
                             propertyPath = embedded.property.getPath(),
-                            grandParent = element.qualifiedName
-                        )
+                            grandParent = element.qualifiedName,
+                        ),
                     )
                 }
             }
@@ -580,7 +580,7 @@ internal constructor(
     private fun loadSuperIndices(
         typeMirror: XType?,
         tableName: String,
-        inherit: Boolean
+        inherit: Boolean,
     ): List<IndexInput> {
         if (typeMirror == null || typeMirror.isNone() || typeMirror.isError()) {
             return emptyList()
@@ -603,7 +603,7 @@ internal constructor(
                             name = createIndexName(it.columnNames, tableName),
                             unique = it.unique,
                             columnNames = it.columnNames,
-                            orders = it.orders
+                            orders = it.orders,
                         )
                     }
                 } else {
@@ -612,8 +612,8 @@ internal constructor(
                         parentTypeElement,
                         ProcessorErrors.droppedSuperClassIndex(
                             childEntity = element.qualifiedName,
-                            superEntity = parentTypeElement.qualifiedName
-                        )
+                            superEntity = parentTypeElement.qualifiedName,
+                        ),
                     )
                     emptyList()
                 }

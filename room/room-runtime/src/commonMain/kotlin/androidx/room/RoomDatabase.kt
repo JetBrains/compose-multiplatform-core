@@ -22,6 +22,7 @@ import androidx.annotation.RestrictTo
 import androidx.room.concurrent.CloseBarrier
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
+import androidx.room.util.getCoroutineContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
@@ -203,7 +204,7 @@ public expect abstract class RoomDatabase() {
         TRUNCATE,
 
         /** Write-Ahead Logging mode. */
-        WRITE_AHEAD_LOGGING
+        WRITE_AHEAD_LOGGING,
     }
 
     /**
@@ -305,7 +306,7 @@ public expect abstract class RoomDatabase() {
          */
         public fun fallbackToDestructiveMigrationFrom(
             dropAllTables: Boolean,
-            vararg startVersions: Int
+            vararg startVersions: Int,
         ): Builder<T>
 
         /**
@@ -467,7 +468,7 @@ public expect abstract class RoomDatabase() {
  * @see [useWriterConnection]
  */
 public suspend fun <R> RoomDatabase.useReaderConnection(block: suspend (Transactor) -> R): R =
-    withContext(getCoroutineScope().coroutineContext + RoomExternalOperationElement) {
+    withContext(getCoroutineContext(false) + RoomExternalOperationElement) {
         useConnection(isReadOnly = true, block)
     }
 
@@ -497,7 +498,7 @@ public suspend fun <R> RoomDatabase.useReaderConnection(block: suspend (Transact
  * @see [useReaderConnection]
  */
 public suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transactor) -> R): R =
-    withContext(getCoroutineScope().coroutineContext + RoomExternalOperationElement) {
+    withContext(getCoroutineContext(false) + RoomExternalOperationElement) {
             useConnection(isReadOnly = false, block)
         }
         .also { invalidationTracker.refreshAsync() }
@@ -521,7 +522,7 @@ internal object RoomExternalOperationElement :
  */
 internal fun validateMigrationsNotRequired(
     migrationStartAndEndVersions: Set<Int>,
-    migrationsNotRequiredFrom: Set<Int>
+    migrationsNotRequiredFrom: Set<Int>,
 ) {
     if (migrationStartAndEndVersions.isNotEmpty()) {
         for (version in migrationStartAndEndVersions) {
@@ -567,7 +568,7 @@ internal fun RoomDatabase.validateAutoMigrations(configuration: DatabaseConfigur
         val migrationExists =
             configuration.migrationContainer.contains(
                 autoMigration.startVersion,
-                autoMigration.endVersion
+                autoMigration.endVersion,
             )
         if (!migrationExists) {
             configuration.migrationContainer.addMigration(autoMigration)

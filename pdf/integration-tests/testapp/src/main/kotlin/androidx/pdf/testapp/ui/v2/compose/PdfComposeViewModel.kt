@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 @SuppressLint("RestrictedApiAndroidX")
 internal class PdfComposeViewModel(
     private val pdfLoader: PdfLoader,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val _loadedDocumentStateFlow = MutableStateFlow<PdfDocument?>(null)
     val loadedDocumentStateFlow: StateFlow<PdfDocument?> = _loadedDocumentStateFlow
@@ -79,7 +79,7 @@ internal class PdfComposeViewModel(
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(
                     modelClass: Class<T>,
-                    extras: CreationExtras
+                    extras: CreationExtras,
                 ): T {
                     val application =
                         checkNotNull(extras[APPLICATION_KEY]) { "Application required" }

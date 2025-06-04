@@ -91,7 +91,7 @@ class CanvasMeshRendererTest {
                             InputToolType.UNKNOWN,
                             x = 99F,
                             y = 99F,
-                            elapsedTimeMillis = 100
+                            elapsedTimeMillis = 100,
                         )
                         .asImmutable(),
             )
@@ -115,7 +115,7 @@ class CanvasMeshRendererTest {
                 enqueueInputsOrThrow(
                     buildStrokeInputBatchFromPoints(
                         floatArrayOf(10f, 20f, 100f, 120f),
-                        startTime = 0L
+                        startTime = 0L,
                     ),
                     MutableStrokeInputBatch(),
                 )
@@ -152,7 +152,7 @@ class CanvasMeshRendererTest {
         assertThat(
                 meshRenderer.obtainShaderMetadata(
                     inProgressStroke.getMeshFormat(0, 0),
-                    isPacked = false
+                    isPacked = false,
                 )
             )
             .isSameInstanceAs(
@@ -278,7 +278,7 @@ class CanvasMeshRendererTest {
                             InputToolType.UNKNOWN,
                             x = 10F,
                             y = 10F,
-                            elapsedTimeMillis = 100
+                            elapsedTimeMillis = 100,
                         )
                         .asImmutable(),
             )
@@ -334,7 +334,7 @@ class CanvasMeshRendererTest {
                             InputToolType.UNKNOWN,
                             x = 10F,
                             y = 10F,
-                            elapsedTimeMillis = 100
+                            elapsedTimeMillis = 100,
                         )
                         .asImmutable(),
             )

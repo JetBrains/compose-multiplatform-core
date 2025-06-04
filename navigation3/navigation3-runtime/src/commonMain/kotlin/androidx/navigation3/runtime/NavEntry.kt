@@ -29,5 +29,5 @@ import androidx.compose.runtime.Composable
 public open class NavEntry<T : Any>(
     public open val key: T,
     public open val metadata: Map<String, Any> = emptyMap(),
-    public open val content: @Composable (T) -> Unit
+    public open val content: @Composable (T) -> Unit,
 )

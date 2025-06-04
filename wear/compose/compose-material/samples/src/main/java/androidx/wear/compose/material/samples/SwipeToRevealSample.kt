@@ -60,13 +60,13 @@ fun SwipeToRevealChipSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
                 revealState = revealState,
                 icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
                 label = { Text("Delete") },
-                onClick = { /* Add the click handler here */ }
+                onClick = { /* Add the click handler here */ },
             )
         },
         secondaryAction = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
-                onClick = { /* Add the click handler here */ }
+                onClick = { /* Add the click handler here */ },
             ) {
                 Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
             }
@@ -75,17 +75,17 @@ fun SwipeToRevealChipSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 label = { Text("Undo") },
-                onClick = { /* Add the undo handler for primary action */ }
+                onClick = { /* Add the undo handler for primary action */ },
             )
         },
         undoSecondaryAction = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 label = { Text("Undo") },
-                onClick = { /* Add the undo handler for secondary action */ }
+                onClick = { /* Add the undo handler for secondary action */ },
             )
         },
-        onFullSwipe = { /* Add the full swipe handler here */ }
+        onFullSwipe = { /* Add the full swipe handler here */ },
     ) {
         Chip(
             modifier =
@@ -100,13 +100,13 @@ fun SwipeToRevealChipSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
                             CustomAccessibilityAction("More Options") {
                                 /* Add the secondary click handler here */
                                 true
-                            }
+                            },
                         )
                 },
             onClick = { /* Add the chip click handler here */ },
             colors = ChipDefaults.primaryChipColors(),
             border = ChipDefaults.outlinedChipBorder(),
-            label = { Text("Swipe to Reveal Chip", maxLines = 3) }
+            label = { Text("Swipe to Reveal Chip", maxLines = 3) },
         )
     }
 }
@@ -127,13 +127,13 @@ fun SwipeToRevealCardSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
                 revealState = revealState,
                 icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
                 label = { Text("Delete") },
-                onClick = { /* Add the click handler here */ }
+                onClick = { /* Add the click handler here */ },
             )
         },
         secondaryAction = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
-                onClick = { /* Add the click handler here */ }
+                onClick = { /* Add the click handler here */ },
             ) {
                 Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
             }
@@ -142,17 +142,17 @@ fun SwipeToRevealCardSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 label = { Text("Undo") },
-                onClick = { /* Add the undo handler for primary action */ }
+                onClick = { /* Add the undo handler for primary action */ },
             )
         },
         undoSecondaryAction = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 label = { Text("Undo") },
-                onClick = { /* Add the undo handler for secondary action */ }
+                onClick = { /* Add the undo handler for secondary action */ },
             )
         },
-        onFullSwipe = { /* Add the full swipe handler here */ }
+        onFullSwipe = { /* Add the full swipe handler here */ },
     ) {
         AppCard(
             onClick = { /* Add the Card click handler */ },
@@ -180,9 +180,9 @@ fun SwipeToRevealCardSample(swipeToDismissBoxState: SwipeToDismissBoxState) {
                             CustomAccessibilityAction("More Options") {
                                 /* Add the secondary click handler here */
                                 true
-                            }
+                            },
                         )
-                }
+                },
         ) {
             Text("Basic card with Swipe to Reveal actions")
         }

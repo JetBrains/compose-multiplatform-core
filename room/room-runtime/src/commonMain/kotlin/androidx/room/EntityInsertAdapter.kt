@@ -117,7 +117,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): LongArray {
         if (entities == null) return longArrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -143,7 +143,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): LongArray {
         if (entities == null) return longArrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -169,7 +169,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): Array<out Long> {
         if (entities == null) return arrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -195,7 +195,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): Array<out Long> {
         if (entities == null) return arrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -221,7 +221,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {
@@ -248,7 +248,7 @@ public abstract class EntityInsertAdapter<T> {
      */
     public fun insertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {

@@ -16,20 +16,16 @@
 
 package androidx.navigation3.runtime
 
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import kotlinx.serialization.Serializable
 
 /**
- * Marker class for keys that ensures that all keys are unique.
+ * Marker interface for keys.
  *
- * Objects and classes that extend this class must also be marked with the [Serializable]
- * annotation.
+ * Objects and classes that extend this class must be marked with the [Serializable] annotation in
+ * order to be saved with by the [rememberNavBackStack] function.
  *
  * This class is required because [Serializable] is only an annotation and does not provide a way to
  * link classes marked with the annotation together and provide a serializable that works with all
  * of them, resulting it making it impossible to properly save and restore.
  */
-@OptIn(ExperimentalUuidApi::class)
-@Serializable
-public open class NavKey(internal val uuid: Uuid = Uuid.random())
+public interface NavKey

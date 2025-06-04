@@ -49,7 +49,7 @@ public fun Text(
             this.set(modifier) { this.modifier = it }
             this.set(style) { this.style = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 

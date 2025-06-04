@@ -59,6 +59,7 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.mockitoKotlin4)
     androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 android {
@@ -96,5 +97,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "add pdf viewing to their apps."
+    addGoldenImageAssets()
     enableRobolectric()
 }

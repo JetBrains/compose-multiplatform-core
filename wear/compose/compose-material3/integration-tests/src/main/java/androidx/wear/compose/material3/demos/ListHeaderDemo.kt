@@ -41,26 +41,12 @@ fun ListHeaderDemo() {
             state = scrollState,
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = contentPadding
+            contentPadding = contentPadding,
         ) {
             item { ListHeader { Text("Long heading should be center-aligned") } }
             item { ListSubHeader(label = { Text("Long sub heading should be start-aligned") }) }
-            item {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {},
-                ) {
-                    Text("Bluetooth")
-                }
-            }
-            item {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {},
-                ) {
-                    Text("Wifi")
-                }
-            }
+            item { Button(modifier = Modifier.fillMaxWidth(), onClick = {}) { Text("Bluetooth") } }
+            item { Button(modifier = Modifier.fillMaxWidth(), onClick = {}) { Text("Wifi") } }
         }
     }
 }

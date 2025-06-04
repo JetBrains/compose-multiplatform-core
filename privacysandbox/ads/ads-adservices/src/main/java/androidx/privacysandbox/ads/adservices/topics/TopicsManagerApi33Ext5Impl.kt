@@ -27,7 +27,7 @@ import androidx.annotation.RestrictTo
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
 class TopicsManagerApi33Ext5Impl(context: Context) :
     TopicsManagerImplCommon(
-        context.getSystemService(android.adservices.topics.TopicsManager::class.java),
+        context.getSystemService(android.adservices.topics.TopicsManager::class.java)
     ) {
     override fun convertRequest(
         request: GetTopicsRequest

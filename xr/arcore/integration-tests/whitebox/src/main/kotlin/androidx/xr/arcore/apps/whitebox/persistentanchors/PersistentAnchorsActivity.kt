@@ -62,15 +62,15 @@ import androidx.xr.arcore.apps.whitebox.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.common.SessionLifecycleHelper
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.AnchorPersistenceMode
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.scene
 import java.util.UUID
 import kotlin.collections.List
@@ -97,8 +97,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
             SessionLifecycleHelper(
                 this,
                 Config(
-                    anchorPersistence = AnchorPersistenceMode.ENABLED,
-                    headTracking = HeadTrackingMode.ENABLED,
+                    anchorPersistence = AnchorPersistenceMode.LOCAL,
+                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
@@ -125,7 +125,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             PanelEntity.create(
                 session,
                 composeView,
-                PixelDimensions(640, 640),
+                IntSize2d(640, 640),
                 "movableEntity",
                 movableEntityOffset,
             )
@@ -165,7 +165,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             topBar = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     BackToMainActivityButton()
                     Text(
@@ -260,7 +260,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         PanelEntity.create(
                             session,
                             composeView,
-                            PixelDimensions(640, 640),
+                            IntSize2d(640, 640),
                             "anchorEntity ${anchor.hashCode()}",
                             Pose(),
                         )
@@ -294,7 +294,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             }
             Button(
                 modifier = Modifier.padding(top = 10.dp),
-                onClick = { deleteEntity(anchor, entity) }
+                onClick = { deleteEntity(anchor, entity) },
             ) {
                 Text(text = "Delete anchor", fontSize = 32.sp)
             }

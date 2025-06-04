@@ -36,8 +36,8 @@ public interface MeasureResult {
     public val depth: Int
 
     /**
-     * Used for positioning children. [Placeable.placeAt] should be called on children inside
-     * [placeChildren]
+     * Used for positioning children. [SubspacePlaceable.placeAt] should be called on children
+     * inside [placeChildren]
      */
-    public fun placeChildren(placementScope: Placeable.PlacementScope)
+    public fun placeChildren(placementScope: SubspacePlaceable.SubspacePlacementScope)
 }

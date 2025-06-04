@@ -27,13 +27,13 @@ import java.time.ZoneOffset
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun formatDatePickerNavigateToYearString(
     template: String,
-    localizedYear: String
+    localizedYear: String,
 ): String = template.format(localizedYear)
 
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun formatHeadlineDescription(
     template: String,
-    verboseDateDescription: String
+    verboseDateDescription: String,
 ): String = template.format(verboseDateDescription)
 
 /**
@@ -61,7 +61,7 @@ fun rememberDatePickerState(
     initialDisplayedMonth: YearMonth? = initialSelectedDate?.let { YearMonth.from(it) },
     yearRange: IntRange = DatePickerDefaults.YearRange,
     initialDisplayMode: DisplayMode = DisplayMode.Picker,
-    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
 ): DatePickerState {
     val initialSelectedDateMillis = initialSelectedDate?.let { getLocalDateMillisUtc(it) }
     val initialDisplayedMonthMillis = initialDisplayedMonth?.let { getYearMonthMillisUtc(it) }
@@ -70,7 +70,7 @@ fun rememberDatePickerState(
         initialDisplayedMonthMillis = initialDisplayedMonthMillis,
         yearRange = yearRange,
         initialDisplayMode = initialDisplayMode,
-        selectableDates = selectableDates
+        selectableDates = selectableDates,
     )
 }
 
@@ -111,7 +111,7 @@ fun DatePickerState(
     initialDisplayedMonth: YearMonth? = initialSelectedDate?.let { YearMonth.from(it) },
     yearRange: IntRange = DatePickerDefaults.YearRange,
     initialDisplayMode: DisplayMode = DisplayMode.Picker,
-    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
 ): DatePickerState =
     DatePickerState(
         locale = locale,
@@ -119,7 +119,7 @@ fun DatePickerState(
         initialDisplayedMonthMillis = initialDisplayedMonth?.let { getYearMonthMillisUtc(it) },
         yearRange = yearRange,
         initialDisplayMode = initialDisplayMode,
-        selectableDates = selectableDates
+        selectableDates = selectableDates,
     )
 
 /**
@@ -151,7 +151,7 @@ fun rememberDateRangePickerState(
     initialDisplayedMonth: YearMonth? = initialSelectedStartDate?.let { YearMonth.from(it) },
     yearRange: IntRange = DatePickerDefaults.YearRange,
     initialDisplayMode: DisplayMode = DisplayMode.Picker,
-    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
 ): DateRangePickerState {
     val initialSelectedStartDateMillis = initialSelectedStartDate?.let { getLocalDateMillisUtc(it) }
     val initialSelectedEndDateMillis = initialSelectedEndDate?.let { getLocalDateMillisUtc(it) }
@@ -162,7 +162,7 @@ fun rememberDateRangePickerState(
         initialDisplayedMonthMillis = initialDisplayedMonthMillis,
         yearRange = yearRange,
         initialDisplayMode = initialDisplayMode,
-        selectableDates = selectableDates
+        selectableDates = selectableDates,
     )
 }
 
@@ -208,7 +208,7 @@ fun DateRangePickerState(
     initialDisplayedMonth: YearMonth? = initialSelectedStartDate?.let { YearMonth.from(it) },
     yearRange: IntRange = DatePickerDefaults.YearRange,
     initialDisplayMode: DisplayMode = DisplayMode.Picker,
-    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates,
 ): DateRangePickerState =
     DateRangePickerState(
         locale = locale,
@@ -217,7 +217,7 @@ fun DateRangePickerState(
         initialDisplayedMonthMillis = initialDisplayedMonth?.let { getYearMonthMillisUtc(it) },
         yearRange = yearRange,
         initialDisplayMode = initialDisplayMode,
-        selectableDates = selectableDates
+        selectableDates = selectableDates,
     )
 
 /**

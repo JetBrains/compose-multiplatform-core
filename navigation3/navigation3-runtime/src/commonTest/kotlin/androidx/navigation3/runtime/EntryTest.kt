@@ -33,7 +33,7 @@ class EntryTest {
             NavEntry(
                 key = "myKey",
                 metadata = mapOf("feature1" to 1, "feature2" to MyObject),
-                content = {}
+                content = {},
             )
         assertThat(entry.metadata["feature1"]).isEqualTo(1)
         assertThat(entry.metadata["feature2"]).isEqualTo(MyObject)

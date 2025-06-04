@@ -46,7 +46,7 @@ internal interface SharedCounter {
     private class RealSharedCounter(
         private val nativeSharedCounter: NativeSharedCounter,
         /** The memory address to be mapped. */
-        private val mappedAddress: Long
+        private val mappedAddress: Long,
     ) : SharedCounter {
         override fun getValue(): Int {
             return nativeSharedCounter.nativeGetCounterValue(mappedAddress)
@@ -127,7 +127,7 @@ internal interface SharedCounter {
                 pfd =
                     ParcelFileDescriptor.open(
                         file,
-                        ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE
+                        ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE,
                     )
                 return createCounterFromFd(pfd)
             } finally {

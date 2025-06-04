@@ -94,7 +94,7 @@ object TestGlanceAppWidget : GlanceAppWidget() {
 
     inline fun withProvidePreview(
         noinline previewBlock: @Composable TestGlanceAppWidget.(Int) -> Unit,
-        withBlock: () -> Unit
+        withBlock: () -> Unit,
     ) {
         val previousProvidePreview = onProvidePreview
         onProvidePreview = previewBlock
@@ -105,9 +105,7 @@ object TestGlanceAppWidget : GlanceAppWidget() {
         }
     }
 
-    inline fun withErrorOnSessionCreation(
-        block: () -> Unit,
-    ) {
+    inline fun withErrorOnSessionCreation(block: () -> Unit) {
         shouldThrowErrorWhenCreatingSession = true
         try {
             block()
@@ -119,7 +117,7 @@ object TestGlanceAppWidget : GlanceAppWidget() {
     override fun createAppWidgetSession(
         context: Context,
         id: AppWidgetId,
-        options: Bundle?
+        options: Bundle?,
     ): AppWidgetSession {
         return if (shouldThrowErrorWhenCreatingSession) error("Error creating app widget session")
         else super.createAppWidgetSession(context, id, options)

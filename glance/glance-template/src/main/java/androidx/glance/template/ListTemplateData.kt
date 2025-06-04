@@ -34,7 +34,7 @@ package androidx.glance.template
 public class ListTemplateData(
     public val headerBlock: HeaderBlock? = null,
     public val listContent: List<ListTemplateItem> = listOf(),
-    public val listStyle: ListStyle = ListStyle.Full
+    public val listStyle: ListStyle = ListStyle.Full,
 ) {
 
     override fun hashCode(): Int {

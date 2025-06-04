@@ -67,7 +67,7 @@ class PdfFastScrollerTest {
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             )
         scenario.onFragment { fragment ->
             // Register idling resource
@@ -144,7 +144,7 @@ class PdfFastScrollerTest {
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}"
+                "Unable to load document due to ${it.documentError?.message}",
             )
             it.setIsAnnotationIntentResolvable(true)
             it.isToolboxVisible = true

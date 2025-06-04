@@ -49,7 +49,7 @@ class CpuEventCounterBenchmark {
 
         assumeFalse(
             "cpu events enabled for all benchmarks, disabling this test",
-            Arguments.cpuEventCounterEnable
+            Arguments.cpuEventCounterEnable,
         )
     }
 

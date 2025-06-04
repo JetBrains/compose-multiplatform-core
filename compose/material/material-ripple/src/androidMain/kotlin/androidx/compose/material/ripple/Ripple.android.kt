@@ -58,7 +58,7 @@ internal actual fun createPlatformRippleNode(
     bounded: Boolean,
     radius: Dp,
     color: ColorProducer,
-    rippleAlpha: () -> RippleAlpha
+    rippleAlpha: () -> RippleAlpha,
 ): DelegatableNode = AndroidRippleNode(interactionSource, bounded, radius, color, rippleAlpha)
 
 /**
@@ -81,7 +81,7 @@ actual constructor(bounded: Boolean, radius: Dp, color: State<Color>) :
         bounded: Boolean,
         radius: Dp,
         color: State<Color>,
-        rippleAlpha: State<RippleAlpha>
+        rippleAlpha: State<RippleAlpha>,
     ): RippleIndicationInstance {
         val view = findNearestViewGroup(LocalView.current)
         return remember(interactionSource, this, view) {
@@ -101,7 +101,7 @@ internal class AndroidRippleNode(
     bounded: Boolean,
     radius: Dp,
     color: ColorProducer,
-    rippleAlpha: () -> RippleAlpha
+    rippleAlpha: () -> RippleAlpha,
 ) : RippleNode(interactionSource, bounded, radius, color, rippleAlpha), RippleHostKey {
     /**
      * [RippleContainer] attached to the nearest [ViewGroup]. If it hasn't already been created by a
@@ -141,7 +141,7 @@ internal class AndroidRippleNode(
                     size = rippleSize,
                     radius = targetRadius.roundToInt(),
                     color = rippleColor,
-                    alpha = rippleAlpha().pressedAlpha
+                    alpha = rippleAlpha().pressedAlpha,
                 )
 
                 draw(canvas.nativeCanvas)
@@ -160,7 +160,7 @@ internal class AndroidRippleNode(
                         radius = targetRadius.roundToInt(),
                         color = rippleColor,
                         alpha = rippleAlpha().pressedAlpha,
-                        onInvalidateRipple = { invalidateDraw() }
+                        onInvalidateRipple = { invalidateDraw() },
                     )
                 }
             }
@@ -199,7 +199,7 @@ internal class AndroidRippleIndicationInstance(
     private val radius: Dp,
     private val color: State<Color>,
     private val rippleAlpha: State<RippleAlpha>,
-    private val view: ViewGroup
+    private val view: ViewGroup,
 ) : RippleIndicationInstance(bounded, rippleAlpha), RememberObserver, RippleHostKey {
     /**
      * [RippleContainer] attached to the nearest [ViewGroup]: [view]. If it hasn't already been
@@ -270,7 +270,7 @@ internal class AndroidRippleIndicationInstance(
                     size = size,
                     radius = rippleRadius,
                     color = color,
-                    alpha = alpha
+                    alpha = alpha,
                 )
 
                 draw(canvas.nativeCanvas)
@@ -289,7 +289,7 @@ internal class AndroidRippleIndicationInstance(
                         radius = rippleRadius,
                         color = color.value,
                         alpha = rippleAlpha.value.pressedAlpha,
-                        onInvalidateRipple = onInvalidateRipple
+                        onInvalidateRipple = onInvalidateRipple,
                     )
                 }
             }

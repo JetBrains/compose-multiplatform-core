@@ -357,7 +357,7 @@ expect class GraphicsLayer {
         density: Density,
         layoutDirection: LayoutDirection,
         size: IntSize,
-        block: DrawScope.() -> Unit
+        block: DrawScope.() -> Unit,
     )
 
     /**
@@ -387,7 +387,7 @@ fun GraphicsLayer.setOutline(outline: Outline) {
         is Outline.Rectangle ->
             setRectOutline(
                 Offset(outline.rect.left, outline.rect.top),
-                Size(outline.rect.width, outline.rect.height)
+                Size(outline.rect.width, outline.rect.height),
             )
         is Outline.Generic -> setPathOutline(outline.path)
         is Outline.Rounded -> {
@@ -402,7 +402,7 @@ fun GraphicsLayer.setOutline(outline: Outline) {
                 setRoundRectOutline(
                     Offset(rr.left, rr.top),
                     Size(rr.width, rr.height),
-                    rr.bottomLeftCornerRadius.x
+                    rr.bottomLeftCornerRadius.x,
                 )
             }
         }

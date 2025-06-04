@@ -42,7 +42,7 @@ class AggregatedAppFunctionInvokerTest {
                 aggregatedInvoker.unsafeInvoke(
                     FakeAppFunctionContext,
                     "androidx.apfunctions.internal#test1",
-                    mapOf()
+                    mapOf(),
                 )
             }
         }
@@ -52,11 +52,7 @@ class AggregatedAppFunctionInvokerTest {
     fun testAggregatedInvoker_nonExistFunction() {
         val aggregatedInvoker =
             object : AggregatedAppFunctionInvoker() {
-                override val invokers: List<AppFunctionInvoker> =
-                    listOf(
-                        Invoker1(),
-                        Invoker2(),
-                    )
+                override val invokers: List<AppFunctionInvoker> = listOf(Invoker1(), Invoker2())
             }
 
         assertThat(aggregatedInvoker.supportedFunctionIds).hasSize(2)
@@ -67,7 +63,7 @@ class AggregatedAppFunctionInvokerTest {
                 aggregatedInvoker.unsafeInvoke(
                     FakeAppFunctionContext,
                     "androidx.apfunctions.internal#test0",
-                    mapOf()
+                    mapOf(),
                 )
             }
         }
@@ -77,32 +73,28 @@ class AggregatedAppFunctionInvokerTest {
     fun testAggregatedInvoker_existFunctions() {
         val aggregatedInvoker =
             object : AggregatedAppFunctionInvoker() {
-                override val invokers: List<AppFunctionInvoker> =
-                    listOf(
-                        Invoker1(),
-                        Invoker2(),
-                    )
+                override val invokers: List<AppFunctionInvoker> = listOf(Invoker1(), Invoker2())
             }
 
         val invokeTest1Result = runBlocking {
             aggregatedInvoker.unsafeInvoke(
                 FakeAppFunctionContext,
                 "androidx.appfunctions.internal#test1",
-                mapOf()
+                mapOf(),
             )
         }
         val invokeTest2Result = runBlocking {
             aggregatedInvoker.unsafeInvoke(
                 FakeAppFunctionContext,
                 "androidx.appfunctions.internal#test2",
-                mapOf()
+                mapOf(),
             )
         }
 
         assertThat(aggregatedInvoker.supportedFunctionIds)
             .containsExactly(
                 "androidx.appfunctions.internal#test1",
-                "androidx.appfunctions.internal#test2"
+                "androidx.appfunctions.internal#test2",
             )
         assertThat(invokeTest1Result).isEqualTo("Invoker1#test1")
         assertThat(invokeTest2Result).isEqualTo("Invoker2#test2")
@@ -115,7 +107,7 @@ class AggregatedAppFunctionInvokerTest {
         override suspend fun unsafeInvoke(
             appFunctionContext: AppFunctionContext,
             functionIdentifier: String,
-            parameters: Map<String, Any?>
+            parameters: Map<String, Any?>,
         ): Any? {
             return when (functionIdentifier) {
                 "androidx.appfunctions.internal#test1" -> "Invoker1#test1"
@@ -131,7 +123,7 @@ class AggregatedAppFunctionInvokerTest {
         override suspend fun unsafeInvoke(
             appFunctionContext: AppFunctionContext,
             functionIdentifier: String,
-            parameters: Map<String, Any?>
+            parameters: Map<String, Any?>,
         ): Any? {
             return when (functionIdentifier) {
                 "androidx.appfunctions.internal#test2" -> "Invoker2#test2"
@@ -142,9 +134,6 @@ class AggregatedAppFunctionInvokerTest {
 
     private object FakeAppFunctionContext : AppFunctionContext {
         override val context: Context
-            get() = throw RuntimeException("Stub!")
-
-        override val callingPackageName: String
             get() = throw RuntimeException("Stub!")
     }
 }

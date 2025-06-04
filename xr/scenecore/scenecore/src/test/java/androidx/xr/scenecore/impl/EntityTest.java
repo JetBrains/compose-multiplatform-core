@@ -39,7 +39,6 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -48,6 +47,7 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -99,7 +99,7 @@ public final class EntityTest {
                         mActivity,
                         mFakeScheduledExecutorService,
                         mXrExtensions,
-                        new FakeImpressApi(),
+                        new FakeImpressApiImpl(),
                         mEntityManager,
                         perceptionLibrary,
                         mock(SplitEngineSubspaceManager.class),

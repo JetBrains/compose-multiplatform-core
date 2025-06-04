@@ -60,7 +60,7 @@ fun CustomTransformationSpecSample() {
 
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black)
+        modifier = Modifier.background(Color.Black),
     ) {
         items(count = 100) { index ->
             Button(
@@ -81,7 +81,7 @@ fun CustomTransformationSpecSample() {
                             with(morphingTransformationSpec) {
                                 applyContentTransformation(scrollProgress)
                             }
-                        }
+                        },
                 )
             }
         }
@@ -106,7 +106,7 @@ fun ResponsiveTransformationSpecButtonSample() {
         )
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black)
+        modifier = Modifier.background(Color.Black),
     ) {
         items(count = 100) { index ->
             Button(
@@ -130,7 +130,7 @@ fun TransformationSpecButtonRowSample() {
 
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black)
+        modifier = Modifier.background(Color.Black),
     ) {
         items(count = 100) {
             val interactionSource1 = remember { MutableInteractionSource() }
@@ -159,7 +159,7 @@ fun TransformationSpecButtonRowSample() {
                                     with(transformationSpec) {
                                         applyContentTransformation(scrollProgress)
                                     }
-                                }
+                                },
                         )
                     }
                 }
@@ -176,7 +176,7 @@ fun TransformationSpecButtonRowSample() {
                                     with(transformationSpec) {
                                         applyContentTransformation(scrollProgress)
                                     }
-                                }
+                                },
                         )
                     }
                 }

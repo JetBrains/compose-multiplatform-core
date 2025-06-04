@@ -106,14 +106,14 @@ private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): Ap
 private fun unsafeBuildSingleReturnValue(
     type: Int,
     result: Any,
-    objectQualifiedName: String? = null
+    objectQualifiedName: String? = null,
 ): AppFunctionData {
     val builder = AppFunctionData.Builder("")
     when (type) {
         TYPE_LONG -> {
             builder.setLong(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Long
+                result as Long,
             )
         }
         TYPE_INT -> {
@@ -122,25 +122,25 @@ private fun unsafeBuildSingleReturnValue(
         TYPE_DOUBLE -> {
             builder.setDouble(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Double
+                result as Double,
             )
         }
         TYPE_FLOAT -> {
             builder.setFloat(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Float
+                result as Float,
             )
         }
         TYPE_BOOLEAN -> {
             builder.setBoolean(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Boolean
+                result as Boolean,
             )
         }
         TYPE_STRING -> {
             builder.setString(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as String
+                result as String,
             )
         }
         TYPE_BYTES -> {
@@ -149,13 +149,13 @@ private fun unsafeBuildSingleReturnValue(
         TYPE_PENDING_INTENT -> {
             builder.setPendingIntent(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as PendingIntent
+                result as PendingIntent,
             )
         }
         TYPE_OBJECT -> {
             builder.setAppFunctionData(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                AppFunctionData.serialize(result, checkNotNull(objectQualifiedName))
+                AppFunctionData.serialize(result, checkNotNull(objectQualifiedName)),
             )
         }
         TYPE_UNIT -> {
@@ -172,58 +172,58 @@ private fun unsafeBuildSingleReturnValue(
 private fun unsafeBuildCollectionReturnValue(
     type: Int,
     result: Any,
-    objectQualifiedName: String? = null
+    objectQualifiedName: String? = null,
 ): AppFunctionData {
     val builder = AppFunctionData.Builder("")
     when (type) {
         TYPE_LONG -> {
             builder.setLongArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as LongArray
+                result as LongArray,
             )
         }
         TYPE_INT -> {
             builder.setIntArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as IntArray
+                result as IntArray,
             )
         }
         TYPE_DOUBLE -> {
             builder.setDoubleArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as DoubleArray
+                result as DoubleArray,
             )
         }
         TYPE_FLOAT -> {
             builder.setFloatArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as FloatArray
+                result as FloatArray,
             )
         }
         TYPE_BOOLEAN -> {
             builder.setBooleanArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as BooleanArray
+                result as BooleanArray,
             )
         }
         TYPE_STRING -> {
             @Suppress("UNCHECKED_CAST")
             builder.setStringList(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as List<String>
+                result as List<String>,
             )
         }
         TYPE_BYTES -> {
             builder.setByteArray(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as ByteArray
+                result as ByteArray,
             )
         }
         TYPE_PENDING_INTENT -> {
             @Suppress("UNCHECKED_CAST")
             builder.setPendingIntentList(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as List<PendingIntent>
+                result as List<PendingIntent>,
             )
         }
         TYPE_OBJECT -> {
@@ -232,7 +232,7 @@ private fun unsafeBuildCollectionReturnValue(
                 ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
                 (result as List<Any>).map {
                     AppFunctionData.serialize(it, checkNotNull(objectQualifiedName))
-                }
+                },
             )
         }
         else -> {

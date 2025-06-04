@@ -30,7 +30,7 @@ import androidx.xr.runtime.math.Vector3
  * parent. Applications create and manage Entity instances to construct spatial scenes.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface Entity : ActivityPose {
+public interface Entity : ScenePose {
 
     /**
      * Sets this Entity to be represented in the parent's coordinate space. From a User's
@@ -232,7 +232,7 @@ public abstract class BaseEntity<out RtEntityType : RtEntity>
 internal constructor(
     internal val rtEntity: RtEntityType,
     private val entityManager: EntityManager,
-) : Entity, BaseActivityPose<RtActivityPose>(rtEntity) {
+) : Entity, BaseScenePose<RtActivityPose>(rtEntity) {
 
     init {
         entityManager.setEntityForRtEntity(rtEntity, this)
@@ -331,9 +331,4 @@ internal constructor(
     }
 
     override fun setContentDescription(text: String) {}
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun interface OnSpaceUpdatedListener {
-    public fun onSpaceUpdated()
 }

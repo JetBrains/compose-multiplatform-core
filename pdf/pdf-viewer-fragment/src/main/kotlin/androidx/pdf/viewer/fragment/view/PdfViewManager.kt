@@ -27,7 +27,7 @@ import androidx.pdf.viewer.fragment.model.HighlightData
 internal class PdfViewManager(
     private val pdfView: PdfView,
     @ColorInt private val selectedHighlightColor: Int,
-    @ColorInt private val highlightColor: Int
+    @ColorInt private val highlightColor: Int,
 ) {
 
     fun setHighlights(highlightData: HighlightData) {
@@ -64,7 +64,7 @@ internal class PdfViewManager(
                         position =
                             PdfPoint(
                                 selectedHighlight.pageNum,
-                                PointF(selectedBounds.left, selectedBounds.top)
+                                PointF(selectedBounds.left, selectedBounds.top),
                             )
                     )
                 }

@@ -49,20 +49,20 @@ internal fun Modifier.paneExpansionDraggable(
     interactionSource: MutableInteractionSource,
     semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)?,
     animateFraction: () -> Float,
-    lookaheadScope: LookaheadScope
+    lookaheadScope: LookaheadScope,
 ): Modifier =
     this.draggable(
             state = state.draggableState,
             orientation = Orientation.Horizontal,
             interactionSource = interactionSource,
-            onDragStopped = { velocity -> state.settleToAnchorIfNeeded(velocity) }
+            onDragStopped = { velocity -> state.settleToAnchorIfNeeded(velocity) },
         )
         .semanticsAction(semanticsProperties, interactionSource)
         .systemGestureExclusion()
         .animateWithFading(
             enabled = true,
             animateFraction = animateFraction,
-            lookaheadScope = lookaheadScope
+            lookaheadScope = lookaheadScope,
         )
         .semanticsWithDefaults(state, semanticsProperties)
         .then(MinTouchTargetSizeElement(minTouchTargetSize))
@@ -79,7 +79,7 @@ internal fun Modifier.paneExpansionDraggable(
     message =
         "Just omit the semanticsProperties parameter when using " +
             "Modifier.paneExpansionDraggable to set up the default semantics",
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 @ExperimentalMaterial3AdaptiveApi
 @Composable
@@ -91,7 +91,7 @@ fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.(
         if (currentAnchor != null) {
             getString(
                 Strings.defaultPaneExpansionDragHandleStateDescription,
-                currentAnchor.description
+                currentAnchor.description,
             )
         } else {
             null
@@ -101,7 +101,7 @@ fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.(
         if (nextAnchor != null) {
             getString(
                 Strings.defaultPaneExpansionDragHandleActionDescription,
-                nextAnchor.description
+                nextAnchor.description,
             )
         } else {
             null
@@ -153,7 +153,7 @@ private class MinTouchTargetSizeNode(var size: Dp) : ParentDataModifierNode, Mod
 
 private fun Modifier.semanticsAction(
     semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)?,
-    interactionSource: MutableInteractionSource
+    interactionSource: MutableInteractionSource,
 ): Modifier {
     return this.then(
         semanticsProperties?.onClickAction?.let {
@@ -205,7 +205,7 @@ private class DefaultSemanticsNode(var state: PaneExpansionState) :
             currentAnchor?.run {
                 getString(
                     Strings.defaultPaneExpansionDragHandleStateDescription,
-                    this@DefaultSemanticsNode.description
+                    this@DefaultSemanticsNode.description,
                 )
             }
         val nextAnchor = state.nextAnchor
@@ -213,7 +213,7 @@ private class DefaultSemanticsNode(var state: PaneExpansionState) :
             nextAnchor?.run {
                 getString(
                     Strings.defaultPaneExpansionDragHandleActionDescription,
-                    this@DefaultSemanticsNode.description
+                    this@DefaultSemanticsNode.description,
                 )
             }
 

@@ -72,7 +72,7 @@ internal open class FakePdfDocument(
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
-    private val textContents: List<PdfPageTextContent> = emptyList()
+    private val textContents: List<PdfPageTextContent> = emptyList(),
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -113,7 +113,7 @@ internal open class FakePdfDocument(
         if (pageNumber in pages.indices && pageNumber < textContents.size) {
             return PdfDocument.PdfPageContent(
                 textContents = listOf(textContents[pageNumber]),
-                imageContents = emptyList()
+                imageContents = emptyList(),
             )
         }
 
@@ -125,7 +125,7 @@ internal open class FakePdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection {
         // TODO(b/376136631) provide a useful implementation when it's needed for testing
         return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
@@ -136,13 +136,13 @@ internal open class FakePdfDocument(
             0,
             SelectionBoundary(0),
             SelectionBoundary(Int.MAX_VALUE),
-            listOf(textContents[pageNumber])
+            listOf(textContents[pageNumber]),
         )
     }
 
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         return searchResults
     }
@@ -153,7 +153,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): List<PdfDocument.PageInfo> {
         return listOf()
     }
@@ -164,7 +164,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfo(
         pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): PdfDocument.PageInfo {
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
@@ -194,7 +194,7 @@ internal open class FakePdfDocument(
                         255,
                         colorRng.nextInt(256),
                         colorRng.nextInt(256),
-                        colorRng.nextInt(256)
+                        colorRng.nextInt(256),
                     )
                 )
             }
@@ -238,7 +238,7 @@ internal open class FakePdfDocument(
                     List(10) { index ->
                         PdfPageTextContent(
                             bounds = listOf(RectF(0f, 0f, 100f, 200f)),
-                            text = "Sample text for page ${index + 1}"
+                            text = "Sample text for page ${index + 1}",
                         )
                     },
                 pageLinks =
@@ -254,19 +254,19 @@ internal open class FakePdfDocument(
                                                     pageNumber = VALID_PAGE_NUMBER,
                                                     xCoordinate = 10f,
                                                     yCoordinate = 40f,
-                                                    zoom = 1f
-                                                )
+                                                    zoom = 1f,
+                                                ),
                                         )
                                     ),
                                 externalLinks =
                                     listOf(
                                         PdfPageLinkContent(
                                             bounds = listOf(RectF(25f, 60f, 75f, 80f)),
-                                            uri = Uri.parse(URI_WITH_VALID_SCHEME)
+                                            uri = Uri.parse(URI_WITH_VALID_SCHEME),
                                         )
                                     ),
                             )
-                    )
+                    ),
             )
     }
 }

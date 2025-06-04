@@ -28,5 +28,5 @@ class SwipeToRevealDismissBoxTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = SwipeToDismissBoxBenchmark,
-        actionSuffix = "SWIPE_TO_DISMISS_BOX_ACTIVITY"
+        actionSuffix = "SWIPE_TO_DISMISS_BOX_ACTIVITY",
     )

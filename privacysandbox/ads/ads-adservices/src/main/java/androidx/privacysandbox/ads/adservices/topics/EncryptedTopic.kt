@@ -39,7 +39,7 @@ class EncryptedTopic
 public constructor(
     val encryptedTopic: ByteArray,
     val keyIdentifier: String,
-    val encapsulatedKey: ByteArray
+    val encapsulatedKey: ByteArray,
 ) {
     override fun toString(): String {
         val encryptedTopicString =
@@ -61,7 +61,7 @@ public constructor(
         return Objects.hash(
             encryptedTopic.contentHashCode(),
             keyIdentifier,
-            encapsulatedKey.contentHashCode()
+            encapsulatedKey.contentHashCode(),
         )
     }
 }

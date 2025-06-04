@@ -83,7 +83,7 @@ abstract class OnDevicePersonalizationManager internal constructor() {
         surfaceViewHostToken: IBinder,
         displayId: Int,
         width: Int,
-        height: Int
+        height: Int,
     ): SurfaceControlViewHost.SurfacePackage
 
     companion object {

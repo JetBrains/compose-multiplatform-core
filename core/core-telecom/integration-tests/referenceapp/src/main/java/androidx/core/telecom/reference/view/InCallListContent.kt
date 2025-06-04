@@ -58,7 +58,7 @@ fun InCallListContent(
     LazyColumn(
         modifier =
             Modifier.fillMaxSize().padding(16.dp).background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(calls, key = { it.callId }) { call ->
             CallCard(
@@ -71,7 +71,7 @@ fun InCallListContent(
                 onAddParticipantClick = onAddParticipantClick,
                 onRemoveParticipantClick = onRemoveParticipantClick,
                 onChangeCallIconClick = onChangeCallIconClick,
-                onLocalCallSilenceClick = onLocalCallSilenceClick
+                onLocalCallSilenceClick = onLocalCallSilenceClick,
             )
         }
         if (calls.isEmpty()) {
@@ -102,7 +102,7 @@ fun InCallListContentPreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }
@@ -124,7 +124,7 @@ fun InCallListContentEmptyPreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }

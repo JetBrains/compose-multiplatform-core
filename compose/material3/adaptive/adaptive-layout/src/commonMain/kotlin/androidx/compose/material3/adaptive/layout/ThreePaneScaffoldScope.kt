@@ -57,7 +57,7 @@ internal class ThreePaneScaffoldScopeImpl(
         state: PaneExpansionState,
         minTouchTargetSize: Dp,
         interactionSource: MutableInteractionSource,
-        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)?
+        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)?,
     ): Modifier =
         this.paneExpansionDraggable(
             state = state,
@@ -65,7 +65,7 @@ internal class ThreePaneScaffoldScopeImpl(
             interactionSource = interactionSource,
             semanticsProperties = semanticsProperties,
             animateFraction = { motionProgress },
-            lookaheadScope = this@ThreePaneScaffoldScopeImpl
+            lookaheadScope = this@ThreePaneScaffoldScopeImpl,
         )
 }
 
@@ -74,7 +74,7 @@ internal class ThreePaneScaffoldScopeImpl(
 internal fun rememberThreePaneScaffoldPaneScope(
     paneRole: ThreePaneScaffoldRole,
     scaffoldScope: ThreePaneScaffoldScope,
-    paneMotion: PaneMotion
+    paneMotion: PaneMotion,
 ): ThreePaneScaffoldPaneScope =
     remember(scaffoldScope) { ThreePaneScaffoldPaneScopeImpl(paneRole, scaffoldScope) }
         .apply { this.paneMotion = paneMotion }

@@ -27,7 +27,7 @@ import androidx.glance.action.Action
 public enum class TemplateMode {
     Collapsed,
     Vertical,
-    Horizontal
+    Horizontal,
 }
 
 /**
@@ -67,7 +67,7 @@ public class TemplateText(public val text: String, public val type: TextType = T
 public class TemplateImageWithDescription(
     public val image: ImageProvider,
     public val description: String,
-    public val cornerRadius: Dp = 16.dp
+    public val cornerRadius: Dp = 16.dp,
 ) {
 
     override fun hashCode(): Int =

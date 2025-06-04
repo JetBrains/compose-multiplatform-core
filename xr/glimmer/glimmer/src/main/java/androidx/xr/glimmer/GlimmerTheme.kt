@@ -48,13 +48,14 @@ import androidx.compose.ui.node.DelegatableNode
 public fun GlimmerTheme(
     colors: Colors = GlimmerTheme.colors,
     typography: Typography = GlimmerTheme.typography,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         _localGlimmerTheme provides GlimmerTheme(colors, typography),
         // TODO: b/413429405
         LocalIndication provides NoIndication,
-        content = content
+        LocalTextStyle provides typography.bodySmall,
+        content = content,
     )
 }
 
@@ -69,7 +70,7 @@ public fun GlimmerTheme(
 @Immutable
 public class GlimmerTheme(
     public val colors: Colors = Colors(),
-    public val typography: Typography = Typography()
+    public val typography: Typography = Typography(),
 ) {
     public companion object {
         /** Retrieves the current [Colors] at the call site's position in the hierarchy. */

@@ -60,11 +60,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "invokeBackwardsCompatFlow={0}")
-        fun data(): Array<Any> =
-            arrayOf(
-                arrayOf(true),
-                arrayOf(false),
-            )
+        fun data(): Array<Any> = arrayOf(arrayOf(true), arrayOf(false))
     }
 
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -92,7 +88,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
             linearLayout.layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                 )
             linearLayout.setBackgroundColor(Color.RED)
             setContentView(linearLayout)
@@ -101,7 +97,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
             recyclerView.layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                 )
             recyclerView.setLayoutManager(LinearLayoutManager(context))
         }
@@ -173,7 +169,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
                     midPixelLocation,
                     midPixelLocation + 10,
                     midPixelLocation + 10,
-                    SDK_VIEW_COLOR
+                    SDK_VIEW_COLOR,
                 )
             )
             .isTrue()
@@ -221,7 +217,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
             val layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                 )
             layoutParams.setMargins(20, 20, 20, 20)
             view.layoutParams = layoutParams
@@ -236,7 +232,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
 
                 val adapterFromCoreLibInfo =
                     SandboxedUiAdapterFactory.createFromCoreLibInfo(
-                        sessionManager.getCoreLibInfoFromAdapter(adapter)
+                        sessionManager.getCoreLibInfoFromSharedUiAdapter(adapter)
                     )
 
                 childSandboxedSdkView.setAdapter(adapterFromCoreLibInfo)

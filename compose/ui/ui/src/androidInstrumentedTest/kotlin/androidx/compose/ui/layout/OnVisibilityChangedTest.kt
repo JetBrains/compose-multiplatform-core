@@ -48,9 +48,7 @@ class OnVisibilityChangedTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onVisibilityChanged(
-                                minFractionVisible = 1.0f,
-                            ) { visible ->
+                            .onVisibilityChanged(minFractionVisible = 1.0f) { visible ->
                                 called++
                                 isVisible = visible
                             }
@@ -100,9 +98,7 @@ class OnVisibilityChangedTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onVisibilityChanged(
-                                minFractionVisible = 0f,
-                            ) { visible ->
+                            .onVisibilityChanged(minFractionVisible = 0f) { visible ->
                                 called++
                                 isVisible = visible
                             }
@@ -158,9 +154,7 @@ class OnVisibilityChangedTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onVisibilityChanged(
-                                minFractionVisible = 0.5f,
-                            ) { visible ->
+                            .onVisibilityChanged(minFractionVisible = 0.5f) { visible ->
                                 called++
                                 isVisible = visible
                             }
@@ -219,9 +213,7 @@ class OnVisibilityChangedTest {
             Column {
                 Column {
                     Box(
-                        Modifier.onVisibilityChanged(
-                                minFractionVisible = 0f,
-                            ) { visible ->
+                        Modifier.onVisibilityChanged(minFractionVisible = 0f) { visible ->
                                 called++
                                 isVisible = visible
                             }
@@ -244,9 +236,7 @@ class OnVisibilityChangedTest {
             Column {
                 Column {
                     Box(
-                        Modifier.onVisibilityChanged(
-                                minFractionVisible = 1f,
-                            ) { visible ->
+                        Modifier.onVisibilityChanged(minFractionVisible = 1f) { visible ->
                                 called++
                                 isVisible = visible
                             }
@@ -269,9 +259,7 @@ class OnVisibilityChangedTest {
             Column {
                 Column {
                     Box(
-                        Modifier.onVisibilityChanged(
-                                minFractionVisible = 1f,
-                            ) { visible ->
+                        Modifier.onVisibilityChanged(minFractionVisible = 1f) { visible ->
                                 called++
                                 isVisible = visible
                             }

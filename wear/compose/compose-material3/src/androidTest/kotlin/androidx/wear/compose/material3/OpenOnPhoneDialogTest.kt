@@ -51,7 +51,7 @@ class OpenOnPhoneDialogTest {
                 visible = true,
                 modifier = Modifier.testTag(TEST_TAG),
                 onDismissRequest = {},
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -71,7 +71,7 @@ class OpenOnPhoneDialogTest {
                     dismissCounter++
                 },
                 visible = visible,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         rule.mainClock.advanceTimeBy(OpenOnPhoneDialogDefaults.DurationMillis / 2)
@@ -90,7 +90,7 @@ class OpenOnPhoneDialogTest {
                 visible = false,
                 modifier = Modifier.testTag(TEST_TAG),
                 onDismissRequest = {},
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
@@ -105,7 +105,7 @@ class OpenOnPhoneDialogTest {
                 onDismissRequest = {},
                 visible = true,
                 curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Red))
             }
@@ -125,7 +125,7 @@ class OpenOnPhoneDialogTest {
                 onDismissRequest = { dismissCounter++ },
                 durationMillis = 1000,
                 visible = visible.value,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         rule.waitForIdle()
@@ -155,7 +155,7 @@ class OpenOnPhoneDialogTest {
                 },
                 durationMillis = 100,
                 visible = visible.value,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         rule.waitUntilDoesNotExist(hasTestTag(TEST_TAG))
@@ -171,7 +171,7 @@ class OpenOnPhoneDialogTest {
             OpenOnPhoneDialog(
                 onDismissRequest = { dismissed = true },
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             ) {}
         }
         // Timeout longer than default confirmation duration
@@ -193,7 +193,7 @@ class OpenOnPhoneDialogTest {
                 onDismissRequest = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
             expectedIconColor = MaterialTheme.colorScheme.primary
             expectedIconContainerColor = MaterialTheme.colorScheme.primaryContainer
@@ -237,10 +237,10 @@ class OpenOnPhoneDialogTest {
                         iconColor = customIconColor,
                         iconContainerColor = customIconContainerColor,
                         progressIndicatorColor = customProgressIndicatorColor,
-                        progressTrackColor = customProgressTrackColor
+                        progressTrackColor = customProgressTrackColor,
                     ),
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
             )
         }
         // Advance time by half of the default confirmation duration, so that the track and

@@ -36,7 +36,7 @@ internal class TranslateInsetsAnimationCallback(
     private val view: View,
     private val windowManager: WindowManager?,
     private val pdfContainer: View?,
-    dispatchMode: Int = DISPATCH_MODE_CONTINUE_ON_SUBTREE
+    dispatchMode: Int = DISPATCH_MODE_CONTINUE_ON_SUBTREE,
 ) : WindowInsetsAnimationCompat.Callback(dispatchMode) {
 
     init {
@@ -56,7 +56,7 @@ internal class TranslateInsetsAnimationCallback(
 
     override fun onProgress(
         insets: WindowInsetsCompat,
-        runningAnimations: List<WindowInsetsAnimationCompat>
+        runningAnimations: List<WindowInsetsAnimationCompat>,
     ): WindowInsetsCompat {
         // onProgress() is called when any of the running animations progress...
 

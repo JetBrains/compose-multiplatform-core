@@ -40,10 +40,7 @@ public fun interface SceneStrategy<T : Any> {
      *   done by the returned [Scene]. The passed [Int] should be the number of entries were popped.
      */
     @Composable
-    public fun calculateScene(
-        entries: List<NavEntry<T>>,
-        onBack: (count: Int) -> Unit,
-    ): Scene<T>?
+    public fun calculateScene(entries: List<NavEntry<T>>, onBack: (count: Int) -> Unit): Scene<T>?
 
     /**
      * Chains this [SceneStrategy] with another [sceneStrategy] to return a combined

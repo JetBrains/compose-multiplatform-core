@@ -54,7 +54,7 @@ internal class GraphicsLayerOwnerLayer(
     private val context: GraphicsContext?,
     private val ownerView: AndroidComposeView,
     drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-    invalidateParentLayer: () -> Unit
+    invalidateParentLayer: () -> Unit,
 ) : OwnedLayer, GraphicLayerInfo {
     private var drawBlock: ((canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit)? = drawBlock
     private var invalidateParentLayer: (() -> Unit)? = invalidateParentLayer
@@ -142,7 +142,7 @@ internal class GraphicsLayerOwnerLayer(
                 graphicsLayer.pivotOffset =
                     Offset(
                         transformOrigin.pivotFractionX * size.width,
-                        transformOrigin.pivotFractionY * size.height
+                        transformOrigin.pivotFractionY * size.height,
                     )
             }
         }
@@ -263,7 +263,7 @@ internal class GraphicsLayerOwnerLayer(
                 graphicsLayer.pivotOffset =
                     Offset(
                         transformOrigin.pivotFractionX * size.width,
-                        transformOrigin.pivotFractionY * size.height
+                        transformOrigin.pivotFractionY * size.height,
                     )
             }
             graphicsLayer.record(density, layoutDirection, size, recordLambda)
@@ -324,7 +324,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
     ) {
         val context =
             checkPreconditionNotNull(context) {
@@ -421,7 +421,7 @@ internal class GraphicsLayerOwnerLayer(
                     rotationZ,
                     scaleX,
                     scaleY,
-                    1.0f
+                    1.0f,
                 )
             }
             isMatrixDirty = false

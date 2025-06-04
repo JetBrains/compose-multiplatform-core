@@ -134,7 +134,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true }
+                onRefresh = { isRefreshing.value = true },
             ) {
                 LazyColumn(Modifier.testTag("lazy")) { items(50) { Text("Item") } }
             }
@@ -157,7 +157,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true }
+                onRefresh = { isRefreshing.value = true },
             ) {
                 Column(
                     Modifier.fillMaxWidth()
@@ -172,7 +172,7 @@ class PullToRefreshBoxTest {
                                         remainingVelocity = initialVelocity
                                         return initialVelocity
                                     }
-                                }
+                                },
                         )
                 ) {
                     repeat(50) { Text("Lorem ipsum") }

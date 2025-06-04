@@ -65,7 +65,7 @@ class LineLayoutRunTest {
         text: CharSequence,
         start: Int,
         end: Int,
-        orientation: ResolvedOrientation
+        orientation: ResolvedOrientation,
     ) = createLayoutRun(text, start, end, PAINT, orientation)
 
     @Test

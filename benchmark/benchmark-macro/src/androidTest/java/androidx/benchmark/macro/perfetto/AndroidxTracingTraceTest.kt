@@ -68,13 +68,13 @@ class AndroidxTracingTraceTest {
         perfettoCapture.start(
             PerfettoConfig.Benchmark(
                 appTagPackages = listOf(Packages.TEST),
-                useStackSamplingConfig = false
+                useStackSamplingConfig = false,
             )
         )
 
         assertTrue(
             Trace.isEnabled(),
-            "In-process tracing should be enabled immediately after trace capture is started"
+            "In-process tracing should be enabled immediately after trace capture is started",
         )
 
         repeat(20) {
@@ -114,7 +114,7 @@ class AndroidxTracingTraceTest {
                     "${PREFIX}counter0.0",
                 ) +
                 List(10) { "$PREFIX${it + 10}" },
-            matchingSlices.map { it.name }
+            matchingSlices.map { it.name },
         )
         matchingSlices.forEach {
             if (it.name.startsWith("${PREFIX}counter")) {

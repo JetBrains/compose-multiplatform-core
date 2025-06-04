@@ -63,7 +63,7 @@ class TypeConverterStoreTest {
                 fun jump2_Type2_Sub(inp : JumpType_3): Type2_Sub = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val convertersElm = invocation.processingEnv.requireTypeElement("MyConverters")
@@ -72,7 +72,7 @@ class TypeConverterStoreTest {
                 TypeAdapterStore.create(
                         invocation.context,
                         BuiltInConverterFlags.DEFAULT,
-                        converters.map(::CustomTypeConverterWrapper)
+                        converters.map(::CustomTypeConverterWrapper),
                     )
                     .typeConverterStore
 

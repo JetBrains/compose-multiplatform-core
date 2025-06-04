@@ -111,7 +111,7 @@ class GlanceAppWidgetManagerTest {
             GlanceAppWidgetManager(context)
                 .requestPinGlanceAppWidget(
                     TestGlanceAppWidgetReceiver::class.java,
-                    preview = TestGlanceAppWidget
+                    preview = TestGlanceAppWidget,
                 )
 
         assertThat(result).isTrue()
@@ -124,9 +124,7 @@ class GlanceAppWidgetManagerTest {
     fun pinInvalidAppWidget() = runTest {
         val result =
             GlanceAppWidgetManager(context)
-                .requestPinGlanceAppWidget(
-                    DummyGlanceAppWidgetReceiver::class.java,
-                )
+                .requestPinGlanceAppWidget(DummyGlanceAppWidgetReceiver::class.java)
 
         assertThat(result).isFalse()
     }
@@ -142,7 +140,7 @@ class GlanceAppWidgetManagerTest {
             assertThat(manager.listKnownReceivers())
                 .containsExactly(
                     DummyGlanceAppWidgetReceiver::class.java.canonicalName,
-                    TestGlanceAppWidgetReceiver::class.java.canonicalName
+                    TestGlanceAppWidgetReceiver::class.java.canonicalName,
                 )
 
             manager.cleanReceivers()
@@ -175,7 +173,7 @@ class GlanceAppWidgetManagerTest {
                             .getWidgetPreview(
                                 ComponentName(context, TestGlanceAppWidgetReceiver::class.java),
                                 /* profile= */ null,
-                                category
+                                category,
                             )
                     assertNotNull(preview)
 

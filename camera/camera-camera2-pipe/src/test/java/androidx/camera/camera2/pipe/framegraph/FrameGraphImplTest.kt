@@ -73,7 +73,7 @@ class FrameGraphImplTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val metadata =
         FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
+            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
         )
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val cameraSurfaceManager = CameraSurfaceManager()
@@ -85,10 +85,7 @@ class FrameGraphImplTest {
 
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
-        CameraGraph.Config(
-            camera = metadata.camera,
-            streams = listOf(stream1Config, stream2Config),
-        )
+        CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
     private val threads = FakeThreads.fromTestScope(testScope)
     private val cameraPipeLifetime = CameraPipeLifetime()
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
@@ -131,7 +128,7 @@ class FrameGraphImplTest {
             audioRestriction,
             graphId,
             cameraGraphParameters,
-            sessionLock
+            sessionLock,
         )
     // TODO: b/412695326 - Refactor FrameGraphImplTest to use CameraGraphSimulator
 
@@ -190,7 +187,7 @@ class FrameGraphImplTest {
 
             frameGraph.captureWith(
                 setOf(streamId1, streamId2),
-                mapOf(CAPTURE_REQUEST_KEY to 2, TEST_NULLABLE_KEY to null, TEST_KEY to 5)
+                mapOf(CAPTURE_REQUEST_KEY to 2, TEST_NULLABLE_KEY to null, TEST_KEY to 5),
             )
             advanceUntilIdle()
 

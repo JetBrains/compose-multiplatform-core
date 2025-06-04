@@ -131,7 +131,7 @@ class StrokeTest {
                                 originalBrush.family.coats.map { coat ->
                                     BrushCoat(
                                         tip = coat.tip.copy(scaleX = 0.12345f),
-                                        paint = coat.paint
+                                        paint = coat.paint,
                                     )
                                 }
                             ),
@@ -315,7 +315,7 @@ class StrokeTest {
                     factor * 2f,
                     factor * 3f,
                     factor * 5f,
-                    factor * 2f
+                    factor * 2f,
                 )
             )
             .asImmutable()

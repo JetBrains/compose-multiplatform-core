@@ -27,5 +27,5 @@ data class NetworkState(
     val isMetered: Boolean,
 
     /** Determines if the network is not roaming. */
-    val isNotRoaming: Boolean
+    val isNotRoaming: Boolean,
 )

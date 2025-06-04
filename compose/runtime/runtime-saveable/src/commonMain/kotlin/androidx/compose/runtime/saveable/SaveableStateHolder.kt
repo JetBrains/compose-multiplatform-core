@@ -78,7 +78,7 @@ private class SaveableStateHolderImpl(
             }
             CompositionLocalProvider(
                 LocalSaveableStateRegistry provides registry,
-                content = content
+                content = content,
             )
             DisposableEffect(Unit) {
                 require(key !in registries) { "Key $key was used multiple times " }
@@ -107,7 +107,7 @@ private class SaveableStateHolderImpl(
 
     private fun SaveableStateRegistry.saveTo(
         map: MutableMap<Any, Map<String, List<Any?>>>,
-        key: Any
+        key: Any,
     ) {
         val savedData = performSave()
         if (savedData.isEmpty()) {

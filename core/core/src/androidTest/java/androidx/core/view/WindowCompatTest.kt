@@ -56,7 +56,7 @@ class WindowCompatTest :
                 assertEquals(
                     if (Build.VERSION.SDK_INT >= 30) LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
                     else LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
-                    window.attributes.layoutInDisplayCutoutMode
+                    window.attributes.layoutInDisplayCutoutMode,
                 )
             }
             if (Build.VERSION.SDK_INT >= 29) {

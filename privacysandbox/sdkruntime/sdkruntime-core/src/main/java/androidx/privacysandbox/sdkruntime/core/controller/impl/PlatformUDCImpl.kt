@@ -54,7 +54,7 @@ internal class PlatformUDCImpl(private val controller: SdkSandboxController, sdk
         sdkName: String,
         params: Bundle,
         executor: Executor,
-        callback: LoadSdkCallback
+        callback: LoadSdkCallback,
     ) {
         sdkLoader.loadSdk(sdkName, params, executor, callback)
     }
@@ -96,11 +96,11 @@ internal class PlatformUDCImpl(private val controller: SdkSandboxController, sdk
 
     override fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat
+        listenerCompat: SdkSandboxClientImportanceListenerCompat,
     ) =
         clientImportanceListenerRegistry.registerSdkSandboxClientImportanceListener(
             executor,
-            listenerCompat
+            listenerCompat,
         )
 
     override fun unregisterSdkSandboxClientImportanceListener(
@@ -139,7 +139,7 @@ internal class PlatformUDCImpl(private val controller: SdkSandboxController, sdk
 
                     override fun onActivityPostCreated(
                         activity: Activity,
-                        savedInstanceState: Bundle?
+                        savedInstanceState: Bundle?,
                     ) {
                         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
                     }

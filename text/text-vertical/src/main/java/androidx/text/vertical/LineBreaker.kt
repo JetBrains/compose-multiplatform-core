@@ -72,7 +72,7 @@ internal object LineBreaker {
         private val lineLayouts: List<LineLayout>,
         val width: Float,
         val lineLeftSide: Float,
-        val lineRightSide: Float
+        val lineRightSide: Float,
     ) {
         /** The number of lines in the text layout. */
         val lineCount: Int
@@ -254,7 +254,7 @@ private data class Context(
         end: Int,
         orientation: ResolvedOrientation,
         advances: FloatArray,
-        crossinline consumer: (Int, Int, Float) -> Unit
+        crossinline consumer: (Int, Int, Float) -> Unit,
     ) {
         breaker.updateForRun(start, end, orientation)
 
@@ -277,7 +277,7 @@ private data class Context(
         wEnd: Int,
         advances: FloatArray,
         advancesOffset: Int,
-        crossinline consumer: (Int, Int, Float) -> Unit
+        crossinline consumer: (Int, Int, Float) -> Unit,
     ) {
         var gStart = wStart
         for (i in wStart + 1 until wEnd) {

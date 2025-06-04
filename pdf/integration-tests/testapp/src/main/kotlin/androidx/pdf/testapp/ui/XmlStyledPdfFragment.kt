@@ -46,7 +46,7 @@ class XmlStyledPdfFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentXmlStyledPdfBinding.inflate(inflater, container, false)
         return binding.root

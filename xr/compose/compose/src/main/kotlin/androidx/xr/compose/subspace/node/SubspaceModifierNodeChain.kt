@@ -17,8 +17,8 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.xr.compose.subspace.layout.CombinedSubspaceModifier
-import androidx.xr.compose.subspace.layout.Placeable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.findInstance
 import androidx.xr.compose.subspace.layout.traverseSelfThenAncestors
 import androidx.xr.compose.subspace.layout.traverseSelfThenDescendants
@@ -130,8 +130,8 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
 
     internal fun measureChain(
         constraints: VolumeConstraints,
-        wrappedMeasureBlock: (VolumeConstraints) -> Placeable,
-    ): Placeable {
+        wrappedMeasureBlock: (VolumeConstraints) -> SubspacePlaceable,
+    ): SubspacePlaceable {
         val layoutNode = getAll<SubspaceLayoutModifierNode>().firstOrNull()
         if (layoutNode == null || inMeasurePass) {
             inMeasurePass = false

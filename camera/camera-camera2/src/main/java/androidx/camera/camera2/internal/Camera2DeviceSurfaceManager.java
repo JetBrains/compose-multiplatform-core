@@ -16,21 +16,26 @@
 
 package androidx.camera.camera2.internal;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.camera2.CameraDevice;
 import android.media.CamcorderProfile;
-import android.util.Pair;
+import android.os.Build;
 import android.util.Size;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.camera2.impl.FeatureCombinationQueryImpl;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.core.CameraUnavailableException;
+import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
+import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
-import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.SurfaceConfig;
+import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
 
@@ -99,16 +104,28 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
     /**
      * Prepare necessary resources for the surface manager.
      */
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     private void init(@NonNull Context context, @NonNull CameraManagerCompat cameraManager,
             @NonNull Set<String> availableCameraIds)
             throws CameraUnavailableException {
         Preconditions.checkNotNull(context);
 
+        FeatureCombinationQuery featureCombinationQuery =
+                FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY;
+
         for (String cameraId : availableCameraIds) {
+            // TODO: b/417839748 - Decide on the appropriate API level for CameraX feature combo API
+            if (Build.VERSION.SDK_INT >= 35) {
+                featureCombinationQuery = new FeatureCombinationQueryImpl(context, cameraId,
+                        cameraManager);
+            }
+
             mCameraSupportedSurfaceCombinationMap.put(
                     cameraId,
                     new SupportedSurfaceCombination(
-                            context, cameraId, cameraManager, mCamcorderProfileHelper));
+                            context, cameraId, cameraManager, mCamcorderProfileHelper,
+                            featureCombinationQuery));
         }
     }
 
@@ -144,15 +161,15 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
     }
 
     @Override
-    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
-            getSuggestedStreamSpecs(
+    public @NonNull SurfaceStreamSpecQueryResult getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
             boolean hasVideoCapture,
-            boolean allowFeatureCombinationResolutions) {
+            boolean allowFeatureCombinationResolutions,
+            boolean findMaxSupportedFrameRate) {
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
 
@@ -170,6 +187,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                 newUseCaseConfigsSupportedSizeMap,
                 isPreviewStabilizationOn,
                 hasVideoCapture,
-                allowFeatureCombinationResolutions);
+                allowFeatureCombinationResolutions,
+                findMaxSupportedFrameRate);
     }
 }

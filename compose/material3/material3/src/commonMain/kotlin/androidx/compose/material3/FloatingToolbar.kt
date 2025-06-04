@@ -175,7 +175,7 @@ fun HorizontalFloatingToolbar(
     trailingContent: @Composable (RowScope.() -> Unit)? = null,
     expandedShadowElevation: Dp = FloatingToolbarDefaults.ContainerExpandedElevation,
     collapsedShadowElevation: Dp = FloatingToolbarDefaults.ContainerCollapsedElevation,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val touchExplorationServiceEnabled by rememberTouchExplorationService()
     var forceCollapse by rememberSaveable { mutableStateOf(false) }
@@ -191,7 +191,7 @@ fun HorizontalFloatingToolbar(
         trailingContent = trailingContent,
         expandedShadowElevation = expandedShadowElevation,
         collapsedShadowElevation = collapsedShadowElevation,
-        content = content
+        content = content,
     )
 }
 
@@ -272,7 +272,7 @@ fun HorizontalFloatingToolbar(
     animationSpec: FiniteAnimationSpec<Float> = FloatingToolbarDefaults.animationSpec(),
     expandedShadowElevation: Dp = FloatingToolbarDefaults.ContainerExpandedElevationWithFab,
     collapsedShadowElevation: Dp = FloatingToolbarDefaults.ContainerCollapsedElevationWithFab,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val touchExplorationServiceEnabled by rememberTouchExplorationService()
     var forceCollapse by rememberSaveable { mutableStateOf(false) }
@@ -290,7 +290,7 @@ fun HorizontalFloatingToolbar(
         fabPosition = floatingActionButtonPosition,
         expandedShadowElevation = expandedShadowElevation,
         collapsedShadowElevation = collapsedShadowElevation,
-        toolbar = content
+        toolbar = content,
     )
 }
 
@@ -340,7 +340,7 @@ fun VerticalFloatingToolbar(
     trailingContent: @Composable (ColumnScope.() -> Unit)? = null,
     expandedShadowElevation: Dp = FloatingToolbarDefaults.ContainerExpandedElevation,
     collapsedShadowElevation: Dp = FloatingToolbarDefaults.ContainerCollapsedElevation,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val touchExplorationServiceEnabled by rememberTouchExplorationService()
     var forceCollapse by rememberSaveable { mutableStateOf(false) }
@@ -356,7 +356,7 @@ fun VerticalFloatingToolbar(
         trailingContent = trailingContent,
         expandedShadowElevation = expandedShadowElevation,
         collapsedShadowElevation = collapsedShadowElevation,
-        content = content
+        content = content,
     )
 }
 
@@ -430,7 +430,7 @@ fun VerticalFloatingToolbar(
     animationSpec: FiniteAnimationSpec<Float> = FloatingToolbarDefaults.animationSpec(),
     expandedShadowElevation: Dp = FloatingToolbarDefaults.ContainerExpandedElevationWithFab,
     collapsedShadowElevation: Dp = FloatingToolbarDefaults.ContainerCollapsedElevationWithFab,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val touchExplorationServiceEnabled by rememberTouchExplorationService()
     var forceCollapse by rememberSaveable { mutableStateOf(false) }
@@ -448,7 +448,7 @@ fun VerticalFloatingToolbar(
         fabPosition = floatingActionButtonPosition,
         expandedShadowElevation = expandedShadowElevation,
         collapsedShadowElevation = collapsedShadowElevation,
-        toolbar = content
+        toolbar = content,
     )
 }
 
@@ -514,7 +514,7 @@ class ExitAlwaysFloatingToolbarScrollBehavior(
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         state.contentOffset += consumed.y
         state.offset += consumed.y
@@ -572,7 +572,7 @@ class ExitAlwaysFloatingToolbarScrollBehavior(
                 state = draggableState,
                 onDragStopped = { velocity ->
                     settleFloatingToolbar(state, velocity, snapAnimationSpec, flingAnimationSpec)
-                }
+                },
             )
             .onGloballyPositioned { coordinates ->
                 // Updates the toolbar's offsetLimit relative to the parent.
@@ -639,7 +639,7 @@ object FloatingToolbarDefaults {
             start = FloatingToolbarTokens.ContainerLeadingSpace,
             top = FloatingToolbarTokens.ContainerLeadingSpace,
             end = FloatingToolbarTokens.ContainerTrailingSpace,
-            bottom = FloatingToolbarTokens.ContainerTrailingSpace
+            bottom = FloatingToolbarTokens.ContainerTrailingSpace,
         )
 
     /**
@@ -685,48 +685,36 @@ object FloatingToolbarDefaults {
         exitDirection: FloatingToolbarExitDirection,
         state: FloatingToolbarState = rememberFloatingToolbarState(),
         snapAnimationSpec: AnimationSpec<Float> = MotionSchemeKeyTokens.DefaultEffects.value(),
-        flingAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
+        flingAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay(),
     ): FloatingToolbarScrollBehavior =
         remember(exitDirection, state, snapAnimationSpec, flingAnimationSpec) {
             ExitAlwaysFloatingToolbarScrollBehavior(
                 exitDirection = exitDirection,
                 state = state,
                 snapAnimationSpec = snapAnimationSpec,
-                flingAnimationSpec = flingAnimationSpec
+                flingAnimationSpec = flingAnimationSpec,
             )
         }
 
     /** Default enter transition used for [HorizontalFloatingToolbar] when expanding */
     @Composable
     fun horizontalEnterTransition(expandFrom: Alignment.Horizontal) =
-        expandHorizontally(
-            animationSpec = animationSpec(),
-            expandFrom = expandFrom,
-        )
+        expandHorizontally(animationSpec = animationSpec(), expandFrom = expandFrom)
 
     /** Default enter transition used for [VerticalFloatingToolbar] when expanding */
     @Composable
     fun verticalEnterTransition(expandFrom: Alignment.Vertical) =
-        expandVertically(
-            animationSpec = animationSpec(),
-            expandFrom = expandFrom,
-        )
+        expandVertically(animationSpec = animationSpec(), expandFrom = expandFrom)
 
     /** Default exit transition used for [HorizontalFloatingToolbar] when shrinking */
     @Composable
     fun horizontalExitTransition(shrinkTowards: Alignment.Horizontal) =
-        shrinkHorizontally(
-            animationSpec = animationSpec(),
-            shrinkTowards = shrinkTowards,
-        )
+        shrinkHorizontally(animationSpec = animationSpec(), shrinkTowards = shrinkTowards)
 
     /** Default exit transition used for [VerticalFloatingToolbar] when shrinking */
     @Composable
     fun verticalExitTransition(shrinkTowards: Alignment.Vertical) =
-        shrinkVertically(
-            animationSpec = animationSpec(),
-            shrinkTowards = shrinkTowards,
-        )
+        shrinkVertically(animationSpec = animationSpec(), shrinkTowards = shrinkTowards)
 
     /**
      * Creates a [FloatingToolbarColors] that represents the default standard colors used in the
@@ -758,13 +746,13 @@ object FloatingToolbarDefaults {
         toolbarContainerColor: Color = Color.Unspecified,
         toolbarContentColor: Color = Color.Unspecified,
         fabContainerColor: Color = Color.Unspecified,
-        fabContentColor: Color = Color.Unspecified
+        fabContentColor: Color = Color.Unspecified,
     ): FloatingToolbarColors =
         MaterialTheme.colorScheme.defaultFloatingToolbarStandardColors.copy(
             toolbarContainerColor = toolbarContainerColor,
             toolbarContentColor = toolbarContentColor,
             fabContainerColor = fabContainerColor,
-            fabContentColor = fabContentColor
+            fabContentColor = fabContentColor,
         )
 
     /**
@@ -781,13 +769,13 @@ object FloatingToolbarDefaults {
         toolbarContainerColor: Color = Color.Unspecified,
         toolbarContentColor: Color = Color.Unspecified,
         fabContainerColor: Color = Color.Unspecified,
-        fabContentColor: Color = Color.Unspecified
+        fabContentColor: Color = Color.Unspecified,
     ): FloatingToolbarColors =
         MaterialTheme.colorScheme.defaultFloatingToolbarVibrantColors.copy(
             toolbarContainerColor = toolbarContainerColor,
             toolbarContentColor = toolbarContentColor,
             fabContainerColor = fabContainerColor,
-            fabContentColor = fabContentColor
+            fabContentColor = fabContentColor,
         )
 
     /**
@@ -827,7 +815,7 @@ object FloatingToolbarDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             interactionSource = interactionSource,
-            content = content
+            content = content,
         )
 
     /**
@@ -867,7 +855,7 @@ object FloatingToolbarDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             interactionSource = interactionSource,
-            content = content
+            content = content,
         )
 
     /**
@@ -894,7 +882,7 @@ object FloatingToolbarDefaults {
         onCollapse: () -> Unit,
         expandScrollDistanceThreshold: Dp = ScrollDistanceThreshold,
         collapseScrollDistanceThreshold: Dp = ScrollDistanceThreshold,
-        reverseLayout: Boolean = false
+        reverseLayout: Boolean = false,
     ): Modifier =
         this then
             VerticalNestedScrollExpansionElement(
@@ -903,7 +891,7 @@ object FloatingToolbarDefaults {
                 onCollapse = onCollapse,
                 reverseLayout = reverseLayout,
                 expandScrollThreshold = expandScrollDistanceThreshold,
-                collapseScrollThreshold = collapseScrollDistanceThreshold
+                collapseScrollThreshold = collapseScrollDistanceThreshold,
             )
 
     internal class VerticalNestedScrollExpansionElement(
@@ -912,7 +900,7 @@ object FloatingToolbarDefaults {
         val onCollapse: () -> Unit,
         val reverseLayout: Boolean,
         val expandScrollThreshold: Dp,
-        val collapseScrollThreshold: Dp
+        val collapseScrollThreshold: Dp,
     ) : ModifierNodeElement<VerticalNestedScrollExpansionNode>() {
         override fun create() =
             VerticalNestedScrollExpansionNode(
@@ -921,7 +909,7 @@ object FloatingToolbarDefaults {
                 onCollapse = onCollapse,
                 reverseLayout = reverseLayout,
                 expandScrollThreshold = expandScrollThreshold,
-                collapseScrollThreshold = collapseScrollThreshold
+                collapseScrollThreshold = collapseScrollThreshold,
             )
 
         override fun update(node: VerticalNestedScrollExpansionNode) {
@@ -931,7 +919,7 @@ object FloatingToolbarDefaults {
                 onCollapse,
                 reverseLayout,
                 expandScrollThreshold,
-                collapseScrollThreshold
+                collapseScrollThreshold,
             )
         }
 
@@ -992,10 +980,7 @@ object FloatingToolbarDefaults {
             get() = false
 
         private var nestedScrollNode: DelegatableNode =
-            nestedScrollModifierNode(
-                connection = this,
-                dispatcher = null,
-            )
+            nestedScrollModifierNode(connection = this, dispatcher = null)
 
         override fun onAttach() {
             delegate(nestedScrollNode)
@@ -1009,7 +994,7 @@ object FloatingToolbarDefaults {
         override fun onPostScroll(
             consumed: Offset,
             available: Offset,
-            source: NestedScrollSource
+            source: NestedScrollSource,
         ): Offset {
             val scrollDelta = consumed.y * reverseLayoutFactor
             contentOffset += scrollDelta
@@ -1030,7 +1015,7 @@ object FloatingToolbarDefaults {
             onCollapse: () -> Unit,
             reverseLayout: Boolean,
             expandScrollThreshold: Dp,
-            collapseScrollThreshold: Dp
+            collapseScrollThreshold: Dp,
         ) {
             if (
                 this.expandScrollThreshold != expandScrollThreshold ||
@@ -1246,7 +1231,7 @@ internal constructor(@Suppress("unused") private val value: Int) {
 fun rememberFloatingToolbarState(
     initialOffsetLimit: Float = -Float.MAX_VALUE,
     initialOffset: Float = 0f,
-    initialContentOffset: Float = 0f
+    initialContentOffset: Float = 0f,
 ): FloatingToolbarState {
     return rememberSaveable(saver = FloatingToolbarState.Saver) {
         FloatingToolbarState(initialOffsetLimit, initialOffset, initialContentOffset)
@@ -1296,9 +1281,9 @@ interface FloatingToolbarState {
                     FloatingToolbarState(
                         initialOffsetLimit = it[0],
                         initialOffset = it[1],
-                        initialContentOffset = it[2]
+                        initialContentOffset = it[2],
                     )
-                }
+                },
             )
     }
 }
@@ -1317,7 +1302,7 @@ interface FloatingToolbarState {
 fun FloatingToolbarState(
     initialOffsetLimit: Float,
     initialOffset: Float,
-    initialContentOffset: Float
+    initialContentOffset: Float,
 ): FloatingToolbarState =
     FloatingToolbarStateImpl(initialOffsetLimit, initialOffset, initialContentOffset)
 
@@ -1326,7 +1311,7 @@ fun FloatingToolbarState(
 private class FloatingToolbarStateImpl(
     initialOffsetLimit: Float,
     initialOffset: Float,
-    initialContentOffset: Float
+    initialContentOffset: Float,
 ) : FloatingToolbarState {
 
     override var offsetLimit by mutableFloatStateOf(initialOffsetLimit)
@@ -1351,7 +1336,7 @@ private suspend fun settleFloatingToolbar(
     state: FloatingToolbarState,
     velocity: Float,
     snapAnimationSpec: AnimationSpec<Float>,
-    flingAnimationSpec: DecayAnimationSpec<Float>
+    flingAnimationSpec: DecayAnimationSpec<Float>,
 ): Velocity {
     // Check if the toolbar is completely collapsed/expanded. If so, no need to settle the toolbar,
     // and just return Zero Velocity.
@@ -1366,20 +1351,18 @@ private suspend fun settleFloatingToolbar(
     // continue the motion to expand or collapse the toolbar.
     if (abs(velocity) > 1f) {
         var lastValue = 0f
-        AnimationState(
-                initialValue = 0f,
-                initialVelocity = velocity,
-            )
-            .animateDecay(flingAnimationSpec) {
-                val delta = value - lastValue
-                val initialOffset = state.offset
-                state.offset = initialOffset + delta
-                val consumed = abs(initialOffset - state.offset)
-                lastValue = value
-                remainingVelocity = this.velocity
-                // avoid rounding errors and stop if anything is unconsumed
-                if (abs(delta - consumed) > 0.5f) this.cancelAnimation()
-            }
+        AnimationState(initialValue = 0f, initialVelocity = velocity).animateDecay(
+            flingAnimationSpec
+        ) {
+            val delta = value - lastValue
+            val initialOffset = state.offset
+            state.offset = initialOffset + delta
+            val consumed = abs(initialOffset - state.offset)
+            lastValue = value
+            remainingVelocity = this.velocity
+            // avoid rounding errors and stop if anything is unconsumed
+            if (abs(delta - consumed) > 0.5f) this.cancelAnimation()
+        }
     }
 
     if (state.offset < 0 && state.offset > state.offsetLimit) {
@@ -1389,7 +1372,7 @@ private suspend fun settleFloatingToolbar(
             } else {
                 state.offsetLimit
             },
-            animationSpec = snapAnimationSpec
+            animationSpec = snapAnimationSpec,
         ) {
             state.offset = value
         }
@@ -1453,7 +1436,7 @@ private fun HorizontalFloatingToolbarLayout(
     trailingContent: @Composable (RowScope.() -> Unit)?,
     expandedShadowElevation: Dp,
     collapsedShadowElevation: Dp,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val expandToolbarActionLabel = getString(Strings.FloatingToolbarExpand)
     val collapseToolbarActionLabel = getString(Strings.FloatingToolbarCollapse)
@@ -1461,7 +1444,7 @@ private fun HorizontalFloatingToolbarLayout(
     val shadowElevationState by
         animateDpAsState(
             if (expanded) expandedShadowElevation else collapsedShadowElevation,
-            animationSpec = FloatingToolbarDefaults.animationSpec()
+            animationSpec = FloatingToolbarDefaults.animationSpec(),
         )
     Row(
         modifier =
@@ -1479,7 +1462,7 @@ private fun HorizontalFloatingToolbarLayout(
                 .background(color = colors.toolbarContainerColor, shape = shape)
                 .padding(contentPadding),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
             leadingContent?.let {
@@ -1506,16 +1489,16 @@ private fun HorizontalFloatingToolbarLayout(
                                         true
                                     },
                                     expandActionLabel = expandToolbarActionLabel,
-                                    collapseActionLabel = collapseToolbarActionLabel
+                                    collapseActionLabel = collapseToolbarActionLabel,
                                 )
                         }
                         .minimumInteractiveBalancedPadding(
                             hasVisibleLeadingContent = expanded && leadingContent != null,
                             hasVisibleTrailingContent = expanded && trailingContent != null,
                             // Ensures this motion will cause the padding to bounce.
-                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec()
+                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                         ),
-                content = content
+                content = content,
             )
             trailingContent?.let {
                 AnimatedVisibility(
@@ -1547,7 +1530,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
     fabPosition: FloatingToolbarHorizontalFabPosition,
     expandedShadowElevation: Dp,
     collapsedShadowElevation: Dp,
-    toolbar: @Composable RowScope.() -> Unit
+    toolbar: @Composable RowScope.() -> Unit,
 ) {
     val fabShape = FloatingActionButtonDefaults.shape
     val expandTransition = updateTransition(if (expanded) 1f else 0f, label = "expanded state")
@@ -1562,7 +1545,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                     Modifier.background(colors.toolbarContainerColor)
                         .padding(toolbarContentPadding)
                         .horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                     toolbar()
@@ -1583,9 +1566,9 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                                     true
                                 },
                                 expandActionLabel = expandToolbarActionLabel,
-                                collapseActionLabel = collapseToolbarActionLabel
+                                collapseActionLabel = collapseToolbarActionLabel,
                             )
-                    },
+                    }
             ) {
                 fab()
             }
@@ -1596,7 +1579,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                 .then(
                     scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
                         ?: Modifier
-                )
+                ),
     ) { measurables, constraints ->
         val toolbarMeasurable = measurables[0]
         val fabMeasurable = measurables[1]
@@ -1610,7 +1593,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                     minWidth = fabSizeConstraint,
                     maxWidth = fabSizeConstraint,
                     minHeight = fabSizeConstraint,
-                    maxHeight = fabSizeConstraint
+                    maxHeight = fabSizeConstraint,
                 )
             )
 
@@ -1628,7 +1611,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                         (maxToolbarPlaceableWidth * expandedProgress.value)
                             .coerceAtLeast(0f)
                             .toInt(),
-                    minHeight = FloatingToolbarDefaults.ContainerSize.roundToPx()
+                    minHeight = FloatingToolbarDefaults.ContainerSize.roundToPx(),
                 )
             )
 
@@ -1664,7 +1647,7 @@ private fun HorizontalFloatingToolbarWithFabLayout(
                 lerp(
                     expandedShadowElevation,
                     collapsedShadowElevation,
-                    1f - expandedProgress.value.coerceAtMost(1f)
+                    1f - expandedProgress.value.coerceAtMost(1f),
                 )
 
             fabPlaceable.placeRelativeWithLayer(x = fabX, y = fapTopOffset) {
@@ -1691,7 +1674,7 @@ private fun VerticalFloatingToolbarLayout(
     trailingContent: @Composable (ColumnScope.() -> Unit)?,
     expandedShadowElevation: Dp,
     collapsedShadowElevation: Dp,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val expandToolbarActionLabel = getString(Strings.FloatingToolbarExpand)
     val collapseToolbarActionLabel = getString(Strings.FloatingToolbarCollapse)
@@ -1699,7 +1682,7 @@ private fun VerticalFloatingToolbarLayout(
     val shadowElevationState by
         animateDpAsState(
             if (expanded) expandedShadowElevation else collapsedShadowElevation,
-            animationSpec = FloatingToolbarDefaults.animationSpec()
+            animationSpec = FloatingToolbarDefaults.animationSpec(),
         )
 
     Column(
@@ -1718,7 +1701,7 @@ private fun VerticalFloatingToolbarLayout(
                 .background(color = colors.toolbarContainerColor, shape = shape)
                 .padding(contentPadding),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
             leadingContent?.let {
@@ -1745,16 +1728,16 @@ private fun VerticalFloatingToolbarLayout(
                                         true
                                     },
                                     expandActionLabel = expandToolbarActionLabel,
-                                    collapseActionLabel = collapseToolbarActionLabel
+                                    collapseActionLabel = collapseToolbarActionLabel,
                                 )
                         }
                         .minimumInteractiveBalancedPadding(
                             hasVisibleLeadingContent = expanded && leadingContent != null,
                             hasVisibleTrailingContent = expanded && trailingContent != null,
                             // Ensures this motion will cause the padding to bounce.
-                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec()
+                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                         ),
-                content = content
+                content = content,
             )
             trailingContent?.let {
                 AnimatedVisibility(
@@ -1786,7 +1769,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
     fabPosition: FloatingToolbarVerticalFabPosition,
     expandedShadowElevation: Dp,
     collapsedShadowElevation: Dp,
-    toolbar: @Composable ColumnScope.() -> Unit
+    toolbar: @Composable ColumnScope.() -> Unit,
 ) {
     val fabShape = FloatingActionButtonDefaults.shape
     val expandTransition = updateTransition(if (expanded) 1f else 0f, label = "expanded state")
@@ -1801,7 +1784,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
                     Modifier.background(colors.toolbarContainerColor)
                         .padding(toolbarContentPadding)
                         .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                     toolbar()
@@ -1822,9 +1805,9 @@ private fun VerticalFloatingToolbarWithFabLayout(
                                     true
                                 },
                                 expandActionLabel = expandToolbarActionLabel,
-                                collapseActionLabel = collapseToolbarActionLabel
+                                collapseActionLabel = collapseToolbarActionLabel,
                             )
-                    },
+                    }
             ) {
                 fab()
             }
@@ -1835,7 +1818,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
                 .then(
                     scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
                         ?: Modifier
-                )
+                ),
     ) { measurables, constraints ->
         val toolbarMeasurable = measurables[0]
         val fabMeasurable = measurables[1]
@@ -1849,7 +1832,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
                     minWidth = fabSizeConstraint,
                     maxWidth = fabSizeConstraint,
                     minHeight = fabSizeConstraint,
-                    maxHeight = fabSizeConstraint
+                    maxHeight = fabSizeConstraint,
                 )
             )
         // Compute the toolbar's max intrinsic height. We will use it as a base to determine the
@@ -1866,7 +1849,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
                         (maxToolbarPlaceableHeight * expandedProgress.value)
                             .coerceAtLeast(0f)
                             .toInt(),
-                    minWidth = FloatingToolbarDefaults.ContainerSize.roundToPx()
+                    minWidth = FloatingToolbarDefaults.ContainerSize.roundToPx(),
                 )
             )
 
@@ -1893,10 +1876,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
             }
 
         layout(width, height) {
-            toolbarPlaceable.placeRelativeWithLayer(
-                x = toolbarEdgeOffset,
-                y = toolbarY,
-            ) {
+            toolbarPlaceable.placeRelativeWithLayer(x = toolbarEdgeOffset, y = toolbarY) {
                 shadowElevation = expandedShadowElevation.toPx()
                 shape = toolbarShape
                 clip = true
@@ -1905,7 +1885,7 @@ private fun VerticalFloatingToolbarWithFabLayout(
                 lerp(
                     expandedShadowElevation,
                     collapsedShadowElevation,
-                    1f - expandedProgress.value.coerceAtMost(1f)
+                    1f - expandedProgress.value.coerceAtMost(1f),
                 )
             fabPlaceable.placeRelativeWithLayer(x = fapEdgeOffset, y = fabY) {
                 shape = fabShape
@@ -1935,26 +1915,26 @@ private fun VerticalFloatingToolbarWithFabLayout(
 private fun Modifier.minimumInteractiveBalancedPadding(
     hasVisibleLeadingContent: Boolean,
     hasVisibleTrailingContent: Boolean,
-    animationSpec: AnimationSpec<Float>
+    animationSpec: AnimationSpec<Float>,
 ): Modifier =
     this then
         MinimumInteractiveBalancedPaddingElement(
             hasVisibleLeadingContent,
             hasVisibleTrailingContent,
-            animationSpec
+            animationSpec,
         )
 
 private data class MinimumInteractiveBalancedPaddingElement(
     val hasVisibleLeadingContent: Boolean,
     val hasVisibleTrailingContent: Boolean,
-    val animationSpec: AnimationSpec<Float>
+    val animationSpec: AnimationSpec<Float>,
 ) : ModifierNodeElement<MinimumInteractiveBalancedPaddingNode>() {
 
     override fun create(): MinimumInteractiveBalancedPaddingNode =
         MinimumInteractiveBalancedPaddingNode(
             hasVisibleLeadingContent,
             hasVisibleTrailingContent,
-            animationSpec
+            animationSpec,
         )
 
     override fun update(node: MinimumInteractiveBalancedPaddingNode) {
@@ -1975,7 +1955,7 @@ private data class MinimumInteractiveBalancedPaddingElement(
 private class MinimumInteractiveBalancedPaddingNode(
     var hasVisibleLeadingContent: Boolean,
     var hasVisibleTrailingContent: Boolean,
-    var animationSpec: AnimationSpec<Float>
+    var animationSpec: AnimationSpec<Float>,
 ) : Modifier.Node(), LayoutModifierNode {
 
     private var paddingAnimation: Animatable<Float, AnimationVector1D> =
@@ -1983,7 +1963,7 @@ private class MinimumInteractiveBalancedPaddingNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         var verticalAlignmentOffset = 0f
@@ -2022,7 +2002,7 @@ private class MinimumInteractiveBalancedPaddingNode(
         return layout(width = totalWidth, height = totalHeight) {
             placeable.place(
                 (totalWidth - placeable.width) / 2,
-                (totalHeight - placeable.height) / 2
+                (totalHeight - placeable.height) / 2,
             )
         }
     }
@@ -2063,5 +2043,5 @@ private fun rememberTouchExplorationService(): State<Boolean> =
     rememberAccessibilityServiceState(
         listenToTouchExplorationState = true,
         listenToSwitchAccessState = false,
-        listenToVoiceAccessState = false
+        listenToVoiceAccessState = false,
     )

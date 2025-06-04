@@ -53,8 +53,8 @@ package androidx.compose.ui.graphics {
   }
 
   public final class AndroidColor_androidKt {
-    method public static long fromColorLong(androidx.compose.ui.graphics.Color.Companion, long colorLong);
-    method public static long toColorLong(long);
+    method public static long fromColorLong(androidx.compose.ui.graphics.Color.Companion, @ColorLong long colorLong);
+    method @ColorLong public static long toColorLong(long);
   }
 
   public final class AndroidGraphicsContext_androidKt {
@@ -295,6 +295,7 @@ package androidx.compose.ui.graphics {
   }
 
   public static final class Brush.Companion {
+    method @androidx.compose.runtime.Stable public androidx.compose.ui.graphics.Brush compositeShaderBrush(androidx.compose.ui.graphics.Brush dstBrush, androidx.compose.ui.graphics.Brush srcBrush, int blendMode);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.graphics.Brush horizontalGradient(java.util.List<androidx.compose.ui.graphics.Color> colors, optional float startX, optional float endX, optional int tileMode);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.graphics.Brush horizontalGradient(kotlin.Pair<java.lang.Float,androidx.compose.ui.graphics.Color>[] colorStops, optional float startX, optional float endX, optional int tileMode);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.graphics.Brush linearGradient(java.util.List<androidx.compose.ui.graphics.Color> colors, optional long start, optional long end, optional int tileMode);
@@ -502,7 +503,9 @@ package androidx.compose.ui.graphics {
 
   public interface GraphicsContext {
     method public androidx.compose.ui.graphics.layer.GraphicsLayer createGraphicsLayer();
+    method public default androidx.compose.ui.graphics.shadow.ShadowContext getShadowContext();
     method public void releaseGraphicsLayer(androidx.compose.ui.graphics.layer.GraphicsLayer layer);
+    property public default androidx.compose.ui.graphics.shadow.ShadowContext shadowContext;
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface ImageBitmap {
@@ -986,9 +989,11 @@ package androidx.compose.ui.graphics {
     ctor public ShaderBrush();
     method public final void applyTo(long size, androidx.compose.ui.graphics.Paint p, float alpha);
     method public abstract android.graphics.Shader createShader(long size);
+    method public final void transform(float[]? matrix);
   }
 
   public final class ShaderKt {
+    method public static android.graphics.Shader CompositeShader(android.graphics.Shader dst, android.graphics.Shader src, int blendMode);
     method public static android.graphics.Shader ImageShader(androidx.compose.ui.graphics.ImageBitmap image, optional int tileModeX, optional int tileModeY);
     method public static android.graphics.Shader LinearGradientShader(long from, long to, java.util.List<androidx.compose.ui.graphics.Color> colors, optional java.util.List<java.lang.Float>? colorStops, optional int tileMode);
     method public static android.graphics.Shader RadialGradientShader(long center, float radius, java.util.List<androidx.compose.ui.graphics.Color> colors, optional java.util.List<java.lang.Float>? colorStops, optional int tileMode);
@@ -1679,6 +1684,70 @@ package androidx.compose.ui.graphics.painter {
     method public abstract long getIntrinsicSize();
     method protected abstract void onDraw(androidx.compose.ui.graphics.drawscope.DrawScope);
     property public abstract long intrinsicSize;
+  }
+
+}
+
+package androidx.compose.ui.graphics.shadow {
+
+  public final class AndroidShadowContext_androidKt {
+    method public static androidx.compose.ui.graphics.shadow.ShadowContext ShadowContext();
+  }
+
+  @androidx.compose.runtime.Stable public final class DropShadow {
+    ctor public DropShadow(float radius, androidx.compose.ui.graphics.Brush brush, optional float spread, optional float alpha, optional int blendMode);
+    ctor public DropShadow(float radius, optional long color, optional float spread, optional float alpha, optional int blendMode);
+    method public float getAlpha();
+    method public int getBlendMode();
+    method public androidx.compose.ui.graphics.Brush? getBrush();
+    method public long getColor();
+    method public float getRadius();
+    method public float getSpread();
+    property public float alpha;
+    property public int blendMode;
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public long color;
+    property public float radius;
+    property public float spread;
+  }
+
+  public final class DropShadowPainter extends androidx.compose.ui.graphics.painter.Painter {
+    ctor public DropShadowPainter(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.DropShadow dropShadow);
+    method public long getIntrinsicSize();
+    method protected void onDraw(androidx.compose.ui.graphics.drawscope.DrawScope);
+    property public long intrinsicSize;
+  }
+
+  public final class InnerShadow {
+    ctor public InnerShadow(float radius, androidx.compose.ui.graphics.Brush brush, optional float spread, optional long offset, optional float alpha, optional int blendMode);
+    ctor public InnerShadow(float radius, optional long color, optional float spread, optional long offset, optional float alpha, optional int blendMode);
+    method public float getAlpha();
+    method public int getBlendMode();
+    method public androidx.compose.ui.graphics.Brush? getBrush();
+    method public long getColor();
+    method public long getOffset();
+    method public float getRadius();
+    method public float getSpread();
+    property public float alpha;
+    property public int blendMode;
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public long color;
+    property public long offset;
+    property public float radius;
+    property public float spread;
+  }
+
+  public final class InnerShadowPainter extends androidx.compose.ui.graphics.painter.Painter {
+    ctor public InnerShadowPainter(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.InnerShadow innerShadow);
+    method public long getIntrinsicSize();
+    method protected void onDraw(androidx.compose.ui.graphics.drawscope.DrawScope);
+    property public long intrinsicSize;
+  }
+
+  public interface ShadowContext {
+    method public default void clearCache();
+    method public default androidx.compose.ui.graphics.shadow.DropShadowPainter createDropShadowPainter(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.DropShadow dropShadow);
+    method public default androidx.compose.ui.graphics.shadow.InnerShadowPainter createInnerShadowPainter(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.InnerShadow innerShadow);
   }
 
 }

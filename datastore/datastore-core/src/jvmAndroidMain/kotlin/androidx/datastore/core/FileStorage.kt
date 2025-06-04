@@ -41,7 +41,7 @@ class FileStorage<T>(
     private val coordinatorProducer: (File) -> InterProcessCoordinator = {
         createSingleProcessCoordinator(it)
     },
-    private val produceFile: () -> File
+    private val produceFile: () -> File,
 ) : Storage<T> {
 
     override fun createConnection(): StorageConnection<T> {
@@ -80,7 +80,7 @@ internal class FileStorageConnection<T>(
     private val file: File,
     private val serializer: Serializer<T>,
     override val coordinator: InterProcessCoordinator,
-    private val onClose: () -> Unit
+    private val onClose: () -> Unit,
 ) : StorageConnection<T> {
 
     private val closed = AtomicBoolean(false)
@@ -150,7 +150,7 @@ internal class FileStorageConnection<T>(
 
 internal open class FileReadScope<T>(
     protected val file: File,
-    protected val serializer: Serializer<T>
+    protected val serializer: Serializer<T>,
 ) : ReadScope<T> {
 
     private val closed = AtomicBoolean(false)
@@ -172,7 +172,7 @@ internal open class FileReadScope<T>(
                         throw if (e is FileNotFoundException) {
                             wrapExceptionIfDueToDirectBoot(
                                 parentDirPath = file.parent,
-                                exception = e
+                                exception = e,
                             )
                         } else {
                             e

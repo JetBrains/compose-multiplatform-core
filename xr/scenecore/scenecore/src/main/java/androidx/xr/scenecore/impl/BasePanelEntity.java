@@ -24,9 +24,12 @@ import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.TypedValueCompat;
+import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
+import androidx.xr.runtime.internal.PerceivedResolutionResult;
 import androidx.xr.runtime.internal.PixelDimensions;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
@@ -81,9 +84,7 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
         // Convert the updated corner radius to pixels.
         float radiusPixels =
-                TypedValueCompat.dpToPx(
-                        radiusDp,
-                        Resources.getSystem().getDisplayMetrics());
+                TypedValueCompat.dpToPx(radiusDp, Resources.getSystem().getDisplayMetrics());
 
         // Convert the pixel radius to meters.
         return radiusPixels / getDefaultPixelDensity();
@@ -127,6 +128,31 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     @Override
     public void setSizeInPixels(@NonNull PixelDimensions dimensions) {
         mPixelDimensions = dimensions;
+    }
+
+    @NonNull
+    @Override
+    public PerceivedResolutionResult getPerceivedResolution() {
+        // Get the Camera View with which to compute Perceived Resolution
+        CameraViewActivityPose cameraView =
+                PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
+        if (cameraView == null) {
+            return new PerceivedResolutionResult.InvalidCameraView();
+        }
+
+        // Compute the width, height, and distance to camera, of the panel in activity space units
+        float panelWidthInActivitySpace = getSize().width * getScale(Space.ACTIVITY).getX();
+        float panelHeightInActivitySpace = getSize().height * getScale(Space.ACTIVITY).getY();
+        Vector3 cameraPositionInActivitySpace = cameraView.getActivitySpacePose().getTranslation();
+        float PanelDistanceToCameraInActivitySpace =
+                Vector3.distance(
+                        cameraPositionInActivitySpace, getPose(Space.ACTIVITY).getTranslation());
+
+        return PerceivedResolutionUtils.getPerceivedResolutionOfPanel(
+                cameraView,
+                panelWidthInActivitySpace,
+                panelHeightInActivitySpace,
+                PanelDistanceToCameraInActivitySpace);
     }
 
     @Override

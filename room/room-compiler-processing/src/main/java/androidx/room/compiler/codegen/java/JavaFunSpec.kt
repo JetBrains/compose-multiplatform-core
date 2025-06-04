@@ -38,7 +38,7 @@ import javax.lang.model.element.Modifier
 
 internal class JavaFunSpec(
     private val addJavaNullabilityAnnotation: Boolean,
-    override val actual: JFunSpec
+    override val actual: JFunSpec,
 ) : JavaSpec<JFunSpec>(), XFunSpec {
 
     override val name = XName.of(actual.name)
@@ -49,7 +49,7 @@ internal class JavaFunSpec(
 
     internal class Builder(
         private val addJavaNullabilityAnnotation: Boolean,
-        internal val actual: JFunSpecBuilder
+        internal val actual: JFunSpecBuilder,
     ) : XSpec.Builder(), XFunSpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
@@ -87,8 +87,8 @@ internal class JavaFunSpec(
                         require(it is XCodeBlockImpl)
                         it.java.actual
                     },
-                    ", "
-                )
+                    ", ",
+                ),
             )
         }
 

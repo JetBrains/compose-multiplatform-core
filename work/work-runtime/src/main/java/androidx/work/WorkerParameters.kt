@@ -58,7 +58,7 @@ inline fun <reified T : ListenableWorker> WorkerParameters.usingRemoteService(
  */
 fun WorkerParameters.usingRemoteService(
     workerClassName: String,
-    componentName: ComponentName
+    componentName: ComponentName,
 ): WorkerParameters {
     return WorkerParameters(
         id,
@@ -72,7 +72,7 @@ fun WorkerParameters.usingRemoteService(
         taskExecutor,
         workerFactory,
         progressUpdater,
-        foregroundUpdater
+        foregroundUpdater,
     )
 }
 
@@ -80,7 +80,7 @@ fun WorkerParameters.usingRemoteService(
 fun buildDelegatedRemoteRequestData(
     delegatedWorkerName: String,
     componentName: ComponentName,
-    inputData: Data
+    inputData: Data,
 ): Data {
     val builder = Data.Builder()
     builder

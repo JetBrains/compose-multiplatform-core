@@ -60,7 +60,7 @@ fun getFilesForApiLevels(apiFiles: Collection<File>, currentVersion: Version): L
  */
 private fun filterVersions(
     versionToFileMap: Map<Version, File>,
-    currentVersion: Version
+    currentVersion: Version,
 ): List<Version> {
     val filteredVersions = mutableListOf<Version>()
     var prev: Version? = null
@@ -97,11 +97,11 @@ internal fun Project.registerVersionMetadataComponent(
         configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.versionMetadataUsage)
         configuration.attributes.attribute(
             Category.CATEGORY_ATTRIBUTE,
-            objects.named<Category>(Category.DOCUMENTATION)
+            objects.named<Category>(Category.DOCUMENTATION),
         )
         configuration.attributes.attribute(
             Bundling.BUNDLING_ATTRIBUTE,
-            objects.named<Bundling>(Bundling.EXTERNAL)
+            objects.named<Bundling>(Bundling.EXTERNAL),
         )
 
         // The generate API task has many output files, only add the version metadata as an artifact

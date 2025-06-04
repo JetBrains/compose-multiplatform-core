@@ -26,7 +26,7 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         return androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils
             .MediateeSdkApiImpl

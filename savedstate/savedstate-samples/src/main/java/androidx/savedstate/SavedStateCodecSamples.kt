@@ -79,7 +79,7 @@ fun encodeWithExplicitSerializerAndConfig() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config
+            configuration = config,
         )
 }
 
@@ -125,13 +125,13 @@ fun decodeWithExplicitSerializerAndConfig() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config
+            configuration = config,
         )
     val decoded =
         decodeFromSavedState(
             deserializer = PolymorphicSerializer(Any::class),
             savedState = encoded,
-            configuration = config
+            configuration = config,
         )
 }
 
@@ -209,12 +209,12 @@ fun config() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config
+            configuration = config,
         )
     val decoded =
         decodeFromSavedState(
             deserializer = PolymorphicSerializer(Any::class),
             savedState = encoded,
-            configuration = config
+            configuration = config,
         )
 }

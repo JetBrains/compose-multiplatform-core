@@ -27,6 +27,7 @@ import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOUR
 
 import static androidx.camera.camera2.internal.ZslUtil.isCapabilitySupported;
 import static androidx.camera.core.internal.StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
+import static androidx.core.util.Preconditions.checkArgument;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
@@ -226,8 +227,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
     @Override
     public int getLensFacing() {
         Integer lensFacing = mCameraCharacteristicsCompat.get(CameraCharacteristics.LENS_FACING);
-        Preconditions.checkArgument(lensFacing != null, "Unable to get the lens facing of the "
-                + "camera.");
+        checkArgument(lensFacing != null, "Unable to get the lens facing of the camera.");
         return LensFacingUtil.getCameraSelectorLensFacing(lensFacing);
     }
 

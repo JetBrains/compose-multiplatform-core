@@ -19,6 +19,7 @@ package androidx.privacysandbox.ui.client.view
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
+import android.os.Trace
 import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceView
@@ -160,7 +161,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
 
     private fun checkClientOpenSession(
         isSecondary: Boolean = false,
-        callback: Consumer<Boolean>? = null
+        callback: Consumer<Boolean>? = null,
     ) {
         val adapter = adapter
         if (
@@ -171,6 +172,8 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                 windowVisibility == View.VISIBLE
         ) {
             if (client == null && !isSecondary) {
+                // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
+                CompatImpl.addTracePoint("checkClientOpenSession")
                 client = Client(this)
                 adapter.openSession(
                     context,
@@ -179,7 +182,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                     height,
                     isZOrderOnTop,
                     handler::post,
-                    client!!
+                    client!!,
                 )
             } else if (client != null && isSecondary) {
                 clientSecondary = Client(this)
@@ -191,7 +194,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                     height,
                     isZOrderOnTop,
                     handler::post,
-                    clientSecondary!!
+                    clientSecondary!!,
                 )
             }
         }
@@ -313,7 +316,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                     /* left = */ paddingLeft,
                     /* top = */ paddingTop,
                     /* right = */ paddingLeft + childWidth,
-                    /* bottom = */ paddingTop + childHeight
+                    /* bottom = */ paddingTop + childHeight,
                 )
             }
             previousChildHeight = childHeight
@@ -472,7 +475,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         private var supportedSignalOptions =
             setOf(
                 SandboxedUiAdapterSignalOptions.GEOMETRY,
-                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
             )
 
         fun notifyConfigurationChanged(configuration: Configuration) {
@@ -513,6 +516,8 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         override fun onSessionOpened(session: SandboxedUiAdapter.Session) {
+            // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
+            CompatImpl.addTracePoint("onSessionOpened")
             if (sandboxedSdkView == null) {
                 close()
                 return
@@ -611,6 +616,12 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             }
         }
 
+        fun addTracePoint(tracePointName: String) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Api29PlusImpl.addTracePoint(tracePointName)
+            }
+        }
+
         @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
         private object Api35PlusImpl {
             @JvmStatic
@@ -618,7 +629,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                 sandboxedSdkView.sessionData =
                     SessionData(
                         windowInputToken = null,
-                        inputTransferToken = sandboxedSdkView.rootSurfaceControl?.inputTransferToken
+                        inputTransferToken = sandboxedSdkView.rootSurfaceControl?.inputTransferToken,
                     )
                 sandboxedSdkView.checkClientOpenSession()
             }
@@ -630,7 +641,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             @JvmStatic
             fun attachTemporarySurfaceViewAndOpenSession(
                 context: Context,
-                sandboxedSdkView: SandboxedSdkView
+                sandboxedSdkView: SandboxedSdkView,
             ) {
                 val surfaceView = SurfaceView(context).apply { visibility = GONE }
                 val onSurfaceViewAttachedListener =
@@ -664,6 +675,14 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             @JvmStatic
             fun unregisterFrameCommitCallback(observer: ViewTreeObserver, callback: Runnable) {
                 observer.unregisterFrameCommitCallback(callback)
+            }
+
+            @JvmStatic
+            fun addTracePoint(tracePointName: String) {
+                // TODO(b/418155054): Create helper function in SdkSandboxCrossProcessLatencyMetric.
+                Trace.beginAsyncSection(tracePointName, 0)
+                // To avoid misusing API, end the section. See b/412962485.
+                Trace.endAsyncSection(tracePointName, 0)
             }
         }
     }

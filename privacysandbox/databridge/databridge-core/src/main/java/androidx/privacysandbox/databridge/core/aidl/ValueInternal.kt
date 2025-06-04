@@ -28,7 +28,7 @@ import androidx.annotation.RestrictTo
 public data class ValueInternal(
     val type: String,
     val isValueNull: Boolean = false,
-    val value: Any?
+    val value: Any?,
 ) : Parcelable {
     @RequiresApi(Build.VERSION_CODES.Q)
     @Suppress("UNCHECKED_CAST")

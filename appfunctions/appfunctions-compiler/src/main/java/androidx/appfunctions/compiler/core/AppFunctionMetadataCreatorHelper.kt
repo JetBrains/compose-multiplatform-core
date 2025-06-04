@@ -208,7 +208,7 @@ class AppFunctionMetadataCreatorHelper {
                 val annotatedAppFunctionSerializable =
                     getAnnotatedAppFunctionSerializable(
                         appFunctionTypeReference,
-                        allowSerializableInterfaceTypes
+                        allowSerializableInterfaceTypes,
                     )
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     annotatedAppFunctionSerializable,
@@ -231,7 +231,7 @@ class AppFunctionMetadataCreatorHelper {
                 val annotatedAppFunctionSerializable =
                     getAnnotatedAppFunctionSerializable(
                         appFunctionTypeReference,
-                        allowSerializableInterfaceTypes
+                        allowSerializableInterfaceTypes,
                     )
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     annotatedAppFunctionSerializable,
@@ -374,7 +374,7 @@ class AppFunctionMetadataCreatorHelper {
                     seenDataTypeQualifiers,
                     resolvedAnnotatedSerializableProxies,
                     allowSerializableInterfaceTypes,
-                )
+                ),
             )
         } else {
             // If there are superTypes, we first need to build the list of superTypes for this
@@ -396,7 +396,7 @@ class AppFunctionMetadataCreatorHelper {
                             // Shared type should be the most permissive version (i.e. nullable) by
                             // default. This is because the outer AllOfType to this shared type
                             // can add further constraint (i.e. non-null) if required.
-                            isNullable = true
+                            isNullable = true,
                         )
                     )
                 }
@@ -445,8 +445,8 @@ class AppFunctionMetadataCreatorHelper {
                     // Shared type should be the most permissive version (i.e. nullable) by
                     // default. This is because the outer ReferenceType to this shared type
                     // can add further constraint (i.e. non-null) if required.
-                    isNullable = true
-                )
+                    isNullable = true,
+                ),
             )
         }
     }
@@ -598,9 +598,7 @@ class AppFunctionMetadataCreatorHelper {
             AnnotatedAppFunctionSerializableInterface(appFunctionSerializableClassDeclaration)
                 .validate(allowSerializableInterfaceTypes)
         } else {
-            AnnotatedAppFunctionSerializable(
-                    appFunctionSerializableClassDeclaration,
-                )
+            AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
                 .parameterizedBy(
                     appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments
                 )

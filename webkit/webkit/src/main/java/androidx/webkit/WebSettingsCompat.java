@@ -18,8 +18,11 @@ package androidx.webkit;
 
 import android.os.Build;
 import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.RequiresFeature;
@@ -43,6 +46,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -52,7 +56,8 @@ public class WebSettingsCompat {
 
     private static final String TAG = "WebSettingsCompat";
 
-    private WebSettingsCompat() {}
+    private WebSettingsCompat() {
+    }
 
     /**
      * Sets whether this WebView should raster tiles when it is
@@ -128,7 +133,7 @@ public class WebSettingsCompat {
      * returns true for {@link WebViewFeature#SAFE_BROWSING_ENABLE}.
      *
      * @param settings The WebSettings object to update.
-     * @param enabled Whether Safe Browsing is enabled.
+     * @param enabled  Whether Safe Browsing is enabled.
      */
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_ENABLE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -168,6 +173,7 @@ public class WebSettingsCompat {
     }
 
     /**
+     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef(flag = true, value = {
@@ -178,7 +184,8 @@ public class WebSettingsCompat {
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
-    public @interface MenuItemFlags {}
+    public @interface MenuItemFlags {
+    }
 
     /**
      * Disables the action mode menu items according to {@code menuItems} flag.
@@ -188,7 +195,7 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}.
      *
-     * @param settings The WebSettings object to update.
+     * @param settings  The WebSettings object to update.
      * @param menuItems an integer field flag for the menu items to be disabled.
      */
     @RequiresFeature(name = WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS,
@@ -252,7 +259,8 @@ public class WebSettingsCompat {
      * In either of these cases, you should control the mode manually with
      * {@link ForceDark#FORCE_DARK_ON} or {@link ForceDark#FORCE_DARK_OFF}.
      *
-     * <p> See <a href="https://developer.android.com/guide/topics/ui/look-and-feel/darktheme#force_dark">
+     * <p> See
+     * <a href="https://developer.android.com/guide/topics/ui/look-and-feel/darktheme#force_dark">
      * Force Dark documentation</a> for more information.
      *
      * @see #setForceDark
@@ -272,6 +280,7 @@ public class WebSettingsCompat {
     public static final int FORCE_DARK_ON = WebSettings.FORCE_DARK_ON;
 
     /**
+     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef(value = {
@@ -281,7 +290,8 @@ public class WebSettingsCompat {
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
-    public @interface ForceDark {}
+    public @interface ForceDark {
+    }
 
     /**
      * Set the force dark mode for this WebView.
@@ -435,9 +445,9 @@ public class WebSettingsCompat {
      * is created.
      *
      * <p>
-     * @param settings The WebSettings object to update.
-     * @param allow allow algorithmic darkening or not.
      *
+     * @param settings The WebSettings object to update.
+     * @param allow    allow algorithmic darkening or not.
      */
     @RequiresFeature(name = WebViewFeature.ALGORITHMIC_DARKENING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -518,6 +528,7 @@ public class WebSettingsCompat {
             WebSettingsBoundaryInterface.ForceDarkBehavior.PREFER_MEDIA_QUERY_OVER_FORCE_DARK;
 
     /**
+     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef(value = {
@@ -527,7 +538,8 @@ public class WebSettingsCompat {
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
-    public @interface ForceDarkStrategy {}
+    public @interface ForceDarkStrategy {
+    }
 
     /**
      * Set how WebView content should be darkened.
@@ -596,7 +608,8 @@ public class WebSettingsCompat {
      * <p>
      * EnterpriseAuthenticationAppLinkPolicy is enabled by default.
      *
-     * <p> See <a href="https://source.chromium.org/chromium/chromium/src/+/main:components/policy/resources/policy_templates.json;l=32321?q=EnterpriseAuthenticationAppLinkPolicy%20file:policy_templates.json">
+     * <p> See
+     * <a href="https://source.chromium.org/chromium/chromium/src/+/main:components/policy/resources/policy_templates.json;l=32321?q=EnterpriseAuthenticationAppLinkPolicy%20file:policy_templates.json">
      * this</a> for more information on EnterpriseAuthenticationAppLinkPolicy.
      *
      * <p>
@@ -605,7 +618,7 @@ public class WebSettingsCompat {
      * returns true for {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}.
      *
      * @param settings The WebSettings object to update.
-     * @param enabled Whether EnterpriseAuthenticationAppLinkPolicy should be enabled.
+     * @param enabled  Whether EnterpriseAuthenticationAppLinkPolicy should be enabled.
      */
     @RequiresFeature(name = WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -624,7 +637,8 @@ public class WebSettingsCompat {
     /**
      * Gets whether EnterpriseAuthenticationAppLinkPolicy is allowed to have any effect on WebView.
      *
-     * <p> See <a href="https://source.chromium.org/chromium/chromium/src/+/main:components/policy/resources/policy_templates.json;l=32321?q=EnterpriseAuthenticationAppLinkPolicy%20file:policy_templates.json">
+     * <p> See
+     * <a href="https://source.chromium.org/chromium/chromium/src/+/main:components/policy/resources/policy_templates.json;l=32321?q=EnterpriseAuthenticationAppLinkPolicy%20file:policy_templates.json">
      * this</a> for more information on EnterpriseAuthenticationAppLinkPolicy.
      *
      * <p>
@@ -692,7 +706,7 @@ public class WebSettingsCompat {
      * The format of the strings in the allow-list follows the origin rules of
      * {@link WebViewCompat#addWebMessageListener(WebView, String, Set, WebViewCompat.WebMessageListener)}.
      *
-     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param settings  Settings retrieved from {@link WebView#getSettings()}.
      * @param allowList Set of origins to allow-list.
      * @throws IllegalArgumentException if the allow-list contains a malformed origin.
      */
@@ -808,7 +822,7 @@ public class WebSettingsCompat {
      * <p>
      * This option should only be used after applying to
      * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web#register-attribution">
-     *     use web sources</a>.
+     * use web sources</a>.
      */
     public static final int ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER =
             WebSettingsBoundaryInterface.AttributionBehavior.WEB_SOURCE_AND_WEB_TRIGGER;
@@ -837,14 +851,14 @@ public class WebSettingsCompat {
      * allowlist for registering web sources</a> and then set the
      * {@link #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER} behavior.
      *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param behavior New behavior to use.
      * @see
      * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web#register-attribution">How to apply to use web source</a>
      * @see #ATTRIBUTION_BEHAVIOR_DISABLED
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
-     * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param behavior New behavior to use.
      */
     @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -862,12 +876,12 @@ public class WebSettingsCompat {
     /**
      * Read the current behavior for attribution registration.
      *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @see #setAttributionRegistrationBehavior(WebSettings, int)
      * @see #ATTRIBUTION_BEHAVIOR_DISABLED
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
-     * @param settings Settings retrieved from {@link WebView#getSettings()}.
      */
     @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1015,7 +1029,8 @@ public class WebSettingsCompat {
     }
 
     /**
-     * Disables all speculative loading tech. See <a href="https://developer.mozilla.org/en-US/docs/Web/Performance/Speculative_loading">this</a> to learn more.
+     * Disables all speculative loading tech. See
+     * <a href="https://developer.mozilla.org/en-US/docs/Web/Performance/Speculative_loading">this</a> to learn more.
      * <p>
      * This is the default behavior.
      */
@@ -1025,7 +1040,8 @@ public class WebSettingsCompat {
 
     /**
      * Enabled Prerender for this WebSettings, See
-     * <a href="https://developer.chrome.com/docs/web-platform/prerender-pages">Prerender</a> to learn more.
+     * <a href="https://developer.chrome.com/docs/web-platform/prerender-pages">Prerender</a>
+     * to learn more.
      */
     @ExperimentalSpeculativeLoading
     public static final int SPECULATIVE_LOADING_PRERENDER_ENABLED =
@@ -1038,7 +1054,8 @@ public class WebSettingsCompat {
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
     @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
-    public @interface ExperimentalSpeculativeLoading {}
+    public @interface ExperimentalSpeculativeLoading {
+    }
 
 
     /**
@@ -1050,9 +1067,9 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#isFeatureSupported(String)} returns true for
      * {@link WebViewFeature#SPECULATIVE_LOADING}.
      *
-     * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param speculativeLoadingStatus  The new status for the speculative loading.
-     *                                  It will to be one of {@link SpeculativeLoadingStatus}
+     * @param settings                 Settings retrieved from {@link WebView#getSettings()}.
+     * @param speculativeLoadingStatus The new status for the speculative loading.
+     *                                 It will to be one of {@link SpeculativeLoadingStatus}
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1102,7 +1119,8 @@ public class WebSettingsCompat {
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
     @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
-    public @interface ExperimentalBackForwardCache {}
+    public @interface ExperimentalBackForwardCache {
+    }
 
     /**
      * Enables <a href="https://developer.chrome.com/blog/back-forward-cache">BackForwardCache</a>
@@ -1114,9 +1132,9 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#isFeatureSupported(String)} returns true for
      * {@link WebViewFeature#BACK_FORWARD_CACHE}.
      *
-     * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param backForwardCacheEnabled  whether BackForwardCache should be enabled for this
-     *                                  {@link WebSettings}
+     * @param settings                Settings retrieved from {@link WebView#getSettings()}.
+     * @param backForwardCacheEnabled whether BackForwardCache should be enabled for this
+     *                                {@link WebSettings}
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1182,17 +1200,21 @@ public class WebSettingsCompat {
      *
      * <ul>
      * <li>The {@code org.chromium.intent.action.PAY} intent is necessary to let users <a
-     * href="https://web.dev/articles/android-payment-apps-developers-guide#step_3_let_a_customer_make_payment">make
+     * href="https://web.dev/articles/android-payment-apps-developers-guide
+     * #step_3_let_a_customer_make_payment">make
      * payments</a>.
      *
      * <li>The {@code org.chromium.intent.action.IS_READY_TO_PAY} intent is necessary to let the
      * merchant website know if the user is <a
-     * href="https://web.dev/articles/android-payment-apps-developers-guide#step_2_let_a_merchant_know_if_a_customer_has_an_enrolled_instrument_that_is_ready_to_pay">ready
+     * href="https://web.dev/articles/android-payment-apps-developers-guide
+     * #step_2_let_a_merchant_know_if_a_customer_has_an_enrolled_instrument_that_is_ready_to_pay
+     * ">ready
      * to pay</a>.
      *
      * <li>The {@code org.chromium.intent.action.UPDATE_PAYMENT_DETAILS} intent is necessary for
      * payment apps to support <a
-     * href="https://web.dev/articles/android-payment-apps-delegation#optional_support_dynamic_flow">updating
+     * href="https://web.dev/articles/android-payment-apps-delegation
+     * #optional_support_dynamic_flow">updating
      * the price dynamically</a> in response to the user selecting a different shipping address or
      * option.
      * </ul>
@@ -1203,9 +1225,10 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param enabled Whether
-     *     <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> should be enabled
-     *     for this {@link WebSettings}.
+     * @param enabled  Whether
+     *                 <a href="https://w3c.github.io/payment-request/">PaymentRequest</a>
+     *                 should be enabled
+     *                 for this {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1229,7 +1252,7 @@ public class WebSettingsCompat {
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return Whether <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> is
-     *     enabled.
+     * enabled.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1258,8 +1281,8 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param enabled Whether {@code PaymentRequest.hasEnrolledInstrument()} should be enabled
-     *     for this {@link WebSettings}.
+     * @param enabled  Whether {@code PaymentRequest.hasEnrolledInstrument()} should be enabled
+     *                 for this {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1285,7 +1308,7 @@ public class WebSettingsCompat {
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return Whether {@code PaymentRequest.hasEnrolledInstrument()} is enabled for this
-     *     {@link WebSettings}.
+     * {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1296,6 +1319,61 @@ public class WebSettingsCompat {
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
+    }
+
+
+    /**
+     * This method controls if the relevant {@code Cookie} header will be added to the
+     * {@link WebResourceRequest} object passed to
+     * {@link WebViewClient#shouldInterceptRequest(WebView, WebResourceRequest)}.
+     * It also enables the use of
+     * {@link WebResourceResponseCompat#setCookies(List)}, which will
+     * otherwise be ignored.
+     *
+     * <p>Prefer using this method over calling {@link CookieManager} as part of
+     * intercepting requests if it is necessary to access cookies, as this approach will provide
+     * the correct set of cookies for the request.
+     *
+     * <p>This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#COOKIE_INTERCEPT}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param enabled  Whether cookie access during request intercept should be enabled.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setIncludeCookiesOnShouldInterceptRequest(
+            @NonNull WebSettings settings, boolean enabled) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        getAdapter(settings).setCookieAccessForShouldInterceptRequestEnabled(enabled);
+    }
+
+
+    /**
+     * Returns whether cookie access during request intercept is enabled.
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#COOKIE_INTERCEPT}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @see #setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static boolean getIncludeCookiesOnShouldInterceptRequest(
+            @NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        return getAdapter(settings).getCookieAccessForShouldInterceptRequestEnabled();
     }
 
     private static WebSettingsAdapter getAdapter(WebSettings settings) {

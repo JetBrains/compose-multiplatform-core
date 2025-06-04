@@ -139,8 +139,8 @@ class AndroidPointerInputTest {
                 container,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
         }
     }
@@ -167,7 +167,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(Float.NaN, Float.NaN))
+                    arrayOf(PointerCoords(Float.NaN, Float.NaN)),
                 )
 
             val androidComposeView = findAndroidComposeView(container)!!
@@ -201,7 +201,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY))
+                    arrayOf(PointerCoords(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)),
                 )
 
             val androidComposeView = findAndroidComposeView(container)!!
@@ -235,7 +235,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(0f, 0f))
+                    arrayOf(PointerCoords(0f, 0f)),
                 )
 
             // Act
@@ -282,7 +282,7 @@ class AndroidPointerInputTest {
                                             if (event.type == PointerEventType.Move) {
                                                 dispatchTouchEvent(
                                                     ACTION_CANCEL,
-                                                    topBoxInnerCoordinates!!
+                                                    topBoxInnerCoordinates!!,
                                                 )
                                             }
                                         }
@@ -346,7 +346,7 @@ class AndroidPointerInputTest {
                     numPointers = 1,
                     actionIndex = 0,
                     pointerProperties = arrayOf(topBoxPointerProperties),
-                    pointerCoords = arrayOf(PointerCoords(topBoxOffset.x, topBoxOffset.y))
+                    pointerCoords = arrayOf(PointerCoords(topBoxOffset.x, topBoxOffset.y)),
                 )
 
             eventStartTime += 500
@@ -361,8 +361,8 @@ class AndroidPointerInputTest {
                     pointerCoords =
                         arrayOf(
                             PointerCoords(topBoxOffset.x, topBoxOffset.y),
-                            PointerCoords(bottomBoxOffset.x, bottomBoxOffset.y)
-                        )
+                            PointerCoords(bottomBoxOffset.x, bottomBoxOffset.y),
+                        ),
                 )
 
             eventStartTime += 500
@@ -377,8 +377,8 @@ class AndroidPointerInputTest {
                     pointerCoords =
                         arrayOf(
                             PointerCoords(topBoxOffset.x + 10, topBoxOffset.y),
-                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y)
-                        )
+                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y),
+                        ),
                 )
 
             eventStartTime += 500
@@ -393,8 +393,8 @@ class AndroidPointerInputTest {
                     pointerCoords =
                         arrayOf(
                             PointerCoords(topBoxOffset.x + 10, topBoxOffset.y),
-                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y)
-                        )
+                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y),
+                        ),
                 )
 
             eventStartTime += 500
@@ -409,8 +409,8 @@ class AndroidPointerInputTest {
                     pointerCoords =
                         arrayOf(
                             PointerCoords(topBoxOffset.x + 10, topBoxOffset.y),
-                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y)
-                        )
+                            PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y),
+                        ),
                 )
 
             eventStartTime += 500
@@ -422,7 +422,7 @@ class AndroidPointerInputTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(bottomBoxPointerProperties),
                     pointerCoords =
-                        arrayOf(PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y))
+                        arrayOf(PointerCoords(bottomBoxOffset.x + 10, bottomBoxOffset.y)),
                 )
 
             // Act
@@ -484,7 +484,7 @@ class AndroidPointerInputTest {
                     arrayOf(PointerProperties(0)),
                     arrayOf(
                         PointerCoords(locationInWindow[0].toFloat(), locationInWindow[1].toFloat())
-                    )
+                    ),
                 )
 
             // Act
@@ -499,7 +499,7 @@ class AndroidPointerInputTest {
     fun dispatchTouchEvent_movementNotConsumed_requestDisallowInterceptTouchEventNotCalled() {
         dispatchTouchEvent_movementConsumptionInCompose(
             consumeMovement = false,
-            callsRequestDisallowInterceptTouchEvent = false
+            callsRequestDisallowInterceptTouchEvent = false,
         )
     }
 
@@ -507,7 +507,7 @@ class AndroidPointerInputTest {
     fun dispatchTouchEvent_movementConsumed_requestDisallowInterceptTouchEventCalled() {
         dispatchTouchEvent_movementConsumptionInCompose(
             consumeMovement = true,
-            callsRequestDisallowInterceptTouchEvent = true
+            callsRequestDisallowInterceptTouchEvent = true,
         )
     }
 
@@ -522,7 +522,7 @@ class AndroidPointerInputTest {
                     Layout(
                         {},
                         Modifier.consumeDownGestureFilter { consumedDownPosition = it }
-                            .onGloballyPositioned { latch.countDown() }
+                            .onGloballyPositioned { latch.countDown() },
                     ) { _, _ ->
                         val sizePx = size.value
                         layout(sizePx, sizePx) {}
@@ -547,7 +547,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(locationInWindow[0] + 15f, locationInWindow[1] + 15f))
+                    arrayOf(PointerCoords(locationInWindow[0] + 15f, locationInWindow[1] + 15f)),
                 )
 
             // we expect it to first remeasure and only then process
@@ -576,7 +576,7 @@ class AndroidPointerInputTest {
                                     {},
                                     Modifier.logEventsGestureFilter(log).onGloballyPositioned {
                                         latch.countDown()
-                                    }
+                                    },
                                 ) { _, _ ->
                                     layout(5, 5) {}
                                 }
@@ -600,9 +600,9 @@ class AndroidPointerInputTest {
                     arrayOf(
                         PointerCoords(
                             locationInWindow[0].toFloat() + 1 + 10 + 100,
-                            locationInWindow[1].toFloat() + 1 + 10 + 100
+                            locationInWindow[1].toFloat() + 1 + 10 + 100,
                         )
-                    )
+                    ),
                 )
 
             // Act
@@ -617,7 +617,7 @@ class AndroidPointerInputTest {
 
     private fun dispatchTouchEvent_movementConsumptionInCompose(
         consumeMovement: Boolean,
-        callsRequestDisallowInterceptTouchEvent: Boolean
+        callsRequestDisallowInterceptTouchEvent: Boolean,
     ) {
 
         // Arrange
@@ -647,7 +647,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(x, y))
+                    arrayOf(PointerCoords(x, y)),
                 )
 
             val move =
@@ -657,7 +657,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0)),
-                    arrayOf(PointerCoords(x + 1, y))
+                    arrayOf(PointerCoords(x + 1, y)),
                 )
 
             findRootView(container).dispatchTouchEvent(down)
@@ -717,9 +717,9 @@ class AndroidPointerInputTest {
                     arrayOf(
                         PointerCoords(
                             locationInWindow[0].toFloat(),
-                            locationInWindow[1].toFloat() + offset
+                            locationInWindow[1].toFloat() + offset,
                         )
-                    )
+                    ),
                 )
 
             // Act
@@ -815,7 +815,7 @@ class AndroidPointerInputTest {
                                         findRootView(container).dispatchTouchEvent(upEvent!!)
                                     }
                                     pressLatch.countDown()
-                                }
+                                },
                             )
                         }
                         .onGloballyPositioned { positionedLatch.countDown() }
@@ -832,14 +832,14 @@ class AndroidPointerInputTest {
                     createPointerEventAt(
                         iteration * sleepTime.toInt(),
                         ACTION_DOWN,
-                        locationInWindow
+                        locationInWindow,
                     )
 
                 upEvent =
                     createPointerEventAt(
                         touchUpDelay + iteration * sleepTime.toInt(),
                         ACTION_UP,
-                        locationInWindow
+                        locationInWindow,
                     )
                 findRootView(container).dispatchTouchEvent(downEvent)
             }
@@ -1068,7 +1068,7 @@ class AndroidPointerInputTest {
     private fun assertHoverEvent(
         event: PointerEvent,
         isEnter: Boolean = false,
-        isExit: Boolean = false
+        isExit: Boolean = false,
     ) {
         assertThat(event.changes).hasSize(1)
         val change = event.changes[0]
@@ -1097,7 +1097,7 @@ class AndroidPointerInputTest {
         layoutCoordinates: LayoutCoordinates,
         offset: Offset = Offset.Zero,
         scrollDelta: Offset = Offset.Zero,
-        eventTime: Int = 0
+        eventTime: Int = 0,
     ) {
         rule.runOnUiThread {
             val root = layoutCoordinates.findRootCoordinates()
@@ -1109,7 +1109,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
-                    arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y))
+                    arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y)),
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1126,7 +1126,7 @@ class AndroidPointerInputTest {
     private fun dispatchStylusEvents(
         layoutCoordinates: LayoutCoordinates,
         offset: Offset,
-        vararg actions: Int
+        vararg actions: Int,
     ) {
         rule.runOnUiThread {
             val root = layoutCoordinates.findRootCoordinates()
@@ -1143,7 +1143,7 @@ class AndroidPointerInputTest {
                         arrayOf(
                             PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_STYLUS }
                         ),
-                        arrayOf(PointerCoords(pos.x, pos.y))
+                        arrayOf(PointerCoords(pos.x, pos.y)),
                     )
 
                 when (action) {
@@ -1160,7 +1160,7 @@ class AndroidPointerInputTest {
         action: Int,
         layoutCoordinates: LayoutCoordinates,
         offset: Offset = Offset.Zero,
-        eventTime: Int = 0
+        eventTime: Int = 0,
     ) {
         rule.runOnUiThread {
             val root = layoutCoordinates.findRootCoordinates()
@@ -1172,7 +1172,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_FINGER }),
-                    arrayOf(PointerCoords(pos.x, pos.y))
+                    arrayOf(PointerCoords(pos.x, pos.y)),
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1572,7 +1572,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
-                    arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y))
+                    arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y)),
                 )
 
             // Main scroll event on Box 1
@@ -1583,7 +1583,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
-                    arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y))
+                    arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y)),
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1666,7 +1666,7 @@ class AndroidPointerInputTest {
                     pointerProperties = pointerProperties,
                     pointerCoords = pointerCoords!!,
                     buttonState = buttonState,
-                    classification = motionEventClassification
+                    classification = motionEventClassification,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1694,7 +1694,7 @@ class AndroidPointerInputTest {
                     pointerProperties = pointerProperties,
                     pointerCoords = pointerCoords!!,
                     buttonState = buttonState,
-                    classification = motionEventClassification
+                    classification = motionEventClassification,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1721,7 +1721,7 @@ class AndroidPointerInputTest {
                     pointerProperties = pointerProperties,
                     pointerCoords = pointerCoords!!,
                     buttonState = buttonState,
-                    classification = motionEventClassification
+                    classification = motionEventClassification,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1748,7 +1748,7 @@ class AndroidPointerInputTest {
                     pointerProperties = pointerProperties,
                     pointerCoords = pointerCoords!!,
                     buttonState = buttonState,
-                    classification = motionEventClassification
+                    classification = motionEventClassification,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1775,7 +1775,7 @@ class AndroidPointerInputTest {
                     pointerProperties = pointerProperties,
                     pointerCoords = pointerCoords!!,
                     buttonState = buttonState,
-                    classification = motionEventClassification
+                    classification = motionEventClassification,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1938,7 +1938,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_HOVER_ENTER,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -1962,7 +1962,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_HOVER_EXIT,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
 
         rule.waitForFutureFrame(2)
@@ -1988,7 +1988,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_DOWN,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2011,7 +2011,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_UP,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2034,7 +2034,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_DOWN,
             layoutCoordinates = box2LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2057,7 +2057,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_UP,
             layoutCoordinates = box2LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2201,7 +2201,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_HOVER_ENTER,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2223,7 +2223,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_HOVER_EXIT,
             layoutCoordinates = box1LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
 
         rule.waitForFutureFrame(2)
@@ -2246,7 +2246,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_DOWN,
             layoutCoordinates = box2LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2267,7 +2267,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             action = ACTION_UP,
             layoutCoordinates = box2LayoutCoordinates!!,
-            eventTime = eventTime
+            eventTime = eventTime,
         )
         rule.runOnUiThread {
             // Verify Box 1 events
@@ -2583,7 +2583,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2602,7 +2602,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2642,7 +2642,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2661,7 +2661,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2723,7 +2723,7 @@ class AndroidPointerInputTest {
         // Pointer Input Modifier that is toggled on/off based on passed value.
         fun Modifier.dynamicallyToggledPointerInput(
             enable: Boolean,
-            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit
+            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit,
         ) =
             if (enable) {
                 pointerInput(pointerEventLambda) {
@@ -2825,7 +2825,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2849,7 +2849,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -2920,7 +2920,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(2)
@@ -2944,7 +2944,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(2)
@@ -3007,7 +3007,7 @@ class AndroidPointerInputTest {
         // Pointer Input Modifier that is toggled on/off based on passed value.
         fun Modifier.dynamicallyToggledPointerInput(
             enable: Boolean,
-            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit
+            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit,
         ) =
             if (enable) {
                 pointerInput(Unit) {
@@ -3104,7 +3104,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3128,7 +3128,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3184,7 +3184,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(2)
@@ -3208,7 +3208,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(2)
@@ -3281,7 +3281,7 @@ class AndroidPointerInputTest {
         // Pointer Input Modifier that is toggled on/off based on passed value.
         fun Modifier.dynamicallyToggledPointerInput(
             enable: Boolean,
-            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit
+            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit,
         ) =
             if (enable) {
                 pointerInput(Unit) {
@@ -3443,10 +3443,7 @@ class AndroidPointerInputTest {
             }
         }
 
-        dispatchTouchEvent(
-            ACTION_UP,
-            childBoxLayoutCoordinates!!,
-        )
+        dispatchTouchEvent(ACTION_UP, childBoxLayoutCoordinates!!)
         rule.runOnUiThread {
             assertThat(childBoxPointerInputScopeExecutionCount).isEqualTo(1)
             assertThat(parentBoxDynamicPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3510,7 +3507,7 @@ class AndroidPointerInputTest {
         // Pointer Input Modifier that is toggled on/off based on passed value.
         fun Modifier.dynamicallyToggledPointerInput(
             enable: Boolean,
-            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit
+            pointerEventLambda: (pointerEvent: PointerEvent) -> Unit,
         ) =
             if (enable) {
                 pointerInput(pointerEventLambda) {
@@ -3612,7 +3609,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3636,7 +3633,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3686,7 +3683,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_MOVE,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -3710,7 +3707,7 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_UP,
             box1LayoutCoordinates!!,
-            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f)
+            Offset(0f, box1LayoutCoordinates!!.size.height / 2 - 1f),
         )
         rule.runOnUiThread {
             assertThat(originalPointerInputScopeExecutionCount).isEqualTo(1)
@@ -4060,7 +4057,7 @@ class AndroidPointerInputTest {
                         1,
                         0,
                         arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
-                        arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y))
+                        arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y)),
                     )
 
                 // Press on Box 1
@@ -4071,7 +4068,7 @@ class AndroidPointerInputTest {
                         1,
                         0,
                         arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
-                        arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y))
+                        arrayOf(PointerCoords(pos.x, pos.y, Offset.Zero.x, Offset.Zero.y)),
                     )
 
                 val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -4652,7 +4649,7 @@ class AndroidPointerInputTest {
                 1,
                 0,
                 arrayOf(PointerProperties(10).also { it.toolType = TOOL_TYPE_FINGER }),
-                arrayOf(PointerCoords(1f, 1f))
+                arrayOf(PointerCoords(1f, 1f)),
             )
 
         container.dispatchTouchEvent(motionEvent)
@@ -4766,7 +4763,7 @@ class AndroidPointerInputTest {
                     arrayOf(
                         PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_STYLUS }
                     ),
-                    arrayOf(PointerCoords(pos.x, pos.y))
+                    arrayOf(PointerCoords(pos.x, pos.y)),
                 )
 
             androidComposeView.dispatchHoverEvent(exit)
@@ -4778,7 +4775,7 @@ class AndroidPointerInputTest {
                     1,
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_FINGER }),
-                    arrayOf(PointerCoords(pos.x, pos.y))
+                    arrayOf(PointerCoords(pos.x, pos.y)),
                 )
             androidComposeView.dispatchTouchEvent(down)
         }
@@ -4862,7 +4859,7 @@ class AndroidPointerInputTest {
         dispatchMouseEvent(
             ACTION_HOVER_MOVE,
             coords,
-            Offset(0f, (coords.size.height / 2 - 1).toFloat())
+            Offset(0f, (coords.size.height / 2 - 1).toFloat()),
         )
 
         rule.runOnUiThread { assertThat(eventLog).isEmpty() }
@@ -4871,14 +4868,14 @@ class AndroidPointerInputTest {
         dispatchMouseEvent(
             ACTION_HOVER_MOVE,
             coords,
-            Offset(0f, (coords.size.height / 2 + 1).toFloat())
+            Offset(0f, (coords.size.height / 2 + 1).toFloat()),
         )
 
         // Now hit the bottom of the clipped region
         dispatchMouseEvent(
             ACTION_HOVER_MOVE,
             coords,
-            Offset(0f, (coords.size.height - 1).toFloat())
+            Offset(0f, (coords.size.height - 1).toFloat()),
         )
 
         // Now leave
@@ -4889,7 +4886,7 @@ class AndroidPointerInputTest {
                 .containsExactly(
                     PointerEventType.Enter,
                     PointerEventType.Move,
-                    PointerEventType.Exit
+                    PointerEventType.Exit,
                 )
         }
     }
@@ -5043,12 +5040,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild)
+            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild)
+            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild),
         )
         rule.runOnUiThread { assertThat(eventLog).isEmpty() }
 
@@ -5058,12 +5055,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild)
+            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild)
+            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild),
         )
 
         rule.runOnUiThread { assertThat(eventLog).isEmpty() }
@@ -5089,11 +5086,7 @@ class AndroidPointerInputTest {
         dispatchMouseEvent(ACTION_UP, parentBoxCoords)
 
         rule.runOnUiThread {
-            assertThat(eventLog)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+            assertThat(eventLog).containsExactly(PointerEventType.Press, PointerEventType.Release)
         }
 
         // Hits the bottom box in the unclipped region (farther down from edges).
@@ -5192,12 +5185,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild)
+            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild)
+            Offset(0f, -justOutsideMinimumTouchTargetOfClippedChild),
         )
         rule.runOnUiThread { assertThat(eventLog).isEmpty() }
 
@@ -5211,12 +5204,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild)
+            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild)
+            Offset(0f, -edgeOfMinimumTouchTargetOfClippedChild),
         )
         rule.runOnUiThread { assertThat(eventLog).isEmpty() }
 
@@ -5241,11 +5234,7 @@ class AndroidPointerInputTest {
         dispatchMouseEvent(ACTION_UP, parentBoxCoords)
 
         rule.runOnUiThread {
-            assertThat(eventLog)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+            assertThat(eventLog).containsExactly(PointerEventType.Press, PointerEventType.Release)
         }
 
         // Hits the bottom box in the unclipped region (farther down from edges).
@@ -5356,20 +5345,17 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox)
+            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox)
+            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox),
         )
 
         rule.runOnUiThread {
             assertThat(eventLogTopBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogBottomBox).isEmpty()
         }
 
@@ -5378,12 +5364,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox)
+            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox)
+            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox),
         )
 
         rule.runOnUiThread {
@@ -5626,20 +5612,17 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
 
         rule.runOnUiThread {
             assertThat(eventLogLargeBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogMediumBox).isEmpty()
             assertThat(eventLogSmallBox).isEmpty()
         }
@@ -5648,12 +5631,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -5665,10 +5648,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogMediumBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogSmallBox).isEmpty()
         }
 
@@ -5676,12 +5656,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -5702,10 +5682,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogSmallBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
         }
     }
 
@@ -5823,20 +5800,17 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
 
         rule.runOnUiThread {
             assertThat(eventLogLargeBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogMediumBox).isEmpty()
             assertThat(eventLogSmallBox).isEmpty()
         }
@@ -5845,12 +5819,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -5862,10 +5836,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogMediumBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogSmallBox).isEmpty()
         }
 
@@ -5873,12 +5844,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -5899,10 +5870,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogSmallBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
         }
     }
 
@@ -6014,20 +5982,17 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!)
+            Offset(hitLargeBoxOnlyFloat!!, hitLargeBoxOnlyFloat!!),
         )
 
         rule.runOnUiThread {
             assertThat(eventLogLargeBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogMediumBox).isEmpty()
             assertThat(eventLogSmallBox).isEmpty()
         }
@@ -6036,12 +6001,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!)
+            Offset(hitLargeAndMediumBoxesFloat!!, hitLargeAndMediumBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -6053,10 +6018,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogMediumBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogSmallBox).isEmpty()
         }
 
@@ -6064,12 +6026,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
         dispatchTouchEvent(
             ACTION_UP,
             topOffsetBoxCoords,
-            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!)
+            Offset(hitAllThreeBoxesFloat!!, hitAllThreeBoxesFloat!!),
         )
 
         rule.runOnUiThread {
@@ -6090,10 +6052,7 @@ class AndroidPointerInputTest {
                     PointerEventType.Release,
                 )
             assertThat(eventLogSmallBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
         }
     }
 
@@ -6171,20 +6130,17 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox)
+            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox)
+            Offset(0f, -justOutsideMinimumTouchTargetOfChildBox),
         )
 
         rule.runOnUiThread {
             assertThat(eventLogTopBox)
-                .containsExactly(
-                    PointerEventType.Press,
-                    PointerEventType.Release,
-                )
+                .containsExactly(PointerEventType.Press, PointerEventType.Release)
             assertThat(eventLogBottomBox).isEmpty()
         }
 
@@ -6193,12 +6149,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox)
+            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             offsetBoxCoords,
-            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox)
+            Offset(0f, -edgeOfMinimumTouchTargetOfChildBox),
         )
 
         rule.runOnUiThread {
@@ -6313,7 +6269,7 @@ class AndroidPointerInputTest {
                             }
                         }
                     },
-                    verticalArrangement = Arrangement.spacedBy(spaceBetweenElementsInColumnDp)
+                    verticalArrangement = Arrangement.spacedBy(spaceBetweenElementsInColumnDp),
                 ) {
                     Box(
                         Modifier.size(40.dp) // Below minimum touch target 48.dp
@@ -6364,12 +6320,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             bottomBoxCoordinates!!,
-            Offset(0f, negativeHalfSpaceTriggersBottomBox)
+            Offset(0f, negativeHalfSpaceTriggersBottomBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             bottomBoxCoordinates!!,
-            Offset(0f, negativeHalfSpaceTriggersBottomBox)
+            Offset(0f, negativeHalfSpaceTriggersBottomBox),
         )
 
         rule.runOnUiThread {
@@ -6381,12 +6337,12 @@ class AndroidPointerInputTest {
         dispatchTouchEvent(
             ACTION_DOWN,
             bottomBoxCoordinates!!,
-            Offset(0f, negativeHalfSpaceMinusOnePixelTriggersTopBox)
+            Offset(0f, negativeHalfSpaceMinusOnePixelTriggersTopBox),
         )
         dispatchTouchEvent(
             ACTION_UP,
             bottomBoxCoordinates!!,
-            Offset(0f, negativeHalfSpaceMinusOnePixelTriggersTopBox)
+            Offset(0f, negativeHalfSpaceMinusOnePixelTriggersTopBox),
         )
 
         rule.runOnUiThread {
@@ -7021,7 +6977,7 @@ class AndroidPointerInputTest {
             1,
             0,
             arrayOf(PointerProperties(0)),
-            arrayOf(PointerCoords(locationInWindow[0].toFloat(), locationInWindow[1].toFloat()))
+            arrayOf(PointerCoords(locationInWindow[0].toFloat(), locationInWindow[1].toFloat())),
         )
 }
 
@@ -7059,7 +7015,7 @@ private class ConsumeMovementGestureFilter(val consumeMovement: Boolean) : Point
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (consumeMovement) {
             pointerEvent.changes.fastForEach { it.consume() }
@@ -7075,7 +7031,7 @@ private class ConsumeDownChangeFilter : PointerInputFilter() {
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         pointerEvent.changes.fastForEach {
             if (it.changedToDown()) {
@@ -7094,7 +7050,7 @@ private class LogEventsGestureFilter(val log: MutableList<List<PointerInputChang
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (pass == PointerEventPass.Initial) {
             log.add(pointerEvent.changes.map { it.copy() })
@@ -7155,7 +7111,7 @@ private fun MotionEvent(
         0,
         0,
         source,
-        0
+        0,
     )
 }
 
@@ -7177,7 +7133,7 @@ private fun MotionEvent(
         )
             MotionEvent.BUTTON_PRIMARY
         else 0,
-    classification: Int
+    classification: Int,
 ): MotionEvent {
     val source =
         if (pointerProperties[0].toolType == TOOL_TYPE_MOUSE) {
@@ -7201,7 +7157,7 @@ private fun MotionEvent(
         source,
         0,
         0,
-        classification
+        classification,
     )!!
 }
 

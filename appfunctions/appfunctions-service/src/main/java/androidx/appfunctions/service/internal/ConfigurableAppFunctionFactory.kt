@@ -35,9 +35,7 @@ import java.lang.reflect.InvocationTargetException
  * the enclosing class.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ConfigurableAppFunctionFactory<T : Any>(
-    private val context: Context,
-) {
+public class ConfigurableAppFunctionFactory<T : Any>(private val context: Context) {
     public fun createEnclosingClass(enclosingClass: Class<T>): T {
         val configurationProvider = context.applicationContext as? AppFunctionConfiguration.Provider
         val customFactory =
@@ -51,7 +49,8 @@ public class ConfigurableAppFunctionFactory<T : Any>(
         }
 
         val instance = customFactory.invoke()
-        @Suppress("UNCHECKED_CAST") return instance as T
+        @Suppress("UNCHECKED_CAST")
+        return instance as T
     }
 
     /** Thrown when unable to instantiate the AppFunction enclosing class. */
@@ -71,7 +70,7 @@ public class ConfigurableAppFunctionFactory<T : Any>(
                     "$enclosingClass requires additional parameter to create. " +
                         "Please either remove the additional parameters or implement the " +
                         "factory and provide it in " +
-                        "${AppFunctionConfiguration::class.qualifiedName}",
+                        "${AppFunctionConfiguration::class.qualifiedName}"
                 )
             } catch (_: InstantiationException) {
                 throw AppFunctionInstantiationException(

@@ -74,7 +74,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     supportsNativeFence = eglManager.supportsNativeAndroidFence()
                 }
@@ -83,7 +83,7 @@ class GLFrameBufferRendererTest {
                     targetSurfaceControl: SurfaceControlCompat,
                     transaction: SurfaceControlCompat.Transaction,
                     frameBuffer: FrameBuffer,
-                    syncFence: SyncFenceCompat?
+                    syncFence: SyncFenceCompat?,
                 ) {
                     fence = syncFence
                     latch.countDown()
@@ -130,7 +130,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     // NO-OP
                 }
@@ -170,7 +170,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     // NO-OP
                 }
@@ -210,7 +210,7 @@ class GLFrameBufferRendererTest {
                 1, // height
                 HardwareBuffer.RGBA_FP16, // format
                 1, // layers
-                flags // flags
+                flags, // flags
             )
         ) {
             return
@@ -224,7 +224,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     // NO-OP
                 }
@@ -233,7 +233,7 @@ class GLFrameBufferRendererTest {
                     targetSurfaceControl: SurfaceControlCompat,
                     transaction: SurfaceControlCompat.Transaction,
                     frameBuffer: FrameBuffer,
-                    syncFence: SyncFenceCompat?
+                    syncFence: SyncFenceCompat?,
                 ) {
                     pixelFormat = frameBuffer.hardwareBuffer.format
                     latch.countDown()
@@ -281,7 +281,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     // NO-OP
                 }
@@ -290,7 +290,7 @@ class GLFrameBufferRendererTest {
                     targetSurfaceControl: SurfaceControlCompat,
                     transaction: SurfaceControlCompat.Transaction,
                     frameBuffer: FrameBuffer,
-                    syncFence: SyncFenceCompat?
+                    syncFence: SyncFenceCompat?,
                 ) {
                     actualUsageFlags = frameBuffer.hardwareBuffer.usage
                     latch.countDown()
@@ -381,7 +381,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     assertEquals(surfaceWidth, width)
                     assertEquals(surfaceHeight, height)
@@ -394,7 +394,7 @@ class GLFrameBufferRendererTest {
                         0f,
                         bufferInfo.height.toFloat(),
                         -1f,
-                        1f
+                        1f,
                     )
                     Matrix.multiplyMM(mProjectionMatrix, 0, mOrthoMatrix, 0, transform, 0)
                     Rectangle().draw(mProjectionMatrix, Color.RED, 0f, 0f, 100f, 100f)
@@ -404,7 +404,7 @@ class GLFrameBufferRendererTest {
                     targetSurfaceControl: SurfaceControlCompat,
                     transaction: SurfaceControlCompat.Transaction,
                     frameBuffer: FrameBuffer,
-                    syncFence: SyncFenceCompat?
+                    syncFence: SyncFenceCompat?,
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         transaction.addTransactionCommittedListener(
@@ -413,7 +413,7 @@ class GLFrameBufferRendererTest {
                                 override fun onTransactionCommitted() {
                                     renderLatch.countDown()
                                 }
-                            }
+                            },
                         )
                     } else {
                         renderLatch.countDown()
@@ -440,7 +440,7 @@ class GLFrameBufferRendererTest {
                                             holder: SurfaceHolder,
                                             format: Int,
                                             width: Int,
-                                            height: Int
+                                            height: Int,
                                         ) {
                                             surfaceWidth = width
                                             surfaceHeight = height
@@ -513,7 +513,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     GLES20.glViewport(0, 0, bufferInfo.width, bufferInfo.height)
                     Matrix.orthoM(
@@ -524,7 +524,7 @@ class GLFrameBufferRendererTest {
                         0f,
                         bufferInfo.height.toFloat(),
                         -1f,
-                        1f
+                        1f,
                     )
                     Matrix.multiplyMM(mProjectionMatrix, 0, mOrthoMatrix, 0, transform, 0)
                     Rectangle().draw(mProjectionMatrix, Color.RED, 0f, 0f, 100f, 100f)
@@ -534,7 +534,7 @@ class GLFrameBufferRendererTest {
                     targetSurfaceControl: SurfaceControlCompat,
                     transaction: SurfaceControlCompat.Transaction,
                     frameBuffer: FrameBuffer,
-                    syncFence: SyncFenceCompat?
+                    syncFence: SyncFenceCompat?,
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         transaction.addTransactionCommittedListener(
@@ -543,7 +543,7 @@ class GLFrameBufferRendererTest {
                                 override fun onTransactionCommitted() {
                                     renderLatch.countDown()
                                 }
-                            }
+                            },
                         )
                     } else {
                         renderLatch.countDown()
@@ -562,7 +562,7 @@ class GLFrameBufferRendererTest {
                         surfaceView = target
                         it.setContentView(
                             target,
-                            FrameLayout.LayoutParams(renderWidth, renderHeight)
+                            FrameLayout.LayoutParams(renderWidth, renderHeight),
                         )
                         renderer = GLFrameBufferRenderer.Builder(surfaceView!!, callbacks).build()
                     }
@@ -592,7 +592,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     renderLatch.countDown()
                 }
@@ -635,14 +635,14 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     renderLatch.countDown()
                 }
 
                 override fun onBufferReleased(
                     frameBuffer: FrameBuffer,
-                    releaseFence: SyncFenceCompat?
+                    releaseFence: SyncFenceCompat?,
                 ) {
                     bufferReleasedLatch.countDown()
                 }
@@ -686,7 +686,7 @@ class GLFrameBufferRendererTest {
                     width: Int,
                     height: Int,
                     bufferInfo: BufferInfo,
-                    transform: FloatArray
+                    transform: FloatArray,
                 ) {
                     // NO-OP
                 }

@@ -70,7 +70,7 @@ class StylingOptionsTests {
             launchFragmentInContainer(
                 fragmentArgs = styledFragment.arguments,
                 themeResId = themeResId,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             ) {
                 styledFragment
             }
@@ -110,7 +110,7 @@ class StylingOptionsTests {
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}"
+                "Unable to load document due to ${it.documentError?.message}",
             )
         }
 
@@ -142,24 +142,24 @@ class StylingOptionsTests {
 
             assertEquals(
                 round(THUMB_DRAWABLE_HEIGHT.dpToPx(context)).toInt(),
-                fastScrollDrawer?.thumbDrawable?.intrinsicHeight
+                fastScrollDrawer?.thumbDrawable?.intrinsicHeight,
             )
             assertEquals(
                 round(THUMB_DRAWABLE_WIDTH.dpToPx(context)).toInt(),
-                fastScrollDrawer?.thumbDrawable?.intrinsicWidth
+                fastScrollDrawer?.thumbDrawable?.intrinsicWidth,
             )
             assertEquals(
                 round(THUMB_END_MARGIN.dpToPx(context)).toInt(),
-                fastScrollDrawer?.thumbMarginEnd
+                fastScrollDrawer?.thumbMarginEnd,
             )
 
             assertEquals(
                 round(PAGE_INDICATOR_DRAWABLE_HEIGHT.dpToPx(context)).toInt(),
-                fastScrollDrawer?.pageIndicatorBackground?.intrinsicHeight
+                fastScrollDrawer?.pageIndicatorBackground?.intrinsicHeight,
             )
             assertEquals(
                 round(PAGE_INDICATOR_END_MARGIN.dpToPx(context)).toInt(),
-                fastScrollDrawer?.pageIndicatorMarginEnd
+                fastScrollDrawer?.pageIndicatorMarginEnd,
             )
         }
     }

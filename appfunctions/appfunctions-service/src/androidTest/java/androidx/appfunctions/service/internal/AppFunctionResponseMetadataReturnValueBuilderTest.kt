@@ -39,16 +39,13 @@ import org.junit.runner.RunWith
 class AppFunctionResponseMetadataReturnValueBuilderTest {
     @Test
     fun testUnsafeBuildExecuteAppFunctionResponse_buildSingleResponse(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val result = 100L
         val responseMetadata =
             AppFunctionResponseMetadata(
                 valueType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_LONG,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = isNullable)
             )
 
         val returnValue = responseMetadata.unsafeBuildReturnValue(result)
@@ -62,11 +59,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result: Double = 5.0
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_LONG,
-                        isNullable = false,
-                    )
+                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
@@ -79,11 +72,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_DOUBLE,
-                        isNullable = false,
-                    )
+                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
@@ -96,11 +85,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_STRING,
-                        isNullable = true,
-                    )
+                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = true)
             )
 
         val returnValue = responseMetadata.unsafeBuildReturnValue(result)
@@ -123,7 +108,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
                                 type = TYPE_DOUBLE,
                                 isNullable = false,
                             ),
-                        isNullable = isNullable
+                        isNullable = isNullable,
                     )
             )
 
@@ -148,7 +133,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
                                 type = TYPE_STRING,
                                 isNullable = false,
                             ),
-                        isNullable = false
+                        isNullable = false,
                     )
             )
 
@@ -169,7 +154,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
                                 type = TYPE_BOOLEAN,
                                 isNullable = false,
                             ),
-                        isNullable = false
+                        isNullable = false,
                     )
             )
 
@@ -186,11 +171,8 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
                 valueType =
                     AppFunctionArrayTypeMetadata(
                         itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_LONG,
-                                isNullable = false,
-                            ),
-                        isNullable = true
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                        isNullable = true,
                     )
             )
 

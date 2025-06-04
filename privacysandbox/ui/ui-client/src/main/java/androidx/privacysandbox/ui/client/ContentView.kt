@@ -32,7 +32,7 @@ import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
  */
 internal class ContentView(
     context: Context,
-    val remoteSessionController: IRemoteSessionController
+    val remoteSessionController: IRemoteSessionController,
 ) : SurfaceView(context) {
     private var currentGestureMotionEventTransferCallback: IMotionEventTransferCallback? = null
     private var requestDisallowInterceptHandler: Handler? = null
@@ -65,7 +65,7 @@ internal class ContentView(
         remoteSessionController.notifyMotionEvent(
             motionEvent,
             eventTargetFrameTime,
-            currentGestureMotionEventTransferCallback
+            currentGestureMotionEventTransferCallback,
         )
         return true
     }

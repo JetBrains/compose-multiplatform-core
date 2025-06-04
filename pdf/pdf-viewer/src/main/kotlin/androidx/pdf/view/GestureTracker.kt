@@ -160,7 +160,7 @@ internal class GestureTracker(context: Context) {
     fun feed(
         event: MotionEvent,
         viewParent: ViewParent? = null,
-        contentAtEdge: Boolean = false
+        contentAtEdge: Boolean = false,
     ): Boolean {
         parent = if (contentAtEdge) viewParent else null
         if (lastEvent?.matches(event) == true) {

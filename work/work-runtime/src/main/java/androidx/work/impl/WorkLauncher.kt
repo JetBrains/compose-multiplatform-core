@@ -47,10 +47,8 @@ interface WorkLauncher {
         stopWork(workSpecId, reason)
 }
 
-class WorkLauncherImpl(
-    val processor: Processor,
-    val workTaskExecutor: TaskExecutor,
-) : WorkLauncher {
+class WorkLauncherImpl(val processor: Processor, val workTaskExecutor: TaskExecutor) :
+    WorkLauncher {
     override fun startWork(workSpecId: StartStopToken, runtimeExtras: RuntimeExtras?) {
         workTaskExecutor.executeOnTaskThread { processor.startWork(workSpecId, runtimeExtras) }
     }

@@ -57,9 +57,9 @@ class OffsetInformationTest : ToolingTest() {
                 "<get-shapes>" to 2070,
                 "Surface" to 2021,
                 "TextButton" to 2102,
-                "Row" to 2185
+                "Row" to 2185,
             ),
-            offsets
+            offsets,
         )
     }
 
@@ -94,9 +94,9 @@ class OffsetInformationTest : ToolingTest() {
                 "<get-shapes>" to false,
                 "Surface" to false,
                 "TextButton" to false,
-                "Row" to true
+                "Row" to true,
             ),
-            inlines
+            inlines,
         )
     }
 }
@@ -115,10 +115,10 @@ fun Group.all(): Iterable<Group> {
 fun <T> assertArrayEquals(
     expected: Collection<T>,
     actual: Collection<T>,
-    transform: (T) -> String = { "$it" }
+    transform: (T) -> String = { "$it" },
 ) {
     TestCase.assertEquals(
         expected.joinToString("\n", transform = transform),
-        actual.joinToString("\n", transform = transform)
+        actual.joinToString("\n", transform = transform),
     )
 }

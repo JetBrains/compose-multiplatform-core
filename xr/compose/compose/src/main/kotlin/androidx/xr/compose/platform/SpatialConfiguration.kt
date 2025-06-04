@@ -136,7 +136,7 @@ public sealed interface SpatialConfiguration {
 
         internal fun getOrCreate(
             session: Session,
-            hasXrSpatialFeature: Boolean
+            hasXrSpatialFeature: Boolean,
         ): SpatialConfiguration =
             sessionInstances.getOrPut(session) {
                 SessionSpatialConfiguration(session, hasXrSpatialFeature)

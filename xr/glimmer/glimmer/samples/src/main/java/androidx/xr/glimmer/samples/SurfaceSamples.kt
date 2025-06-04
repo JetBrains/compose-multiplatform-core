@@ -22,33 +22,34 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.surface
 
 @Composable
 fun SurfaceSampleUsage() {
     LazyColumn(
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { SurfaceSample() }
     }
 }
 
-@Preview
 @Sampled
 @Composable
 fun SurfaceSample() {
     Box(Modifier.surface().padding(horizontal = 24.dp, vertical = 20.dp)) {
-        BasicText(
-            "This is a surface",
-            style = GlimmerTheme.typography.bodySmall.copy(color = Color.White)
-        )
+        Text("This is a surface")
     }
+}
+
+@Preview
+@Composable
+private fun SurfacePreview() {
+    GlimmerTheme { SurfaceSample() }
 }

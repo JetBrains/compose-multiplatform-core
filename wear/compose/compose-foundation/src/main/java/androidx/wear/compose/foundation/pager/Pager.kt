@@ -115,7 +115,7 @@ public fun HorizontalPager(
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
     rotaryScrollableBehavior: RotaryScrollableBehavior? = null,
-    content: @Composable PagerScope.(page: Int) -> Unit
+    content: @Composable PagerScope.(page: Int) -> Unit,
 ) {
     var allowPaging by remember { mutableStateOf(true) }
     var pagerCoordinates = remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -130,7 +130,7 @@ public fun HorizontalPager(
                     .rotaryScrollable(
                         behavior = rotaryScrollableBehavior,
                         focusRequester = focusRequester,
-                        reverseDirection = reverseLayout
+                        reverseDirection = reverseLayout,
                     )
             else Modifier
 
@@ -151,7 +151,7 @@ public fun HorizontalPager(
                             allowPaging =
                                 !gestureInclusion.ignoreGestureStart(
                                     firstDown.position,
-                                    pagerCoordinates.value!!
+                                    pagerCoordinates.value!!,
                                 )
                         }
                     }
@@ -160,7 +160,7 @@ public fun HorizontalPager(
                             if (allowPaging) {
                                 ScrollAxisRange(
                                     value = { state.currentPage.toFloat() },
-                                    maxValue = { state.pageCount.toFloat() }
+                                    maxValue = { state.pageCount.toFloat() },
                                 )
                             } else {
                                 // signals system swipe to dismiss that it can take over
@@ -249,7 +249,7 @@ public fun VerticalPager(
     key: ((index: Int) -> Any)? = null,
     rotaryScrollableBehavior: RotaryScrollableBehavior? =
         RotaryScrollableDefaults.snapBehavior(state),
-    content: @Composable PagerScope.(page: Int) -> Unit
+    content: @Composable PagerScope.(page: Int) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     val rotaryModifier =
@@ -258,7 +258,7 @@ public fun VerticalPager(
                 .rotaryScrollable(
                     behavior = rotaryScrollableBehavior,
                     focusRequester = focusRequester,
-                    reverseDirection = reverseLayout
+                    reverseDirection = reverseLayout,
                 )
         else Modifier
 
@@ -310,7 +310,7 @@ public object PagerDefaults {
     @Composable
     public fun gestureInclusion(
         state: PagerState,
-        edgeZoneFraction: Float = LeftEdgeZoneFraction
+        edgeZoneFraction: Float = LeftEdgeZoneFraction,
     ): GestureInclusion {
         val touchExplorationStateProvider = remember { DefaultTouchExplorationStateProvider() }
         val touchExplorationServicesEnabled by touchExplorationStateProvider.touchExplorationState()
@@ -319,7 +319,7 @@ public object PagerDefaults {
             object : GestureInclusion {
                 override fun ignoreGestureStart(
                     offset: Offset,
-                    layoutCoordinates: LayoutCoordinates
+                    layoutCoordinates: LayoutCoordinates,
                 ): Boolean {
                     if (touchExplorationServicesEnabled || state.currentPage != 0) {
                         return false
@@ -368,7 +368,7 @@ public object PagerDefaults {
         maxFlingPages: Int = 1,
         decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay(),
         snapAnimationSpec: AnimationSpec<Float> = PagerDefaults.SnapAnimationSpec,
-        @FloatRange(from = 0.0, to = 1.0) snapPositionalThreshold: Float = 0.5f
+        @FloatRange(from = 0.0, to = 1.0) snapPositionalThreshold: Float = 0.5f,
     ): TargetedFlingBehavior {
         return ComposePagerDefaults.flingBehavior(
             state = state.pagerState,

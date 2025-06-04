@@ -52,7 +52,7 @@ fun LazyColumnDemo() {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(60.dp).background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Add a single item
         items(100) { index ->
@@ -77,7 +77,7 @@ private fun AlphaButton(frameRate: Float) {
         Text(
             text = "Click Me for alpha change $frameRate",
             color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-            modifier = Modifier.requestedFrameRate(frameRate)
+            modifier = Modifier.requestedFrameRate(frameRate),
         )
     }
 }

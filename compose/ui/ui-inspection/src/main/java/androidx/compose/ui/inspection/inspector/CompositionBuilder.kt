@@ -71,9 +71,7 @@ private val unwantedCalls =
 
 /** Builder of [InspectorNode] trees from [root] compositions. */
 @OptIn(UiToolingDataApi::class)
-internal class CompositionBuilder(
-    private val info: SharedBuilderData,
-) : SharedBuilderData by info {
+internal class CompositionBuilder(private val info: SharedBuilderData) : SharedBuilderData by info {
     private var ownerView: View? = null
     private var subCompositionsFound = 0
     private val subCompositions = mutableMapOf<Any?, MutableList<SubCompositionResult>>()
@@ -88,7 +86,7 @@ internal class CompositionBuilder(
     fun convert(
         composition: CompositionInstance,
         root: CompositionData,
-        childCompositions: List<SubCompositionResult>
+        childCompositions: List<SubCompositionResult>,
     ): SubCompositionResult {
         reset(root, childCompositions)
         val node = root.mapTree(::convert, contextCache) ?: newNode()
@@ -132,7 +130,7 @@ internal class CompositionBuilder(
     private fun convert(
         group: CompositionGroup,
         context: SourceContext,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ): MutableInspectorNode {
         val parent = parse(group, context, children)
         addToParent(parent, children)
@@ -144,10 +142,7 @@ internal class CompositionBuilder(
      * Adds the nodes in [input] to the children of [parentNode]. Nodes without a reference to a
      * wanted Composable are skipped. A single skipped render id will be added to [parentNode].
      */
-    private fun addToParent(
-        parentNode: MutableInspectorNode,
-        input: List<MutableInspectorNode>,
-    ) {
+    private fun addToParent(parentNode: MutableInspectorNode, input: List<MutableInspectorNode>) {
         // If we're adding an unwanted node from the `input` to the parent node and it has a
         // View ID, then assign it to the parent view so that we don't lose the context that we
         // found a View as a descendant of the parent node. Most likely, there were one or more
@@ -239,7 +234,7 @@ internal class CompositionBuilder(
     private fun parse(
         group: CompositionGroup,
         context: SourceContext,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ): MutableInspectorNode {
         val node = newNode()
         node.name = context.name ?: ""
@@ -318,7 +313,7 @@ internal class CompositionBuilder(
             left = min(left, other.left),
             top = min(top, other.top),
             bottom = max(bottom, other.bottom),
-            right = max(right, other.right)
+            right = max(right, other.right),
         )
     }
 
@@ -342,7 +337,7 @@ internal class CompositionBuilder(
      */
     private fun checkCapturingSubCompositions(
         node: MutableInspectorNode,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ) {
         if (capturingSubCompositions.isEmpty()) {
             return
@@ -368,7 +363,7 @@ internal class CompositionBuilder(
 
     private fun addAll(
         first: MutableList<SubCompositionResult>?,
-        second: MutableList<SubCompositionResult>?
+        second: MutableList<SubCompositionResult>?,
     ): MutableList<SubCompositionResult>? =
         when {
             first == null -> second
@@ -382,7 +377,7 @@ internal class CompositionBuilder(
 
     private fun copyNodeToAllSubCompositions(
         node: MutableInspectorNode,
-        subCompositions: List<SubCompositionResult>
+        subCompositions: List<SubCompositionResult>,
     ) {
         subCompositions.forEach { subComposition ->
             val copy = newNode(node)
@@ -405,7 +400,7 @@ internal class CompositionBuilder(
     private fun parseLayoutInfo(
         layoutInfo: LayoutInfo,
         context: SourceContext,
-        node: MutableInspectorNode
+        node: MutableInspectorNode,
     ): MutableInspectorNode {
         val box = context.bounds
         val size = box.size.toSize()
@@ -548,7 +543,7 @@ internal class CompositionBuilder(
      */
     private fun updateTree(
         node: MutableInspectorNode,
-        modification: (MutableInspectorNode) -> Unit
+        modification: (MutableInspectorNode) -> Unit,
     ) {
         val oldChildren = node.children.toList()
         node.children.clear()
@@ -558,7 +553,7 @@ internal class CompositionBuilder(
 
     private fun updateTree(
         node: InspectorNode,
-        modification: (MutableInspectorNode) -> Unit
+        modification: (MutableInspectorNode) -> Unit,
     ): InspectorNode {
         val newNode = newNode()
         newNode.shallowCopy(node)
@@ -620,7 +615,7 @@ internal class SubCompositionResult(
      * The index of this reusable sub-composition or -1 if this is not reusable content. Example: an
      * item in a LazyColumn.
      */
-    val listIndex: Int
+    val listIndex: Int,
 ) {
     /**
      * The identity of the parent [CompositionGroup] where this composition belongs in a parent

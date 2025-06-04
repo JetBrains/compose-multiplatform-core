@@ -99,7 +99,7 @@ class KeylineSnapPositionTest {
             keylineListOf(
                 carouselMainAxisSize = 1000f,
                 itemSpacing = 0f,
-                carouselAlignment = CarouselAlignment.Center
+                carouselAlignment = CarouselAlignment.Center,
             ) {
                 add(xSmallSize, isAnchor = true)
                 add(smallSize)
@@ -115,7 +115,7 @@ class KeylineSnapPositionTest {
             availableSpace = 1000f,
             itemSpacing = 0f,
             beforeContentPadding = 0f,
-            afterContentPadding = 0f
+            afterContentPadding = 0f,
         )
     }
 
@@ -137,7 +137,7 @@ class KeylineSnapPositionTest {
             keylineListOf(
                 carouselMainAxisSize = 1000f,
                 itemSpacing = 0f,
-                carouselAlignment = CarouselAlignment.Start
+                carouselAlignment = CarouselAlignment.Start,
             ) {
                 add(xSmallSize, isAnchor = true)
                 add(largeSize)
@@ -152,7 +152,7 @@ class KeylineSnapPositionTest {
             availableSpace = 1000f,
             itemSpacing = 0f,
             beforeContentPadding = 0f,
-            afterContentPadding = 0f
+            afterContentPadding = 0f,
         )
     }
 
@@ -182,7 +182,7 @@ class KeylineSnapPositionTest {
             availableSpace = 1000f,
             itemSpacing = 0f,
             beforeContentPadding = 0f,
-            afterContentPadding = 0f
+            afterContentPadding = 0f,
         )
     }
 }

@@ -48,10 +48,16 @@ package androidx.xr.runtime.openxr {
     method public void update(long xrTime);
     property public android.os.IBinder anchorToken;
     property public long nativePointer;
-    property public androidx.xr.runtime.internal.Anchor.PersistenceState persistenceState;
+    property @GuardedBy("lock") public androidx.xr.runtime.internal.Anchor.PersistenceState persistenceState;
     property public androidx.xr.runtime.math.Pose pose;
     property public androidx.xr.runtime.TrackingState trackingState;
-    property public java.util.UUID? uuid;
+    property @GuardedBy("lock") public java.util.UUID? uuid;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDevice implements androidx.xr.runtime.internal.ArDevice {
+    method public androidx.xr.runtime.math.Pose getDevicePose();
+    method public void update(long xrTime);
+    property public androidx.xr.runtime.math.Pose devicePose;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEarth implements androidx.xr.runtime.internal.Earth {
@@ -86,6 +92,7 @@ package androidx.xr.runtime.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPerceptionManager implements androidx.xr.runtime.internal.PerceptionManager {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.runtime.openxr.OpenXrDevice getArDevice();
     method public androidx.xr.runtime.openxr.OpenXrEarth getEarth();
     method public androidx.xr.runtime.internal.Hand getLeftHand();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
@@ -96,6 +103,7 @@ package androidx.xr.runtime.openxr {
     method public androidx.xr.runtime.internal.Anchor loadAnchorFromNativePointer(long nativePointer);
     method public void unpersistAnchor(java.util.UUID uuid);
     method public void update(long xrTime);
+    property public androidx.xr.runtime.openxr.OpenXrDevice arDevice;
     property public androidx.xr.runtime.openxr.OpenXrEarth earth;
     property public androidx.xr.runtime.internal.Hand leftHand;
     property public androidx.xr.runtime.internal.Hand rightHand;
@@ -137,6 +145,14 @@ package androidx.xr.runtime.openxr {
   }
 
   public static final class OpenXrRuntimeFactory.Companion {
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrViewCamera implements androidx.xr.runtime.internal.ViewCamera {
+    method public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method public androidx.xr.runtime.math.Pose getPose();
+    method public void update(long xrTime);
+    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.Pose pose;
   }
 
 }

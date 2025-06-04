@@ -135,7 +135,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -188,7 +188,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -205,39 +205,41 @@ interface CredentialManager {
      * @throws GetCredentialException If the request fails
      */
     @RequiresApi(34)
-    suspend fun prepareGetCredential(
-        request: GetCredentialRequest,
-    ): PrepareGetCredentialResponse = suspendCancellableCoroutine { continuation ->
-        // Any Android API that supports cancellation should be configured to propagate
-        // coroutine cancellation as follows:
-        val canceller = CancellationSignal()
-        continuation.invokeOnCancellation { canceller.cancel() }
+    suspend fun prepareGetCredential(request: GetCredentialRequest): PrepareGetCredentialResponse =
+        suspendCancellableCoroutine { continuation ->
+            // Any Android API that supports cancellation should be configured to propagate
+            // coroutine cancellation as follows:
+            val canceller = CancellationSignal()
+            continuation.invokeOnCancellation { canceller.cancel() }
 
-        val callback =
-            object :
-                CredentialManagerCallback<PrepareGetCredentialResponse, GetCredentialException> {
-                override fun onResult(result: PrepareGetCredentialResponse) {
-                    if (continuation.isActive) {
-                        continuation.resume(result)
+            val callback =
+                object :
+                    CredentialManagerCallback<
+                        PrepareGetCredentialResponse,
+                        GetCredentialException,
+                    > {
+                    override fun onResult(result: PrepareGetCredentialResponse) {
+                        if (continuation.isActive) {
+                            continuation.resume(result)
+                        }
+                    }
+
+                    override fun onError(e: GetCredentialException) {
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(e)
+                        }
                     }
                 }
 
-                override fun onError(e: GetCredentialException) {
-                    if (continuation.isActive) {
-                        continuation.resumeWithException(e)
-                    }
-                }
-            }
-
-        prepareGetCredentialAsync(
-            request,
-            canceller,
-            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
-            // handle getting to the right thread or pool via the ContinuationInterceptor.
-            Runnable::run,
-            callback
-        )
-    }
+            prepareGetCredentialAsync(
+                request,
+                canceller,
+                // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+                // handle getting to the right thread or pool via the ContinuationInterceptor.
+                Runnable::run,
+                callback,
+            )
+        }
 
     /**
      * Registers a user credential that can be used to authenticate the user to the app in the
@@ -283,7 +285,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -333,7 +335,7 @@ interface CredentialManager {
                 // Use a direct executor to avoid extra dispatch. Resuming the continuation will
                 // handle getting to the right thread or pool via the ContinuationInterceptor.
                 Runnable::run,
-                callback
+                callback,
             )
         }
 

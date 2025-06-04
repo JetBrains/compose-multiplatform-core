@@ -70,7 +70,7 @@ class ViewfinderTest {
             with(LocalDensity.current) {
                 TestViewfinder(
                     modifier = Modifier.size(540.toDp(), 960.toDp()),
-                    coordinateTransformer = coordinateTransformer
+                    coordinateTransformer = coordinateTransformer,
                 ) {}
             }
         }
@@ -111,9 +111,9 @@ class ViewfinderTest {
                             cropRectLeft = 0f,
                             cropRectTop = 0f,
                             cropRectRight = 270f,
-                            cropRectBottom = 480f
+                            cropRectBottom = 480f,
                         ),
-                    coordinateTransformer = coordinateTransformer
+                    coordinateTransformer = coordinateTransformer,
                 ) {}
             }
         }
@@ -192,7 +192,7 @@ class ViewfinderTest {
             ViewfinderSurfaceRequest(
                 width = ViewfinderTestParams.Default.sourceResolution.width,
                 height = ViewfinderTestParams.Default.sourceResolution.height,
-                implementationMode = implementationMode
+                implementationMode = implementationMode,
             )
         rule.setContent {
             TestViewfinder(surfaceRequest = surfaceRequest) {
@@ -225,7 +225,7 @@ fun TestViewfinder(
         )
     },
     coordinateTransformer: MutableCoordinateTransformer? = null,
-    onInit: ViewfinderInitScope.() -> Unit
+    onInit: ViewfinderInitScope.() -> Unit,
 ) {
     Column {
         if (showViewfinder) {
@@ -234,7 +234,7 @@ fun TestViewfinder(
                 surfaceRequest = surfaceRequest,
                 transformationInfo = transformationInfo,
                 coordinateTransformer = coordinateTransformer,
-                onInit = onInit
+                onInit = onInit,
             )
         }
     }

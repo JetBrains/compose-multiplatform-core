@@ -31,7 +31,7 @@ import android.view.ViewParent
  */
 internal class FastScrollGestureDetector(
     private val fastScroller: FastScroller,
-    private val gestureHandler: FastScrollGestureHandler
+    private val gestureHandler: FastScrollGestureHandler,
 ) {
     internal var trackingFastScrollGesture: Boolean = false
 

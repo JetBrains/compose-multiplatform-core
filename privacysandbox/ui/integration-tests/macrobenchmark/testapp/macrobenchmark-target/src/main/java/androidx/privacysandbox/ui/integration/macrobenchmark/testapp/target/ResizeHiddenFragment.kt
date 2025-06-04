@@ -29,7 +29,7 @@ class ResizeHiddenFragment : BaseHiddenFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_resize_hidden, container, false)
         resizableBannerView = inflatedView.findViewById(R.id.hidden_resizable_ad_view)

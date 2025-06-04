@@ -31,7 +31,7 @@ public class ForeignKeyBundle(
     @SerialName("onDelete") public val onDelete: String,
     @SerialName("onUpdate") public val onUpdate: String,
     @SerialName("columns") public val columns: List<String>,
-    @SerialName("referencedColumns") public val referencedColumns: List<String>
+    @SerialName("referencedColumns") public val referencedColumns: List<String>,
 ) : SchemaEquality<ForeignKeyBundle> {
 
     override fun isSchemaEqual(other: ForeignKeyBundle): Boolean {

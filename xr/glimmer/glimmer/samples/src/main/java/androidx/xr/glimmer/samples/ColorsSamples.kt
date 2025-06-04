@@ -21,68 +21,57 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.surface
 
-@Preview
 @Composable
 fun ColorsSample() {
     val colors = GlimmerTheme.colors
     LazyColumn(
-        contentPadding = PaddingValues(15.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { ColorItem(colors.primary, colorName = "primary", Color.Black) }
-        item { ColorItem(colors.secondary, colorName = "secondary", Color.Black) }
-        item { ColorItem(colors.negative, colorName = "negative", Color.Black) }
-        item { ColorItem(colors.positive, colorName = "positive", Color.Black) }
-        item { ColorItem(colors.surface, colorName = "surface", Color.White) }
-        item { ColorItem(colors.outline, colorName = "outline", Color.White) }
-        item { ColorItem(colors.outlineVariant, colorName = "outlineVariant", Color.White) }
+        item { ColorItem(colors.primary, colorName = "primary") }
+        item { ColorItem(colors.secondary, colorName = "secondary") }
+        item { ColorItem(colors.negative, colorName = "negative") }
+        item { ColorItem(colors.positive, colorName = "positive") }
+        item { ColorItem(colors.surface, colorName = "surface") }
+        item { ColorItem(colors.outline, colorName = "outline") }
+        item { ColorItem(colors.outlineVariant, colorName = "outlineVariant") }
     }
 }
 
+@Preview
 @Composable
-private fun ColorItem(
-    color: Color,
-    colorName: String,
-    onColor: Color,
-    modifier: Modifier = Modifier
-) {
+private fun ColorsPreview() {
+    GlimmerTheme { ColorsSample() }
+}
+
+@Composable
+private fun ColorItem(color: Color, colorName: String, modifier: Modifier = Modifier) {
     Row(
         modifier
             .surface(
                 shape = RectangleShape,
                 color = color,
-                border = BorderStroke(1.dp, color = Color.White)
+                border = BorderStroke(1.dp, color = Color.White),
             )
-            .fillMaxWidth()
-            .height(50.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(
-            text = colorName,
-            style = TextStyle(color = onColor),
-            modifier = Modifier.padding(10.dp)
-        )
-        BasicText(
-            text = color.toHexString(),
-            style = TextStyle(color = onColor),
-            modifier = Modifier.padding(10.dp)
-        )
+        Text(text = colorName, modifier = Modifier.padding(16.dp))
+        Text(text = color.toHexString(), modifier = Modifier.padding(16.dp))
     }
 }
 

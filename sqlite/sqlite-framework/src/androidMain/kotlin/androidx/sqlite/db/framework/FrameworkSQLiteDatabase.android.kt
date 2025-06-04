@@ -87,7 +87,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                 0 /* SQLiteSession.TRANSACTION_MODE_DEFERRED */,
                 transactionListener,
                 0 /* connectionFlags */,
-                null /* cancellationSignal */
+                null, /* cancellationSignal */
             )
         } else if (transactionListener != null) {
             beginTransactionWithListener(transactionListener)
@@ -192,7 +192,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
             query.sql,
             EMPTY_STRING_ARRAY,
             null,
-            cancellationSignal!!
+            cancellationSignal!!,
         )
     }
 
@@ -220,7 +220,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         conflictAlgorithm: Int,
         values: ContentValues,
         whereClause: String?,
-        whereArgs: Array<out Any?>?
+        whereArgs: Array<out Any?>?,
     ): Int {
         // taken from SQLiteDatabase class.
         require(values.size() != 0) { "Empty values" }
@@ -326,7 +326,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         fun execPerConnectionSQL(
             sQLiteDatabase: SQLiteDatabase,
             sql: String,
-            bindArgs: Array<out Any?>?
+            bindArgs: Array<out Any?>?,
         ) {
             sQLiteDatabase.execPerConnectionSQL(sql, bindArgs)
         }
@@ -358,7 +358,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                             Int::class.java,
                             SQLiteTransactionListener::class.java,
                             Int::class.java,
-                            CancellationSignal::class.java
+                            CancellationSignal::class.java,
                         )
                 } catch (t: Throwable) {
                     null

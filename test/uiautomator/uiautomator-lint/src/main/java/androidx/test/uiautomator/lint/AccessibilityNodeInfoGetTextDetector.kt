@@ -69,8 +69,8 @@ internal constructor(
                     Implementation(
                         AccessibilityNodeInfoGetTextDetector::class.java,
                         EnumSet.of(Scope.JAVA_FILE),
-                        Scope.JAVA_FILE_SCOPE
-                    )
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
             )
     }
 
@@ -97,7 +97,7 @@ internal constructor(
 
 private class TextPropertyVisitor(
     private val context: JavaContext,
-    private val useAccessibilityNodeInfoFullQualifiedClassName: Boolean
+    private val useAccessibilityNodeInfoFullQualifiedClassName: Boolean,
 ) : AbstractUastVisitor() {
 
     companion object {
@@ -176,7 +176,7 @@ private class TextPropertyVisitor(
             issue = ISSUE,
             scope = node,
             location = context.getLocation(node),
-            message = ISSUE.getBriefDescription(format = TextFormat.TEXT)
+            message = ISSUE.getBriefDescription(format = TextFormat.TEXT),
         )
     }
 }

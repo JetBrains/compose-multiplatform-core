@@ -70,7 +70,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                 destination = content,
                 destinationOffset = index + 1,
                 startIndex = index,
-                endIndex = size
+                endIndex = size,
             )
         }
         content[index] = element
@@ -91,7 +91,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                 destination = content,
                 destinationOffset = index + elementsSize,
                 startIndex = index,
-                endIndex = size
+                endIndex = size,
             )
         }
         for (i in elements.indices) {
@@ -115,14 +115,14 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                 destination = content,
                 destinationOffset = index + elementsSize,
                 startIndex = index,
-                endIndex = size
+                endIndex = size,
             )
         }
         elements.content.fastCopyInto(
             destination = content,
             destinationOffset = index,
             startIndex = 0,
-            endIndex = elementsSize
+            endIndex = elementsSize,
         )
         size += elementsSize
         return true
@@ -173,7 +173,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                 destination = content,
                 destinationOffset = index + elementsSize,
                 startIndex = index,
-                endIndex = size
+                endIndex = size,
             )
         }
         elements.forEachIndexed { i, item -> content[index + i] = item }
@@ -702,7 +702,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                 destination = content,
                 destinationOffset = index,
                 startIndex = index + 1,
-                endIndex = size
+                endIndex = size,
             )
         }
         size--
@@ -718,7 +718,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
                     destination = content,
                     destinationOffset = start,
                     startIndex = end,
-                    endIndex = size
+                    endIndex = size,
                 )
             }
             val newSize = size - (end - start)
@@ -904,7 +904,7 @@ internal constructor(@PublishedApi @JvmField internal var content: Array<T?>, si
     private class SubList<T>(
         private val list: MutableList<T>,
         private val start: Int,
-        private var end: Int
+        private var end: Int,
     ) : MutableList<T> {
         override val size: Int
             get() = end - start

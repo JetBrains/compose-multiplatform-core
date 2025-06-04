@@ -56,7 +56,7 @@ public actual object Room {
      */
     public inline fun <reified T : RoomDatabase> databaseBuilder(
         name: String,
-        noinline factory: () -> T = { findDatabaseConstructorAndInitDatabaseImpl(T::class) }
+        noinline factory: () -> T = { findDatabaseConstructorAndInitDatabaseImpl(T::class) },
     ): RoomDatabase.Builder<T> {
         require(name.isNotBlank()) {
             "Cannot build a database with empty name." +

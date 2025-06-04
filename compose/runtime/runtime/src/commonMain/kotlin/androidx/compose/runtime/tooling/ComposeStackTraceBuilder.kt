@@ -55,7 +55,7 @@ internal abstract class ComposeStackTraceBuilder {
 
     private fun extractTraceFrame(
         groupSourceInformation: GroupSourceInformation,
-        targetChild: Any?
+        targetChild: Any?,
     ): ComposeStackTraceFrame? {
         val parsed = groupSourceInformation.sourceInformation?.let { parseSourceInfo(it) }
         if (parsed != null) {
@@ -133,7 +133,7 @@ internal abstract class ComposeStackTraceBuilder {
 
     private fun findInGroupSourceInformation(
         sourceInformation: GroupSourceInformation,
-        target: Any // (Anchor | Int)
+        target: Any, // (Anchor | Int)
     ): Boolean {
         val children = sourceInformation.groups
         if (children == null) {
@@ -254,14 +254,14 @@ private fun parseSourceInfo(data: String): ParsedSourceInformation? {
         lineNumbers = lineInfo,
         fileName = fileName,
         packageHash = packageHash,
-        dataString = data
+        dataString = data,
     )
 }
 
 internal fun SlotWriter.buildTrace(
     child: Any? = null,
     group: Int = currentGroup,
-    parent: Int? = null
+    parent: Int? = null,
 ): List<ComposeStackTraceFrame> {
     val writer = this
     if (!writer.closed && writer.size != 0) {
@@ -305,7 +305,7 @@ internal fun SlotReader.buildTrace(): List<ComposeStackTraceFrame> {
 
 internal fun SlotReader.traceForGroup(
     group: Int,
-    child: Any? /* Anchor | Int | null */
+    child: Any?, /* Anchor | Int | null */
 ): List<ComposeStackTraceFrame> {
     val reader = this
     val traceBuilder = ReaderTraceBuilder(reader)

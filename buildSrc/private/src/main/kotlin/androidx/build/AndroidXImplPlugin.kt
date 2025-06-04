@@ -43,7 +43,6 @@ import androidx.build.studio.StudioTask
 import androidx.build.testConfiguration.addAppApkToTestConfigGeneration
 import androidx.build.testConfiguration.addToModuleInfo
 import androidx.build.testConfiguration.configureTestConfigGeneration
-import androidx.build.transform.configureAarAsJarForConfiguration
 import androidx.build.uptodatedness.TaskUpToDateValidator
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import com.android.build.api.artifact.SingleArtifact
@@ -106,6 +105,7 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.AbstractTestTask
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.build.event.BuildEventsListenerRegistry
@@ -120,6 +120,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -128,6 +129,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -152,7 +155,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         val androidXKmpExtension =
             project.extensions.create<AndroidXMultiplatformExtension>(
                 AndroidXMultiplatformExtension.EXTENSION_NAME,
-                project
+                project,
             )
 
         project.tasks.register(BUILD_ON_SERVER_TASK, DefaultTask::class.java)
@@ -172,14 +175,14 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                     configureWithKotlinMultiplatformAndroidPlugin(
                         project,
                         androidXKmpExtension.agpKmpExtension,
-                        androidXExtension
+                        androidXExtension,
                     )
                 is KotlinBasePluginWrapper ->
                     configureWithKotlinPlugin(
                         project,
                         androidXExtension,
                         plugin,
-                        androidXKmpExtension
+                        androidXKmpExtension,
                     )
                 is PrivacySandboxSdkPlugin -> configureWithPrivacySandboxSdkPlugin(project)
                 is ProtobufPlugin -> configureProtobufPlugin(project)
@@ -208,7 +211,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project.configureMavenArtifactUpload(
             androidXExtension,
             androidXKmpExtension,
-            componentFactory
+            componentFactory,
         ) {
             if (buildFeatures.isIsolatedProjectsEnabled()) return@configureMavenArtifactUpload
             project.addCreateLibraryBuildInfoFileTasks(androidXExtension, androidXKmpExtension)
@@ -235,6 +238,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             }
             project.registerValidateMultiplatformSourceSetNamingTask()
             project.validateLintVersionTestExists(androidXExtension)
+            project.addTestLintK1Task(androidXExtension)
         }
         project.disallowAccidentalAndroidDependenciesInKmpProject(androidXKmpExtension)
         TaskUpToDateValidator.setup(project, registry)
@@ -262,7 +266,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 { getHeadShaProvider(project) },
                 { configurationName: String ->
                     configureAarAsJarForConfiguration(project, configurationName)
-                }
+                },
             )
             .apply { kotlinTarget.set(KotlinTarget.DEFAULT) }
     }
@@ -328,7 +332,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 val zipXmlTask =
                     project.tasks.register(
                         "zipXmlResultsOf$capitalizedTestTaskName",
-                        Zip::class.java
+                        Zip::class.java,
                     ) {
                         it.destinationDirectory.set(xmlReportDestDir)
                         it.archiveFileName.set(archiveName)
@@ -382,7 +386,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             if (evaluatedProject.androidXExtension.shouldPublish()) {
                 tasks.register(
                     CheckKotlinApiTargetTask.TASK_NAME,
-                    CheckKotlinApiTargetTask::class.java
+                    CheckKotlinApiTargetTask::class.java,
                 ) {
                     it.kotlinTarget.set(kotlinVersionProvider)
                     it.outputFile.set(layout.buildDirectory.file("kotlinApiTargetCheckReport.txt"))
@@ -425,7 +429,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project: Project,
         androidXExtension: AndroidXExtension,
         plugin: KotlinBasePluginWrapper,
-        androidXMultiplatformExtension: AndroidXMultiplatformExtension
+        androidXMultiplatformExtension: AndroidXMultiplatformExtension,
     ) {
         val targetsAndroid =
             project.provider {
@@ -462,7 +466,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                             getDefaultTargetJavaVersion(
                                     softwareType = androidXExtension.type,
                                     projectName = project.name,
-                                    targetName = target.name
+                                    targetName = target.name,
                                 )
                                 .toString()
                         }
@@ -527,7 +531,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                             listOf(
                                 "-Xno-param-assertions",
                                 "-Xno-call-assertions",
-                                "-Xno-receiver-assertions"
+                                "-Xno-receiver-assertions",
                             )
                     }
 
@@ -609,7 +613,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
         project.configureJavaCompilationWarnings(
             androidXExtension = androidXExtension,
-            isTestApp = true
+            isTestApp = true,
         )
         project.buildOnServerDependsOnAssembleRelease()
         project.buildOnServerDependsOnLint()
@@ -658,14 +662,41 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             variant.enableMicrobenchmarkInternalDefaults(project)
             project.validateKotlinModuleFiles(
                 variant.name,
-                variant.artifacts.get(SingleArtifact.AAR)
+                variant.artifacts.get(SingleArtifact.AAR),
             )
         }
 
         project.disableStrictVersionConstraints()
         project.configureJavaCompilationWarnings(androidXExtension)
         project.setUpCheckDocsTask(androidXExtension)
+        project.enforceDeviceTestsForMultiplatform()
     }
+
+    // Sets up android instrumented tests and includes common tests regardless of if they have
+    // been explicitly configured.
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    private fun Project.enforceDeviceTestsForMultiplatform() {
+        project.multiplatformExtension?.let {
+            it.targets.withType(KotlinAndroidTarget::class.java).configureEach { androidTarget ->
+                androidTarget.instrumentedTestVariant {
+                    sourceSetTree.set(KotlinSourceSetTree.test)
+                }
+            }
+            val commonTestSourceSet = it.sourceSets.getByName("commonTest")
+            val androidInstrumentedTestSourceSet =
+                it.sourceSets.getByName("androidInstrumentedTest")
+            val commonTestFilesExist = commonTestSourceSet.kotlin.files.isNotEmpty()
+            if (commonTestFilesExist) {
+                androidInstrumentedTestSourceSet.dependsOn(commonTestSourceSet)
+                androidInstrumentedTestSourceSet.dependencies {
+                    implementation(getLibraryByName("testRunner"))
+                }
+            }
+        }
+    }
+
+    private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
+        name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
     private fun AarMetadata.configure(compileSdk: Int?) {
         // Taken from
@@ -694,13 +725,13 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
     private fun configureWithKotlinMultiplatformAndroidPlugin(
         project: Project,
         kotlinMultiplatformAndroidTarget: KotlinMultiplatformAndroidLibraryTarget,
-        androidXExtension: AndroidXExtension
+        androidXExtension: AndroidXExtension,
     ) {
         val kotlinMultiplatformAndroidComponentsExtension =
             project.extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>()
         kotlinMultiplatformAndroidTarget.configureAndroidBaseOptions(
             project,
-            kotlinMultiplatformAndroidComponentsExtension
+            kotlinMultiplatformAndroidComponentsExtension,
         )
         configureCommonAndroidLibrary(
             project,
@@ -726,7 +757,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             project.configureMultiplatformSourcesForAndroid(
                 variant.name,
                 kotlinMultiplatformAndroidTarget,
-                androidXExtension.samplesProjects
+                androidXExtension.samplesProjects,
             )
         }
 
@@ -747,15 +778,15 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 it.isCanBeResolved = false
                 it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
-                    project.objects.named(Usage.JAVA_RUNTIME)
+                    project.objects.named(Usage.JAVA_RUNTIME),
                 )
                 it.attributes.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.LIBRARY)
+                    project.objects.named<Category>(Category.LIBRARY),
                 )
                 it.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named<BuildTypeAttr>("release")
+                    project.objects.named<BuildTypeAttr>("release"),
                 )
                 it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
             }
@@ -772,7 +803,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             val taskProvider =
                 tasks.register(
                     "repackageAarWithResourceApi".appendCapitalized(variant.name),
-                    RepackagingTask::class.java
+                    RepackagingTask::class.java,
                 ) { task ->
                     task.from(blankPublicResourceDir)
                     task.from(zipTree(task.aarFile))
@@ -820,7 +851,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun configureLocalAsbSigning(
         experimentalProperties: MutableMap<String, Any>,
-        keyStore: File
+        keyStore: File,
     ) {
         experimentalProperties[ASB_SIGNING_CONFIG_PROPERTY_NAME] = keyStore.absolutePath
     }
@@ -904,11 +935,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
         val libraryAndroidComponentsExtension =
             project.extensions.getByType<LibraryAndroidComponentsExtension>()
-        configureCommonAndroidLibrary(
-            project,
-            androidXExtension,
-            libraryAndroidComponentsExtension,
-        )
+        configureCommonAndroidLibrary(project, androidXExtension, libraryAndroidComponentsExtension)
 
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
@@ -932,7 +959,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         val copyPublicResourcesDirTask =
             project.tasks.register(
                 "generatePublicResourcesStub",
-                CopyPublicResourcesDirTask::class.java
+                CopyPublicResourcesDirTask::class.java,
             ) { task ->
                 task.buildSrcResDir.set(File(project.getSupportRootFolder(), "buildSrc/res"))
             }
@@ -941,11 +968,11 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 // Standard docs, resource API, and Metalava configuration for AndroidX projects.
                 project.configureProjectForApiTasks(
                     LibraryApiTaskConfig(variant),
-                    androidXExtension
+                    androidXExtension,
                 )
                 project.configureProjectForKzipTasks(
                     LibraryApiTaskConfig(variant),
-                    androidXExtension
+                    androidXExtension,
                 )
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
@@ -958,7 +985,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             val verifyELFRegionAlignmentTaskProvider =
                 project.tasks.register(
                     variant.name + "VerifyELFRegionAlignment",
-                    VerifyELFRegionAlignmentTask::class.java
+                    VerifyELFRegionAlignmentTask::class.java,
                 ) { task ->
                     task.files.from(
                         variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS).map { dir ->
@@ -1069,7 +1096,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun CommonExtension<*, *, *, *, *, *>.configureAndroidBaseOptions(
         project: Project,
-        androidXExtension: AndroidXExtension
+        androidXExtension: AndroidXExtension,
     ) {
         compileOptions.apply {
             sourceCompatibility = VERSION_1_8
@@ -1144,7 +1171,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun KotlinMultiplatformAndroidLibraryTarget.configureAndroidBaseOptions(
         project: Project,
-        componentsExtension: KotlinMultiplatformAndroidComponentsExtension
+        componentsExtension: KotlinMultiplatformAndroidComponentsExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
         val defaultCompileSdk = project.defaultAndroidConfig.compileSdk
@@ -1276,7 +1303,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun ApplicationExtension.configureAndroidApplicationOptions(
         project: Project,
-        androidXExtension: AndroidXExtension
+        androidXExtension: AndroidXExtension,
     ) {
         defaultConfig.apply {
             versionCode = 1
@@ -1290,7 +1317,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
     private fun Project.configureDependencyVerification(
         androidXExtension: AndroidXExtension,
-        taskConfigurator: (TaskProvider<VerifyDependencyVersionsTask>) -> Unit
+        taskConfigurator: (TaskProvider<VerifyDependencyVersionsTask>) -> Unit,
     ) {
         if (buildFeatures.isIsolatedProjectsEnabled()) return
         afterEvaluate {
@@ -1453,7 +1480,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 internal fun getDefaultTargetJavaVersion(
     softwareType: SoftwareType,
     projectName: String? = null,
-    targetName: String? = null
+    targetName: String? = null,
 ): JavaVersion {
     return when {
         // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
@@ -1463,6 +1490,34 @@ internal fun getDefaultTargetJavaVersion(
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
         else -> VERSION_1_8
     }
+}
+
+/** Must be called from a `project.afterEvaluate` block. */
+private fun Project.addTestLintK1Task(androidXExt: AndroidXExtension) {
+    if (!androidXExt.type.isLint()) {
+        return
+    }
+
+    // Make the default ":test" task use lint.use.fir.uast=true, which forces Lint tests to run
+    // using K2.
+    project.tasks.withType<Test>().named("test") { task ->
+        task.systemProperty("lint.use.fir.uast", "true")
+    }
+
+    // Add an additional test task, ":testLintK1", to run Lint tests using K1.
+    //
+    // This task is automatically included in allHostTests and configured (by JavaBasePlugin to run
+    // the Kotlin/Java tests) just by being of type `Test`; no additional code is needed, and the
+    // order (of when we register this task vs., say, allHostTests) does not matter.
+    //
+    // All AndroidX libraries target the Kotlin 2.0 language version, so AndroidX lint checks
+    // invoked via AGP will use K2. However, K1 may still be used: (a) When Lint runs in Android
+    // Studio and IntelliJ, the user can choose K1/K2 mode. (b) The developer can force AGP Lint to
+    // run via K1 for specific modules, which they might do if there are problems with K2.
+    project.tasks.register("testLintK1", Test::class.java).configure { task ->
+        task.systemProperty("lint.use.fir.uast", "false")
+    }
+    project.tasks.named("check") { task -> task.dependsOn("testLintK1") }
 }
 
 private fun Project.validateLintVersionTestExists(androidXExtension: AndroidXExtension) {
@@ -1512,7 +1567,7 @@ internal fun Project.configureTaskTimeouts() {
         setOf(
             ":compose:ui:ui:compileReleaseAndroidTestKotlinAndroid",
             ":compose:foundation:foundation:compileReleaseAndroidTestKotlinAndroid",
-            ":compose:foundation:foundation:integration-tests:lazy-tests:compileReleaseAndroidTestKotlin"
+            ":compose:foundation:foundation:integration-tests:lazy-tests:compileReleaseAndroidTestKotlin",
         )
     tasks.configureEach { t ->
         // skip adding a timeout for some tasks that both take a long time and
@@ -1554,7 +1609,7 @@ private fun Project.configureJavaCompilationWarnings(
             JavaCompileArgumentProvider(
                 isTestApp = isTestApp,
                 failOnDeprecationWarnings = androidXExtension.failOnDeprecationWarnings,
-                usingMaxDepVersions = usingMaxDepVersions()
+                usingMaxDepVersions = usingMaxDepVersions(),
             )
         )
     }

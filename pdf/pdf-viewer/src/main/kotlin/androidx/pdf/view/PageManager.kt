@@ -25,6 +25,7 @@ import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
+import androidx.pdf.models.FormWidgetInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,7 +48,7 @@ internal class PageManager(
     private val maxBitmapSizePx: Point,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
-    isAccessibilityEnabled: Boolean
+    isAccessibilityEnabled: Boolean,
 ) {
     /**
      * Replay at least 1 value in case of an invalidation signal issued while [PdfView] is not
@@ -79,9 +80,13 @@ internal class PageManager(
             }
         }
 
-    internal fun areAllVisiblePagesFullyRendered(visiblePageRange: Range<Int>): Boolean =
+    internal fun areAllVisiblePagesFullyRendered(
+        visiblePageRange: Range<Int>,
+        zoom: Float,
+        visiblePageAreas: SparseArray<Rect>?,
+    ): Boolean =
         (visiblePageRange.lower..visiblePageRange.upper).all { pageNum ->
-            pages[pageNum]?.isFullyRendered() ?: false
+            pages[pageNum]?.isFullyRendered(zoom, visiblePageAreas?.get(pageNum)) ?: false
         }
 
     /**
@@ -125,7 +130,7 @@ internal class PageManager(
                 maxOf(0, visiblePageAreas.keyAt(0) - PAGE_RETENTION_RADIUS),
                 minOf(
                     visiblePageAreas.keyAt(visiblePageAreas.size() - 1) + PAGE_RETENTION_RADIUS,
-                    pdfDocument.pageCount - 1
+                    pdfDocument.pageCount - 1,
                 ),
             )
         for (pageNum in pages.keyIterator()) {
@@ -134,6 +139,26 @@ internal class PageManager(
             } else if (!visiblePageAreas.contains(pageNum)) {
                 pages[pageNum]?.setNearlyVisible()
             }
+        }
+    }
+
+    /**
+     * Invalidates the given [areasToUpdate] for the [Page] at [pageNum].
+     *
+     * This function checks if the union of [areasToUpdate] intersects with the [visibleArea]. If
+     * there's an intersection, it updates the specific page to invalidate the intersecting area.
+     */
+    fun maybeInvalidateAreas(
+        pageNum: Int,
+        visibleArea: Rect,
+        currentZoom: Float,
+        areasToUpdate: List<Rect>,
+    ) {
+        val invalidatedArea = areasToUpdate.union()
+        if (invalidatedArea.intersect(visibleArea)) {
+            // If there is some intersection in the visible area and the invalidated area,
+            // invalidatedArea is updated to hold the intersection.
+            pages[pageNum]?.maybeInvalidateAreas(currentZoom, invalidatedArea)
         }
     }
 
@@ -148,6 +173,7 @@ internal class PageManager(
         stablePosition: Boolean,
         viewArea: Rect? = null,
         pauseBitmapFetch: Boolean,
+        formWidgetInfos: List<FormWidgetInfo>? = null,
     ) {
         if (pages.contains(pageNum)) return
         val page =
@@ -160,7 +186,8 @@ internal class PageManager(
                     onPageUpdate = { _invalidationSignalFlow.tryEmit(Unit) },
                     onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
                     errorFlow = errorFlow,
-                    isAccessibilityEnabled = isAccessibilityEnabled
+                    isAccessibilityEnabled = isAccessibilityEnabled,
+                    formWidgetInfos = formWidgetInfos,
                 )
                 .apply {
                     // If the page is visible, let it know
@@ -169,6 +196,11 @@ internal class PageManager(
                     }
                 }
         pages.put(pageNum, page)
+    }
+
+    /** Updates the form widget information in the given [pageNum] when a edit is applied. */
+    fun maybeUpdateFormWidgetMetadata(pageNum: Int) {
+        pages[pageNum]?.maybeUpdateFormWidgetInfos()
     }
 
     /** Adds [newHighlights]s to this manager to be drawn along with the pages they belong to */
@@ -198,6 +230,19 @@ internal class PageManager(
 
     fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
         return pages[pdfPoint.pageNum]?.links
+    }
+
+    fun getWidgetAtTapPoint(pdfPoint: PdfPoint): List<FormWidgetInfo>? {
+        return pages[pdfPoint.pageNum]?.formWidgetInfos
+    }
+
+    private fun List<Rect>.union(): Rect {
+        if (isEmpty()) return Rect()
+        val unionRect = Rect()
+        for (rect in this) {
+            unionRect.union(rect)
+        }
+        return unionRect
     }
 }
 

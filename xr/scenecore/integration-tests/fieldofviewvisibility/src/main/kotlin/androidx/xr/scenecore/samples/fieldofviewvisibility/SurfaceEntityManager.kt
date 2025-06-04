@@ -31,15 +31,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SurfaceEntity
 
 /** Manage the UI for the Surface Entity. */
 class SurfaceEntityManager(private val session: Session) {
     private val mSession: Session
-    private var mSurfaceEntity: SurfaceEntity? by mutableStateOf(null)
+    var surfaceEntity: SurfaceEntity? by mutableStateOf(null)
+        private set
+
     private var mMovableComponent: MovableComponent? = null // movable component for surfaceEntity
 
     init {
@@ -47,8 +49,8 @@ class SurfaceEntityManager(private val session: Session) {
     }
 
     private fun destroySurfaceEntity() {
-        mSurfaceEntity?.dispose()
-        mSurfaceEntity = null
+        surfaceEntity?.dispose()
+        surfaceEntity = null
     }
 
     @Composable
@@ -69,7 +71,7 @@ class SurfaceEntityManager(private val session: Session) {
                     selected = (canvas.javaClass == selectedCanvasShapeOption.javaClass),
                     onClick = {
                         onCanvasShapeOptionSelected(canvas)
-                        mSurfaceEntity?.canvasShape = canvas
+                        surfaceEntity?.canvasShape = canvas
                     },
                 )
                 Text(text = canvas.javaClass.simpleName, modifier = Modifier.padding(end = 30.dp))
@@ -77,11 +79,11 @@ class SurfaceEntityManager(private val session: Session) {
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Button(
-                enabled = (mSurfaceEntity == null),
+                enabled = (surfaceEntity == null),
                 onClick = {
                     // Create SurfaceEntity and MovableComponent if they don't exist.
-                    if (mSurfaceEntity == null) {
-                        mSurfaceEntity =
+                    if (surfaceEntity == null) {
+                        surfaceEntity =
                             SurfaceEntity.create(
                                 mSession,
                                 SurfaceEntity.StereoMode.MONO,
@@ -93,15 +95,15 @@ class SurfaceEntityManager(private val session: Session) {
                         // angles and distances)
                         mMovableComponent = MovableComponent.create(mSession)
                         // The quad has a radius of 1.0 meters
-                        mMovableComponent!!.size = Dimensions(1.0f, 1.0f, 1.0f)
-                        val unused = mSurfaceEntity!!.addComponent(mMovableComponent!!)
+                        mMovableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
+                        val unused = surfaceEntity!!.addComponent(mMovableComponent!!)
                     }
                 },
             ) {
                 Text(text = "Create Surface Entity", fontSize = 20.sp)
             }
             Button(
-                enabled = (mSurfaceEntity != null),
+                enabled = (surfaceEntity != null),
                 onClick = {
                     // Destroy SurfaceEntity and MovableComponent if they exist.
                     destroySurfaceEntity()

@@ -85,7 +85,7 @@ object SharedUiAdapterFactory {
             Class.forName(
                 "androidx.privacysandbox.ui.core.SharedUiAdapter\$SessionClient",
                 /* initialize = */ false,
-                uiProviderBinder.javaClass.classLoader
+                uiProviderBinder.javaClass.classLoader,
             )
 
         // The adapterInterface provided must have a openSession method on its class.
@@ -95,13 +95,13 @@ object SharedUiAdapterFactory {
             Class.forName(
                     "androidx.privacysandbox.ui.core.LocalSharedUiAdapter",
                     /* initialize = */ false,
-                    uiProviderBinder.javaClass.classLoader
+                    uiProviderBinder.javaClass.classLoader,
                 )
                 .getMethod(
                     "openLocalSession",
                     Int::class.java,
                     Executor::class.java,
-                    targetSharedSessionClientClass
+                    targetSharedSessionClientClass,
                 )
 
         override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
@@ -110,13 +110,13 @@ object SharedUiAdapterFactory {
                     Proxy.newProxyInstance(
                         uiProviderBinder.javaClass.classLoader,
                         arrayOf(targetSharedSessionClientClass),
-                        SessionClientProxyHandler(uiProviderVersion, client)
+                        SessionClientProxyHandler(uiProviderVersion, client),
                     )
                 openSessionMethod.invoke(
                     uiProviderBinder,
                     SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
                     clientExecutor,
-                    sessionClientProxy
+                    sessionClientProxy,
                 )
             } catch (exception: Throwable) {
                 client.onSessionError(exception)
@@ -125,7 +125,7 @@ object SharedUiAdapterFactory {
 
         private class SessionClientProxyHandler(
             private val uiProviderVersion: Int,
-            private val origClient: SharedUiAdapter.SessionClient
+            private val origClient: SharedUiAdapter.SessionClient,
         ) : InvocationHandler {
             override fun invoke(proxy: Any, method: Method, args: Array<Any>?): Any {
                 return when (method.name) {
@@ -171,7 +171,7 @@ object SharedUiAdapterFactory {
             tryToCallRemoteObject(adapterInterface) {
                 this.openRemoteSession(
                     SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
-                    RemoteSharedUiSessionClient(uiProviderVersion, client, clientExecutor)
+                    RemoteSharedUiSessionClient(uiProviderVersion, client, clientExecutor),
                 )
             }
         }
@@ -179,7 +179,7 @@ object SharedUiAdapterFactory {
         class RemoteSharedUiSessionClient(
             private val uiProviderVersion: Int,
             private val client: SharedUiAdapter.SessionClient,
-            private val clientExecutor: Executor
+            private val clientExecutor: Executor,
         ) : IRemoteSharedUiSessionClient.Stub() {
             override fun onRemoteSessionOpened(
                 remoteSessionController: IRemoteSharedUiSessionController

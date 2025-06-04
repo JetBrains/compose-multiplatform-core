@@ -53,8 +53,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MainPanel
 import androidx.xr.compose.subspace.SpatialColumn
@@ -116,7 +116,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
-                        text = "Panel Bottom Left (View)"
+                        text = "Panel Bottom Left (View)",
                     )
                 }
                 SpatialColumn(
@@ -157,7 +157,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     Text(text = item, fontSize = 20.sp)
                 }
             }
-            Orbiter(position = OrbiterEdge.End, offset = 24.dp) {
+            Orbiter(position = ContentEdge.End, offset = 24.dp) {
                 IconButton(
                     onClick = { addHighlight = !addHighlight },
                     modifier = Modifier.background(Color.Gray),

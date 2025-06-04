@@ -102,7 +102,7 @@ sealed interface AdaptStrategy {
     class Levitate(
         val strategy: Strategy = Strategy.Always,
         val alignment: Alignment = Alignment.Center,
-        val scrim: Scrim? = null
+        val scrim: Scrim? = null,
     ) : AdaptStrategy {
         override fun toString() =
             "AdaptStrategy[Levitate, type=$strategy, alignment=$alignment, scrim=$scrim]"

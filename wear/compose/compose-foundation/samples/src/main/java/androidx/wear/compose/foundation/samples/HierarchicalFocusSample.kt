@@ -75,7 +75,7 @@ fun HierarchicalFocusSample() {
                         TextStyle(
                             color = Color.White,
                             fontSize = 20.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         ),
                     modifier =
                         Modifier.fillMaxWidth()
@@ -88,7 +88,7 @@ fun HierarchicalFocusSample() {
                                 } else {
                                     Modifier
                                 }
-                            )
+                            ),
                 )
             }
         }
@@ -126,7 +126,7 @@ fun HierarchicalFocus2Levels() {
                                         TextStyle(
                                             color = Color.White,
                                             fontSize = 20.sp,
-                                            textAlign = TextAlign.Center
+                                            textAlign = TextAlign.Center,
                                         ),
                                 )
                             }

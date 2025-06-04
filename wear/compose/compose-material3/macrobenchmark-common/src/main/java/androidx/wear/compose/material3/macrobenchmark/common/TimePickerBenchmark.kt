@@ -34,7 +34,7 @@ object TimePickerBenchmark : MacrobenchmarkScreen {
             TimePicker(
                 onTimePicked = {},
                 timePickerType = TimePickerType.HoursMinutesAmPm12H,
-                initialTime = LocalTime.of(11, 30)
+                initialTime = LocalTime.of(11, 30),
             )
         }
 
@@ -68,7 +68,7 @@ object TimePickerScrollMinutesBenchmark : MacrobenchmarkScreen {
             TimePicker(
                 onTimePicked = {},
                 timePickerType = TimePickerType.HoursMinutesAmPm12H,
-                initialTime = LocalTime.of(11, 30)
+                initialTime = LocalTime.of(11, 30),
             )
         }
 

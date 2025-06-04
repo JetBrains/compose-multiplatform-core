@@ -16,12 +16,16 @@
 
 package androidx.pdf.compose
 
+import android.net.Uri
+import androidx.annotation.DimenRes
+import androidx.annotation.DrawableRes
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.pdf.PdfDocument
+import androidx.pdf.content.ExternalLink
 import androidx.pdf.view.PdfView
 import kotlin.random.Random
 
@@ -41,6 +45,11 @@ public fun PdfViewer(
     pdfDocument: PdfDocument?,
     minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
+    @DrawableRes fastScrollVerticalThumbDrawable: Int? = null,
+    @DrawableRes fastScrollPageIndicatorBackgroundDrawable: Int? = null,
+    @DimenRes fastScrollPageIndicatorMarginEnd: Int? = null,
+    @DimenRes fastScrollVerticalThumbMarginEnd: Int? = null,
+    onUrlLinkClicked: ((Uri) -> Boolean)? = null,
 ) {
     // Create and remember an ID for PdfView so that it retains state across compositions and
     // recreations
@@ -53,12 +62,42 @@ public fun PdfViewer(
                 state.pdfView = this
             }
         },
-        onRelease = { state.pdfView = null },
+        onRelease = { view ->
+            state.pdfView = null
+            view.linkClickListener = null
+        },
         // Factory will execute exactly once; update is the correct place to supply mutable states
         update = { view ->
             view.pdfDocument = pdfDocument
             view.minZoom = minZoom
             view.maxZoom = maxZoom
-        }
+            fastScrollVerticalThumbDrawable?.let {
+                view.fastScrollVerticalThumbDrawable = view.context.getDrawable(it)
+            }
+            fastScrollPageIndicatorBackgroundDrawable?.let {
+                view.fastScrollVerticalThumbDrawable = view.context.getDrawable(it)
+            }
+            fastScrollPageIndicatorMarginEnd?.let {
+                view.fastScrollVerticalThumbMarginEnd = view.resources.getDimensionPixelSize(it)
+            }
+            fastScrollVerticalThumbMarginEnd?.let {
+                view.fastScrollVerticalThumbMarginEnd = view.resources.getDimensionPixelSize(it)
+            }
+            view.linkClickListener = PdfViewerLinkClickListener(onUrlLinkClicked)
+        },
     )
+}
+
+/**
+ * Bridge between the lambda-based [PdfViewer] API for custom link handling, and the listener
+ * interface [PdfView] API for the same.
+ *
+ * Notably this defers to the default behavior in [PdfView] in the event [behavior] is null, i.e. by
+ * returning false from [onLinkClicked]
+ */
+private class PdfViewerLinkClickListener(private val behavior: ((Uri) -> Boolean)?) :
+    PdfView.LinkClickListener {
+    override fun onLinkClicked(externalLink: ExternalLink): Boolean {
+        return behavior?.invoke(externalLink.uri) ?: false
+    }
 }

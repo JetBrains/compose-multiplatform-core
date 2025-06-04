@@ -78,7 +78,7 @@ internal fun Project.registerValidateRelocatedDependenciesTask() =
     tasks
         .register(
             VerifyRelocatedDependenciesTask.TASK_NAME,
-            VerifyRelocatedDependenciesTask::class.java
+            VerifyRelocatedDependenciesTask::class.java,
         ) {
             val depsProvider: Provider<List<Pair<String, List<String>>>> =
                 project.providers.provider {

@@ -81,7 +81,10 @@ object ComposeUiFlags {
      * requestFocus() which tries to re-assign focus before the previous composition is complete.
      * This flag enables a fix for this issue.
      */
-    @Suppress("MutableBareField") @JvmField var isRemoveFocusedViewFixEnabled: Boolean = false
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isRemoveFocusedViewFixEnabled: Boolean = false
 
     /**
      * With this flag on, the new focus state management implementation is enabled. The new

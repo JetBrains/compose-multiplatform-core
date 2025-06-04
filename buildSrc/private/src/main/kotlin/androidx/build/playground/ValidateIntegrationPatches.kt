@@ -76,7 +76,7 @@ abstract class ValidateIntegrationPatches : DefaultTask() {
             val task =
                 project.tasks.register(
                     "validateIntegrationPatches",
-                    ValidateIntegrationPatches::class.java
+                    ValidateIntegrationPatches::class.java,
                 ) { task ->
                     task.patchesDirectory.set(File(project.getSupportRootFolder(), PATCH_DIRECTORY))
                     task.cacheEvenIfNoOutputs()

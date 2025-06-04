@@ -57,7 +57,7 @@ private constructor(
 
     @Deprecated(
         "Use createCameraGraph instead.",
-        replaceWith = ReplaceWith("createCameraGraph(config)")
+        replaceWith = ReplaceWith("createCameraGraph(config)"),
     )
     override fun create(config: CameraGraph.Config): CameraGraphSimulator =
         createCameraGraph(config)
@@ -85,7 +85,7 @@ private constructor(
         val cameraGraphSimulator =
             createCameraGraphSimulator(
                 cameraGraphConfig = frameGraphConfig.cameraGraphConfig,
-                cameraGraph = cameraGraph
+                cameraGraph = cameraGraph,
             )
 
         val frameGraphSimulator = FrameGraphSimulator(frameGraph, cameraGraphSimulator)
@@ -182,7 +182,7 @@ private constructor(
         public fun create(
             testScope: TestScope,
             testContext: Context,
-            fakeCameras: List<CameraMetadata> = listOf(FakeCameraMetadata())
+            fakeCameras: List<CameraMetadata> = listOf(FakeCameraMetadata()),
         ): CameraPipeSimulator {
             val fakeCameraBackend =
                 FakeCameraBackend(fakeCameras = fakeCameras.associateBy { it.camera })
@@ -206,7 +206,7 @@ private constructor(
                         cameraBackendConfig =
                             CameraBackendConfig(internalBackend = fakeCameraBackend),
                         threadConfig = testScopeThreadConfig,
-                        imageSources = fakeImageSources
+                        imageSources = fakeImageSources,
                     )
                 )
             return CameraPipeSimulator(
@@ -214,7 +214,7 @@ private constructor(
                 fakeCameraBackend,
                 fakeSurfaces,
                 fakeImageReaders,
-                fakeImageSources
+                fakeImageSources,
             )
         }
     }

@@ -21,7 +21,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 
-// TODO(grantapher-cm-api-publicize) add AddItemToTextContextMenuAndroid sample
 /**
  * Adds an item to the list of text context menu components.
  *
@@ -32,9 +31,9 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
  *   drawable resource reference. Setting this to the default value [Resources.ID_NULL] means that
  *   it will not be displayed.
  * @param onClick Action to perform upon the item being clicked/pressed.
+ * @sample androidx.compose.foundation.samples.AddItemToTextContextMenuAndroid
  */
-// TODO(grantapher-cm-api-publicize) make function public
-internal fun TextContextMenuBuilderScope.item(
+fun TextContextMenuBuilderScope.item(
     key: Any,
     label: String,
     @DrawableRes leadingIcon: Int = Resources.ID_NULL,

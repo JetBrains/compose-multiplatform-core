@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class EagerConfigurationIssueTest :
     GradleLintDetectorTest(
         detector = DiscouragedGradleMethodDetector(),
-        issues = listOf(DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE)
+        issues = listOf(DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE),
     ) {
     @Test
     fun `Test usage of TaskContainer#create`() {

@@ -76,7 +76,7 @@ internal fun getDeviceFeatures(context: Context): Set<Feature> {
     // Short-circuit for unit tests environments.
     if (Build.FINGERPRINT.contains("robolectric")) return emptySet()
 
-    val features = mutableSetOf<Feature>(Feature.FullStack)
+    val features = mutableSetOf<Feature>(Feature.FULLSTACK)
     val packageManager = context.packageManager
 
     // TODO(b/398957058): Remove emulator check once the emulator has the system feature.
@@ -84,7 +84,7 @@ internal fun getDeviceFeatures(context: Context): Set<Feature> {
         packageManager.hasSystemFeature(FEATURE_XR_API_OPENXR) ||
             Build.FINGERPRINT.contains("emulator")
     ) {
-        features.add(Feature.OpenXr)
+        features.add(Feature.OPEN_XR)
     }
 
     // TODO(b/398957058): Remove emulator check once the emulator has the system feature.
@@ -92,7 +92,7 @@ internal fun getDeviceFeatures(context: Context): Set<Feature> {
         packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL) ||
             Build.FINGERPRINT.contains("emulator")
     ) {
-        features.add(Feature.Spatial)
+        features.add(Feature.SPATIAL)
     }
 
     return features

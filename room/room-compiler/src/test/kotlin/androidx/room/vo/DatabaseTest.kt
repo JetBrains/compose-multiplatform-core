@@ -52,19 +52,19 @@ class DatabaseTest {
                                         name = "leIndex",
                                         unique = false,
                                         properties = Properties(),
-                                        orders = emptyList()
+                                        orders = emptyList(),
                                     ),
                                     Index(
                                         name = "leIndex2",
                                         unique = true,
                                         properties = Properties(),
-                                        orders = emptyList()
-                                    )
+                                        orders = emptyList(),
+                                    ),
                                 ),
                             foreignKeys = emptyList(),
                             constructor =
                                 Constructor(mock(XConstructorElement::class.java), emptyList()),
-                            shadowTableName = null
+                            shadowTableName = null,
                         )
                     ),
                 views = emptyList(),

@@ -16,7 +16,6 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
@@ -27,9 +26,8 @@ import kotlinx.coroutines.sync.Semaphore
 
 /** Test-only implementation of [LifecycleManager] used to validate state transitions. */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeLifecycleManager(
-    /** If false, create() will throw an exception during testing. */
+    /** If false, [create] will throw an exception during testing. */
     @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true
 ) : LifecycleManager {
 
@@ -57,10 +55,10 @@ public class FakeLifecycleManager(
 
     private val semaphore = Semaphore(1)
 
-    /** If true, configure() will emulate the failure case for missing permissions. */
+    /** If true, [configure] will emulate the failure case for missing permissions. */
     @get:JvmName("hasMissingPermission") public var hasMissingPermission: Boolean = false
 
-    /** if false, configure() will throw an exception if the config enables PlaneTracking */
+    /** If false, [configure] will throw an Exception if the config enables PlaneTracking. */
     @get:JvmName("shouldSupportPlaneTracking") public var shouldSupportPlaneTracking: Boolean = true
 
     override fun create() {
@@ -79,9 +77,10 @@ public class FakeLifecycleManager(
     override var config: Config =
         Config(
             Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            Config.HandTrackingMode.ENABLED,
-            Config.DepthEstimationMode.ENABLED,
-            Config.AnchorPersistenceMode.ENABLED,
+            Config.HandTrackingMode.BOTH,
+            Config.DeviceTrackingMode.LAST_KNOWN,
+            Config.DepthEstimationMode.SMOOTH_AND_RAW,
+            Config.AnchorPersistenceMode.LOCAL,
         )
 
     override fun configure(config: Config) {
@@ -106,7 +105,7 @@ public class FakeLifecycleManager(
     }
 
     /**
-     * Retrieves the latest timemark. The first call to this method will execute immediately.
+     * Retrieves the latest time mark. The first call to this method will execute immediately.
      * Subsequent calls will be blocked until [allowOneMoreCallToUpdate] is called.
      */
     override suspend fun update(): ComparableTimeMark {

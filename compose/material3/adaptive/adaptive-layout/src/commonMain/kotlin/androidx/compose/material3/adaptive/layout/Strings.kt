@@ -45,5 +45,5 @@ internal expect fun CompositionLocalConsumerModifierNode.getString(string: Strin
 
 internal expect fun CompositionLocalConsumerModifierNode.getString(
     string: Strings,
-    vararg formatArgs: Any
+    vararg formatArgs: Any,
 ): String

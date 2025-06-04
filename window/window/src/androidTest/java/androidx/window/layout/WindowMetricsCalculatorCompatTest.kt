@@ -272,26 +272,26 @@ class WindowMetricsCalculatorCompatTest {
                 TypedValue.deriveDimension(
                     TypedValue.COMPLEX_UNIT_DIP,
                     windowMetrics.bounds.width().toFloat(),
-                    displayMetrics
+                    displayMetrics,
                 )
             val heightDp =
                 TypedValue.deriveDimension(
                     TypedValue.COMPLEX_UNIT_DIP,
                     windowMetrics.bounds.height().toFloat(),
-                    displayMetrics
+                    displayMetrics,
                 )
 
             assertEquals(
                 "Width DP must be within 1dp of configuration value.",
                 widthDp,
                 windowMetrics.widthDp,
-                1f
+                1f,
             )
             assertEquals(
                 "Height DP must be within 1dp of configuration value.",
                 heightDp,
                 windowMetrics.heightDp,
-                1f
+                1f,
             )
         }
     }
@@ -308,12 +308,12 @@ class WindowMetricsCalculatorCompatTest {
             assertEquals(
                 "Full screen view width must match window metrics width",
                 windowMetrics.bounds.width(),
-                rootView.width
+                rootView.width,
             )
             assertEquals(
                 "Full screen view height must match window metrics height",
                 windowMetrics.bounds.height(),
-                rootView.height
+                rootView.height,
             )
         }
     }
@@ -326,7 +326,7 @@ class WindowMetricsCalculatorCompatTest {
         runActionsAcrossActivityLifecycle(
             activityScenarioRule,
             initialAction,
-            assertWindowBoundsMatchesDisplayAction
+            assertWindowBoundsMatchesDisplayAction,
         )
     }
 
@@ -338,7 +338,7 @@ class WindowMetricsCalculatorCompatTest {
         runActionsAcrossActivityLifecycle(
             activityScenarioRule,
             initialAction,
-            assertWindowBoundsMatchesDisplayAction
+            assertWindowBoundsMatchesDisplayAction,
         )
     }
 
@@ -374,12 +374,12 @@ class WindowMetricsCalculatorCompatTest {
             assertEquals(
                 "Window bounds width does not match real display width",
                 realDisplaySize.x.toLong(),
-                bounds.width().toLong()
+                bounds.width().toLong(),
             )
             assertEquals(
                 "Window bounds height does not match real display height",
                 realDisplaySize.y.toLong(),
-                bounds.height().toLong()
+                bounds.height().toLong(),
             )
         }
     }
@@ -399,12 +399,12 @@ class WindowMetricsCalculatorCompatTest {
             assertEquals(
                 "Window bounds width does not match real display width",
                 realDisplaySize.x.toLong(),
-                bounds.width().toLong()
+                bounds.width().toLong(),
             )
             assertEquals(
                 "Window bounds height does not match real display height",
                 realDisplaySize.y.toLong(),
-                bounds.height().toLong()
+                bounds.height().toLong(),
             )
         }
     }

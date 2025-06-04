@@ -47,13 +47,13 @@ fun SimplePicker() {
                 .scrollable(
                     state = state,
                     orientation = Orientation.Vertical,
-                    reverseDirection = true
+                    reverseDirection = true,
                 ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp),
-            text = "Selected: ${items[state.selectedOptionIndex]}"
+            text = "Selected: ${items[state.selectedOptionIndex]}",
         )
         Picker(
             modifier = Modifier.size(100.dp, 100.dp),
@@ -77,7 +77,7 @@ fun PickerScrollToOption() {
     ) {
         Button(
             onClick = { coroutineScope.launch { state.scrollToOption(it) } },
-            label = { Text("$it") }
+            label = { Text("$it") },
         )
     }
 }
@@ -96,7 +96,7 @@ fun PickerAnimateScrollToOption() {
         ) {
             Button(
                 onClick = { coroutineScope.launch { state.animateScrollToOption(it) } },
-                label = { Text("$it") }
+                label = { Text("$it") },
             )
         }
     }

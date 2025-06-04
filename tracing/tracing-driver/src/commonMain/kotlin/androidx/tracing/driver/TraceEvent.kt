@@ -105,7 +105,7 @@ internal constructor(
             counterDoubleValue = null,
             counterLongValue = null,
             flowIds = emptyList(),
-            trackDescriptor = null
+            trackDescriptor = null,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -123,7 +123,7 @@ internal constructor(
     internal inline fun setBeginSectionWithFlows(
         trackUuid: Long,
         name: String,
-        flowIds: List<Long>
+        flowIds: List<Long>,
     ) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -138,10 +138,7 @@ internal constructor(
         timestamp = nanoTime()
     }
 
-    internal inline fun setInstant(
-        trackUuid: Long,
-        name: String,
-    ) {
+    internal inline fun setInstant(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
         timestamp = nanoTime()

@@ -32,10 +32,13 @@ import androidx.annotation.VisibleForTesting
 import androidx.pdf.PdfDocument
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.util.FORM_WIDGET_INFO_REQUEST_NAME
 import androidx.pdf.util.PAGE_CONTENTS_REQUEST_NAME
 import androidx.pdf.util.PAGE_LINKS_REQUEST_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -63,7 +66,9 @@ internal class Page(
     private val onPageTextReady: ((Int) -> Unit),
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
-    isAccessibilityEnabled: Boolean
+    isAccessibilityEnabled: Boolean,
+    /** A list represent the [FormWidgetInfo] present on the page. */
+    formWidgetInfos: List<FormWidgetInfo>? = null,
 ) {
     init {
         require(pageNum >= 0) { "Invalid negative page" }
@@ -92,6 +97,8 @@ internal class Page(
     internal var links: PdfDocument.PdfPageLinks? = null
         private set
 
+    private var fetchFormWidgetInfoJob: Job? = null
+
     internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
         set(value) {
             field = value
@@ -100,8 +107,12 @@ internal class Page(
             }
         }
 
-    internal fun isFullyRendered(): Boolean {
-        return bitmapFetcher?.pageBitmaps?.isFullyRendered ?: false
+    internal var formWidgetInfos: List<FormWidgetInfo>? = formWidgetInfos
+        private set
+
+    //  Checks if the content of this page within the specified visible area is fully rendered.
+    internal fun isFullyRendered(zoom: Float, viewArea: Rect?): Boolean {
+        return bitmapFetcher?.isFullyRendered(zoom, viewArea) ?: false
     }
 
     /**
@@ -117,7 +128,7 @@ internal class Page(
         zoom: Float,
         viewArea: Rect,
         stablePosition: Boolean = true,
-        pauseBitmapFetch: Boolean = false
+        pauseBitmapFetch: Boolean = false,
     ) {
         if (bitmapFetcher == null) {
             bitmapFetcher =
@@ -128,7 +139,7 @@ internal class Page(
                     backgroundScope,
                     maxBitmapSizePx,
                     onPageUpdate,
-                    errorFlow
+                    errorFlow,
                 )
         }
         if (!pauseBitmapFetch) {
@@ -140,6 +151,16 @@ internal class Page(
                 maybeFetchPageText()
             }
         }
+    }
+
+    /**
+     * Invalidates and fetches new bitmaps for the [invalidatedArea] of the page.
+     *
+     * @param zoom the current scale
+     * @param invalidatedArea visible portion of the page which has been invalidated
+     */
+    fun maybeInvalidateAreas(zoom: Float, invalidatedArea: Rect) {
+        bitmapFetcher?.maybeFetchNewBitmaps(zoom, invalidatedArea, hasFormStateChanged = true)
     }
 
     /**
@@ -181,14 +202,40 @@ internal class Page(
                                 requestMetadata =
                                     RequestMetadata(
                                         requestName = PAGE_CONTENTS_REQUEST_NAME,
-                                        pageRange = pageNum..pageNum
+                                        pageRange = pageNum..pageNum,
                                     ),
-                                throwable = e
+                                throwable = e,
                             )
                         errorFlow.emit(exception)
                     }
                 }
                 .also { it.invokeOnCompletion { fetchPageTextJob = null } }
+    }
+
+    /** Updates the [formWidgetInfos] associated with the page. */
+    internal fun maybeUpdateFormWidgetInfos() {
+        val previousJob = fetchFormWidgetInfoJob
+
+        fetchFormWidgetInfoJob =
+            backgroundScope.launch {
+                // Cancel the previous job, since we want to fetch the latest set of widgets
+                previousJob?.cancelAndJoin()
+                ensureActive()
+                try {
+                    formWidgetInfos = pdfDocument.getFormWidgetInfos(pageNum)
+                } catch (e: DeadObjectException) {
+                    val exception =
+                        RequestFailedException(
+                            requestMetadata =
+                                RequestMetadata(
+                                    requestName = FORM_WIDGET_INFO_REQUEST_NAME,
+                                    pageRange = pageNum..pageNum,
+                                ),
+                            throwable = e,
+                        )
+                    errorFlow.emit(exception)
+                }
+            }
     }
 
     fun draw(canvas: Canvas, locationInView: Rect, highlights: List<Highlight>) {
@@ -225,9 +272,9 @@ internal class Page(
                                 requestMetadata =
                                     RequestMetadata(
                                         requestName = PAGE_LINKS_REQUEST_NAME,
-                                        pageRange = pageNum..pageNum
+                                        pageRange = pageNum..pageNum,
                                     ),
-                                throwable = e
+                                throwable = e,
                             )
                         errorFlow.emit(exception)
                     }
@@ -249,7 +296,7 @@ internal class Page(
                     bitmap, /* src */
                     null,
                     locationForTile(tile, tileBoard.bitmapScale, locationInView),
-                    BMP_PAINT
+                    BMP_PAINT,
                 )
             }
         }
@@ -258,7 +305,7 @@ internal class Page(
     private fun locationForTile(
         tile: TileBoard.Tile,
         renderedScale: Float,
-        locationInView: Rect
+        locationInView: Rect,
     ): RectF {
         val tileOffsetPx = tile.offsetPx
         // The tile describes its own location in pixels, i.e. scaled coordinates, however
@@ -271,7 +318,7 @@ internal class Page(
             left,
             top,
             left + exactSize.x / renderedScale,
-            top + exactSize.y / renderedScale
+            top + exactSize.y / renderedScale,
         )
         return tileLocationRect
     }

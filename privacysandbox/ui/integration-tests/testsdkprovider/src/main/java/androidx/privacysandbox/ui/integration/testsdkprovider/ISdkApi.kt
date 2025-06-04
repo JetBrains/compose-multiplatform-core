@@ -26,7 +26,7 @@ interface ISdkApi {
         adType: Int,
         mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle
 
     // This new method is needed since we cannot add optional params to shim methods.
@@ -36,7 +36,7 @@ interface ISdkApi {
         mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackBundle: Bundle
+        automatedTestCallbackBundle: Bundle,
     ): Bundle
 
     fun requestResize(width: Int, height: Int)

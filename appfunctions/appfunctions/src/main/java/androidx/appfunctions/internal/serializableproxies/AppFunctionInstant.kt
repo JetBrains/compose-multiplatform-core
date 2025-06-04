@@ -35,7 +35,7 @@ public data class AppFunctionInstant(val epochSecond: Long, val nanoAdjustment: 
         public fun fromInstant(instant: Instant): AppFunctionInstant {
             return AppFunctionInstant(
                 epochSecond = instant.epochSecond,
-                nanoAdjustment = instant.nano
+                nanoAdjustment = instant.nano,
             )
         }
     }

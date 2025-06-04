@@ -70,10 +70,7 @@ private constructor(
         clientBrushFamilyId: String = "",
         @Suppress("UNUSED_PARAMETER") inputModel: InputModel = DEFAULT_INPUT_MODEL,
     ) : this(
-        BrushFamilyNative.create(
-            coats.map { it.nativePointer }.toLongArray(),
-            clientBrushFamilyId,
-        ),
+        BrushFamilyNative.create(coats.map { it.nativePointer }.toLongArray(), clientBrushFamilyId),
         coats,
     )
 
@@ -285,10 +282,7 @@ private object BrushFamilyNative {
 
     /** Create underlying native object and return reference for all subsequent native calls. */
     @UsedByNative
-    external fun create(
-        coatNativePointers: LongArray,
-        clientBrushFamilyId: String,
-    ): Long
+    external fun create(coatNativePointers: LongArray, clientBrushFamilyId: String): Long
 
     /** Release the underlying memory allocated in [create]. */
     @UsedByNative external fun free(nativePointer: Long)

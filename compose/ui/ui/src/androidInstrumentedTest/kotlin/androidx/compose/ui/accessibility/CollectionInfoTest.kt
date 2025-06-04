@@ -249,7 +249,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -281,7 +281,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -313,7 +313,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }

@@ -37,7 +37,7 @@ class MediateeSdkApiImpl() {
             @AdType adType: Int,
             withSlowDraw: Boolean,
             drawViewability: Boolean,
-            sdkContext: Context
+            sdkContext: Context,
         ): Bundle =
             when (adFormat) {
                 AdFormat.BANNER_AD ->
@@ -50,7 +50,7 @@ class MediateeSdkApiImpl() {
             @AdType adType: Int,
             waitInsideOnDraw: Boolean,
             drawViewability: Boolean,
-            sdkContext: Context
+            sdkContext: Context,
         ): Bundle {
             val testAdapters = TestAdapters(sdkContext)
             val mediationDescription =
@@ -74,7 +74,7 @@ class MediateeSdkApiImpl() {
                 NativeAdGenerator(
                     sdkContext,
                     if (CompatImpl.isAppOwnedMediatee()) MediationOption.IN_APP_MEDIATEE
-                    else MediationOption.SDK_RUNTIME_MEDIATEE
+                    else MediationOption.SDK_RUNTIME_MEDIATEE,
                 )
             return nativeAdGenerator.generateAdBundleWithAssets(adType)
         }
@@ -99,7 +99,7 @@ class MediateeSdkApiImpl() {
         private fun loadNonWebViewBannerAd(
             testAdapters: TestAdapters,
             text: String,
-            waitInsideOnDraw: Boolean
+            waitInsideOnDraw: Boolean,
         ): AbstractSandboxedUiAdapter {
             return testAdapters.TestBannerAd(text, waitInsideOnDraw)
         }

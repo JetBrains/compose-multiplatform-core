@@ -205,7 +205,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
                 paddingLeft,
                 paddingTop,
                 child.measuredWidth + paddingLeft,
-                child.measuredHeight + paddingTop
+                child.measuredHeight + paddingTop,
             )
         }
         sessionManager?.checkClientOpenSession()
@@ -246,8 +246,8 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
             resolveSizeAndState(
                 maxHeight,
                 heightMeasureSpec,
-                childState shl MEASURED_HEIGHT_STATE_SHIFT
-            )
+                childState shl MEASURED_HEIGHT_STATE_SHIFT,
+            ),
         )
     }
 

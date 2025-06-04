@@ -113,13 +113,9 @@ public fun AlertDialog(
             AlertDialogDefaults.confirmDismissContentPadding()
         },
     properties: DialogProperties = DialogProperties(),
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(
-        visible = visible,
-        onDismissRequest = onDismissRequest,
-        properties = properties,
-    ) {
+    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
         AlertDialogContent(
             confirmButton = confirmButton,
             title = title,
@@ -129,7 +125,7 @@ public fun AlertDialog(
             text = text,
             verticalArrangement = verticalArrangement,
             contentPadding = contentPadding,
-            content = content
+            content = content,
         )
     }
 }
@@ -184,13 +180,9 @@ public fun AlertDialog(
             AlertDialogDefaults.contentPadding()
         },
     properties: DialogProperties = DialogProperties(),
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(
-        visible = visible,
-        onDismissRequest = onDismissRequest,
-        properties = properties,
-    ) {
+    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
         AlertDialogContent(
             title = title,
             modifier = modifier,
@@ -198,7 +190,7 @@ public fun AlertDialog(
             text = text,
             verticalArrangement = verticalArrangement,
             contentPadding = contentPadding,
-            content = content
+            content = content,
         )
     }
 }
@@ -266,13 +258,9 @@ public fun AlertDialog(
             AlertDialogDefaults.contentPadding()
         },
     properties: DialogProperties = DialogProperties(),
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(
-        visible = visible,
-        onDismissRequest = onDismissRequest,
-        properties = properties,
-    ) {
+    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
         AlertDialogContent(
             edgeButton = edgeButton,
             title = title,
@@ -281,7 +269,7 @@ public fun AlertDialog(
             text = text,
             verticalArrangement = verticalArrangement,
             contentPadding = contentPadding,
-            content = content
+            content = content,
         )
     }
 }
@@ -328,14 +316,10 @@ public fun AlertDialogContent(
         } else {
             AlertDialogDefaults.confirmDismissContentPadding()
         },
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
-    ScreenScaffold(
-        scrollState = state,
-        modifier = modifier,
-        contentPadding = contentPadding,
-    ) {
+    ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
         ScalingLazyColumn(
             scalingParams = AlertScalingParams,
             state = state,
@@ -387,14 +371,10 @@ public fun AlertDialogContent(
         } else {
             AlertDialogDefaults.contentPadding()
         },
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
-    ScreenScaffold(
-        scrollState = state,
-        modifier = modifier,
-        contentPadding = contentPadding,
-    ) {
+    ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
         ScalingLazyColumn(
             scalingParams = AlertScalingParams,
             state = state,
@@ -449,7 +429,7 @@ public fun AlertDialogContent(
         } else {
             AlertDialogDefaults.contentPadding()
         },
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
     val noTextAndContent = text == null && content == null
@@ -493,14 +473,14 @@ public object AlertDialogDefaults {
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         colors: ButtonColors = ButtonDefaults.buttonColors(),
-        content: @Composable RowScope.() -> Unit = ConfirmIcon
+        content: @Composable RowScope.() -> Unit = ConfirmIcon,
     ) {
         EdgeButton(
             modifier = modifier,
             onClick = onClick,
             colors = colors,
             buttonSize = EdgeButtonSize.Medium,
-            content = content
+            content = content,
         )
     }
 
@@ -518,7 +498,7 @@ public object AlertDialogDefaults {
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         colors: IconButtonColors = IconButtonDefaults.filledIconButtonColors(),
-        content: @Composable RowScope.() -> Unit = ConfirmIcon
+        content: @Composable RowScope.() -> Unit = ConfirmIcon,
     ) {
         val confirmWidth = 63.dp
         val confirmHeight = 54.dp
@@ -527,11 +507,11 @@ public object AlertDialogDefaults {
             onClick = onClick,
             modifier = modifier.rotate(-45f).size(confirmWidth, confirmHeight),
             colors = colors,
-            shapes = IconButtonDefaults.shapes(confirmShape)
+            shapes = IconButtonDefaults.shapes(confirmShape),
         ) {
             Row(
                 modifier = Modifier.align(Alignment.Center).graphicsLayer { rotationZ = 45f },
-                content = content
+                content = content,
             )
         }
     }
@@ -550,7 +530,7 @@ public object AlertDialogDefaults {
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         colors: IconButtonColors = IconButtonDefaults.filledTonalIconButtonColors(),
-        content: @Composable RowScope.() -> Unit = DismissIcon
+        content: @Composable RowScope.() -> Unit = DismissIcon,
     ) {
         val dismissSize = 60.dp
         val dismissShape = MaterialTheme.shapes.medium
@@ -559,7 +539,7 @@ public object AlertDialogDefaults {
                 onClick = onClick,
                 modifier = modifier.size(dismissSize).align(Alignment.BottomEnd),
                 colors = colors,
-                shapes = IconButtonDefaults.shapes(dismissShape)
+                shapes = IconButtonDefaults.shapes(dismissShape),
             ) {
                 Row(content = content)
             }
@@ -645,7 +625,7 @@ public object AlertDialogDefaults {
         Icon(
             imageVector = Icons.Check,
             contentDescription = getString(Strings.AlertDialogContentDescriptionConfirmButton),
-            modifier = Modifier.size(28.dp).align(Alignment.CenterVertically)
+            modifier = Modifier.size(28.dp).align(Alignment.CenterVertically),
         )
     }
     /** Default icon for the dismiss button. */
@@ -653,7 +633,7 @@ public object AlertDialogDefaults {
         Icon(
             imageVector = Icons.Close,
             contentDescription = getString(Strings.AlertDialogContentDescriptionDismissButton),
-            modifier = Modifier.size(28.dp).align(Alignment.CenterVertically)
+            modifier = Modifier.size(28.dp).align(Alignment.CenterVertically),
         )
     }
 
@@ -672,7 +652,7 @@ private fun ScalingLazyListScope.alertDialogCommonContent(
     icon: @Composable (() -> Unit)? = null,
     title: @Composable () -> Unit,
     text: @Composable (() -> Unit)? = null,
-    content: (ScalingLazyListScope.() -> Unit)? = null
+    content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     if (icon != null) {
         item { IconAlert(icon) }
@@ -706,9 +686,9 @@ private fun Title(content: @Composable () -> Unit) {
                 TextConfiguration(
                     textAlign = TextAlign.Center,
                     maxLines = AlertTitleMaxLines,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 ),
-            content = content
+            content = content,
         )
     }
 }
@@ -716,13 +696,13 @@ private fun Title(content: @Composable () -> Unit) {
 @Composable
 private fun ConfirmDismissButtons(
     confirmButton: @Composable RowScope.() -> Unit,
-    dismissButton: @Composable RowScope.() -> Unit
+    dismissButton: @Composable RowScope.() -> Unit,
 ) {
     Column {
         Spacer(modifier = Modifier.height(ConfirmDismissButtonsTopSpacing))
         Row(
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(modifier = Modifier.width(6.dp))
             dismissButton(this)
@@ -752,9 +732,9 @@ private fun TextMessage(content: @Composable () -> Unit) {
                 TextConfiguration(
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = TextConfigurationDefaults.MaxLines
+                    maxLines = TextConfigurationDefaults.MaxLines,
                 ),
-            content = content
+            content = content,
         )
     }
 }
@@ -770,7 +750,4 @@ internal const val AlertTitleMaxLines = 3
 private const val TextPaddingFraction = 0.0416f
 private const val TitlePaddingFraction = 0.12f
 private const val ConfirmDismissBetweenButtonsPaddingFraction = 0.03f
-private val AlertScalingParams =
-    ScalingLazyColumnDefaults.scalingParams(
-        minTransitionArea = 0.2f,
-    )
+private val AlertScalingParams = ScalingLazyColumnDefaults.scalingParams(minTransitionArea = 0.2f)

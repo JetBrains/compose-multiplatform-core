@@ -91,13 +91,11 @@ class CaptureOptionSubmissionTest(
     private val selectorName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -218,7 +216,7 @@ class CaptureOptionSubmissionTest(
         val targetFpsRange = getAeFpsRangeFromQuirks()
         assumeFalse(
             "AeFpsRange workaround is applied only on LEGACY level devices.",
-            targetFpsRange == null
+            targetFpsRange == null,
         )
 
         var lastSubmittedFpsRange: Range<Int>? = null
@@ -281,7 +279,7 @@ class CaptureOptionSubmissionTest(
                         Camera2Interop.Extender(it)
                             .setCaptureRequestOption(
                                 CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                targetFpsRange
+                                targetFpsRange,
                             )
                     }
                 )
@@ -308,7 +306,7 @@ class CaptureOptionSubmissionTest(
         val interopFpsRange = getSupportedFpsRanges().lastOrNull { it.upper <= 30 }
         assumeTrue(
             "Run the test only when two different supported FPS ranges can be found.",
-            targetFpsRange != null && interopFpsRange != null && targetFpsRange != interopFpsRange
+            targetFpsRange != null && interopFpsRange != null && targetFpsRange != interopFpsRange,
         )
 
         var lastSubmittedFpsRange: Range<Int>? = null
@@ -329,9 +327,9 @@ class CaptureOptionSubmissionTest(
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                            interopFpsRange!!
+                            interopFpsRange!!,
                         )
-                }
+                },
             )
         )
 
@@ -351,7 +349,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Preview stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -364,7 +362,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder().setPreviewStabilizationEnabled(true),
-                VideoCapture.Builder(Recorder.Builder().build())
+                VideoCapture.Builder(Recorder.Builder().build()),
             )
         )
 
@@ -383,7 +381,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -396,7 +394,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder(),
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -416,12 +414,12 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Preview stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
+            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON),
         )
 
         var lastSubmittedMode: Int? = null
@@ -434,7 +432,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder().setPreviewStabilizationEnabled(true),
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -453,7 +451,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -472,7 +470,7 @@ class CaptureOptionSubmissionTest(
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CONTROL_VIDEO_STABILIZATION_MODE,
-                            targetStabilizationMode
+                            targetStabilizationMode,
                         )
                 }
             )
@@ -493,7 +491,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
+            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON),
         )
 
         var lastSubmittedMode: Int? = null
@@ -512,10 +510,10 @@ class CaptureOptionSubmissionTest(
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CONTROL_VIDEO_STABILIZATION_MODE,
-                            targetStabilizationMode
+                            targetStabilizationMode,
                         )
                 },
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -581,7 +579,7 @@ class CaptureOptionSubmissionTest(
                                 Camera2InteropUtil.setCameraCaptureSessionCallback(
                                     implName,
                                     it,
-                                    sessionCaptureCallback
+                                    sessionCaptureCallback,
                                 )
                             }
                         }
@@ -604,7 +602,7 @@ class CaptureOptionSubmissionTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 cameraSelector,
-                *useCases.toTypedArray()
+                *useCases.toTypedArray(),
             )
         }
     }
@@ -617,7 +615,7 @@ class CaptureOptionSubmissionTest(
         data class Verification(
             val condition:
                 (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean,
-            val isVerified: CompletableDeferred<Unit>
+            val isVerified: CompletableDeferred<Unit>,
         )
 
         private var pendingVerifications = mutableListOf<Verification>()
@@ -628,7 +626,7 @@ class CaptureOptionSubmissionTest(
                 (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean =
                 { _, _ ->
                     false
-                },
+                }
         ): Deferred<Unit> =
             CompletableDeferred<Unit>().apply {
                 val verification = Verification(condition, this)
@@ -640,7 +638,7 @@ class CaptureOptionSubmissionTest(
         override fun onCaptureCompleted(
             session: CameraCaptureSession,
             request: CaptureRequest,
-            result: TotalCaptureResult
+            result: TotalCaptureResult,
         ) {
             pendingVerifications.forEach {
                 if (it.condition(request, result)) {
@@ -659,13 +657,13 @@ class CaptureOptionSubmissionTest(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 // front camera is not important with the current test, but may be required in
                 // future

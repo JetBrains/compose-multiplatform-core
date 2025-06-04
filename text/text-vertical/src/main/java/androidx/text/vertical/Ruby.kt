@@ -97,7 +97,7 @@ internal inline fun forEachRubySpanTransition(
     text: CharSequence,
     start: Int,
     end: Int,
-    crossinline consumer: (Int, Int, RubySpan?) -> Unit
+    crossinline consumer: (Int, Int, RubySpan?) -> Unit,
 ) =
     forEachSpan(text, start, end) { rStart, rEnd, rubySpans ->
         require(rubySpans.size <= 1) { "RubySpan cannot be overlapped" }
@@ -188,7 +188,7 @@ internal class RubyLayoutRun(
 private inline fun <T : Paint, R> withTempScale(
     textPaint: T,
     scale: Float,
-    crossinline block: () -> R
+    crossinline block: () -> R,
 ): R {
     val originalSize = textPaint.textSize
     textPaint.textSize *= scale

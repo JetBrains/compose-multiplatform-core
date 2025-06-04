@@ -205,7 +205,7 @@ public class HighSpeedResolver(private val characteristics: CameraCharacteristic
         @JvmStatic
         public fun getTargetHighSpeedFrameRate(
             attachedSurfaces: Collection<AttachedSurfaceInfo>,
-            newUseCaseConfigs: Collection<UseCaseConfig<*>>
+            newUseCaseConfigs: Collection<UseCaseConfig<*>>,
         ): Range<Int> {
             val frameRates =
                 attachedSurfaces.map { it.targetHighSpeedFrameRate } +

@@ -88,7 +88,7 @@ class AppBarRowScreenshotTest {
     data class AppBarItem(
         val label: String,
         val icon: androidx.compose.ui.graphics.vector.ImageVector,
-        val onClick: () -> Unit
+        val onClick: () -> Unit,
     )
 
     @Composable
@@ -97,7 +97,7 @@ class AppBarRowScreenshotTest {
             listOf(
                 AppBarItem(label = "Favorite", icon = Icons.Filled.Favorite, onClick = {}),
                 AppBarItem(label = "Add", icon = Icons.Filled.Add, onClick = {}),
-                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {})
+                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {}),
             )
 
         AppBarRow(
@@ -111,14 +111,14 @@ class AppBarRowScreenshotTest {
                         } else {
                             menuState.show()
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Menu,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
-            }
+            },
         ) {
             repeat(itemCount) { index ->
                 val item = appBarItems[index % 3]
@@ -128,7 +128,7 @@ class AppBarRowScreenshotTest {
                         Icon(imageVector = item.icon, contentDescription = "Localized description")
                     },
                     enabled = true,
-                    label = item.label
+                    label = item.label,
                 )
             }
         }

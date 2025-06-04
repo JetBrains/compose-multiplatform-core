@@ -89,9 +89,9 @@ fun SwipeToRevealSample() {
                     coroutineScope.launch { state.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
-        }
+        },
     ) {
         Chip(
             modifier =
@@ -107,7 +107,7 @@ fun SwipeToRevealSample() {
                 },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }
@@ -136,7 +136,7 @@ fun SwipeToRevealWithDelayedText() {
                         animateFloatAsState(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = 250, delayMillis = 250),
-                            label = "PrimaryActionTextAlpha"
+                            label = "PrimaryActionTextAlpha",
                         )
                     Box(modifier = Modifier.graphicsLayer { alpha = textAlpha.value }) {
                         Spacer(Modifier.size(5.dp))
@@ -153,9 +153,9 @@ fun SwipeToRevealWithDelayedText() {
                     coroutineScope.launch { state.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
-        }
+        },
     ) {
         Chip(
             modifier =
@@ -171,7 +171,7 @@ fun SwipeToRevealWithDelayedText() {
                 },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }
@@ -192,9 +192,7 @@ fun SwipeToRevealWithExpandables() {
     ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
         item { ListHeader { Text("Scaling Lazy Column") } }
         repeat(itemCount) { current ->
-            expandableItem(
-                state = expandableStates[current],
-            ) { isExpanded ->
+            expandableItem(state = expandableStates[current]) { isExpanded ->
                 val revealState = rememberRevealState()
                 if (isExpanded) {
                     SwipeToReveal(
@@ -209,11 +207,11 @@ fun SwipeToRevealWithExpandables() {
                                                 revealState.animateTo(RevealValue.RightRevealed)
                                             }
                                         },
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
-                                    contentDescription = "Delete"
+                                    contentDescription = "Delete",
                                 )
                             }
                         },
@@ -223,11 +221,11 @@ fun SwipeToRevealWithExpandables() {
                                     Modifier.fillMaxSize()
                                         .background(Color.Gray, actionShape)
                                         .clickable { /* trigger the optional action */ },
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "More Options"
+                                    contentDescription = "More Options",
                                 )
                             }
                         },
@@ -240,7 +238,7 @@ fun SwipeToRevealWithExpandables() {
                                     }
                                 },
                                 colors = ChipDefaults.secondaryChipColors(),
-                                label = { Text(text = "Undo") }
+                                label = { Text(text = "Undo") },
                             )
                         },
                         onFullSwipe = {
@@ -248,7 +246,7 @@ fun SwipeToRevealWithExpandables() {
                                 delay(1000)
                                 expandableStates[current].expanded = false
                             }
-                        }
+                        },
                     ) {
                         Chip(
                             modifier =
@@ -267,12 +265,12 @@ fun SwipeToRevealWithExpandables() {
                                             CustomAccessibilityAction("More Options") {
                                                 /* Add the secondary action click handler */
                                                 true
-                                            }
+                                            },
                                         )
                                 },
                             onClick = { /* the click action associated with chip */ },
                             colors = ChipDefaults.secondaryChipColors(),
-                            label = { Text(text = "Swipe Me") }
+                            label = { Text(text = "Swipe Me") },
                         )
                     }
                 }

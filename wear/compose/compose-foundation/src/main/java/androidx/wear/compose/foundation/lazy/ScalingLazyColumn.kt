@@ -99,7 +99,7 @@ public sealed interface ScalingLazyListScope {
     public fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
-        itemContent: @Composable ScalingLazyListItemScope.(index: Int) -> Unit
+        itemContent: @Composable ScalingLazyListItemScope.(index: Int) -> Unit,
     )
 }
 
@@ -118,7 +118,7 @@ public sealed interface ScalingLazyListScope {
 public inline fun <T> ScalingLazyListScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable ScalingLazyListItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable ScalingLazyListItemScope.(item: T) -> Unit,
 ): Unit =
     items(items.size, if (key != null) { index: Int -> key(items[index]) } else null) {
         itemContent(items[it])
@@ -139,7 +139,7 @@ public inline fun <T> ScalingLazyListScope.items(
 public inline fun <T> ScalingLazyListScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable ScalingLazyListItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable ScalingLazyListItemScope.(index: Int, item: T) -> Unit,
 ): Unit =
     items(items.size, if (key != null) { index: Int -> key(index, items[index]) } else null) {
         itemContent(it, items[it])
@@ -160,7 +160,7 @@ public inline fun <T> ScalingLazyListScope.itemsIndexed(
 public inline fun <T> ScalingLazyListScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable ScalingLazyListItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable ScalingLazyListItemScope.(item: T) -> Unit,
 ): Unit =
     items(items.size, if (key != null) { index: Int -> key(items[index]) } else null) {
         itemContent(items[it])
@@ -181,7 +181,7 @@ public inline fun <T> ScalingLazyListScope.items(
 public inline fun <T> ScalingLazyListScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable ScalingLazyListItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable ScalingLazyListItemScope.(index: Int, item: T) -> Unit,
 ): Unit =
     items(items.size, if (key != null) { index: Int -> key(index, items[index]) } else null) {
         itemContent(it, items[it])
@@ -340,7 +340,7 @@ public class AutoCenteringParams(
  */
 @Deprecated(
     "Please use the new overload with additional rotaryBehavior parameter",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun ScalingLazyColumn(
@@ -351,7 +351,7 @@ public fun ScalingLazyColumn(
     verticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(
             space = 4.dp,
-            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
+            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
         ),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
@@ -359,7 +359,7 @@ public fun ScalingLazyColumn(
     scalingParams: ScalingParams = ScalingLazyColumnDefaults.scalingParams(),
     anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
     autoCentering: AutoCenteringParams? = AutoCenteringParams(),
-    content: ScalingLazyListScope.() -> Unit
+    content: ScalingLazyListScope.() -> Unit,
 ) {
     ScalingLazyColumn(
         modifier = modifier,
@@ -374,7 +374,7 @@ public fun ScalingLazyColumn(
         anchorType = anchorType,
         autoCentering = autoCentering,
         rotaryScrollableBehavior = RotaryScrollableDefaults.behavior(state),
-        content = content
+        content = content,
     )
 }
 
@@ -467,7 +467,7 @@ public fun ScalingLazyColumn(
  */
 @Deprecated(
     "Please use the new overload with additional overscrollEffect parameter",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun ScalingLazyColumn(
@@ -478,7 +478,7 @@ public fun ScalingLazyColumn(
     verticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(
             space = 4.dp,
-            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
+            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
         ),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
@@ -487,7 +487,7 @@ public fun ScalingLazyColumn(
     anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
     autoCentering: AutoCenteringParams? = AutoCenteringParams(),
     rotaryScrollableBehavior: RotaryScrollableBehavior? = RotaryScrollableDefaults.behavior(state),
-    content: ScalingLazyListScope.() -> Unit
+    content: ScalingLazyListScope.() -> Unit,
 ): Unit =
     ScalingLazyColumn(
         modifier = modifier,
@@ -503,7 +503,7 @@ public fun ScalingLazyColumn(
         anchorType = anchorType,
         autoCentering = autoCentering,
         rotaryScrollableBehavior = rotaryScrollableBehavior,
-        content = content
+        content = content,
     )
 
 /**
@@ -605,7 +605,7 @@ public fun ScalingLazyColumn(
     verticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(
             space = 4.dp,
-            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
+            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
         ),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
@@ -615,7 +615,7 @@ public fun ScalingLazyColumn(
     autoCentering: AutoCenteringParams? = AutoCenteringParams(),
     rotaryScrollableBehavior: RotaryScrollableBehavior? = RotaryScrollableDefaults.behavior(state),
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: ScalingLazyListScope.() -> Unit
+    content: ScalingLazyListScope.() -> Unit,
 ) {
     var initialized by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -628,10 +628,10 @@ public fun ScalingLazyColumn(
                         behavior = rotaryScrollableBehavior,
                         focusRequester = focusRequester,
                         reverseDirection = reverseLayout,
-                        overscrollEffect = overscrollEffect
+                        overscrollEffect = overscrollEffect,
                     )
             else modifier,
-        propagateMinConstraints = true
+        propagateMinConstraints = true,
     ) {
         val density = LocalDensity.current
         val layoutDirection = LocalLayoutDirection.current
@@ -667,8 +667,8 @@ public fun ScalingLazyColumn(
                             vertical =
                                 -(contentPadding.calculateTopPadding() +
                                         contentPadding.calculateBottomPadding())
-                                    .roundToPx()
-                        )
+                                    .roundToPx(),
+                        ),
                 )
 
             // Set up transient state
@@ -683,7 +683,7 @@ public fun ScalingLazyColumn(
                     anchorType = anchorType,
                     autoCentering = autoCentering,
                     reverseLayout = reverseLayout,
-                    localInspectionMode = LocalInspectionMode.current
+                    localInspectionMode = LocalInspectionMode.current,
                 )
 
             LazyColumn(
@@ -847,7 +847,7 @@ public object ScalingLazyColumnDefaults {
         minTransitionArea: Float = 0.35f,
         maxTransitionArea: Float = 0.55f,
         scaleInterpolator: Easing = CubicBezierEasing(0.3f, 0f, 0.7f, 1f),
-        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 20f).toInt() }
+        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 20f).toInt() },
     ): ScalingParams =
         DefaultScalingParams(
             edgeScale = edgeScale,
@@ -857,7 +857,7 @@ public object ScalingLazyColumnDefaults {
             minTransitionArea = minTransitionArea,
             maxTransitionArea = maxTransitionArea,
             scaleInterpolator = scaleInterpolator,
-            viewportVerticalOffsetResolver = viewportVerticalOffsetResolver
+            viewportVerticalOffsetResolver = viewportVerticalOffsetResolver,
         )
 
     /**
@@ -873,14 +873,14 @@ public object ScalingLazyColumnDefaults {
     public fun snapFlingBehavior(
         state: ScalingLazyListState,
         snapOffset: Dp = 0.dp,
-        decay: DecayAnimationSpec<Float> = exponentialDecay()
+        decay: DecayAnimationSpec<Float> = exponentialDecay(),
     ): FlingBehavior {
         val snapOffsetPx = with(LocalDensity.current) { snapOffset.roundToPx() }
         return remember(state, snapOffset, decay) {
             ScalingLazyColumnSnapFlingBehavior(
                 state = state,
                 snapOffset = snapOffsetPx,
-                decay = decay
+                decay = decay,
             )
         }
     }
@@ -889,7 +889,7 @@ public object ScalingLazyColumnDefaults {
 private class ScalingLazyListScopeImpl(
     private val state: ScalingLazyListState,
     private val scope: LazyListScope,
-    private val itemScope: ScalingLazyListItemScope
+    private val itemScope: ScalingLazyListItemScope,
 ) : ScalingLazyListScope {
 
     private var currentStartIndex = 0
@@ -905,7 +905,7 @@ private class ScalingLazyListScopeImpl(
     override fun items(
         count: Int,
         key: ((index: Int) -> Any)?,
-        itemContent: @Composable (ScalingLazyListItemScope.(index: Int) -> Unit)
+        itemContent: @Composable (ScalingLazyListItemScope.(index: Int) -> Unit),
     ) {
         val startIndex = currentStartIndex
         scope.items(count = count, key = key) {
@@ -922,7 +922,7 @@ private fun ScalingLazyColumnItemWrapper(
     index: Int,
     state: ScalingLazyListState,
     itemScope: ScalingLazyListItemScope,
-    content: @Composable (ScalingLazyListItemScope.() -> Unit)
+    content: @Composable (ScalingLazyListItemScope.() -> Unit),
 ) {
     Box(
         modifier =
@@ -951,7 +951,7 @@ private fun ScalingLazyColumnItemWrapper(
                         transformOrigin =
                             TransformOrigin(
                                 pivotFractionX = 0.5f,
-                                pivotFractionY = if (reverseLayout) 1.0f else 0.0f
+                                pivotFractionY = if (reverseLayout) 1.0f else 0.0f,
                             )
                     }
                 }
@@ -965,7 +965,7 @@ private fun ScalingLazyColumnItemWrapper(
 @Immutable
 public class CombinedPaddingValues(
     @Stable public val contentPadding: PaddingValues,
-    @Stable public val extraPadding: Dp
+    @Stable public val extraPadding: Dp,
 ) : PaddingValues {
     override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp =
         contentPadding.calculateLeftPadding(layoutDirection)
@@ -1004,23 +1004,22 @@ public class CombinedPaddingValues(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun Modifier.verticalNegativePadding(
-    extraPadding: Dp,
-): Modifier = layout { measurable, constraints ->
-    require(constraints.hasBoundedHeight) { "height should be bounded" }
-    val topAndBottomPadding = (extraPadding * 2).roundToPx()
-    val placeable =
-        measurable.measure(
-            constraints.copy(
-                minHeight = constraints.minHeight + topAndBottomPadding,
-                maxHeight = constraints.maxHeight + topAndBottomPadding
+public fun Modifier.verticalNegativePadding(extraPadding: Dp): Modifier =
+    layout { measurable, constraints ->
+        require(constraints.hasBoundedHeight) { "height should be bounded" }
+        val topAndBottomPadding = (extraPadding * 2).roundToPx()
+        val placeable =
+            measurable.measure(
+                constraints.copy(
+                    minHeight = constraints.minHeight + topAndBottomPadding,
+                    maxHeight = constraints.maxHeight + topAndBottomPadding,
+                )
             )
-        )
 
-    layout(placeable.measuredWidth, constraints.maxHeight) {
-        placeable.place(0, -extraPadding.roundToPx())
+        layout(placeable.measuredWidth, constraints.maxHeight) {
+            placeable.place(0, -extraPadding.roundToPx())
+        }
     }
-}
 
 private fun Modifier.autoCenteringHeight(getHeight: () -> Int) = layout { measurable, constraints ->
     val height = getHeight()

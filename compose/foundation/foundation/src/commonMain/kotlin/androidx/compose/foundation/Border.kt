@@ -120,7 +120,7 @@ internal data class BorderModifierNodeElement(val width: Dp, val brush: Brush, v
 internal class BorderModifierNode(
     widthParameter: Dp,
     brushParameter: Brush,
-    shapeParameter: Shape
+    shapeParameter: Shape,
 ) : DelegatingNode() {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -165,7 +165,7 @@ internal class BorderModifierNode(
                     val strokeWidthPx =
                         min(
                             if (width == Dp.Hairline) 1f else ceil(width.toPx()),
-                            ceil(size.minDimension / 2)
+                            ceil(size.minDimension / 2),
                         )
                     val halfStroke = strokeWidthPx / 2
                     val topLeft = Offset(halfStroke, halfStroke)
@@ -182,7 +182,7 @@ internal class BorderModifierNode(
                                 topLeft,
                                 borderSize,
                                 fillArea,
-                                strokeWidthPx
+                                strokeWidthPx,
                             )
                         is Outline.Rectangle ->
                             drawRectBorder(brush, topLeft, borderSize, fillArea, strokeWidthPx)
@@ -200,7 +200,7 @@ internal class BorderModifierNode(
         brush: Brush,
         outline: Outline.Generic,
         fillArea: Boolean,
-        strokeWidth: Float
+        strokeWidth: Float,
     ): DrawResult =
         if (fillArea) {
             onDrawWithContent {
@@ -256,7 +256,7 @@ internal class BorderModifierNode(
                             drawPath(
                                 path = outline.path,
                                 brush = brush,
-                                style = Stroke(strokeWidth * 2)
+                                style = Stroke(strokeWidth * 2),
                             )
 
                             // Scale the canvas slightly to cover the background that may be visible
@@ -266,7 +266,7 @@ internal class BorderModifierNode(
                                 drawPath(
                                     path = maskPath,
                                     brush = brush,
-                                    blendMode = BlendMode.Clear
+                                    blendMode = BlendMode.Clear,
                                 )
                             }
                         }
@@ -288,7 +288,7 @@ internal class BorderModifierNode(
         topLeft: Offset,
         borderSize: Size,
         fillArea: Boolean,
-        strokeWidth: Float
+        strokeWidth: Float,
     ): DrawResult {
         return if (outline.roundRect.isSimple) {
             val cornerRadius = outline.roundRect.topLeftCornerRadius
@@ -312,7 +312,7 @@ internal class BorderModifierNode(
                             strokeWidth,
                             size.width - strokeWidth,
                             size.height - strokeWidth,
-                            clipOp = ClipOp.Difference
+                            clipOp = ClipOp.Difference,
                         ) {
                             drawRoundRect(brush, cornerRadius = cornerRadius)
                         }
@@ -327,7 +327,7 @@ internal class BorderModifierNode(
                             topLeft = topLeft,
                             size = borderSize,
                             cornerRadius = cornerRadius.shrink(halfStroke),
-                            style = borderStroke
+                            style = borderStroke,
                         )
                     }
                 }
@@ -356,12 +356,12 @@ private data class BorderCache(
     private var imageBitmap: ImageBitmap? = null,
     private var canvas: androidx.compose.ui.graphics.Canvas? = null,
     private var canvasDrawScope: CanvasDrawScope? = null,
-    private var borderPath: Path? = null
+    private var borderPath: Path? = null,
 ) {
     inline fun CacheDrawScope.drawBorderCache(
         borderSize: IntSize,
         config: ImageBitmapConfig,
-        block: DrawScope.() -> Unit
+        block: DrawScope.() -> Unit,
     ): ImageBitmap {
 
         var targetImageBitmap = imageBitmap
@@ -415,7 +415,7 @@ private fun CacheDrawScope.drawRectBorder(
     topLeft: Offset,
     borderSize: Size,
     fillArea: Boolean,
-    strokeWidthPx: Float
+    strokeWidthPx: Float,
 ): DrawResult {
     // If we are drawing a rectangular stroke, just offset it by half the stroke
     // width as strokes are always drawn centered on their geometry.
@@ -437,7 +437,7 @@ private fun createRoundRectPath(
     targetPath: Path,
     roundedRect: RoundRect,
     strokeWidth: Float,
-    fillArea: Boolean
+    fillArea: Boolean,
 ): Path =
     targetPath.apply {
         reset()
@@ -458,7 +458,7 @@ private fun createInsetRoundedRect(widthPx: Float, roundedRect: RoundRect) =
         topLeftCornerRadius = roundedRect.topLeftCornerRadius.shrink(widthPx),
         topRightCornerRadius = roundedRect.topRightCornerRadius.shrink(widthPx),
         bottomLeftCornerRadius = roundedRect.bottomLeftCornerRadius.shrink(widthPx),
-        bottomRightCornerRadius = roundedRect.bottomRightCornerRadius.shrink(widthPx)
+        bottomRightCornerRadius = roundedRect.bottomRightCornerRadius.shrink(widthPx),
     )
 
 /**

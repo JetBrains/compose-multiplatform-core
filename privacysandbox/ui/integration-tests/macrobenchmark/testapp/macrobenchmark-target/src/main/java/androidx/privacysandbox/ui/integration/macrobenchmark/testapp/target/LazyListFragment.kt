@@ -48,7 +48,7 @@ class LazyListFragment : BaseFragment() {
         adFormat: Int,
         adType: Int,
         mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -60,7 +60,7 @@ class LazyListFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         initializeBannerAdAdapter(count = 10)
         return ComposeView(requireContext()).apply {
@@ -79,12 +79,12 @@ class LazyListFragment : BaseFragment() {
             items(
                 items = adAdapters,
                 key = { adapterWithId -> adapterWithId.id },
-                contentType = { adapterItem -> adapterItem.contentType }
+                contentType = { adapterItem -> adapterItem.contentType },
             ) { adapterWithId ->
                 SandboxedSdkUi(
                     adapterWithId.adapter,
                     Modifier.fillParentMaxSize(),
-                    providerUiOnTop = providerUiOnTop
+                    providerUiOnTop = providerUiOnTop,
                 )
             }
         }
@@ -108,7 +108,7 @@ class LazyListFragment : BaseFragment() {
                                         false,
                                         shouldDrawViewabilityLayer,
                                     )
-                            )
+                            ),
                     )
                 )
             }
@@ -134,7 +134,7 @@ class LazyListFragment : BaseFragment() {
                                         false,
                                         shouldDrawViewabilityLayer,
                                     )
-                            )
+                            ),
                     )
                 )
             }
@@ -147,6 +147,6 @@ class LazyListFragment : BaseFragment() {
         // TODO(b/391558988): Specify content type for PoolingContainer CUJ
         // in View world for consistency
         val contentType: String = "BannerAd_$id",
-        val adapter: SandboxedUiAdapter
+        val adapter: SandboxedUiAdapter,
     )
 }

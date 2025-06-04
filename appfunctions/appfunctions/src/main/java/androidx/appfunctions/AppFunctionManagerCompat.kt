@@ -71,7 +71,7 @@ internal constructor(
     public suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean {
         return appFunctionManagerApi.isAppFunctionEnabled(
             packageName = packageName,
-            functionId = functionId
+            functionId = functionId,
         )
     }
 
@@ -88,7 +88,7 @@ internal constructor(
     @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public suspend fun setAppFunctionEnabled(
         functionId: String,
-        @EnabledState newEnabledState: Int
+        @EnabledState newEnabledState: Int,
     ) {
         return appFunctionManagerApi.setAppFunctionEnabled(functionId, newEnabledState)
     }
@@ -104,14 +104,14 @@ internal constructor(
      */
     @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public suspend fun executeAppFunction(
-        request: ExecuteAppFunctionRequest,
+        request: ExecuteAppFunctionRequest
     ): ExecuteAppFunctionResponse {
 
         val schemaMetadata: AppFunctionSchemaMetadata? =
             try {
                 appFunctionReader.getAppFunctionSchemaMetadata(
                     functionId = request.functionIdentifier,
-                    packageName = request.targetPackageName
+                    packageName = request.targetPackageName,
                 )
             } catch (ex: AppFunctionFunctionNotFoundException) {
                 return ExecuteAppFunctionResponse.Error(ex)
@@ -243,7 +243,7 @@ internal constructor(
                         Dependencies.translatorSelector,
                         AppSearchAppFunctionReader(
                             context,
-                            Dependencies.schemaAppFunctionInventory
+                            Dependencies.schemaAppFunctionInventory,
                         ),
                         PlatformAppFunctionManagerApi(context),
                     )
@@ -255,7 +255,7 @@ internal constructor(
                         Dependencies.translatorSelector,
                         AppSearchAppFunctionReader(
                             context,
-                            Dependencies.schemaAppFunctionInventory
+                            Dependencies.schemaAppFunctionInventory,
                         ),
                         ExtensionAppFunctionManagerApi(context),
                     )

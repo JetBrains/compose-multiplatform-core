@@ -47,7 +47,7 @@ import kotlin.jvm.JvmInline
 @ExperimentalMaterial3AdaptiveApi
 fun calculatePaneScaffoldDirective(
     windowAdaptiveInfo: WindowAdaptiveInfo,
-    verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating
+    verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating,
 ): PaneScaffoldDirective {
     val maxHorizontalPartitions: Int
     val horizontalPartitionSpacerSize: Dp
@@ -126,7 +126,7 @@ fun calculatePaneScaffoldDirective(
 @ExperimentalMaterial3AdaptiveApi
 fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
     windowAdaptiveInfo: WindowAdaptiveInfo,
-    verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating
+    verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating,
 ): PaneScaffoldDirective {
     val isMediumWidth =
         windowAdaptiveInfo.windowSizeClass.minWidth == WindowSizeClass.WidthSizeClasses.Medium
@@ -142,7 +142,7 @@ fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
                 },
             maxVerticalPartitions = if (isMediumWidth && !isTableTop) 1 else maxVerticalPartitions,
             verticalPartitionSpacerSize =
-                if (isMediumWidth && !isTableTop) 0.dp else verticalPartitionSpacerSize
+                if (isMediumWidth && !isTableTop) 0.dp else verticalPartitionSpacerSize,
         )
     }
 }
@@ -187,7 +187,7 @@ class PaneScaffoldDirective(
     val verticalPartitionSpacerSize: Dp,
     val defaultPanePreferredWidth: Dp,
     val defaultPanePreferredHeight: Dp,
-    val excludedBounds: List<Rect>
+    val excludedBounds: List<Rect>,
 ) {
     constructor(
         maxHorizontalPartitions: Int,
@@ -233,7 +233,7 @@ class PaneScaffoldDirective(
         verticalPartitionSpacerSize: Dp = this.verticalPartitionSpacerSize,
         defaultPanePreferredWidth: Dp = this.defaultPanePreferredWidth,
         excludedBounds: List<Rect> = this.excludedBounds,
-        defaultPanePreferredHeight: Dp = this.defaultPanePreferredHeight
+        defaultPanePreferredHeight: Dp = this.defaultPanePreferredHeight,
     ): PaneScaffoldDirective =
         PaneScaffoldDirective(
             maxHorizontalPartitions = maxHorizontalPartitions,
@@ -265,7 +265,7 @@ class PaneScaffoldDirective(
      */
     @Deprecated(
         "Maintained for binary compatibility. Use version with defaultPanePreferredHeight instead.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     fun copy(
         maxHorizontalPartitions: Int = this.maxHorizontalPartitions,
@@ -273,7 +273,7 @@ class PaneScaffoldDirective(
         maxVerticalPartitions: Int = this.maxVerticalPartitions,
         verticalPartitionSpacerSize: Dp = this.verticalPartitionSpacerSize,
         defaultPanePreferredWidth: Dp = this.defaultPanePreferredWidth,
-        excludedBounds: List<Rect> = this.excludedBounds
+        excludedBounds: List<Rect> = this.excludedBounds,
     ): PaneScaffoldDirective =
         PaneScaffoldDirective(
             maxHorizontalPartitions = maxHorizontalPartitions,
@@ -336,7 +336,7 @@ class PaneScaffoldDirective(
                 verticalPartitionSpacerSize = 0.dp,
                 defaultPanePreferredWidth = DefaultPreferredWidth,
                 defaultPanePreferredHeight = DefaultPreferredHeight,
-                excludedBounds = emptyList()
+                excludedBounds = emptyList(),
             )
     }
 }

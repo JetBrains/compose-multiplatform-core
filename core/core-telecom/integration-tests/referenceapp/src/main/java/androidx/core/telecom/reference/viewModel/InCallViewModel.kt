@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalAppActions::class)
 class InCallViewModel(
     private val context: Context,
-    private val callRepository: CallRepository = CallRepository()
+    private val callRepository: CallRepository = CallRepository(),
 ) : ViewModel() {
 
     private val _activeLoopbackCallId = MutableStateFlow<String?>(null)
@@ -79,14 +79,14 @@ class InCallViewModel(
                         isLocalCallSilenceEnabled = call.isLocalCallSilenceEnabled,
                         isCallIconExtensionEnabled = call.isCallIconExtensionEnabled,
                         callIconData = call.iconData,
-                        isLocallyMuted = call.isLocallyMuted
+                        isLocallyMuted = call.isLocallyMuted,
                     )
                 }
             }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
+                initialValue = emptyList(),
             )
 
     private fun observeCallStateForLoopback() {
@@ -120,7 +120,7 @@ class InCallViewModel(
                         "EligibleCall: ${eligibleCall?.callId}, " +
                         "GlobalMute: ${audioManager.isMicrophoneMute}, " +
                         "EligibleCallLocallyMuted: ${eligibleCall?.isLocallyMuted}, " +
-                        "EffectiveMuteForLoopback: $effectiveMuteForLoopback"
+                        "EffectiveMuteForLoopback: $effectiveMuteForLoopback",
                 )
 
                 val desiredLoopbackCallId: String? =
@@ -135,7 +135,7 @@ class InCallViewModel(
                     }
                 Log.v(
                     TAG,
-                    "Loopback Observer: Desired ID: $desiredLoopbackCallId, Current ID: $currentLoopbackCallId"
+                    "Loopback Observer: Desired ID: $desiredLoopbackCallId, Current ID: $currentLoopbackCallId",
                 )
 
                 if (
@@ -143,7 +143,7 @@ class InCallViewModel(
                 ) {
                     Log.d(
                         TAG,
-                        "Loopback Observer: Condition met to START for $desiredLoopbackCallId"
+                        "Loopback Observer: Condition met to START for $desiredLoopbackCallId",
                     )
                     if (currentLoopbackCallId != null) {
                         stopAudioLoopbackInternal()
@@ -154,13 +154,13 @@ class InCallViewModel(
                     } else {
                         Log.e(
                             TAG,
-                            "Loopback: RECORD_AUDIO permission missing for $desiredLoopbackCallId! Should be granted on app start."
+                            "Loopback: RECORD_AUDIO permission missing for $desiredLoopbackCallId! Should be granted on app start.",
                         )
                     }
                 } else if (desiredLoopbackCallId == null && currentLoopbackCallId != null) {
                     Log.d(
                         TAG,
-                        "Loopback Observer: Condition met to STOP for $currentLoopbackCallId"
+                        "Loopback Observer: Condition met to STOP for $currentLoopbackCallId",
                     )
                     stopAudioLoopbackInternal()
                 }
@@ -229,7 +229,7 @@ class InCallViewModel(
         if (audioManager.isMicrophoneMute) {
             Log.w(
                 TAG,
-                "[$callId] Internal start check: Cannot start loopback, global mute is active."
+                "[$callId] Internal start check: Cannot start loopback, global mute is active.",
             )
             _activeLoopbackCallId.value = null
             return
@@ -237,7 +237,7 @@ class InCallViewModel(
         if (_activeLoopbackCallId.value == callId) {
             Log.w(
                 TAG,
-                "[$callId] startAudioLoopbackInternal called but already active for this ID."
+                "[$callId] startAudioLoopbackInternal called but already active for this ID.",
             )
             return
         }

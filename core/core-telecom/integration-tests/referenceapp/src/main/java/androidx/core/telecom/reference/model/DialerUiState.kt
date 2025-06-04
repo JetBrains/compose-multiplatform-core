@@ -32,5 +32,5 @@ data class DialerUiState(
     val errorMessage: String? = null,
     val availableEndpoints: List<CallEndpointCompat> = emptyList(),
     val selectedEndpoint: CallEndpointCompat? = null,
-    val isFetchingEndpoints: Boolean = false
+    val isFetchingEndpoints: Boolean = false,
 )

@@ -73,7 +73,7 @@ fun <S, T : PaneScaffoldValue<S>> ExtendedPaneScaffoldPaneScope<S, T>.AnimatedPa
                 enterTransition = enterTransition,
                 exitTransition = exitTransition,
                 boundsAnimationSpec = boundsAnimationSpec,
-                content = content
+                content = content,
             )
             .AnimatedPane()
     }
@@ -108,7 +108,7 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                             animationSpec = boundsAnimationSpec,
                             scaleConversion = scaleConversion,
                             lookaheadScope = this,
-                            enabled = animatingBounds
+                            enabled = animatingBounds,
                         )
                         .semantics { isTraversalGroup = true }
                         .then(
@@ -120,7 +120,7 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                         )
                         .then(if (animatingBounds) Modifier else Modifier.clipToBounds()),
                 enter = enterTransition,
-                exit = exitTransition
+                exit = exitTransition,
             ) {
                 scope.saveableStateHolder.SaveableStateProvider(paneRole.toString()) {
                     AnimatedPaneScope.create(this).content()
@@ -135,11 +135,11 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                 scaffoldStateTransition.AnimatedVisibility(
                     visible = { value: T -> value[paneRole] != PaneAdaptedValue.Hidden },
                     enter = enterTransition,
-                    exit = exitTransition
+                    exit = exitTransition,
                 ) {
                     Content(
                         defaultColor = ThreePaneScaffoldDefaults.ScrimColor,
-                        enabled = paneValue is PaneAdaptedValue.Levitated
+                        enabled = paneValue is PaneAdaptedValue.Levitated,
                     )
                 }
             }

@@ -20,6 +20,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
@@ -27,6 +28,7 @@ import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEvent;
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo;
+import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
@@ -117,7 +119,8 @@ final class RuntimeUtils {
     }
 
     @Nullable
-    private static HitInfo getHitInfo(
+    @VisibleForTesting
+    static HitInfo getHitInfo(
             com.android.extensions.xr.node.InputEvent.HitInfo xrHitInfo,
             EntityManager entityManager) {
         if (xrHitInfo == null
@@ -131,7 +134,7 @@ final class RuntimeUtils {
             return null;
         }
         return new HitInfo(
-                entityManager.getEntityForNode(xrHitInfo.getInputNode()),
+                hitEntity,
                 (xrHitInfo.getHitPosition() == null)
                         ? null
                         : getVector3(xrHitInfo.getHitPosition()),
@@ -261,6 +264,10 @@ final class RuntimeUtils {
         return new Vector3(vec3.x, vec3.y, vec3.z);
     }
 
+    static Quaternion getQuaternion(Quatf quatf) {
+        return new Quaternion(quatf.x, quatf.y, quatf.z, quatf.w);
+    }
+
     /**
      * Converts from a perception pose type.
      *
@@ -328,7 +335,7 @@ final class RuntimeUtils {
      */
     static SpatialCapabilities convertSpatialCapabilities(
             com.android.extensions.xr.space.SpatialCapabilities extCapabilities) {
-        @SpatialCapabilities.SpatialCapability int capabilities = 0;
+        int capabilities = 0;
         if (extCapabilities.get(
                 com.android.extensions.xr.space.SpatialCapabilities.SPATIAL_UI_CAPABLE)) {
             capabilities |= SpatialCapabilities.SPATIAL_CAPABILITY_UI;
@@ -359,14 +366,25 @@ final class RuntimeUtils {
     }
 
     /**
+     * Converts from the Extensions perceived resolution to the runtime perceived resolution.
+     *
+     * @param extResolution a {@link com.android.extensions.xr.space.PerceivedResolution} instance
+     *     to be converted.
+     */
+    static PixelDimensions convertPerceivedResolution(
+            com.android.extensions.xr.space.PerceivedResolution extResolution) {
+        return new PixelDimensions(extResolution.getWidth(), extResolution.getHeight());
+    }
+
+    /**
      * Converts from the Extensions spatial visibility to the runtime spatial visibility.
      *
-     * @param extVisibility a {@link com.android.extensions.xr.space.VisibilityState} instance to be
-     *     converted.
+     * @param extVisibility a {@link com.android.extensions.xr.space.VisibilityState.S} instance to
+     *     be converted.
      */
-    static SpatialVisibility convertSpatialVisibility(VisibilityState extVisibility) {
+    static SpatialVisibility convertSpatialVisibility(int extVisibility) {
         int visibility;
-        switch (extVisibility.getVisibility()) {
+        switch (extVisibility) {
             case VisibilityState.UNKNOWN:
                 visibility = SpatialVisibility.UNKNOWN;
                 break;
@@ -380,8 +398,7 @@ final class RuntimeUtils {
                 visibility = SpatialVisibility.WITHIN_FOV;
                 break;
             default:
-                throw new IllegalArgumentException(
-                        "Unknown Spatial Visibility: " + extVisibility.getVisibility());
+                throw new IllegalArgumentException("Unknown Spatial Visibility: " + extVisibility);
         }
         return new SpatialVisibility(visibility);
     }

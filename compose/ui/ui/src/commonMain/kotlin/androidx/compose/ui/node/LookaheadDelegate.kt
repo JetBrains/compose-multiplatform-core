@@ -210,7 +210,7 @@ internal abstract class LookaheadCapablePlaceable :
         height: Int,
         alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
-        placementBlock: PlacementScope.() -> Unit
+        placementBlock: PlacementScope.() -> Unit,
     ): MeasureResult {
         checkMeasuredSize(width, height)
         return object : MeasureResult {
@@ -277,7 +277,7 @@ internal abstract class LookaheadCapablePlaceable :
     private fun captureRulers(
         placeableResult: PlaceableResult,
         positionOnScreen: IntOffset = IntOffset.Max,
-        size: IntSize = IntSize.Zero
+        size: IntSize = IntSize.Zero,
     ) {
         val rulerReaders = rulerReaders
         val newValues = rulerValues ?: RulerTrackingMap().also { rulerValues = it }
@@ -397,9 +397,8 @@ internal inline fun checkMeasuredSize(width: Int, height: Int) {
     }
 }
 
-internal abstract class LookaheadDelegate(
-    val coordinator: NodeCoordinator,
-) : Measurable, LookaheadCapablePlaceable() {
+internal abstract class LookaheadDelegate(val coordinator: NodeCoordinator) :
+    Measurable, LookaheadCapablePlaceable() {
     override val child: LookaheadCapablePlaceable?
         get() = coordinator.wrapped?.lookaheadDelegate
 
@@ -482,7 +481,7 @@ internal abstract class LookaheadDelegate(
     final override fun placeAt(
         position: IntOffset,
         zIndex: Float,
-        layerBlock: (GraphicsLayerScope.() -> Unit)?
+        layerBlock: (GraphicsLayerScope.() -> Unit)?,
     ) {
         placeSelf(position)
         if (isShallowPlacing) return
@@ -607,7 +606,7 @@ private class RulerTrackingMap {
     fun notifyChanged(
         isLookingAhead: Boolean,
         parent: LookaheadCapablePlaceable?,
-        rulerReaders: MutableScatterMap<Ruler, MutableScatterSet<WeakReference<LayoutNode>>>?
+        rulerReaders: MutableScatterMap<Ruler, MutableScatterSet<WeakReference<LayoutNode>>>?,
     ) {
         for (i in 0 until size) {
             val access = accessFlags[i]

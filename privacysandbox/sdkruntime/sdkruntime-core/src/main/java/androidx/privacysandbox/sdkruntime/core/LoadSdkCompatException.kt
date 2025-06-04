@@ -60,7 +60,7 @@ class LoadSdkCompatException : Exception {
         @LoadSdkErrorCode loadSdkErrorCode: Int,
         message: String?,
         cause: Throwable?,
-        extraInformation: Bundle = Bundle()
+        extraInformation: Bundle = Bundle(),
     ) : super(message, cause) {
         this.loadSdkErrorCode = loadSdkErrorCode
         this.extraInformation = extraInformation
@@ -75,7 +75,7 @@ class LoadSdkCompatException : Exception {
     @RestrictTo(LIBRARY_GROUP)
     constructor(
         @LoadSdkErrorCode loadSdkErrorCode: Int,
-        message: String?
+        message: String?,
     ) : this(loadSdkErrorCode, message, cause = null)
 
     /**
@@ -86,7 +86,7 @@ class LoadSdkCompatException : Exception {
      */
     constructor(
         cause: Throwable,
-        extraInfo: Bundle
+        extraInfo: Bundle,
     ) : this(LOAD_SDK_SDK_DEFINED_ERROR, "", cause, extraInfo)
 
     @IntDef(
@@ -124,7 +124,7 @@ class LoadSdkCompatException : Exception {
                 toLoadSdkErrorCodeCompat(ex.loadSdkErrorCode),
                 ex.message,
                 ex.cause,
-                ex.extraInformation
+                ex.extraInformation,
             )
         }
 

@@ -370,7 +370,7 @@ class QueryWriterTest {
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(Query::class) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(Query::class) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -378,7 +378,7 @@ class QueryWriterTest {
                 QueryFunctionProcessor(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = methods.first()
+                    executableElement = methods.first(),
                 )
             val method = parser.process()
             handler(invocation.isKsp, QueryWriter(method))

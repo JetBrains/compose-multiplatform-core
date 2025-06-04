@@ -19,7 +19,6 @@ package androidx.xr.scenecore.impl;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
@@ -31,7 +30,6 @@ import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.common.BaseEntity;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
@@ -67,7 +65,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     Optional<Executor> mPointerCaptureExecutor = Optional.empty();
     final ConcurrentHashMap<Consumer<ReformEvent>, Executor> mReformEventConsumerMap =
             new ConcurrentHashMap<>();
-    private final EntityManager mEntityManager;
+    protected final EntityManager mEntityManager;
     private ReformOptions mReformOptions;
 
     AndroidXrEntity(

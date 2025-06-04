@@ -45,7 +45,7 @@ class SecondActivity : ComponentActivity() {
     fun ActivityContent(session: Session) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
                 Text(text = "Request FSM", fontSize = 30.sp)

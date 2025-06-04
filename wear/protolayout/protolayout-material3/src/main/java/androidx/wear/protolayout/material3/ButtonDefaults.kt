@@ -76,7 +76,7 @@ public class ButtonColors(
             containerColor = containerColor,
             iconColor = iconColor,
             labelColor = labelColor,
-            secondaryLabelColor = secondaryLabelColor
+            secondaryLabelColor = secondaryLabelColor,
         )
 }
 
@@ -127,7 +127,7 @@ public object ButtonDefaults {
         secondaryLabel: LayoutElement?,
         @HorizontalAlignment horizontalAlignment: Int,
         style: AvatarButtonStyle,
-        height: ContainerDimension
+        height: ContainerDimension,
     ): LayoutElement {
         val verticalElementBuilder: Column.Builder =
             Column.Builder().setWidth(expand()).setHorizontalAlignment(HORIZONTAL_ALIGN_START)
@@ -136,7 +136,7 @@ public object ButtonDefaults {
 
         ContainerWithSpacersBuilder<LayoutElement>(
                 { element: LayoutElement? -> verticalElementBuilder.addContent(element!!) },
-                label
+                label,
             )
             .addElement(secondaryLabel)
 
@@ -234,7 +234,7 @@ public object ButtonDefaults {
             containerColor = theme.colorScheme.primary,
             iconColor = theme.colorScheme.onPrimary,
             labelColor = theme.colorScheme.onPrimary,
-            secondaryLabelColor = theme.colorScheme.onPrimary.withOpacity(0.8f)
+            secondaryLabelColor = theme.colorScheme.onPrimary.withOpacity(0.8f),
         )
 
     /**
@@ -249,7 +249,7 @@ public object ButtonDefaults {
             containerColor = theme.colorScheme.surfaceContainer,
             iconColor = theme.colorScheme.primary,
             labelColor = theme.colorScheme.onSurface,
-            secondaryLabelColor = theme.colorScheme.onSurfaceVariant
+            secondaryLabelColor = theme.colorScheme.onSurfaceVariant,
         )
 
     /**
@@ -264,7 +264,7 @@ public object ButtonDefaults {
             containerColor = theme.colorScheme.primaryContainer,
             iconColor = theme.colorScheme.onPrimaryContainer,
             labelColor = theme.colorScheme.onPrimaryContainer,
-            secondaryLabelColor = theme.colorScheme.onPrimaryContainer.withOpacity(0.9f)
+            secondaryLabelColor = theme.colorScheme.onPrimaryContainer.withOpacity(0.9f),
         )
 
     internal const val METADATA_TAG_BUTTON: String = "BTN"
@@ -286,7 +286,7 @@ internal object CompactButtonStyle {
 public class IconButtonStyle
 internal constructor(
     @Dimension(unit = DP) internal val iconSize: Float,
-    internal val innerPadding: Padding = DEFAULT_CONTENT_PADDING
+    internal val innerPadding: Padding = DEFAULT_CONTENT_PADDING,
 ) {
     public companion object {
         /**
@@ -307,7 +307,7 @@ internal constructor(
 public class TextButtonStyle
 internal constructor(
     @TypographyToken internal val labelTypography: Int,
-    internal val innerPadding: Padding = DEFAULT_CONTENT_PADDING
+    internal val innerPadding: Padding = DEFAULT_CONTENT_PADDING,
 ) {
     public companion object {
         /**
@@ -360,7 +360,7 @@ internal constructor(
                 secondaryLabelTypography = Typography.BODY_SMALL,
                 iconSize = 24f,
                 innerPadding = padding(horizontal = 14f, vertical = 10f),
-                iconToLabelsSpaceDp = 6
+                iconToLabelsSpaceDp = 6,
             )
 
         /**
@@ -373,7 +373,7 @@ internal constructor(
                 secondaryLabelTypography = Typography.LABEL_SMALL,
                 iconSize = 26f,
                 innerPadding = padding(horizontal = 14f, vertical = 6f),
-                iconToLabelsSpaceDp = 8
+                iconToLabelsSpaceDp = 8,
             )
 
         /**
@@ -386,7 +386,7 @@ internal constructor(
                 secondaryLabelTypography = Typography.LABEL_SMALL,
                 iconSize = 32f,
                 innerPadding = padding(horizontal = 14f, vertical = 8f),
-                iconToLabelsSpaceDp = 10
+                iconToLabelsSpaceDp = 10,
             )
     }
 }

@@ -32,7 +32,7 @@ data class Version(val major: Int, val minor: Int, val patch: Int, val extra: St
         Integer.parseInt(checkedMatcher(versionString).group(2)),
         Integer.parseInt(checkedMatcher(versionString).group(3)),
         if (checkedMatcher(versionString).groupCount() == 4) checkedMatcher(versionString).group(4)
-        else null
+        else null,
     )
 
     fun isSnapshot(): Boolean = "-SNAPSHOT" == extra
@@ -59,7 +59,7 @@ data class Version(val major: Int, val minor: Int, val patch: Int, val extra: St
             { it.minor },
             { it.patch },
             { it.extra == null }, // False (no extra) sorts above true (has extra)
-            { it.extra } // gradle uses lexicographic ordering
+            { it.extra }, // gradle uses lexicographic ordering
         )
 
     override fun toString(): String {

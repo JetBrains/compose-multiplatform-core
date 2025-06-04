@@ -56,7 +56,7 @@ class MultiProcessDataStoreFactoryTest {
         val store =
             MultiProcessDataStoreFactory.create(
                 serializer = TestingSerializer(),
-                scope = dataStoreScope
+                scope = dataStoreScope,
             ) {
                 testFile
             }
@@ -78,7 +78,7 @@ class MultiProcessDataStoreFactoryTest {
                         TestingSerializerConfig(failReadWithCorruptionException = true)
                     ),
                 corruptionHandler = ReplaceFileCorruptionHandler<Byte> { valueToReplace },
-                scope = dataStoreScope
+                scope = dataStoreScope,
             ) {
                 testFile
             }
@@ -111,7 +111,7 @@ class MultiProcessDataStoreFactoryTest {
             MultiProcessDataStoreFactory.create(
                 serializer = TestingSerializer(),
                 migrations = listOf(migratePlus2, migrateMinus1),
-                scope = dataStoreScope
+                scope = dataStoreScope,
             ) {
                 testFile
             }

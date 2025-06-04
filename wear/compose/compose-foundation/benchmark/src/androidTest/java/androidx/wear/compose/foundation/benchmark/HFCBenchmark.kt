@@ -93,15 +93,15 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                         )
                         .thenIf(
                             useHfc,
-                            Modifier.hierarchicalFocusGroup(active = selectedRow == rowIx)
+                            Modifier.hierarchicalFocusGroup(active = selectedRow == rowIx),
                         ),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     BasicText(
                         "Sel",
                         Modifier.background(Color.Gray, CircleShape).clickable {
                             selectedRow = rowIx
-                        }
+                        },
                     )
                     repeat(numColumns) { colIx ->
                         var focused by remember { mutableStateOf(false) }
@@ -112,7 +112,7 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                                 TextStyle(
                                     color = Color.White,
                                     fontSize = 20.sp,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
                                 ),
                             modifier =
                                 Modifier.thenIf(
@@ -120,7 +120,7 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                                         Modifier.hierarchicalFocusGroup(
                                                 active = selectedColumn[rowIx].value == colIx
                                             )
-                                            .requestFocusOnHierarchyActive()
+                                            .requestFocusOnHierarchyActive(),
                                     )
                                     .weight(1f)
                                     .clickable { selectedColumn[rowIx].value = colIx }
@@ -129,9 +129,9 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                                     .focusable()
                                     .thenIf(
                                         selectedColumn[rowIx].value == colIx,
-                                        Modifier.border(BorderStroke(2.dp, Color.Red))
+                                        Modifier.border(BorderStroke(2.dp, Color.Red)),
                                     )
-                                    .thenIf(focused, Modifier.background(Color.Gray))
+                                    .thenIf(focused, Modifier.background(Color.Gray)),
                         )
                     }
                 }

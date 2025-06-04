@@ -51,7 +51,7 @@ internal class AppFunctionServiceDelegate(
     private val mainCoroutineContext: CoroutineContext,
     private val aggregatedInventory: AggregatedAppFunctionInventory,
     private val aggregatedInvoker: AggregatedAppFunctionInvoker,
-    private val translatorSelector: TranslatorSelector
+    private val translatorSelector: TranslatorSelector,
 ) {
 
     private val job = Job()
@@ -60,7 +60,6 @@ internal class AppFunctionServiceDelegate(
 
     internal fun onExecuteFunction(
         executeAppFunctionRequest: ExecuteAppFunctionRequest,
-        callingPackageName: String,
         callback: OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException>,
     ): Job =
         workerCoroutineScope.launch {
@@ -71,7 +70,7 @@ internal class AppFunctionServiceDelegate(
                 if (appFunctionMetadata == null) {
                     Log.d(
                         APP_FUNCTIONS_TAG,
-                        "${executeAppFunctionRequest.functionIdentifier} is not available"
+                        "${executeAppFunctionRequest.functionIdentifier} is not available",
                     )
                     callback.onError(
                         AppFunctionFunctionNotFoundException(
@@ -88,31 +87,30 @@ internal class AppFunctionServiceDelegate(
                 callback.onResult(
                     unsafeInvokeFunction(
                         executeAppFunctionRequest,
-                        callingPackageName,
                         appFunctionMetadata,
                         parameters,
-                        translator
+                        translator,
                     )
                 )
             } catch (e: CancellationException) {
                 Log.d(
                     APP_FUNCTIONS_TAG,
                     "Invocation of ${executeAppFunctionRequest.functionIdentifier} was cancelled",
-                    e
+                    e,
                 )
                 callback.onError(AppFunctionCancelledException(e.message))
             } catch (e: AppFunctionException) {
                 Log.d(
                     APP_FUNCTIONS_TAG,
                     "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
-                    e
+                    e,
                 )
                 callback.onError(e)
             } catch (e: Exception) {
                 Log.d(
                     APP_FUNCTIONS_TAG,
                     "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
-                    e
+                    e,
                 )
                 callback.onError(AppFunctionAppUnknownException(e.message))
             }
@@ -124,7 +122,7 @@ internal class AppFunctionServiceDelegate(
 
     private fun getTranslator(
         request: ExecuteAppFunctionRequest,
-        schemaMetadata: AppFunctionSchemaMetadata?
+        schemaMetadata: AppFunctionSchemaMetadata?,
     ): Translator? {
         if (request.useJetpackSchema) {
             return null
@@ -135,7 +133,7 @@ internal class AppFunctionServiceDelegate(
     private fun extractParameters(
         request: ExecuteAppFunctionRequest,
         appFunctionMetadata: CompileTimeAppFunctionMetadata,
-        translator: Translator?
+        translator: Translator?,
     ): Map<String, Any?> {
         // Upgrade the parameters from the agents, if they are using the old format.
         val translatedParameters =
@@ -151,17 +149,16 @@ internal class AppFunctionServiceDelegate(
 
     private suspend fun unsafeInvokeFunction(
         request: ExecuteAppFunctionRequest,
-        callingPackageName: String,
         appFunctionMetadata: CompileTimeAppFunctionMetadata,
         parameters: Map<String, Any?>,
-        translator: Translator?
+        translator: Translator?,
     ): ExecuteAppFunctionResponse {
         val result =
             withContext(mainCoroutineContext) {
                 aggregatedInvoker.unsafeInvoke(
-                    buildAppFunctionContext(callingPackageName),
+                    buildAppFunctionContext(),
                     request.functionIdentifier,
-                    parameters
+                    parameters,
                 )
             }
         val returnValue = appFunctionMetadata.response.unsafeBuildReturnValue(result)
@@ -170,13 +167,10 @@ internal class AppFunctionServiceDelegate(
         return ExecuteAppFunctionResponse.Success(translatedReturnValue)
     }
 
-    private fun buildAppFunctionContext(callingPackageName: String): AppFunctionContext {
+    private fun buildAppFunctionContext(): AppFunctionContext {
         return object : AppFunctionContext {
             override val context: Context
                 get() = appContext
-
-            override val callingPackageName: String
-                get() = callingPackageName
         }
     }
 }

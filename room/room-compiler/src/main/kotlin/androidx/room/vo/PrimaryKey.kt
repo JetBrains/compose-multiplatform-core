@@ -22,7 +22,7 @@ import androidx.room.migration.bundle.PrimaryKeyBundle
 data class PrimaryKey(
     val declaredIn: XElement?,
     override val properties: Properties,
-    val autoGenerateId: Boolean
+    val autoGenerateId: Boolean,
 ) : HasSchemaIdentity, HasProperties {
     companion object {
         val MISSING = PrimaryKey(null, Properties(), false)

@@ -23,10 +23,8 @@ import javax.lang.model.SourceVersion
 @Suppress("VisibleForTests")
 @ExperimentalProcessingApi
 class SyntheticJavacProcessor
-private constructor(
-    config: XProcessingEnvConfig,
-    private val impl: SyntheticProcessorImpl,
-) : JavacBasicAnnotationProcessor(configureEnv = { config }), SyntheticProcessor by impl {
+private constructor(config: XProcessingEnvConfig, private val impl: SyntheticProcessorImpl) :
+    JavacBasicAnnotationProcessor(configureEnv = { config }), SyntheticProcessor by impl {
     constructor(
         config: XProcessingEnvConfig,
         handlers: List<(XTestInvocation) -> Unit>,

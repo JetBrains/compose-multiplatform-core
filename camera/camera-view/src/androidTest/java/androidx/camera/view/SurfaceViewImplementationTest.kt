@@ -161,7 +161,7 @@ class SurfaceViewImplementationTest {
 
     private fun SurfaceViewImplementation.testSurfaceRequest(
         surfaceRequest: SurfaceRequest,
-        listener: OnSurfaceNotInUseListener? = null
+        listener: OnSurfaceNotInUseListener? = null,
     ) {
         mInstrumentation.runOnMainSync { onSurfaceRequested(surfaceRequest, listener) }
 

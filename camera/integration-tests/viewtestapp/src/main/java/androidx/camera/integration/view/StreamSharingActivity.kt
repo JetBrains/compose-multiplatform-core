@@ -190,7 +190,7 @@ class StreamSharingActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(applicationContext)
         cameraProviderFuture.addListener(
             { bindUseCases(cameraProviderFuture.get()) },
-            ContextCompat.getMainExecutor(applicationContext)
+            ContextCompat.getMainExecutor(applicationContext),
         )
     }
 
@@ -203,7 +203,7 @@ class StreamSharingActivity : AppCompatActivity() {
                 createPreview(),
                 createImageCapture(),
                 createImageAnalysis(),
-                createVideoCapture()
+                createVideoCapture(),
             )
         isUseCasesBound =
             try {
@@ -280,7 +280,7 @@ class StreamSharingActivity : AppCompatActivity() {
         return if (canDeviceWriteToMediaStore()) {
             recorder.prepareRecording(
                 context,
-                generateVideoMediaStoreOptions(context.contentResolver, fileName)
+                generateVideoMediaStoreOptions(context.contentResolver, fileName),
             )
         } else {
             recorder.prepareRecording(context, generateVideoFileOutputOptions(fileName))

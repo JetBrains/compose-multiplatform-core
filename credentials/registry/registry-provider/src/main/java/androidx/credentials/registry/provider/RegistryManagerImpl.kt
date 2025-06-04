@@ -27,7 +27,7 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
     ) {
         val provider: RegistryManagerProvider? =
             RegistryManagerProviderFactory(context).getBestAvailableProvider()
@@ -46,7 +46,7 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
     override fun clearCredentialRegistryAsync(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
     ) {
         val provider: RegistryManagerProvider? =
             RegistryManagerProviderFactory(context).getBestAvailableProvider()

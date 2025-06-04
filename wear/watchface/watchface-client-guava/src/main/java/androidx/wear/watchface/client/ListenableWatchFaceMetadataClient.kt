@@ -50,7 +50,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
         @JvmStatic
         public fun create(
             context: Context,
-            watchFaceName: ComponentName
+            watchFaceName: ComponentName,
         ): ListenableFuture<WatchFaceMetadataClient> =
             createImpl(
                 context,
@@ -58,7 +58,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
                     setPackage(watchFaceName.packageName)
                 },
                 watchFaceName,
-                WatchFaceMetadataClient.Companion.ParserProvider()
+                WatchFaceMetadataClient.Companion.ParserProvider(),
             )
 
         /**
@@ -81,7 +81,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
         public fun createForRuntime(
             context: Context,
             watchFaceName: ComponentName,
-            resourceOnlyWatchFacePackageName: String
+            resourceOnlyWatchFacePackageName: String,
         ) =
             ListenableWatchFaceControlClient.launchFutureCoroutine(
                 "ListenableWatchFaceMetadataClient.create"
@@ -89,7 +89,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
                 WatchFaceMetadataClient.createForRuntime(
                     context,
                     watchFaceName,
-                    resourceOnlyWatchFacePackageName
+                    resourceOnlyWatchFacePackageName,
                 )
             }
 
@@ -97,7 +97,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
             context: Context,
             intent: Intent,
             watchFaceName: ComponentName,
-            parserProvider: WatchFaceMetadataClient.Companion.ParserProvider
+            parserProvider: WatchFaceMetadataClient.Companion.ParserProvider,
         ) =
             ListenableWatchFaceControlClient.launchFutureCoroutine(
                 "ListenableWatchFaceMetadataClient.listenableCreateWatchFaceMetadataClient"

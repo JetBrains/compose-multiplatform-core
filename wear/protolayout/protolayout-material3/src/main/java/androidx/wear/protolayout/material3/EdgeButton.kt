@@ -97,7 +97,7 @@ public fun MaterialScope.iconEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    iconContent: (MaterialScope.() -> LayoutElement)
+    iconContent: (MaterialScope.() -> LayoutElement),
 ): LayoutElement {
     val style =
         if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
@@ -112,7 +112,7 @@ public fun MaterialScope.iconEdgeButton(
                 IconStyle(
                     width = style.iconSizeDp.dp,
                     height = style.iconSizeDp.dp,
-                    tintColor = colors.iconColor
+                    tintColor = colors.iconColor,
                 )
         ) {
             iconContent()
@@ -162,7 +162,7 @@ public fun MaterialScope.textEdgeButton(
                 TextElementStyle(
                     typography = Typography.LABEL_MEDIUM,
                     color = colors.labelColor,
-                    scalable = false
+                    scalable = false,
                 )
         ) {
             labelContent()
@@ -172,7 +172,7 @@ public fun MaterialScope.textEdgeButton(
         (content as? Text)?.text?.let {
             LayoutModifier.contentDescription(
                 staticValue = it.value,
-                dynamicValue = it.dynamicValue
+                dynamicValue = it.dynamicValue,
             ) then modifier
         } ?: modifier
 
@@ -223,7 +223,7 @@ private fun MaterialScope.edgeButton(
     colors: ButtonColors,
     modifier: LayoutModifier = LayoutModifier,
     style: EdgeButtonStyle = ICON,
-    content: MaterialScope.() -> LayoutElement
+    content: MaterialScope.() -> LayoutElement,
 ): LayoutElement {
     val containerWidth = deviceConfiguration.screenWidthDp.toDp()
     val horizontalMarginPercent: Float =
@@ -301,7 +301,7 @@ internal constructor(
     @Dimension(DP) internal val buttonHeightDp: Float = EDGE_BUTTON_HEIGHT_DP,
     @Dimension(DP) internal val bottomMarginDp: Float = BOTTOM_MARGIN_DP,
     @Dimension(DP) internal val iconSizeDp: Float = ICON_SIZE_DP,
-    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS
+    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS,
 ) {
     internal companion object {
         /**
@@ -317,8 +317,8 @@ internal constructor(
                     padding(
                         start = TEXT_SIDE_PADDING_DP,
                         top = TEXT_TOP_PADDING_DP,
-                        end = TEXT_SIDE_PADDING_DP
-                    )
+                        end = TEXT_SIDE_PADDING_DP,
+                    ),
             )
 
         /**
@@ -350,7 +350,7 @@ internal constructor(
                     ),
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
-                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP
+                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
             )
 
         /**
@@ -377,7 +377,7 @@ internal constructor(
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
                 bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
-                iconSizeDp = ICON_SIZE_FALLBACK_DP
+                iconSizeDp = ICON_SIZE_FALLBACK_DP,
             )
     }
 }

@@ -27,7 +27,7 @@ class SandboxedSdkInfo(
      * Sdk Version. This is a value of `android:versionMajor` attribute <sdk-library> tag of SDK
      * Manifest.
      */
-    val version: Long
+    val version: Long,
 ) {
 
     override fun equals(other: Any?): Boolean {

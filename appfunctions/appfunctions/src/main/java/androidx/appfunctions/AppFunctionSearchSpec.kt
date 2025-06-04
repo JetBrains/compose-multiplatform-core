@@ -21,7 +21,6 @@ import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 /**
  * Defines the specifications for filtering and searching app function snapshots.
  *
- * @constructor Creates a new instance of [AppFunctionSearchSpec].
  * @property packageNames A set of package names to filter functions by. Only functions belonging to
  *   these packages will be considered. Defaults to null, which means this field is ignored when
  *   filtering.
@@ -37,6 +36,7 @@ import androidx.appfunctions.metadata.AppFunctionMetadataDocument
  * @property minSchemaVersion The minimum version of the function's schema. Functions with a schema
  *   version equal to or greater than this value will be included when filtering. Defaults to 0,
  *   which means this field is ignored when filtering. This value cannot be negative.
+ * @constructor Creates a new instance of [AppFunctionSearchSpec].
  */
 public class AppFunctionSearchSpec
 @JvmOverloads
@@ -49,7 +49,7 @@ constructor(
     public val packageNames: Set<String>? = null,
     public val schemaCategory: String? = null,
     public val schemaName: String? = null,
-    public val minSchemaVersion: Int = 0
+    public val minSchemaVersion: Int = 0,
 ) {
     init {
         require(minSchemaVersion >= 0) {

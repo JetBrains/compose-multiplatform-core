@@ -37,13 +37,13 @@ import androidx.test.uiautomator.watcher.WatcherRegistration
  *
  *     startActivity(MyActivity::class.java)
  *
- *     onView { id == "button" }.click()
+ *     onElement { id == "button" }.click()
  *
- *     onView { id == "nested_elements" }
+ *     onElement { id == "nested_elements" }
  *         .apply {
- *             onView { text == "First Level" }
- *             onView { text == "Second Level" }
- *             onView { text == "Third Level" }
+ *             onElement { text == "First Level" }
+ *             onElement { text == "Second Level" }
+ *             onElement { text == "Third Level" }
  *         }
  * }
  * ```
@@ -88,7 +88,7 @@ public open class UiAutomatorTestScope protected constructor() {
      * api. When the given [ScopedUiWatcher.isVisible] condition is satisfied, then the given
      * [block] is executed. scope. This method returns a handler with the [WatcherRegistration] to
      * unregister it before the block is complete. Note that this api helps with unexpected ui
-     * elements, such as system dialogs, and that for expected dialogs the [onView] api should be
+     * elements, such as system dialogs, and that for expected dialogs the [onElement] api should be
      * used.
      *
      * Usage:
@@ -111,7 +111,7 @@ public open class UiAutomatorTestScope protected constructor() {
      */
     public fun <T> watchFor(
         watcher: ScopedUiWatcher<T>,
-        block: T.() -> (Unit)
+        block: T.() -> (Unit),
     ): WatcherRegistration {
         val id = watcher.toString()
 
@@ -141,21 +141,21 @@ public open class UiAutomatorTestScope protected constructor() {
      *
      * Example:
      * ```kotlin
-     * onView { textAsString == "Search" }.click()
+     * onElement { textAsString == "Search" }.click()
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a [UiObject2] from a node that matches the given [block] condition.
      */
     @JvmOverloads
-    public fun onView(
+    public fun onElement(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): UiObject2 = device.onView(timeoutMs, pollIntervalMs, block)
+    ): UiObject2 = device.onElement(timeoutMs, pollIntervalMs, block)
 
     /**
      * Performs a DFS on the accessibility tree starting from the root node in the active window and
@@ -165,21 +165,21 @@ public open class UiAutomatorTestScope protected constructor() {
      *
      * Example:
      * ```kotlin
-     * onView { textAsString == "Search" }.click()
+     * onElement { textAsString == "Search" }.click()
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a [UiObject2] from a node that matches the given [block] condition or null.
      */
     @JvmOverloads
-    public fun onViewOrNull(
+    public fun onElementOrNull(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): UiObject2? = device.onViewOrNull(timeoutMs, pollIntervalMs, block)
+    ): UiObject2? = device.onElementOrNull(timeoutMs, pollIntervalMs, block)
 
     /**
      * Performs a DFS on the accessibility tree starting from the root node in the active window and
@@ -189,21 +189,21 @@ public open class UiAutomatorTestScope protected constructor() {
      *
      * Example:
      * ```kotlin
-     * node.onViews { isClass(Button::class.java) }
+     * node.onElements { isClass(Button::class.java) }
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a list of [UiObject2] from nodes that matches the given [block] condition.
      */
     @JvmOverloads
-    public fun onViews(
+    public fun onElements(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): List<UiObject2> = device.onViews(timeoutMs, pollIntervalMs, block)
+    ): List<UiObject2> = device.onElements(timeoutMs, pollIntervalMs, block)
 
     /**
      * Waits for an application to become visible. Note that internally it checks if an
@@ -219,10 +219,7 @@ public open class UiAutomatorTestScope protected constructor() {
         appPackageName: String = instrumentation.targetContext.packageName,
         timeoutMs: Long = 10000L,
     ): Boolean =
-        device.waitForAppToBeVisible(
-            appPackageName = appPackageName,
-            timeoutMs = timeoutMs,
-        )
+        device.waitForAppToBeVisible(appPackageName = appPackageName, timeoutMs = timeoutMs)
 
     /**
      * Types the given [text] string simulating key press through [Instrumentation.sendKeySync].
@@ -269,10 +266,10 @@ public open class UiAutomatorTestScope protected constructor() {
      *   to be considered stable.
      * @param stablePollIntervalMs specifies how often the ui should be checked for changes.
      * @param requireStableScreenshot specifies if also the bitmap of the node should not change
-     *   over the specified [stableIntervalMs]. Note that this won't work with views that change
+     *   over the specified [stableIntervalMs]. Note that this won't work with elements that change
      *   constantly, like a video player.
-     * @return a [StableResult] containing the latest acquired view hierarchy and screenshot, and a
-     *   flag indicating if the node was stable before timeout.
+     * @return a [StableResult] containing the latest acquired element hierarchy and screenshot, and
+     *   a flag indicating if the node was stable before timeout.
      */
     @JvmOverloads
     public fun waitForStableInActiveWindow(
@@ -312,10 +309,8 @@ public open class UiAutomatorTestScope protected constructor() {
      * @param packageName the app package name of the activity to start.
      * @param activityName the name of the activity to start.
      */
-    public fun startActivity(
-        packageName: String,
-        activityName: String,
-    ): Unit = appManager.startActivity(packageName = packageName, activityName = activityName)
+    public fun startActivity(packageName: String, activityName: String): Unit =
+        appManager.startActivity(packageName = packageName, activityName = activityName)
 
     /**
      * Starts an activity with the given class.

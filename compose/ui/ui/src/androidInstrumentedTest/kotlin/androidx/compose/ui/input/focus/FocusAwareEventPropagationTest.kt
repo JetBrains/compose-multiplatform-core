@@ -73,12 +73,7 @@ class FocusAwareEventPropagationTest(private val nodeType: NodeType) {
             KeyInput,
             InterruptedSoftKeyboardInput -> KeyEvent(AndroidKeyEvent(ACTION_DOWN, KEYCODE_A))
             RotaryInput -> RotaryScrollEvent(1f, 1f, 0L, findRotaryInputDevice())
-            IndirectTouchInput ->
-                IndirectTouchEvent(
-                    Offset.Zero,
-                    0L,
-                    IndirectTouchEventType.Press,
-                )
+            IndirectTouchInput -> IndirectTouchEvent(Offset.Zero, 0L, IndirectTouchEventType.Press)
         }
     private var receivedEvent: Any? = null
     private val initialFocus = FocusRequester()

@@ -60,7 +60,7 @@ fun <T> StateFlow<T>.collectAsState(context: CoroutineContext = EmptyCoroutineCo
 @Composable
 fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
-    context: CoroutineContext = EmptyCoroutineContext
+    context: CoroutineContext = EmptyCoroutineContext,
 ): State<R> =
     produceState(initial, this, context) {
         if (context == EmptyCoroutineContext) {

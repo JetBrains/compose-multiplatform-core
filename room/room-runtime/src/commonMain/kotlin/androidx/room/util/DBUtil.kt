@@ -37,13 +37,13 @@ public expect suspend fun <R> performSuspending(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> R
+    block: (SQLiteConnection) -> R,
 ): R
 
 internal suspend inline fun <R> RoomDatabase.internalPerform(
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    crossinline block: suspend (PooledConnection) -> R
+    crossinline block: suspend (PooledConnection) -> R,
 ): R =
     useConnection(isReadOnly) { transactor ->
         if (inTransaction) {
@@ -85,7 +85,7 @@ internal expect suspend fun RoomDatabase.getCoroutineContext(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public expect suspend fun <R> performInTransactionSuspending(
     db: RoomDatabase,
-    block: suspend () -> R
+    block: suspend () -> R,
 ): R
 
 /**

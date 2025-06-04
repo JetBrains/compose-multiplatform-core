@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <application>
         <service
-            android:name="androidx.appfunctions.service.ExtensionAppFunctionService"
+            android:name="androidx.appfunctions.service.PlatformAppFunctionService"
             android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
             android:exported="true">
             <!-- XML file property for Legacy AppSearch Indexer.-->

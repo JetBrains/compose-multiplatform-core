@@ -169,7 +169,7 @@ internal class TextFieldTextLayoutModifierNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val result =
             textLayoutState.layoutWithNewMeasureInputs(
@@ -185,7 +185,7 @@ internal class TextFieldTextLayoutModifierNode(
                     minWidth = result.size.width,
                     maxWidth = result.size.width,
                     minHeight = result.size.height,
-                    maxHeight = result.size.height
+                    maxHeight = result.size.height,
                 )
             )
 
@@ -208,7 +208,7 @@ internal class TextFieldTextLayoutModifierNode(
         return layout(
             width = result.size.width,
             height = result.size.height,
-            alignmentLines = baselineCache!!
+            alignmentLines = baselineCache!!,
         ) {
             placeable.place(0, 0)
         }

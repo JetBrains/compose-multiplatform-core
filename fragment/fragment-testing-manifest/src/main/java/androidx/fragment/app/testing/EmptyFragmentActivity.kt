@@ -31,7 +31,7 @@ class EmptyFragmentActivity : FragmentActivity() {
         setTheme(
             intent.getIntExtra(
                 THEME_EXTRAS_BUNDLE_KEY,
-                R.style.FragmentScenarioEmptyFragmentActivityTheme
+                R.style.FragmentScenarioEmptyFragmentActivityTheme,
             )
         )
 

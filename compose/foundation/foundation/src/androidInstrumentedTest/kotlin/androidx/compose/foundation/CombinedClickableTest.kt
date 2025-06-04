@@ -143,7 +143,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable {}
+                    modifier = Modifier.testTag("myClickable").combinedClickable {},
                 )
             }
         }
@@ -161,7 +161,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable(enabled = false) {}
+                    modifier = Modifier.testTag("myClickable").combinedClickable(enabled = false) {},
                 )
             }
         }
@@ -185,7 +185,7 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -214,7 +214,7 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -267,7 +267,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable(onClick = onClick)
+                    modifier = Modifier.testTag("myClickable").combinedClickable(onClick = onClick),
                 )
             }
         }
@@ -316,7 +316,7 @@ class CombinedClickableTest {
                 BasicText(
                     "ClickableText",
                     modifier =
-                        Modifier.testTag("myClickable").combinedClickable(onLongClick = onClick) {}
+                        Modifier.testTag("myClickable").combinedClickable(onLongClick = onClick) {},
                 )
             }
         }
@@ -352,8 +352,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 onLongClick = onClick,
-                                hapticFeedbackEnabled = true
-                            ) {}
+                                hapticFeedbackEnabled = true,
+                            ) {},
                     )
                 }
             }
@@ -404,8 +404,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 onLongClick = onClick,
-                                hapticFeedbackEnabled = false
-                            ) {}
+                                hapticFeedbackEnabled = false,
+                            ) {},
                     )
                 }
             }
@@ -447,8 +447,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -484,8 +484,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -528,8 +528,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -568,7 +568,7 @@ class CombinedClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .combinedClickable(onLongClick = onLongClick, onClick = onClick)
+                            .combinedClickable(onLongClick = onLongClick, onClick = onClick),
                 )
             }
         }
@@ -601,7 +601,7 @@ class CombinedClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .combinedClickable(onDoubleClick = onDoubleClick, onClick = onClick)
+                            .combinedClickable(onDoubleClick = onDoubleClick, onClick = onClick),
                 )
             }
         }
@@ -641,8 +641,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -686,8 +686,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -717,8 +717,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -762,8 +762,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -824,8 +824,8 @@ class CombinedClickableTest {
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
                             onClick = { ++clickCounter },
-                            onLongClick = { ++longClickCounter }
-                        )
+                            onLongClick = { ++longClickCounter },
+                        ),
             )
         }
 
@@ -863,8 +863,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -911,8 +911,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -954,8 +954,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -998,12 +998,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1045,8 +1045,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1101,8 +1101,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1145,8 +1145,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1184,12 +1184,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1228,12 +1228,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1281,8 +1281,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1331,8 +1331,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -1381,8 +1381,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1424,8 +1424,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1471,8 +1471,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1509,8 +1509,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1574,8 +1574,8 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1645,8 +1645,8 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1708,8 +1708,8 @@ class CombinedClickableTest {
                                 enabled = enabled.value,
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -1801,7 +1801,7 @@ class CombinedClickableTest {
                 Modifier.combinedClickable(
                     onDoubleClick = outerOnDoubleClick,
                     onLongClick = outerOnLongClick,
-                    onClick = outerOnClick
+                    onClick = outerOnClick,
                 )
             ) {
                 BasicText(
@@ -1812,8 +1812,8 @@ class CombinedClickableTest {
                                 enabled = enabled.value,
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -1919,8 +1919,8 @@ class CombinedClickableTest {
                             enabled = enabled.value,
                             onClick = {},
                             interactionSource = interactionSource,
-                            indication = null
-                        )
+                            indication = null,
+                        ),
             )
         }
 
@@ -1985,7 +1985,7 @@ class CombinedClickableTest {
                             Modifier.testTag("myClickable")
                                 .focusRequester(requester)
                                 .onFocusEvent { focusState = it }
-                                .combinedClickable(enabled = enabled.value) {}
+                                .combinedClickable(enabled = enabled.value) {},
                     )
                 }
             }
@@ -2071,7 +2071,7 @@ class CombinedClickableTest {
                     "onDoubleClick",
                     "onLongClick",
                     "onLongClickLabel",
-                    "hapticFeedbackEnabled"
+                    "hapticFeedbackEnabled",
                 )
         }
     }
@@ -2084,7 +2084,7 @@ class CombinedClickableTest {
                 Modifier.combinedClickable(
                         onClick = onClick,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("combinedClickable")
@@ -2100,7 +2100,7 @@ class CombinedClickableTest {
                     "onLongClickLabel",
                     "indicationNodeFactory",
                     "interactionSource",
-                    "hapticFeedbackEnabled"
+                    "hapticFeedbackEnabled",
                 )
         }
     }
@@ -2195,8 +2195,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -2225,7 +2225,7 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("clickable").combinedClickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -2248,8 +2248,8 @@ class CombinedClickableTest {
                                     role = if (moveContent) Role.Button else Role.Checkbox,
                                     onClickLabel = moveContent.toString(),
                                     onLongClick = {},
-                                    onLongClickLabel = moveContent.toString()
-                                ) {}
+                                    onLongClickLabel = moveContent.toString(),
+                                ) {},
                         )
                     }
                 }
@@ -2293,8 +2293,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                onDoubleClick = onDoubleClick
-                            )
+                                onDoubleClick = onDoubleClick,
+                            ),
                 )
             }
         }
@@ -2329,7 +2329,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -2363,7 +2363,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)
@@ -2399,8 +2399,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                onDoubleClick = onDoubleClick
-                            )
+                                onDoubleClick = onDoubleClick,
+                            ),
                 )
             }
         }
@@ -2447,7 +2447,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -2481,7 +2481,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)

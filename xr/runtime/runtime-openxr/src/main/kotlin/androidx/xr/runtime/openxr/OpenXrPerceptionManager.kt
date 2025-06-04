@@ -101,6 +101,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val rightHand: Hand
         get() = xrResources.rightHand
 
+    override val arDevice: OpenXrDevice
+        get() = xrResources.arDevice
+
     override val earth: OpenXrEarth = xrResources.earth
 
     private var lastUpdateXrTime: Long = 0L

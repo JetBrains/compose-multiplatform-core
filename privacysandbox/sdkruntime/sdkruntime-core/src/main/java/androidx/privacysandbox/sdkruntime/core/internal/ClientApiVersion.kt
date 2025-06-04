@@ -32,14 +32,14 @@ import androidx.annotation.RestrictTo
 enum class ClientApiVersion(
     val apiLevel: Int,
     val stable: Boolean = false,
-    private val newFeatures: Set<ClientFeature> = emptySet()
+    private val newFeatures: Set<ClientFeature> = emptySet(),
 ) {
     V5__1_0_ALPHA13(apiLevel = 5),
     V6__1_0_ALPHA14(
         apiLevel = 6,
         /** Temporary mark as stable to run tests for V6 and V7 */
         stable = true,
-        newFeatures = setOf(ClientFeature.GET_CLIENT_PACKAGE_NAME)
+        newFeatures = setOf(ClientFeature.GET_CLIENT_PACKAGE_NAME),
     ),
     V7__1_0_ALPHA16(apiLevel = 7, newFeatures = setOf(ClientFeature.CLIENT_IMPORTANCE_LISTENER)),
 

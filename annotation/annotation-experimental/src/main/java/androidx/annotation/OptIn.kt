@@ -40,7 +40,7 @@ import kotlin.reflect.KClass
     AnnotationTarget.PROPERTY_GETTER,
     AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.FILE,
-    AnnotationTarget.TYPEALIAS
+    AnnotationTarget.TYPEALIAS,
 )
 // Needed due to Kotlin's lack of PACKAGE annotation target
 // https://youtrack.jetbrains.com/issue/KT-45921
@@ -52,7 +52,7 @@ import kotlin.reflect.KClass
     ElementType.METHOD,
     ElementType.PACKAGE,
     ElementType.TYPE,
-    ElementType.PARAMETER
+    ElementType.PARAMETER,
 )
 public annotation class OptIn(
     /** Defines the opt-in API(s) whose usage this annotation allows. */

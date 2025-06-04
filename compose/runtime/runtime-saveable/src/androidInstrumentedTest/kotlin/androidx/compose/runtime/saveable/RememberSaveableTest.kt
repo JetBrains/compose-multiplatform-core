@@ -136,7 +136,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             provider = valueProvider
                             return super.registerProvider(key, valueProvider)
@@ -164,7 +164,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             provider = valueProvider
                             return super.registerProvider(key, valueProvider)
@@ -190,7 +190,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             val entry = super.registerProvider(key, valueProvider)
                             return object : SaveableStateRegistry.Entry {
@@ -218,7 +218,7 @@ class RememberSaveableTest {
                 object : DelegateRegistry(it) {
                     override fun registerProvider(
                         key: String,
-                        valueProvider: () -> Any?
+                        valueProvider: () -> Any?,
                     ): SaveableStateRegistry.Entry {
                         val result = super.registerProvider(key, valueProvider)
                         // asserts that we unregistered from the previous registry and then
@@ -246,7 +246,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             val entry = super.registerProvider(key, valueProvider)
                             registeredKeys.add(key)
@@ -288,7 +288,7 @@ class RememberSaveableTest {
                         latch.countDown()
                         1
                     },
-                    restore = { 1 }
+                    restore = { 1 },
                 )
         }
 
@@ -306,7 +306,7 @@ class RememberSaveableTest {
             object : DelegateRegistry(it) {
                 override fun registerProvider(
                     key: String,
-                    valueProvider: () -> Any?
+                    valueProvider: () -> Any?,
                 ): SaveableStateRegistry.Entry {
                     val entry = super.registerProvider(key, valueProvider)
                     return object : SaveableStateRegistry.Entry {
@@ -347,7 +347,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             actualKey = key
                             return super.registerProvider(key, valueProvider)
@@ -372,7 +372,7 @@ class RememberSaveableTest {
                     object : DelegateRegistry(it) {
                         override fun registerProvider(
                             key: String,
-                            valueProvider: () -> Any?
+                            valueProvider: () -> Any?,
                         ): SaveableStateRegistry.Entry {
                             actualKey = key
                             return super.registerProvider(key, valueProvider)
@@ -452,7 +452,7 @@ class RememberSaveableTest {
 @Composable
 private fun WrapRegistry(
     wrap: (SaveableStateRegistry) -> SaveableStateRegistry,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val original = LocalSaveableStateRegistry.current!!
     val wrapped = remember(original, wrap) { wrap(original) }

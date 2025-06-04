@@ -31,19 +31,19 @@ class AppFunctionSchemaMetadataTest {
             AppFunctionSchemaMetadata(
                 category = "testCategory2", // Different category
                 name = "testName",
-                version = 1L
+                version = 1L,
             )
         val schema4 =
             AppFunctionSchemaMetadata(
                 category = "testCategory",
                 name = "testName2", // Different name
-                version = 1L
+                version = 1L,
             )
         val schema5 =
             AppFunctionSchemaMetadata(
                 category = "testCategory",
                 name = "testName",
-                version = 2L // Different version
+                version = 2L, // Different version
             )
 
         assertThat(schema1).isEqualTo(schema2)

@@ -63,7 +63,7 @@ fun HierarchicalFocusDemo() {
     Column(
         Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         repeat(numRows) { rowIx ->
             Row(
@@ -76,14 +76,14 @@ fun HierarchicalFocusDemo() {
                         }
                     )
                     .hierarchicalFocusGroup(active = selectedRow == rowIx),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Button(onClick = { selectedRow = rowIx }) { Text("Sel") }
                 if (rowIx == numRows - 1) {
                     Text(
                         "... No focus here ...",
                         Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 } else {
                     repeat(numColumns + 1) { colIx ->
@@ -93,13 +93,13 @@ fun HierarchicalFocusDemo() {
                                     // Last column wants nothing to do with focus
                                     Modifier.hierarchicalFocusGroup(
                                         active = selectedColumn[rowIx].intValue == colIx
-                                    )
+                                    ),
                                 )
                                 .weight(1f)
                                 .clickable { selectedColumn[rowIx].intValue = colIx }
                                 .thenIf(
                                     selectedColumn[rowIx].intValue == colIx,
-                                    Modifier.border(BorderStroke(2.dp, Color.Red))
+                                    Modifier.border(BorderStroke(2.dp, Color.Red)),
                                 )
                         ) {
                             if (colIx < numColumns) {
@@ -112,7 +112,7 @@ fun HierarchicalFocusDemo() {
                                             .requestFocusOnHierarchyActive()
                                             .onFocusChanged { focused = it.isFocused }
                                             .focusable()
-                                            .thenIf(focused, Modifier.background(Color.Gray))
+                                            .thenIf(focused, Modifier.background(Color.Gray)),
                                 )
                             } else {
                                 BasicText("No", style = style, modifier = Modifier)
@@ -128,7 +128,7 @@ fun HierarchicalFocusDemo() {
                 selectedRow = r.nextInt(numRows)
                 repeat(numRows) { selectedColumn[it].intValue = r.nextInt(numColumns + 1) }
             },
-            Modifier.size(40.dp)
+            Modifier.size(40.dp),
         ) {
             Text("Shuffle", style = style)
         }

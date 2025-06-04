@@ -40,7 +40,7 @@ class SdkSandboxCrossProcessLatencyMetricTest {
                 targetPackageName = "androidx.privacysandbox.ui.integration.testapp",
                 testPackageName = "androidx.privacysandbox.ui.integration.testapp",
                 startupMode = StartupMode.COLD,
-                apiLevel = 35
+                apiLevel = 35,
             )
 
         val e2eLatencyMetric =
@@ -50,14 +50,14 @@ class SdkSandboxCrossProcessLatencyMetricTest {
                 "checkClientOpenSession",
                 "checkClientOpenSession",
                 "openSessionMediatee",
-                occurrenceOfEndTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST
+                occurrenceOfEndTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST,
             )
         val uiDisplayLatencyMetric =
             SdkSandboxCrossProcessLatencyMetric(
                 "checkClientOpenSession",
                 "onUiDisplayed",
                 "uiDisplay",
-                occurrenceOfBeginTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST
+                occurrenceOfBeginTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST,
             )
         val crossProcessUiDisplayLatencyMetric =
             SdkSandboxCrossProcessLatencyMetric(
@@ -75,7 +75,7 @@ class SdkSandboxCrossProcessLatencyMetricTest {
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 openSessionMediateeLatencyMetric.getMeasurements(
                     captureInfo = captureInfo,
-                    traceSession = this
+                    traceSession = this,
                 )
             }
 
@@ -83,7 +83,7 @@ class SdkSandboxCrossProcessLatencyMetricTest {
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 uiDisplayLatencyMetric.getMeasurements(
                     captureInfo = captureInfo,
-                    traceSession = this
+                    traceSession = this,
                 )
             }
 
@@ -91,29 +91,29 @@ class SdkSandboxCrossProcessLatencyMetricTest {
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 crossProcessUiDisplayLatencyMetric.getMeasurements(
                     captureInfo = captureInfo,
-                    traceSession = this
+                    traceSession = this,
                 )
             }
 
         assertEqualMeasurements(
             expected = listOf(Metric.Measurement("e2eLatencyMillis", 270.9)),
             observed = result1,
-            threshold = 0.1
+            threshold = 0.1,
         )
         assertEqualMeasurements(
             expected = listOf(Metric.Measurement("openSessionMediateeLatencyMillis", 72.0)),
             observed = result2,
-            threshold = 0.1
+            threshold = 0.1,
         )
         assertEqualMeasurements(
             expected = listOf(Metric.Measurement("uiDisplayLatencyMillis", 199.0)),
             observed = result3,
-            threshold = 0.1
+            threshold = 0.1,
         )
         assertEqualMeasurements(
             expected = listOf(Metric.Measurement("crossProcessUiDisplayLatencyMillis", 251.6)),
             observed = result4,
-            threshold = 0.1
+            threshold = 0.1,
         )
     }
 

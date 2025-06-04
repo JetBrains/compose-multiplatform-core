@@ -109,7 +109,7 @@ interface MutableDoubleState : DoubleState, MutableState<Double> {
 inline operator fun MutableDoubleState.setValue(
     thisObj: Any?,
     property: KProperty<*>,
-    value: Double
+    value: Double,
 ) {
     this.doubleValue = value
 }
@@ -165,7 +165,7 @@ internal open class SnapshotMutableDoubleStateImpl(value: Double) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val currentRecord = current as DoubleStateStateRecord
         val appliedRecord = applied as DoubleStateStateRecord

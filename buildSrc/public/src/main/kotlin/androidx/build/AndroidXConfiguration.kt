@@ -38,7 +38,6 @@ interface AndroidXConfiguration {
 }
 
 enum class KotlinTarget(val apiVersion: KotlinVersion, val catalogVersion: String) {
-    KOTLIN_1_9(KotlinVersion.KOTLIN_1_9, "kotlin19"),
     KOTLIN_2_0(KotlinVersion.KOTLIN_2_0, "kotlin20"),
     KOTLIN_2_1(KotlinVersion.KOTLIN_2_1, "kotlin21"),
     DEFAULT(KOTLIN_2_0),

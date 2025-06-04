@@ -46,7 +46,7 @@ import androidx.pdf.util.buildPageIndicatorLabel
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FastScroller(
     @get:VisibleForTesting public val fastScrollDrawer: FastScrollDrawer,
-    private val scrollCalculator: FastScrollCalculator
+    private val scrollCalculator: FastScrollCalculator,
 ) {
     // Init position for fastScrollY with the top margin of the scroller.
     internal var fastScrollY: Int = scrollCalculator.scrollerTopMarginPx
@@ -90,7 +90,7 @@ public class FastScroller(
         viewWidth: Int,
         viewHeight: Int,
         visiblePages: Range<Int>,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ) {
         if (scrollY != lastScrollY) {
             fastScrollY =
@@ -98,7 +98,7 @@ public class FastScroller(
                     scrollY = scrollY,
                     viewHeight = viewHeight,
                     thumbHeightPx = fastScrollDrawer.thumbHeightPx,
-                    estimatedFullHeight = estimatedFullHeight
+                    estimatedFullHeight = estimatedFullHeight,
                 )
             lastScrollY = scrollY
         }
@@ -107,7 +107,7 @@ public class FastScroller(
             canvas,
             xOffset = scrollX + viewWidth,
             yOffset = scrollY + fastScrollY,
-            visiblePages
+            visiblePages,
         )
     }
 
@@ -126,20 +126,20 @@ public class FastScroller(
     public fun viewScrollPositionFromFastScroller(
         scrollY: Float,
         viewHeight: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ): Int {
         fastScrollY =
             scrollCalculator.constrainScrollPosition(
                 scrollY,
                 viewHeight,
-                fastScrollDrawer.thumbHeightPx
+                fastScrollDrawer.thumbHeightPx,
             )
 
         return scrollCalculator.computeViewScroll(
             fastScrollY = fastScrollY,
             viewHeight = viewHeight,
             thumbHeightPx = fastScrollDrawer.thumbHeightPx,
-            estimatedFullHeight = estimatedFullHeight
+            estimatedFullHeight = estimatedFullHeight,
         )
     }
 
@@ -179,7 +179,7 @@ public class FastScroller(
                         fastScrollDrawer.alpha = FastScrollDrawer.GONE_ALPHA
                         onAnimationUpdate()
                     },
-                    HIDE_DELAY_MS + HIDE_ANIMATION_DURATION_MILLIS
+                    HIDE_DELAY_MS + HIDE_ANIMATION_DURATION_MILLIS,
                 ) // Simulate total time
         }
     }
@@ -190,7 +190,7 @@ public class FastScroller(
         return Settings.Global.getFloat(
             fastScrollDrawer.context.contentResolver,
             Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
+            1f,
         ) != 0f
     }
 
@@ -229,7 +229,7 @@ public class FastScroller(
         y: Float,
         pageCount: Int,
         viewWidth: Int,
-        scrollX: Int
+        scrollX: Int,
     ): Boolean {
         val textLabel =
             buildPageIndicatorLabel(
@@ -237,7 +237,7 @@ public class FastScroller(
                 visiblePages,
                 pageCount,
                 R.string.label_page_single,
-                R.string.label_page_range
+                R.string.label_page_range,
             )
         val indicatorRect =
             fastScrollDrawer.calculatePageIndicatorBounds(

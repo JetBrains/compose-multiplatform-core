@@ -74,12 +74,7 @@ private class OnFirstVisibleElement(
     val callback: () -> Unit,
 ) : ModifierNodeElement<OnFirstVisibleNode>() {
     override fun create() =
-        OnFirstVisibleNode(
-            minDurationMs,
-            minFractionVisible,
-            viewportBounds,
-            callback,
-        )
+        OnFirstVisibleNode(minDurationMs, minFractionVisible, viewportBounds, callback)
 
     override fun update(node: OnFirstVisibleNode) {
         node.minDurationMs = minDurationMs
@@ -145,11 +140,7 @@ private class OnFirstVisibleNode(
         }
 
     val rectChanged = { bounds: RelativeLayoutBounds ->
-        checkVisibility(
-            minFractionVisible,
-            bounds,
-            lastViewport,
-        )
+        checkVisibility(minFractionVisible, bounds, lastViewport)
     }
 
     fun checkVisibility(

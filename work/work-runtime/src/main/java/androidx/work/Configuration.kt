@@ -596,7 +596,7 @@ private fun createDefaultExecutor(isTaskExecutor: Boolean): Executor {
     return Executors.newFixedThreadPool(
         // This value is the same as the core pool size for AsyncTask#THREAD_POOL_EXECUTOR.
         max(2, min(Runtime.getRuntime().availableProcessors() - 1, 4)),
-        factory
+        factory,
     )
 }
 

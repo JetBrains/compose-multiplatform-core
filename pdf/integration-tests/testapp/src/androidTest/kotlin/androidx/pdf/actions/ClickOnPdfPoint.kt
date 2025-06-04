@@ -43,7 +43,7 @@ fun clickOnPdfPoint(
         PdfCoordinatesProvider(pdfPoint),
         precisionDescriber,
         inputSource,
-        buttonState
+        buttonState,
     )
 
 /**

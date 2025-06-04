@@ -39,7 +39,7 @@ internal fun assertScreenshot(screenshotRule: AndroidXScreenshotTestRule, filena
                 it.assertAgainstGolden(
                     screenshotRule,
                     filename,
-                    MSSIMMatcher(MATCHING_SIMILARITY_THRESHOLD)
+                    MSSIMMatcher(MATCHING_SIMILARITY_THRESHOLD),
                 )
             }
         )

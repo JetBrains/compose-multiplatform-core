@@ -258,7 +258,7 @@ class Camera2CameraControllerTest {
                     CameraError.ERROR_CAMERA_OPENER,
                     cameraAvailable,
                     null,
-                    TimestampNs(0L)
+                    TimestampNs(0L),
                 )
             )
 
@@ -268,7 +268,7 @@ class Camera2CameraControllerTest {
                     CameraError.ERROR_GRAPH_CONFIG,
                     cameraAvailable,
                     null,
-                    TimestampNs(0L)
+                    TimestampNs(0L),
                 )
             )
         }

@@ -465,7 +465,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
         @Serializable
         data class D(
             val i: Int = 3,
-            @EncodeDefault(EncodeDefault.Mode.ALWAYS) val s: String? = "foo"
+            @EncodeDefault(EncodeDefault.Mode.ALWAYS) val s: String? = "foo",
         )
         D(i = 5).encodeDecode {
             assertThat(size()).isEqualTo(2)
@@ -518,7 +518,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
                             assertThat(getString("s")).isEqualTo("bar")
                         }
                     }
-                }
+                },
             )
 
         val origin = savedState {
@@ -608,7 +608,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
         // Specifying `ContextualSerializer` explicitly.
         MyColor(1, 3, 5).encodeDecode(
             configuration = config,
-            serializer = ContextualSerializer(MyColor::class)
+            serializer = ContextualSerializer(MyColor::class),
         ) {
             assertThat(size()).isEqualTo(1)
             assertThat(getIntArray("")).isEqualTo(intArrayOf(1, 3, 5))
@@ -644,7 +644,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
         Circle(3).encodeDecode<Shape>(
             configuration = config,
             // This is needed only in Kotlin/Native.
-            serializer = PolymorphicSerializer(Shape::class)
+            serializer = PolymorphicSerializer(Shape::class),
         ) {
             assertThat(size()).isEqualTo(2)
             assertThat(getString("type")).isEqualTo("androidx.savedstate.serialization.Circle")
@@ -656,7 +656,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
         Rectangle(3, 5).encodeDecode<Shape>(
             configuration = config,
             // This is needed only in Kotlin/Native.
-            serializer = PolymorphicSerializer(Shape::class)
+            serializer = PolymorphicSerializer(Shape::class),
         ) {
             assertThat(size()).isEqualTo(2)
             assertThat(getString("type")).isEqualTo("androidx.savedstate.serialization.Rectangle")
@@ -709,7 +709,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
                     assertThat(size()).isEqualTo(2)
                     assertThat(getString("name")).isEqualTo("foo")
                     assertThat(getInt("age")).isEqualTo(99)
-                }
+                },
             )
     }
 
@@ -728,7 +728,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
                     assertThat(size()).isEqualTo(2)
                     assertThat(getString("name")).isEqualTo("foo")
                     assertThat(getInt("age")).isEqualTo(99)
-                }
+                },
             )
     }
 }
@@ -743,7 +743,7 @@ private fun keyOrValueNotFoundErrorMessage(key: String): String {
 data class MyTreeNode<T>(
     val value: T,
     val left: MyTreeNode<T>? = null,
-    val right: MyTreeNode<T>? = null
+    val right: MyTreeNode<T>? = null,
 )
 
 // `@Serializable` is needed for using the enum as root in native and js.
@@ -751,7 +751,7 @@ data class MyTreeNode<T>(
 enum class MyEnum {
     A,
     B,
-    C
+    C,
 }
 
 @Serializable @JvmInline private value class MyValueClassToString(val value: String)

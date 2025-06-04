@@ -73,12 +73,9 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.LeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leadingButton")
+                        modifier = Modifier.testTag("leadingButton"),
                     ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Leading Icon",
-                        )
+                        Icon(Icons.Outlined.Edit, contentDescription = "Leading Icon")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("My Button")
                     }
@@ -91,7 +88,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -111,12 +108,9 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.LeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leadingButton")
+                        modifier = Modifier.testTag("leadingButton"),
                     ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Leading Icon",
-                        )
+                        Icon(Icons.Outlined.Edit, contentDescription = "Leading Icon")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("My Button")
                     }
@@ -129,7 +123,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -149,7 +143,7 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.LeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leading button")
+                        modifier = Modifier.testTag("leading button"),
                     ) {
                         Text("My Button")
                     }
@@ -162,7 +156,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -184,7 +178,7 @@ class SplitButtonTest {
                     SplitButtonDefaults.LeadingButton(
                         onClick = { /* Do Nothing */ },
                         modifier = Modifier.testTag("leading button"),
-                        enabled = false
+                        enabled = false,
                     ) {
                         Text("My Button")
                     }
@@ -198,7 +192,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -219,12 +213,9 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.TonalLeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leadingButton")
+                        modifier = Modifier.testTag("leadingButton"),
                     ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Leading Icon",
-                        )
+                        Icon(Icons.Outlined.Edit, contentDescription = "Leading Icon")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("My Button")
                     }
@@ -237,7 +228,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -253,12 +244,9 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.ElevatedLeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leadingButton")
+                        modifier = Modifier.testTag("leadingButton"),
                     ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Leading Icon",
-                        )
+                        Icon(Icons.Outlined.Edit, contentDescription = "Leading Icon")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("My Button")
                     }
@@ -271,7 +259,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -287,12 +275,9 @@ class SplitButtonTest {
                 leadingButton = {
                     SplitButtonDefaults.OutlinedLeadingButton(
                         onClick = { /* Do Nothing */ },
-                        modifier = Modifier.testTag("leadingButton")
+                        modifier = Modifier.testTag("leadingButton"),
                     ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Leading Icon",
-                        )
+                        Icon(Icons.Outlined.Edit, contentDescription = "Leading Icon")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("My Button")
                     }
@@ -305,7 +290,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -326,12 +311,12 @@ class SplitButtonTest {
                     SplitButtonDefaults.LeadingButton(
                         onClick = { /* Do Nothing */ },
                         modifier = Modifier.testTag("leading button"),
-                        enabled = false
+                        enabled = false,
                     ) {
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                                Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -354,10 +339,10 @@ class SplitButtonTest {
                             Icons.Outlined.KeyboardArrowDown,
                             contentDescription = "Trailing Icon",
                             modifier =
-                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {}
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {},
                         )
                     }
-                }
+                },
             )
         }
 
@@ -387,19 +372,19 @@ class SplitButtonTest {
 
         (textBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             SplitButtonSmallTokens.LeadingButtonLeadingSpace,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             SplitButtonSmallTokens.LeadingButtonTrailingSpace,
-            "end padding for leading button"
+            "end padding for leading button",
         )
         (iconBounds.left - trailingButtonBounds.left).assertIsEqualTo(
             expectedTrailingButtonStartPadding,
-            "start padding for trailing button"
+            "start padding for trailing button",
         )
         (trailingButtonBounds.right - iconBounds.right).assertIsEqualTo(
             expectedTrailingButtonEndPadding,
-            "end padding for trailing button"
+            "end padding for trailing button",
         )
     }
 
@@ -422,13 +407,13 @@ class SplitButtonTest {
                             modifier =
                                 Modifier.testTag("leadingIcon").semantics(
                                     mergeDescendants = true
-                                ) {}
+                                ) {},
                         )
                         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -442,7 +427,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -452,15 +437,15 @@ class SplitButtonTest {
 
         (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             12.dp,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             4.dp,
-            "icon and text between spacing for leading button"
+            "icon and text between spacing for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             10.dp,
-            "end padding for leading button"
+            "end padding for leading button",
         )
     }
 
@@ -483,13 +468,13 @@ class SplitButtonTest {
                             modifier =
                                 Modifier.testTag("leadingIcon").semantics(
                                     mergeDescendants = true
-                                ) {}
+                                ) {},
                         )
                         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -503,7 +488,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -513,15 +498,15 @@ class SplitButtonTest {
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             8.dp,
-            "icon and text between spacing for leading button"
+            "icon and text between spacing for leading button",
         )
         (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             16.dp,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             12.dp,
-            "end padding for leading button"
+            "end padding for leading button",
         )
     }
 
@@ -544,13 +529,13 @@ class SplitButtonTest {
                             modifier =
                                 Modifier.testTag("leadingIcon").semantics(
                                     mergeDescendants = true
-                                ) {}
+                                ) {},
                         )
                         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -564,7 +549,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -574,15 +559,15 @@ class SplitButtonTest {
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             8.dp,
-            "icon and text between spacing for leading button"
+            "icon and text between spacing for leading button",
         )
         (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             24.dp,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             24.dp,
-            "end padding for leading button"
+            "end padding for leading button",
         )
     }
 
@@ -605,13 +590,13 @@ class SplitButtonTest {
                             modifier =
                                 Modifier.testTag("leadingIcon").semantics(
                                     mergeDescendants = true
-                                ) {}
+                                ) {},
                         )
                         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -625,7 +610,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -635,15 +620,15 @@ class SplitButtonTest {
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             12.dp,
-            "icon and text between spacing for leading button"
+            "icon and text between spacing for leading button",
         )
         (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             48.dp,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             48.dp,
-            "end padding for leading button"
+            "end padding for leading button",
         )
     }
 
@@ -666,13 +651,13 @@ class SplitButtonTest {
                             modifier =
                                 Modifier.testTag("leadingIcon").semantics(
                                     mergeDescendants = true
-                                ) {}
+                                ) {},
                         )
                         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                         Text(
                             "My Button",
                             modifier =
-                                Modifier.testTag("text").semantics(mergeDescendants = true) {}
+                                Modifier.testTag("text").semantics(mergeDescendants = true) {},
                         )
                     }
                 },
@@ -686,7 +671,7 @@ class SplitButtonTest {
                     ) {
                         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Trailing Icon")
                     }
-                }
+                },
             )
         }
 
@@ -696,15 +681,15 @@ class SplitButtonTest {
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             16.dp,
-            "icon and text between spacing for leading button"
+            "icon and text between spacing for leading button",
         )
         (leadingIconBounds.left - leadingButtonBounds.left).assertIsEqualTo(
             64.dp,
-            "start padding for leading button"
+            "start padding for leading button",
         )
         (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
             64.dp,
-            "end padding for leading button"
+            "end padding for leading button",
         )
     }
 }

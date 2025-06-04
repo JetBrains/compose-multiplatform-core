@@ -152,14 +152,14 @@ internal sealed class SupportSQLiteStatement(
             ROLLBACK,
             BEGIN_EXCLUSIVE,
             BEGIN_IMMEDIATE,
-            BEGIN_DEFERRED
+            BEGIN_DEFERRED,
         }
     }
 
     private class TransactionSQLiteStatement(
         db: SupportSQLiteDatabase,
         sql: String,
-        val operation: TransactionOperation
+        val operation: TransactionOperation,
     ) : SupportSQLiteStatement(db, sql) {
 
         override fun bindBlob(index: Int, value: ByteArray) {

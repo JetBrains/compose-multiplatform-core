@@ -145,7 +145,7 @@ object NetworkRequest28 {
                         .warning(
                             NetworkRequestCompat.TAG,
                             "Ignoring removing default capability '$it'",
-                            ex
+                            ex,
                         )
                 }
             }
@@ -157,7 +157,7 @@ object NetworkRequest28 {
 
     internal fun createNetworkRequestCompat(
         capabilities: IntArray,
-        transports: IntArray
+        transports: IntArray,
     ): NetworkRequestCompat {
         return NetworkRequestCompat(createNetworkRequest(capabilities, transports))
     }

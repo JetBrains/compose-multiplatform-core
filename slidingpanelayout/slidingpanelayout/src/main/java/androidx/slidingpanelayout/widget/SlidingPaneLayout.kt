@@ -106,7 +106,7 @@ private fun getChildHeightMeasureSpec(
     child: View,
     skippedFirstPass: Boolean,
     spec: Int,
-    padding: Int
+    padding: Int,
 ): Int {
     val lp = child.layoutParams
     return if (skippedFirstPass) {
@@ -164,14 +164,14 @@ private class FoldBoundsCalculator {
                 parentView.paddingLeft,
                 parentView.paddingTop,
                 max(parentView.paddingLeft, splitPosition.left - paneSpacing / 2),
-                parentView.height - parentView.paddingBottom
+                parentView.height - parentView.paddingBottom,
             )
             val rightBound = parentView.width - parentView.paddingRight
             outRightRect.set(
                 min(rightBound, splitPosition.right + (paneSpacing + 1) / 2),
                 parentView.paddingTop,
                 rightBound,
-                parentView.height - parentView.paddingBottom
+                parentView.height - parentView.paddingBottom,
             )
             return true
         }
@@ -184,7 +184,7 @@ private class FoldBoundsCalculator {
     private fun getFoldBoundsInView(
         foldingFeature: FoldingFeature,
         view: View,
-        outRect: Rect
+        outRect: Rect,
     ): Boolean {
         val viewLocationInWindow = tmpIntArray
         view.getLocationInWindow(viewLocationInWindow)
@@ -419,13 +419,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             if (dividerAtLeftEdge or dividerAtRightEdge) {
                 sendAccessibilityEventForDivider(
                     eventType = AccessibilityEvent.TYPE_ANNOUNCEMENT,
-                    contentDescription = getDividerContentDescription()
+                    contentDescription = getDividerContentDescription(),
                 )
             }
 
             sendAccessibilityEventForDivider(
                 eventType = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                contentChangeType = AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE
+                contentChangeType = AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE,
             )
             pendingA11yDividerPositionUpdates = false
         }
@@ -681,7 +681,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         context.withStyledAttributes(
             attrs,
             R.styleable.SlidingPaneLayout,
-            defStyleRes = R.style.Widget_SlidingPaneLayout
+            defStyleRes = R.style.Widget_SlidingPaneLayout,
         ) {
             isOverlappingEnabled =
                 getBoolean(R.styleable.SlidingPaneLayout_isOverlappingEnabled, true)
@@ -697,7 +697,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             isChildClippingToResizeDividerEnabled =
                 getBoolean(
                     R.styleable.SlidingPaneLayout_isChildClippingToResizeDividerEnabled,
-                    true
+                    true,
                 )
             // Constants used in this `when` are defined in attrs.xml
             userResizeBehavior =
@@ -865,7 +865,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     dividerLeft,
                     dividerTop,
                     dividerLeft + intrinsicWidth,
-                    dividerTop + intrinsicHeight
+                    dividerTop + intrinsicHeight,
                 )
             }
     }
@@ -1042,12 +1042,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         MeasureSpec.makeMeasureSpec(
                             (widthAvailableToChild - horizontalMargin).coerceAtLeast(0),
                             if (widthMode == MeasureSpec.UNSPECIFIED) widthMode
-                            else MeasureSpec.AT_MOST
+                            else MeasureSpec.AT_MOST,
                         )
                     MATCH_PARENT ->
                         MeasureSpec.makeMeasureSpec(
                             (widthAvailableToChild - horizontalMargin).coerceAtLeast(0),
-                            widthMode
+                            widthMode,
                         )
                     else -> MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
                 }
@@ -1056,7 +1056,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 getChildMeasureSpec(
                     heightMeasureSpec,
                     paddingTop + paddingBottom + lp.topMargin + lp.bottomMargin,
-                    lp.height
+                    lp.height,
                 )
             if (
                 allowOverlappingPanes ||
@@ -1153,7 +1153,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                             child,
                             skippedFirstPass,
                             heightMeasureSpec,
-                            paddingTop + paddingBottom + lp.topMargin + lp.bottomMargin
+                            paddingTop + paddingBottom + lp.topMargin + lp.bottomMargin,
                         )
                     child.measure(childWidthSpec, childHeightSpec)
                     val childHeight = child.measuredHeight
@@ -1196,7 +1196,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 foldingFeature,
                 this,
                 leftSplitBounds,
-                rightSplitBounds
+                rightSplitBounds,
             )
         if (hasFold) {
             // Determine if child configuration would prevent following the fold position;
@@ -1232,7 +1232,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 val childWidthSpec =
                     MeasureSpec.makeMeasureSpec(
                         (splitView.width() - lp.horizontalMargin).coerceAtLeast(0),
-                        MeasureSpec.EXACTLY
+                        MeasureSpec.EXACTLY,
                     )
 
                 // Use the child's existing height; all children have been measured once since
@@ -1497,7 +1497,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     @Deprecated(
         "Renamed to {@link #openPane()} - this method is going away soon!",
-        ReplaceWith("openPane()")
+        ReplaceWith("openPane()"),
     )
     open fun smoothSlideOpen() {
         openPane()
@@ -1524,7 +1524,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** @return true if content in this layout can be slid open and closed */
     @Deprecated(
         "Renamed to {@link #isSlideable()} - this method is going away soon!",
-        ReplaceWith("isSlideable")
+        ReplaceWith("isSlideable"),
     )
     open fun canSlide(): Boolean {
         return isSlideable
@@ -1532,7 +1532,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     @Deprecated(
         "Renamed to {@link #closePane()} - this method is going away soon!",
-        ReplaceWith("closePane()")
+        ReplaceWith("closePane()"),
     )
     open fun smoothSlideClosed() {
         closePane()
@@ -1590,19 +1590,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun drawChild(
         @Suppress("InvalidNullabilityOverride") canvas: Canvas,
         @Suppress("InvalidNullabilityOverride") child: View,
-        drawingTime: Long
+        drawingTime: Long,
     ): Boolean {
         if (isSlideable) {
             val gestureInsets = systemGestureInsets
             if (isLayoutRtl xor isOpen) {
                 overlappingPaneHandler.setEdgeTrackingEnabled(
                     ViewDragHelper.EDGE_LEFT,
-                    gestureInsets?.left ?: 0
+                    gestureInsets?.left ?: 0,
                 )
             } else {
                 overlappingPaneHandler.setEdgeTrackingEnabled(
                     ViewDragHelper.EDGE_RIGHT,
-                    gestureInsets?.right ?: 0
+                    gestureInsets?.right ?: 0,
                 )
             }
         } else {
@@ -1676,7 +1676,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun smoothSlideTo(
         slideOffset: Float,
         duration: Int,
-        interpolator: Interpolator
+        interpolator: Interpolator,
     ): Boolean {
         if (!isSlideable) {
             // Nothing to do.
@@ -1691,7 +1691,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 x,
                 slideableView.top,
                 duration,
-                interpolator
+                interpolator,
             )
         ) {
             setAllChildrenVisible()
@@ -1723,7 +1723,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         """Renamed to {@link #setShadowDrawableLeft(Drawable d)} to support LTR (left to
       right language) and {@link #setShadowDrawableRight(Drawable d)} to support RTL (right to left
       language) during opening/closing.""",
-        ReplaceWith("setShadowDrawableLeft(d)")
+        ReplaceWith("setShadowDrawableLeft(d)"),
     )
     open fun setShadowDrawable(drawable: Drawable?) {
         setShadowDrawableLeft(drawable)
@@ -1755,7 +1755,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         """Renamed to {@link #setShadowResourceLeft(int)} to support LTR (left to
       right language) and {@link #setShadowResourceRight(int)} to support RTL (right to left
       language) during opening/closing.""",
-        ReplaceWith("setShadowResourceLeft(resId)")
+        ReplaceWith("setShadowResourceLeft(resId)"),
     )
     open fun setShadowResource(@DrawableRes resId: Int) {
         setShadowResourceLeft(resId)
@@ -1861,7 +1861,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                             true,
                             dx,
                             x + scrollX - child.left,
-                            y + scrollY - child.top
+                            y + scrollY - child.top,
                         )
                 ) {
                     return true
@@ -2065,7 +2065,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         override fun onInitializeAccessibilityNodeInfo(
             host: View,
-            info: AccessibilityNodeInfoCompat
+            info: AccessibilityNodeInfoCompat,
         ) {
             val superNode = AccessibilityNodeInfoCompat.obtain(info)
             super.onInitializeAccessibilityNodeInfo(host, superNode)
@@ -2087,7 +2087,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         override fun onRequestSendAccessibilityEvent(
             host: ViewGroup,
             child: View,
-            event: AccessibilityEvent
+            event: AccessibilityEvent,
         ): Boolean {
             return if (!isDimmed(child)) {
                 super.onRequestSendAccessibilityEvent(host, child, event)
@@ -2101,7 +2101,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          */
         private fun copyNodeInfoNoChildren(
             dest: AccessibilityNodeInfoCompat,
-            src: AccessibilityNodeInfoCompat
+            src: AccessibilityNodeInfoCompat,
         ) {
             val rect = tmpRect
             src.getBoundsInScreen(rect)
@@ -2262,7 +2262,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                                     SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT
                                 } else {
                                     SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT
-                                }
+                                },
                         )
                         return true
                     }
@@ -2345,7 +2345,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun findViewByAccessibilityIdRootedAtCurrentView(
         accessibilityId: Int,
-        currentView: View
+        currentView: View,
     ): View? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             val getAccessibilityViewIdMethod =
@@ -2362,7 +2362,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     val foundView =
                         findViewByAccessibilityIdRootedAtCurrentView(
                             accessibilityId,
-                            currentView.getChildAt(i)
+                            currentView.getChildAt(i),
                         )
                     if (foundView != null) {
                         return foundView
@@ -2378,7 +2378,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun sendAccessibilityEventForDivider(
         eventType: Int,
         contentDescription: String? = null,
-        contentChangeType: Int = AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+        contentChangeType: Int = AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
     ) {
         // Early return if accessibility is not enabled.
         if (!accessibilityManager.isEnabled && !isAccessibilityEnabledForTesting) {
@@ -2397,10 +2397,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 AccessibilityRecordCompat.setSource(
                     this,
                     this@SlidingPaneLayout,
-                    DIVIDER_VIRTUAL_VIEW_ID
+                    DIVIDER_VIRTUAL_VIEW_ID,
                 )
                 this.packageName = context.packageName
-            }
+            },
         )
     }
 
@@ -2525,7 +2525,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             left: Int,
             top: Int,
             duration: Int,
-            interpolator: Interpolator
+            interpolator: Interpolator,
         ): Boolean = dragHelper.smoothSlideViewTo(view, left, top, duration, interpolator)
 
         fun setPanelSlideListener(listener: PanelSlideListener?) {
@@ -2614,7 +2614,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             left: Int,
             top: Int,
             dx: Int,
-            dy: Int
+            dy: Int,
         ) {
             onPanelDragged(left)
             invalidate()
@@ -2810,7 +2810,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 width -
                     paddingRight -
                     rightChild.spLayoutParams.horizontalMargin -
-                    getMinimumChildWidth(rightChild)
+                    getMinimumChildWidth(rightChild),
             )
         }
 
@@ -3070,28 +3070,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             object : UserResizeBehavior {
                 override fun onUserResizeStarted(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }
 
                 override fun onUserResizeProgress(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }
 
                 override fun onUserResizeComplete(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     slidingPaneLayout.splitDividerPosition = dividerPositionX
                 }
 
                 override fun onUserResizeCancelled(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }
@@ -3109,28 +3109,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             object : UserResizeBehavior {
                 override fun onUserResizeStarted(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }
 
                 override fun onUserResizeProgress(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     slidingPaneLayout.splitDividerPosition = dividerPositionX
                 }
 
                 override fun onUserResizeComplete(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }
 
                 override fun onUserResizeCancelled(
                     slidingPaneLayout: SlidingPaneLayout,
-                    dividerPositionX: Int
+                    dividerPositionX: Int,
                 ) {
                     // Do nothing
                 }

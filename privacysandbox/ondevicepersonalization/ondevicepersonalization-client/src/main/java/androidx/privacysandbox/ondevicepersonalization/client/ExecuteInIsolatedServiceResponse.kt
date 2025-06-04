@@ -26,6 +26,4 @@ import android.adservices.ondevicepersonalization.SurfacePackageToken
  *   content to be displayed within the calling app.
  */
 class ExecuteInIsolatedServiceResponse
-internal constructor(
-    val surfacePackageToken: SurfacePackageToken?,
-)
+internal constructor(val surfacePackageToken: SurfacePackageToken?)

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package androidx.credentials
 
 import android.os.Bundle
+import androidx.credentials.internal.FrameworkClassParsingException
 import androidx.credentials.internal.RequestValidationHelper
 
 /**
@@ -28,19 +29,39 @@ import androidx.credentials.internal.RequestValidationHelper
  */
 @ExperimentalDigitalCredentialApi
 class CreateDigitalCredentialRequest
-constructor(
+private constructor(
     val requestJson: String,
+    origin: String?,
+    credentialData: Bundle,
+    candidateQueryData: Bundle,
 ) :
     CreateCredentialRequest(
         type = DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
-        credentialData = toBundle(requestJson),
+        credentialData = credentialData,
         displayInfo = populateUnusedDisplayInfo(),
-        candidateQueryData = Bundle(),
+        candidateQueryData = candidateQueryData,
         isSystemProviderRequired = false,
         isAutoSelectAllowed = false,
-        origin = null,
-        preferImmediatelyAvailableCredentials = false
+        origin = origin,
+        preferImmediatelyAvailableCredentials = false,
     ) {
+
+    /**
+     * @param requestJson The
+     *   [JSON](https://w3c-fedid.github.io/digital-credentials/#extensions-to-credentialcreationoptions-dictionary)
+     *   string representing the request
+     * @param origin the origin of a different application if the request is being made on behalf of
+     *   that application
+     */
+    constructor(
+        requestJson: String,
+        origin: String?,
+    ) : this(
+        requestJson = requestJson,
+        origin = origin,
+        credentialData = toBundle(requestJson),
+        candidateQueryData = Bundle(),
+    )
 
     init {
         require(RequestValidationHelper.isValidJSON(requestJson)) {
@@ -54,13 +75,31 @@ constructor(
         // DisplayInfo not used in this request, user name is required to create a DisplayInfo
         internal const val UNUSED_USER_ID = "unused"
 
-        fun populateUnusedDisplayInfo() = DisplayInfo(userId = UNUSED_USER_ID)
+        @JvmStatic fun populateUnusedDisplayInfo() = DisplayInfo(userId = UNUSED_USER_ID)
 
         @JvmStatic
         internal fun toBundle(requestJson: String): Bundle {
             val bundle = Bundle()
             bundle.putString(BUNDLE_KEY_REQUEST_JSON, requestJson)
             return bundle
+        }
+
+        @JvmStatic
+        fun createFrom(
+            data: Bundle,
+            origin: String?,
+            candidateQueryData: Bundle,
+        ): CreateDigitalCredentialRequest {
+            val requestJson = data.getString(BUNDLE_KEY_REQUEST_JSON)
+            if (requestJson == null) {
+                throw FrameworkClassParsingException()
+            }
+            return CreateDigitalCredentialRequest(
+                requestJson = requestJson,
+                origin = origin,
+                credentialData = data,
+                candidateQueryData = candidateQueryData,
+            )
         }
     }
 }

@@ -207,7 +207,7 @@ object Migration_12_13 : Migration(VERSION_12, VERSION_13) {
 @RenameColumn(
     tableName = "WorkSpec",
     fromColumnName = "period_start_time",
-    toColumnName = "last_enqueue_time"
+    toColumnName = "last_enqueue_time",
 )
 class AutoMigration_14_15 : AutoMigrationSpec {
     override fun onPostMigrate(db: SupportSQLiteDatabase) {
@@ -219,7 +219,7 @@ class AutoMigration_14_15 : AutoMigrationSpec {
             OnConflictStrategy.ABORT,
             values,
             "last_enqueue_time = 0 AND interval_duration <> 0 ",
-            emptyArray()
+            emptyArray(),
         )
     }
 }
@@ -231,13 +231,13 @@ class RescheduleMigration(val mContext: Context, startVersion: Int, endVersion: 
         if (endVersion >= VERSION_10) {
             db.execSQL(
                 PreferenceUtils.INSERT_PREFERENCE,
-                arrayOf(PreferenceUtils.KEY_RESCHEDULE_NEEDED, 1)
+                arrayOf<Any>(PreferenceUtils.KEY_RESCHEDULE_NEEDED, 1),
             )
         } else {
             val preferences =
                 mContext.getSharedPreferences(
                     PreferenceUtils.PREFERENCES_FILE_NAME,
-                    Context.MODE_PRIVATE
+                    Context.MODE_PRIVATE,
                 )
 
             // Mutate the shared preferences directly, and eventually they will get

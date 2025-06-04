@@ -27,5 +27,5 @@ data class InitializedExtensionsHolder(
     val iconData: IconData? = null,
     val participants: ParticipantExtension? = null,
     val raiseHand: RaiseHandState? = null,
-    val participantsManager: ParticipantsExtensionManager? = null
+    val participantsManager: ParticipantsExtensionManager? = null,
 )

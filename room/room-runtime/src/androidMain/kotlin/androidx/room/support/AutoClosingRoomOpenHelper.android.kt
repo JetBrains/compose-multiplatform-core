@@ -35,7 +35,7 @@ import java.util.Locale
 /** A SupportSQLiteOpenHelper that has auto close enabled for database connections. */
 internal class AutoClosingRoomOpenHelper(
     override val delegate: SupportSQLiteOpenHelper,
-    internal val autoCloser: AutoCloser
+    internal val autoCloser: AutoCloser,
 ) : SupportSQLiteOpenHelper by delegate, DelegatingOpenHelper {
 
     private val autoClosingDb = AutoClosingSupportSQLiteDatabase(autoCloser)
@@ -236,7 +236,7 @@ internal class AutoClosingRoomOpenHelper(
         @RequiresApi(api = Build.VERSION_CODES.N)
         override fun query(
             query: SupportSQLiteQuery,
-            cancellationSignal: CancellationSignal?
+            cancellationSignal: CancellationSignal?,
         ): Cursor {
             val result =
                 try {
@@ -266,7 +266,7 @@ internal class AutoClosingRoomOpenHelper(
             conflictAlgorithm: Int,
             values: ContentValues,
             whereClause: String?,
-            whereArgs: Array<out Any?>?
+            whereArgs: Array<out Any?>?,
         ): Int {
             return autoCloser.executeRefCountingFunction { db: SupportSQLiteDatabase ->
                 db.update(table, conflictAlgorithm, values, whereClause, whereArgs)
@@ -361,7 +361,7 @@ internal class AutoClosingRoomOpenHelper(
      */
     private class KeepAliveCursor(
         private val delegate: Cursor,
-        private val autoCloser: AutoCloser
+        private val autoCloser: AutoCloser,
     ) : Cursor by delegate {
         // close is the only important/changed method here:
         override fun close() {
@@ -377,7 +377,7 @@ internal class AutoClosingRoomOpenHelper(
      */
     private class AutoClosingSupportSQLiteStatement(
         private val sql: String,
-        private val autoCloser: AutoCloser
+        private val autoCloser: AutoCloser,
     ) : SupportSQLiteStatement {
 
         private var bindingTypes: IntArray = IntArray(0)

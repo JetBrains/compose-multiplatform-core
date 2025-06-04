@@ -25,5 +25,5 @@ class WorkerExceptionInfo(
     val workerParameters: WorkerParameters,
 
     /** The [Throwable] thrown while initializing or executing a [ListenableWorker] */
-    val throwable: Throwable
+    val throwable: Throwable,
 )

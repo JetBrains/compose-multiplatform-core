@@ -87,11 +87,11 @@ fun <T : Any> CommonUiNavDisplay(
         ContentTransform(
             fadeIn(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
             fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
-            sizeTransform = null
+            sizeTransform = null,
         ),
     popTransitionSpec: ContentTransform = transitionSpec,
     onBack: () -> Unit = { if (backstack is MutableList) backstack.removeAt(backstack.size - 1) },
-    entryProvider: (key: T) -> NavEntry<out T>
+    entryProvider: (key: T) -> NavEntry<out T>,
 ) {
     BackHandler(backstack.size > 1, onBack)
     DecoratedNavEntryProvider(backstack, entryProvider, entryDecorators) { entries ->
@@ -116,11 +116,11 @@ fun <T : Any> CommonUiNavDisplay(
                 ContentTransform(
                     targetContentEnter = contentTransform.targetContentEnter,
                     initialContentExit = contentTransform.initialContentExit,
-                    sizeTransform = contentTransform.sizeTransform
+                    sizeTransform = contentTransform.sizeTransform,
                 )
             },
             contentAlignment = contentAlignment,
-            contentKey = { it.last() }
+            contentKey = { it.last() },
         ) { innerStack ->
             val lastKey = innerStack.last()
             val layoutPolicy =
@@ -135,10 +135,10 @@ fun <T : Any> CommonUiNavDisplay(
                             onClick = { onItemClick(topLevelRoute) },
                             icon = {
                                 Icon(imageVector = topLevelRoute.icon, contentDescription = null)
-                            }
+                            },
                         )
                     }
-                }
+                },
             ) {
                 entries.findLast { entry -> entry.key == lastKey }?.content?.invoke(lastKey)
             }

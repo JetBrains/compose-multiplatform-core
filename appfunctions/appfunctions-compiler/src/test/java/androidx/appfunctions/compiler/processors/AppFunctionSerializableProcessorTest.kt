@@ -36,7 +36,7 @@ class AppFunctionSerializableProcessorTest {
                         "androidx/appfunctions/internal/serializableproxies/AppFunctionLocalDateTime.KT",
                         "androidx/appfunctions/internal/serializableproxies/AppFunctionUri.KT",
                     ),
-                symbolProcessorProviders = listOf(AppFunctionSerializableProcessor.Provider())
+                symbolProcessorProviders = listOf(AppFunctionSerializableProcessor.Provider()),
             )
     }
 
@@ -52,7 +52,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$EntityWithValidPropertiesFactory.kt",
-            goldenFileName = "\$EntityWithValidPropertiesFactory.KT"
+            goldenFileName = "\$EntityWithValidPropertiesFactory.KT",
         )
     }
 
@@ -67,7 +67,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$EntityWithValidNullablePropertiesFactory.kt",
-            goldenFileName = "\$EntityWithValidNullablePropertiesFactory.KT"
+            goldenFileName = "\$EntityWithValidNullablePropertiesFactory.KT",
         )
     }
 
@@ -79,12 +79,12 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$DerivedSerializableFactory.kt",
-            goldenFileName = "\$DerivedSerializableFactory.KT"
+            goldenFileName = "\$DerivedSerializableFactory.KT",
         )
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$LongBaseSerializableFactory.kt",
-            goldenFileName = "\$LongBaseSerializableFactory.KT"
+            goldenFileName = "\$LongBaseSerializableFactory.KT",
         )
     }
 
@@ -98,17 +98,17 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$NestedDerivedSerializableFactory.kt",
-            goldenFileName = "\$NestedDerivedSerializableFactory.KT"
+            goldenFileName = "\$NestedDerivedSerializableFactory.KT",
         )
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$NestedBaseSerializableFactory.kt",
-            goldenFileName = "\$NestedBaseSerializableFactory.KT"
+            goldenFileName = "\$NestedBaseSerializableFactory.KT",
         )
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$NonNestedChildSerializableFactory.kt",
-            goldenFileName = "\$NonNestedChildSerializableFactory.KT"
+            goldenFileName = "\$NonNestedChildSerializableFactory.KT",
         )
     }
 
@@ -121,7 +121,7 @@ class AppFunctionSerializableProcessorTest {
 
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "All parameters in @AppFunctionSerializable supertypes must be present in subtype"
+            "All parameters in @AppFunctionSerializable supertypes must be present in subtype",
         )
     }
 
@@ -134,7 +134,7 @@ class AppFunctionSerializableProcessorTest {
 
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "All Properties in @AppFunctionSchemaCapability supertypes must be present in subtype"
+            "All Properties in @AppFunctionSchemaCapability supertypes must be present in subtype",
         )
     }
 
@@ -145,31 +145,26 @@ class AppFunctionSerializableProcessorTest {
                 sourceFileNames =
                     listOf(
                         "EntityWithDiffPackageSerializableProperty.KT",
-                        "DiffPackageSerializable.KT"
+                        "DiffPackageSerializable.KT",
                     )
             )
 
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$EntityWithDiffPackageSerializablePropertyFactory.kt",
-            goldenFileName = "\$EntityWithDiffPackageSerializablePropertyFactory.KT"
+            goldenFileName = "\$EntityWithDiffPackageSerializablePropertyFactory.KT",
         )
     }
 
     @Test
     fun testProcessor_recursiveSerializable_success() {
         val report =
-            compilationTestHelper.compileAll(
-                sourceFileNames =
-                    listOf(
-                        "RecursiveSerializable.KT",
-                    )
-            )
+            compilationTestHelper.compileAll(sourceFileNames = listOf("RecursiveSerializable.KT"))
 
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$RecursiveSerializableFactory.kt",
-            goldenFileName = "\$RecursiveSerializableFactory.KT"
+            goldenFileName = "\$RecursiveSerializableFactory.KT",
         )
     }
 
@@ -181,7 +176,7 @@ class AppFunctionSerializableProcessorTest {
             )
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "All parameters in @AppFunctionSerializable primary constructor must have getters"
+            "All parameters in @AppFunctionSerializable primary constructor must have getters",
         )
     }
 
@@ -193,7 +188,7 @@ class AppFunctionSerializableProcessorTest {
             )
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "AppFunctionSerializable properties must be one of the following types:\n"
+            "AppFunctionSerializable properties must be one of the following types:\n",
         )
     }
 
@@ -205,7 +200,7 @@ class AppFunctionSerializableProcessorTest {
             )
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "AppFunctionSerializable properties must be one of the following types:\n"
+            "AppFunctionSerializable properties must be one of the following types:\n",
         )
     }
 
@@ -215,12 +210,12 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$LocalDateTimeFactory.kt",
-            goldenFileName = "\$LocalDateTimeFactory.KT"
+            goldenFileName = "\$LocalDateTimeFactory.KT",
         )
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$UriFactory.kt",
-            goldenFileName = "\$UriFactory.KT"
+            goldenFileName = "\$UriFactory.KT",
         )
     }
 
@@ -234,7 +229,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "\$SerializableWithProxyTypeFactory.kt",
-            goldenFileName = "\$SerializableWithProxyTypeFactory.KT"
+            goldenFileName = "\$SerializableWithProxyTypeFactory.KT",
         )
     }
 
@@ -246,7 +241,7 @@ class AppFunctionSerializableProcessorTest {
             )
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "Class must have exactly one member function: toLocalDateTime"
+            "Class must have exactly one member function: toLocalDateTime",
         )
     }
 
@@ -258,7 +253,7 @@ class AppFunctionSerializableProcessorTest {
             )
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "Companion Class must have exactly one member function: fromLocalDateTime"
+            "Companion Class must have exactly one member function: fromLocalDateTime",
         )
     }
 
@@ -272,7 +267,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}SetFieldFactory.kt",
-            goldenFileName = "${'$'}SetFieldFactory.KT"
+            goldenFileName = "${'$'}SetFieldFactory.KT",
         )
     }
 
@@ -286,7 +281,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}UpdateNoteParamsFactory.kt",
-            goldenFileName = "${'$'}UpdateNoteParamsFactory.KT"
+            goldenFileName = "${'$'}UpdateNoteParamsFactory.KT",
         )
     }
 
@@ -300,7 +295,7 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}EmptyFactory.kt",
-            goldenFileName = "${'$'}EmptyFactory.KT"
+            goldenFileName = "${'$'}EmptyFactory.KT",
         )
     }
 
@@ -312,12 +307,12 @@ class AppFunctionSerializableProcessorTest {
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}MyNoteFactory.kt",
-            goldenFileName = "${'$'}MyNoteFactory.KT"
+            goldenFileName = "${'$'}MyNoteFactory.KT",
         )
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}ResponseFactory.kt",
-            goldenFileName = "${'$'}ResponseFactory.KT"
+            goldenFileName = "${'$'}ResponseFactory.KT",
         )
     }
 }

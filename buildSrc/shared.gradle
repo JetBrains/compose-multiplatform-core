@@ -41,13 +41,11 @@ tasks.withType(KotlinCompile).configureEach { task ->
                 "-Xskip-metadata-version-check",
                 "-Xjdk-release=17",
         )
-        // b/410631668
+        // TODO(b/410631668): Remove when we migrate away from using internal API in binary compatibility validator
         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
-            languageVersion.set(KotlinVersion.KOTLIN_1_8)
-            apiVersion.set(KotlinVersion.KOTLIN_1_8)
-        } else {
-            languageVersion.set(KotlinVersion.KOTLIN_2_0)
-            apiVersion.set(KotlinVersion.KOTLIN_2_0)
+            friendPaths.from(configurations.friends.incoming.artifactView {}.files)
         }
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }
 }

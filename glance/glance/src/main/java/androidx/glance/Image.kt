@@ -205,6 +205,6 @@ internal fun ImageElement(
             this.set(contentScale) { this.contentScale = it }
             this.set(colorFilter) { this.colorFilterParams = it?.colorFilterParams }
             this.set(alpha) { this.alpha = it }
-        }
+        },
     )
 }

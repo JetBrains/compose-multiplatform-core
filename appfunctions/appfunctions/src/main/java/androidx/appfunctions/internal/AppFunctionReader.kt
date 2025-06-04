@@ -45,6 +45,6 @@ internal interface AppFunctionReader {
      */
     suspend fun getAppFunctionSchemaMetadata(
         functionId: String,
-        packageName: String
+        packageName: String,
     ): AppFunctionSchemaMetadata?
 }

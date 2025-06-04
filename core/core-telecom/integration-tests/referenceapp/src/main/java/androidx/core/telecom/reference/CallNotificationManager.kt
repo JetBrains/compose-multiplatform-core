@@ -80,7 +80,7 @@ import androidx.core.telecom.reference.view.NavRoutes
  */
 class CallNotificationManager(
     private val context: Context,
-    private val hostActivityClass: Class<out Activity> = DialerActivity::class.java
+    private val hostActivityClass: Class<out Activity> = DialerActivity::class.java,
 ) {
 
     private val notificationManager =
@@ -118,7 +118,7 @@ class CallNotificationManager(
         val notificationId = callIdToNotificationId(callData.callId)
         Log.d(
             TAG,
-            "[${callData.callId}] Requesting show/update notification (State: ${callData.callState})"
+            "[${callData.callId}] Requesting show/update notification (State: ${callData.callState})",
         )
 
         // Delegate to the internal builder logic
@@ -126,14 +126,14 @@ class CallNotificationManager(
             buildNotificationInternal(
                 callData.callId.toInt(),
                 callData.attributes,
-                callData.callState
+                callData.callState,
             )
 
         if (builder != null) {
             // If builder is valid, build and notify
             Log.i(
                 TAG,
-                "[${callData.callId}] Posting notification (ID:[$notificationId], State: ${callData.callState})"
+                "[${callData.callId}] Posting notification (ID:[$notificationId], State: ${callData.callState})",
             )
             notificationManager.notify(notificationId, builder.build())
         } else {
@@ -141,7 +141,7 @@ class CallNotificationManager(
             // The internal builder might have already logged, but we ensure cancel here.
             Log.i(
                 TAG,
-                "[${callData.callId}] No valid notification to show for state ${callData.callState}, ensuring cancellation."
+                "[${callData.callId}] No valid notification to show for state ${callData.callState}, ensuring cancellation.",
             )
             cancelCallNotification(callData.callId) // Explicit cancel for invalid states
         }
@@ -171,7 +171,7 @@ class CallNotificationManager(
             NotificationChannel(
                     CALL_NOTIFICATION_CHANNEL_ID,
                     CALL_NOTIFICATION_CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH // Use HIGH for incoming calls/heads-up
+                    NotificationManager.IMPORTANCE_HIGH, // Use HIGH for incoming calls/heads-up
                 )
                 .apply {
                     description = "Notifications for incoming and ongoing VoIP calls"
@@ -192,7 +192,7 @@ class CallNotificationManager(
     private fun buildNotificationInternal(
         notificationId: Int,
         attributes: CallAttributesCompat,
-        callState: CallState = CallState.UNKNOWN
+        callState: CallState = CallState.UNKNOWN,
     ): NotificationCompat.Builder? {
         val callId = notificationId.toString()
         // Ensure we have valid data to proceed
@@ -227,7 +227,7 @@ class CallNotificationManager(
                     NotificationCompat.CallStyle.forIncomingCall(
                         callerPerson,
                         createDeclinePendingIntent(callId, notificationId),
-                        createAnswerPendingIntent(callId, notificationId, attributes)
+                        createAnswerPendingIntent(callId, notificationId, attributes),
                     )
                 }
                 CallState.DIALING -> {
@@ -237,8 +237,8 @@ class CallNotificationManager(
                         callerPerson,
                         createHangupPendingIntent(
                             callId,
-                            notificationId
-                        ) // Hangup action for outgoing
+                            notificationId,
+                        ), // Hangup action for outgoing
                     )
                 }
                 CallState.ACTIVE -> {
@@ -250,7 +250,7 @@ class CallNotificationManager(
                         .setChronometerCountDown(false)
                     NotificationCompat.CallStyle.forOngoingCall(
                         callerPerson,
-                        createHangupPendingIntent(callId, notificationId)
+                        createHangupPendingIntent(callId, notificationId),
                     )
                 }
                 CallState.INACTIVE -> { // e.g. On Hold
@@ -258,7 +258,7 @@ class CallNotificationManager(
                     // You might want different actions for hold state? For now, just Hangup.
                     NotificationCompat.CallStyle.forOngoingCall(
                         callerPerson,
-                        createHangupPendingIntent(callId, notificationId)
+                        createHangupPendingIntent(callId, notificationId),
                     )
                 }
                 // DISCONNECTED and UNKNOWN states should not show a notification
@@ -295,7 +295,7 @@ class CallNotificationManager(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
@@ -339,7 +339,7 @@ class CallNotificationManager(
     private fun createAnswerPendingIntent(
         callId: String,
         notificationId: Int,
-        attributes: CallAttributesCompat
+        attributes: CallAttributesCompat,
     ): PendingIntent {
         // Use the same deep link logic as createContentPendingIntent
         val deepLinkUri = Uri.parse("$DEEP_LINK_BASE_URI/${NavRoutes.IN_CALL}/$callId")
@@ -363,7 +363,7 @@ class CallNotificationManager(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
@@ -374,7 +374,7 @@ class CallNotificationManager(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
@@ -385,7 +385,7 @@ class CallNotificationManager(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 }

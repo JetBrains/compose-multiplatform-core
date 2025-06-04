@@ -45,7 +45,7 @@ import kotlinx.coroutines.withContext
 public expect abstract class LimitOffsetPagingSource<Value : Any>(
     sourceQuery: RoomRawQuery,
     db: RoomDatabase,
-    vararg tables: String
+    vararg tables: String,
 ) : PagingSource<Int, Value> {
     public val sourceQuery: RoomRawQuery
     public val db: RoomDatabase
@@ -58,14 +58,14 @@ public expect abstract class LimitOffsetPagingSource<Value : Any>(
 
     protected open suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
-        itemCount: Int
+        itemCount: Int,
     ): List<Value>
 }
 
 internal class CommonLimitOffsetImpl<Value : Any>(
     private val tables: Array<out String>,
     private val pagingSource: LimitOffsetPagingSource<Value>,
-    private val convertRows: suspend (RoomRawQuery, Int) -> List<Value>
+    private val convertRows: suspend (RoomRawQuery, Int) -> List<Value>,
 ) {
     private val db = pagingSource.db
     private val sourceQuery = pagingSource.sourceQuery
@@ -143,7 +143,7 @@ internal class CommonLimitOffsetImpl<Value : Any>(
                 params = params,
                 sourceQuery = sourceQuery,
                 itemCount = tempCount,
-                convertRows = convertRows
+                convertRows = convertRows,
             )
         // TODO(b/192269858): Create a better API to facilitate source invalidation.
         // Manually check if database has been updated. If so, invalidate the source and the result.

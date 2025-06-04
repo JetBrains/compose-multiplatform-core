@@ -41,7 +41,7 @@ open class ProtectedSignalsManagerImpl(
             protectedSignalsManager.updateSignals(
                 convertUpdateRequest(request),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }

@@ -26,8 +26,7 @@ package androidx.navigationevent {
   }
 
   public abstract class NavigationEventCallback {
-    ctor public NavigationEventCallback(boolean isEnabled, optional int priority);
-    method public final int getPriority();
+    ctor public NavigationEventCallback(boolean isEnabled);
     method public final boolean isEnabled();
     method public final boolean isPassThrough();
     method public void onEventCancelled();
@@ -39,13 +38,13 @@ package androidx.navigationevent {
     method public final void setPassThrough(boolean);
     property public final boolean isEnabled;
     property public final boolean isPassThrough;
-    property public final int priority;
   }
 
   public final class NavigationEventDispatcher {
-    ctor public NavigationEventDispatcher(kotlin.jvm.functions.Function0<kotlin.Unit>? fallbackOnBackPressed);
-    ctor public NavigationEventDispatcher(kotlin.jvm.functions.Function0<kotlin.Unit>? fallbackOnBackPressed, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onHasEnabledCallbacksChanged);
+    ctor public NavigationEventDispatcher();
+    ctor public NavigationEventDispatcher(optional kotlin.jvm.functions.Function0<kotlin.Unit>? fallbackOnBackPressed, optional kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onHasEnabledCallbacksChanged);
     method @MainThread public void addCallback(androidx.navigationevent.NavigationEventCallback callback, optional int priority);
+    method @BytecodeOnly @MainThread public void addCallback-3owFMvg(androidx.navigationevent.NavigationEventCallback, int);
     method @MainThread public void dispatchOnCancelled();
     method @MainThread public void dispatchOnCompleted();
     method @MainThread public void dispatchOnProgressed(androidx.navigationevent.NavigationEvent event);
@@ -59,12 +58,16 @@ package androidx.navigationevent {
   }
 
   @kotlin.jvm.JvmInline public final value class NavigationEventPriority {
+    method @BytecodeOnly public static androidx.navigationevent.NavigationEventPriority! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.navigationevent.NavigationEventPriority.Companion Companion;
   }
 
   public static final class NavigationEventPriority.Companion {
     method public int getDefault();
+    method @BytecodeOnly public int getDefault-b1THaJE();
     method public int getOverlay();
+    method @BytecodeOnly public int getOverlay-b1THaJE();
     property public int Default;
     property public int Overlay;
   }

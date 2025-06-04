@@ -33,7 +33,7 @@ actual constructor(
     /** The view name */
     @JvmField public actual val name: String,
     /** The SQL of CREATE VIEW. */
-    @JvmField public actual val sql: String?
+    @JvmField public actual val sql: String?,
 ) {
     actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 

@@ -139,6 +139,7 @@ package androidx.biometric {
   }
 
   public fun interface AuthenticationResultCallback {
+    method public default void onAuthFailure();
     method public void onAuthResult(androidx.biometric.AuthenticationResult result);
   }
 
@@ -149,9 +150,9 @@ package androidx.biometric {
 
   public final class AuthenticationUtils {
     method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.Fragment, androidx.biometric.AuthenticationResultCallback resultCallback);
-    method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.Fragment, optional kotlin.jvm.functions.Function0<kotlin.Unit> onAuthFailedCallback, androidx.biometric.AuthenticationResultCallback resultCallback);
+    method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.Fragment, java.util.concurrent.Executor callbackExecutor, androidx.biometric.AuthenticationResultCallback resultCallback);
     method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.FragmentActivity, androidx.biometric.AuthenticationResultCallback resultCallback);
-    method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.FragmentActivity, optional kotlin.jvm.functions.Function0<kotlin.Unit> onAuthFailedCallback, androidx.biometric.AuthenticationResultCallback resultCallback);
+    method public static androidx.biometric.AuthenticationResultLauncher registerForAuthenticationResult(androidx.fragment.app.FragmentActivity, java.util.concurrent.Executor callbackExecutor, androidx.biometric.AuthenticationResultCallback resultCallback);
   }
 
   public class BiometricManager {

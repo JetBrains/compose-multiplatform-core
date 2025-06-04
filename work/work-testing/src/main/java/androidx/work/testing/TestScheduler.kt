@@ -46,7 +46,7 @@ class TestScheduler(
     private val launcher: WorkLauncher,
     private val clock: Clock,
     runnableScheduler: RunnableScheduler,
-    private val executorsMode: ExecutorsMode
+    private val executorsMode: ExecutorsMode,
 ) : Scheduler, TestDriver {
     @GuardedBy("lock") private val pendingWorkStates = mutableMapOf<String, InternalWorkState>()
     private val lock = Any()
@@ -177,7 +177,7 @@ class TestScheduler(
 
     private fun generateStartStopToken(
         spec: WorkSpec,
-        generationalId: WorkGenerationalId
+        generationalId: WorkGenerationalId,
     ): StartStopToken {
         val token =
             synchronized(lock) {

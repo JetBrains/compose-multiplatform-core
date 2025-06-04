@@ -212,12 +212,7 @@ internal constructor(
      * @see fractionVisibleIn
      * @see fractionVisibleInWindowWithInsets
      */
-    fun fractionVisibleInRect(
-        left: Int,
-        top: Int,
-        right: Int,
-        bottom: Int,
-    ): Float {
+    fun fractionVisibleInRect(left: Int, top: Int, right: Int, bottom: Int): Float {
         val l = unpackX(topLeft)
         val clippedLeft = min(max(l, left), right)
 

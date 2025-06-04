@@ -234,7 +234,7 @@ class NestedInflatedFragmentTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ) = TextView(inflater.context).apply { text = "Simple fragment" }
     }
 }

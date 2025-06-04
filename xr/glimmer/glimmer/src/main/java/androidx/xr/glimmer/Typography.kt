@@ -49,7 +49,7 @@ private constructor(
     public val titleSmall: TextStyle,
     public val bodyLarge: TextStyle,
     public val bodyMedium: TextStyle,
-    public val bodySmall: TextStyle
+    public val bodySmall: TextStyle,
 ) {
 
     /**
@@ -85,7 +85,7 @@ private constructor(
         titleSmall = titleSmall.withDefaultFontFamily(defaultFontFamily),
         bodyLarge = bodyLarge.withDefaultFontFamily(defaultFontFamily),
         bodyMedium = bodyMedium.withDefaultFontFamily(defaultFontFamily),
-        bodySmall = bodySmall.withDefaultFontFamily(defaultFontFamily)
+        bodySmall = bodySmall.withDefaultFontFamily(defaultFontFamily),
     )
 
     /** Returns a copy of this Typography, optionally overriding some of the values. */
@@ -103,7 +103,7 @@ private constructor(
             titleSmall = titleSmall,
             bodyLarge = bodyLarge,
             bodyMedium = bodyMedium,
-            bodySmall = bodySmall
+            bodySmall = bodySmall,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -144,7 +144,7 @@ private val TitleLarge =
         fontSize = 32.sp,
         lineHeight = 38.sp,
         letterSpacing = 0.05.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 private val TitleMedium =
@@ -153,7 +153,7 @@ private val TitleMedium =
         fontSize = 28.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.0525.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 private val TitleSmall =
@@ -162,7 +162,7 @@ private val TitleSmall =
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.0525.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 private val BodyLarge =
@@ -171,7 +171,7 @@ private val BodyLarge =
         fontSize = 32.sp,
         lineHeight = 38.sp,
         letterSpacing = 0.05.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 private val BodyMedium =
@@ -180,7 +180,7 @@ private val BodyMedium =
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.0425.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 private val BodySmall =
@@ -189,7 +189,7 @@ private val BodySmall =
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.0525.em,
-        lineHeightStyle = DefaultLineHeightStyle
+        lineHeightStyle = DefaultLineHeightStyle,
     )
 
 /**

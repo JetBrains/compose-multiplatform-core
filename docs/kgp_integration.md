@@ -40,6 +40,7 @@ Simply make the change (e.g. suppression) in aosp and merge the change.
     *   If the patch file cannot be applied due to merge conflicts, see the
         instructions
         [here](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:.github/integration-patches/).
+*   Update the Kotlin version in `gradle/libs.versions.toml`
 *   Make any necessary changes
 *   Ensure `collection` builds locally
 *   Run the following (or something similar) to update the patch file

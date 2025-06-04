@@ -46,7 +46,7 @@ val COMPILATION_MODES =
             CompilationMode.Interpreted,
             CompilationMode.Partial(
                 baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = 3
+                warmupIterations = 3,
             ),
             /* For simplicity we use `Partial()`, which will only install baseline profiles if
              * available, which would not be useful for macrobenchmarks that don't include baseline
@@ -54,7 +54,7 @@ val COMPILATION_MODES =
              * jetpack macrobenchmark over time.
              */
             CompilationMode.Partial(),
-            CompilationMode.Full()
+            CompilationMode.Full(),
         )
     }
 
@@ -72,7 +72,7 @@ fun getStartupMetrics() =
         StartupTimingMetric(),
         if (Build.VERSION.SDK_INT >= 24) ArtMetric() else null,
         TraceSectionMetric("StartupTracingInitializer", TraceSectionMetric.Mode.First),
-        MemoryUsageMetric(MemoryUsageMetric.Mode.Last)
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
     )
 
 @OptIn(ExperimentalBenchmarkConfigApi::class, ExperimentalPerfettoCaptureApi::class)
@@ -82,7 +82,7 @@ fun MacrobenchmarkRule.measureStartup(
     packageName: String,
     iterations: Int = 10,
     metrics: List<Metric> = getStartupMetrics(),
-    setupIntent: Intent.() -> Unit = {}
+    setupIntent: Intent.() -> Unit = {},
 ) {
     measureRepeated(
         packageName = packageName,
@@ -92,7 +92,7 @@ fun MacrobenchmarkRule.measureStartup(
         startupMode = startupMode,
         experimentalConfig =
             ExperimentalConfig(startupInsightsConfig = StartupInsightsConfig(true)),
-        setupBlock = { pressHome() }
+        setupBlock = { pressHome() },
     ) {
         val intent = Intent()
         intent.setPackage(packageName)
@@ -121,7 +121,7 @@ private val STARTUP_COMPILATION_MODES =
 
 fun createStartupCompilationParams(
     startupModes: List<StartupMode> = STARTUP_MODES,
-    compilationModes: List<CompilationMode> = STARTUP_COMPILATION_MODES
+    compilationModes: List<CompilationMode> = STARTUP_COMPILATION_MODES,
 ): List<Array<Any>> =
     mutableListOf<Array<Any>>().apply {
         // To save CI resources, avoid measuring startup combinations which have non-primary

@@ -43,7 +43,7 @@ class WorkConstrainsDaoTest : DatabaseTest() {
                             NetworkRequest.Builder()
                                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                                 .build(),
-                            NetworkType.CONNECTED
+                            NetworkType.CONNECTED,
                         )
                         .build()
                 )
@@ -92,7 +92,7 @@ class WorkConstrainsDaoTest : DatabaseTest() {
                                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                                 .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
                                 .build(),
-                            NetworkType.CONNECTED
+                            NetworkType.CONNECTED,
                         )
                         .build()
                 )

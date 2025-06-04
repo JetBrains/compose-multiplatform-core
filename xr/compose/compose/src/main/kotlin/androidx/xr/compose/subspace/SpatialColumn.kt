@@ -52,7 +52,7 @@ public fun SpatialColumn(
                 ContentlessEntity.create(
                     this,
                     name = entityName("SpatialColumn"),
-                    pose = Pose.Identity
+                    pose = Pose.Identity,
                 )
             },
         measurePolicy =

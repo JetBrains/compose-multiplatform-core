@@ -53,7 +53,7 @@ public inline fun <reified VM : ViewModel> Fragment.hiltNavGraphViewModels(
         factoryProducer = {
             HiltViewModelFactory(requireActivity(), backStackEntry.defaultViewModelProviderFactory)
         },
-        extrasProducer = { backStackEntry.defaultViewModelCreationExtras }
+        extrasProducer = { backStackEntry.defaultViewModelCreationExtras },
     )
 }
 
@@ -80,7 +80,7 @@ public inline fun <reified VM : ViewModel> Fragment.hiltNavGraphViewModels(
 @MainThread
 public inline fun <reified VM : ViewModel, reified VMF : Any> Fragment.hiltNavGraphViewModels(
     @IdRes navGraphId: Int,
-    noinline creationCallback: (VMF) -> VM
+    noinline creationCallback: (VMF) -> VM,
 ): Lazy<VM> {
     val backStackEntry by lazy { findNavController().getBackStackEntry(navGraphId) }
     val storeProducer: () -> ViewModelStore = { backStackEntry.viewModelStore }
@@ -92,6 +92,6 @@ public inline fun <reified VM : ViewModel, reified VMF : Any> Fragment.hiltNavGr
         },
         extrasProducer = {
             backStackEntry.defaultViewModelCreationExtras.withCreationCallback(creationCallback)
-        }
+        },
     )
 }

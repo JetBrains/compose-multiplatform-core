@@ -35,7 +35,7 @@ internal class XParameterSpecImpl(
         private val name: String,
         private val type: XTypeName,
         internal val java: JavaParameterSpec.Builder,
-        internal val kotlin: KotlinParameterSpec.Builder
+        internal val kotlin: KotlinParameterSpec.Builder,
     ) : XSpec.Builder(), XParameterSpec.Builder {
         private val delegates: List<XParameterSpec.Builder> = listOf(java, kotlin)
 

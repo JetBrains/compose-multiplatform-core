@@ -102,11 +102,11 @@ private fun configureJvmTestTask(project: Project, task: Test) {
         val robolectricDependencies =
             File(
                 project.getPrebuiltsRoot(),
-                "androidx/external/org/robolectric/android-all-instrumented"
+                "androidx/external/org/robolectric/android-all-instrumented",
             )
         task.systemProperty(
             "robolectric.dependency.dir",
-            robolectricDependencies.relativeTo(project.projectDir)
+            robolectricDependencies.relativeTo(project.projectDir),
         )
     }
 

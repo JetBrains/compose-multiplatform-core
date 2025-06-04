@@ -60,13 +60,13 @@ import kotlinx.coroutines.launch
  * The `loadDocument` function initiates the loading process within the `viewModelScope`, ensuring
  * that the operation is properly managed and not cancelled by configuration changes.
  *
- * @constructor Creates a new [PdfDocumentViewModel] instance.
  * @property loader The [PdfLoader] used to open the PDF document.
+ * @constructor Creates a new [PdfDocumentViewModel] instance.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PdfDocumentViewModel(
     private val state: SavedStateHandle,
-    private val loader: PdfLoader
+    private val loader: PdfLoader,
 ) : ViewModel() {
 
     /** A Coroutine [Job] that manages the PDF loading task. */
@@ -170,7 +170,7 @@ internal class PdfDocumentViewModel(
                 searchRepository.produceSearchResults(
                     query = query,
                     currentVisiblePage = pageNum,
-                    resultIndex = resultIndex
+                    resultIndex = resultIndex,
                 )
             }
         }
@@ -273,7 +273,7 @@ internal class PdfDocumentViewModel(
                     SearchViewUiState.Active(
                         query = queryResults.query,
                         currentMatch = 0,
-                        totalMatches = 0
+                        totalMatches = 0,
                     )
                 }
                 _highlightsFlow.update { EMPTY_HIGHLIGHTS }
@@ -292,13 +292,13 @@ internal class PdfDocumentViewModel(
                         // The UI displays the search result counter starting from 1,
                         // so we add 1 to the current index.
                         currentMatch = if (totalMatches > 0) currentIndex + 1 else 0,
-                        totalMatches = totalMatches
+                        totalMatches = totalMatches,
                     )
                 }
                 _highlightsFlow.update {
                     HighlightData(
                         currentIndex = currentIndex,
-                        highlightBounds = queryResults.toHighlightsData()
+                        highlightBounds = queryResults.toHighlightsData(),
                     )
                 }
             }
@@ -392,7 +392,7 @@ internal class PdfDocumentViewModel(
         viewModelScope.launch(searchJob) {
             searchRepository.produceSearchResults(
                 query = query,
-                currentVisiblePage = visiblePageRange.getCenter()
+                currentVisiblePage = visiblePageRange.getCenter(),
             )
         }
     }
@@ -450,7 +450,7 @@ internal class PdfDocumentViewModel(
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(
                     modelClass: Class<T>,
-                    extras: CreationExtras
+                    extras: CreationExtras,
                 ): T {
                     // Get the Application object from extras
                     val application = checkNotNull(extras[APPLICATION_KEY])
@@ -460,7 +460,7 @@ internal class PdfDocumentViewModel(
                     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
                     return (PdfDocumentViewModel(
                         savedStateHandle,
-                        SandboxedPdfLoader(application, dispatcher)
+                        SandboxedPdfLoader(application, dispatcher),
                     ))
                         as T
                 }

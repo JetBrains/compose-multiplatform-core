@@ -62,7 +62,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
             outerContent = { content ->
                 CompositionLocalProvider(
                     LocalTextContextMenuDropdownProvider provides fakeTextContextMenuProvider,
-                    content = content
+                    content = content,
                 )
             }
         ) {
@@ -77,7 +77,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
             outerContent = { content ->
                 CompositionLocalProvider(
                     LocalTextContextMenuToolbarProvider provides fakeTextContextMenuProvider,
-                    content = content
+                    content = content,
                 )
             }
         ) {
@@ -93,7 +93,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
                 CompositionLocalProvider(
                     LocalTextContextMenuToolbarProvider provides fakeTextContextMenuProvider,
                     LocalTextContextMenuDropdownProvider provides fakeTextContextMenuProvider,
-                    content = content
+                    content = content,
                 )
             }
         ) {
@@ -110,7 +110,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
     }
 
     private inner class TestScope(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit,
+        outerContent: @Composable (content: @Composable () -> Unit) -> Unit
     ) {
         var toolbarProvider: TextContextMenuProvider? = null
         var dropdownProvider: TextContextMenuProvider? = null

@@ -92,7 +92,7 @@ public class Threads(
 
     private fun <T> runAsyncSupervised(
         dispatcher: CoroutineDispatcher,
-        block: suspend () -> T
+        block: suspend () -> T,
     ): Deferred<T> {
         return cameraPipeDispatchScope.async(dispatcher) { block() }
     }

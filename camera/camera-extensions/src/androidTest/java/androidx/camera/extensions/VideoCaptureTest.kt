@@ -74,7 +74,7 @@ class VideoCaptureTest(
     private val cameraXConfig: CameraXConfig,
     private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
-    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
+    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -180,7 +180,7 @@ class VideoCaptureTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionsCameraSelector,
-                videoCapture
+                videoCapture,
             )
         }
         videoCapture.recordTo(file)
@@ -211,7 +211,7 @@ class VideoCaptureTest(
                 extensionsCameraSelector,
                 preview,
                 imageCapture,
-                videoCapture
+                videoCapture,
             )
             preview.setSurfaceProvider(createPreviewSurfaceProvider())
         }
@@ -231,7 +231,7 @@ class VideoCaptureTest(
             object : SurfaceTextureProvider.SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size
+                    resolution: Size,
                 ) {
                     // No-op.
                 }

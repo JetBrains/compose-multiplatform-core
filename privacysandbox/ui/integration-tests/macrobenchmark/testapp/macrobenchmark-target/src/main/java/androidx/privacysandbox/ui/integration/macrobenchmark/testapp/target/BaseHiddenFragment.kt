@@ -26,7 +26,7 @@ abstract class BaseHiddenFragment : BaseFragment() {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {}
 
     final override fun handleDrawerStateChange(isDrawerOpen: Boolean) {}

@@ -78,7 +78,7 @@ class ContentViewTest {
                 override fun notifyMotionEvent(
                     motionEvent: MotionEvent,
                     eventTargetFrameTime: Long,
-                    eventTransferCallback: IMotionEventTransferCallback?
+                    eventTransferCallback: IMotionEventTransferCallback?,
                 ) {
                     lastTransferredMotionEvent = motionEvent
                     lastTransferredEventTargetFrameTime = eventTargetFrameTime
@@ -192,7 +192,7 @@ class ContentViewTest {
             motionEventAction,
             0f,
             0f,
-            /* metaState = */ 0
+            /* metaState = */ 0,
         )
     }
 }

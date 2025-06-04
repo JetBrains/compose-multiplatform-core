@@ -64,7 +64,6 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -81,6 +80,7 @@ import com.android.extensions.xr.node.ShadowReformEvent;
 import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -117,7 +117,7 @@ public class MovableComponentImplTest {
     private final FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
     private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private final EntityManager mEntityManager = new EntityManager();
 
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =

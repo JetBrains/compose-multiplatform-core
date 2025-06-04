@@ -50,13 +50,11 @@ private val DEFAULT_CAMERA_ID_GROUP = Collections.unmodifiableSet(setOf("0", "1"
 class FovDeviceTest(
     private val cameraId: String,
     private val implName: String,
-    private val cameraXConfig: CameraXConfig
+    private val cameraXConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -74,14 +72,14 @@ class FovDeviceTest(
                     arrayOf(
                         cameraId,
                         Camera2Config::class.simpleName,
-                        Camera2Config.defaultConfig()
+                        Camera2Config.defaultConfig(),
                     )
                 )
                 paramList.add(
                     arrayOf(
                         cameraId,
                         CameraPipeConfig::class.simpleName,
-                        CameraPipeConfig.defaultConfig()
+                        CameraPipeConfig.defaultConfig(),
                     )
                 )
             }

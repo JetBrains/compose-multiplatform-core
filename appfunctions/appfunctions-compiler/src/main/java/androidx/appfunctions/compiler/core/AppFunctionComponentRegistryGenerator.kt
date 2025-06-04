@@ -90,7 +90,6 @@ class AppFunctionComponentRegistryGenerator(private val codeGenerator: CodeGener
 
         val fileSpec =
             FileSpec.builder(APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME, className)
-                .addGeneratedTimeStamp()
                 .addType(registryClassBuilder.build())
                 .build()
 

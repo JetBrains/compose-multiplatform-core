@@ -52,7 +52,7 @@ actual constructor(
     internal val database: RoomDatabase,
     private val shadowTablesMap: Map<String, String>,
     private val viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    internal vararg val tableNames: String
+    internal vararg val tableNames: String,
 ) {
     private val implementation =
         TriggerBasedInvalidationTracker(
@@ -61,7 +61,7 @@ actual constructor(
             viewTables = viewTables,
             tableNames = tableNames,
             useTempTable = database.useTempTrackingTable,
-            onInvalidatedTablesIds = ::notifyInvalidatedObservers
+            onInvalidatedTablesIds = ::notifyInvalidatedObservers,
         )
 
     private val observerMap = mutableMapOf<Observer, ObserverWrapper>()
@@ -94,12 +94,12 @@ actual constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     public constructor(
         database: RoomDatabase,
-        vararg tableNames: String
+        vararg tableNames: String,
     ) : this(
         database = database,
         shadowTablesMap = emptyMap(),
         viewTables = emptyMap(),
-        tableNames = tableNames
+        tableNames = tableNames,
     )
 
     init {
@@ -217,7 +217,7 @@ actual constructor(
     @JvmOverloads
     public actual fun createFlow(
         vararg tables: String,
-        emitInitialState: Boolean
+        emitInitialState: Boolean,
     ): Flow<Set<String>> {
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
@@ -267,7 +267,7 @@ actual constructor(
             ObserverWrapper(
                 observer = observer,
                 tableIds = tableIds,
-                tableNames = resolvedTableNames
+                tableNames = resolvedTableNames,
             )
 
         val currentObserver =
@@ -384,11 +384,11 @@ actual constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     @Deprecated(
         message = "Replaced with overload that takes 'inTransaction 'parameter.",
-        replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction")
+        replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction"),
     )
     public open fun <T> createLiveData(
         tableNames: Array<out String>,
-        computeFunction: Callable<T?>
+        computeFunction: Callable<T?>,
     ): LiveData<T> {
         return createLiveData(tableNames, false, computeFunction)
     }
@@ -411,7 +411,7 @@ actual constructor(
     public open fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: Callable<T?>
+        computeFunction: Callable<T?>,
     ): LiveData<T> {
         // Validate names early to fail fast as actual observer subscription is done once LiveData
         // is observed.
@@ -437,7 +437,7 @@ actual constructor(
     public fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: (SQLiteConnection) -> T?
+        computeFunction: (SQLiteConnection) -> T?,
     ): LiveData<T> {
         // Validate names early to fail fast as actual observer subscription is done once LiveData
         // is observed.
@@ -449,7 +449,7 @@ actual constructor(
     internal fun initMultiInstanceInvalidation(
         context: Context,
         name: String,
-        serviceIntent: Intent
+        serviceIntent: Intent,
     ) {
         multiInstanceInvalidationIntent = serviceIntent
         multiInstanceInvalidationClient = MultiInstanceInvalidationClient(context, name, this)
@@ -476,7 +476,7 @@ actual constructor(
          */
         protected constructor(
             firstTable: String,
-            vararg rest: String
+            vararg rest: String,
         ) : this(arrayOf(firstTable, *rest))
 
         /**
@@ -497,7 +497,7 @@ actual constructor(
     private data class MultiInstanceClientInitState(
         val context: Context,
         val name: String,
-        val serviceIntent: Intent
+        val serviceIntent: Intent,
     )
 
     // Kept for binary compatibility even if empty. :(
@@ -513,7 +513,7 @@ actual constructor(
 internal class ObserverWrapper(
     internal val observer: Observer,
     internal val tableIds: IntArray,
-    private val tableNames: Array<out String>
+    private val tableNames: Array<out String>,
 ) {
     init {
         check(tableIds.size == tableNames.size)

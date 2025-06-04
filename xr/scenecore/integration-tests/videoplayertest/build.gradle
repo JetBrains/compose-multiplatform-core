@@ -80,7 +80,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-common:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.8.7")
-    implementation("androidx.media3:media3-exoplayer:1.5.0")
+    implementation("androidx.media3:media3-exoplayer:1.6.0")
     implementation("androidx.savedstate:savedstate:1.2.1")
 
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))

@@ -112,7 +112,7 @@ public fun ConfirmationDialog(
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
     properties: DialogProperties = DialogProperties(),
     durationMillis: Long = ConfirmationDialogDefaults.DurationMillis,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit {
     AnimateConfirmationDialog(
         visible = visible,
@@ -124,7 +124,7 @@ public fun ConfirmationDialog(
         durationMillis = durationMillis,
         content = {
             ConfirmationDialogContent(curvedText = curvedText, colors = colors, content = content)
-        }
+        },
     )
 }
 
@@ -155,7 +155,7 @@ public fun ConfirmationDialogContent(
     curvedText: (CurvedScope.() -> Unit)?,
     modifier: Modifier = Modifier,
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit {
     ConfirmationDialogContentWrapper(
         curvedText = curvedText,
@@ -165,7 +165,7 @@ public fun ConfirmationDialogContent(
             IconContainer(
                 iconColor = colors.iconColor,
                 iconBackground = iconContainer(true, colors.iconContainerColor),
-                content = content
+                content = content,
             )
         },
     )
@@ -209,7 +209,7 @@ public fun ConfirmationDialog(
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
     properties: DialogProperties = DialogProperties(),
     durationMillis: Long = ConfirmationDialogDefaults.DurationMillis,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AnimateConfirmationDialog(
         visible = visible,
@@ -219,7 +219,7 @@ public fun ConfirmationDialog(
         properties = properties,
         containsText = text != null,
         durationMillis = durationMillis,
-        content = { ConfirmationDialogContent(text = text, colors = colors, content = content) }
+        content = { ConfirmationDialogContent(text = text, colors = colors, content = content) },
     )
 }
 
@@ -248,7 +248,7 @@ public fun ConfirmationDialogContent(
     text: @Composable (ColumnScope.() -> Unit)?,
     modifier: Modifier = Modifier,
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val reduceMotionEnabled = LocalReduceMotion.current
 
@@ -263,11 +263,11 @@ public fun ConfirmationDialogContent(
         val horizontalPadding = screenWidthDp().dp * HorizontalLinearContentPaddingFraction
         Column(
             modifier = Modifier.align(Alignment.Center).padding(horizontal = horizontalPadding),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 iconContainer(false, colors.iconContainerColor)()
                 CompositionLocalProvider(LocalContentColor provides colors.iconColor, content)
@@ -279,7 +279,7 @@ public fun ConfirmationDialogContent(
                     TextConfiguration(
                         textAlign = TextAlign.Center,
                         maxLines = LinearContentMaxLines,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     ),
             ) {
                 if (text != null) {
@@ -288,7 +288,7 @@ public fun ConfirmationDialogContent(
                         modifier =
                             Modifier.fillMaxWidth().graphicsLayer { alpha = alphaAnimatable.value },
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        content = text
+                        content = text,
                     )
                     Spacer(Modifier.height(LinearContentSpacing))
                 }
@@ -354,7 +354,7 @@ public fun SuccessConfirmationDialog(
         SuccessConfirmationDialogContent(
             curvedText = curvedText,
             colors = colors,
-            content = content
+            content = content,
         )
     }
 }
@@ -400,7 +400,7 @@ public fun SuccessConfirmationDialogContent(
             IconContainer(
                 iconColor = colors.iconColor,
                 iconBackground = successIconContainer(colors.iconContainerColor),
-                content = content
+                content = content,
             )
         },
     )
@@ -460,7 +460,7 @@ public fun FailureConfirmationDialog(
         FailureConfirmationDialogContent(
             curvedText = curvedText,
             colors = colors,
-            content = content
+            content = content,
         )
     }
 }
@@ -508,11 +508,11 @@ public fun FailureConfirmationDialogContent(
                 animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
                 translationXAnimatable.animateTo(
                     FailureContentTransition[1],
-                    FailureContentAnimationSpecs[0]
+                    FailureContentAnimationSpecs[0],
                 )
                 translationXAnimatable.animateTo(
                     FailureContentTransition[2],
-                    FailureContentAnimationSpecs[1]
+                    FailureContentAnimationSpecs[1],
                 )
             }
 
@@ -520,9 +520,9 @@ public fun FailureConfirmationDialogContent(
                 modifier = Modifier.graphicsLayer { translationX = translationXAnimatable.value },
                 iconColor = colors.iconColor,
                 iconBackground = failureIconContainer(colors.iconContainerColor),
-                content = content
+                content = content,
             )
-        }
+        },
     )
 }
 
@@ -535,10 +535,7 @@ public fun FailureConfirmationDialogContent(
  * @param style It is recommended to use [ConfirmationDialogDefaults.curvedTextStyle] for curved
  *   text in Confirmation Dialogs.
  */
-public fun CurvedScope.confirmationDialogCurvedText(
-    text: String,
-    style: CurvedTextStyle,
-): Unit =
+public fun CurvedScope.confirmationDialogCurvedText(text: String, style: CurvedTextStyle): Unit =
     curvedText(
         text = text,
         style = style,
@@ -556,9 +553,11 @@ public object ConfirmationDialogDefaults {
     /**
      * A default composable used in [SuccessConfirmationDialog] that displays a success icon with an
      * animation.
+     *
+     * @param modifier Modifier to be applied to the success icon.
      */
     @Composable
-    public fun SuccessIcon() {
+    public fun SuccessIcon(modifier: Modifier = Modifier) {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_check_animation)
         var atEnd by remember { mutableStateOf(false) }
@@ -571,16 +570,18 @@ public object ConfirmationDialogDefaults {
         Icon(
             painter = rememberAnimatedVectorPainter(animation, atEnd),
             contentDescription = null,
-            modifier = Modifier.size(IconSize)
+            modifier = modifier.size(IconSize),
         )
     }
 
     /**
      * A default composable used in [FailureConfirmationDialog] that displays a failure icon with an
      * animation.
+     *
+     * @param modifier Modifier to be applied to the failure icon.
      */
     @Composable
-    public fun FailureIcon() {
+    public fun FailureIcon(modifier: Modifier = Modifier) {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_failure_animation)
         var atEnd by remember { mutableStateOf(false) }
@@ -593,7 +594,7 @@ public object ConfirmationDialogDefaults {
         Icon(
             painter = rememberAnimatedVectorPainter(animation, atEnd),
             contentDescription = null,
-            modifier = Modifier.size(IconSize)
+            modifier = modifier.size(IconSize),
         )
     }
 
@@ -698,7 +699,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.Primary),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultConfirmationColorsCached = it }
         }
@@ -709,7 +710,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.Primary),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultSuccessConfirmationColorsCached = it }
         }
@@ -720,7 +721,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.ErrorDim),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnError).copy(.8f),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultFailureConfirmationColorsCached = it }
         }
@@ -751,7 +752,7 @@ public class ConfirmationDialogColors(
     public fun copy(
         iconColor: Color = this.iconColor,
         iconContainerColor: Color = this.iconContainerColor,
-        textColor: Color = this.textColor
+        textColor: Color = this.textColor,
     ): ConfirmationDialogColors =
         ConfirmationDialogColors(
             iconColor = iconColor.takeOrElse { this.iconColor },
@@ -810,7 +811,7 @@ private fun AnimateConfirmationDialog(
         modifier = modifier,
         onDismissRequest = onDismissRequest,
         properties = properties,
-        content = content
+        content = content,
     )
 }
 
@@ -850,7 +851,7 @@ private fun BoxScope.IconContainer(
     modifier: Modifier = Modifier,
     iconColor: Color,
     iconBackground: @Composable BoxScope.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
         iconBackground()
@@ -975,12 +976,9 @@ private val FailureContentAnimationSpecs =
         spring(
             dampingRatio = ExpressiveDefaultDamping,
             stiffness = ExpressiveDefaultStiffness,
-            visibilityThreshold = 0f
+            visibilityThreshold = 0f,
         ),
-        spring(
-            dampingRatio = 0.5f,
-            stiffness = ExpressiveDefaultStiffness,
-        )
+        spring(dampingRatio = 0.5f, stiffness = ExpressiveDefaultStiffness),
     )
 private val TextOpacityAnimationSpec: AnimationSpec<Float>
     @Composable get() = MaterialTheme.motionScheme.fastEffectsSpec()

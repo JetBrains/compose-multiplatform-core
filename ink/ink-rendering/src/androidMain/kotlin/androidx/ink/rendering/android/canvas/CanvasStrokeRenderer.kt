@@ -101,7 +101,7 @@ public interface CanvasStrokeRenderer {
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
-        strokeToScreenTransform: AffineTransform
+        strokeToScreenTransform: AffineTransform,
     ): Unit = draw(canvas, stroke, strokeToScreenTransform, 0f)
 
     /**

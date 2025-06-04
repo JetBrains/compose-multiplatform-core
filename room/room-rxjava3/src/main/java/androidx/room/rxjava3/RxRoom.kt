@@ -55,7 +55,7 @@ public fun <T : Any> createFlowable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    block: (SQLiteConnection) -> T?
+    block: (SQLiteConnection) -> T?,
 ): Flowable<T> =
     createObservable(db, inTransaction, tableNames, block).toFlowable(BackpressureStrategy.LATEST)
 
@@ -65,7 +65,7 @@ public fun <T : Any> createObservable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    block: (SQLiteConnection) -> T?
+    block: (SQLiteConnection) -> T?,
 ): Observable<T> =
     createFlow(db, inTransaction, tableNames, block)
         .filterNotNull()
@@ -77,7 +77,7 @@ public fun <T : Any> createMaybe(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> T?
+    block: (SQLiteConnection) -> T?,
 ): Maybe<T> =
     rxMaybe(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -89,7 +89,7 @@ public fun createCompletable(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> Unit
+    block: (SQLiteConnection) -> Unit,
 ): Completable =
     rxCompletable(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -101,7 +101,7 @@ public fun <T : Any> createSingle(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> T?
+    block: (SQLiteConnection) -> T?,
 ): Single<T> =
     rxSingle(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -146,7 +146,7 @@ public fun createFlowable(database: RoomDatabase, vararg tableNames: String): Fl
                 emitter.onNext(NOTHING)
             }
         },
-        BackpressureStrategy.LATEST
+        BackpressureStrategy.LATEST,
     )
 }
 
@@ -160,7 +160,7 @@ public fun <T : Any> createFlowable(
     database: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    callable: Callable<out T>
+    callable: Callable<out T>,
 ): Flowable<T> {
     val scheduler = Schedulers.from(getExecutor(database, inTransaction))
     val maybe = Maybe.fromCallable(callable)
@@ -214,7 +214,7 @@ public fun <T : Any> createObservable(
     database: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    callable: Callable<out T>
+    callable: Callable<out T>,
 ): Observable<T> {
     val scheduler = Schedulers.from(getExecutor(database, inTransaction))
     val maybe = Maybe.fromCallable(callable)

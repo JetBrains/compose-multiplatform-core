@@ -51,7 +51,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
         CreateCredentialRequest,
         CreateCredentialResponse,
         androidx.credentials.CreateCredentialResponse,
-        CreateCredentialException
+        CreateCredentialException,
     >(context) {
 
     /** The callback object state, used in the protected handleResponse method. */
@@ -59,7 +59,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
     lateinit var callback:
         CredentialManagerCallback<
             androidx.credentials.CreateCredentialResponse,
-            CreateCredentialException
+            CreateCredentialException,
         >
 
     /** The callback requires an executor to invoke it. */
@@ -82,7 +82,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
                             createCredentialExceptionTypeToException,
                         executor,
                         callback,
-                        cancellationSignal
+                        cancellationSignal,
                     )
                 ) {
                     return
@@ -90,7 +90,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
                     handleResponse(
                         resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
                         resultCode,
-                        resultData.getParcelable(RESULT_DATA_TAG)
+                        resultData.getParcelable(RESULT_DATA_TAG),
                     )
                 }
             }
@@ -101,7 +101,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
             Log.w(
                 TAG,
                 "Returned request code $CONTROLLER_REQUEST_CODE which " +
-                    " does not match what was given $uniqueRequestCode"
+                    " does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -110,7 +110,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                cancellationSignal,
             )
         ) {
             return
@@ -128,7 +128,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
             val response =
                 PendingIntentHandler.retrieveCreateCredentialResponse(
                     type = DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
-                    intent = data
+                    intent = data,
                 )
             if (response == null) {
                 val providerException = PendingIntentHandler.retrieveCreateCredentialException(data)
@@ -155,10 +155,10 @@ internal class CreateDigitalCredentialController(private val context: Context) :
         callback:
             CredentialManagerCallback<
                 androidx.credentials.CreateCredentialResponse,
-                CreateCredentialException
+                CreateCredentialException,
             >,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -178,7 +178,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
                 hiddenIntent.flags = Intent.FLAG_ACTIVITY_NO_ANIMATION
                 hiddenIntent.putExtra(
                     RESULT_RECEIVER_TAG,
-                    toIpcFriendlyResultReceiver(resultReceiver)
+                    toIpcFriendlyResultReceiver(resultReceiver),
                 )
                 hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result.pendingIntent)
                 hiddenIntent.putExtra(EXTRA_ERROR_NAME, CREATE_UNKNOWN)
@@ -211,7 +211,7 @@ internal class CreateDigitalCredentialController(private val context: Context) :
     ): androidx.credentials.CreateCredentialResponse {
         return androidx.credentials.CreateCredentialResponse.createFrom(
             type = DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
-            data = response.data
+            data = response.data,
         )
     }
 

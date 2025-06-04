@@ -11,6 +11,8 @@ package androidx.benchmark.junit4 {
     method public org.junit.runners.model.Statement apply(org.junit.runners.model.Statement base, org.junit.runner.Description description);
     method public androidx.benchmark.MicrobenchmarkConfig getConfig();
     method public androidx.benchmark.BenchmarkState getState();
+    method @BytecodeOnly @kotlin.PublishedApi internal androidx.benchmark.TestDefinition? getTestDefinition();
+    method @BytecodeOnly @kotlin.PublishedApi internal void setTestDefinition(androidx.benchmark.TestDefinition?);
     property public androidx.benchmark.MicrobenchmarkConfig config;
     property @kotlin.PublishedApi internal androidx.benchmark.TestDefinition? testDefinition;
     field @kotlin.PublishedApi internal androidx.benchmark.TestDefinition? testDefinition;

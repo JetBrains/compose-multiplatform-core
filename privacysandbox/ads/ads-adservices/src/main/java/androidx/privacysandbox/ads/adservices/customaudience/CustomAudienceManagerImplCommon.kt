@@ -37,7 +37,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @OptIn(
     ExperimentalFeatures.Ext10OptIn::class,
     ExperimentalFeatures.Ext14OptIn::class,
-    ExperimentalFeatures.Ext16OptIn::class
+    ExperimentalFeatures.Ext16OptIn::class,
 )
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
@@ -53,7 +53,7 @@ open class CustomAudienceManagerImplCommon(
             customAudienceManager.joinCustomAudience(
                 convertJoinRequest(request),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -89,7 +89,7 @@ open class CustomAudienceManagerImplCommon(
             customAudienceManager.leaveCustomAudience(
                 convertLeaveRequest(request),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -202,7 +202,7 @@ open class CustomAudienceManagerImplCommon(
             @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
             suspend fun scheduleCustomAudienceUpdate(
                 customAudienceManager: android.adservices.customaudience.CustomAudienceManager,
-                scheduleCustomAudienceUpdateRequest: ScheduleCustomAudienceUpdateRequest
+                scheduleCustomAudienceUpdateRequest: ScheduleCustomAudienceUpdateRequest,
             ) {
                 suspendCancellableCoroutine { continuation ->
                     customAudienceManager.scheduleCustomAudienceUpdate(
@@ -222,7 +222,7 @@ open class CustomAudienceManagerImplCommon(
                                     continuation.resumeWithException(error)
                                 }
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -273,13 +273,13 @@ open class CustomAudienceManagerImplCommon(
             @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
             suspend fun fetchAndJoinCustomAudience(
                 customAudienceManager: android.adservices.customaudience.CustomAudienceManager,
-                fetchAndJoinCustomAudienceRequest: FetchAndJoinCustomAudienceRequest
+                fetchAndJoinCustomAudienceRequest: FetchAndJoinCustomAudienceRequest,
             ) {
                 suspendCancellableCoroutine { continuation ->
                     customAudienceManager.fetchAndJoinCustomAudience(
                         fetchAndJoinCustomAudienceRequest.convertToAdServices(),
                         Runnable::run,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }

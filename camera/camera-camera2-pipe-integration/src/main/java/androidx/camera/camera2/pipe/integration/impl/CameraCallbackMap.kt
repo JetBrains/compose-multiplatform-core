@@ -74,7 +74,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onBufferLost(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        stream: StreamId
+        stream: StreamId,
     ) {
         for ((callback, executor) in callbacks) {
             if (
@@ -92,7 +92,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                             session,
                             request,
                             surface,
-                            frameNumber.value
+                            frameNumber.value,
                         )
                     }
                 }
@@ -103,7 +103,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
@@ -116,7 +116,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                         callback.captureCallback.onCaptureCompleted(
                             session,
                             request,
-                            totalCaptureResult
+                            totalCaptureResult,
                         )
                     }
                 }
@@ -138,7 +138,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onFailed(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        requestFailure: RequestFailure
+        requestFailure: RequestFailure,
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
@@ -173,7 +173,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onPartialCaptureResult(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        captureResult: FrameMetadata
+        captureResult: FrameMetadata,
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
@@ -186,7 +186,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                         callback.captureCallback.onCaptureProgressed(
                             session,
                             request,
-                            partialResult
+                            partialResult,
                         )
                     }
                 }
@@ -204,7 +204,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                     executor.execute {
                         callback.captureCallback.onCaptureSequenceAborted(
                             session,
-                            -1 /*sequenceId*/
+                            -1, /*sequenceId*/
                         )
                     }
                 }
@@ -218,7 +218,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
 
     override fun onRequestSequenceCompleted(
         requestMetadata: RequestMetadata,
-        frameNumber: FrameNumber
+        frameNumber: FrameNumber,
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
@@ -229,7 +229,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                         callback.captureCallback.onCaptureSequenceCompleted(
                             session,
                             -1 /*sequenceId*/,
-                            frameNumber.value
+                            frameNumber.value,
                         )
                     }
                 }
@@ -240,7 +240,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onStarted(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        timestamp: CameraTimestamp
+        timestamp: CameraTimestamp,
     ) {
         for ((callback, executor) in callbacks) {
             if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
@@ -252,7 +252,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                             session,
                             request,
                             timestamp.value,
-                            frameNumber.value
+                            frameNumber.value,
                         )
                     }
                 }
@@ -274,7 +274,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                         callback.captureCallback.onCaptureProgressed(
                             session,
                             request,
-                            partialResult
+                            partialResult,
                         )
                     }
                 }
@@ -282,7 +282,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                 executor.execute {
                     callback.onCaptureProcessProgressed(
                         requestMetadata.getCaptureConfigId(),
-                        progress
+                        progress,
                     )
                 }
             }
@@ -292,7 +292,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     override fun onReadoutStarted(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        timestamp: SensorTimestamp
+        timestamp: SensorTimestamp,
     ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             return
@@ -309,7 +309,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
                             session,
                             request,
                             timestamp.value,
-                            frameNumber.value
+                            frameNumber.value,
                         )
                     }
                 }
@@ -331,7 +331,7 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
     public companion object {
         public fun createFor(
             callbacks: Collection<CameraCaptureCallback>,
-            executor: Executor
+            executor: Executor,
         ): CameraCallbackMap {
             return CameraCallbackMap().apply {
                 callbacks.forEach { callback -> addCaptureCallback(callback, executor) }

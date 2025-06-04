@@ -56,7 +56,7 @@ public fun rememberViewModelStoreNavEntryDecorator(
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
-    shouldRemoveStoreOwner: () -> Boolean = shouldRemoveViewModelStoreCallback()
+    shouldRemoveStoreOwner: () -> Boolean = shouldRemoveViewModelStoreCallback(),
 ): NavEntryDecorator<Any> = remember {
     ViewModelStoreNavEntryDecorator(viewModelStoreOwner.viewModelStore, shouldRemoveStoreOwner)
 }

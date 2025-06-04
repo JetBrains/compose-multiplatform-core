@@ -29,7 +29,7 @@ package androidx.compose.runtime.saveable
  */
 fun <T> mapSaver(
     save: SaverScope.(value: T) -> Map<String, Any?>,
-    restore: (Map<String, Any?>) -> T?
+    restore: (Map<String, Any?>) -> T?,
 ) =
     listSaver<T, Any?>(
         save = {
@@ -51,5 +51,5 @@ fun <T> mapSaver(
                 index += 2
             }
             restore(map)
-        }
+        },
     )

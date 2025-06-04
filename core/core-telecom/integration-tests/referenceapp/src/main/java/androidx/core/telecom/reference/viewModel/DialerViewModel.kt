@@ -47,7 +47,7 @@ import kotlinx.coroutines.launch
  */
 class DialerViewModel(
     private val context: Context,
-    private val callRepository: CallRepository = CallRepository()
+    private val callRepository: CallRepository = CallRepository(),
 ) : ViewModel() {
     // Internal mutable state flow to hold the Dialer UI state.
     private val _uiState = MutableStateFlow(DialerUiState())
@@ -76,7 +76,7 @@ class DialerViewModel(
             it.copy(
                 isFetchingEndpoints = true,
                 availableEndpoints = emptyList(),
-                selectedEndpoint = null
+                selectedEndpoint = null,
             )
         } // Reset state
 
@@ -92,7 +92,7 @@ class DialerViewModel(
                             _uiState.update {
                                 it.copy(
                                     isFetchingEndpoints = false,
-                                    availableEndpoints = emptyList()
+                                    availableEndpoints = emptyList(),
                                 )
                             }
                         }
@@ -100,7 +100,7 @@ class DialerViewModel(
                         .collect { endpoints ->
                             Log.i(
                                 TAG,
-                                "Received endpoints: ${endpoints.joinToString { it.name.toString() }}"
+                                "Received endpoints: ${endpoints.joinToString { it.name.toString() }}",
                             )
                             _uiState.update {
                                 it.copy(
@@ -189,7 +189,7 @@ class DialerViewModel(
                 CallAttributesCompat.DIRECTION_OUTGOING,
                 callType = getCallType(),
                 callCapabilities = getCallCapabilities(),
-                preferredStartingCallEndpoint = _uiState.value.selectedEndpoint
+                preferredStartingCallEndpoint = _uiState.value.selectedEndpoint,
             )
         )
     }

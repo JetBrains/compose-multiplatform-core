@@ -79,7 +79,7 @@ internal actual class SynchronizedObject actual constructor() {
 
 internal actual inline fun <T> synchronizedImpl(
     lock: SynchronizedObject,
-    crossinline action: () -> T
+    crossinline action: () -> T,
 ): T {
     lock.lock()
     return try {

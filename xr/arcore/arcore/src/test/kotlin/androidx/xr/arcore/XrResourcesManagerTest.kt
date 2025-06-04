@@ -16,9 +16,14 @@
 
 package androidx.xr.arcore
 
+import android.app.Activity
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.Earth as RuntimeEarth
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.testing.FakePerceptionManager
 import androidx.xr.runtime.testing.FakeRuntimeAnchor
 import androidx.xr.runtime.testing.FakeRuntimeEarth
 import androidx.xr.runtime.testing.FakeRuntimeHand
@@ -26,6 +31,7 @@ import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -35,6 +41,7 @@ import org.junit.runner.RunWith
 class XrResourcesManagerTest {
 
     private lateinit var underTest: XrResourcesManager
+    private lateinit var session: Session
 
     private fun doBlocking(block: suspend CoroutineScope.() -> Unit) {
         runBlocking(block = block)
@@ -71,8 +78,9 @@ class XrResourcesManagerTest {
     }
 
     @Test
-    fun addUpdatable_addsUpdatable() {
-        val anchor = Anchor(FakeRuntimeAnchor(Pose()), underTest)
+    fun addUpdatable_addsUpdatable() = createTestSessionAndRunTest {
+        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val anchor = Anchor(fakePerceptionManager.createAnchor(Pose()), underTest)
         check(underTest.updatables.isEmpty())
 
         underTest.addUpdatable(anchor)
@@ -81,8 +89,9 @@ class XrResourcesManagerTest {
     }
 
     @Test
-    fun removeUpdatable_removesUpdatable() {
-        val anchor = Anchor(FakeRuntimeAnchor(Pose()), underTest)
+    fun removeUpdatable_removesUpdatable() = createTestSessionAndRunTest {
+        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val anchor = Anchor(fakePerceptionManager.createAnchor(Pose()), underTest)
         underTest.addUpdatable(anchor)
         check(underTest.updatables.contains(anchor))
         check(underTest.updatables.size == 1)
@@ -93,9 +102,10 @@ class XrResourcesManagerTest {
     }
 
     @Test
-    fun clear_clearAllUpdatables() {
-        val runtimeAnchor = FakeRuntimeAnchor(Pose())
-        val runtimeAnchor2 = FakeRuntimeAnchor(Pose())
+    fun clear_clearAllUpdatables() = createTestSessionAndRunTest {
+        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
+        val runtimeAnchor2 = fakePerceptionManager.createAnchor(Pose())
         val anchor = Anchor(runtimeAnchor, underTest)
         val anchor2 = Anchor(runtimeAnchor2, underTest)
         underTest.addUpdatable(anchor)
@@ -153,11 +163,24 @@ class XrResourcesManagerTest {
         val runtimeEarth = FakeRuntimeEarth()
         underTest.initiateEarth(runtimeEarth)
         underTest.update()
-        check(underTest.earth.state.value == Earth.State.Stopped)
+        check(underTest.earth.state.value == Earth.State.STOPPED)
         runtimeEarth.state = RuntimeEarth.State.RUNNING
 
         underTest.update()
 
-        assertThat(underTest.earth.state.value).isEqualTo(Earth.State.Running)
+        assertThat(underTest.earth.state.value).isEqualTo(Earth.State.RUNNING)
+    }
+
+    private fun createTestSessionAndRunTest(testBody: () -> Unit) {
+        ActivityScenario.launch(Activity::class.java).use {
+            it.onActivity { activity ->
+                session =
+                    (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)
+                        .session
+                underTest.lifecycleManager = session.runtime.lifecycleManager
+
+                testBody()
+            }
+        }
     }
 }

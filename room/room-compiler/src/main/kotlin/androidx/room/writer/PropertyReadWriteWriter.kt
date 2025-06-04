@@ -68,7 +68,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
         private fun createNodeTree(
             rootVar: String,
             propertiesWithIndices: List<PropertyWithIndex>,
-            scope: CodeGenScope
+            scope: CodeGenScope,
         ): Node {
             val allParents = getAllParents(propertiesWithIndices.map { it.property })
             val rootNode = Node(rootVar, null)
@@ -77,7 +77,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                 allParents.associateWith {
                     Node(
                         varName = scope.getTmpVar("_tmp${it.property.name.capitalize(Locale.US)}"),
-                        propertyParent = it
+                        propertyParent = it,
                     )
                 }
             parentNodes.values.forEach { node ->
@@ -96,7 +96,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
             ownerVar: String,
             stmtParamVar: String,
             propertiesWithIndices: List<PropertyWithIndex>,
-            scope: CodeGenScope
+            scope: CodeGenScope,
         ) {
             fun visitNode(node: Node) {
                 fun bindWithDescendants() {
@@ -105,7 +105,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                             .bindToStatement(
                                 ownerVar = node.varName,
                                 stmtParamVar = stmtParamVar,
-                                scope = scope
+                                scope = scope,
                             )
                     }
                     node.subNodes.forEach(::visitNode)
@@ -116,7 +116,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                     propertyParent.getter.writeGet(
                         ownerVar = node.parentNode!!.varName,
                         outVar = node.varName,
-                        builder = scope.builder
+                        builder = scope.builder,
                     )
                     scope.builder.apply {
                         if (propertyParent.nonNull) {
@@ -151,7 +151,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
             localVariableNames: Map<String, PropertyWithIndex>,
             localEmbeddeds: List<Node>,
             localRelations: Map<String, Property>,
-            scope: CodeGenScope
+            scope: CodeGenScope,
         ) {
             if (constructor == null) {
                 // Instantiate with default constructor, best hope for code generation
@@ -188,7 +188,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
             stmtVar: String,
             propertiesWithIndices: List<PropertyWithIndex>,
             scope: CodeGenScope,
-            relationCollectors: List<RelationCollector>
+            relationCollectors: List<RelationCollector>,
         ) {
             fun visitNode(node: Node) {
                 val propertyParent = node.propertyParent
@@ -202,7 +202,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                                     .readIntoTmpVar(
                                         stmtVar,
                                         fwi.property.setter.type.asTypeName(),
-                                        scope
+                                        scope,
                                     )
                             }
                     // read decomposed properties (e.g. embedded)
@@ -215,7 +215,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                                 it.writeReadCollectionIntoTmpVar(
                                     stmtVarName = stmtVar,
                                     propertiesWithIndices = propertiesWithIndices,
-                                    scope = scope
+                                    scope = scope,
                                 )
                             }
 
@@ -228,7 +228,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                             localEmbeddeds = node.subNodes,
                             localRelations = relationProperties,
                             localVariableNames = constructorProperties,
-                            scope = scope
+                            scope = scope,
                         )
                     } else {
                         construct(
@@ -238,7 +238,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                             localEmbeddeds = node.subNodes,
                             localRelations = relationProperties,
                             localVariableNames = constructorProperties,
-                            scope = scope
+                            scope = scope,
                         )
                     }
                     // ready any property that was not part of the constructor
@@ -249,7 +249,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                                 .readFromStatement(
                                     ownerVar = node.varName,
                                     stmtVar = stmtVar,
-                                    scope = scope
+                                    scope = scope,
                                 )
                         }
                     // assign sub nodes to properties if they were not part of the constructor.
@@ -266,7 +266,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                             setter.writeSet(
                                 ownerVar = node.varName,
                                 inVar = varName,
-                                builder = scope.builder
+                                builder = scope.builder,
                             )
                         }
                     // assign relation properties that were not part of the constructor
@@ -278,7 +278,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                             property.setter.writeSet(
                                 ownerVar = node.varName,
                                 inVar = varName,
-                                builder = scope.builder
+                                builder = scope.builder,
                             )
                         }
                 }
@@ -357,7 +357,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                     tmpProperty,
                     stmtVar,
                     indexVar,
-                    scope
+                    scope,
                 )
             } else {
                 beginControlFlow("if (%L == -1)", indexVar).applyTo { language ->
@@ -370,7 +370,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                         addStatement(
                             "error(%S)",
                             "Missing column '${property.columnName}' for a NON-NULL value, " +
-                                "column not found in result."
+                                "column not found in result.",
                         )
                     } else {
                         addStatement("%L = %L", tmpProperty, defaultValue)
@@ -381,7 +381,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
                         tmpProperty,
                         stmtVar,
                         indexVar,
-                        scope
+                        scope,
                     )
                 }
                 endControlFlow()
@@ -395,7 +395,7 @@ class PropertyReadWriteWriter(propertyWithIndex: PropertyWithIndex) {
         // root for me
         val varName: String,
         // set if I'm a PropertyParent
-        val propertyParent: EmbeddedProperty?
+        val propertyParent: EmbeddedProperty?,
     ) {
         // whom do i belong
         var parentNode: Node? = null

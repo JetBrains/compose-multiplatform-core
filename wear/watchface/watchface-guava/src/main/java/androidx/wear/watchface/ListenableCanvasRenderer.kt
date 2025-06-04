@@ -41,7 +41,7 @@ constructor(
     watchState: WatchState,
     @CanvasTypeIntDef private val canvasType: Int,
     @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
-    clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false
+    clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false,
 ) :
     Renderer.CanvasRenderer(
         surfaceHolder,
@@ -49,7 +49,7 @@ constructor(
         watchState,
         canvasType,
         interactiveDrawModeUpdateDelayMillis,
-        clearWithBackgroundTintBeforeRenderingHighlightLayer
+        clearWithBackgroundTintBeforeRenderingHighlightLayer,
     ) {
     /**
      * Perform UiThread specific initialization. Will be called once during initialization before
@@ -88,7 +88,7 @@ constructor(
     watchState: WatchState,
     @CanvasTypeIntDef private val canvasType: Int,
     @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
-    clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false
+    clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false,
 ) :
     Renderer.CanvasRenderer2<SharedAssetsT>(
         surfaceHolder,
@@ -96,7 +96,7 @@ constructor(
         watchState,
         canvasType,
         interactiveDrawModeUpdateDelayMillis,
-        clearWithBackgroundTintBeforeRenderingHighlightLayer
+        clearWithBackgroundTintBeforeRenderingHighlightLayer,
     ) where SharedAssetsT : SharedAssets {
     /**
      * Perform UiThread specific initialization. Will be called once during initialization before

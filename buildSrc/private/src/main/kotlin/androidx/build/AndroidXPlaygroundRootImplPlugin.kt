@@ -133,7 +133,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                     if (playgroundRepository.includeModuleRegex != null) {
                         it.includeModuleByRegex(
                             playgroundRepository.includeGroupRegex,
-                            playgroundRepository.includeModuleRegex
+                            playgroundRepository.includeModuleRegex,
                         )
                     }
                 }
@@ -155,28 +155,28 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
             PlaygroundRepository(
                 "https://androidx.dev/snapshots/builds/${props.snapshotBuildId}/artifacts" +
                     "/repository",
-                includeGroupRegex = """androidx\..*"""
+                includeGroupRegex = """androidx\..*""",
             )
         val metalava =
             PlaygroundRepository(
                 "https://androidx.dev/metalava/builds/${props.metalavaBuildId}/artifacts" +
                     "/repo/m2repository",
-                includeGroupRegex = """com\.android\.tools\.metalava"""
+                includeGroupRegex = """com\.android\.tools\.metalava""",
             )
         val prebuilts =
             PlaygroundRepository(
                 INTERNAL_PREBUILTS_REPO_URL,
-                includeGroupRegex = """androidx\..*"""
+                includeGroupRegex = """androidx\..*""",
             )
         val dokka =
             PlaygroundRepository(
                 "https://maven.pkg.jetbrains.space/kotlin/p/dokka/dev",
-                includeGroupRegex = """org\.jetbrains\.dokka"""
+                includeGroupRegex = """org\.jetbrains\.dokka""",
             )
         val kotlinDev =
             PlaygroundRepository(
                 "https://packages.jetbrains.team/maven/p/kt/dev/",
-                includeGroupRegex = """org\.jetbrains\.kotlin.*"""
+                includeGroupRegex = """org\.jetbrains\.kotlin.*""",
             )
         val all = listOf(snapshots, metalava, dokka, prebuilts, kotlinDev)
     }
@@ -184,7 +184,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
     private data class PlaygroundRepository(
         val url: String,
         val includeGroupRegex: String,
-        val includeModuleRegex: String? = null
+        val includeModuleRegex: String? = null,
     )
 
     private data class PlaygroundProperties(

@@ -322,7 +322,7 @@ class OpenXrPerceptionManagerTest {
             openXrManager.configure(
                 Config(
                     planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    handTracking = Config.HandTrackingMode.ENABLED,
+                    handTracking = Config.HandTrackingMode.BOTH,
                 )
             )
 

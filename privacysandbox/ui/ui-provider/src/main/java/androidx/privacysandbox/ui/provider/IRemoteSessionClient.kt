@@ -31,7 +31,7 @@ internal interface IRemoteSessionClient {
         surfacePackage: SurfaceControlViewHost.SurfacePackage,
         remoteSessionController: IRemoteSessionController,
         isZOrderOnTop: Boolean,
-        signalOptions: List<String>
+        signalOptions: List<String>,
     )
 
     fun onRemoteSessionError(exception: String?)

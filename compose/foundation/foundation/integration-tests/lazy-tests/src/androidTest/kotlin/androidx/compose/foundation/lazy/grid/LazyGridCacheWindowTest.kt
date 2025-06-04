@@ -175,12 +175,12 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
     fun rememberState(
         cacheWindow: LazyLayoutCacheWindow,
         initialFirstVisibleItemIndex: Int = 0,
-        initialFirstVisibleItemScrollOffset: Int = 0
+        initialFirstVisibleItemScrollOffset: Int = 0,
     ): LazyGridState = remember {
         LazyGridState(
             cacheWindow,
             initialFirstVisibleItemIndex,
-            initialFirstVisibleItemScrollOffset
+            initialFirstVisibleItemScrollOffset,
         )
     }
 
@@ -189,14 +189,14 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
-        contentPadding: PaddingValues = PaddingValues(0.dp)
+        contentPadding: PaddingValues = PaddingValues(0.dp),
     ) {
         rule.setContent {
             state =
                 rememberState(
                     cacheWindow = cacheWindow,
                     initialFirstVisibleItemIndex = firstItem,
-                    initialFirstVisibleItemScrollOffset = itemOffset
+                    initialFirstVisibleItemScrollOffset = itemOffset,
                 )
             LazyGrid(
                 2,
@@ -210,7 +210,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
                     ),
                 state,
                 reverseLayout = reverseLayout,
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
             ) {
                 items(100) {
                     DisposableEffect(it) {

@@ -198,7 +198,7 @@ public constructor(
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
                 "androidx.xr.runtime.openxr.OpenXrRuntimeFactory",
-                "androidx.xr.runtime.testing.FakeRuntimeFactory"
+                "androidx.xr.runtime.testing.FakeRuntimeFactory",
             )
         private val JXR_PLATFORM_ADAPTER_FACTORY_PROVIDERS =
             listOf(
@@ -213,7 +213,7 @@ public constructor(
         private val SESSION_CONNECTOR_PROVIDERS =
             listOf(
                 "androidx.xr.scenecore.Scene",
-                "androidx.xr.runtime.testing.FakeSessionConnector"
+                "androidx.xr.runtime.testing.FakeSessionConnector",
             )
     }
 
@@ -245,7 +245,6 @@ public constructor(
     private var updateJob: Job? = null
 
     /** The current state of the runtime configuration. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val config: Config
         get() = runtime.lifecycleManager.config
 
@@ -257,7 +256,6 @@ public constructor(
      *   configuration criteria was not met.
      * @throws IllegalStateException if the session has been destroyed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun configure(config: Config): SessionConfigureResult {
         check(lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
             "Session has been destroyed."

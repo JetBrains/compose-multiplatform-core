@@ -46,7 +46,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
     constructor(
         config: DatabaseConfiguration,
         openDelegate: RoomOpenDelegate,
-        transactionWrapper: TransactionWrapper<*>
+        transactionWrapper: TransactionWrapper<*>,
     ) {
         this.configuration = config
         this.openDelegate = openDelegate
@@ -70,7 +70,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
                 PassthroughConnectionPool(
                     driver = SupportSQLiteDriver(supportOpenHelper),
                     fileName = config.name ?: ":memory:",
-                    transactionWrapper = transactionWrapper
+                    transactionWrapper = transactionWrapper,
                 )
         } else {
             this.supportOpenHelper = null
@@ -82,20 +82,20 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
                     PassthroughConnectionPool(
                         driver = DriverWrapper(config.sqliteDriver),
                         fileName = config.name ?: ":memory:",
-                        transactionWrapper = transactionWrapper
+                        transactionWrapper = transactionWrapper,
                     )
                 } else if (config.name == null) {
                     // An in-memory database must use a single connection pool.
                     newSingleConnectionPool(
                         driver = DriverWrapper(config.sqliteDriver),
-                        fileName = ":memory:"
+                        fileName = ":memory:",
                     )
                 } else {
                     newConnectionPool(
                         driver = DriverWrapper(config.sqliteDriver),
                         fileName = config.name,
                         maxNumOfReaders = config.journalMode.getMaxNumberOfReaders(),
-                        maxNumOfWriters = config.journalMode.getMaxNumberOfWriters()
+                        maxNumOfWriters = config.journalMode.getMaxNumberOfWriters(),
                     )
                 }
         }
@@ -105,7 +105,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
     constructor(
         config: DatabaseConfiguration,
         supportOpenHelperFactory: (DatabaseConfiguration) -> SupportSQLiteOpenHelper,
-        transactionWrapper: TransactionWrapper<*>
+        transactionWrapper: TransactionWrapper<*>,
     ) {
         this.configuration = config
         this.openDelegate = NoOpOpenDelegate()
@@ -120,7 +120,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
             PassthroughConnectionPool(
                 driver = SupportSQLiteDriver(supportOpenHelper),
                 fileName = config.name ?: ":memory:",
-                transactionWrapper = transactionWrapper
+                transactionWrapper = transactionWrapper,
             )
         init()
     }
@@ -132,7 +132,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R = connectionPool.useConnection(isReadOnly, block)
 
     override fun resolveFileName(fileName: String): String =
@@ -163,7 +163,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
             this@RoomConnectionManager.onMigrate(
                 SupportSQLiteConnection(db),
                 oldVersion,
-                newVersion
+                newVersion,
             )
         }
 

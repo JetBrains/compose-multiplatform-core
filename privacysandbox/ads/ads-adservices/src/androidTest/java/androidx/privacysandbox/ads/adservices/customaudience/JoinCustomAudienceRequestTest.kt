@@ -58,7 +58,7 @@ class JoinCustomAudienceRequestTest {
                 expirationTime,
                 userBiddingSignals,
                 trustedBiddingSignals,
-                componentAds = TestFixtures.componentAds
+                componentAds = TestFixtures.componentAds,
             )
         val result = "JoinCustomAudience: customAudience=$customAudience"
         val joinCustomAudienceRequest = JoinCustomAudienceRequest(customAudience)

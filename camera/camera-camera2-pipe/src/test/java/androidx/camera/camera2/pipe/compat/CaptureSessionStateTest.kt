@@ -60,7 +60,7 @@ class CaptureSessionStateTest {
         object : Camera2CaptureSequenceProcessorFactory {
             override fun create(
                 session: CameraCaptureSessionWrapper,
-                surfaceMap: Map<StreamId, Surface>
+                surfaceMap: Map<StreamId, Surface>,
             ): CaptureSequenceProcessor<Request, FakeCaptureSequence> = fakeCaptureSequenceProcessor
         }
     private val timeSource = SystemTimeSource()
@@ -79,7 +79,7 @@ class CaptureSessionStateTest {
     private val captureSessionFactory =
         FakeCaptureSessionFactory(
             requiredStreams = setOf(stream1, stream2),
-            deferrableStreams = setOf(stream3Deferred)
+            deferrableStreams = setOf(stream3Deferred),
         )
 
     private val fakeCameraDevice: CameraDeviceWrapper = mock()
@@ -270,9 +270,7 @@ class CaptureSessionStateTest {
                 captureSequenceProcessorFactory,
                 cameraSurfaceManager,
                 timeSource,
-                CameraGraph.Flags(
-                    closeCaptureSessionOnDisconnect = true,
-                ),
+                CameraGraph.Flags(closeCaptureSessionOnDisconnect = true),
                 fakeThreads,
                 this,
             )

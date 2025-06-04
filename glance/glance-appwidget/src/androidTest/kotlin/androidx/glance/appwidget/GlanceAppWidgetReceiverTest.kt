@@ -166,7 +166,7 @@ class GlanceAppWidgetReceiverTest {
                         textDecoration = TextDecoration.Underline,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
-                    )
+                    ),
             )
         }
 
@@ -427,10 +427,7 @@ class GlanceAppWidgetReceiverTest {
             val children = column.notGoneChildren.toList()
             val child1 = assertIs<TextView>(children[0])
             val child2 = children[1].getTargetView<TextView>()
-            assertViewSize(
-                child1,
-                DpSize(mHostRule.portraitSize.width, 0.dp),
-            )
+            assertViewSize(child1, DpSize(mHostRule.portraitSize.width, 0.dp))
             assertViewSize(child2, DpSize(100.dp, mHostRule.portraitSize.height))
         }
     }
@@ -445,9 +442,9 @@ class GlanceAppWidgetReceiverTest {
                 colors =
                     ButtonDefaults.buttonColors(
                         backgroundColor = ColorProvider(Color.Transparent),
-                        contentColor = ColorProvider(Color.DarkGray)
+                        contentColor = ColorProvider(Color.DarkGray),
                     ),
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -471,9 +468,9 @@ class GlanceAppWidgetReceiverTest {
                 colors =
                     ButtonDefaults.buttonColors(
                         backgroundColor = ColorProvider(Color.Transparent),
-                        contentColor = ColorProvider(Color.DarkGray)
+                        contentColor = ColorProvider(Color.DarkGray),
                     ),
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -512,7 +509,7 @@ class GlanceAppWidgetReceiverTest {
                 modifier =
                     GlanceModifier.fillMaxWidth()
                         .height(220.dp)
-                        .background(ImageProvider(R.drawable.oval))
+                        .background(ImageProvider(R.drawable.oval)),
             )
         }
 
@@ -537,7 +534,7 @@ class GlanceAppWidgetReceiverTest {
                 modifier =
                     GlanceModifier.fillMaxWidth()
                         .height(220.dp)
-                        .background(ImageProvider(R.drawable.oval), contentScale = ContentScale.Fit)
+                        .background(ImageProvider(R.drawable.oval), contentScale = ContentScale.Fit),
             )
         }
 
@@ -564,8 +561,8 @@ class GlanceAppWidgetReceiverTest {
                         .height(220.dp)
                         .background(
                             ImageProvider(R.drawable.oval),
-                            contentScale = ContentScale.Crop
-                        )
+                            contentScale = ContentScale.Crop,
+                        ),
             )
         }
 
@@ -590,7 +587,7 @@ class GlanceAppWidgetReceiverTest {
                 (context.resources.getDrawable(R.drawable.compose, null) as BitmapDrawable).bitmap
             Text(
                 "Some useful text",
-                modifier = GlanceModifier.fillMaxSize().background(ImageProvider(bitmap))
+                modifier = GlanceModifier.fillMaxSize().background(ImageProvider(bitmap)),
             )
         }
 
@@ -754,7 +751,7 @@ class GlanceAppWidgetReceiverTest {
                             actionRunCallback<CallbackTest>(
                                 actionParametersOf(CallbackTest.key to 1)
                             )
-                        )
+                        ),
                 )
                 Text(
                     "text2",
@@ -763,7 +760,7 @@ class GlanceAppWidgetReceiverTest {
                             actionRunCallback<CallbackTest>(
                                 actionParametersOf(CallbackTest.key to 2)
                             )
-                        )
+                        ),
                 )
             }
         }
@@ -801,7 +798,7 @@ class GlanceAppWidgetReceiverTest {
                             actionRunCallback<CallbackTest>(
                                 actionParametersOf(CallbackTest.key to 2)
                             )
-                        )
+                        ),
             )
         }
 
@@ -866,12 +863,12 @@ class GlanceAppWidgetReceiverTest {
                     CheckBox(
                         checked = false,
                         onCheckedChange = { assert(checkBoxClicked.tryEmit(true)) },
-                        text = checkbox
+                        text = checkbox,
                     )
                     Switch(
                         checked = true,
                         onCheckedChange = { assert(switchClicked.tryEmit(true)) },
-                        text = switch
+                        text = switch,
                     )
                 }
             }
@@ -907,7 +904,7 @@ class GlanceAppWidgetReceiverTest {
                         checkedTrackColor = ColorProvider(day = Color.Green, night = Color.Yellow),
                         uncheckedThumbColor = ColorProvider(Color.Magenta),
                         uncheckedTrackColor = ColorProvider(Color.Magenta),
-                    )
+                    ),
             )
         }
 
@@ -928,7 +925,7 @@ class GlanceAppWidgetReceiverTest {
                 checked = true,
                 onClick =
                     actionRunCallback<CallbackTest>(actionParametersOf(CallbackTest.key to 2)),
-                text = "text1"
+                text = "text1",
             )
         }
 
@@ -996,7 +993,7 @@ class GlanceAppWidgetReceiverTest {
             TestGlanceAppWidget.uiDefinition = {
                 Text(
                     "text1",
-                    modifier = if (enabled) GlanceModifier.clickable {} else GlanceModifier
+                    modifier = if (enabled) GlanceModifier.clickable {} else GlanceModifier,
                 )
             }
 
@@ -1033,7 +1030,7 @@ class GlanceAppWidgetReceiverTest {
                                 actionParametersOf(CompoundButtonActionTest.key to "checkbox")
                             )
                         } else null,
-                    text = "checkbox"
+                    text = "checkbox",
                 )
             }
 
@@ -1123,11 +1120,7 @@ class GlanceAppWidgetReceiverTest {
     @Test
     fun compoundButtonsDoNotHaveRipples() {
         TestGlanceAppWidget.uiDefinition = {
-            RadioButton(
-                checked = true,
-                onClick = actionRunCallback<CallbackTest>(),
-                text = "text1",
-            )
+            RadioButton(checked = true, onClick = actionRunCallback<CallbackTest>(), text = "text1")
         }
 
         mHostRule.startHost()
@@ -1281,7 +1274,7 @@ class GlanceAppWidgetReceiverTest {
     enum class EffectState {
         Initial,
         Started,
-        Disposed
+        Disposed,
     }
 
     inner class ViewHierarchyFailureWatcher : TestWatcher() {
@@ -1310,7 +1303,7 @@ internal class CallbackTest : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         val value = checkNotNull(parameters[key])
         received.update { it + value }
@@ -1343,7 +1336,7 @@ internal class CompoundButtonActionTest : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         val target = checkNotNull(parameters[key])
         val value = checkNotNull(parameters[ToggleableStateKey])

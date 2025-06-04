@@ -41,8 +41,8 @@ class UpdateWatchFaceTest {
             context,
             listOf(
                 SAMPLE_WATCHFACE,
-                "androidx.wear.watchface.push.test.watchfacepush.androidxsample2"
-            )
+                "androidx.wear.watchface.push.test.watchfacepush.androidxsample2",
+            ),
         )
         details = runBlocking {
             readWatchFace(context, VALID_APK).use { pipe ->
@@ -60,7 +60,7 @@ class UpdateWatchFaceTest {
                     wfp.updateWatchFace(
                         details.slotId,
                         pipe.readFd,
-                        "nBUctGetKYcewjHzkFrrjO1uN63VyaUJyOKsXKiQm8U=:MS4wLjA="
+                        "nBUctGetKYcewjHzkFrrjO1uN63VyaUJyOKsXKiQm8U=:MS4wLjA=",
                     )
 
                 assertThat(wfp.listWatchFaces().installedWatchFaceDetails).isNotEmpty()
@@ -149,7 +149,7 @@ class UpdateWatchFaceTest {
                         wfp.updateWatchFace(
                             details.slotId,
                             pipe.readFd,
-                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA="
+                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA=",
                         )
                     }
                 }
@@ -169,7 +169,7 @@ class UpdateWatchFaceTest {
                         wfp.updateWatchFace(
                             details.slotId,
                             pipe.readFd,
-                            "XPdIIO1kCKDsA+lYKq2Mw5bjC1VEAK2kqUApZgA87Eg=:MS4wLjA="
+                            "XPdIIO1kCKDsA+lYKq2Mw5bjC1VEAK2kqUApZgA87Eg=:MS4wLjA=",
                         )
                     }
                 }

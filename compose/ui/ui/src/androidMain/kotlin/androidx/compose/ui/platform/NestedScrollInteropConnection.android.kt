@@ -47,7 +47,7 @@ import kotlin.math.floor
 @OptIn(ExperimentalComposeUiApi::class)
 internal class NestedScrollInteropConnection(
     private val view: View,
-    private val minFlingVelocity: Float
+    private val minFlingVelocity: Float,
 ) : NestedScrollConnection {
 
     private val nestedScrollChildHelper =
@@ -72,7 +72,7 @@ internal class NestedScrollInteropConnection(
                 composeToViewOffset(available.y),
                 consumedScrollCache,
                 null,
-                source.toViewType()
+                source.toViewType(),
             )
 
             return toOffset(consumedScrollCache, available)
@@ -84,7 +84,7 @@ internal class NestedScrollInteropConnection(
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         // Using the return of startNestedScroll to determine if nested scrolling will happen.
         if (nestedScrollChildHelper.startNestedScroll(available.scrollAxes, source.toViewType())) {
@@ -149,7 +149,7 @@ internal class NestedScrollInteropConnection(
                     nestedScrollChildHelper.dispatchNestedFling(
                         available.x.toViewVelocity(),
                         available.y.toViewVelocity(),
-                        true
+                        true,
                     )
             ) {
                 available

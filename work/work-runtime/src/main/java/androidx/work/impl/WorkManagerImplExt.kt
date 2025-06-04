@@ -39,12 +39,12 @@ fun WorkManagerImpl(
             context.applicationContext,
             workTaskExecutor.serialTaskExecutor,
             configuration.clock,
-            context.resources.getBoolean(R.bool.workmanager_test_configuration)
+            context.resources.getBoolean(R.bool.workmanager_test_configuration),
         ),
     trackers: Trackers = Trackers(context.applicationContext, workTaskExecutor),
     processor: Processor =
         Processor(context.applicationContext, configuration, workTaskExecutor, workDatabase),
-    schedulersCreator: SchedulersCreator = ::createSchedulers
+    schedulersCreator: SchedulersCreator = ::createSchedulers,
 ): WorkManagerImpl {
     val schedulers =
         schedulersCreator(
@@ -53,7 +53,7 @@ fun WorkManagerImpl(
             workTaskExecutor,
             workDatabase,
             trackers,
-            processor
+            processor,
         )
     return WorkManagerImpl(
         context.applicationContext,
@@ -62,7 +62,7 @@ fun WorkManagerImpl(
         workDatabase,
         schedulers,
         processor,
-        trackers
+        trackers,
     )
 }
 
@@ -76,7 +76,7 @@ fun TestWorkManagerImpl(
         context,
         configuration,
         workTaskExecutor,
-        WorkDatabase.create(context, workTaskExecutor.serialTaskExecutor, configuration.clock, true)
+        WorkDatabase.create(context, workTaskExecutor.serialTaskExecutor, configuration.clock, true),
     )
 
 typealias SchedulersCreator =
@@ -86,7 +86,7 @@ typealias SchedulersCreator =
         workTaskExecutor: TaskExecutor,
         workDatabase: WorkDatabase,
         trackers: Trackers,
-        processor: Processor
+        processor: Processor,
     ) -> List<Scheduler>
 
 fun schedulers(vararg schedulers: Scheduler): SchedulersCreator = { _, _, _, _, _, _ ->
@@ -109,7 +109,7 @@ private fun createSchedulers(
             trackers,
             processor,
             WorkLauncherImpl(processor, workTaskExecutor),
-            workTaskExecutor
+            workTaskExecutor,
         ),
     )
 

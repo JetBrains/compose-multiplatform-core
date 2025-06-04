@@ -51,7 +51,7 @@ fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     val bundle = Bundle()
     bundle.putInt(
         ProtocolConstants.uiProviderVersionKey,
-        SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel
+        SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
     )
 
     // Bundle key is a binary compatibility requirement
@@ -67,7 +67,7 @@ private class BinderSharedUiAdapterDelegate(private val adapter: SharedUiAdapter
     override fun openLocalSession(
         clientVersion: Int,
         clientExecutor: Executor,
-        client: SessionClient
+        client: SessionClient,
     ) {
         adapter.openSession(clientExecutor, LocalSharedUiSessionClient(clientVersion, client))
     }
@@ -75,7 +75,7 @@ private class BinderSharedUiAdapterDelegate(private val adapter: SharedUiAdapter
     // TODO(b/365614954): try to improve method's performance.
     override fun openRemoteSession(
         clientVersion: Int,
-        remoteSessionClient: IRemoteSharedUiSessionClient
+        remoteSessionClient: IRemoteSharedUiSessionClient,
     ) {
         val remoteSessionClientWithVersionCheck =
             RemoteSharedUiSessionClient(clientVersion, remoteSessionClient)

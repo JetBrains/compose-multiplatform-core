@@ -196,7 +196,7 @@ internal fun PageIndicatorImpl(
     val isLastPage =
         currentPageOffsetWithFraction.equalsWithTolerance(
             number = state.pageCount - 1f,
-            tolerance = 0.001f
+            tolerance = 0.001f,
         )
 
     // If it's the last page, then we decrease its index by 1 and put a 1f to the offset
@@ -213,7 +213,7 @@ internal fun PageIndicatorImpl(
                 pagesOnScreen = pagesOnScreen,
                 smallIndicatorSizeFraction = smallIndicatorSizeFraction,
                 shrinkThresholdStart = calculateShrinkThresholdStart(spacing, indicatorSize),
-                shrinkThresholdEnd = calculateShrinkThresholdEnd(spacing, indicatorSize)
+                shrinkThresholdEnd = calculateShrinkThresholdEnd(spacing, indicatorSize),
             )
         }
 
@@ -231,7 +231,7 @@ internal fun PageIndicatorImpl(
         val size =
             IntSize(
                 width = if (isHorizontal) width else height,
-                height = if (isHorizontal) height else width
+                height = if (isHorizontal) height else width,
             )
         size
     }
@@ -266,7 +266,7 @@ internal fun PageIndicatorImpl(
         offset = boundsOffset,
         size = boundsSize,
         modifier = modifier.padding(edgePadding),
-        onSizeChanged = { containerSize = it }
+        onSizeChanged = { containerSize = it },
     ) {
         if (pagesState.totalPages == 1) {
             SingleDotCurvedPageIndicator(
@@ -285,7 +285,7 @@ internal fun PageIndicatorImpl(
                         page = page,
                         size = indicatorSize,
                         unselectedColor = unselectedColor,
-                        pagesState = pagesState
+                        pagesState = pagesState,
                     )
                 },
                 spacer = { spacerIndex ->
@@ -296,13 +296,13 @@ internal fun PageIndicatorImpl(
                         indicatorSize = indicatorSize,
                         spacing = spacing,
                         selectedColor = selectedColor,
-                        progress = offset
+                        progress = offset,
                     )
                 },
                 angularPadding = angularPadding,
                 isHorizontal = isHorizontal,
                 layoutDirection = layoutDirection,
-                backgroundColor = backgroundColor
+                backgroundColor = backgroundColor,
             )
         }
     }
@@ -404,7 +404,7 @@ private fun CurvedScope.curvedSelectedIndicator(
     indicatorSize: Dp,
     spacing: Dp,
     selectedColor: Color,
-    progress: Float
+    progress: Float,
 ) {
 
     val startSpacerWeight = (1 - progress * 2).coerceAtLeast(0f)
@@ -432,7 +432,7 @@ private fun CurvedScope.curvedIndicator(
     page: Int,
     unselectedColor: Color,
     pagesState: PagesState,
-    size: Dp
+    size: Dp,
 ) {
     curvedBox(
         CurvedModifier
@@ -446,7 +446,7 @@ private fun CurvedScope.curvedIndicator(
                     unselectedColor.copy(
                         alpha = unselectedColor.alpha * pagesState.indicatorsAlpha[page]
                     ),
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
     ) {}
 }
@@ -465,7 +465,7 @@ private class PagesState(
     val pagesOnScreen: Int,
     val smallIndicatorSizeFraction: Float,
     val shrinkThresholdStart: Float,
-    val shrinkThresholdEnd: Float
+    val shrinkThresholdEnd: Float,
 ) {
     private val dotsCount = pagesOnScreen + 1
     private val spacersCount = pagesOnScreen + 2
@@ -592,7 +592,7 @@ private class PagesState(
             shrinkThresholdStart,
             shrinkThresholdEnd,
             visibleDotIndex,
-            offset
+            offset,
         )
     }
 
@@ -604,7 +604,7 @@ private class PagesState(
         shrinkThresholdStart: Float,
         shrinkThresholdEnd: Float,
         visibleDotIndex: Int,
-        offset: Float
+        offset: Float,
     ) {
         val shrinkFractionPrev =
             inverseLerp(1 - shrinkThresholdStart, 1 - shrinkThresholdEnd, offset)

@@ -89,7 +89,7 @@ class BaselineProfileRule : TestRule {
         includeInStartupProfile: Boolean = false,
         strictStability: Boolean = false,
         filterPredicate: ((String) -> Boolean) = { true },
-        profileBlock: MacrobenchmarkScope.() -> Unit
+        profileBlock: MacrobenchmarkScope.() -> Unit,
     ) {
         collect(
             uniqueName = outputFilePrefix ?: currentDescription.toUniqueName(),
@@ -99,7 +99,7 @@ class BaselineProfileRule : TestRule {
             includeInStartupProfile = includeInStartupProfile,
             strictStability = strictStability,
             filterPredicate = filterPredicate,
-            profileBlock = profileBlock
+            profileBlock = profileBlock,
         )
     }
 
@@ -137,7 +137,7 @@ class BaselineProfileRule : TestRule {
         includeInStartupProfile: Boolean = false,
         strictStability: Boolean = false,
         filterPredicate: ((String) -> Boolean) = { true },
-        profileBlock: MacrobenchmarkScope.() -> Unit
+        profileBlock: MacrobenchmarkScope.() -> Unit,
     ): BaselineProfileResult {
         return collect(
             uniqueName = outputFilePrefix ?: currentDescription.toUniqueName(),
@@ -147,7 +147,7 @@ class BaselineProfileRule : TestRule {
             includeInStartupProfile = includeInStartupProfile,
             strictStability = strictStability,
             filterPredicate = filterPredicate,
-            profileBlock = profileBlock
+            profileBlock = profileBlock,
         )
     }
 
@@ -158,35 +158,18 @@ class BaselineProfileRule : TestRule {
      * @param config which is used to manage the collection of Baseline Profiles.
      * @return [BaselineProfileResult] which can be used to determine the absolute paths of the
      *   collected baseline profiles.
-     * @see [configBuilder] to construct an instance of [BaselineProfileConfig].
+     * @see [BaselineProfileConfig.Builder] to construct an instance of [BaselineProfileConfig].
      */
     public fun collectWithResults(config: BaselineProfileConfig): BaselineProfileResult {
         return collect(
-            uniqueName = config.getOutputFilePrefix(),
+            uniqueName = config.getOutputFilePrefix() ?: currentDescription.toUniqueName(),
             packageName = config.getPackageName(),
             stableIterations = config.getStableIterations(),
             maxIterations = config.getMaxIterations(),
             includeInStartupProfile = config.isIncludeInStartupProfile(),
             strictStability = config.isStrictStability(),
             filterPredicate = config.getFilterPredicate(),
-            profileBlock = config.getProfileBlock()
-        )
-    }
-
-    /**
-     * @return An instance of [BaselineProfileConfig.Builder] that can be used to manage collection
-     *   of Baseline profiles.
-     */
-    @JvmOverloads
-    public fun configBuilder(
-        packageName: String,
-        outputFilePrefix: String? = null,
-        profileBlock: MacrobenchmarkScope.() -> Unit
-    ): BaselineProfileConfig.Builder {
-        return BaselineProfileConfig.Builder(
-            outputFilePrefix ?: currentDescription.toUniqueName(),
-            packageName,
-            profileBlock
+            profileBlock = config.getProfileBlock(),
         )
     }
 

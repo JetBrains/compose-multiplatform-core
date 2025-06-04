@@ -27,7 +27,7 @@ package androidx.browser.auth {
     method public static androidx.browser.auth.AuthTabColorSchemeParams getColorSchemeParams(android.content.Intent, @IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabSession.PendingSession? getPendingSession();
     method public androidx.browser.auth.AuthTabSession? getSession();
-    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingEnabled();
+    method public boolean isEphemeralBrowsingEnabled();
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String);
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String, String);
     method public static androidx.activity.result.ActivityResultLauncher<android.content.Intent!> registerActivityResultLauncher(androidx.activity.result.ActivityResultCaller, androidx.activity.result.ActivityResultCallback<androidx.browser.auth.AuthTabIntent.AuthResult!>);
@@ -55,7 +55,7 @@ package androidx.browser.auth {
     method public androidx.browser.auth.AuthTabIntent.Builder setColorScheme(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_SYSTEM, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
     method public androidx.browser.auth.AuthTabIntent.Builder setColorSchemeParams(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int, androidx.browser.auth.AuthTabColorSchemeParams);
     method public androidx.browser.auth.AuthTabIntent.Builder setDefaultColorSchemeParams(androidx.browser.auth.AuthTabColorSchemeParams);
-    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public androidx.browser.auth.AuthTabIntent.Builder setEphemeralBrowsingEnabled(boolean);
+    method public androidx.browser.auth.AuthTabIntent.Builder setEphemeralBrowsingEnabled(boolean);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabIntent.Builder setPendingSession(androidx.browser.auth.AuthTabSession.PendingSession);
     method public androidx.browser.auth.AuthTabIntent.Builder setSession(androidx.browser.auth.AuthTabSession);
   }
@@ -227,7 +227,7 @@ package androidx.browser.customtabs {
     method public static boolean isBookmarksButtonEnabled(android.content.Intent);
     method public static boolean isCloseButtonEnabled(android.content.Intent);
     method public static boolean isDownloadButtonEnabled(android.content.Intent);
-    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingEnabled();
+    method public boolean isEphemeralBrowsingEnabled();
     method public static boolean isSendToExternalDefaultHandlerEnabled(android.content.Intent);
     method public void launchUrl(android.content.Context, android.net.Uri);
     method public static android.content.Intent setAlwaysUseBrowserUI(android.content.Intent?);
@@ -336,7 +336,7 @@ package androidx.browser.customtabs {
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setDefaultColorSchemeParams(androidx.browser.customtabs.CustomTabColorSchemeParams);
     method @Deprecated public androidx.browser.customtabs.CustomTabsIntent.Builder setDefaultShareMenuItemEnabled(boolean);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setDownloadButtonEnabled(boolean);
-    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public androidx.browser.customtabs.CustomTabsIntent.Builder setEphemeralBrowsingEnabled(boolean);
+    method public androidx.browser.customtabs.CustomTabsIntent.Builder setEphemeralBrowsingEnabled(boolean);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setExitAnimations(android.content.Context, @AnimRes int, @AnimRes int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setInitialActivityHeightPx(@Dimension(unit=androidx.annotation.Dimension.PX) int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setInitialActivityHeightPx(@Dimension(unit=androidx.annotation.Dimension.PX) int, int);
@@ -447,9 +447,6 @@ package androidx.browser.customtabs {
     method public default void onGreatestScrollPercentageIncreased(@IntRange(from=1, to=100) int, android.os.Bundle);
     method public default void onSessionEnded(boolean, android.os.Bundle);
     method public default void onVerticalScrollEvent(boolean, android.os.Bundle);
-  }
-
-  @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.WARNING) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalEphemeralBrowsing {
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.WARNING) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalOpenInBrowser {

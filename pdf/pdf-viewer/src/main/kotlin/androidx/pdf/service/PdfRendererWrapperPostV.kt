@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PdfRendererWrapperPostV(
     parcelFileDescriptor: ParcelFileDescriptor,
-    password: String
+    password: String,
 ) : PdfRendererWrapper {
 
     private val pdfRenderer: PdfRenderer

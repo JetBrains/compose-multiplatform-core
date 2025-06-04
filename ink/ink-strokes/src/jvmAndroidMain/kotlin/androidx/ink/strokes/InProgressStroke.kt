@@ -213,7 +213,7 @@ public class InProgressStroke {
             InProgressStrokeNative.updateShape(
                 nativePointer,
                 currentElapsedTimeMillis,
-                throwOnError
+                throwOnError,
             )
         check(success || !throwOnError) { "Should have thrown an exception if updateShape failed." }
         if (success) version++
@@ -533,7 +533,7 @@ public class InProgressStroke {
         return (InProgressStrokeNative.getRawTriangleIndexData(
                 nativePointer,
                 coatIndex,
-                partitionIndex
+                partitionIndex,
             ) ?: ByteBuffer.allocate(0))
             .asReadOnlyBuffer()
             .order(ByteOrder.nativeOrder())
@@ -668,7 +668,7 @@ private object InProgressStrokeNative {
     external fun getTriangleIndexStride(
         nativePointer: Long,
         coatIndex: Int,
-        partitionIndex: Int
+        partitionIndex: Int,
     ): Int
 
     /**

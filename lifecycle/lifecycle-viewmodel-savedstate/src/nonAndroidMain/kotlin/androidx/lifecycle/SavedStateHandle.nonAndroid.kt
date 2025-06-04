@@ -74,7 +74,7 @@ public actual class SavedStateHandle {
     @MainThread
     public actual fun setSavedStateProvider(
         key: String,
-        provider: SavedStateRegistry.SavedStateProvider
+        provider: SavedStateRegistry.SavedStateProvider,
     ): Unit = impl.setSavedStateProvider(key, provider)
 
     @MainThread

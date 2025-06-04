@@ -95,7 +95,7 @@ internal constructor(
     val unmergedSemantics: List<RawParameter>,
 
     /** The children nodes of this Composable. */
-    val children: List<InspectorNode>
+    val children: List<InspectorNode>,
 ) {
     /** Left side of the Composable in pixels. */
     val left: Int
@@ -293,6 +293,6 @@ internal class MutableInspectorNode {
             viewId,
             if (withSemantics) mergedSemantics.toList() else emptyList(),
             if (withSemantics) unmergedSemantics.toList() else emptyList(),
-            children.toList()
+            children.toList(),
         )
 }

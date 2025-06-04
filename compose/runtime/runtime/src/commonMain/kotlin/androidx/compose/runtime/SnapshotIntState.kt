@@ -162,7 +162,7 @@ internal open class SnapshotMutableIntStateImpl(value: Int) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val currentRecord = current as IntStateStateRecord
         val appliedRecord = applied as IntStateStateRecord

@@ -77,7 +77,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.MediumTest
+import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assume.assumeTrue
@@ -85,7 +85,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@MediumTest
+@SmallTest
 @RunWith(AndroidJUnit4::class)
 class FocusViewInteropTest {
 
@@ -287,7 +287,7 @@ class FocusViewInteropTest {
                                 }
                             },
                             onReset = {},
-                            onRelease = {}
+                            onRelease = {},
                         ) { et ->
                             et.setText("$index")
                             if (index == 2) {
@@ -357,7 +357,7 @@ class FocusViewInteropTest {
                             bottomEditText = it
                         }
                     }
-                }
+                },
             )
         }
 
@@ -410,7 +410,7 @@ class FocusViewInteropTest {
                             bottomEditText = it
                         }
                     }
-                }
+                },
             )
         }
 
@@ -464,7 +464,7 @@ class FocusViewInteropTest {
                             bottomEditText = it
                         }
                     }
-                }
+                },
             )
         }
 
@@ -515,7 +515,7 @@ class FocusViewInteropTest {
                             bottomEditText = it
                         }
                     }
-                }
+                },
             )
         }
 
@@ -563,7 +563,7 @@ class FocusViewInteropTest {
                             bottomEditText = it
                         }
                     }
-                }
+                },
             )
         }
 
@@ -628,7 +628,7 @@ class FocusViewInteropTest {
                             linearLayout.addView(it)
                         }
                     }
-                }
+                },
             )
         }
         rule.onNodeWithTag("button1").requestFocus()
@@ -693,7 +693,7 @@ class FocusViewInteropTest {
                             linearLayout.addView(it)
                         }
                     }
-                }
+                },
             )
         }
         rule.onNodeWithTag("button1").requestFocus()
@@ -725,7 +725,7 @@ class FocusViewInteropTest {
                     onClick = {},
                     Modifier.testTag("button")
                         .focusProperties { canFocus = true }
-                        .focusRequester(composeButton)
+                        .focusRequester(composeButton),
                 ) {
                     Text("Compose Button")
                 }
@@ -771,9 +771,6 @@ class FocusViewInteropTest {
 
     @Test
     fun removeFocusedView() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        assumeTrue(ComposeUiFlags.isRemoveFocusedViewFixEnabled)
-
         // Arrange.
         lateinit var buttonView1: Button
         lateinit var buttonView3: Button
@@ -796,7 +793,7 @@ class FocusViewInteropTest {
                                         2 -> buttonView3 = this
                                     }
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -812,7 +809,7 @@ class FocusViewInteropTest {
             assertThat(buttonView3.isFocused).isFalse()
             // We don't reassign focus in touch mode.
             // https://developer.android.com/about/versions/pie/android-9.0-changes-28#focus
-            if (inputModeManager.inputMode == Touch && SDK_INT > 28) {
+            if (inputModeManager.inputMode == Touch && SDK_INT >= 28) {
                 assertThat(buttonView1.isFocused).isFalse()
             } else {
                 assertThat(buttonView1.isFocused).isTrue()

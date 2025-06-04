@@ -50,7 +50,7 @@ import com.google.common.truth.IterableSubject
  */
 internal fun ComposeContentTestRule.setFocusableContent(
     extraItemForInitialFocus: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     setContent {
         if (extraItemForInitialFocus) {
@@ -78,7 +78,7 @@ internal fun FocusableBox(
     focusRequester: FocusRequester? = null,
     deactivated: Boolean = false,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 ) {
     Layout(
         content = content,
@@ -99,7 +99,7 @@ internal fun FocusableBox(
                         }
                     }
                 }
-            }
+            },
     )
 }
 

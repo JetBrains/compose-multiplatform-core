@@ -68,7 +68,7 @@ class CurrentWindowSizeTest {
         rule.setContent {
             CompositionLocalProvider(
                 LocalDensity provides MockWindowDensity,
-                LocalWindowInfo provides MockWindowInfo(mockWindowSize)
+                LocalWindowInfo provides MockWindowInfo(mockWindowSize),
             ) {
                 actualWindowSize = currentWindowDpSize()
             }

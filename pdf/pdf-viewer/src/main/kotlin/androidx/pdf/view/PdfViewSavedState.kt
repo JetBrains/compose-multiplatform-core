@@ -81,7 +81,7 @@ internal class PdfViewSavedState : AbsSavedState {
             object : ClassLoaderCreator<PdfViewSavedState> {
                 override fun createFromParcel(
                     source: Parcel,
-                    loader: ClassLoader?
+                    loader: ClassLoader?,
                 ): PdfViewSavedState {
                     return PdfViewSavedState(source, loader)
                 }

@@ -230,7 +230,7 @@ public object Typography {
         NUMERAL_SMALL,
         TITLE_LARGE,
         TITLE_MEDIUM,
-        TITLE_SMALL
+        TITLE_SMALL,
     )
     public annotation class TypographyToken
 }

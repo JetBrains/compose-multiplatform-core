@@ -1168,7 +1168,7 @@ class FocusTargetAttachDetachTest {
                 KeyEvent(
                     NativeKeyEvent(
                         android.view.KeyEvent.ACTION_DOWN,
-                        android.view.KeyEvent.KEYCODE_ENTER
+                        android.view.KeyEvent.KEYCODE_ENTER,
                     )
                 )
             )
@@ -1225,7 +1225,7 @@ class FocusTargetAttachDetachTest {
                 KeyEvent(
                     NativeKeyEvent(
                         android.view.KeyEvent.ACTION_DOWN,
-                        android.view.KeyEvent.KEYCODE_ENTER
+                        android.view.KeyEvent.KEYCODE_ENTER,
                     )
                 )
             )

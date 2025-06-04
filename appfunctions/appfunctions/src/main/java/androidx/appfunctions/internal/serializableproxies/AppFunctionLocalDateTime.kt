@@ -37,7 +37,7 @@ public data class AppFunctionLocalDateTime(
     val hour: Int,
     val minute: Int,
     val second: Int,
-    val nanoOfSecond: Int
+    val nanoOfSecond: Int,
 ) {
 
     public fun toLocalDateTime(): LocalDateTime {
@@ -53,7 +53,7 @@ public data class AppFunctionLocalDateTime(
                 localDateTime.hour,
                 localDateTime.minute,
                 localDateTime.second,
-                localDateTime.nano
+                localDateTime.nano,
             )
         }
     }

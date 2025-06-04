@@ -63,14 +63,14 @@ class ExtraSupportedQualityQuirkTest {
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(createFakeVideoProfileProxy(RESOLUTION_CIF))
+                listOf(createFakeVideoProfileProxy(RESOLUTION_CIF)),
             )
         val profilesQcif =
             EncoderProfilesProxy.ImmutableEncoderProfilesProxy.create(
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(createFakeVideoProfileProxy(RESOLUTION_QCIF))
+                listOf(createFakeVideoProfileProxy(RESOLUTION_QCIF)),
             )
         val encoderProfileProvider =
             FakeEncoderProfilesProvider.Builder()
@@ -84,7 +84,7 @@ class ExtraSupportedQualityQuirkTest {
         val qualityEncoderProfilesMap =
             ExtraSupportedQualityQuirk().getExtraEncoderProfiles(
                 cameraInfo,
-                encoderProfileProvider
+                encoderProfileProvider,
             ) {
                 FakeVideoEncoderInfo()
             }

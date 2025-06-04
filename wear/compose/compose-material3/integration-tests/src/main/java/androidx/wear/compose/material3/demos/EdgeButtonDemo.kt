@@ -84,23 +84,23 @@ fun EdgeButtonBelowLazyColumnDemo() {
                 EdgeButton(
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
                 ) {
                     Text(labels[selectedLabel.intValue], color = Color.White)
                 }
-            }
+            },
         ) { contentPadding ->
             LazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 contentPadding = contentPadding,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 items(labels.size) {
                     Card(
                         onClick = { selectedLabel.intValue = it },
-                        modifier = Modifier.fillMaxWidth(0.9f)
+                        modifier = Modifier.fillMaxWidth(0.9f),
                     ) {
                         Text(labels[it])
                     }
@@ -124,23 +124,23 @@ fun EdgeButtonBelowScalingLazyColumnDemo() {
                 EdgeButton(
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
                 ) {
                     Text(labels[selectedLabel.intValue], color = Color.White)
                 }
-            }
+            },
         ) { contentPadding ->
             ScalingLazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 autoCentering = null,
                 contentPadding = contentPadding,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 items(labels.size) {
                     Card(
                         onClick = { selectedLabel.intValue = it },
-                        modifier = Modifier.fillMaxWidth(0.9f)
+                        modifier = Modifier.fillMaxWidth(0.9f),
                     ) {
                         Text(labels[it])
                     }
@@ -163,23 +163,23 @@ fun EdgeButtonBelowTransformingLazyColumnDemo() {
                 EdgeButton(
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
                 ) {
                     Text(labels[selectedLabel.intValue], color = Color.White)
                 }
-            }
+            },
         ) { contentPadding ->
             TransformingLazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 contentPadding = contentPadding,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 items(labels.size) {
                     Card(
                         onClick = { selectedLabel.intValue = it },
-                        modifier = Modifier.fillMaxWidth(0.9f)
+                        modifier = Modifier.fillMaxWidth(0.9f),
                     ) {
                         Text(labels[it])
                     }
@@ -197,7 +197,7 @@ fun EdgeButtonMultiDemo() {
             EdgeButtonSize.ExtraSmall,
             EdgeButtonSize.Small,
             EdgeButtonSize.Medium,
-            EdgeButtonSize.Large
+            EdgeButtonSize.Large,
         )
     val sizeNames = listOf("XS", "S", "M", "L")
     var size by remember { mutableIntStateOf(0) }
@@ -208,7 +208,7 @@ fun EdgeButtonMultiDemo() {
             ButtonDefaults.filledVariantButtonColors(),
             ButtonDefaults.filledTonalButtonColors(),
             ButtonDefaults.outlinedButtonColors(),
-            ButtonDefaults.buttonColors()
+            ButtonDefaults.buttonColors(),
         )
     val colorNames = listOf("F", "FV", "FT", "O", "D")
     var color by remember { mutableIntStateOf(0) }
@@ -217,7 +217,7 @@ fun EdgeButtonMultiDemo() {
         Column(
             Modifier.align(Alignment.TopCenter).fillMaxSize().padding(top = 0.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Row { Spacer(modifier = Modifier.height(10.dp)) }
@@ -226,18 +226,18 @@ fun EdgeButtonMultiDemo() {
                         Text(
                             "Sizes",
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     repeat(sizeNames.size) {
                         TextButton(
                             onClick = { size = it },
-                            modifier = Modifier.size(TextButtonDefaults.SmallButtonSize)
+                            modifier = Modifier.size(TextButtonDefaults.SmallButtonSize),
                         ) {
                             Text(sizeNames[it])
                         }
@@ -248,18 +248,18 @@ fun EdgeButtonMultiDemo() {
                         Text(
                             "Colors",
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     repeat(colorNames.size) {
                         TextButton(
                             onClick = { color = it },
-                            modifier = Modifier.size(TextButtonDefaults.SmallButtonSize)
+                            modifier = Modifier.size(TextButtonDefaults.SmallButtonSize),
                         ) {
                             Text(colorNames[it])
                         }
@@ -274,7 +274,7 @@ fun EdgeButtonMultiDemo() {
                 border =
                     if (colorNames[color] == "O")
                         ButtonDefaults.outlinedButtonBorder(enabled = true)
-                    else null
+                    else null,
             ) {
                 CheckIcon(modifier = Modifier.size(EdgeButtonDefaults.iconSizeFor(sizes[size])))
             }
@@ -298,7 +298,7 @@ fun EdgeButtonConfigurableDemo() {
             "Filled Variant" to ButtonDefaults.filledVariantButtonColors(),
             "Filled Tonal" to ButtonDefaults.filledTonalButtonColors(),
             "Outlined" to ButtonDefaults.outlinedButtonColors(),
-            "Disabled" to ButtonDefaults.buttonColors()
+            "Disabled" to ButtonDefaults.buttonColors(),
         )
     var selectedColor by remember { mutableIntStateOf(0) }
     val types = listOf("Icon only" to 0, "Small Text" to 1, "Long Text" to 2)
@@ -318,7 +318,7 @@ fun EdgeButtonConfigurableDemo() {
                         if (colors[selectedColor].first == "Outlined")
                             ButtonDefaults.outlinedButtonBorder(true)
                         else null,
-                    enabled = colors[selectedColor].first != "Disabled"
+                    enabled = colors[selectedColor].first != "Disabled",
                 ) {
                     when (selectedType) {
                         0 -> {
@@ -337,32 +337,32 @@ fun EdgeButtonConfigurableDemo() {
                         else -> Text("Long Text to show max lines and overflow")
                     }
                 }
-            }
+            },
         ) { contentPadding ->
             ScalingLazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 autoCentering = null,
                 contentPadding = contentPadding,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 selection(
                     sizes,
                     selected = { selectedSize == it },
                     onSelect = { selectedSize = it },
-                    label = "Size"
+                    label = "Size",
                 )
                 selection(
                     colors,
                     selected = { selectedColor == it },
                     onSelect = { selectedColor = it },
-                    label = "Color"
+                    label = "Color",
                 )
                 selection(
                     types,
                     selected = { selectedType == it },
                     onSelect = { selectedType = it },
-                    label = "Content"
+                    label = "Content",
                 )
             }
         }
@@ -373,19 +373,19 @@ private fun <T> ScalingLazyListScope.selection(
     items: List<Pair<String, T>>,
     selected: (Int) -> Boolean,
     onSelect: (Int) -> Unit,
-    label: String
+    label: String,
 ) {
     item { Text(label) }
     items(items.size) { ix ->
         RadioButton(
             selected = selected(ix),
             onSelect = { onSelect(ix) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 items[ix].first,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
     }

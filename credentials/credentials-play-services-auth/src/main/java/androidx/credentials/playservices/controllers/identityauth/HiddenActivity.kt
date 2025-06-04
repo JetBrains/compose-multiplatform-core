@@ -87,7 +87,7 @@ open class HiddenActivity : Activity() {
         val requestCode: Int =
             intent.getIntExtra(
                 CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
-                DEFAULT_VALUE
+                DEFAULT_VALUE,
             )
 
         if (pendingIntent != null) {
@@ -100,7 +100,7 @@ open class HiddenActivity : Activity() {
                     0,
                     0,
                     0,
-                    null
+                    null,
                 )
             } catch (e: IntentSender.SendIntentException) {
                 setupIntentSenderFailureByType(type, e)
@@ -116,14 +116,14 @@ open class HiddenActivity : Activity() {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "During begin sign in, one tap ui intent sender " + "failure: " + "${e.message}"
+                    "During begin sign in, one tap ui intent sender " + "failure: " + "${e.message}",
                 )
             }
             CredentialProviderBaseController.CREATE_PASSWORD_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.CREATE_UNKNOWN,
-                    "During save password, found UI intent sender " + "failure: ${e.message}"
+                    "During save password, found UI intent sender " + "failure: ${e.message}",
                 )
             }
             CredentialProviderBaseController.CREATE_PUBLIC_KEY_CREDENTIAL_TAG -> {
@@ -131,14 +131,14 @@ open class HiddenActivity : Activity() {
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.CREATE_UNKNOWN,
                     "During public key credential, found IntentSender " +
-                        "failure on public key creation: ${e.message}"
+                        "failure on public key creation: ${e.message}",
                 )
             }
             CredentialProviderBaseController.SIGN_IN_INTENT_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "During get sign-in intent, one tap ui intent sender " + "failure: ${e.message}"
+                    "During get sign-in intent, one tap ui intent sender " + "failure: ${e.message}",
                 )
             }
         }
@@ -150,28 +150,28 @@ open class HiddenActivity : Activity() {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "internal error during the begin sign in operation"
+                    "internal error during the begin sign in operation",
                 )
             }
             CredentialProviderBaseController.CREATE_PASSWORD_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.CREATE_UNKNOWN,
-                    "internal error during password creation"
+                    "internal error during password creation",
                 )
             }
             CredentialProviderBaseController.CREATE_PUBLIC_KEY_CREDENTIAL_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.CREATE_UNKNOWN,
-                    "internal error during public key credential creation"
+                    "internal error during public key credential creation",
                 )
             }
             CredentialProviderBaseController.SIGN_IN_INTENT_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "internal error during the sign-in intent operation"
+                    "internal error during the sign-in intent operation",
                 )
             }
         }
@@ -182,7 +182,7 @@ open class HiddenActivity : Activity() {
         resultReceiver?.reportResult(
             requestCode = requestCode,
             data = data,
-            resultCode = resultCode
+            resultCode = resultCode,
         )
         mWaitingForActivityResult = false
         finish()

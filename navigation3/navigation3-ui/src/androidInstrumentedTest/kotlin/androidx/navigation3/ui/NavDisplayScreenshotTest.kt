@@ -78,7 +78,7 @@ class NavDisplayScreenshotTest {
                 },
                 predictivePopTransitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it / 2 }
-                }
+                },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -140,7 +140,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(first) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Blue),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(first, Modifier.size(50.dp))
                             }
@@ -149,7 +149,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(second) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(second, Modifier.size(50.dp))
                             }
@@ -183,15 +183,13 @@ class NavDisplayScreenshotTest {
         val duration = 500
         composeTestRule.setContent {
             backStack = remember { mutableStateListOf(first, second) }
-            NavDisplay(
-                backStack,
-            ) { key ->
+            NavDisplay(backStack) { key ->
                 when (key) {
                     first ->
                         NavEntry(first) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Blue),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(first, Modifier.size(50.dp))
                             }
@@ -204,11 +202,11 @@ class NavDisplayScreenshotTest {
                                 NavDisplay.popTransitionSpec {
                                     slideInHorizontally(tween(duration)) { it / 2 } togetherWith
                                         slideOutHorizontally(tween(duration)) { -it / 2 }
-                                }
+                                },
                         ) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(second, Modifier.size(50.dp))
                             }
@@ -255,7 +253,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(third) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(third, Modifier.size(50.dp))
                             }
@@ -264,7 +262,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(forth) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Green),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(forth, Modifier.size(50.dp))
                             }
@@ -320,7 +318,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(first) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Blue),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(first, Modifier.size(50.dp))
                             }
@@ -330,7 +328,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(third) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(third, Modifier.size(50.dp))
                             }
@@ -339,7 +337,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(forth) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Green),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(forth, Modifier.size(50.dp))
                             }
@@ -390,7 +388,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(first) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Blue),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(first, Modifier.size(50.dp))
                             }
@@ -399,7 +397,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(second) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(second, Modifier.size(50.dp))
                             }
@@ -448,7 +446,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(first) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Blue),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(first, Modifier.size(50.dp))
                             }
@@ -461,11 +459,11 @@ class NavDisplayScreenshotTest {
                                 NavDisplay.popTransitionSpec {
                                     slideInHorizontally(tween(duration)) { it / 2 } togetherWith
                                         slideOutHorizontally(tween(duration)) { -it / 2 }
-                                }
+                                },
                         ) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(second, Modifier.size(50.dp))
                             }
@@ -474,7 +472,7 @@ class NavDisplayScreenshotTest {
                         NavEntry(third) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Green),
-                                contentAlignment = Alignment.TopEnd
+                                contentAlignment = Alignment.TopEnd,
                             ) {
                                 BasicText(third, Modifier.size(50.dp))
                             }

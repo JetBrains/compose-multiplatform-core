@@ -89,7 +89,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             if (!buildFeatures.isIsolatedProjectsEnabled()) {
                 tasks.register(
                     CREATE_AGGREGATE_BUILD_INFO_FILES_TASK,
-                    CreateAggregateLibraryBuildInfoFileTask::class.java
+                    CreateAggregateLibraryBuildInfoFileTask::class.java,
                 )
             } else null
 

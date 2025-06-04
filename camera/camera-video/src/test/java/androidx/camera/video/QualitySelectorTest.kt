@@ -61,7 +61,7 @@ class QualitySelectorTest {
         createFakeVideoCapabilities(
             mapOf(
                 SDR to listOf(Quality.UHD, Quality.HD),
-                HLG_10_BIT to listOf(Quality.FHD, Quality.SD)
+                HLG_10_BIT to listOf(Quality.FHD, Quality.SD),
             )
         )
 
@@ -178,7 +178,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.FHD,
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD)
+                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD),
             )
 
         // Act.
@@ -234,9 +234,9 @@ class QualitySelectorTest {
                     Quality.FHD,
                     Quality.UHD,
                     Quality.LOWEST,
-                    Quality.HIGHEST
+                    Quality.HIGHEST,
                 ),
-                FallbackStrategy.higherQualityThan(Quality.LOWEST)
+                FallbackStrategy.higherQualityThan(Quality.LOWEST),
             )
 
         // Act.
@@ -254,7 +254,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.FHD,
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD)
+                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD),
             )
 
         // Act.
@@ -362,7 +362,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.UHD,
-                FallbackStrategy.higherQualityOrLowerThan(Quality.UHD)
+                FallbackStrategy.higherQualityOrLowerThan(Quality.UHD),
             )
 
         // Act.
@@ -423,7 +423,7 @@ class QualitySelectorTest {
 
             override fun getSupportedFrameRateRanges(
                 quality: Quality,
-                dynamicRange: DynamicRange
+                dynamicRange: DynamicRange,
             ): Set<Range<Int>> {
                 throw UnsupportedOperationException("Not supported.")
             }

@@ -46,7 +46,7 @@ abstract class WorkerFactory {
     abstract fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters
+        workerParameters: WorkerParameters,
     ): ListenableWorker?
 
     /**
@@ -67,7 +67,7 @@ abstract class WorkerFactory {
     fun createWorkerWithDefaultFallback(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters
+        workerParameters: WorkerParameters,
     ): ListenableWorker {
         fun getWorkerClass(workerClassName: String): Class<out ListenableWorker> {
             return try {
@@ -79,7 +79,7 @@ abstract class WorkerFactory {
         }
         fun fallbackToReflection(
             workerClassName: String,
-            workerParameters: WorkerParameters
+            workerParameters: WorkerParameters,
         ): ListenableWorker {
             val clazz = getWorkerClass(workerClassName)
             return try {
@@ -110,7 +110,7 @@ object DefaultWorkerFactory : WorkerFactory() {
     override fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters
+        workerParameters: WorkerParameters,
     ) = null
 }
 

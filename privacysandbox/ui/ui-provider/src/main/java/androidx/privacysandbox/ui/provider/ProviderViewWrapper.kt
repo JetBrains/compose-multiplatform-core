@@ -71,7 +71,7 @@ internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
     fun scheduleMotionEventProcessing(
         motionEvent: MotionEvent,
         eventTargetFrameTime: Long,
-        motionEventTransferCallback: IMotionEventTransferCallback?
+        motionEventTransferCallback: IMotionEventTransferCallback?,
     ) {
         if (eventDispatchHandler == null) {
             return
@@ -84,13 +84,13 @@ internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
 
         eventDispatchHandler?.sendMessageAtTime(
             dispatchMessage,
-            eventTargetFrameTime + TRANSFERRED_EVENT_DISPATCH_DELAY_MS
+            eventTargetFrameTime + TRANSFERRED_EVENT_DISPATCH_DELAY_MS,
         )
     }
 
     fun processMotionEvent(
         motionEvent: MotionEvent,
-        motionEventTransferCallback: IMotionEventTransferCallback?
+        motionEventTransferCallback: IMotionEventTransferCallback?,
     ) {
         if (motionEvent.action == MotionEvent.ACTION_DOWN) {
             // Resetting the value of it to false (parent can intercept) for new gestures.

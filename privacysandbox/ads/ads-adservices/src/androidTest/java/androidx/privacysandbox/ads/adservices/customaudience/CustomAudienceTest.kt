@@ -38,7 +38,7 @@ import org.junit.runner.RunWith
 @OptIn(
     ExperimentalFeatures.Ext8OptIn::class,
     ExperimentalFeatures.Ext14OptIn::class,
-    ExperimentalFeatures.Ext16OptIn::class
+    ExperimentalFeatures.Ext16OptIn::class,
 )
 @SmallTest
 @RunWith(AndroidJUnit4::class)
@@ -58,7 +58,7 @@ class CustomAudienceTest {
     private val adFilters: AdFilters =
         AdFilters(
             FrequencyCapFilters(
-                keyedFrequencyCapsForViewEvents = listOf(KeyedFrequencyCap(1, 3, interval)),
+                keyedFrequencyCapsForViewEvents = listOf(KeyedFrequencyCap(1, 3, interval))
             )
         )
     private val ads: List<AdData> = listOf(AdData(uri, "metadata", adCounterKeys, adFilters))
@@ -90,7 +90,7 @@ class CustomAudienceTest {
                 activationTime,
                 expirationTime,
                 userBiddingSignals,
-                trustedBiddingSignals
+                trustedBiddingSignals,
             )
         Truth.assertThat(customAudience.toString()).isEqualTo(result)
 
@@ -158,7 +158,7 @@ class CustomAudienceTest {
                 userBiddingSignals,
                 trustedBiddingSignals,
                 FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS,
-                priority
+                priority,
             )
         Truth.assertThat(customAudience.toString()).isEqualTo(result)
 
@@ -207,7 +207,7 @@ class CustomAudienceTest {
                 trustedBiddingSignals,
                 FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS,
                 priority,
-                TestFixtures.componentAds
+                TestFixtures.componentAds,
             )
         Truth.assertThat(customAudience.toString()).isEqualTo(result)
 

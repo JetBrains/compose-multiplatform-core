@@ -257,8 +257,8 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
         "Replace with Snapshot.withoutReadObservation()",
         ReplaceWith(
             "Snapshot.withoutReadObservation(block)",
-            "androidx.compose.runtime.snapshots.Snapshot"
-        )
+            "androidx.compose.runtime.snapshots.Snapshot",
+        ),
     )
     fun withNoObservations(block: () -> Unit) {
         val oldPaused = isPaused
@@ -402,7 +402,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
                         ?: MutableObjectIntMap<Any>().also {
                             currentScopeReads = it
                             scopeToValues[scope] = it
-                        }
+                        },
             )
         }
 
@@ -411,7 +411,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
             value: Any,
             currentToken: Int,
             currentScope: Any,
-            recordedValues: MutableObjectIntMap<Any>
+            recordedValues: MutableObjectIntMap<Any>,
         ) {
             if (deriveStateScopeCount > 0) {
                 // Reads coming from derivedStateOf block
@@ -542,7 +542,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
                         if (
                             !policy.equivalent(
                                 derivedState.currentRecord.currentValue,
-                                previousValue
+                                previousValue,
                             )
                         ) {
                             valueToScopes.forEachScopeOf(derivedState) { scope ->
@@ -581,7 +581,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
                     currentScope = scope,
                     recordedValues =
                         scopeToValues[scope]
-                            ?: MutableObjectIntMap<Any>().also { scopeToValues[scope] = it }
+                            ?: MutableObjectIntMap<Any>().also { scopeToValues[scope] = it },
                 )
             }
         }

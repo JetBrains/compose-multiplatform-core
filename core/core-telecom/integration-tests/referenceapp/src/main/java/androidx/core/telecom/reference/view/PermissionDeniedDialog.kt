@@ -33,6 +33,6 @@ fun PermissionDeniedDialog(onConfirm: () -> Unit) {
                     " in App Settings."
             )
         },
-        confirmButton = { Button(onClick = onConfirm) { Text("Open Settings") } }
+        confirmButton = { Button(onClick = onConfirm) { Text("Open Settings") } },
     )
 }

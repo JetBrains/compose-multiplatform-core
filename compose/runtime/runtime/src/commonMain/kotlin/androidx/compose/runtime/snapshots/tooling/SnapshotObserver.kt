@@ -157,7 +157,7 @@ internal inline fun <R : Snapshot> creatingSnapshot(
     noinline readObserver: ((Any) -> Unit)?,
     noinline writeObserver: ((Any) -> Unit)?,
     readonly: Boolean,
-    crossinline block: (readObserver: ((Any) -> Unit)?, writeObserver: ((Any) -> Unit)?) -> R
+    crossinline block: (readObserver: ((Any) -> Unit)?, writeObserver: ((Any) -> Unit)?) -> R,
 ): R {
     var observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>? = null
     val observers = observers
@@ -214,7 +214,7 @@ private fun mergeObservers(a: ((Any) -> Unit)?, b: ((Any) -> Unit)?): ((Any) -> 
 internal fun PersistentList<SnapshotObserver>.dispatchCreatedObservers(
     parent: Snapshot?,
     result: Snapshot,
-    observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>?
+    observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>?,
 ) {
     fastForEach { observer ->
         val instance = observerMap?.get(observer)

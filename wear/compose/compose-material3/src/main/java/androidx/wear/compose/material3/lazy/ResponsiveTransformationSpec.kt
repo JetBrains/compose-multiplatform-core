@@ -216,7 +216,7 @@ public object ResponsiveTransformationSpecDefaults {
     internal val Specs: List<ResponsiveTransformationSpecImpl> =
         listOf(
                 ResponsiveTransformationSpec.smallScreen(),
-                ResponsiveTransformationSpec.largeScreen()
+                ResponsiveTransformationSpec.largeScreen(),
             )
             .map { it as ResponsiveTransformationSpecImpl }
 }
@@ -380,7 +380,7 @@ internal class ResponsiveTransformationSpecImpl(
 
     override fun getTransformedHeight(
         measuredHeight: Int,
-        scrollProgress: TransformingLazyColumnItemScrollProgress
+        scrollProgress: TransformingLazyColumnItemScrollProgress,
     ): Int =
         trace("wear-compose:tlc:getTransformedHeight") {
             with(TransitionAreaProgress(scrollProgress)) {
@@ -389,7 +389,7 @@ internal class ResponsiveTransformationSpecImpl(
         }
 
     override fun GraphicsLayerScope.applyContentTransformation(
-        scrollProgress: TransformingLazyColumnItemScrollProgress,
+        scrollProgress: TransformingLazyColumnItemScrollProgress
     ) =
         trace("wear-compose:tlc:applyContentTransformation") {
             if (scrollProgress.isUnspecified) return
@@ -416,25 +416,23 @@ internal class ResponsiveTransformationSpecImpl(
     override fun TransformedContainerPainterScope.createTransformedContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke?
+        border: BorderStroke?,
     ): Painter =
         BackgroundPainter(
-            transformState = {
-                val scrollProgress = scrollProgress
-                trace("wear-compose:tlc:backgroundPainterStateResolution") {
-                    TransformationState(TransitionAreaProgress(scrollProgress))
-                }
+            scale = {
+                val progress = TransitionAreaProgress(scrollProgress)
+                progress.compute(scale, easing)
             },
             shape = shape,
             border = border,
-            backgroundPainter = painter
+            backgroundPainter = painter,
         )
 }
 
 private fun lerp(
     start: ResponsiveTransformationSpecImpl,
     stop: ResponsiveTransformationSpecImpl,
-    progress: Float
+    progress: Float,
 ) =
     ResponsiveTransformationSpecImpl(
         screenSize = lerp(start.screenSize.value, stop.screenSize.value, progress).dp,
@@ -446,13 +444,13 @@ private fun lerp(
             lerp(
                 start.minTransitionAreaHeightFraction,
                 stop.minTransitionAreaHeightFraction,
-                progress
+                progress,
             ),
         maxTransitionAreaHeightFraction =
             lerp(
                 start.maxTransitionAreaHeightFraction,
                 stop.maxTransitionAreaHeightFraction,
-                progress
+                progress,
             ),
         easing = { fraction ->
             lerp(start.easing.transform(fraction), stop.easing.transform(fraction), progress)
@@ -475,7 +473,7 @@ internal fun ResponsiveTransformationSpecImpl.TransformationState(
 
 /** Uses a TransformationSpec to convert a scrollProgress into a transitionProgress. */
 internal fun ResponsiveTransformationSpecImpl.TransitionAreaProgress(
-    scrollProgress: TransformingLazyColumnItemScrollProgress,
+    scrollProgress: TransformingLazyColumnItemScrollProgress
 ): TransitionAreaProgress =
     if (scrollProgress == TransformingLazyColumnItemScrollProgress.Unspecified) {
         TransitionAreaProgress.None
@@ -508,7 +506,7 @@ internal fun ResponsiveTransformationSpecImpl.TransitionAreaProgress(
  */
 internal fun responsiveTransformationSpec(
     screenSize: Dp,
-    specs: List<ResponsiveTransformationSpecImpl>
+    specs: List<ResponsiveTransformationSpecImpl>,
 ): ResponsiveTransformationSpecImpl {
     require(specs.isNotEmpty()) { "Must provide at least one TransformationSpec" }
 
@@ -526,7 +524,7 @@ internal fun responsiveTransformationSpec(
         inverseLerp(
             sortedSpecs[ix - 1].screenSize.value,
             sortedSpecs[ix].screenSize.value,
-            screenSize.value
-        )
+            screenSize.value,
+        ),
     )
 }

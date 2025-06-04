@@ -45,13 +45,13 @@ import org.xmlpull.v1.XmlPullParser
 public class XmlSchemaAndComplicationSlotsDefinition(
     val schema: UserStyleSchema?,
     val complicationSlots: List<ComplicationSlotStaticData>,
-    val flavors: UserStyleFlavors?
+    val flavors: UserStyleFlavors?,
 ) {
     companion object {
         @Throws(PackageManager.NameNotFoundException::class)
         public fun inflate(
             resources: Resources,
-            parser: XmlResourceParser
+            parser: XmlResourceParser,
         ): XmlSchemaAndComplicationSlotsDefinition {
             parser.moveToStart("XmlWatchFace")
 
@@ -80,7 +80,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                                     resources,
                                     parser,
                                     complicationScaleX,
-                                    complicationScaleY
+                                    complicationScaleY,
                                 )
                         }
                         "ComplicationSlot" -> {
@@ -89,7 +89,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                                     resources,
                                     parser,
                                     complicationScaleX,
-                                    complicationScaleY
+                                    complicationScaleY,
                                 )
                             )
                         }
@@ -125,7 +125,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
         val fixedComplicationDataSource: Boolean,
         val nameResourceId: Int?,
         val screenReaderNameResourceId: Int?,
-        val boundingArc: BoundingArc?
+        val boundingArc: BoundingArc?,
     ) {
         companion object {
             @Suppress("NewApi")
@@ -138,14 +138,14 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                     "SMALL_IMAGE" to ComplicationType.SMALL_IMAGE,
                     "PHOTO_IMAGE" to ComplicationType.PHOTO_IMAGE,
                     "GOAL_PROGRESS" to ComplicationType.GOAL_PROGRESS,
-                    "WEIGHTED_ELEMENTS" to ComplicationType.WEIGHTED_ELEMENTS
+                    "WEIGHTED_ELEMENTS" to ComplicationType.WEIGHTED_ELEMENTS,
                 )
 
             fun inflate(
                 resources: Resources,
                 parser: XmlResourceParser,
                 complicationScaleX: Float,
-                complicationScaleY: Float
+                complicationScaleY: Float,
             ): ComplicationSlotStaticData {
                 require(parser.name == "ComplicationSlot") { "Expected a UserStyleSchema node" }
                 val slotId = getIntRefAttribute(resources, parser, "slotId")
@@ -187,7 +187,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                     DefaultComplicationDataSourcePolicy.inflate(
                         resources,
                         parser,
-                        "ComplicationSlot"
+                        "ComplicationSlot",
                     )
 
                 val initiallyEnabled =
@@ -196,7 +196,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                     parser.getAttributeBooleanValue(
                         NAMESPACE_APP,
                         "fixedComplicationDataSource",
-                        false
+                        false,
                     )
                 val nameResourceId =
                     if (parser.hasValue("name")) {
@@ -215,7 +215,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                         BoundingArc(
                             parser.getAttributeFloatValue(NAMESPACE_APP, "startArcAngle", 0f),
                             parser.getAttributeFloatValue(NAMESPACE_APP, "totalArcAngle", 0f),
-                            parser.getAttributeFloatValue(NAMESPACE_APP, "arcThickness", 0f)
+                            parser.getAttributeFloatValue(NAMESPACE_APP, "arcThickness", 0f),
                         )
                     } else {
                         null
@@ -225,7 +225,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                         resources,
                         parser,
                         complicationScaleX,
-                        complicationScaleY
+                        complicationScaleY,
                     )
                 require(bounds != null) {
                     "ComplicationSlot must have either one ComplicationSlotBounds child node or " +
@@ -242,7 +242,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                     fixedComplicationDataSource,
                     nameResourceId,
                     screenReaderNameResourceId,
-                    boundingArc
+                    boundingArc,
                 )
             }
         }
@@ -250,7 +250,7 @@ public class XmlSchemaAndComplicationSlotsDefinition(
 
     fun buildComplicationSlotsManager(
         currentUserStyleRepository: CurrentUserStyleRepository,
-        complicationSlotInflationFactory: ComplicationSlotInflationFactory
+        complicationSlotInflationFactory: ComplicationSlotInflationFactory,
     ): ComplicationSlotsManager {
         return ComplicationSlotsManager(
             complicationSlots.map {
@@ -278,10 +278,10 @@ public class XmlSchemaAndComplicationSlotsDefinition(
                     },
                     it.nameResourceId,
                     it.screenReaderNameResourceId,
-                    it.boundingArc
+                    it.boundingArc,
                 )
             },
-            currentUserStyleRepository
+            currentUserStyleRepository,
         )
     }
 }

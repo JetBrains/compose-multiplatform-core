@@ -45,7 +45,7 @@ import org.robolectric.util.ReflectionHelpers
 @DoNotInstrument
 @Config(
     minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"]
+    instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"],
 )
 class CameraCompatibilityFilterTest {
 
@@ -74,11 +74,11 @@ class CameraCompatibilityFilterTest {
                     ApplicationProvider.getApplicationContext(),
                     CameraThreadConfig.create(
                         CameraXExecutors.mainThreadExecutor(),
-                        Handler(Looper.getMainLooper())
+                        Handler(Looper.getMainLooper()),
                     ),
                     null,
                     -1L,
-                    NO_OP_STREAM_SPECS_CALCULATOR
+                    NO_OP_STREAM_SPECS_CALCULATOR,
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds).containsExactly("0", "1", "2")
@@ -98,11 +98,11 @@ class CameraCompatibilityFilterTest {
                     ApplicationProvider.getApplicationContext(),
                     CameraThreadConfig.create(
                         CameraXExecutors.mainThreadExecutor(),
-                        Handler(Looper.getMainLooper())
+                        Handler(Looper.getMainLooper()),
                     ),
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     -1L,
-                    NO_OP_STREAM_SPECS_CALCULATOR
+                    NO_OP_STREAM_SPECS_CALCULATOR,
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds).containsExactly("0", "2")
@@ -118,11 +118,11 @@ class CameraCompatibilityFilterTest {
                     ApplicationProvider.getApplicationContext(),
                     CameraThreadConfig.create(
                         CameraXExecutors.mainThreadExecutor(),
-                        Handler(Looper.getMainLooper())
+                        Handler(Looper.getMainLooper()),
                     ),
                     null,
                     -1L,
-                    NO_OP_STREAM_SPECS_CALCULATOR
+                    NO_OP_STREAM_SPECS_CALCULATOR,
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds)
@@ -140,24 +140,24 @@ class CameraCompatibilityFilterTest {
 
                 set(
                     CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE,
-                    Rect(0, 0, sensorWidth, sensorHeight)
+                    Rect(0, 0, sensorWidth, sensorHeight),
                 )
 
                 set(
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL,
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
                 )
 
                 set(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP,
-                    StreamConfigurationMapBuilder.newBuilder().build()
+                    StreamConfigurationMapBuilder.newBuilder().build(),
                 )
             }
 
         capabilities?.let {
             shadowCharacteristics.set(
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
-                capabilities
+                capabilities,
             )
         }
 

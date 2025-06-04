@@ -27,9 +27,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** Represents the annotated @AppFunctionSchemaDefinition. */
-class AnnotatedAppFunctionSchemaDefinition(
-    private val classDeclaration: KSClassDeclaration,
-) {
+class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClassDeclaration) {
     private val schemaFunctionDeclaration: KSFunctionDeclaration by lazy {
         classDeclaration.declarations.filterIsInstance<KSFunctionDeclaration>().singleOrNull()
             ?: throw ProcessingException(
@@ -59,7 +57,7 @@ class AnnotatedAppFunctionSchemaDefinition(
     /** Creates [CompileTimeAppFunctionMetadata] from @AppFunctionSchemaDefinition. */
     fun createAppFunctionMetadata(
         resolvedAnnotatedSerializableProxies:
-            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies,
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
     ): CompileTimeAppFunctionMetadata {
         val metadataCreatorHelper = AppFunctionMetadataCreatorHelper()
         val annotation =
@@ -68,7 +66,7 @@ class AnnotatedAppFunctionSchemaDefinition(
             )
                 ?: throw ProcessingException(
                     "Class not annotated with @AppFunctionSchemaDefinition",
-                    classDeclaration
+                    classDeclaration,
                 )
         val annotationProperties =
             metadataCreatorHelper.computeAppFunctionAnnotationProperties(
@@ -104,7 +102,7 @@ class AnnotatedAppFunctionSchemaDefinition(
             schema = annotationProperties.getAppFunctionSchemaMetadata(),
             parameters = parameterTypeMetadataList,
             response = AppFunctionResponseMetadata(responseTypeMetadata),
-            components = AppFunctionComponentsMetadata(sharedDataTypeMap)
+            components = AppFunctionComponentsMetadata(sharedDataTypeMap),
         )
     }
 }

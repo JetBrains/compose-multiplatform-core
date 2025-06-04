@@ -144,7 +144,7 @@ public fun Modifier.rotaryScrollable(
     behavior: RotaryScrollableBehavior,
     focusRequester: FocusRequester,
     reverseDirection: Boolean = false,
-    overscrollEffect: OverscrollEffect? = null
+    overscrollEffect: OverscrollEffect? = null,
 ): Modifier =
     rotaryHandler(
             behavior = behavior,
@@ -194,7 +194,7 @@ public fun Modifier.rotaryScrollable(
 public fun Modifier.rotaryScrollable(
     behavior: RotaryScrollableBehavior,
     focusRequester: FocusRequester,
-    reverseDirection: Boolean = false
+    reverseDirection: Boolean = false,
 ): Modifier =
     rotaryScrollable(
         behavior = behavior,
@@ -277,7 +277,7 @@ public object RotaryScrollableDefaults {
     public fun behavior(
         scrollableState: ScrollableState,
         flingBehavior: FlingBehavior? = ScrollableDefaults.flingBehavior(),
-        hapticFeedbackEnabled: Boolean = true
+        hapticFeedbackEnabled: Boolean = true,
     ): RotaryScrollableBehavior {
         val isLowRes = isLowResInput()
         val viewConfiguration = ViewConfiguration.get(LocalContext.current)
@@ -289,7 +289,7 @@ public object RotaryScrollableDefaults {
             rotaryHaptics,
             flingBehavior,
             isLowRes,
-            viewConfiguration
+            viewConfiguration,
         )
     }
 
@@ -310,14 +310,14 @@ public object RotaryScrollableDefaults {
         scrollableState: ScrollableState,
         layoutInfoProvider: RotarySnapLayoutInfoProvider,
         snapOffset: Dp = 0.dp,
-        hapticFeedbackEnabled: Boolean = true
+        hapticFeedbackEnabled: Boolean = true,
     ): RotaryScrollableBehavior =
         snapBehavior(
             scrollableState = scrollableState,
             layoutInfoProvider = layoutInfoProvider,
             snapSensitivity = RotarySnapSensitivity.DEFAULT,
             snapOffset = snapOffset,
-            hapticFeedbackEnabled = hapticFeedbackEnabled
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
 
     /**
@@ -335,7 +335,7 @@ public object RotaryScrollableDefaults {
     public fun snapBehavior(
         scrollableState: ScalingLazyListState,
         snapOffset: Dp = 0.dp,
-        hapticFeedbackEnabled: Boolean = true
+        hapticFeedbackEnabled: Boolean = true,
     ): RotaryScrollableBehavior =
         snapBehavior(
             scrollableState = scrollableState,
@@ -345,7 +345,7 @@ public object RotaryScrollableDefaults {
                 },
             snapOffset = snapOffset,
             snapSensitivity = RotarySnapSensitivity.DEFAULT,
-            hapticFeedbackEnabled = hapticFeedbackEnabled
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
 
     /**
@@ -363,7 +363,7 @@ public object RotaryScrollableDefaults {
     public fun snapBehavior(
         pagerState: PagerState,
         snapOffset: Dp = 0.dp,
-        hapticFeedbackEnabled: Boolean = true
+        hapticFeedbackEnabled: Boolean = true,
     ): RotaryScrollableBehavior {
         return snapBehavior(
             scrollableState = pagerState,
@@ -371,7 +371,7 @@ public object RotaryScrollableDefaults {
                 remember(pagerState) { PagerRotarySnapLayoutInfoProvider(pagerState) },
             snapSensitivity = RotarySnapSensitivity.HIGH,
             snapOffset = snapOffset,
-            hapticFeedbackEnabled = hapticFeedbackEnabled
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
     }
 
@@ -381,7 +381,7 @@ public object RotaryScrollableDefaults {
         layoutInfoProvider: RotarySnapLayoutInfoProvider,
         snapSensitivity: RotarySnapSensitivity,
         snapOffset: Dp,
-        hapticFeedbackEnabled: Boolean
+        hapticFeedbackEnabled: Boolean,
     ): RotaryScrollableBehavior {
         val isLowRes = isLowResInput()
         val snapOffsetPx = with(LocalDensity.current) { snapOffset.roundToPx() }
@@ -395,7 +395,7 @@ public object RotaryScrollableDefaults {
                 rotaryHaptics,
                 snapSensitivity,
                 snapOffsetPx,
-                isLowRes
+                isLowRes,
             )
         }
     }
@@ -464,7 +464,7 @@ internal class PagerRotarySnapLayoutInfoProvider(private val state: PagerState) 
 internal class RotaryScrollLogic(
     val overscrollEffect: OverscrollEffect?,
     val nestedScrollDispatcher: NestedScrollDispatcher?,
-    val reverseDirection: Boolean
+    val reverseDirection: Boolean,
 ) {
 
     var orientation = Vertical
@@ -497,7 +497,7 @@ internal class RotaryScrollLogic(
                 performFling(
                     velocity.reverseIfNeeded().toVelocity(),
                     nestedScrollDispatcher,
-                    flingBehavior
+                    flingBehavior,
                 )
         }
         return consumedVelocity.toFloat().reverseIfNeeded()
@@ -505,7 +505,7 @@ internal class RotaryScrollLogic(
 
     private fun ScrollScope.performScroll(
         delta: Offset,
-        nestedScrollDispatcher: NestedScrollDispatcher?
+        nestedScrollDispatcher: NestedScrollDispatcher?,
     ): Offset {
         if (nestedScrollDispatcher != null) {
             val consumedByPreScroll = nestedScrollDispatcher.dispatchPreScroll(delta, UserInput)
@@ -523,7 +523,7 @@ internal class RotaryScrollLogic(
                 nestedScrollDispatcher.dispatchPostScroll(
                     consumedBySelfScroll,
                     deltaAvailableAfterScroll,
-                    UserInput
+                    UserInput,
                 )
 
             debugLog {
@@ -543,7 +543,7 @@ internal class RotaryScrollLogic(
     private suspend fun ScrollScope.performFling(
         velocity: Velocity,
         nestedScrollDispatcher: NestedScrollDispatcher?,
-        flingBehavior: FlingBehavior?
+        flingBehavior: FlingBehavior?,
     ): Velocity {
         val afterPreFling =
             velocity - (nestedScrollDispatcher?.dispatchPreFling(velocity) ?: Velocity.Zero)
@@ -614,7 +614,7 @@ private fun flingBehavior(
     rotaryHaptics: RotaryHapticHandler,
     flingBehavior: FlingBehavior? = null,
     isLowRes: Boolean,
-    viewConfiguration: ViewConfiguration
+    viewConfiguration: ViewConfiguration,
 ): RotaryScrollableBehavior {
 
     fun rotaryFlingHandler(inputDeviceId: Int, initialTimestamp: Long) =
@@ -627,7 +627,7 @@ private fun flingBehavior(
                     else RotaryScrollableDefaults.HighResFlingTimeframe,
                 viewConfiguration = viewConfiguration,
                 inputDeviceId = inputDeviceId,
-                initialTimestamp = initialTimestamp
+                initialTimestamp = initialTimestamp,
             )
         }
 
@@ -639,7 +639,7 @@ private fun flingBehavior(
         rotaryFlingHandlerFactory = { inputDeviceId: Int, initialTimestamp: Long ->
             rotaryFlingHandler(inputDeviceId, initialTimestamp)
         },
-        scrollHandlerFactory = { scrollHandler() }
+        scrollHandlerFactory = { scrollHandler() },
     )
 }
 
@@ -664,18 +664,14 @@ private fun snapBehavior(
     rotaryHaptics: RotaryHapticHandler,
     snapSensitivity: RotarySnapSensitivity,
     snapOffset: Int,
-    isLowRes: Boolean
+    isLowRes: Boolean,
 ): RotaryScrollableBehavior {
     return if (isLowRes) {
         LowResSnapRotaryScrollableBehavior(
             rotaryHaptics = rotaryHaptics,
             snapHandlerFactory = {
-                RotarySnapHandler(
-                    scrollableState,
-                    layoutInfoProvider,
-                    snapOffset,
-                )
-            }
+                RotarySnapHandler(scrollableState, layoutInfoProvider, snapOffset)
+            },
         )
     } else {
         HighResSnapRotaryScrollableBehavior(
@@ -685,17 +681,13 @@ private fun snapBehavior(
                 ThresholdHandler(
                     minThresholdDivider = snapSensitivity.minThresholdDivider,
                     maxThresholdDivider = snapSensitivity.maxThresholdDivider,
-                    averageItemSize = { layoutInfoProvider.averageItemSize }
+                    averageItemSize = { layoutInfoProvider.averageItemSize },
                 )
             },
             snapHandlerFactory = {
-                RotarySnapHandler(
-                    scrollableState,
-                    layoutInfoProvider,
-                    snapOffset,
-                )
+                RotarySnapHandler(scrollableState, layoutInfoProvider, snapOffset)
             },
-            scrollHandlerFactory = { RotaryScrollHandler(scrollableState) }
+            scrollHandlerFactory = { RotaryScrollHandler(scrollableState) },
         )
     }
 }
@@ -724,9 +716,7 @@ internal abstract class BaseRotaryScrollableBehavior : RotaryScrollableBehavior 
  * This class does a smooth animation when the scroll by N pixels is done. This animation works well
  * on Rsb(high-res) and Bezel(low-res) devices.
  */
-internal class RotaryScrollHandler(
-    private val scrollableState: ScrollableState,
-) {
+internal class RotaryScrollHandler(private val scrollableState: ScrollableState) {
     private var sequentialAnimation = false
     private var scrollAnimation = AnimationState(0f)
     private var prevPosition = 0f
@@ -736,7 +726,7 @@ internal class RotaryScrollHandler(
     fun scrollToTarget(
         coroutineScope: CoroutineScope,
         targetValue: Float,
-        scrollLogic: RotaryScrollLogic
+        scrollLogic: RotaryScrollLogic,
     ) {
         cancelScrollIfActive()
 
@@ -757,7 +747,7 @@ internal class RotaryScrollHandler(
             scrollAnimation.animateTo(
                 targetValue,
                 animationSpec = animationSpec,
-                sequentialAnimation = sequentialAnimation
+                sequentialAnimation = sequentialAnimation,
             ) {
                 val delta = value - prevPosition
                 with(scrollLogic) { scroll(delta, scrollableState) }
@@ -823,7 +813,7 @@ internal class RotarySnapHandler(
             // Create and execute the snap animation
             AnimationState(0f).animateTo(
                 targetValue = -layoutInfoProvider.currentItemOffset,
-                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing),
             ) {
                 val animDelta = value - prevPosition
                 with(scrollLogic) { scroll(animDelta, scrollableState) }
@@ -869,7 +859,7 @@ internal class RotarySnapHandler(
                         prevPosition + expectedDistance,
                         animationSpec =
                             spring(stiffness = defaultStiffness, visibilityThreshold = 0.1f),
-                        sequentialAnimation = (anim.velocity != 0f)
+                        sequentialAnimation = (anim.velocity != 0f),
                     ) {
                         // Exit animation if snap target was updated
                         if (snapTargetUpdated) cancelAnimation()
@@ -910,7 +900,7 @@ internal class RotarySnapHandler(
                     prevPosition + expectedDistance,
                     animationSpec =
                         SpringSpec(stiffness = defaultStiffness, visibilityThreshold = 0.1f),
-                    sequentialAnimation = (anim.velocity != 0f)
+                    sequentialAnimation = (anim.velocity != 0f),
                 ) {
                     // Exit animation if snap target was updated
                     if (snapTargetUpdated) cancelAnimation()
@@ -946,7 +936,7 @@ internal fun Modifier.rotaryHandler(
         properties["behavior"] = behavior
         properties["overscrollEffect"] = overscrollEffect
         properties["reverseDirection"] = reverseDirection
-    }
+    },
 ): Modifier =
     this then RotaryHandlerElement(behavior, overscrollEffect, reverseDirection, inspectorInfo)
 
@@ -969,7 +959,7 @@ internal class RotaryFlingHandler(
     private val flingTimeframe: Long,
     viewConfiguration: ViewConfiguration,
     inputDeviceId: Int,
-    initialTimestamp: Long
+    initialTimestamp: Long,
 ) {
     private var flingJob: Job = CompletableDeferred<Unit>()
 
@@ -1023,7 +1013,7 @@ internal class RotaryFlingHandler(
         coroutineScope: CoroutineScope,
         beforeFling: () -> Unit,
         scrollLogic: RotaryScrollLogic,
-        edgeReached: (velocity: Float) -> Unit
+        edgeReached: (velocity: Float) -> Unit,
     ) {
         cancelFlingIfActive()
 
@@ -1044,7 +1034,7 @@ internal class RotaryFlingHandler(
     private suspend fun trackFling(
         beforeFling: () -> Unit,
         scrollLogic: RotaryScrollLogic,
-        edgeReached: (velocity: Float) -> Unit
+        edgeReached: (velocity: Float) -> Unit,
     ) {
         val currentVelocity = rotaryVelocityTracker.velocity
         debugLog { "currentVelocity: $currentVelocity" }
@@ -1153,7 +1143,7 @@ internal class FlingRotaryScrollableBehavior(
             edgeReached = { velocity ->
                 debugLog { "Edge reached, velocity: $velocity" }
                 rotaryHaptics.handleLimitHaptic(velocity > 0f, inputDeviceId, AxisScroll)
-            }
+            },
         )
     }
 
@@ -1186,7 +1176,7 @@ internal class HighResSnapRotaryScrollableBehavior(
     private val scrollDistanceDivider: Float,
     private val thresholdHandlerFactory: () -> ThresholdHandler,
     private val snapHandlerFactory: () -> RotarySnapHandler,
-    private val scrollHandlerFactory: () -> RotaryScrollHandler
+    private val scrollHandlerFactory: () -> RotaryScrollHandler,
 ) : BaseRotaryScrollableBehavior() {
     private val snapDelay = 100L
 
@@ -1335,7 +1325,7 @@ internal class HighResSnapRotaryScrollableBehavior(
  */
 internal class LowResSnapRotaryScrollableBehavior(
     private val rotaryHaptics: RotaryHapticHandler,
-    private val snapHandlerFactory: () -> RotarySnapHandler
+    private val snapHandlerFactory: () -> RotarySnapHandler,
 ) : BaseRotaryScrollableBehavior() {
 
     private var snapJob: Job = CompletableDeferred<Unit>()
@@ -1420,7 +1410,7 @@ internal class ThresholdHandler(
     private val maxVelocity: Float = 3000f,
     // Smoothing factor for velocity readings
     private val smoothingConstant: Float = 0.4f,
-    private val averageItemSize: () -> Float
+    private val averageItemSize: () -> Float,
 ) {
     private val thresholdDividerEasing: Easing = CubicBezierEasing(0.5f, 0.0f, 0.5f, 1.0f)
 
@@ -1471,7 +1461,7 @@ internal class ThresholdHandler(
                 exponentialSmoothing(
                     currentVelocity = rotaryVelocityTracker.velocity.absoluteValue,
                     prevVelocity = smoothedVelocity,
-                    smoothingConstant = smoothingConstant
+                    smoothingConstant = smoothingConstant,
                 )
         }
         debugLog { "rotaryVelocityTracker velocity: ${rotaryVelocityTracker.velocity}" }
@@ -1481,7 +1471,7 @@ internal class ThresholdHandler(
     private fun exponentialSmoothing(
         currentVelocity: Float,
         prevVelocity: Float,
-        smoothingConstant: Float
+        smoothingConstant: Float,
     ): Float = smoothingConstant * currentVelocity + (1 - smoothingConstant) * prevVelocity
 }
 
@@ -1489,14 +1479,10 @@ private class RotaryHandlerElement(
     private val behavior: RotaryScrollableBehavior,
     private val overscrollEffect: OverscrollEffect?,
     private val reverseDirection: Boolean,
-    private val inspectorInfo: InspectorInfo.() -> Unit
+    private val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<RotaryInputNode>() {
     override fun create(): RotaryInputNode =
-        RotaryInputNode(
-            behavior,
-            overscrollEffect,
-            reverseDirection,
-        )
+        RotaryInputNode(behavior, overscrollEffect, reverseDirection)
 
     override fun update(node: RotaryInputNode) {
         debugLog { "Update launched!" }

@@ -58,7 +58,7 @@ internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) val activity: Activity?,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) val context: Context,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) val handler: Handler,
-    private val windowAnimations: Int
+    private val windowAnimations: Int,
 ) : FragmentContainer() {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -68,7 +68,7 @@ internal constructor(
     constructor(
         context: Context,
         handler: Handler,
-        windowAnimations: Int
+        windowAnimations: Int,
     ) : this(if (context is Activity) context else null, context, handler, windowAnimations)
 
     @Suppress("deprecation")
@@ -89,7 +89,7 @@ internal constructor(
         prefix: String,
         fd: FileDescriptor?,
         writer: PrintWriter,
-        args: Array<String>?
+        args: Array<String>?,
     ) {}
 
     /** Return `true` if the fragment's state needs to be saved. */
@@ -130,7 +130,7 @@ internal constructor(
         fragment: Fragment,
         intent: Intent,
         requestCode: Int,
-        options: Bundle?
+        options: Bundle?,
     ) {
         check(requestCode == -1) {
             "Starting activity with a requestCode requires a FragmentActivity host"
@@ -155,7 +155,7 @@ internal constructor(
         flagsMask: Int,
         flagsValues: Int,
         extraFlags: Int,
-        options: Bundle?
+        options: Bundle?,
     ) {
         check(requestCode == -1) {
             "Starting intent sender with a requestCode requires a FragmentActivity host"
@@ -172,7 +172,7 @@ internal constructor(
             flagsMask,
             flagsValues,
             extraFlags,
-            options
+            options,
         )
     }
 
@@ -187,7 +187,7 @@ internal constructor(
     open fun onRequestPermissionsFromFragment(
         fragment: Fragment,
         permissions: Array<String>,
-        requestCode: Int
+        requestCode: Int,
     ) {}
 
     /**

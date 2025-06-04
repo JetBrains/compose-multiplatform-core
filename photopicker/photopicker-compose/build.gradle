@@ -28,10 +28,14 @@ dependencies {
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
-    implementation(project(":compose:material3:material3"))
-    implementation(project(":compose:runtime:runtime"))
-    implementation(project(":compose:ui:ui"))
-    implementation(project(":annotation:annotation"))
+    // Pin to the stable release of compose.
+    def compose_version = "1.8.1"
+
+    implementation("androidx.compose.runtime:runtime:$compose_version")
+    implementation("androidx.compose.ui:ui:$compose_version")
+
+    // Pin to latest stable release of annotation.
+    implementation("androidx.annotation:annotation:1.9.1")
 
     androidTestImplementation(project(":photopicker:photopicker-testing"))
     androidTestImplementation(libs.testExtJunit)

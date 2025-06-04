@@ -28,7 +28,7 @@ class CreateDigitalCredentialResponseTest {
     fun constructor_emptyJson_throws() {
         Assert.assertThrows(
             "responseJson must not be empty, and must be a valid JSON",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
             CreateDigitalCredentialResponse(responseJson = "")
         }
@@ -38,7 +38,7 @@ class CreateDigitalCredentialResponseTest {
     fun constructor_invalidJson_throws() {
         Assert.assertThrows(
             "responseJson must not be empty, and must be a valid JSON",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
             CreateDigitalCredentialResponse(responseJson = "ewpfoj`3oje")
         }

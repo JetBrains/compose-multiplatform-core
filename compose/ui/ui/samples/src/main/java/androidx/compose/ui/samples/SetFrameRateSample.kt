@@ -70,12 +70,12 @@ fun SetFrameRateSample() {
             onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f },
             modifier =
                 Modifier.testTag("frameRateTag")
-                    .background(LocalContentColor.current.copy(alpha = alpha))
+                    .background(LocalContentColor.current.copy(alpha = alpha)),
         ) {
             Text(
                 text = "Click Me for alpha change with 30 Hz frame rate",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(30f)
+                modifier = Modifier.requestedFrameRate(30f),
             )
         }
     }

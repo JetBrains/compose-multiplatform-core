@@ -50,7 +50,7 @@ class MultiProcessGlanceAppWidgetTest {
             fun callCreateAppWidgetSession(
                 context: Context,
                 id: AppWidgetId,
-                options: Bundle?
+                options: Bundle?,
             ): AppWidgetSession = createAppWidgetSession(context, id, options)
         }
 

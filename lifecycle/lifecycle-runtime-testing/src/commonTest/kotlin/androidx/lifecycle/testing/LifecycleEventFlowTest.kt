@@ -52,7 +52,7 @@ class LifecycleEventFlowTest {
                 .containsExactly(
                     Lifecycle.Event.ON_CREATE,
                     Lifecycle.Event.ON_START,
-                    Lifecycle.Event.ON_STOP
+                    Lifecycle.Event.ON_STOP,
                 )
                 .inOrder()
         }
@@ -74,7 +74,7 @@ class LifecycleEventFlowTest {
                     Lifecycle.Event.ON_CREATE,
                     Lifecycle.Event.ON_START,
                     Lifecycle.Event.ON_STOP,
-                    Lifecycle.Event.ON_DESTROY
+                    Lifecycle.Event.ON_DESTROY,
                 )
                 .inOrder()
         }

@@ -50,6 +50,15 @@
         android:enableOnBackInvokedCallback="true"
         android:exported="true">
     </activity>
+    <activity
+        android:name=".StateTestAppActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
+      <intent-filter>
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
   </application>
 
 </manifest>

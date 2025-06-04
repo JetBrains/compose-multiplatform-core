@@ -98,7 +98,7 @@ internal open class InspectableNestedScrollConnection() : NestedScrollConnection
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         consumedDownChain += consumed
         notConsumedByChild += available
@@ -167,7 +167,7 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
         dxUnconsumed: Int,
         dyUnconsumed: Int,
         type: Int,
-        consumed: IntArray
+        consumed: IntArray,
     ) {
         super.onNestedScroll(
             target,
@@ -176,7 +176,7 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
             dxUnconsumed,
             dyUnconsumed,
             type,
-            consumed
+            consumed,
         )
         unconsumed[0] += dxConsumed
         unconsumed[1] += dyConsumed
@@ -193,7 +193,7 @@ internal class TestNestedScrollParentView(context: Context, attrs: AttributeSet)
         target: View,
         velocityX: Float,
         velocityY: Float,
-        consumed: Boolean
+        consumed: Boolean,
     ): Boolean {
         velocityUnconsumed[0] += velocityX
         velocityUnconsumed[1] += velocityY
@@ -211,7 +211,7 @@ internal class AllConsumingInspectableConnection : InspectableNestedScrollConnec
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         super.onPostScroll(consumed, available, source)
         return available
@@ -265,7 +265,7 @@ internal fun NestedScrollInteropTestApp(modifier: Modifier = Modifier, content: 
 internal fun NestedScrollDeepNested(
     modifier: Modifier,
     enabled: Boolean,
-    connection: NestedScrollConnection? = null
+    connection: NestedScrollConnection? = null,
 ) {
     // Box (Compose) + AndroidView (View) +
     // Box (Compose)
@@ -294,7 +294,7 @@ internal fun ComposeInViewWithNestedScrollInterop() {
             Box(
                 modifier =
                     Modifier.padding(16.dp).height(56.dp).fillMaxWidth().background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(item.toString())
             }
@@ -307,7 +307,7 @@ internal fun ComposeInViewWithNestedScrollInterop() {
 internal fun NestedScrollInteropWithView(
     modifier: Modifier = Modifier,
     enabled: Boolean,
-    recyclerViewConsumptionTracker: RecyclerViewConsumptionTracker
+    recyclerViewConsumptionTracker: RecyclerViewConsumptionTracker,
 ) {
     NestedScrollInteropTestApp(modifier) { context ->
         LayoutInflater.from(context)
@@ -324,7 +324,7 @@ internal fun NestedScrollInteropWithView(
                             override fun onFling(velocityX: Int, velocityY: Int): Boolean {
                                 recyclerViewConsumptionTracker.trackVelocityConsumed(
                                     velocityX,
-                                    velocityY
+                                    velocityY,
                                 )
                                 return false
                             }
@@ -339,7 +339,7 @@ internal fun ActivityScenario<*>.createActivityWithComposeContent(
     @LayoutRes layout: Int,
     enableInterop: Boolean,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     onActivity { activity ->
         activity.setTheme(R.style.Theme_MaterialComponents_Light)
@@ -371,7 +371,7 @@ internal fun RecyclerViewAndroidView(interopEnabled: Boolean) {
                 }
                 .also { ViewCompat.setNestedScrollingEnabled(it, interopEnabled) }
         },
-        modifier = Modifier.testTag(AndroidViewContainer)
+        modifier = Modifier.testTag(AndroidViewContainer),
     )
 }
 

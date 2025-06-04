@@ -29,14 +29,14 @@ object RemoteCallManager {
 
     fun addBinderDeathListener(
         remoteSessionController: IRemoteSessionController,
-        recipient: IBinder.DeathRecipient
+        recipient: IBinder.DeathRecipient,
     ) {
         tryToCallRemoteObject(remoteSessionController) { this.asBinder().linkToDeath(recipient, 0) }
     }
 
     fun addBinderDeathListener(
         remoteSessionController: IRemoteSharedUiSessionController,
-        recipient: IBinder.DeathRecipient
+        recipient: IBinder.DeathRecipient,
     ) {
         tryToCallRemoteObject(remoteSessionController) { this.asBinder().linkToDeath(recipient, 0) }
     }
@@ -44,7 +44,7 @@ object RemoteCallManager {
     /** Tries to call the remote object and handles exceptions if the remote object has died. */
     inline fun <RemoteObject> tryToCallRemoteObject(
         remoteObject: RemoteObject,
-        function: RemoteObject.() -> Unit
+        function: RemoteObject.() -> Unit,
     ) {
         try {
             remoteObject.function()

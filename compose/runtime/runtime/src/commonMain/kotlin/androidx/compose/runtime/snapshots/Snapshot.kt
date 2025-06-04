@@ -62,7 +62,7 @@ sealed class Snapshot(
     snapshotId: SnapshotId,
 
     /** A set of all the snapshots that should be treated as invalid. */
-    internal open var invalid: SnapshotIdSet
+    internal open var invalid: SnapshotIdSet,
 ) {
     @Deprecated("Use id: Long constructor instead", level = DeprecationLevel.HIDDEN)
     constructor(id: Int, invalid: SnapshotIdSet) : this(id.toSnapshotId(), invalid)
@@ -411,11 +411,11 @@ sealed class Snapshot(
          */
         fun takeMutableSnapshot(
             readObserver: ((Any) -> Unit)? = null,
-            writeObserver: ((Any) -> Unit)? = null
+            writeObserver: ((Any) -> Unit)? = null,
         ): MutableSnapshot =
             (currentSnapshot() as? MutableSnapshot)?.takeNestedMutableSnapshot(
                 readObserver,
-                writeObserver
+                writeObserver,
             ) ?: error("Cannot create a mutable snapshot of an read-only snapshot")
 
         /**
@@ -481,7 +481,7 @@ sealed class Snapshot(
         fun <T> observe(
             readObserver: ((Any) -> Unit)? = null,
             writeObserver: ((Any) -> Unit)? = null,
-            block: () -> T
+            block: () -> T,
         ): T {
             if (readObserver == null && writeObserver == null) {
                 // No observer change, just execute the block
@@ -513,7 +513,7 @@ sealed class Snapshot(
                                 specifiedReadObserver = readObserver,
                                 specifiedWriteObserver = writeObserver,
                                 mergeParentObservers = true,
-                                ownsParentSnapshot = false
+                                ownsParentSnapshot = false,
                             )
                         }
                         readObserver == null -> {
@@ -573,7 +573,7 @@ sealed class Snapshot(
         internal fun restoreNonObservable(
             previous: Snapshot?,
             nonObservable: Snapshot,
-            observer: ((Any) -> Unit)?
+            observer: ((Any) -> Unit)?,
         ) {
             if (previous === nonObservable) {
                 when (previous) {
@@ -737,7 +737,7 @@ internal constructor(
     snapshotId: SnapshotId,
     invalid: SnapshotIdSet,
     override val readObserver: ((Any) -> Unit)?,
-    override val writeObserver: ((Any) -> Unit)?
+    override val writeObserver: ((Any) -> Unit)?,
 ) : Snapshot(snapshotId, invalid) {
     /**
      * Whether there are any pending changes in this snapshot. These changes are not visible until
@@ -761,7 +761,7 @@ internal constructor(
     @OptIn(ExperimentalComposeRuntimeApi::class)
     open fun takeNestedMutableSnapshot(
         readObserver: ((Any) -> Unit)? = null,
-        writeObserver: ((Any) -> Unit)? = null
+        writeObserver: ((Any) -> Unit)? = null,
     ): MutableSnapshot {
         validateNotDisposed()
         validateNotAppliedOrPinned()
@@ -780,7 +780,7 @@ internal constructor(
                         currentInvalid.addRange(snapshotId + 1, newId),
                         mergedReadObserver(actualReadObserver, this.readObserver),
                         mergedWriteObserver(actualWriteObserver, this.writeObserver),
-                        this
+                        this,
                     )
                 }
             }
@@ -821,7 +821,7 @@ internal constructor(
                 optimisticMerges(
                     globalSnapshot.snapshotId,
                     this,
-                    openSnapshots.clear(globalSnapshot.snapshotId)
+                    openSnapshots.clear(globalSnapshot.snapshotId),
                 )
             } else null
 
@@ -845,7 +845,7 @@ internal constructor(
                         nextSnapshotId,
                         modified,
                         optimisticMerges,
-                        openSnapshots.clear(globalSnapshot.snapshotId)
+                        openSnapshots.clear(globalSnapshot.snapshotId),
                     )
                 if (result != SnapshotApplyResult.Success) return result
 
@@ -918,7 +918,7 @@ internal constructor(
             if (this is GlobalSnapshot) null else this,
             readObserver = readObserver,
             writeObserver = null,
-            readonly = true
+            readonly = true,
         ) { actualReadObserver, _ ->
             advance {
                 sync {
@@ -928,7 +928,7 @@ internal constructor(
                         snapshotId = readonlyId,
                         invalid = invalid.addRange(previousId + 1, readonlyId),
                         readObserver = mergedReadObserver(actualReadObserver, this.readObserver),
-                        parent = this
+                        parent = this,
                     )
                 }
             }
@@ -1005,7 +1005,7 @@ internal constructor(
         nextId: SnapshotId,
         modified: MutableScatterSet<StateObject>,
         optimisticMerges: Map<StateRecord, StateRecord>?,
-        invalidSnapshots: SnapshotIdSet
+        invalidSnapshots: SnapshotIdSet,
     ): SnapshotApplyResult {
         // This must be called in a synchronized block
 
@@ -1330,7 +1330,7 @@ interface StateObject {
     fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? = null
 }
 
@@ -1342,7 +1342,7 @@ internal class ReadonlySnapshot
 internal constructor(
     snapshotId: SnapshotId,
     invalid: SnapshotIdSet,
-    override val readObserver: ((Any) -> Unit)?
+    override val readObserver: ((Any) -> Unit)?,
 ) : Snapshot(snapshotId, invalid) {
     /**
      * The number of nested snapshots that are active. To simplify the code, this snapshot counts
@@ -1377,7 +1377,7 @@ internal constructor(
                 snapshotId = snapshotId,
                 invalid = invalid,
                 readObserver = mergedReadObserver(actualReadObserver, this.readObserver),
-                parent = this
+                parent = this,
             )
         }
     }
@@ -1414,7 +1414,7 @@ internal class NestedReadonlySnapshot(
     snapshotId: SnapshotId,
     invalid: SnapshotIdSet,
     override val readObserver: ((Any) -> Unit)?,
-    val parent: Snapshot
+    val parent: Snapshot,
 ) : Snapshot(snapshotId, invalid) {
     init {
         parent.nestedActivated(this)
@@ -1438,7 +1438,7 @@ internal class NestedReadonlySnapshot(
                 snapshotId = snapshotId,
                 invalid = invalid,
                 readObserver = mergedReadObserver(actualReadObserver, this.readObserver),
-                parent = parent
+                parent = parent,
             )
         }
 
@@ -1482,7 +1482,7 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
         snapshotId,
         invalid,
         null,
-        { state -> sync { globalWriteObservers.fastForEach { it(state) } } }
+        { state -> sync { globalWriteObservers.fastForEach { it(state) } } },
     ) {
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
@@ -1497,7 +1497,7 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
                 ReadonlySnapshot(
                     snapshotId = sync { nextSnapshotId.also { nextSnapshotId += 1 } },
                     invalid = invalid,
-                    readObserver = actualReadObserver
+                    readObserver = actualReadObserver,
                 )
             }
         }
@@ -1505,13 +1505,13 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
     @OptIn(ExperimentalComposeRuntimeApi::class)
     override fun takeNestedMutableSnapshot(
         readObserver: ((Any) -> Unit)?,
-        writeObserver: ((Any) -> Unit)?
+        writeObserver: ((Any) -> Unit)?,
     ): MutableSnapshot =
         creatingSnapshot(
             parent = null,
             readonly = false,
             readObserver = readObserver,
-            writeObserver = writeObserver
+            writeObserver = writeObserver,
         ) { actualReadObserver, actualWriteObserver ->
             takeNewSnapshot { invalid ->
                 MutableSnapshot(
@@ -1524,7 +1524,7 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
 
                     // It is intentional that global write observers are not merged with mutable
                     // snapshots write observers.
-                    writeObserver = actualWriteObserver
+                    writeObserver = actualWriteObserver,
                 )
             }
         }
@@ -1551,7 +1551,7 @@ internal class NestedMutableSnapshot(
     invalid: SnapshotIdSet,
     readObserver: ((Any) -> Unit)?,
     writeObserver: ((Any) -> Unit)?,
-    val parent: MutableSnapshot
+    val parent: MutableSnapshot,
 ) : MutableSnapshot(snapshotId, invalid, readObserver, writeObserver) {
     private var deactivated = false
 
@@ -1636,7 +1636,7 @@ internal class TransparentObserverMutableSnapshot(
     specifiedReadObserver: ((Any) -> Unit)?,
     specifiedWriteObserver: ((Any) -> Unit)?,
     private val mergeParentObservers: Boolean,
-    private val ownsParentSnapshot: Boolean
+    private val ownsParentSnapshot: Boolean,
 ) :
     MutableSnapshot(
         INVALID_SNAPSHOT,
@@ -1644,12 +1644,12 @@ internal class TransparentObserverMutableSnapshot(
         mergedReadObserver(
             specifiedReadObserver,
             parentSnapshot?.readObserver ?: globalSnapshot.readObserver,
-            mergeParentObservers
+            mergeParentObservers,
         ),
         mergedWriteObserver(
             specifiedWriteObserver,
-            parentSnapshot?.writeObserver ?: globalSnapshot.writeObserver
-        )
+            parentSnapshot?.writeObserver ?: globalSnapshot.writeObserver,
+        ),
     ) {
     override var readObserver: ((Any) -> Unit)? = super.readObserver
     override var writeObserver: ((Any) -> Unit)? = super.writeObserver
@@ -1703,7 +1703,7 @@ internal class TransparentObserverMutableSnapshot(
             createTransparentSnapshotWithNoParentReadObserver(
                 previousSnapshot = currentSnapshot.takeNestedSnapshot(null),
                 readObserver = mergedReadObserver,
-                ownsPreviousSnapshot = true
+                ownsPreviousSnapshot = true,
             )
         } else {
             currentSnapshot.takeNestedSnapshot(mergedReadObserver)
@@ -1712,7 +1712,7 @@ internal class TransparentObserverMutableSnapshot(
 
     override fun takeNestedMutableSnapshot(
         readObserver: ((Any) -> Unit)?,
-        writeObserver: ((Any) -> Unit)?
+        writeObserver: ((Any) -> Unit)?,
     ): MutableSnapshot {
         val mergedReadObserver = mergedReadObserver(readObserver, this.readObserver)
         val mergedWriteObserver = mergedWriteObserver(writeObserver, this.writeObserver)
@@ -1720,14 +1720,14 @@ internal class TransparentObserverMutableSnapshot(
             val nestedSnapshot =
                 currentSnapshot.takeNestedMutableSnapshot(
                     readObserver = null,
-                    writeObserver = mergedWriteObserver
+                    writeObserver = mergedWriteObserver,
                 )
             TransparentObserverMutableSnapshot(
                 parentSnapshot = nestedSnapshot,
                 specifiedReadObserver = mergedReadObserver,
                 specifiedWriteObserver = mergedWriteObserver,
                 mergeParentObservers = false,
-                ownsParentSnapshot = true
+                ownsParentSnapshot = true,
             )
         } else {
             currentSnapshot.takeNestedMutableSnapshot(mergedReadObserver, mergedWriteObserver)
@@ -1747,17 +1747,13 @@ internal class TransparentObserverSnapshot(
     private val parentSnapshot: Snapshot?,
     specifiedReadObserver: ((Any) -> Unit)?,
     private val mergeParentObservers: Boolean,
-    private val ownsParentSnapshot: Boolean
-) :
-    Snapshot(
-        INVALID_SNAPSHOT,
-        SnapshotIdSet.EMPTY,
-    ) {
+    private val ownsParentSnapshot: Boolean,
+) : Snapshot(INVALID_SNAPSHOT, SnapshotIdSet.EMPTY) {
     override var readObserver: ((Any) -> Unit)? =
         mergedReadObserver(
             specifiedReadObserver,
             parentSnapshot?.readObserver ?: globalSnapshot.readObserver,
-            mergeParentObservers
+            mergeParentObservers,
         )
     override val writeObserver: ((Any) -> Unit)? = null
 
@@ -1804,7 +1800,7 @@ internal class TransparentObserverSnapshot(
             createTransparentSnapshotWithNoParentReadObserver(
                 currentSnapshot.takeNestedSnapshot(null),
                 mergedReadObserver,
-                ownsPreviousSnapshot = true
+                ownsPreviousSnapshot = true,
             )
         } else {
             currentSnapshot.takeNestedSnapshot(mergedReadObserver)
@@ -1822,7 +1818,7 @@ internal class TransparentObserverSnapshot(
 private fun createTransparentSnapshotWithNoParentReadObserver(
     previousSnapshot: Snapshot?,
     readObserver: ((Any) -> Unit)? = null,
-    ownsPreviousSnapshot: Boolean = false
+    ownsPreviousSnapshot: Boolean = false,
 ): Snapshot =
     if (previousSnapshot is MutableSnapshot || previousSnapshot == null) {
         TransparentObserverMutableSnapshot(
@@ -1830,21 +1826,21 @@ private fun createTransparentSnapshotWithNoParentReadObserver(
             specifiedReadObserver = readObserver,
             specifiedWriteObserver = null,
             mergeParentObservers = false,
-            ownsParentSnapshot = ownsPreviousSnapshot
+            ownsParentSnapshot = ownsPreviousSnapshot,
         )
     } else {
         TransparentObserverSnapshot(
             parentSnapshot = previousSnapshot,
             specifiedReadObserver = readObserver,
             mergeParentObservers = false,
-            ownsParentSnapshot = ownsPreviousSnapshot
+            ownsParentSnapshot = ownsPreviousSnapshot,
         )
     }
 
 private fun mergedReadObserver(
     readObserver: ((Any) -> Unit)?,
     parentObserver: ((Any) -> Unit)?,
-    mergeReadObserver: Boolean = true
+    mergeReadObserver: Boolean = true,
 ): ((Any) -> Unit)? {
     @Suppress("NAME_SHADOWING") val parentObserver = if (mergeReadObserver) parentObserver else null
     return if (readObserver != null && parentObserver != null && readObserver !== parentObserver) {
@@ -1857,7 +1853,7 @@ private fun mergedReadObserver(
 
 private fun mergedWriteObserver(
     writeObserver: ((Any) -> Unit)?,
-    parentObserver: ((Any) -> Unit)?
+    parentObserver: ((Any) -> Unit)?,
 ): ((Any) -> Unit)? =
     if (writeObserver != null && parentObserver != null && writeObserver !== parentObserver) {
         { state: Any ->
@@ -1928,7 +1924,7 @@ private var globalWriteObservers = emptyList<(Any) -> Unit>()
 private val globalSnapshot =
     GlobalSnapshot(
             snapshotId = nextSnapshotId.also { nextSnapshotId += 1 },
-            invalid = SnapshotIdSet.EMPTY
+            invalid = SnapshotIdSet.EMPTY,
         )
         .also { openSnapshots = openSnapshots.set(it.snapshotId) }
 
@@ -1937,7 +1933,7 @@ private val globalSnapshot =
 
 private fun <T> resetGlobalSnapshotLocked(
     globalSnapshot: GlobalSnapshot,
-    block: (invalid: SnapshotIdSet) -> T
+    block: (invalid: SnapshotIdSet) -> T,
 ): T {
     val snapshotId = globalSnapshot.snapshotId
     val result = block(openSnapshots.clear(snapshotId))
@@ -2034,7 +2030,7 @@ private fun validateOpen(snapshot: Snapshot) {
 private fun valid(
     currentSnapshot: SnapshotId,
     candidateSnapshot: SnapshotId,
-    invalid: SnapshotIdSet
+    invalid: SnapshotIdSet,
 ): Boolean {
     return candidateSnapshot != INVALID_SNAPSHOT &&
         candidateSnapshot <= currentSnapshot &&
@@ -2059,7 +2055,8 @@ private fun <T : StateRecord> readable(r: T, id: SnapshotId, invalid: SnapshotId
         current = current.next
     }
     if (candidate != null) {
-        @Suppress("UNCHECKED_CAST") return candidate as T
+        @Suppress("UNCHECKED_CAST")
+        return candidate as T
     }
     return null
 }
@@ -2264,7 +2261,7 @@ internal fun <T : StateRecord> T.writableRecord(state: StateObject, snapshot: Sn
 internal fun <T : StateRecord> T.overwritableRecord(
     state: StateObject,
     snapshot: Snapshot,
-    candidate: T
+    candidate: T,
 ): T {
     if (snapshot.readOnly) {
         // If the snapshot is read-only, use the snapshot recordModified to report it.
@@ -2340,7 +2337,7 @@ internal fun notifyWrite(snapshot: Snapshot, state: StateObject) {
 inline fun <T : StateRecord, R> T.writable(
     state: StateObject,
     snapshot: Snapshot,
-    block: T.() -> R
+    block: T.() -> R,
 ): R {
     // A writable record will always be the readable record (as all newer records are invalid it
     // must be the newest valid record). This means that if the readable record is not from the
@@ -2387,7 +2384,7 @@ inline fun <T : StateRecord, R> T.writable(state: StateObject, block: T.() -> R)
 internal inline fun <T : StateRecord, R> T.overwritable(
     state: StateObject,
     candidate: T,
-    block: T.() -> R
+    block: T.() -> R,
 ): R {
     val snapshot: Snapshot
     return sync {
@@ -2405,7 +2402,7 @@ internal inline fun <T : StateRecord, R> T.overwritable(
 private fun optimisticMerges(
     currentSnapshotId: SnapshotId,
     applyingSnapshot: MutableSnapshot,
-    invalidSnapshots: SnapshotIdSet
+    invalidSnapshots: SnapshotIdSet,
 ): Map<StateRecord, StateRecord>? {
     val modified = applyingSnapshot.modified
     if (modified == null) return null

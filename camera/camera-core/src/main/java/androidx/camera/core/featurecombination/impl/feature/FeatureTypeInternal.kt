@@ -23,5 +23,5 @@ internal enum class FeatureTypeInternal {
     DYNAMIC_RANGE,
     FPS_RANGE,
     VIDEO_STABILIZATION,
-    IMAGE_FORMAT
+    IMAGE_FORMAT,
 }

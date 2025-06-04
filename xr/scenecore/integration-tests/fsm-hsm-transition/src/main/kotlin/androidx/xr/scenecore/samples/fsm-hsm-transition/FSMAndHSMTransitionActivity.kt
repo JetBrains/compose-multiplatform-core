@@ -30,12 +30,12 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.BasePanelEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
 import androidx.xr.scenecore.SpatialEnvironment
@@ -54,7 +54,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
     private val skyboxFuture: ListenableFuture<ExrImage> by lazy {
         ExrImage.create(session, "skyboxes/BlueSkybox.zip")
     }
-    private var boundsListener = Consumer<Dimensions> {}
+    private var boundsListener = Consumer<FloatSize3d> {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,17 +137,17 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
 
         val resizePortraitFsm: Button = findViewById(R.id.resizePortraitFsm)
         resizePortraitFsm.setOnClickListener {
-            session.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(1200, 1600))
+            session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1200, 1600))
         }
         val resizeLandscapeFsm: Button = findViewById(R.id.resizeLandscapeFsm)
         resizeLandscapeFsm.setOnClickListener {
-            session.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(1600, 1200))
+            session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1600, 1200))
         }
 
         val textRadio: TextView = findViewById(R.id.radioLabel)
         val textDimensions: TextView = findViewById(R.id.textDimensions)
         boundsListener =
-            Consumer<Dimensions> { dimensions ->
+            Consumer<FloatSize3d> { dimensions ->
                 val dimensionsString =
                     "{w:${dimensions.width}, h:${dimensions.height}, d:${dimensions.depth}}"
                 textDimensions.text = dimensionsString
@@ -163,7 +163,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
                 resizeLandscapeFsm.visibility = visibility
                 Log.i(
                     TAG,
-                    "OnBoundsChanged called on Activity Space with dimensions: $dimensionsString"
+                    "OnBoundsChanged called on Activity Space with dimensions: $dimensionsString",
                 )
             }
         session.scene.activitySpace.addBoundsChangedListener(boundsListener)
@@ -172,7 +172,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
         resizableComponent.addResizeListener(
             Executors.newSingleThreadExecutor(),
             object : ResizeListener {
-                override fun onResizeEnd(entity: Entity, finalSize: Dimensions) {
+                override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
                     Log.i(TAG, "resize event $finalSize")
                     (entity as BasePanelEntity<*>).setSize(finalSize)
                     textMainPanelPixelDimensions.text = mainPanelPixelDimensionsString()

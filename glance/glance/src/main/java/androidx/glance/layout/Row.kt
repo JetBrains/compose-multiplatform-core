@@ -86,7 +86,7 @@ public fun Row(
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableRow,
@@ -95,6 +95,6 @@ public fun Row(
             this.set(verticalAlignment) { this.verticalAlignment = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
         },
-        content = { RowScopeImplInstance.content() }
+        content = { RowScopeImplInstance.content() },
     )
 }

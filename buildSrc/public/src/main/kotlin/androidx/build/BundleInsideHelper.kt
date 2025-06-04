@@ -128,7 +128,7 @@ object BundleInsideHelper {
                 "META-INF/kotlin-metadata-jvm.kotlin_module",
                 "META-INF/kotlin-metadata.kotlin_module",
                 "META-INF/metadata.jvm.kotlin_module",
-                "META-INF/metadata.kotlin_module"
+                "META-INF/metadata.kotlin_module",
             )
         }
 
@@ -145,7 +145,7 @@ object BundleInsideHelper {
     private fun Project.configureRepackageTaskForType(
         relocations: List<Relocation>?,
         configuration: Configuration,
-        dropResourcesWithSuffix: String?
+        dropResourcesWithSuffix: String?,
     ): TaskProvider<ShadowJar> {
         return tasks.register(REPACKAGE_TASK_NAME, ShadowJar::class.java) { task ->
             task.apply {
@@ -171,7 +171,7 @@ object BundleInsideHelper {
                 it.attributes { attributes ->
                     attributes.attribute(
                         Usage.USAGE_ATTRIBUTE,
-                        objects.named<Usage>(Usage.JAVA_RUNTIME)
+                        objects.named<Usage>(Usage.JAVA_RUNTIME),
                     )
                 }
                 it.isCanBeConsumed = false

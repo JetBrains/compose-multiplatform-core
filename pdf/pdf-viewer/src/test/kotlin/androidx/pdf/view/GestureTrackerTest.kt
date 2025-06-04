@@ -147,7 +147,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event)
         }
@@ -182,10 +182,7 @@ class GestureTrackerTest {
     fun testDrag() {
         val velocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity / 4
         for (event in
-            oneFingerDrag(
-                start = PointF(50f, 50f),
-                velocity = Point(velocity, velocity),
-            )) {
+            oneFingerDrag(start = PointF(50f, 50f), velocity = Point(velocity, velocity))) {
             gestureTracker.feed(event)
         }
 
@@ -201,10 +198,7 @@ class GestureTrackerTest {
     fun testFling() {
         val velocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity * 2
         for (event in
-            oneFingerDrag(
-                start = PointF(50f, 50f),
-                velocity = Point(velocity, velocity),
-            )) {
+            oneFingerDrag(start = PointF(50f, 50f), velocity = Point(velocity, velocity))) {
             gestureTracker.feed(event)
         }
 
@@ -314,7 +308,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event)
         }
@@ -340,7 +334,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event)
         }
@@ -376,7 +370,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event)
         }
@@ -393,7 +387,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event)
         }
@@ -417,7 +411,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event, viewParentSpy, contentAtEdge = true)
         }
@@ -443,7 +437,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
             )) {
             gestureTracker.feed(event, viewParentSpy, contentAtEdge = false)
         }
@@ -506,7 +500,7 @@ private fun oneFingerDrag(
     start: PointF,
     velocity: Point,
     downTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
-    skipDown: Boolean = false
+    skipDown: Boolean = false,
 ): List<MotionEvent> {
     val sequence = mutableListOf<MotionEvent>()
     if (!skipDown) sequence.add(down(start, time = downTime))
@@ -532,7 +526,7 @@ private fun twoFingerDrag(
     start1: PointF,
     start2: PointF,
     velocity1: Point,
-    velocity2: Point
+    velocity2: Point,
 ): List<MotionEvent> {
     // Specify the touch properties for the finger events.
     val pp1 = MotionEvent.PointerProperties()
@@ -573,7 +567,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0
+            0,
         )
     val secondFingerEvent =
         MotionEvent.obtain(
@@ -590,7 +584,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0
+            0,
         )
     val sequence = mutableListOf(firstFingerEvent, secondFingerEvent)
     // Compute a series of ACTION_MOVE events with interpolated coordinates for each pointer
@@ -616,7 +610,7 @@ private fun twoFingerDrag(
                 0,
                 0,
                 0,
-                0
+                0,
             )
         sequence.add(twoPointerMove)
     }
@@ -636,7 +630,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0
+            0,
         )
     val firstFingerUpEvent =
         MotionEvent.obtain(
@@ -653,7 +647,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0
+            0,
         )
     sequence.add(secondFingerUpEvent)
     sequence.add(firstFingerUpEvent)

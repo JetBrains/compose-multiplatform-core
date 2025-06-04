@@ -59,7 +59,7 @@ internal class LazyListCacheWindowStrategy(cacheWindow: LazyLayoutCacheWindow) :
     /** Adapts the LazyListPrefetchScope and LazyListLayoutInfo to a single scope. */
     private inline fun LazyListPrefetchScope.applyWindowScope(
         layoutInfo: LazyListLayoutInfo,
-        block: CacheWindowScope.() -> Unit
+        block: CacheWindowScope.() -> Unit,
     ) {
         cacheWindowScope.layoutInfo = layoutInfo
         cacheWindowScope.prefetchScope = this
@@ -113,12 +113,12 @@ internal class LazyListCacheWindowScope() : CacheWindowScope {
 
     override fun schedulePrefetch(
         lineIndex: Int,
-        onItemPrefetched: (Int, Int) -> Unit
+        onItemPrefetched: (Int, Int) -> Unit,
     ): List<PrefetchHandle> {
         return listOf(
             prefetchScope.schedulePrefetch(
                 lineIndex,
-                { onItemPrefetched.invoke(index, mainAxisSize) }
+                { onItemPrefetched.invoke(index, mainAxisSize) },
             )
         )
     }

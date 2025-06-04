@@ -26,11 +26,7 @@ class AppFunctionResponseMetadataTest {
     fun appFunctionResponseMetadata_toAppFunctionResponseMetadataDocument_returnsCorrectDocument() {
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false)
             )
 
         val responseMetadataDocument = responseMetadata.toAppFunctionResponseMetadataDocument()
@@ -39,10 +35,7 @@ class AppFunctionResponseMetadataTest {
             .isEqualTo(
                 AppFunctionResponseMetadataDocument(
                     valueType =
-                        AppFunctionDataTypeMetadataDocument(
-                            type = TYPE_INT,
-                            isNullable = false,
-                        )
+                        AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false)
                 )
             )
     }
@@ -51,11 +44,7 @@ class AppFunctionResponseMetadataTest {
     fun appFunctionResponseMetadataDocument_toAppFunctionResponseMetadata_returnsCorrectMetadata() {
         val responseMetadataDocument =
             AppFunctionResponseMetadataDocument(
-                valueType =
-                    AppFunctionDataTypeMetadataDocument(
-                        type = TYPE_INT,
-                        isNullable = false,
-                    )
+                valueType = AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false)
             )
 
         val responseMetadata = responseMetadataDocument.toAppFunctionResponseMetadata()
@@ -64,10 +53,7 @@ class AppFunctionResponseMetadataTest {
             .isEqualTo(
                 AppFunctionResponseMetadata(
                     valueType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_INT,
-                            isNullable = false,
-                        )
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false)
                 )
             )
     }

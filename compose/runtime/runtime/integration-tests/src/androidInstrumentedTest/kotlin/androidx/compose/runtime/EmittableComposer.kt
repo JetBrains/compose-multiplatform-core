@@ -47,5 +47,5 @@ fun LinearLayout(
     id: Int = 0,
     orientation: Int = LinearLayout.VERTICAL,
     onClickListener: View.OnClickListener? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {}

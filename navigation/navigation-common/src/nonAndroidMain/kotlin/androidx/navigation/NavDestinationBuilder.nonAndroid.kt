@@ -89,7 +89,7 @@ internal constructor(
     @Suppress("BuilderSetStyle")
     public actual inline fun <reified T : Any> deepLink(
         basePath: String,
-        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     ) {
         deepLink(T::class, basePath, navDeepLink)
     }
@@ -99,7 +99,7 @@ internal constructor(
     public actual fun <T : Any> deepLink(
         route: KClass<T>,
         basePath: String,
-        navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     ) {
         // make sure they used the safe args constructors which automatically adds
         // argument to the destination

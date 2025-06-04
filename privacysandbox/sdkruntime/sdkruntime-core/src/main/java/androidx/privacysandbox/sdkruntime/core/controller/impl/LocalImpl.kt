@@ -33,14 +33,14 @@ import java.util.concurrent.Executor
  */
 internal class LocalImpl(
     private val implFromClient: SdkSandboxControllerCompat.SandboxControllerImpl,
-    private val clientVersion: Int
+    private val clientVersion: Int,
 ) : SdkSandboxControllerCompat.SandboxControllerImpl {
 
     override fun loadSdk(
         sdkName: String,
         params: Bundle,
         executor: Executor,
-        callback: LoadSdkCallback
+        callback: LoadSdkCallback,
     ) {
         implFromClient.loadSdk(sdkName, params, executor, callback)
     }
@@ -71,7 +71,7 @@ internal class LocalImpl(
 
     override fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat
+        listenerCompat: SdkSandboxClientImportanceListenerCompat,
     ) {
         if (ClientFeature.CLIENT_IMPORTANCE_LISTENER.isAvailable(clientVersion)) {
             implFromClient.registerSdkSandboxClientImportanceListener(executor, listenerCompat)

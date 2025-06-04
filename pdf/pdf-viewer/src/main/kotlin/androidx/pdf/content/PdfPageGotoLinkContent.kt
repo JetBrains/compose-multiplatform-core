@@ -30,7 +30,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PdfPageGotoLinkContent(
     public val bounds: List<RectF>,
-    public val destination: Destination
+    public val destination: Destination,
 ) {
     /**
      * Creates a new instance of PdfPageGotoLinkContent.Destination using the page number, x
@@ -48,6 +48,6 @@ public class PdfPageGotoLinkContent(
         public val pageNumber: Int,
         public val xCoordinate: Float,
         public val yCoordinate: Float,
-        public val zoom: Float
+        public val zoom: Float,
     )
 }

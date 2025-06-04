@@ -140,9 +140,7 @@ actual class ModalBottomSheetProperties {
         this.isAppearanceLightNavigationBars = isAppearanceLightNavigationBars
     }
 
-    actual constructor(
-        shouldDismissOnBackPress: Boolean,
-    ) {
+    actual constructor(shouldDismissOnBackPress: Boolean) {
         this.securePolicy = SecureFlagPolicy.Inherit
         this.shouldDismissOnBackPress = shouldDismissOnBackPress
         this.isAppearanceLightNavigationBars = null
@@ -153,7 +151,7 @@ actual class ModalBottomSheetProperties {
         message = "'isFocusable' param is no longer used. Use constructor without this parameter.",
         level = DeprecationLevel.WARNING,
         replaceWith =
-            ReplaceWith("ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)")
+            ReplaceWith("ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)"),
     )
     @Suppress("UNUSED_PARAMETER")
     constructor(
@@ -209,13 +207,13 @@ actual object ModalBottomSheetDefaults {
     @Deprecated(
         level = DeprecationLevel.WARNING,
         message = "'isFocusable' param is no longer used. Use value without this parameter.",
-        replaceWith = ReplaceWith("properties")
+        replaceWith = ReplaceWith("properties"),
     )
     @Suppress("UNUSED_PARAMETER")
     fun properties(
         securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
         isFocusable: Boolean = true,
-        shouldDismissOnBackPress: Boolean = true
+        shouldDismissOnBackPress: Boolean = true,
     ) =
         ModalBottomSheetProperties(
             securePolicy = securePolicy,
@@ -282,7 +280,7 @@ actual object ModalBottomSheetDefaults {
                 "properties," +
                 "content," +
                 ")"
-        )
+        ),
 )
 fun ModalBottomSheet(
     onDismissRequest: () -> Unit,
@@ -324,7 +322,7 @@ internal actual fun ModalBottomSheetDialog(
     contentColor: Color,
     properties: ModalBottomSheetProperties,
     predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
@@ -348,11 +346,7 @@ internal actual fun ModalBottomSheetDialog(
                 )
                 .apply {
                     setContent(composition) {
-                        Box(
-                            Modifier.semantics { dialog() },
-                        ) {
-                            currentContent()
-                        }
+                        Box(Modifier.semantics { dialog() }) { currentContent() }
                     }
                 }
         }
@@ -379,10 +373,8 @@ internal actual fun ModalBottomSheetDialog(
 // Fork of androidx.compose.ui.window.DialogLayout
 // Additional parameters required for current predictive back implementation.
 @Suppress("ViewConstructor")
-private class ModalBottomSheetDialogLayout(
-    context: Context,
-    override val window: Window,
-) : AbstractComposeView(context), DialogWindowProvider {
+private class ModalBottomSheetDialogLayout(context: Context, override val window: Window) :
+    AbstractComposeView(context), DialogWindowProvider {
 
     private var content: @Composable () -> Unit by mutableStateOf({})
 
@@ -422,7 +414,7 @@ private class ModalBottomSheetDialogWrapper(
     ComponentDialog(
         ContextThemeWrapper(
             composeView.context,
-            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme
+            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme,
         )
     ),
     ViewRootForInspector {
@@ -498,8 +490,8 @@ private class ModalBottomSheetDialogWrapper(
                     predictiveBackProgress = predictiveBackProgress,
                     onDismissRequest = {
                         this.onDismissRequest()
-                    } // Ensure lambda captures current onDismissRequest
-                )
+                    }, // Ensure lambda captures current onDismissRequest
+                ),
         )
     }
 
@@ -524,7 +516,7 @@ private class ModalBottomSheetDialogWrapper(
             } else {
                 WindowManager.LayoutParams.FLAG_SECURE.inv()
             },
-            WindowManager.LayoutParams.FLAG_SECURE
+            WindowManager.LayoutParams.FLAG_SECURE,
         )
     }
 
@@ -532,7 +524,7 @@ private class ModalBottomSheetDialogWrapper(
         onDismissRequest: () -> Unit,
         properties: ModalBottomSheetProperties,
         contentColor: Color,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties
@@ -550,7 +542,7 @@ private class ModalBottomSheetDialogWrapper(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             } else {
                 @Suppress("DEPRECATION") WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            },
+            }
         )
     }
 
@@ -576,7 +568,7 @@ private class ModalBottomSheetDialogWrapper(
         isEnabled: Boolean,
         val scope: CoroutineScope,
         val predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-        var onDismissRequest: () -> Unit
+        var onDismissRequest: () -> Unit,
     ) : OnBackPressedCallback(isEnabled) {
 
         override fun handleOnBackStarted(backEvent: BackEventCompat) {

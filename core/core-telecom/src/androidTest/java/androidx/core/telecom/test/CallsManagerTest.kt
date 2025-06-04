@@ -119,7 +119,7 @@ class CallsManagerTest : BaseTelecomTest() {
                 assertTrue(
                     Utils.hasCapability(
                         CAPABILITY_SUPPORTS_TRANSACTIONAL_OPERATIONS,
-                        account.capabilities
+                        account.capabilities,
                     )
                 )
             } else {
@@ -280,7 +280,7 @@ class CallsManagerTest : BaseTelecomTest() {
                         CallAttributesCompat.DIRECTION_OUTGOING,
                         CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
                         ALL_CALL_CAPABILITIES,
-                        earpieceEndpoint
+                        earpieceEndpoint,
                     ),
                     TestUtils.mOnAnswerLambda,
                     TestUtils.mOnDisconnectLambda,
@@ -324,7 +324,7 @@ class CallsManagerTest : BaseTelecomTest() {
                 Log.i(
                     TAG,
                     "assertStartingCallEndpoint: " +
-                        "endpoints.size=[${initialEndpoints.size}], earpiece=[$earpieceEndpoint]"
+                        "endpoints.size=[${initialEndpoints.size}], earpiece=[$earpieceEndpoint]",
                 )
                 preCallEndpointsScope?.cancel()
             }
@@ -339,7 +339,7 @@ class CallsManagerTest : BaseTelecomTest() {
                 TestUtils.OUTGOING_NAME,
                 TestUtils.TEST_ADDRESS,
                 CallAttributesCompat.DIRECTION_OUTGOING,
-                CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                CallAttributesCompat.CALL_TYPE_VIDEO_CALL,
             )
         ) {
             launch {

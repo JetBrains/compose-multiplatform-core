@@ -55,7 +55,7 @@ import kotlinx.coroutines.test.TestResult
 // own test rule.
 public fun runGlanceAppWidgetUnitTest(
     timeout: Duration = DEFAULT_TIMEOUT,
-    block: GlanceAppWidgetUnitTest.() -> Unit
+    block: GlanceAppWidgetUnitTest.() -> Unit,
 ): TestResult = GlanceAppWidgetUnitTestEnvironment(timeout).runTest(block)
 
 /**

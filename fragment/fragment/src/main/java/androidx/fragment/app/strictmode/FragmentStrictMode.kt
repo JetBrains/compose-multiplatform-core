@@ -92,7 +92,7 @@ object FragmentStrictMode {
     fun onWrongNestedHierarchy(
         fragment: Fragment,
         expectedParentFragment: Fragment,
-        containerId: Int
+        containerId: Int,
     ) {
         val violation: Violation =
             WrongNestedHierarchyViolation(fragment, expectedParentFragment, containerId)
@@ -157,7 +157,7 @@ object FragmentStrictMode {
     fun onSetTargetFragmentUsage(
         violatingFragment: Fragment,
         targetFragment: Fragment,
-        requestCode: Int
+        requestCode: Int,
     ) {
         val violation: Violation =
             SetTargetFragmentUsageViolation(violatingFragment, targetFragment, requestCode)
@@ -168,7 +168,7 @@ object FragmentStrictMode {
                 shouldHandlePolicyViolation(
                     policy,
                     violatingFragment.javaClass,
-                    violation.javaClass
+                    violation.javaClass,
                 )
         ) {
             handlePolicyViolation(policy, violation)
@@ -235,7 +235,7 @@ object FragmentStrictMode {
             Log.d(
                 FragmentManager.TAG,
                 "StrictMode violation in ${violation.fragment.javaClass.name}",
-                violation
+                violation,
             )
         }
     }
@@ -243,7 +243,7 @@ object FragmentStrictMode {
     private fun shouldHandlePolicyViolation(
         policy: Policy,
         fragmentClass: Class<out Fragment>,
-        violationClass: Class<out Violation>
+        violationClass: Class<out Violation>,
     ): Boolean {
         val fragmentClassString = fragmentClass.name
         val violationsToBypass = policy.mAllowedViolations[fragmentClassString] ?: return true
@@ -294,7 +294,7 @@ object FragmentStrictMode {
         DETECT_RETAIN_INSTANCE_USAGE,
         DETECT_SET_USER_VISIBLE_HINT,
         DETECT_TARGET_FRAGMENT_USAGE,
-        DETECT_WRONG_FRAGMENT_CONTAINER
+        DETECT_WRONG_FRAGMENT_CONTAINER,
     }
 
     /**
@@ -321,7 +321,7 @@ object FragmentStrictMode {
     internal constructor(
         internal val flags: Set<Flag>,
         listener: OnViolationListener?,
-        allowedViolations: Map<String, MutableSet<Class<out Violation>>>
+        allowedViolations: Map<String, MutableSet<Class<out Violation>>>,
     ) {
         internal val listener: OnViolationListener?
         internal val mAllowedViolations: Map<String, Set<Class<out Violation>>>
@@ -437,7 +437,7 @@ object FragmentStrictMode {
             @SuppressLint("BuilderSetStyle")
             fun allowViolation(
                 fragmentClass: Class<out Fragment>,
-                violationClass: Class<out Violation>
+                violationClass: Class<out Violation>,
             ): Builder {
                 val fragmentClassString = fragmentClass.name
                 return allowViolation(fragmentClassString, violationClass)
@@ -456,7 +456,7 @@ object FragmentStrictMode {
             @SuppressLint("BuilderSetStyle")
             fun allowViolation(
                 fragmentClass: String,
-                violationClass: Class<out Violation>
+                violationClass: Class<out Violation>,
             ): Builder {
                 var violationsToBypass = mAllowedViolations[fragmentClass]
                 if (violationsToBypass == null) {

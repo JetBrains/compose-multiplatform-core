@@ -25,5 +25,5 @@ enum class BackoffPolicy {
     EXPONENTIAL,
 
     /** Used to indicate that [WorkManager] should increase the backoff time linearly */
-    LINEAR
+    LINEAR,
 }

@@ -104,7 +104,7 @@ class OnGlobalRectChangedTest {
                             modifier =
                                 Modifier.onLayoutRectChanged(0, 0) {
                                     wrap1Position = it.boundsInWindow
-                                }
+                                },
                         )
                     } else {
                         Wrap(
@@ -113,7 +113,7 @@ class OnGlobalRectChangedTest {
                             modifier =
                                 Modifier.onLayoutRectChanged(0, 0) {
                                     wrap2Position = it.boundsInWindow
-                                }
+                                },
                         )
                     }
                 }
@@ -144,7 +144,7 @@ class OnGlobalRectChangedTest {
                     modifier =
                         Modifier.onLayoutRectChanged(0, 0) {
                             realChildSize = it.boundsInRoot.size.width
-                        }
+                        },
                 )
             }
         }
@@ -178,10 +178,10 @@ class OnGlobalRectChangedTest {
                                 Modifier.onLayoutRectChanged(0, 0) { rect ->
                                     childGlobalPosition = rect.boundsInRoot.offset()
                                     latch.countDown()
-                                }
+                                },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -209,21 +209,21 @@ class OnGlobalRectChangedTest {
                         minWidth = 10,
                         minHeight = 10,
                         modifier =
-                            Modifier.onLayoutRectChanged(0, 0) { wrap1OnPositionedCalled = true }
+                            Modifier.onLayoutRectChanged(0, 0) { wrap1OnPositionedCalled = true },
                     )
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
                         modifier =
-                            Modifier.onLayoutRectChanged(0, 0) { wrap2OnPositionedCalled = true }
+                            Modifier.onLayoutRectChanged(0, 0) { wrap2OnPositionedCalled = true },
                     ) {
                         Wrap(
                             minWidth = 10,
                             minHeight = 10,
-                            modifier = Modifier.onLayoutRectChanged(0, 0) { latch.countDown() }
+                            modifier = Modifier.onLayoutRectChanged(0, 0) { latch.countDown() },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -292,7 +292,7 @@ class OnGlobalRectChangedTest {
         rule.setContent {
             Column(
                 modifier = Modifier.size(200.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     modifier =
@@ -417,7 +417,7 @@ class OnGlobalRectChangedTest {
                         Modifier.onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, _ ->
                     layout(100, 200) {}
                 }
@@ -436,7 +436,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertThat(abs(view.getYInWindow().toInt() - coordinates!!.top) <= 1) }
@@ -456,7 +456,7 @@ class OnGlobalRectChangedTest {
                         .onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
             ) { _, _ ->
                 layout(100, 200) {}
             }
@@ -474,7 +474,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(5, coordinates!!.left) }
@@ -512,7 +512,7 @@ class OnGlobalRectChangedTest {
                         Modifier.onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, constraints ->
                     layout(constraints.maxWidth, constraints.maxHeight) {}
                 }
@@ -529,7 +529,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container moved",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(startY - 100, coordinates!!.top) }
@@ -737,7 +737,7 @@ class OnGlobalRectChangedTest {
             if (toggle) {
                 FixedSize(
                     30,
-                    Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it }
+                    Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it },
                 ) { /* no-op */
                 }
             }
@@ -772,7 +772,7 @@ class OnGlobalRectChangedTest {
         rule.setContent {
             FixedSize(
                 30,
-                Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it }
+                Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it },
             ) { /* no-op */
             }
         }
@@ -804,7 +804,7 @@ class OnGlobalRectChangedTest {
                         30,
                         Modifier.padding(10).background(Color.Red).onLayoutRectChanged(0, 0) {
                             coords = it.boundsInWindow
-                        }
+                        },
                     ) { /* no-op */
                     }
                 }
@@ -856,7 +856,7 @@ class OnGlobalRectChangedTest {
         val lambda: (RelativeLayoutBounds) -> Unit = {}
         assertEquals(
             Modifier.onLayoutRectChanged(0, 0, lambda),
-            Modifier.onLayoutRectChanged(0, 0, lambda)
+            Modifier.onLayoutRectChanged(0, 0, lambda),
         )
     }
 
@@ -867,7 +867,7 @@ class OnGlobalRectChangedTest {
         val lambda2: (RelativeLayoutBounds) -> Unit = { print("bar") }
         Assert.assertNotEquals(
             Modifier.onLayoutRectChanged(0, 0, lambda1),
-            Modifier.onLayoutRectChanged(0, 0, lambda2)
+            Modifier.onLayoutRectChanged(0, 0, lambda2),
         )
     }
 

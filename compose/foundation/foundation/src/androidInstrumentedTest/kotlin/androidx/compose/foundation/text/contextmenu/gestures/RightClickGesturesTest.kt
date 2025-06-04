@@ -52,9 +52,7 @@ class OnRightClickDownTest {
     private val tag = "testTag"
 
     @Composable
-    private fun TestRightClickBox(
-        onClick: (Offset) -> Unit,
-    ) {
+    private fun TestRightClickBox(onClick: (Offset) -> Unit) {
         Box(
             modifier =
                 Modifier.background(Color.LightGray).size(100.dp).testTag(tag).pointerInput(Unit) {

@@ -200,7 +200,7 @@ class SandboxedSdkProviderAdapterTest {
             windowContext: Context,
             params: Bundle,
             width: Int,
-            height: Int
+            height: Int,
         ): View {
             mLastWindowContext = windowContext
             mLastParams = params

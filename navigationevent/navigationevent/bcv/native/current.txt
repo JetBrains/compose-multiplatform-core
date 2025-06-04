@@ -12,10 +12,7 @@ abstract interface androidx.navigationevent/NavigationEventDispatcherOwner { // 
 }
 
 abstract class androidx.navigationevent/NavigationEventCallback { // androidx.navigationevent/NavigationEventCallback|null[0]
-    constructor <init>(kotlin/Boolean, androidx.navigationevent/NavigationEventPriority = ...) // androidx.navigationevent/NavigationEventCallback.<init>|<init>(kotlin.Boolean;androidx.navigationevent.NavigationEventPriority){}[0]
-
-    final val priority // androidx.navigationevent/NavigationEventCallback.priority|{}priority[0]
-        final fun <get-priority>(): androidx.navigationevent/NavigationEventPriority // androidx.navigationevent/NavigationEventCallback.priority.<get-priority>|<get-priority>(){}[0]
+    constructor <init>(kotlin/Boolean) // androidx.navigationevent/NavigationEventCallback.<init>|<init>(kotlin.Boolean){}[0]
 
     final var isEnabled // androidx.navigationevent/NavigationEventCallback.isEnabled|{}isEnabled[0]
         final fun <get-isEnabled>(): kotlin/Boolean // androidx.navigationevent/NavigationEventCallback.isEnabled.<get-isEnabled>|<get-isEnabled>(){}[0]
@@ -64,8 +61,7 @@ final class androidx.navigationevent/NavigationEvent { // androidx.navigationeve
 }
 
 final class androidx.navigationevent/NavigationEventDispatcher { // androidx.navigationevent/NavigationEventDispatcher|null[0]
-    constructor <init>(kotlin/Function0<kotlin/Unit>?) // androidx.navigationevent/NavigationEventDispatcher.<init>|<init>(kotlin.Function0<kotlin.Unit>?){}[0]
-    constructor <init>(kotlin/Function0<kotlin/Unit>?, kotlin/Function1<kotlin/Boolean, kotlin/Unit>?) // androidx.navigationevent/NavigationEventDispatcher.<init>|<init>(kotlin.Function0<kotlin.Unit>?;kotlin.Function1<kotlin.Boolean,kotlin.Unit>?){}[0]
+    constructor <init>(kotlin/Function0<kotlin/Unit>? = ..., kotlin/Function1<kotlin/Boolean, kotlin/Unit>? = ...) // androidx.navigationevent/NavigationEventDispatcher.<init>|<init>(kotlin.Function0<kotlin.Unit>?;kotlin.Function1<kotlin.Boolean,kotlin.Unit>?){}[0]
 
     final fun addCallback(androidx.navigationevent/NavigationEventCallback, androidx.navigationevent/NavigationEventPriority = ...) // androidx.navigationevent/NavigationEventDispatcher.addCallback|addCallback(androidx.navigationevent.NavigationEventCallback;androidx.navigationevent.NavigationEventPriority){}[0]
     final fun dispatchOnCancelled() // androidx.navigationevent/NavigationEventDispatcher.dispatchOnCancelled|dispatchOnCancelled(){}[0]

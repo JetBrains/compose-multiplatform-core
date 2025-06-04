@@ -99,11 +99,11 @@ val SCREEN_SIZE_LARGE = 228
 
 enum class ScreenSize(val size: Int) {
     SMALL(SCREEN_SIZE_SMALL),
-    LARGE(SCREEN_SIZE_LARGE)
+    LARGE(SCREEN_SIZE_LARGE),
 }
 
 enum class ScreenShape(val isRound: Boolean) {
-    ROUND_DEVICE(true),
+    ROUND_DEVICE(true)
 }
 
 /**
@@ -122,7 +122,7 @@ enum class ScreenShape(val isRound: Boolean) {
 fun ScreenConfiguration(
     screenSizeDp: Int,
     isRound: Boolean? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val originalConfiguration = LocalConfiguration.current
     val originalContext = LocalContext.current
@@ -143,11 +143,11 @@ fun ScreenConfiguration(
 
     CompositionLocalProvider(
         LocalContext provides originalContext,
-        LocalConfiguration provides fixedScreenSizeConfiguration
+        LocalConfiguration provides fixedScreenSizeConfiguration,
     ) {
         Box(
             modifier =
-                Modifier.size(screenSizeDp.dp).background(MaterialTheme.colorScheme.background),
+                Modifier.size(screenSizeDp.dp).background(MaterialTheme.colorScheme.background)
         ) {
             content()
         }
@@ -171,7 +171,7 @@ fun TestImage(iconLabel: String = "TestIcon") {
         iconLabel,
         modifier = Modifier.fillMaxSize().testTag(iconLabel),
         contentScale = ContentScale.Fit,
-        alignment = Alignment.Center
+        alignment = Alignment.Center,
     )
 }
 
@@ -181,7 +181,7 @@ fun TestIcon(modifier: Modifier = Modifier, iconLabel: String = "TestIcon") {
     Icon(
         imageVector = testImage,
         contentDescription = iconLabel,
-        modifier = modifier.testTag(iconLabel)
+        modifier = modifier.testTag(iconLabel),
     )
 }
 
@@ -194,7 +194,7 @@ fun ComposeContentTestRule.setContentWithThemeForSizeAssertions(
     parentMaxWidth: Dp = BigTestMaxWidth,
     parentMaxHeight: Dp = BigTestMaxHeight,
     useUnmergedTree: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): SemanticsNodeInteraction {
     setContent {
         MaterialTheme {
@@ -222,14 +222,14 @@ fun ComposeContentTestRule.textStyleOf(text: String): TextStyle {
 
 fun ComposeContentTestRule.setContentWithTheme(
     modifier: Modifier = Modifier,
-    composable: @Composable BoxScope.() -> Unit
+    composable: @Composable BoxScope.() -> Unit,
 ) {
     setContent { MaterialTheme { Box(modifier = modifier, content = composable) } }
 }
 
 internal fun ComposeContentTestRule.verifyTapSize(
     expectedSize: Dp,
-    content: @Composable (modifier: Modifier) -> Unit
+    content: @Composable (modifier: Modifier) -> Unit,
 ) {
     setContentWithTheme { content(Modifier.testTag(TEST_TAG)) }
     waitForIdle()
@@ -241,7 +241,7 @@ internal fun ComposeContentTestRule.verifyTapSize(
 
 internal fun ComposeContentTestRule.verifyActualSize(
     expectedSize: Dp,
-    content: @Composable (modifier: Modifier) -> Unit
+    content: @Composable (modifier: Modifier) -> Unit,
 ) {
     setContentWithTheme { content(Modifier.testTag(TEST_TAG)) }
     waitForIdle()
@@ -255,7 +255,7 @@ internal fun ComposeContentTestRule.verifyColors(
     expectedContainerColor: @Composable () -> Color,
     expectedContentColor: @Composable () -> Color,
     applyAlphaForDisabled: Boolean = true,
-    content: @Composable () -> Color
+    content: @Composable () -> Color,
 ) {
     val testBackgroundColor = Color.White
     var finalExpectedContainerColor = Color.Transparent
@@ -286,7 +286,7 @@ internal fun ComposeContentTestRule.verifyColors(
 /** Checks that [expectedColor] is in the percentage [range] of an [ImageBitmap] color histogram */
 fun ImageBitmap.assertColorInPercentageRange(
     expectedColor: Color,
-    range: ClosedFloatingPointRange<Float> = 50.0f..100.0f
+    range: ClosedFloatingPointRange<Float> = 50.0f..100.0f,
 ) {
     val histogram = histogram()
     if (!histogram.containsKey(expectedColor)) {
@@ -310,7 +310,7 @@ fun ImageBitmap.assertColorInPercentageRange(
  */
 internal fun SemanticsNodeInteraction.assertHeightIsEqualTo(
     expectedHeight: Dp,
-    tolerance: Dp = Dp(0.5f)
+    tolerance: Dp = Dp(0.5f),
 ): SemanticsNodeInteraction {
     return withUnclippedBoundsInRoot {
         it.height.assertIsEqualTo(expectedHeight, "height", tolerance)
@@ -391,7 +391,7 @@ internal fun ComposeContentTestRule.verifyScreenshot(
     testTag: String = TEST_TAG,
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     matcher: BitmapMatcher = MSSIMMatcher(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     setContentWithTheme {
         CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -417,7 +417,7 @@ fun ComposeContentTestRule.verifyRoundedButtonTapAnimationEnd(
     color: @Composable () -> Color,
     antiAliasingGap: Float = 2f,
     releaseAfterTap: Boolean = true,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable (Modifier) -> Unit,
 ) {
     val expectedAnimationEnd =
         AnimatedRoundedCornerShape(baseShape, pressedShape) { targetProgress }

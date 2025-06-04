@@ -111,31 +111,23 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
                 PrimaryActionButton(
                     onClick = {},
                     icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    text = { Text("Delete") }
+                    text = { Text("Delete") },
                 )
             },
             onSwipePrimaryAction = {},
             secondaryAction = {
                 SecondaryActionButton(
                     onClick = {},
-                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
+                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
                 )
             },
-            undoPrimaryAction = {
-                UndoActionButton(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
-            },
+            undoPrimaryAction = { UndoActionButton(onClick = {}, text = { Text("Undo Delete") }) },
             undoSecondaryAction = {
-                UndoActionButton(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
+                UndoActionButton(onClick = {}, text = { Text("Undo Delete") })
             },
             revealState = revealState,
             revealDirection = Bidirectional,
-            hasPartiallyRevealedState = false
+            hasPartiallyRevealedState = false,
         ) {
             Button(
                 modifier =
@@ -146,7 +138,7 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
                                 CustomAccessibilityAction("Options") { true },
                             )
                     },
-                onClick = {}
+                onClick = {},
             ) {
                 Text("This Button has two actions", modifier = Modifier.fillMaxSize())
             }

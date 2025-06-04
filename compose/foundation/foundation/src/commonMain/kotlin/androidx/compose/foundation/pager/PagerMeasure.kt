@@ -64,7 +64,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
     placementScopeInvalidator: ObservableScopeInvalidator,
     coroutineScope: CoroutineScope,
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
-    placeablesCache: MutableIntObjectMap<List<Placeable>>
+    placeablesCache: MutableIntObjectMap<List<Placeable>>,
 ): PagerMeasureResult {
     requirePrecondition(beforeContentPadding >= 0) { "negative beforeContentPadding" }
     requirePrecondition(afterContentPadding >= 0) { "negative afterContentPadding" }
@@ -98,7 +98,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             currentPageOffsetFraction = 0.0f,
             snapPosition = snapPosition,
             remeasureNeeded = false,
-            coroutineScope = coroutineScope
+            coroutineScope = coroutineScope,
         )
     } else {
 
@@ -115,7 +115,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                         constraints.maxHeight
                     } else {
                         pageAvailableSize
-                    }
+                    },
             )
 
         var firstVisiblePage = currentPage
@@ -180,7 +180,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
                     pageAvailableSize = pageAvailableSize,
-                    placeablesCache = placeablesCache
+                    placeablesCache = placeablesCache,
                 )
 
             debugLog { "Composed Page=$previous" }
@@ -244,7 +244,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
                     pageAvailableSize = pageAvailableSize,
-                    placeablesCache = placeablesCache
+                    placeablesCache = placeablesCache,
                 )
 
             debugLog { "Composed Page=$index at $currentFirstPageScrollOffset" }
@@ -290,7 +290,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                         layoutDirection = layoutDirection,
                         reverseLayout = reverseLayout,
                         pageAvailableSize = pageAvailableSize,
-                        placeablesCache = placeablesCache
+                        placeablesCache = placeablesCache,
                     )
                 visiblePages.add(0, measuredPage)
                 maxCrossAxis = maxOf(maxCrossAxis, measuredPage.crossAxisSize)
@@ -335,7 +335,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             createPagesBeforeList(
                 currentFirstPage = currentFirstPage,
                 beyondViewportPageCount = coercedBeyondViewportPageCount,
-                pinnedPages = pinnedPages
+                pinnedPages = pinnedPages,
             ) {
                 getAndMeasure(
                     index = it,
@@ -348,7 +348,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
                     pageAvailableSize = pageAvailableSize,
-                    placeablesCache = placeablesCache
+                    placeablesCache = placeablesCache,
                 )
             }
 
@@ -361,7 +361,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                 currentLastPage = visiblePages.last().index,
                 pagesCount = pageCount,
                 beyondViewportPageCount = coercedBeyondViewportPageCount,
-                pinnedPages = pinnedPages
+                pinnedPages = pinnedPages,
             ) {
                 getAndMeasure(
                     index = it,
@@ -374,7 +374,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                     layoutDirection = layoutDirection,
                     reverseLayout = reverseLayout,
                     pageAvailableSize = pageAvailableSize,
-                    placeablesCache = placeablesCache
+                    placeablesCache = placeablesCache,
                 )
             }
 
@@ -410,7 +410,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                 reverseLayout = reverseLayout,
                 density = this,
                 pageAvailableSize = pageAvailableSize,
-                spaceBetweenPages = spaceBetweenPages
+                spaceBetweenPages = spaceBetweenPages,
             )
 
         val visiblePagesInfo =
@@ -439,7 +439,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                 afterContentPadding,
                 pageSizeWithSpacing,
                 snapPosition,
-                pageCount
+                pageCount,
             )
 
         val snapOffset =
@@ -449,7 +449,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                 beforeContentPadding,
                 afterContentPadding,
                 newCurrentPage?.index ?: 0,
-                pageCount
+                pageCount,
             )
 
         val currentPagePositionOffset = (newCurrentPage?.offset ?: 0)
@@ -501,7 +501,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             remeasureNeeded = remeasureNeeded,
             extraPagesBefore = positionedPagesBefore,
             extraPagesAfter = positionedPagesAfter,
-            coroutineScope = coroutineScope
+            coroutineScope = coroutineScope,
         )
     }
 }
@@ -511,7 +511,7 @@ private fun createPagesAfterList(
     pagesCount: Int,
     beyondViewportPageCount: Int,
     pinnedPages: List<Int>,
-    getAndMeasure: (Int) -> MeasuredPage
+    getAndMeasure: (Int) -> MeasuredPage,
 ): List<MeasuredPage> {
     var list: MutableList<MeasuredPage>? = null
 
@@ -536,7 +536,7 @@ private fun createPagesBeforeList(
     currentFirstPage: Int,
     beyondViewportPageCount: Int,
     pinnedPages: List<Int>,
-    getAndMeasure: (Int) -> MeasuredPage
+    getAndMeasure: (Int) -> MeasuredPage,
 ): List<MeasuredPage> {
     var list: MutableList<MeasuredPage>? = null
 
@@ -564,7 +564,7 @@ private fun calculateNewCurrentPage(
     afterContentPadding: Int,
     itemSize: Int,
     snapPosition: SnapPosition,
-    pageCount: Int
+    pageCount: Int,
 ): MeasuredPage? {
     return visiblePagesInfo.fastMaxBy {
         -abs(
@@ -576,7 +576,7 @@ private fun calculateNewCurrentPage(
                 itemOffset = it.offset,
                 itemIndex = it.index,
                 snapPosition = snapPosition,
-                itemCount = pageCount
+                itemCount = pageCount,
             )
         )
     }
@@ -594,7 +594,7 @@ private fun LazyLayoutMeasureScope.getAndMeasure(
     layoutDirection: LayoutDirection,
     reverseLayout: Boolean,
     pageAvailableSize: Int,
-    placeablesCache: MutableIntObjectMap<List<Placeable>>
+    placeablesCache: MutableIntObjectMap<List<Placeable>>,
 ): MeasuredPage {
     val key = pagerItemProvider.getKey(index)
     val cachedPlaceables = placeablesCache[index]
@@ -617,7 +617,7 @@ private fun LazyLayoutMeasureScope.getAndMeasure(
         reverseLayout = reverseLayout,
         size = pageAvailableSize,
         orientation = orientation,
-        key = key
+        key = key,
     )
 }
 
@@ -635,7 +635,7 @@ private fun LazyLayoutMeasureScope.calculatePagesOffsets(
     reverseLayout: Boolean,
     density: Density,
     spaceBetweenPages: Int,
-    pageAvailableSize: Int
+    pageAvailableSize: Int,
 ): MutableList<MeasuredPage> {
     val pageSizeWithSpacing = (pageAvailableSize + spaceBetweenPages)
     val mainAxisLayoutSize = if (orientation == Orientation.Vertical) layoutHeight else layoutWidth

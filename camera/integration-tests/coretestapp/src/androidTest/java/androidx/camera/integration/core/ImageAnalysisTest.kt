@@ -83,14 +83,12 @@ private val DEFAULT_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 @RunWith(Parameterized::class)
 internal class ImageAnalysisTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -108,7 +106,7 @@ internal class ImageAnalysisTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
@@ -173,7 +171,7 @@ internal class ImageAnalysisTest(
             { image ->
                 imageProxyList.add(image)
                 semaphore.release()
-            }
+            },
         )
 
         // Act.
@@ -181,7 +179,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 CameraSelector.DEFAULT_FRONT_CAMERA,
-                useCase
+                useCase,
             )
         }
 
@@ -300,7 +298,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
+                useCase,
             )
         }
         assertThat(
@@ -333,7 +331,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup
+                useCaseGroup,
             )
         }
         val imageProxy = withTimeoutOrNull(5000) { imageProxyDeferred.await() }
@@ -364,7 +362,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
+                imageAnalysis,
             )
         }
 
@@ -460,7 +458,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
+                imageAnalysis,
             )
         }
         assertThat(imageAnalysis.targetRotation).isEqualTo(Surface.ROTATION_180)
@@ -491,7 +489,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
+                imageAnalysis,
             )
         }
         assertThat(imageAnalysis.resolutionInfo!!.resolution).isEqualTo(maxHighResolutionOutputSize)
@@ -542,7 +540,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
+                imageAnalysis,
             )
         }
 
@@ -559,7 +557,7 @@ internal class ImageAnalysisTest(
                 cameraProvider.bindToLifecycle(
                     fakeLifecycleOwner,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    imageAnalysis
+                    imageAnalysis,
                 )
             }
 
@@ -625,14 +623,14 @@ internal class ImageAnalysisTest(
                     DEFAULT_CAMERA_SELECTOR,
                     preview,
                     imageCapture,
-                    imageAnalysis
+                    imageAnalysis,
                 )
         }
 
         val expectedOutputResolution1 = getRotatedResolution(camera!!, imageAnalysis)
         setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
             imageAnalysis,
-            expectedOutputResolution1
+            expectedOutputResolution1,
         )
 
         // Unbinds all and rebind the imageAnalysis only to make imageAnalysis have a MAXIMUM size
@@ -645,7 +643,7 @@ internal class ImageAnalysisTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
+                imageAnalysis,
             )
         }
 
@@ -653,7 +651,7 @@ internal class ImageAnalysisTest(
         assumeTrue(expectedOutputResolution2 != expectedOutputResolution1)
         setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
             imageAnalysis,
-            expectedOutputResolution2
+            expectedOutputResolution2,
         )
     }
 
@@ -670,7 +668,7 @@ internal class ImageAnalysisTest(
 
     private fun setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
         imageAnalysis: ImageAnalysis,
-        expectedResolution: Size
+        expectedResolution: Size,
     ) {
         analysisResultsSemaphore = Semaphore(0)
         synchronized(analysisResultLock) { analysisResults.clear() }
@@ -687,7 +685,7 @@ internal class ImageAnalysisTest(
         runOnMainSync {
             sessionConfig.errorListener!!.onError(
                 sessionConfig,
-                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN
+                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN,
             )
         }
         // Resets the semaphore
@@ -702,7 +700,7 @@ internal class ImageAnalysisTest(
         val resolution: Size,
         val format: Int,
         val timestamp: Long,
-        val rotationDegrees: Int
+        val rotationDegrees: Int,
     ) {
 
         constructor(
@@ -711,7 +709,7 @@ internal class ImageAnalysisTest(
             Size(image.width, image.height),
             image.format,
             image.imageInfo.timestamp,
-            image.imageInfo.rotationDegrees
+            image.imageInfo.rotationDegrees,
         )
     }
 }

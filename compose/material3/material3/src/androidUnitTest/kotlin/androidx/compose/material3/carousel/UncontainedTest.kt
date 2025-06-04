@@ -38,7 +38,7 @@ class UncontainedTest {
                 density = Density,
                 carouselMainAxisSize = carouselSize,
                 itemSize = itemSize,
-                itemSpacing = 0f
+                itemSpacing = 0f,
             )
         val strategy =
             Strategy(
@@ -46,7 +46,7 @@ class UncontainedTest {
                 availableSpace = carouselSize,
                 itemSpacing = 0f,
                 beforeContentPadding = 0f,
-                afterContentPadding = 0f
+                afterContentPadding = 0f,
             )
         val keylines = strategy.defaultKeylines
         val anchorSize = with(Density) { CarouselDefaults.AnchorSize.toPx() }
@@ -69,7 +69,7 @@ class UncontainedTest {
                 density = Density,
                 carouselMainAxisSize = carouselSize,
                 itemSize = itemSize,
-                itemSpacing = 0f
+                itemSpacing = 0f,
             )
         val strategy =
             Strategy(
@@ -77,7 +77,7 @@ class UncontainedTest {
                 availableSpace = carouselSize,
                 itemSpacing = 0f,
                 beforeContentPadding = 0f,
-                afterContentPadding = 0f
+                afterContentPadding = 0f,
             )
         val keylines = strategy.defaultKeylines
         val anchorSize = with(Density) { CarouselDefaults.AnchorSize.toPx() }
@@ -103,7 +103,7 @@ class UncontainedTest {
                 density = Density,
                 carouselMainAxisSize = carouselSize,
                 itemSize = itemSize,
-                itemSpacing = 0f
+                itemSpacing = 0f,
             )
         val strategy =
             Strategy(
@@ -111,7 +111,7 @@ class UncontainedTest {
                 availableSpace = carouselSize,
                 itemSpacing = 0f,
                 beforeContentPadding = 0f,
-                afterContentPadding = 0f
+                afterContentPadding = 0f,
             )
         val keylines = strategy.defaultKeylines
         val rightAnchorSize = with(Density) { CarouselDefaults.AnchorSize.toPx() }
@@ -146,7 +146,7 @@ class UncontainedTest {
                 density = Density,
                 carouselMainAxisSize = carouselSize,
                 itemSize = itemSize,
-                itemSpacing = 0f
+                itemSpacing = 0f,
             )
         val strategy =
             Strategy(
@@ -154,7 +154,7 @@ class UncontainedTest {
                 availableSpace = carouselSize,
                 itemSpacing = 0f,
                 beforeContentPadding = 0f,
-                afterContentPadding = 0f
+                afterContentPadding = 0f,
             )
         val keylines = strategy.defaultKeylines
         val rightAnchorSize = with(Density) { CarouselDefaults.AnchorSize.toPx() }

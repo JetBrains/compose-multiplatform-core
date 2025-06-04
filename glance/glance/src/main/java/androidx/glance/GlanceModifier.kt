@@ -106,7 +106,7 @@ public interface GlanceModifier {
  */
 public class CombinedGlanceModifier(
     private val outer: GlanceModifier,
-    private val inner: GlanceModifier
+    private val inner: GlanceModifier,
 ) : GlanceModifier {
     override fun <R> foldIn(initial: R, operation: (R, GlanceModifier.Element) -> R): R =
         inner.foldIn(outer.foldIn(initial, operation), operation)

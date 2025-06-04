@@ -122,7 +122,7 @@ class ColorTest {
                     red = lerp(redOklab.red, greenOklab.red, t),
                     green = lerp(redOklab.green, greenOklab.green, t),
                     blue = lerp(redOklab.blue, greenOklab.blue, t),
-                    colorSpace = ColorSpaces.Oklab
+                    colorSpace = ColorSpaces.Oklab,
                 )
             val expected = expectedOklab.convert(ColorSpaces.Srgb)
             val colorARGB = Color(color.toArgb())
@@ -131,7 +131,7 @@ class ColorTest {
                 expectedARGB,
                 colorARGB,
                 "at t = $t[$i] was ${colorARGB.toArgb().toHexString()}, " +
-                    "expecting ${expectedARGB.toArgb().toHexString()}"
+                    "expecting ${expectedARGB.toArgb().toHexString()}",
             )
         }
 
@@ -1395,17 +1395,17 @@ class ColorTest {
             assertTrue(
                 abs(expected[it].toInt().red - color.toArgb().red) < 2,
                 "Expected fraction $it/1000 to have color " +
-                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}"
+                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}",
             )
             assertTrue(
                 abs(expected[it].toInt().green - color.toArgb().green) < 2,
                 "Expected fraction $it/1000 to have color " +
-                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}"
+                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}",
             )
             assertTrue(
                 abs(expected[it].toInt().blue - color.toArgb().blue) < 2,
                 "Expected fraction $it/1000 to have color " +
-                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}"
+                    "0x${expected[it].toString(16)}, but was 0x${colorLong.toString(16)}",
             )
         }
     }
@@ -1541,12 +1541,7 @@ class ColorTest {
             )
         val androidColorSpaces = colorSpaceNames.map { AndroidColorSpace.get(it) }
 
-        val colorSpaces =
-            arrayOf(
-                ColorSpaces.Bt709,
-                ColorSpaces.Bt2020Hlg,
-                ColorSpaces.Bt2020Pq,
-            )
+        val colorSpaces = arrayOf(ColorSpaces.Bt709, ColorSpaces.Bt2020Hlg, ColorSpaces.Bt2020Pq)
         for (i in colorSpaces.indices) {
             val androidColorSpace = androidColorSpaces[i]
             val composeColorSpace = colorSpaces[i]
@@ -1568,12 +1563,7 @@ class ColorTest {
             )
         val androidColorSpaces = colorSpaceNames.map { AndroidColorSpace.get(it) }
 
-        val colorSpaces =
-            arrayOf(
-                ColorSpaces.Bt709,
-                ColorSpaces.Bt2020Hlg,
-                ColorSpaces.Bt2020Pq,
-            )
+        val colorSpaces = arrayOf(ColorSpaces.Bt709, ColorSpaces.Bt2020Hlg, ColorSpaces.Bt2020Pq)
         for (i in colorSpaces.indices) {
             val androidColorSpace = androidColorSpaces[i]
             val composeColorSpace = colorSpaces[i]

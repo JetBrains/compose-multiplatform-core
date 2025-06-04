@@ -20,16 +20,13 @@ import com.squareup.javapoet.ClassName
 import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.BooleanProperty` annotation. */
-data class BooleanPropertyAnnotation(
-    override val name: String,
-    override val isRequired: Boolean,
-) :
+data class BooleanPropertyAnnotation(override val name: String, override val isRequired: Boolean) :
     DataPropertyAnnotation(
         className = CLASS_NAME,
         configClassName = CONFIG_CLASS,
         genericDocGetterName = "getPropertyBoolean",
         genericDocArrayGetterName = "getPropertyBooleanArray",
-        genericDocSetterName = "setPropertyBoolean"
+        genericDocSetterName = "setPropertyBoolean",
     ) {
     companion object {
         val CLASS_NAME: ClassName =
@@ -44,7 +41,7 @@ data class BooleanPropertyAnnotation(
          */
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): BooleanPropertyAnnotation {
             val name = annotationParams["name"] as? String
             return BooleanPropertyAnnotation(

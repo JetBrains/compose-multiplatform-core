@@ -88,6 +88,6 @@ internal class CameraBackendsImpl(
     internal class CameraBackendContext(
         override val appContext: Context,
         override val threads: Threads,
-        override val cameraBackends: CameraBackends
+        override val cameraBackends: CameraBackends,
     ) : CameraContext
 }

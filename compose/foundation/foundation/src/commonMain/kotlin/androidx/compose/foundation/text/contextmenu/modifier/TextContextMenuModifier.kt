@@ -27,7 +27,6 @@ import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
 
-// TODO(grantapher-cm-api-publicize) add AddComponentsToTextContextMenu sample
 /**
  * Adds a [builder] to be run when the text context menu is shown within this hierarchy.
  *
@@ -40,13 +39,12 @@ import androidx.compose.ui.platform.InspectorInfo
  *   such as [separator()][TextContextMenuBuilderScope.separator], to add components. The `item`
  *   function is not in the common source set, but is instead defined as an extension function in
  *   the platform specific source sets.
+ * @sample androidx.compose.foundation.samples.AddComponentsToTextContextMenu
  */
-// TODO(grantapher-cm-api-publicize) Make function public
-internal fun Modifier.addTextContextMenuComponents(
-    builder: TextContextMenuBuilderScope.() -> Unit,
+fun Modifier.addTextContextMenuComponents(
+    builder: TextContextMenuBuilderScope.() -> Unit
 ): Modifier = this then AddTextContextMenuDataComponentsElement(builder)
 
-// TODO(grantapher-cm-api-publicize) add AddFilterToTextContextMenu sample
 /**
  * Adds a [filter] to be run when the text context menu is shown within this hierarchy.
  *
@@ -61,14 +59,14 @@ internal fun Modifier.addTextContextMenuComponents(
  *
  * @param filter a snapshot-aware lambda that determines whether a [TextContextMenuComponent] should
  *   be included in the context menu.
+ * @sample androidx.compose.foundation.samples.AddFilterToTextContextMenu
  */
-// TODO(grantapher-cm-api-publicize) Make function public
-internal fun Modifier.filterTextContextMenuComponents(
-    filter: (TextContextMenuComponent) -> Boolean,
+fun Modifier.filterTextContextMenuComponents(
+    filter: (TextContextMenuComponent) -> Boolean
 ): Modifier = this then FilterTextContextMenuDataComponentsElement(filter)
 
 private class AddTextContextMenuDataComponentsElement(
-    private val builder: TextContextMenuBuilderScope.() -> Unit,
+    private val builder: TextContextMenuBuilderScope.() -> Unit
 ) : ModifierNodeElement<AddTextContextMenuDataComponentsNode>() {
     override fun create(): AddTextContextMenuDataComponentsNode =
         AddTextContextMenuDataComponentsNode(builder)
@@ -95,7 +93,7 @@ private class AddTextContextMenuDataComponentsElement(
 }
 
 private class FilterTextContextMenuDataComponentsElement(
-    private val filter: (TextContextMenuComponent) -> Boolean,
+    private val filter: (TextContextMenuComponent) -> Boolean
 ) : ModifierNodeElement<FilterTextContextMenuDataComponentsNode>() {
     override fun create(): FilterTextContextMenuDataComponentsNode =
         FilterTextContextMenuDataComponentsNode(filter)
@@ -124,14 +122,14 @@ private class FilterTextContextMenuDataComponentsElement(
 private data object TextContextMenuDataTraverseKey
 
 internal class AddTextContextMenuDataComponentsNode(
-    var builder: TextContextMenuBuilderScope.() -> Unit,
+    var builder: TextContextMenuBuilderScope.() -> Unit
 ) : Modifier.Node(), TraversableNode {
     override val traverseKey: Any
         get() = TextContextMenuDataTraverseKey
 }
 
 private class FilterTextContextMenuDataComponentsNode(
-    var filter: (TextContextMenuComponent) -> Boolean,
+    var filter: (TextContextMenuComponent) -> Boolean
 ) : Modifier.Node(), TraversableNode {
     override val traverseKey: Any
         get() = TextContextMenuDataTraverseKey
@@ -168,7 +166,7 @@ internal fun DelegatableNode.collectTextContextMenuData(): TextContextMenuData =
         .apply {
             traverseTextContextMenuDataNodes(
                 filterBlock = ::addFilter,
-                builderBlock = { builder -> this.builder() }
+                builderBlock = { builder -> this.builder() },
             )
         }
         .build()

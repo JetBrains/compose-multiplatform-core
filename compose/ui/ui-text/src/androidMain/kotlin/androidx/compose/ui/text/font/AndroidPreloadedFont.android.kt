@@ -32,12 +32,12 @@ internal sealed class AndroidPreloadedFont
 constructor(
     final override val weight: FontWeight,
     final override val style: FontStyle,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) :
     AndroidFont(
         FontLoadingStrategy.Blocking,
         AndroidPreloadedFontTypefaceLoader,
-        variationSettings
+        variationSettings,
     ) {
     abstract val cacheKey: String?
 
@@ -72,7 +72,7 @@ constructor(
     val path: String,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) : AndroidPreloadedFont(weight, style, variationSettings) {
 
     override fun doLoad(context: Context?): Typeface? {
@@ -116,7 +116,7 @@ constructor(
     val file: File,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) : AndroidPreloadedFont(weight, style, variationSettings) {
 
     override fun doLoad(context: Context?): Typeface? {
@@ -145,7 +145,7 @@ constructor(
     val fileDescriptor: ParcelFileDescriptor,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) : AndroidPreloadedFont(weight, style, variationSettings) {
 
     override fun doLoad(context: Context?): Typeface? {
@@ -153,7 +153,7 @@ constructor(
             TypefaceBuilderCompat.createFromFileDescriptor(
                 fileDescriptor,
                 context,
-                variationSettings
+                variationSettings,
             )
         } else {
             throw IllegalArgumentException("Cannot create font from file descriptor for SDK < 26")
@@ -178,7 +178,7 @@ private object TypefaceBuilderCompat {
         assetManager: AssetManager,
         path: String,
         context: Context?,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ): Typeface? {
         if (context == null) {
             return null
@@ -192,7 +192,7 @@ private object TypefaceBuilderCompat {
     fun createFromFile(
         file: File,
         context: Context?,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ): Typeface? {
         if (context == null) {
             return null

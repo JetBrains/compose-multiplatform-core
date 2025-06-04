@@ -164,7 +164,7 @@ public inline fun <R> Cursor.useCursor(block: (Cursor) -> R): R {
 public fun wrapMappedColumns(
     cursor: Cursor,
     columnNames: Array<String>,
-    mapping: IntArray
+    mapping: IntArray,
 ): Cursor {
     check(columnNames.size == mapping.size) { "Expected columnNames.length == mapping.length" }
     return object : CursorWrapper(cursor) {

@@ -96,6 +96,7 @@ internal constructor(
          * @param nativeLogs whether the native cli process should print Android logs. The tag used
          *   on logcat is `NativeShellProcess`.
          * @return a running shell process, ready to accept commands.
+         * @throws IOException if the underlying native utility does not start.
          */
         @JvmStatic
         @JvmOverloads
@@ -115,7 +116,7 @@ internal constructor(
                     stdOutBufferSize = stdOutBufferSize,
                     stdErrBufferSize = stdErrBufferSize,
                     connectToNativeProcessTimeoutMs = connectToNativeProcessTimeoutMs,
-                    shellProcessVerboseLogs = nativeLogs
+                    shellProcessVerboseLogs = nativeLogs,
                 )
                 .also { it.start() }
         }
@@ -200,7 +201,7 @@ internal constructor(
                     stdInSocketPort,
                     stdOutSocketPort,
                     stdErrSocketPort,
-                    command
+                    command,
                 )
                 .joinToString(" ")
                 .let { "${shellExecFile.absolutePath} $it" }
@@ -231,12 +232,12 @@ internal constructor(
         stdOutReadThread =
             asyncReadFromSocket(
                 socketPort = stdOutSocketPort,
-                circularBuffer = stdOutCircularBuffer
+                circularBuffer = stdOutCircularBuffer,
             )
         stdErrReadThread =
             asyncReadFromSocket(
                 socketPort = stdErrSocketPort,
-                circularBuffer = stdErrCircularBuffer
+                circularBuffer = stdErrCircularBuffer,
             )
     }
 

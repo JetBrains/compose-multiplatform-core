@@ -54,8 +54,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -77,10 +77,10 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialMediaPlayer
 import androidx.xr.scenecore.SurfaceEntity
@@ -128,7 +128,7 @@ class VideoPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         setContent { Subspace { VideoOptionsContent(session) } }
     }
@@ -150,7 +150,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     BackHandler {
                         Log.i(
                             "BackHandler",
-                            "Gnav BACK is being handled by Surface Entity back handler"
+                            "Gnav BACK is being handled by Surface Entity back handler",
                         )
                         releaseMediaPlayer()
                         finish()
@@ -225,7 +225,7 @@ class VideoPlayerActivity : ComponentActivity() {
                                 ) {
                                     Text(
                                         modifier = Modifier.padding(8.dp),
-                                        text = "Spatialize audio with Video"
+                                        text = "Spatialize audio with Video",
                                     )
                                     Switch(
                                         checked = isAudioSpatialized,
@@ -394,7 +394,7 @@ class VideoPlayerActivity : ComponentActivity() {
                 movableComponent = MovableComponent.create(session)
 
                 // The quad has a radius of 1.0 meters
-                movableComponent!!.size = Dimensions(1.0f, 1.0f, 1.0f)
+                movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
                 @Suppress("UNUSED_VARIABLE")
                 val unused = surfaceEntity!!.addComponent(movableComponent!!)
 
@@ -502,7 +502,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
             SpatialBox(
                 modifier = SubspaceModifier.fillMaxSize(),
-                alignment = SpatialAlignment.TopRight
+                alignment = SpatialAlignment.TopRight,
             ) {
                 SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
                     Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
@@ -510,7 +510,7 @@ class VideoPlayerActivity : ComponentActivity() {
             }
 
             // Offset avoids depth perception issues when playing stereoscopic video.
-            Orbiter(position = OrbiterEdge.Bottom, offset = 48.dp) {
+            Orbiter(position = ContentEdge.Bottom, offset = 48.dp) {
                 Button(
                     onClick = {
                         if (isPaused) mediaPlayer.start() else mediaPlayer.pause()
@@ -543,7 +543,7 @@ class VideoPlayerActivity : ComponentActivity() {
                             session.scene.spatialUser.head?.transformPoseTo(
                                 Pose(
                                     Vector3(0.0f, 0.0f, -1.5f),
-                                    Quaternion(0.0f, 0.0f, 0.0f, 1.0f)
+                                    Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                                 ),
                                 session.scene.activitySpace,
                             )!!
@@ -594,14 +594,14 @@ class VideoPlayerActivity : ComponentActivity() {
         surfaceEntity?.dispose()
     }
 
-    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): Dimensions {
+    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
         when (stereoMode) {
             SurfaceEntity.StereoMode.MONO ->
-                return Dimensions(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
-                return Dimensions(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
-                return Dimensions(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }

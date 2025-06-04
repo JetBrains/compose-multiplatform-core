@@ -34,7 +34,7 @@ public class CameraGraphParametersImpl
 internal constructor(
     private val sessionLock: SessionLock,
     private val graphProcessor: GraphProcessor,
-    @ForCameraGraph private val graphScope: CoroutineScope
+    @ForCameraGraph private val graphScope: CoroutineScope,
 ) : Parameters {
     private val lock = Any()
 

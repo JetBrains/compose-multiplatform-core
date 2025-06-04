@@ -42,7 +42,7 @@ class PerfettoTraceLinkTest {
             PerfettoTrace.Link(
                 title = "bar",
                 path = "foo.perfetto-trace",
-                urlParamsEncoded = "?key=value"
+                urlParamsEncoded = "?key=value",
             )
         assertThat(link.benchmarkMarkdownLink(LinkFormat.V2))
             .isEqualTo("[bar](file://foo.perfetto-trace)")
@@ -56,7 +56,7 @@ class PerfettoTraceLinkTest {
             PerfettoTrace.Link(
                 title = "bar",
                 path = "foo.perfetto-trace",
-                urlParamMap = mapOf("key1" to "value1", "key2" to "value2")
+                urlParamMap = mapOf("key1" to "value1", "key2" to "value2"),
             )
         assertThat(link.benchmarkMarkdownLink(LinkFormat.V2))
             .isEqualTo("[bar](file://foo.perfetto-trace)")
@@ -70,7 +70,7 @@ class PerfettoTraceLinkTest {
             PerfettoTrace.Link(
                 title = "bar",
                 path = "foo.perfetto-trace",
-                urlParamMap = mapOf("foo:bar" to "baz")
+                urlParamMap = mapOf("foo:bar" to "baz"),
             )
         assertThat(link.benchmarkMarkdownLink(LinkFormat.V2))
             .isEqualTo("[bar](file://foo.perfetto-trace)")

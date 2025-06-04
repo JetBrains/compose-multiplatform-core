@@ -21,7 +21,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEventListener;
@@ -29,7 +28,6 @@ import androidx.xr.runtime.internal.LoggingEntity;
 import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.common.BaseEntity;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

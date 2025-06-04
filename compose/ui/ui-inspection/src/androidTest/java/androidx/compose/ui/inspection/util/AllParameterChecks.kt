@@ -27,7 +27,7 @@ suspend fun createAllParametersChecks(
     inspectorTester: InspectorTester,
     rootId: Long,
     generation: Int,
-    skipSystemComposables: Boolean = false
+    skipSystemComposables: Boolean = false,
 ): AllParametersChecks {
     val composableResponse =
         inspectorTester
@@ -36,7 +36,7 @@ suspend fun createAllParametersChecks(
                     rootViewId = rootId,
                     skipSystemComposables = skipSystemComposables,
                     extractAllParameters = true,
-                    generation = generation
+                    generation = generation,
                 )
             )
             .getComposablesResponse
@@ -47,7 +47,7 @@ suspend fun createAllParametersChecks(
                 GetAllParametersCommand(
                     rootViewId = rootId,
                     skipSystemComposables = skipSystemComposables,
-                    generation = generation
+                    generation = generation,
                 )
             )
             .getAllParametersResponse
@@ -83,7 +83,7 @@ class AllParametersChecks(
         composable: ComposableNode,
         expectedName: String,
         parameterName: String,
-        expectedParameterValue: String
+        expectedParameterValue: String,
     ) {
         assertThat(composableStrings[composable.name]).isEqualTo(expectedName)
         assertThat(parameterStringValue(composable, parameterName))

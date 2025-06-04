@@ -79,14 +79,12 @@ class VideoRecordingEffectTest(
     private val implName: String,
     val selectorName: String,
     private val cameraSelector: CameraSelector,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -110,25 +108,25 @@ class VideoRecordingEffectTest(
                     Camera2Config::class.simpleName,
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     Camera2Config::class.simpleName,
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     CameraPipeConfig::class.simpleName,
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     CameraPipeConfig::class.simpleName,
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
             )
         }
@@ -140,7 +138,7 @@ class VideoRecordingEffectTest(
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeueInput/Output buffer fails issue. Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
     }
 
@@ -154,7 +152,7 @@ class VideoRecordingEffectTest(
     fun recordSdrVideoGreen_producesGreenVideo_withEffect() =
         runSolidColorRecordingTest(
             colorChannel = ColorChannel.GREEN,
-            dynamicRange = DynamicRange.SDR
+            dynamicRange = DynamicRange.SDR,
         )
 
     @Test
@@ -162,7 +160,7 @@ class VideoRecordingEffectTest(
     fun recordSdrVideoBlue_producesBlueVideo_withEffect() =
         runSolidColorRecordingTest(
             colorChannel = ColorChannel.BLUE,
-            dynamicRange = DynamicRange.SDR
+            dynamicRange = DynamicRange.SDR,
         )
 
     @Test
@@ -170,7 +168,7 @@ class VideoRecordingEffectTest(
     fun recordHlg10VideoRed_producesRedVideo_withEffect() =
         runSolidColorRecordingTest(
             colorChannel = ColorChannel.RED,
-            dynamicRange = DynamicRange.HLG_10_BIT
+            dynamicRange = DynamicRange.HLG_10_BIT,
         )
 
     @Test
@@ -178,7 +176,7 @@ class VideoRecordingEffectTest(
     fun recordHlg10VideoGreen_producesGreenVideo_withEffect() =
         runSolidColorRecordingTest(
             colorChannel = ColorChannel.GREEN,
-            dynamicRange = DynamicRange.HLG_10_BIT
+            dynamicRange = DynamicRange.HLG_10_BIT,
         )
 
     @Test
@@ -186,13 +184,13 @@ class VideoRecordingEffectTest(
     fun recordHlg10VideoBlue_producesBlueVideo_withEffect() =
         runSolidColorRecordingTest(
             colorChannel = ColorChannel.BLUE,
-            dynamicRange = DynamicRange.HLG_10_BIT
+            dynamicRange = DynamicRange.HLG_10_BIT,
         )
 
     @RequiresApi(29)
     private fun runSolidColorRecordingTest(
         colorChannel: ColorChannel,
-        dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED
+        dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
     ) =
         runCameraTest(cameraConfig) { camProvider ->
             val camInfo = camProvider.getCameraInfo(cameraSelector)
@@ -211,7 +209,7 @@ class VideoRecordingEffectTest(
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,
-                        result: TotalCaptureResult
+                        result: TotalCaptureResult,
                     ) {
                         result.get(SENSOR_TEST_PATTERN_MODE)?.let { testPatternModeFlow.value = it }
                     }
@@ -262,7 +260,7 @@ class VideoRecordingEffectTest(
                             videoCapture = videoCapture,
                             minDurationMillis = 1000,
                             pauseDurationMillis = 0,
-                            withAudio = false
+                            withAudio = false,
                         )
                     ) {
                         try {
@@ -284,7 +282,7 @@ class VideoRecordingEffectTest(
 
     private inline fun runCameraTest(
         cameraConfig: CameraXConfig,
-        crossinline block: suspend CoroutineScope.(ProcessCameraProvider) -> Unit
+        crossinline block: suspend CoroutineScope.(ProcessCameraProvider) -> Unit,
     ): Unit = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
         val context: Context = ApplicationProvider.getApplicationContext()

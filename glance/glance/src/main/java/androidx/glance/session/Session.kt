@@ -58,7 +58,7 @@ public abstract class Session(public val key: String) {
      */
     public abstract suspend fun processEmittableTree(
         context: Context,
-        root: EmittableWithChildren
+        root: EmittableWithChildren,
     ): Boolean
 
     /** Process an event that was sent to this session. */

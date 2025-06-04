@@ -103,7 +103,7 @@ tasks.withType(KotlinCompile).configureEach {
 
 androidx {
     name = "Tracing Driver Wire"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "AndroidX Tracing Driver Wire"
 }

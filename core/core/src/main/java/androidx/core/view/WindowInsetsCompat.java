@@ -727,6 +727,15 @@ public class WindowInsetsCompat {
         return mImpl.getRoundedCorner(position);
     }
 
+    /**
+     * Returns a {@link Rect} representing the bounds of the system privacy indicator, for the
+     * current orientation, in the window space coordinates. This method returns null if the system
+     * component doesn't have such indicators or the bounds have been consumed.
+     */
+    public @Nullable Rect getPrivacyIndicatorBounds() {
+        return mImpl.getPrivacyIndicatorBounds();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -835,6 +844,10 @@ public class WindowInsetsCompat {
         }
 
         @Nullable RoundedCornerCompat getRoundedCorner(@Position int position) {
+            return null;
+        }
+
+        @Nullable Rect getPrivacyIndicatorBounds() {
             return null;
         }
 
@@ -1406,9 +1419,17 @@ public class WindowInsetsCompat {
             super(host, other);
         }
 
+        @Override
         @Nullable RoundedCornerCompat getRoundedCorner(@Position int position) {
             return RoundedCornerCompat.toRoundedCornerCompat(
                     mPlatformInsets.getRoundedCorner(position));
+        }
+
+        @Override
+        @Nullable Rect getPrivacyIndicatorBounds() {
+            final Rect bounds = mPlatformInsets.getPrivacyIndicatorBounds();
+            // Prevent the caller from modifying the bounds in the WindowInsets.
+            return bounds != null ? new Rect(bounds) : null;
         }
     }
 
@@ -1675,6 +1696,17 @@ public class WindowInsetsCompat {
         }
 
         /**
+         * Sets the bounds of the system privacy indicator.
+         *
+         * @param bounds The bounds of the system privacy indicator, or null if they don't exist or
+         *               the bounds have been consumed.
+         */
+        public @NonNull Builder setPrivacyIndicatorBounds(@Nullable Rect bounds) {
+            mImpl.setPrivacyIndicatorBounds(bounds);
+            return this;
+        }
+
+        /**
          * Builds a {@link WindowInsetsCompat} instance.
          *
          * @return the {@link WindowInsetsCompat} instance.
@@ -1734,6 +1766,9 @@ public class WindowInsetsCompat {
         void setVisible(int typeMask, boolean visible) {}
 
         void setRoundedCorner(@Position int position, @Nullable RoundedCornerCompat roundedCorner) {
+        }
+
+        void setPrivacyIndicatorBounds(@Nullable Rect bounds) {
         }
 
         /**
@@ -1978,6 +2013,13 @@ public class WindowInsetsCompat {
             mPlatBuilder.setRoundedCorner(
                     RoundedCornerCompat.toPlatformPosition(position),
                     RoundedCornerCompat.toPlatformRoundedCorner(roundedCorner));
+        }
+
+        @Override
+        void setPrivacyIndicatorBounds(@Nullable Rect bounds) {
+            // The platform builder would not copy the bounds, which is dangerous. Here copies the
+            // bounds for it.
+            mPlatBuilder.setPrivacyIndicatorBounds(bounds != null ? new Rect(bounds) : null);
         }
     }
 

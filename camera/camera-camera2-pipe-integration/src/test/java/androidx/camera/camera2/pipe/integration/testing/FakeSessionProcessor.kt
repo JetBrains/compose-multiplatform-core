@@ -45,13 +45,13 @@ class FakeSessionProcessor : SessionProcessor {
         val previewSurface =
             SessionProcessorSurface(
                     outputSurfaceConfiguration!!.previewOutputSurface.surface,
-                    previewOutputConfigId
+                    previewOutputConfigId,
                 )
                 .also { it.setContainerClass(Preview::class.java) }
         val imageCaptureSurface =
             SessionProcessorSurface(
                     outputSurfaceConfiguration.imageCaptureOutputSurface.surface,
-                    imageCaptureOutputConfigId
+                    imageCaptureOutputConfigId,
                 )
                 .also { it.setContainerClass(ImageCapture::class.java) }
         val imageAnalysisSurface =
@@ -89,7 +89,7 @@ class FakeSessionProcessor : SessionProcessor {
 
     override fun startRepeating(
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         Log.debug { "$this#startRepeating" }
         return 0
@@ -102,7 +102,7 @@ class FakeSessionProcessor : SessionProcessor {
     override fun startCapture(
         postviewEnabled: Boolean,
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         Log.debug { "$this#startCapture" }
         startCapturesCount++

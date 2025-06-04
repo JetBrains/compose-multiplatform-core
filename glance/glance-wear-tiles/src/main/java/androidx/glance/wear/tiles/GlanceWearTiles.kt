@@ -45,7 +45,7 @@ import kotlinx.coroutines.withContext
 @Suppress("deprecation") // For backwards compatibility.
 public class WearTilesCompositionResult(
     public val layout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement,
-    public val resources: androidx.wear.tiles.ResourceBuilders.Resources
+    public val resources: androidx.wear.tiles.ResourceBuilders.Resources,
 )
 
 @ExperimentalGlanceWearTilesApi
@@ -62,7 +62,7 @@ public suspend fun compose(
     context: Context,
     size: DpSize,
     state: Any? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): WearTilesCompositionResult = coroutineScope {
     withContext(BroadcastFrameClock()) {
         val WEAR_TILES_ID = object : GlanceId {}
@@ -74,7 +74,7 @@ public suspend fun compose(
                 /*glanceId=*/ WEAR_TILES_ID,
                 context,
                 errorUiLayout(),
-                content
+                content,
             )
         WearTilesCompositionResult(compositionResult.layout, compositionResult.resources.build())
     }
@@ -100,7 +100,7 @@ internal suspend fun composeTileHelper(
     glanceId: GlanceId,
     context: Context,
     errorUiLayout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): CompositionResult = coroutineScope {
     val root = EmittableBox()
     root.modifier = GlanceModifier.fillMaxSize()
@@ -116,7 +116,7 @@ internal suspend fun composeTileHelper(
             LocalState provides currentState,
             LocalTimeInterval provides timeInterval,
             LocalGlanceId provides glanceId,
-            content = content
+            content = content,
         )
     }
 

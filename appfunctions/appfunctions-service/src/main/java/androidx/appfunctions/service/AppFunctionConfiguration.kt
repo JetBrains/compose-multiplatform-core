@@ -58,7 +58,7 @@ internal constructor(
          */
         public fun <T : Any> addEnclosingClassFactory(
             enclosingClass: Class<T>,
-            factory: () -> T
+            factory: () -> T,
         ): Builder {
             @Suppress("UNCHECKED_CAST")
             enclosingClassFactories[enclosingClass] = factory as () -> Any

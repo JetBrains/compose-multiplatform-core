@@ -61,7 +61,7 @@ internal interface PlatformTypefaces {
         weight: FontWeight,
         style: FontStyle,
         variationSettings: FontVariation.Settings,
-        context: Context
+        context: Context,
     ): Typeface?
 }
 
@@ -81,12 +81,12 @@ private class PlatformTypefacesApi : PlatformTypefaces {
     override fun createNamed(
         name: GenericFontFamily,
         fontWeight: FontWeight,
-        fontStyle: FontStyle
+        fontStyle: FontStyle,
     ): Typeface {
         return loadNamedFromTypefaceCacheOrNull(
             getWeightSuffixForFallbackFamilyName(name.name, fontWeight),
             fontWeight,
-            fontStyle
+            fontStyle,
         ) ?: createAndroidTypefaceUsingTypefaceStyle(name.name, fontWeight, fontStyle)
     }
 
@@ -96,7 +96,7 @@ private class PlatformTypefacesApi : PlatformTypefaces {
         weight: FontWeight,
         style: FontStyle,
         variationSettings: FontVariation.Settings,
-        context: Context
+        context: Context,
     ): Typeface? {
         // if the developer specified one of the named fonts, behave identically to the
         // GenericFontFamily behavior, return the same as createNamed always
@@ -114,7 +114,7 @@ private class PlatformTypefacesApi : PlatformTypefaces {
     private fun loadNamedFromTypefaceCacheOrNull(
         familyName: String,
         weight: FontWeight,
-        style: FontStyle
+        style: FontStyle,
     ): Typeface? {
         if (familyName.isEmpty()) return null
         val typeface = createAndroidTypefaceUsingTypefaceStyle(familyName, weight, style)
@@ -128,7 +128,7 @@ private class PlatformTypefacesApi : PlatformTypefaces {
     private fun createAndroidTypefaceUsingTypefaceStyle(
         genericFontFamily: String? = null,
         fontWeight: FontWeight = FontWeight.Normal,
-        fontStyle: FontStyle = FontStyle.Normal
+        fontStyle: FontStyle = FontStyle.Normal,
     ): Typeface {
         if (
             fontStyle == FontStyle.Normal &&
@@ -156,7 +156,7 @@ private class PlatformTypefacesApi28 : PlatformTypefaces {
         weight: FontWeight,
         style: FontStyle,
         variationSettings: FontVariation.Settings,
-        context: Context
+        context: Context,
     ): Typeface? {
         // if the developer specified one of the named fonts, behave identically to the
         // GenericFontFamily behavior, return the same as createNamed always
@@ -181,13 +181,13 @@ private class PlatformTypefacesApi28 : PlatformTypefaces {
     override fun createNamed(
         name: GenericFontFamily,
         fontWeight: FontWeight,
-        fontStyle: FontStyle
+        fontStyle: FontStyle,
     ): Typeface = createAndroidTypefaceApi28(name.name, fontWeight, fontStyle)
 
     private fun loadNamedFromTypefaceCacheOrNull(
         familyName: String,
         weight: FontWeight,
-        style: FontStyle
+        style: FontStyle,
     ): Typeface? {
         if (familyName.isEmpty()) return null
         val typeface = createAndroidTypefaceApi28(familyName, weight, style)
@@ -202,7 +202,7 @@ private class PlatformTypefacesApi28 : PlatformTypefaces {
     private fun createAndroidTypefaceApi28(
         genericFontFamily: String? = null,
         fontWeight: FontWeight,
-        fontStyle: FontStyle
+        fontStyle: FontStyle,
     ): Typeface {
         if (
             fontStyle == FontStyle.Normal &&

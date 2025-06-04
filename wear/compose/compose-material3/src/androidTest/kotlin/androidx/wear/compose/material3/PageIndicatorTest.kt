@@ -79,7 +79,7 @@ class PageIndicatorTest {
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
@@ -116,7 +116,7 @@ class PageIndicatorTest {
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
@@ -153,7 +153,7 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 1,
                             currentPageOffsetFraction = 0.0f,
-                            pageCount = { 9 }
+                            pageCount = { 9 },
                         ),
                 )
             }
@@ -180,7 +180,7 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 1,
                             currentPageOffsetFraction = 0.0f,
-                            pageCount = { pagesCount }
+                            pageCount = { pagesCount },
                         ),
                 )
             }
@@ -212,11 +212,11 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 0,
                             currentPageOffsetFraction = 0f,
-                            pageCount = { 1 }
+                            pageCount = { 1 },
                         ),
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
@@ -248,7 +248,7 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
@@ -285,7 +285,7 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
@@ -313,14 +313,14 @@ class PageIndicatorTest {
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.0f,
-            pageCount = { PAGE_COUNT }
+            pageCount = { PAGE_COUNT },
         )
 
     private val pagerState_middle =
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.5f,
-            pageCount = { PAGE_COUNT }
+            pageCount = { PAGE_COUNT },
         )
 
     companion object {

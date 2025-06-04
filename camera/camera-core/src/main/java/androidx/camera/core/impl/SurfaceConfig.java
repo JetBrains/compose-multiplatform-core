@@ -33,7 +33,10 @@ import com.google.auto.value.AutoValue;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Surface configuration type and size pair
@@ -54,6 +57,26 @@ public abstract class SurfaceConfig {
             ConfigSize.UHD,
             ConfigSize.X_VGA,
     };
+
+    @NonNull
+    private static final Map<@NonNull ConfigType, @NonNull Integer> IMAGE_FORMATS_BY_CONFIG_TYPE =
+            new HashMap<@NonNull ConfigType, @NonNull Integer>() {{
+                    put(ConfigType.YUV, ImageFormat.YUV_420_888);
+                    put(ConfigType.JPEG, ImageFormat.JPEG);
+                    put(ConfigType.JPEG_R, ImageFormat.JPEG_R);
+                    put(ConfigType.RAW, ImageFormat.RAW_SENSOR);
+                    put(ConfigType.PRIV,
+                            ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
+                }};
+
+    @NonNull
+    private static final Map<@NonNull Integer, @NonNull ConfigType> CONFIG_TYPES_BY_IMAGE_FORMAT =
+            new HashMap<@NonNull Integer, @NonNull ConfigType>() {{
+                    for (Map.Entry<ConfigType, Integer> entry :
+                            IMAGE_FORMATS_BY_CONFIG_TYPE.entrySet()) {
+                        put(entry.getValue(), entry.getKey());
+                    }
+                }};
 
     /** Prevent subclassing */
     SurfaceConfig() {
@@ -125,16 +148,42 @@ public abstract class SurfaceConfig {
      * ImageFormat.RAW_SENSOR format.
      */
     public static SurfaceConfig.@NonNull ConfigType getConfigType(int imageFormat) {
-        if (imageFormat == ImageFormat.YUV_420_888) {
-            return SurfaceConfig.ConfigType.YUV;
-        } else if (imageFormat == ImageFormat.JPEG) {
-            return SurfaceConfig.ConfigType.JPEG;
-        } else if (imageFormat == ImageFormat.JPEG_R) {
-            return SurfaceConfig.ConfigType.JPEG_R;
-        } else if (imageFormat == ImageFormat.RAW_SENSOR) {
-            return SurfaceConfig.ConfigType.RAW;
-        } else {
-            return SurfaceConfig.ConfigType.PRIV;
+        ConfigType configType = CONFIG_TYPES_BY_IMAGE_FORMAT.get(imageFormat);
+        if (configType != null) {
+            return configType;
+        }
+        return SurfaceConfig.ConfigType.PRIV;
+    }
+
+    /** Returns the {@link ImageFormat} constant of the underlying {@link ConfigType}. */
+    public int getImageFormat() {
+        Integer imageFormat = IMAGE_FORMATS_BY_CONFIG_TYPE.get(getConfigType());
+        if (imageFormat != null) {
+            return imageFormat;
+        }
+        return ImageFormat.UNKNOWN;
+    }
+
+    /** Returns the resolution based on the underlying {@link ConfigSize}. */
+    public @NonNull Size getResolution(@NonNull SurfaceSizeDefinition definition) {
+        ConfigSize configSize = getConfigSize();
+        switch (configSize) {
+            case PREVIEW:
+                return definition.getPreviewSize();
+            case RECORD:
+                return definition.getRecordSize();
+            case MAXIMUM:
+                return Objects.requireNonNull(definition.getMaximumSize(getImageFormat()));
+            case MAXIMUM_4_3:
+                return Objects.requireNonNull(definition.getMaximum4x3Size(getImageFormat()));
+            case MAXIMUM_16_9:
+                return Objects.requireNonNull(definition.getMaximum16x9Size(getImageFormat()));
+            case ULTRA_MAXIMUM:
+                return Objects.requireNonNull(definition.getUltraMaximumSize(getImageFormat()));
+            case NOT_SUPPORT:
+                throw new IllegalStateException("Not supported config size");
+            default:
+                return Objects.requireNonNull(configSize.getRelatedFixedSize());
         }
     }
 

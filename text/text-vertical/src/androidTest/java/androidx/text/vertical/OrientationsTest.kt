@@ -43,7 +43,7 @@ class OrientationsTest {
         text: CharSequence,
         start: Int = 0,
         end: Int = text.length,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED
+        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
     ): List<Run> {
         val out = mutableListOf<Run>()
         forEachOrientation(text, start, end, textOrientation) { oStart, oEnd, orientation ->
@@ -58,7 +58,7 @@ class OrientationsTest {
 
     private fun resolve(
         text: CharSequence,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED
+        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
     ) = resolve(text, 0, text.length, textOrientation)
 
     @Test

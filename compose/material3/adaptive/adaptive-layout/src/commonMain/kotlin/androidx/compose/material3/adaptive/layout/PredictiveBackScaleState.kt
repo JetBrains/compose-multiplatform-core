@@ -41,7 +41,7 @@ internal fun Modifier.predictiveBackScale(state: PredictiveBackScaleState): Modi
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal class PredictiveBackScaleState(
     private val scaffoldSize: () -> IntSize,
-    private val isPredictiveBackInProgress: () -> Boolean
+    private val isPredictiveBackInProgress: () -> Boolean,
 ) {
     val scaleAnimatable = Animatable(initialValue = 1f)
     val scale: Float
@@ -60,7 +60,7 @@ internal class PredictiveBackScaleState(
                         pivotX = scaffoldSize.width.toFloat() * transformOrigin.pivotFractionX,
                         pivotY = scaffoldSize.height.toFloat() * transformOrigin.pivotFractionY,
                         scaleX = scaleAnimatable.value,
-                        scaleY = scaleAnimatable.value
+                        scaleY = scaleAnimatable.value,
                     )
                 }
                 .map(offset.toOffset())

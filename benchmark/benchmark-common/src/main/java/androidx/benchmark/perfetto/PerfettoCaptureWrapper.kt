@@ -64,7 +64,7 @@ class PerfettoCaptureWrapper {
     @RequiresApi(23)
     private fun start(
         config: PerfettoConfig,
-        perfettoSdkConfig: PerfettoCapture.PerfettoSdkConfig?
+        perfettoSdkConfig: PerfettoCapture.PerfettoSdkConfig?,
     ): Boolean {
         capture?.apply {
             Log.d(LOG_TAG, "Recording perfetto trace")
@@ -120,7 +120,7 @@ class PerfettoCaptureWrapper {
         traceCallback: ((String) -> Unit)? = null,
         enableTracing: Boolean = true,
         inMemoryTracingLabel: String? = null,
-        block: () -> Unit
+        block: () -> Unit,
     ): String? {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         // skip if Perfetto not supported, or if caller opts out

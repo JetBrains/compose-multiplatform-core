@@ -44,7 +44,7 @@ public class RejectOperationCameraCaptureSession : CameraCaptureSession() {
     override fun capture(
         request: CaptureRequest,
         listener: CaptureCallback?,
-        handler: Handler?
+        handler: Handler?,
     ): Int {
         throw IllegalArgumentException(createExceptionMessage("capture"))
     }
@@ -52,7 +52,7 @@ public class RejectOperationCameraCaptureSession : CameraCaptureSession() {
     override fun captureBurst(
         requests: List<CaptureRequest>,
         listener: CaptureCallback?,
-        handler: Handler?
+        handler: Handler?,
     ): Int {
         throw IllegalArgumentException(createExceptionMessage("captureBurst"))
     }
@@ -60,7 +60,7 @@ public class RejectOperationCameraCaptureSession : CameraCaptureSession() {
     override fun setRepeatingRequest(
         request: CaptureRequest,
         listener: CaptureCallback?,
-        handler: Handler?
+        handler: Handler?,
     ): Int {
         throw IllegalArgumentException(createExceptionMessage("setRepeatingRequest"))
     }
@@ -68,7 +68,7 @@ public class RejectOperationCameraCaptureSession : CameraCaptureSession() {
     override fun setRepeatingBurst(
         requests: List<CaptureRequest>,
         listener: CaptureCallback?,
-        handler: Handler?
+        handler: Handler?,
     ): Int {
         throw IllegalArgumentException(createExceptionMessage("setRepeatingBurst"))
     }

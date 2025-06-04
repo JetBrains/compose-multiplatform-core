@@ -101,7 +101,7 @@ class NestedScrollInteropConnectionTest {
         createViewComposeActivity {
             TestListWithNestedScroll(
                 items,
-                Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
             )
         }
 
@@ -110,7 +110,7 @@ class NestedScrollInteropConnectionTest {
             swipeWithVelocity(
                 start = center,
                 end = Offset(center.x, center.y + 100),
-                endVelocity = 0f
+                endVelocity = 0f,
             )
         }
 
@@ -183,7 +183,7 @@ class NestedScrollInteropConnectionTest {
             swipeWithVelocity(
                 start = center,
                 end = Offset(center.x, center.y - appBarExpandedSize.roundToPx()),
-                endVelocity = 0f
+                endVelocity = 0f,
             )
         }
 
@@ -213,7 +213,7 @@ class NestedScrollInteropConnectionTest {
         createViewComposeActivity {
             TestListWithNestedScroll(
                 items,
-                Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
             )
         }
 
@@ -222,7 +222,7 @@ class NestedScrollInteropConnectionTest {
             swipeWithVelocity(
                 start = center,
                 end = Offset(center.x, center.y - completelyCollapsedScroll.roundToPx()),
-                endVelocity = 0f
+                endVelocity = 0f,
             )
         }
 
@@ -242,7 +242,7 @@ class NestedScrollInteropConnectionTest {
         createViewComposeActivity {
             TestListWithNestedScroll(
                 items,
-                Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
             )
         }
 
@@ -251,7 +251,7 @@ class NestedScrollInteropConnectionTest {
             swipeWithVelocity(
                 start = center,
                 end = Offset(center.x, center.y - completelyCollapsedScroll.roundToPx()),
-                endVelocity = 0f
+                endVelocity = 0f,
             )
         }
 
@@ -270,7 +270,7 @@ class NestedScrollInteropConnectionTest {
         createViewComposeActivity {
             TestListWithNestedScroll(
                 items,
-                Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
             )
         }
 
@@ -279,7 +279,7 @@ class NestedScrollInteropConnectionTest {
             swipeUp(
                 startY = center.y,
                 endY = center.y - completelyCollapsedScroll.roundToPx(),
-                durationMillis = 200
+                durationMillis = 200,
             )
         }
 
@@ -302,7 +302,7 @@ class NestedScrollInteropConnectionTest {
             createViewComposeActivity {
                 TestListWithNestedScroll(
                     (1..20).map { it.toString() },
-                    Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                    Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
                 )
             }
 
@@ -330,7 +330,7 @@ class NestedScrollInteropConnectionTest {
             createViewComposeActivity {
                 TestListWithNestedScroll(
                     items,
-                    Modifier.nestedScroll(deltaCollectorNestedScrollConnection)
+                    Modifier.nestedScroll(deltaCollectorNestedScrollConnection),
                 )
             }
 
@@ -339,7 +339,7 @@ class NestedScrollInteropConnectionTest {
                 swipeUp(
                     startY = center.y,
                     endY = center.y - completelyCollapsedScroll.roundToPx(),
-                    durationMillis = 200
+                    durationMillis = 200,
                 )
             }
 
@@ -356,12 +356,12 @@ class NestedScrollInteropConnectionTest {
 
     private fun createViewComposeActivity(
         enableInterop: Boolean = true,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.activityRule.scenario.createActivityWithComposeContent(
             layout = R.layout.test_nested_scroll_coordinator_layout,
             enableInterop = enableInterop,
-            content = content
+            content = content,
         )
     }
 }
@@ -381,7 +381,7 @@ private fun TestListWithNestedScroll(items: List<String>, modifier: Modifier = M
 private fun TestItem(item: String) {
     Box(
         modifier = Modifier.padding(16.dp).height(56.dp).fillMaxWidth().testTag(item),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         BasicText(item)
     }

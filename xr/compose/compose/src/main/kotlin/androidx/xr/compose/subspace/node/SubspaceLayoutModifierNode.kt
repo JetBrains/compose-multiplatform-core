@@ -17,9 +17,9 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.annotation.RestrictTo
-import androidx.xr.compose.subspace.layout.Measurable
 import androidx.xr.compose.subspace.layout.MeasureResult
 import androidx.xr.compose.subspace.layout.MeasureScope
+import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.unit.VolumeConstraints
 
@@ -33,7 +33,8 @@ import androidx.xr.compose.unit.VolumeConstraints
 public interface SubspaceLayoutModifierNode {
 
     /**
-     * Defines the measurement and layout of the [Measurable] within the given [MeasureScope].
+     * Defines the measurement and layout of the [SubspaceMeasurable] within the given
+     * [MeasureScope].
      *
      * The measurable is subject to the specified [VolumeConstraints].
      *
@@ -42,7 +43,7 @@ public interface SubspaceLayoutModifierNode {
      * @return a [MeasureResult] encapsulating the size and alignment lines of the measured layout.
      */
     public fun MeasureScope.measure(
-        measurable: Measurable,
+        measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): MeasureResult
 }

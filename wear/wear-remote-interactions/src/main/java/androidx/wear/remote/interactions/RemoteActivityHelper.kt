@@ -76,7 +76,7 @@ public class RemoteActivityHelper
 @JvmOverloads
 constructor(
     private val context: Context,
-    private val executor: Executor = Executors.newSingleThreadExecutor()
+    private val executor: Executor = Executors.newSingleThreadExecutor(),
 ) {
     public companion object {
         @SuppressWarnings("ActionValue")
@@ -319,7 +319,7 @@ constructor(
                     override fun onFailure(exception: Exception) {
                         it.setException(exception)
                     }
-                }
+                },
             )
         }
     }
@@ -328,7 +328,7 @@ constructor(
     private fun startRemoteActivity(
         @NonNull remoteInteractionsManager: IRemoteInteractionsManager,
         targetIntent: Intent,
-        @NonNull executor: Executor
+        @NonNull executor: Executor,
     ): ListenableFuture<Void> {
         return CallbackToFutureAdapter.getFuture { completer ->
             checkTargetIntentPrecondition(targetIntent)
@@ -346,7 +346,7 @@ constructor(
                         logDOrNotUser("startRemoteActivity", "onError:$error")
                         completer.setException(error)
                     }
-                }
+                },
             )
             "startRemoteActivity"
         }
@@ -357,7 +357,7 @@ constructor(
         nodeId: String?,
         completer: CallbackToFutureAdapter.Completer<Void>,
         nodeClient: NodeClient,
-        callback: Callback
+        callback: Callback,
     ) {
         if (isCurrentDeviceAWatch(context)) {
             callback.intentCreated(
@@ -365,7 +365,7 @@ constructor(
                     intent,
                     RemoteIntentResultReceiver(completer, numNodes = 1),
                     nodeId,
-                    DEFAULT_PACKAGE
+                    DEFAULT_PACKAGE,
                 )
             )
             return
@@ -385,7 +385,7 @@ constructor(
                                 intent,
                                 RemoteIntentResultReceiver(completer, numNodes = 1),
                                 nodeId,
-                                packageName
+                                packageName,
                             )
                         )
                     }
@@ -426,7 +426,7 @@ constructor(
         extraIntent: Intent?,
         resultReceiver: ResultReceiver?,
         nodeId: String?,
-        packageName: String? = null
+        packageName: String? = null,
     ): Intent {
         val remoteIntent = Intent(ACTION_REMOTE_INTENT)
         // Put the extra when non-null value is passed in
@@ -434,7 +434,7 @@ constructor(
         resultReceiver?.let {
             remoteIntent.putExtra(
                 EXTRA_RESULT_RECEIVER,
-                getResultReceiverForSending(resultReceiver)
+                getResultReceiverForSending(resultReceiver),
             )
         }
         nodeId?.let { remoteIntent.putExtra(EXTRA_NODE_ID, nodeId) }
@@ -457,7 +457,7 @@ constructor(
 
     private class RemoteIntentResultReceiver(
         private val completer: CallbackToFutureAdapter.Completer<Void>,
-        private var numNodes: Int
+        private var numNodes: Int,
     ) : ResultReceiver(null) {
         private var numFailedResults: Int = 0
 

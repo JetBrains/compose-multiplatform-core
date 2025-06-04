@@ -46,7 +46,7 @@ class PoolingContainerFragment : BaseFragment() {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -61,7 +61,7 @@ class PoolingContainerFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_poolingcontainer, container, false)
         recyclerView = inflatedView.findViewById(R.id.recycler_view)
@@ -80,7 +80,7 @@ class PoolingContainerFragment : BaseFragment() {
     private inner class CustomAdapter(
         @AdType val adType: Int,
         @MediationOption val mediationOption: Int,
-        var zOrderOnTop: Boolean = true
+        var zOrderOnTop: Boolean = true,
     ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
         val sandboxedSdkViewSet = mutableSetOf<SandboxedSdkView>()
@@ -106,7 +106,7 @@ class PoolingContainerFragment : BaseFragment() {
                         adType,
                         mediationOption,
                         childSandboxedSdkView,
-                        shouldDrawViewabilityLayer
+                        shouldDrawViewabilityLayer,
                     )
                 } catch (e: Exception) {
                     Log.w(TAG, "Ad not loaded $e")

@@ -379,7 +379,7 @@ public class ProtoLayoutInflaterTest {
     // obsoleteContentDescription is tested for backward compatibility
     @SuppressWarnings("deprecation")
     @Test
-    @Config(minSdk = VERSION_CODES.P) //android.view.View#isAccessibilityHeading API requirement
+    @Config(minSdk = VERSION_CODES.P) // android.view.View#isAccessibilityHeading API requirement
     public void inflate_textView_withSemanticsContentDescription() {
         String textContents = "Hello World";
         String staticDescription = "StaticDescription";
@@ -524,7 +524,7 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
-    @Config(minSdk = VERSION_CODES.P) //android.view.View#isAccessibilityHeading API requirement
+    @Config(minSdk = VERSION_CODES.P) // android.view.View#isAccessibilityHeading API requirement
     public void inflate_textView_withSemanticsHeading() {
         String textContents = "Heading";
 
@@ -3861,8 +3861,7 @@ public class ProtoLayoutInflaterTest {
         WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
         expect.that(line.getSweepAngleDegrees()).isEqualTo(45f);
         expect.that(line.getLineSweepAngleDegrees()).isEqualTo(45f);
-        expect
-                .that(line.getMaxSweepAngleDegrees())
+        expect.that(line.getMaxSweepAngleDegrees())
                 .isEqualTo(WearCurvedLineView.SWEEP_ANGLE_WRAP_LENGTH);
     }
 
@@ -3969,8 +3968,7 @@ public class ProtoLayoutInflaterTest {
         WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
         expect.that(line.getSweepAngleDegrees()).isEqualTo(45f);
         expect.that(line.getLineSweepAngleDegrees()).isEqualTo(45f);
-        expect
-                .that(line.getMaxSweepAngleDegrees())
+        expect.that(line.getMaxSweepAngleDegrees())
                 .isEqualTo(WearCurvedLineView.SWEEP_ANGLE_WRAP_LENGTH);
     }
 

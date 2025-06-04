@@ -114,12 +114,12 @@ class DeferredSessionClientTest {
         stubClient: StubClient,
         errorHandler: Consumer<Throwable> = Consumer {
             Assert.fail("Unexpected fail " + it.message)
-        }
+        },
     ): DeferredSessionClient {
         return DeferredSessionClient.create(
             clientFactory = { stubClient },
             clientInit = StubClient::initialize,
-            errorHandler = errorHandler
+            errorHandler = errorHandler,
         )
     }
 

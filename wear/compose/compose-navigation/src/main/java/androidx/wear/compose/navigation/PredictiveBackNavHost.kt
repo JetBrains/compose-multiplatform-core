@@ -205,11 +205,11 @@ internal fun PredictiveBackNavHost(
                     if (wearNavigator.isPop.value || inPredictiveBack) POP_EXIT_TRANSITION
                     else EXIT_TRANSITION,
                 targetContentZIndex = targetZIndex,
-                sizeTransform = null
+                sizeTransform = null,
             )
         },
         contentAlignment = Alignment.Center,
-        contentKey = { it.id }
+        contentKey = { it.id },
     ) {
         // In some specific cases, such as popping your back stack or changing your
         // start destination, AnimatedContent can contain an entry that is no longer
@@ -232,7 +232,7 @@ internal fun PredictiveBackNavHost(
                     modifier =
                         Modifier.background(
                                 scrimColor,
-                                if (isRoundDevice) CircleShape else RectangleShape
+                                if (isRoundDevice) CircleShape else RectangleShape,
                             )
                             .fillMaxSize()
                             .hierarchicalFocusGroup(currentEntry == current)
@@ -250,7 +250,7 @@ internal fun PredictiveBackNavHost(
                                 Modifier.clickable(
                                         enabled = false,
                                         indication = null,
-                                        interactionSource = remember { MutableInteractionSource() }
+                                        interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         // Ignore taps on previous backstack entries
                                     }
@@ -294,7 +294,7 @@ private val POP_ENTER_TRANSITION =
     scaleIn(initialScale = 0.8f, animationSpec = tween(easing = LinearEasing)) +
         slideInHorizontally(
             initialOffsetX = { -it / 2 },
-            animationSpec = tween(easing = LinearEasing)
+            animationSpec = tween(easing = LinearEasing),
         ) +
         fadeIn(initialAlpha = 0.5f, animationSpec = tween(easing = LinearEasing))
 private val POP_EXIT_TRANSITION =

@@ -78,7 +78,7 @@ interface SaveableStateRegistry {
  */
 fun SaveableStateRegistry(
     restoredValues: Map<String, List<Any?>>?,
-    canBeSaved: (Any) -> Boolean
+    canBeSaved: (Any) -> Boolean,
 ): SaveableStateRegistry = SaveableStateRegistryImpl(restoredValues, canBeSaved)
 
 /** CompositionLocal with a current [SaveableStateRegistry] instance. */
@@ -102,7 +102,7 @@ private fun <K, V> Map<K, V>.toMutableScatterMap(): MutableScatterMap<K, V> {
 
 private class SaveableStateRegistryImpl(
     restored: Map<String, List<Any?>>?,
-    private val canBeSaved: (Any) -> Boolean
+    private val canBeSaved: (Any) -> Boolean,
 ) : SaveableStateRegistry {
 
     private val restored: MutableScatterMap<String, List<Any?>>? =

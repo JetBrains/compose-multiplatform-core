@@ -102,7 +102,7 @@ class WindowInsetsDeviceTest {
                 BasicTextField(
                     "Hello",
                     onValueChange = {},
-                    Modifier.fillMaxWidth().focusRequester(focusRequester)
+                    Modifier.fillMaxWidth().focusRequester(focusRequester),
                 )
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
@@ -128,12 +128,12 @@ class WindowInsetsDeviceTest {
                                                     )
                                                 }
                                             }
-                                        }
+                                        },
                                     )
                                 }
                             }
                         }
-                    }
+                    },
                 )
             }
         }
@@ -171,7 +171,7 @@ class WindowInsetsDeviceTest {
                 BasicTextField(
                     "Hello",
                     onValueChange = {},
-                    Modifier.fillMaxWidth().focusRequester(focusRequester)
+                    Modifier.fillMaxWidth().focusRequester(focusRequester),
                 )
                 AndroidView(
                     modifier = Modifier.fillMaxWidth().weight(1f),
@@ -196,12 +196,12 @@ class WindowInsetsDeviceTest {
                                                     )
                                                 }
                                             }
-                                        }
+                                        },
                                     )
                                 }
                             }
                         }
-                    }
+                    },
                 )
             }
         }
@@ -249,7 +249,7 @@ class WindowInsetsDeviceTest {
                                 Box(Modifier.fillMaxSize().background(Color.Cyan))
                             }
                         }
-                    }
+                    },
                 )
             }
         }
@@ -356,13 +356,13 @@ class WindowInsetsDeviceTest {
         rule.runOnIdle {
             ViewCompat.setOnApplyWindowInsetsListener(
                 rule.activity.window.decorView,
-                statusBarsWatcher
+                statusBarsWatcher,
             )
             @Suppress("RedundantNullableReturnType")
             val controller: WindowInsetsControllerCompat? =
                 WindowCompat.getInsetsController(
                     rule.activity.window,
-                    rule.activity.window.decorView
+                    rule.activity.window.decorView,
                 )
             controller?.show(WindowInsetsCompat.Type.statusBars())
         }
@@ -385,7 +385,7 @@ class WindowInsetsDeviceTest {
             val controller: WindowInsetsControllerCompat? =
                 WindowCompat.getInsetsController(
                     rule.activity.window,
-                    rule.activity.window.decorView
+                    rule.activity.window.decorView,
                 )
             controller?.hide(WindowInsetsCompat.Type.statusBars())
         }
@@ -418,13 +418,13 @@ class WindowInsetsDeviceTest {
         rule.runOnUiThread {
             ViewCompat.setOnApplyWindowInsetsListener(
                 rule.activity.window.decorView,
-                statusBarsWatcher
+                statusBarsWatcher,
             )
             @Suppress("RedundantNullableReturnType")
             val controller: WindowInsetsControllerCompat? =
                 WindowCompat.getInsetsController(
                     rule.activity.window,
-                    rule.activity.window.decorView
+                    rule.activity.window.decorView,
                 )
             controller?.show(WindowInsetsCompat.Type.statusBars())
         }

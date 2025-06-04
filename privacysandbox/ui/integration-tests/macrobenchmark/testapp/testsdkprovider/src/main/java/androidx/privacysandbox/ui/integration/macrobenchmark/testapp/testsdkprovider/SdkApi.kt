@@ -55,7 +55,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         return loadAdInternal(adFormat, adType, mediationOption, waitInsideOnDraw, drawViewability)
     }
@@ -69,7 +69,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         private val adapter: DelegatingSandboxedUiAdapter,
         private var mediationOption: Int,
         private val drawViewability: Boolean,
-        private val numberOfRefreshes: Int
+        private val numberOfRefreshes: Int,
     ) : Runnable {
 
         private var refreshCount = 0
@@ -83,7 +83,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                         AdType.BASIC_NON_WEBVIEW,
                         mediationOption,
                         waitInsideOnDraw = false,
-                        drawViewability
+                        drawViewability,
                     )
                 adapter.updateDelegate(adapterBundle)
                 mediationOption =
@@ -99,10 +99,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         }
     }
 
-    private fun loadBannerAd(
-        @AdType adType: Int,
-        waitInsideOnDraw: Boolean,
-    ): Bundle {
+    private fun loadBannerAd(@AdType adType: Int, waitInsideOnDraw: Boolean): Bundle {
         val adapter: AbstractSandboxedUiAdapter =
             when (adType) {
                 AdType.BASIC_NON_WEBVIEW -> {
@@ -129,7 +126,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     override fun launchFullscreenAd(
         launcherInfo: Bundle,
         @ScreenOrientation screenOrientation: Int,
-        @BackNavigation backButtonNavigation: Int
+        @BackNavigation backButtonNavigation: Int,
     ) {
         val coroutineScope = MainScope()
         coroutineScope.launch {
@@ -144,7 +141,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     @OptIn(ExperimentalFeatures.DelegatingAdapterApi::class)
     private fun startDelegatingAdUpdateHandler(
         adapter: DelegatingSandboxedUiAdapter,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ) {
         // This task will recursively post itself to the handler [numberOfRefreshes] times to allow
         // us to test several ad refreshes.
@@ -153,7 +150,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 adapter,
                 MediationOption.SDK_RUNTIME_MEDIATEE,
                 drawViewability,
-                numberOfRefreshes = 5
+                numberOfRefreshes = 5,
             ),
             UPDATE_DELEGATE_INTERVAL,
         )
@@ -163,9 +160,9 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 adapter,
                 MediationOption.IN_APP_MEDIATEE,
                 drawViewability,
-                numberOfRefreshes = 0
+                numberOfRefreshes = 0,
             ),
-            UPDATE_DELEGATE_INTERVAL
+            UPDATE_DELEGATE_INTERVAL,
         )
     }
 
@@ -179,7 +176,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         when (mediationOption) {
             MediationOption.NON_MEDIATED -> {
@@ -198,7 +195,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     adType,
                     mediationOption,
                     waitInsideOnDraw,
-                    drawViewability
+                    drawViewability,
                 )
             else -> return Bundle()
         }
@@ -214,7 +211,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
 
     private fun loadNonWebViewBannerAd(
         text: String,
-        waitInsideOnDraw: Boolean
+        waitInsideOnDraw: Boolean,
     ): AbstractSandboxedUiAdapter {
         return testAdapters.TestBannerAd(text, waitInsideOnDraw)
     }
@@ -232,7 +229,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         val mediateeBundle =
             maybeGetMediateeBundle(
@@ -240,7 +237,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 adType,
                 mediationOption,
                 waitInsideOnDraw,
-                drawViewability
+                drawViewability,
             )
 
         if (adFormat == AdFormat.BANNER_AD) {
@@ -264,7 +261,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         when (mediationOption) {
             MediationOption.SDK_RUNTIME_MEDIATEE,
@@ -277,7 +274,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     adFormat,
                     adType,
                     waitInsideOnDraw,
-                    drawViewability
+                    drawViewability,
                 )
             }
             MediationOption.IN_APP_MEDIATEE -> {
@@ -285,7 +282,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     adFormat,
                     adType,
                     waitInsideOnDraw,
-                    drawViewability
+                    drawViewability,
                 )
             }
             else -> return loadFallbackAd(adFormat, adType, waitInsideOnDraw)
@@ -295,7 +292,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     private fun loadFallbackAd(
         @AdFormat adFormat: Int,
         @AdType adType: Int,
-        withSlowDraw: Boolean
+        withSlowDraw: Boolean,
     ): Bundle =
         when (adFormat) {
             AdFormat.BANNER_AD ->
@@ -305,7 +302,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
             AdFormat.NATIVE_AD ->
                 nativeAdGenerator.generateAdBundleWithAssets(
                     adType,
-                    MEDIATED_SDK_NOT_LOADED_MESSAGE
+                    MEDIATED_SDK_NOT_LOADED_MESSAGE,
                 )
             else -> Bundle()
         }

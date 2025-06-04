@@ -16,29 +16,58 @@
 
 package androidx.camera.integration.core
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.SurfaceTexture
+import android.hardware.DataSpace
+import android.hardware.DataSpace.TRANSFER_HLG
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.os.Build
+import android.util.Range
+import android.util.Size
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.pipe.integration.adapter.awaitUntil
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ExperimentalSessionConfig
+import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.UseCase
 import androidx.camera.core.featurecombination.ExperimentalFeatureCombination
+import androidx.camera.core.featurecombination.Feature
 import androidx.camera.core.featurecombination.Feature.Companion.FPS_60
 import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
 import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
 import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
+import androidx.camera.core.takePicture
+import androidx.camera.integration.core.CaptureOptionSubmissionTest.CaptureCallback
+import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.GLUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.SurfaceTextureProvider.createSurfaceTextureProvider
+import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.rule.GrantPermissionRule
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -47,6 +76,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -57,7 +87,7 @@ class FeatureCombinationDeviceTest(
     private val selectorName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraXConfig: CameraXConfig
+    private val cameraXConfig: CameraXConfig,
 ) {
     @get:Rule
     val useCamera =
@@ -73,17 +103,59 @@ class FeatureCombinationDeviceTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+
+    @get:Rule
+    val externalStorageRule: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+    @get:Rule
+    val temporaryFolder =
+        TemporaryFolder(ApplicationProvider.getApplicationContext<Context>().cacheDir)
+
+    @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
 
-    private val preview = Preview.Builder().build()
-    private val imageCapture = ImageCapture.Builder().build()
-    private val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+    private val sessionCaptureCallback = CaptureCallback()
+
+    private val surfaceTextureDeferred = CompletableDeferred<SurfaceTexture>()
+
+    private val preview =
+        Preview.Builder()
+            .apply { applySessionCaptureCallback() }
+            .build()
+            .apply {
+                runBlocking {
+                    withContext(Dispatchers.Main) {
+                        surfaceProvider =
+                            createSurfaceTextureProvider(
+                                object : SurfaceTextureProvider.SurfaceTextureCallback {
+                                    override fun onSurfaceTextureReady(
+                                        surfaceTexture: SurfaceTexture,
+                                        resolution: Size,
+                                    ) {
+                                        surfaceTextureDeferred.complete(surfaceTexture)
+                                    }
+
+                                    override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
+                                        surfaceTexture.release()
+                                    }
+                                }
+                            )
+                    }
+                }
+            }
+
+    private val imageCapture =
+        ImageCapture.Builder().apply { applySessionCaptureCallback() }.build()
+
+    private val videoCapture =
+        VideoCapture.Builder(Recorder.Builder().build())
+            .apply { applySessionCaptureCallback() }
+            .build()
 
     @Before
     fun setUp() = runBlocking {
@@ -105,212 +177,218 @@ class FeatureCombinationDeviceTest(
     }
 
     @Test
-    fun bindToLifecycle_hlg10_canBindSuccessfullyWhenSupported(): Unit = runBlocking {
-        assumeTrue(
-            cameraProvider
-                .getCameraInfo(cameraSelector)
-                .isFeatureCombinationSupported(setOf(preview, videoCapture), setOf(HDR_HLG10))
-        )
-
-        withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                cameraSelector,
-                SessionConfig(
-                    useCases = listOf(preview, videoCapture),
-                    requiredFeatures = setOf(HDR_HLG10)
-                )
-            )
-        }
-
-        // TODO: b/413177092: Check camera capture results or recording to confirm if features are
-        //  actually set to the camera framework, not too useful right now as
-        //  isFeatureCombinationSupported may not support multiple features properly due to not
-        //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
+    fun bindToLifecycle_hlg10_bindResultMatchesQueryResult(): Unit = runBlocking {
+        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(HDR_HLG10))
     }
 
-    @Test
-    fun bindToLifecycle_fps60_canBindSuccessfullyWhenSupported(): Unit = runBlocking {
-        assumeTrue(
-            cameraProvider
-                .getCameraInfo(cameraSelector)
-                .isFeatureCombinationSupported(setOf(preview, videoCapture), setOf(FPS_60))
-        )
-
-        withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                cameraSelector,
-                SessionConfig(
-                    useCases = listOf(preview, videoCapture),
-                    requiredFeatures = setOf(FPS_60)
-                )
-            )
-        }
-
-        // TODO: b/413177092: Check camera capture results or recording to confirm if features are
-        //  actually set to the camera framework, not too useful right now as
-        //  isFeatureCombinationSupported may not support multiple features properly due to not
-        //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
+    // TODO: b/419804637 - Add @Test after fixing FPS checking issue for feature combo APIs
+    fun bindToLifecycle_fps60_bindResultMatchesQueryResult(): Unit = runBlocking {
+        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(FPS_60))
     }
 
-    @Test
-    fun bindToLifecycle_previewStabilization_canBindSuccessfullyWhenSupported(): Unit =
-        runBlocking {
-            assumeTrue(
-                cameraProvider
-                    .getCameraInfo(cameraSelector)
-                    .isFeatureCombinationSupported(
-                        setOf(preview, videoCapture),
-                        setOf(PREVIEW_STABILIZATION)
-                    )
-            )
-
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    SessionConfig(
-                        useCases = listOf(preview, videoCapture),
-                        requiredFeatures = setOf(PREVIEW_STABILIZATION)
-                    )
-                )
-            }
-
-            // TODO: b/413177092: Check camera capture results or recording to confirm if features
-            //  are actually set to the camera framework, not too useful right now as
-            //  isFeatureCombinationSupported may not support multiple features properly due to not
-            //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
-        }
-
-    @Test
-    fun bindToLifecycle_jpegUltraHdr_canBindSuccessfullyWhenSupported(): Unit = runBlocking {
-        assumeTrue(
-            cameraProvider
-                .getCameraInfo(cameraSelector)
-                .isFeatureCombinationSupported(setOf(preview, imageCapture), setOf(IMAGE_ULTRA_HDR))
+    // TODO: b/419804400 - Add @Test after fixing Preview Stabilization setting issue for feature
+    //  combo APIs
+    fun bindToLifecycle_previewStabilization_bindResultMatchesQueryResult(): Unit = runBlocking {
+        testIfBindAndQueryApiResultsMatch(
+            listOf(preview, videoCapture),
+            setOf(PREVIEW_STABILIZATION),
         )
-
-        withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                cameraSelector,
-                SessionConfig(
-                    useCases = listOf(preview, imageCapture),
-                    requiredFeatures = setOf(IMAGE_ULTRA_HDR)
-                )
-            )
-        }
-
-        // TODO: b/413177092: Check camera capture results or recording to confirm if features are
-        //  actually set to the camera framework, not too useful right now as
-        //  isFeatureCombinationSupported may not support multiple features properly due to not
-        //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
     }
 
-    @Test
-    fun bindToLifecycle_bothHdrAndFps60Required_canBindSuccessfullyIfSupported(): Unit =
+    // TODO: b/420254152 - Add @Test after fixing Ultra HDR capture test issues
+    fun bindToLifecycle_jpegUltraHdr_bindResultMatchesQueryResult(): Unit = runBlocking {
+        testIfBindAndQueryApiResultsMatch(listOf(preview, imageCapture), setOf(IMAGE_ULTRA_HDR))
+    }
+
+    // TODO: b/420371641 - Add @Test after passing feature combo code flow param to
+    //  SupportedSurfaceCombination during bind
+    fun bindToLifecycle_bothHdrAndFps60Required_bindResultMatchesQueryResult(): Unit = runBlocking {
+        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(HDR_HLG10, FPS_60))
+    }
+
+    // TODO: b/420371641 - Add @Test after passing feature combo code flow param to
+    //  SupportedSurfaceCombination during bind
+    fun bindToLifecycle_bothHdrAndPrvwStabilizationRequired_bindResultMatchesQueryResult(): Unit =
         runBlocking {
-            val features = setOf(HDR_HLG10, FPS_60)
-
-            assumeTrue(
-                cameraProvider
-                    .getCameraInfo(cameraSelector)
-                    .isFeatureCombinationSupported(setOf(preview, videoCapture), features)
+            testIfBindAndQueryApiResultsMatch(
+                listOf(preview, videoCapture),
+                setOf(HDR_HLG10, PREVIEW_STABILIZATION),
             )
-
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    SessionConfig(
-                        useCases = listOf(preview, videoCapture),
-                        requiredFeatures = features
-                    )
-                )
-            }
-
-            // TODO: b/413177092: Check camera capture results or recording to confirm if features
-            //  are actually set to the camera framework, not too useful right now as
-            //  isFeatureCombinationSupported may not support multiple features properly due to not
-            //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
         }
 
-    @Test
-    fun bindToLifecycle_bothHdrAndStabilizationRequired_canBindSuccessfullyIfSupported(): Unit =
+    // TODO: b/420371641 - Add @Test after passing feature combo code flow param to
+    //  SupportedSurfaceCombination during bind
+    fun bindToLifecycle_moreThanTwoFeaturesRequired_bindResultMatchesQueryResult(): Unit =
         runBlocking {
-            val features = setOf(HDR_HLG10, PREVIEW_STABILIZATION)
-
-            assumeTrue(
-                cameraProvider
-                    .getCameraInfo(cameraSelector)
-                    .isFeatureCombinationSupported(setOf(preview, videoCapture), features)
+            testIfBindAndQueryApiResultsMatch(
+                listOf(preview, videoCapture),
+                setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
             )
-
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    SessionConfig(
-                        useCases = listOf(preview, videoCapture),
-                        requiredFeatures = features
-                    )
-                )
-            }
-
-            // TODO: b/413177092: Check camera capture results or recording to confirm if features
-            //  are actually set to the camera framework, not too useful right now as
-            //  isFeatureCombinationSupported may not support multiple features properly due to not
-            //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
         }
 
-    @Test
-    fun bindToLifecycle_moreThanTwoFeaturesRequired_canBindSuccessfullyIfSupported(): Unit =
-        runBlocking {
-            val features = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
-
-            assumeTrue(
-                cameraProvider
-                    .getCameraInfo(cameraSelector)
-                    .isFeatureCombinationSupported(setOf(preview, videoCapture), features)
-            )
-
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    SessionConfig(
-                        useCases = listOf(preview, videoCapture),
-                        requiredFeatures = features
-                    )
-                )
-            }
-
-            // TODO: b/413177092: Check camera capture results or recording to confirm if features
-            //  are actually set to the camera framework, not too useful right now as
-            //  isFeatureCombinationSupported may not support multiple features properly due to not
-            //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
-        }
-
-    @Test
+    // TODO: b/420227836 - Add @Test after fixing unsupported exception for no preferred features
+    // TODO: b/419804637 - Add @Test after fixing FPS checking issue for feature combo APIs
     fun bindToLifecycle_multiplePreferredFeatures_canBindSuccessfully(): Unit = runBlocking {
+        val useCases = listOf(preview, videoCapture)
         val orderedFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        val selectedFeatures = mutableSetOf<Feature>()
 
         withContext(Dispatchers.Main) {
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 cameraSelector,
-                SessionConfig(
-                    useCases = listOf(preview, videoCapture),
-                    preferredFeatures = orderedFeatures
-                )
+                SessionConfig(useCases = useCases, preferredFeatures = orderedFeatures).apply {
+                    setFeatureSelectionListener { features -> selectedFeatures.addAll(features) }
+                },
             )
         }
 
-        // TODO: b/413177092: Check camera capture results or recording to confirm if features
-        //  are actually set to the camera framework, not too useful right now as
-        //  isFeatureCombinationSupported may not support multiple features properly due to not
-        //  adding feature combination surface resolutions in SupportedSurfaceCombination yet
+        selectedFeatures.verifyFeatures(useCases)
+    }
+
+    // TODO: b/419766630 - Add tests where FCQ provides extra support compared to non-FCQ bind flow,
+    //  e.g. UHD recording + Preview Stabilization (which is probably not supported right now due to
+    //  Preview Stabilization guaranteed table not supporting UHD PRIV). But we first need to wait
+    //  for adding FCQ-queryable config combinations supported in Baklava, as Android 15 doesn't
+    //  support UHD PRIV for FCQ.
+
+    private suspend fun testIfBindAndQueryApiResultsMatch(
+        useCases: List<UseCase>,
+        features: Set<Feature>,
+    ) {
+        val sessionConfig = SessionConfig(useCases = useCases, requiredFeatures = features)
+
+        val isSupported =
+            cameraProvider
+                .getCameraInfo(cameraSelector)
+                .isFeatureCombinationSupported(sessionConfig)
+
+        bindAndVerify(sessionConfig, isSupported)
+
+        if (isSupported) {
+            features.verifyFeatures(useCases)
+        }
+    }
+
+    private suspend fun bindAndVerify(
+        sessionConfig: SessionConfig,
+        isExpectedToBeSupported: Boolean,
+    ) {
+        var caughtException: Exception? = null
+        try {
+            withContext(Dispatchers.Main) {
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, sessionConfig)
+            }
+        } catch (e: IllegalArgumentException) {
+            caughtException = e
+        }
+
+        // If binding is expected to be supported, there should be no exception
+        assertThat(caughtException == null).isEqualTo(isExpectedToBeSupported)
+    }
+
+    @SuppressLint("NewApi")
+    private suspend fun Set<Feature>.verifyFeatures(useCases: List<UseCase>) {
+        forEach {
+            when (it) {
+                HDR_HLG10 -> {
+                    // Reaching this stage before API 33 means query API didn't work correctly
+                    require(Build.VERSION.SDK_INT >= 33)
+                    verifyHlg10Hdr(useCases)
+                }
+                FPS_60 -> verify60Fps()
+                PREVIEW_STABILIZATION -> verifyPreviewStabilization()
+                IMAGE_ULTRA_HDR -> {
+                    // Reaching this stage before API 34 means query API didn't work correctly
+                    require(Build.VERSION.SDK_INT >= 34)
+                    verifyUltraHdr(useCases)
+                }
+            }
+        }
+    }
+
+    @RequiresApi(33)
+    private suspend fun verifyHlg10Hdr(useCases: List<UseCase>) {
+        useCases.forEach {
+            when (it) {
+                is Preview -> {
+                    assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
+
+                    surfaceTextureDeferred.await().verifyHlg10Hdr()
+                }
+                is VideoCapture<*> -> {
+                    assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
+
+                    // TODO: Check the actual recording
+                }
+            }
+        }
+    }
+
+    @RequiresApi(33)
+    private fun SurfaceTexture.verifyHlg10Hdr() {
+        // Wait for a few frames in order to ensure the surface texture is updated
+        val countDownLatch = CountDownLatch(5)
+        setOnFrameAvailableListener { countDownLatch.countDown() }
+        countDownLatch.await(1, TimeUnit.SECONDS)
+
+        // Ensure latest frame is updated to the texture image
+        attachToGLContext(GLUtil.getTexIdFromGLContext())
+        updateTexImage()
+
+        val dataspaceTransfer = DataSpace.getTransfer(dataSpace)
+
+        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
+    }
+
+    private suspend fun verify60Fps() {
+        verifyCaptureResult(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(60, 60))
+    }
+
+    private suspend fun verifyPreviewStabilization() {
+        verifyCaptureResult(
+            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+            CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
+        )
+    }
+
+    @RequiresApi(34)
+    private suspend fun verifyUltraHdr(useCases: List<UseCase>) {
+        val imageCapture = useCases.filterIsInstance<ImageCapture>().first()
+
+        val saveLocation = temporaryFolder.newFile("test.jpg")
+        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(saveLocation).build()
+
+        imageCapture.takePicture(outputFileOptions)
+
+        // Check gainmap exits.
+        val bitmap = BitmapFactory.decodeFile(saveLocation.absolutePath)
+        assertThat(bitmap).isNotNull()
+        assertThat(bitmap.hasGainmap()).isTrue()
+    }
+
+    private suspend fun <T> verifyCaptureResult(
+        captureKey: CaptureRequest.Key<T>,
+        expectedValue: T,
+    ) {
+        var lastSubmittedValue: T? = null
+        val result =
+            sessionCaptureCallback.verify { captureRequest, _ ->
+                captureRequest[captureKey]?.let { lastSubmittedValue = it }
+                captureRequest[captureKey] == expectedValue
+            }
+
+        val isCompleted = result.awaitUntil(timeoutMillis = 10000)
+        assertWithMessage(
+                "Test failed while verifying a value of $expectedValue for $captureKey" +
+                    ", lastSubmittedValue = $lastSubmittedValue"
+            )
+            .that(isCompleted)
+            .isTrue()
+    }
+
+    private fun ExtendableBuilder<*>.applySessionCaptureCallback() {
+        Camera2InteropUtil.setCameraCaptureSessionCallback(implName, this, sessionCaptureCallback)
     }
 
     companion object {
@@ -322,25 +400,25 @@ class FeatureCombinationDeviceTest(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
             )
     }

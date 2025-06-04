@@ -34,7 +34,7 @@ public expect class TableInfo(
     name: String,
     columns: Map<String, Column>,
     foreignKeys: Set<ForeignKey>,
-    indices: Set<Index>? = null
+    indices: Set<Index>? = null,
 ) {
     /** The table name. */
     public val name: String
@@ -82,7 +82,7 @@ public expect class TableInfo(
         notNull: Boolean,
         primaryKeyPosition: Int,
         defaultValue: String?,
-        createdFrom: Int
+        createdFrom: Int,
     ) {
         /** The column name. */
         public val name: String
@@ -123,7 +123,7 @@ public expect class TableInfo(
         onDelete: String,
         onUpdate: String,
         columnNames: List<String>,
-        referenceColumnNames: List<String>
+        referenceColumnNames: List<String>,
     ) {
         public val referenceTable: String
         public val onDelete: String

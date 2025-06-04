@@ -71,14 +71,14 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
             arrayOf(
                 CameraSelector.LENS_FACING_BACK,
                 CameraSelector.LENS_FACING_FRONT,
-                CameraSelector.LENS_FACING_EXTERNAL
+                CameraSelector.LENS_FACING_EXTERNAL,
             )
 
         @JvmStatic
         private val cameraXConfigList =
             arrayOf(
                 CameraFragment.CAMERA2_IMPLEMENTATION_OPTION,
-                CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION
+                CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION,
             )
 
         @JvmStatic
@@ -96,7 +96,7 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
     @get:Rule
     val cameraPipeConfigTestRule =
         CameraPipeConfigTestRule(
-            active = cameraXConfig == CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION,
+            active = cameraXConfig == CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION
         )
 
     @get:Rule
@@ -109,7 +109,7 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
                 } else {
                     CameraPipeConfig.defaultConfig()
                 }
-            )
+            ),
         )
 
     private lateinit var device: UiDevice
@@ -217,7 +217,7 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
         val intent =
             Intent(
                     ApplicationProvider.getApplicationContext<Context>(),
-                    ViewPagerActivity::class.java
+                    ViewPagerActivity::class.java,
                 )
                 .apply {
                     putExtra(BaseActivity.INTENT_LENS_FACING, lensFacing)
@@ -245,7 +245,7 @@ class ViewPagerActivityTest(private val lensFacing: Int, private val cameraXConf
 
     private fun assertStreamState(
         scenario: ActivityScenario<ViewPagerActivity>,
-        expectStreamState: PreviewView.StreamState
+        expectStreamState: PreviewView.StreamState,
     ) =
         runBlocking<Unit> {
             lateinit var result: Deferred<Boolean>

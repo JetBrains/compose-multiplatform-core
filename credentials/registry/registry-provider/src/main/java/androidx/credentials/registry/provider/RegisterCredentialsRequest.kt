@@ -19,7 +19,6 @@ package androidx.credentials.registry.provider
 /**
  * A request to register credentials with Credential Manager.
  *
- * @constructor
  * @property type the type of the credentials being registered; this matches the
  *   [androidx.credentials.Credential.type] that these registered credentials will be returned as
  * @property id the unique id that identifies this registry, such that it won't be overwritten by
@@ -36,6 +35,7 @@ package androidx.credentials.registry.provider
  *   fulfillment activity, it will build an intent with the given `intentAction` targeting your
  *   package, so this is useful when you need to define different fulfillment activities for
  *   different registries
+ * @constructor
  */
 public abstract class RegisterCredentialsRequest
 @JvmOverloads

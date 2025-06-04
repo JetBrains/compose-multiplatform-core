@@ -73,12 +73,9 @@ fun TimePickerDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     shape: Shape = TimePickerDialogDefaults.shape,
     containerColor: Color = TimePickerDialogDefaults.containerColor,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = properties,
-    ) {
+    Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         Surface(
             shape = shape,
             tonalElevation = DialogTokens.ContainerElevation,
@@ -87,7 +84,7 @@ fun TimePickerDialog(
         ) {
             Column(
                 modifier = Modifier.padding(TimePickerDialogPadding),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 title()
                 content()
@@ -147,7 +144,7 @@ object TimePickerDialogDefaults {
                         } else {
                             Strings.TimePickerToggleKeyboard
                         }
-                    )
+                    ),
             )
         }
     }
@@ -159,10 +156,7 @@ object TimePickerDialogDefaults {
      * @param displayMode the current display mode of the time picker
      */
     @Composable
-    fun Title(
-        displayMode: TimePickerDisplayMode,
-        modifier: Modifier = Modifier,
-    ) {
+    fun Title(displayMode: TimePickerDisplayMode, modifier: Modifier = Modifier) {
         Text(
             modifier = modifier.fillMaxWidth().padding(bottom = 20.dp),
             style = MaterialTheme.typography.labelMedium,
@@ -173,7 +167,7 @@ object TimePickerDialogDefaults {
                     } else {
                         Strings.TimeInputDialogTitle
                     }
-                )
+                ),
         )
     }
 }

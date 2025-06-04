@@ -28,6 +28,7 @@ import androidx.wear.tiles.proto.RequestProto;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 
 /** Builders for request messages used to fetch tiles and resources. */
@@ -113,6 +114,20 @@ public final class RequestBuilders {
             } else {
                 return null;
             }
+        }
+
+        /**
+         * Gets the {@link Instant} representing the last time the tile was visible.
+         *
+         * <p>If the tile has never been visible, or the last time it was visible is not known, this
+         * will return {@link Instant#EPOCH}.
+         *
+         * <p>The returned value is not persistent across reboots or when the tile is removed from
+         * the carousel and added again.
+         */
+        @RequiresSchemaVersion(major = 1, minor = 600)
+        public @NonNull Instant getLastVisibleTime() {
+            return Instant.ofEpochMilli(mImpl.getLastVisibleMillis());
         }
 
         /** Creates a new wrapper instance from the proto. */
@@ -201,6 +216,17 @@ public final class RequestBuilders {
             public @NonNull Builder setState(
                     androidx.wear.tiles.StateBuilders.@NonNull State state) {
                 mImpl.setCurrentState(state.toProto());
+                return this;
+            }
+
+            /**
+             * Sets the {@link Instant} representing the last time the tile was visible.
+             *
+             * <p>If not set, defaults to {@link Instant#EPOCH}.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setLastVisibleTime(@NonNull Instant instant) {
+                mImpl.setLastVisibleMillis(instant.toEpochMilli());
                 return this;
             }
 

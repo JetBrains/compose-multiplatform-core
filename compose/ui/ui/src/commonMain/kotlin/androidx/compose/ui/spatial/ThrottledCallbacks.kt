@@ -104,7 +104,7 @@ internal class ThrottledCallbacks {
         window: IntOffset,
         matrix: Matrix?,
         windowWidth: Int,
-        windowHeight: Int
+        windowHeight: Int,
     ): Boolean {
         var updated = false
         if (window != windowOffset) {
@@ -151,7 +151,7 @@ internal class ThrottledCallbacks {
                     debounceMillis = debounceToUse,
                     node = node,
                     callback = callback,
-                )
+                ),
         )
     }
 
@@ -198,7 +198,7 @@ internal class ThrottledCallbacks {
                 windowOffset = windowOffset,
                 screenOffset = screenOffset,
                 viewToWindowMatrix = viewToWindowMatrix,
-                currentMillis = currentMillis
+                currentMillis = currentMillis,
             )
         }
     }
@@ -223,7 +223,7 @@ internal class ThrottledCallbacks {
                 windowOffset = windowOffset,
                 screenOffset = screenOffset,
                 viewToWindowMatrix = viewToWindowMatrix,
-                currentMillis = currentMillis
+                currentMillis = currentMillis,
             )
         }
     }
@@ -245,7 +245,7 @@ internal class ThrottledCallbacks {
                     screenOffset = screenOffset,
                     viewToWindowMatrix = viewToWindowMatrix,
                     currentMillis = currentMillis,
-                    minDeadline = minDeadline
+                    minDeadline = minDeadline,
                 )
         }
         globalChangeEntries?.linkedForEach { entry ->
@@ -256,7 +256,7 @@ internal class ThrottledCallbacks {
                     screenOffset = screenOffset,
                     viewToWindowMatrix = viewToWindowMatrix,
                     currentMillis = currentMillis,
-                    minDeadline = minDeadline
+                    minDeadline = minDeadline,
                 )
         }
         minDebounceDeadline = if (minDeadline == Long.MAX_VALUE) -1 else minDeadline
@@ -266,7 +266,7 @@ internal class ThrottledCallbacks {
         entry: Entry,
         topLeft: Long,
         bottomRight: Long,
-        currentMillis: Long
+        currentMillis: Long,
     ) {
         val lastInvokeMillis = entry.lastInvokeMillis
         val throttleMillis = entry.throttleMillis
@@ -325,7 +325,7 @@ internal class ThrottledCallbacks {
                 entry.bottomRight,
                 windowOffset,
                 screenOffset,
-                viewToWindowMatrix
+                viewToWindowMatrix,
             )
         }
         if (!debounceOkay) {
@@ -344,7 +344,7 @@ internal class ThrottledCallbacks {
         screenOffset: IntOffset,
         viewToWindowMatrix: Matrix?,
         currentMillis: Long,
-        minDeadline: Long
+        minDeadline: Long,
     ): Long {
         var newMinDeadline = minDeadline
         if (entry.debounceMillis > 0 && entry.lastUninvokedFireMillis > 0) {

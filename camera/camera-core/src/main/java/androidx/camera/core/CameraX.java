@@ -41,6 +41,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
+import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
@@ -91,6 +92,7 @@ public final class CameraX {
     private CameraDeviceSurfaceManager mSurfaceManager;
     private UseCaseConfigFactory mDefaultConfigFactory;
     private StreamSpecsCalculator mStreamSpecsCalculator;
+    private CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
     private final RetryPolicy mRetryPolicy;
     private final ListenableFuture<Void> mInitInternalFuture;
 
@@ -283,6 +285,20 @@ public final class CameraX {
     }
 
     /**
+     * Returns the {@link CameraUseCaseAdapterProvider} instance.
+     *
+     * @throws IllegalStateException if the {@link CameraUseCaseAdapterProvider} has not been
+     *                               set, due to being uninitialized.
+     */
+    public @NonNull CameraUseCaseAdapterProvider getCameraUseCaseAdapterProvider() {
+        if (mCameraUseCaseAdapterProvider == null) {
+            throw new IllegalStateException("CameraX not initialized yet.");
+        }
+
+        return mCameraUseCaseAdapterProvider;
+    }
+
+    /**
      * Returns the {@link CameraRepository} instance.
      *
      */
@@ -413,6 +429,17 @@ public final class CameraX {
                 }
 
                 mCameraRepository.init(mCameraFactory);
+
+                // Prepare CameraUseCaseAdapterProvider
+                mCameraUseCaseAdapterProvider = new CameraUseCaseAdapterProviderImpl(
+                        mCameraRepository,
+                        mCameraFactory.getCameraCoordinator(),
+                        mDefaultConfigFactory,
+                        mStreamSpecsCalculator);
+                for (CameraInternal camera : mCameraRepository.getCameras()) {
+                    camera.getCameraInfoInternal().setCameraUseCaseAdapterProvider(
+                            mCameraUseCaseAdapterProvider);
+                }
 
                 // Please ensure only validate the camera at the last of the initialization.
                 validateCameras(appContext, mCameraRepository, availableCamerasLimiter);

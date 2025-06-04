@@ -83,7 +83,7 @@ val LocalAutofillManager =
 /** The CompositionLocal to provide communication with platform clipboard service. */
 @Deprecated(
     "Use LocalClipboard instead which supports suspend functions",
-    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard")
+    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard"),
 )
 val LocalClipboardManager =
     staticCompositionLocalOf<ClipboardManager> { noLocalProvidedFor("LocalClipboardManager") }
@@ -122,7 +122,7 @@ val LocalFocusManager =
 @Suppress("DEPRECATION")
 @Deprecated(
     "LocalFontLoader is replaced with LocalFontFamilyResolver",
-    replaceWith = ReplaceWith("LocalFontFamilyResolver")
+    replaceWith = ReplaceWith("LocalFontFamilyResolver"),
 )
 @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 val LocalFontLoader =
@@ -211,7 +211,7 @@ val LocalCursorBlinkEnabled: ProvidableCompositionLocal<Boolean> = staticComposi
 internal fun ProvideCommonCompositionLocals(
     owner: Owner,
     uriHandler: UriHandler,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         LocalAccessibilityManager provides owner.accessibilityManager,
@@ -236,7 +236,7 @@ internal fun ProvideCommonCompositionLocals(
         LocalWindowInfo provides owner.windowInfo,
         LocalPointerIconService provides owner.pointerIconService,
         LocalGraphicsContext provides owner.graphicsContext,
-        content = content
+        content = content,
     )
 }
 

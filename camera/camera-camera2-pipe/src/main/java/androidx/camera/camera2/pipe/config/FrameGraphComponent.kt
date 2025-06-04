@@ -35,13 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 @Qualifier internal annotation class FrameGraphCoroutineScope
 
 @FrameGraphScope
-@Subcomponent(
-    modules =
-        [
-            FrameGraphModule::class,
-            FrameGraphConfigModule::class,
-        ],
-)
+@Subcomponent(modules = [FrameGraphModule::class, FrameGraphConfigModule::class])
 internal interface FrameGraphComponent {
 
     fun frameGraph(): FrameGraph
@@ -58,7 +52,7 @@ internal interface FrameGraphComponent {
 @Module
 internal class FrameGraphConfigModule(
     private val cameraGraphComponent: CameraGraphComponent,
-    private val config: FrameGraph.Config
+    private val config: FrameGraph.Config,
 ) {
     @Provides fun provideCameraGraphConfig(): FrameGraph.Config = config
 

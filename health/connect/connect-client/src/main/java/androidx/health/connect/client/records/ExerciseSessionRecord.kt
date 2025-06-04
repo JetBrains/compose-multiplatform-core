@@ -66,7 +66,7 @@ internal constructor(
      * session.
      */
     val exerciseRouteResult: ExerciseRouteResult = ExerciseRouteResult.NoData(),
-    val plannedExerciseSessionId: String? = null
+    val plannedExerciseSessionId: String? = null,
 ) : IntervalRecord {
 
     @JvmOverloads

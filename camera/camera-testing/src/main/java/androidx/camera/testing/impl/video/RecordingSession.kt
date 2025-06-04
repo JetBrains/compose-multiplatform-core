@@ -25,9 +25,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
-public class RecordingSession(
-    private val defaults: Defaults,
-) {
+public class RecordingSession(private val defaults: Defaults) {
     public companion object {
         public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
         public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 5000

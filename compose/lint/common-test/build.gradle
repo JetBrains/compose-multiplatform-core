@@ -31,7 +31,7 @@ plugins {
 dependencies {
     implementation(libs.kotlinStdlib)
     api(libs.androidLintStableAnalysis)
-    api(libs.androidLintTestsStableAnalysis)
+    api(libs.androidLintTests)
     api(libs.junit)
     api(libs.truth)
 }

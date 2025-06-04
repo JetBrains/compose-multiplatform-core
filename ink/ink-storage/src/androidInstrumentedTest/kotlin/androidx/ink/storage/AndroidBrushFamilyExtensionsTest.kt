@@ -78,27 +78,27 @@ class AndroidBrushFamilyExtensionsTest {
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f
+                                            sizeY = 4f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = unknownId,
                                             sizeX = 2f,
-                                            sizeY = 5f
+                                            sizeY = 5f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f
+                                            sizeY = 2f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f
+                                            sizeY = 2f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f
+                                            sizeY = 4f,
                                         ),
                                     )
                             )
@@ -111,17 +111,17 @@ class AndroidBrushFamilyExtensionsTest {
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f
+                                            sizeY = 4f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f
+                                            sizeY = 2f,
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f
+                                            sizeY = 4f,
                                         ),
                                     )
                             )

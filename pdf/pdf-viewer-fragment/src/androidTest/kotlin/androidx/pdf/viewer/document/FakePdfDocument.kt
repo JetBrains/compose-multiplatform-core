@@ -57,7 +57,7 @@ internal open class FakePdfDocument(
     override val isLinearized: Boolean = false,
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
-    private val pageLinks: List<PdfDocument.PdfPageLinks> = emptyList()
+    private val pageLinks: List<PdfDocument.PdfPageLinks> = emptyList(),
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -95,7 +95,7 @@ internal open class FakePdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection {
         // TODO(b/376136631) provide a useful implementation when it's needed for testing
         return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
@@ -107,7 +107,7 @@ internal open class FakePdfDocument(
 
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         return searchResults
     }
@@ -118,7 +118,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): List<PdfDocument.PageInfo> {
         return listOf()
     }
@@ -129,7 +129,7 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfo(
         pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): PdfDocument.PageInfo {
         val size = pages[pageNumber]
         return PdfDocument.PageInfo(pageNumber, size.y, size.x)
@@ -157,7 +157,7 @@ internal open class FakePdfDocument(
                         255,
                         colorRng.nextInt(256),
                         colorRng.nextInt(256),
-                        colorRng.nextInt(256)
+                        colorRng.nextInt(256),
                     )
                 )
             }

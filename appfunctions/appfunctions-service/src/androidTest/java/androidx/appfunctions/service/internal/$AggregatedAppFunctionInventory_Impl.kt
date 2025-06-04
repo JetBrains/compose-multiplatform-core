@@ -52,7 +52,7 @@ class `$AggregatedAppFunctionInventory_Impl` : AggregatedAppFunctionInventory() 
                                             type = TYPE_STRING,
                                             isNullable = false,
                                         )
-                                )
+                                ),
                         ),
                     AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_EXECUTION_FAIL to
                         CompileTimeAppFunctionMetadata(
@@ -68,7 +68,7 @@ class `$AggregatedAppFunctionInventory_Impl` : AggregatedAppFunctionInventory() 
                                             AppFunctionPrimitiveTypeMetadata(
                                                 type = TYPE_LONG,
                                                 isNullable = false,
-                                            )
+                                            ),
                                     )
                                 ),
                             response =
@@ -78,7 +78,7 @@ class `$AggregatedAppFunctionInventory_Impl` : AggregatedAppFunctionInventory() 
                                             type = TYPE_UNIT,
                                             isNullable = false,
                                         )
-                                )
+                                ),
                         ),
                 )
     }

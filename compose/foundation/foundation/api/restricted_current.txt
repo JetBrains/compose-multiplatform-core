@@ -115,17 +115,21 @@ package androidx.compose.foundation {
     property public boolean isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled;
     property public boolean isAutomaticNestedPrefetchEnabled;
     property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
+    property public boolean isNewContextMenuEnabled;
     property public boolean isNonComposedClickableEnabled;
     property public boolean isOnScrollChangedCallbackEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
+    property public boolean isSmartSelectionEnabled;
     field public static boolean DragGesturePickUpEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
     field public static boolean isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled;
     field public static boolean isAutomaticNestedPrefetchEnabled;
     field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
+    field public static boolean isNewContextMenuEnabled;
     field public static boolean isNonComposedClickableEnabled;
     field public static boolean isOnScrollChangedCallbackEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
+    field public static boolean isSmartSelectionEnabled;
   }
 
   public final class DarkThemeKt {
@@ -621,7 +625,6 @@ package androidx.compose.foundation.gestures {
   public final class ScrollExtensionsKt {
     method public static suspend Object? animateScrollBy(androidx.compose.foundation.gestures.Scrollable2DState, long value, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> animationSpec, kotlin.coroutines.Continuation<? super androidx.compose.ui.geometry.Offset>);
     method public static suspend Object? animateScrollBy(androidx.compose.foundation.gestures.ScrollableState, float value, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.coroutines.Continuation<? super java.lang.Float>);
-    method public static boolean canScroll(androidx.compose.foundation.gestures.Scrollable2DState, long offset);
     method public static suspend Object? scrollBy(androidx.compose.foundation.gestures.Scrollable2DState, long value, kotlin.coroutines.Continuation<? super androidx.compose.ui.geometry.Offset>);
     method public static suspend Object? scrollBy(androidx.compose.foundation.gestures.ScrollableState, float value, kotlin.coroutines.Continuation<? super java.lang.Float>);
     method public static suspend Object? stopScroll(androidx.compose.foundation.gestures.Scrollable2DState, optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -637,7 +640,7 @@ package androidx.compose.foundation.gestures {
   }
 
   public interface Scrollable2DState {
-    method public boolean canScroll(float angle);
+    method public boolean canScroll(long offset);
     method public long dispatchRawDelta(long delta);
     method public boolean isScrollInProgress();
     method public suspend Object? scroll(optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.gestures.Scroll2DScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -956,11 +959,11 @@ package androidx.compose.foundation.lazy {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface LazyListPrefetchStrategy {
-    method public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? getPrefetchScheduler();
+    method @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? getPrefetchScheduler();
     method public void onNestedPrefetch(androidx.compose.foundation.lazy.layout.NestedPrefetchScope, int firstVisibleItemIndex);
     method public void onScroll(androidx.compose.foundation.lazy.LazyListPrefetchScope, float delta, androidx.compose.foundation.lazy.LazyListLayoutInfo layoutInfo);
     method public void onVisibleItemsUpdated(androidx.compose.foundation.lazy.LazyListPrefetchScope, androidx.compose.foundation.lazy.LazyListLayoutInfo layoutInfo);
-    property public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
+    property @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
   }
 
   public final class LazyListPrefetchStrategyKt {
@@ -1138,11 +1141,11 @@ package androidx.compose.foundation.lazy.grid {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface LazyGridPrefetchStrategy {
-    method public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? getPrefetchScheduler();
+    method @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? getPrefetchScheduler();
     method public void onNestedPrefetch(androidx.compose.foundation.lazy.layout.NestedPrefetchScope, int firstVisibleItemIndex);
     method public void onScroll(androidx.compose.foundation.lazy.grid.LazyGridPrefetchScope, float delta, androidx.compose.foundation.lazy.grid.LazyGridLayoutInfo layoutInfo);
     method public void onVisibleItemsUpdated(androidx.compose.foundation.lazy.grid.LazyGridPrefetchScope, androidx.compose.foundation.lazy.grid.LazyGridLayoutInfo layoutInfo);
-    property public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
+    property @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
   }
 
   public final class LazyGridPrefetchStrategyKt {
@@ -1252,17 +1255,17 @@ package androidx.compose.foundation.lazy.layout {
     property public default kotlin.jvm.functions.Function1<java.lang.Integer,java.lang.Object?> type;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public interface LazyLayoutItemProvider {
-    method @androidx.compose.runtime.Composable public void Item(int index, Object key);
-    method public default Object? getContentType(int index);
+  @androidx.compose.runtime.Stable public interface LazyLayoutItemProvider {
+    method @androidx.compose.runtime.Composable public void Item(@IntRange(from=0L) int index, Object key);
+    method public default Object? getContentType(@IntRange(from=0L) int index);
     method public default int getIndex(Object key);
-    method public int getItemCount();
-    method public default Object getKey(int index);
-    property public abstract int itemCount;
+    method @IntRange(from=0L) public int getItemCount();
+    method public default Object getKey(@IntRange(from=0L) int index);
+    property @IntRange(from=0L) public abstract int itemCount;
   }
 
   public final class LazyLayoutKt {
-    method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy measurePolicy);
+    method @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy measurePolicy);
     method @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope,? super androidx.compose.ui.unit.Constraints,? extends androidx.compose.ui.layout.MeasureResult> measurePolicy);
   }
 
@@ -1290,26 +1293,25 @@ package androidx.compose.foundation.lazy.layout {
     property public abstract Object? key;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public final class LazyLayoutPrefetchState {
+  @androidx.compose.runtime.Stable public final class LazyLayoutPrefetchState {
     ctor public LazyLayoutPrefetchState();
-    ctor public LazyLayoutPrefetchState(optional androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.NestedPrefetchScope,kotlin.Unit>? onNestedPrefetch);
-    method public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrecomposition(int index);
-    method public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrecompositionAndPremeasure(int index, long constraints, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.LazyLayoutPrefetchResultScope,kotlin.Unit>? onItemPremeasured);
-    method @Deprecated public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrefetch(int index);
-    method @Deprecated public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrefetch(int index, long constraints);
-  }
-
-  public static sealed interface LazyLayoutPrefetchState.LazyLayoutPrefetchResultScope {
-    method public int getIndex();
-    method public int getPlaceablesCount();
-    method public long getSize(int placeableIndex);
-    property public abstract int index;
-    property public abstract int placeablesCount;
+    ctor @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public LazyLayoutPrefetchState(optional androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.NestedPrefetchScope,kotlin.Unit>? onNestedPrefetch);
+    ctor @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public LazyLayoutPrefetchState(optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.NestedPrefetchScope,kotlin.Unit>? onNestedPrefetch);
+    method public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrecomposition(@IntRange(from=0L) int index);
+    method public androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle schedulePrecompositionAndPremeasure(@IntRange(from=0L) int index, long constraints, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchResultScope,kotlin.Unit>? onItemPremeasured);
   }
 
   public static sealed interface LazyLayoutPrefetchState.PrefetchHandle {
     method public void cancel();
     method public void markAsUrgent();
+  }
+
+  public static sealed interface LazyLayoutPrefetchState.PrefetchResultScope {
+    method public int getIndex();
+    method public int getPlaceablesCount();
+    method public long getSize(@IntRange(from=0L) int placeableIndex);
+    property public abstract int index;
+    property public abstract int placeablesCount;
   }
 
   public interface LazyLayoutScrollScope extends androidx.compose.foundation.gestures.ScrollScope {
@@ -1347,16 +1349,16 @@ package androidx.compose.foundation.lazy.layout {
     property public default int nestedPrefetchItemCount;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface PrefetchRequest {
-    method public boolean execute(androidx.compose.foundation.lazy.layout.PrefetchRequestScope);
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface PrefetchRequest {
+    method @Deprecated public boolean execute(androidx.compose.foundation.lazy.layout.PrefetchRequestScope);
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface PrefetchRequestScope {
-    method public long availableTimeNanos();
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface PrefetchRequestScope {
+    method @Deprecated public long availableTimeNanos();
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface PrefetchScheduler {
-    method public void schedulePrefetch(androidx.compose.foundation.lazy.layout.PrefetchRequest prefetchRequest);
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public interface PrefetchScheduler {
+    method @Deprecated public void schedulePrefetch(androidx.compose.foundation.lazy.layout.PrefetchRequest prefetchRequest);
   }
 
 }
@@ -1904,6 +1906,106 @@ package androidx.compose.foundation.text {
 
 }
 
+package androidx.compose.foundation.text.contextmenu.builder {
+
+  public final class TextContextMenuBuilderScope {
+    method public void separator();
+  }
+
+  public final class TextContextMenuBuilderScope_androidKt {
+    method public static void item(androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope, Object key, String label, optional @DrawableRes int leadingIcon, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession,kotlin.Unit> onClick);
+  }
+
+}
+
+package androidx.compose.foundation.text.contextmenu.data {
+
+  public final class ProcessTextKey {
+    method public int getId();
+    property public int id;
+  }
+
+  public abstract class TextContextMenuComponent {
+    method public final Object getKey();
+    property public final Object key;
+  }
+
+  public final class TextContextMenuData {
+    ctor public TextContextMenuData(java.util.List<? extends androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent> components);
+    method public java.util.List<androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent> getComponents();
+    property public java.util.List<androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent> components;
+    field public static final androidx.compose.foundation.text.contextmenu.data.TextContextMenuData.Companion Companion;
+  }
+
+  public static final class TextContextMenuData.Companion {
+    method public androidx.compose.foundation.text.contextmenu.data.TextContextMenuData getEmpty();
+    property public androidx.compose.foundation.text.contextmenu.data.TextContextMenuData Empty;
+  }
+
+  public final class TextContextMenuItem extends androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent {
+    ctor public TextContextMenuItem(Object key, String label, optional int leadingIcon, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession,kotlin.Unit> onClick);
+    method public String getLabel();
+    method public int getLeadingIcon();
+    method public kotlin.jvm.functions.Function1<androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession,kotlin.Unit> getOnClick();
+    property public String label;
+    property public int leadingIcon;
+    property public kotlin.jvm.functions.Function1<androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession,kotlin.Unit> onClick;
+  }
+
+  public final class TextContextMenuKeys {
+    method public Object getAutofillKey();
+    method public Object getCopyKey();
+    method public Object getCutKey();
+    method public Object getPasteKey();
+    method public Object getSelectAllKey();
+    property public Object AutofillKey;
+    property public Object CopyKey;
+    property public Object CutKey;
+    property public Object PasteKey;
+    property public Object SelectAllKey;
+    field public static final androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys INSTANCE;
+  }
+
+  public final class TextContextMenuSeparator extends androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent {
+    field public static final androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator INSTANCE;
+  }
+
+  public interface TextContextMenuSession {
+    method public void close();
+  }
+
+}
+
+package androidx.compose.foundation.text.contextmenu.modifier {
+
+  public final class TextContextMenuModifierKt {
+    method public static androidx.compose.ui.Modifier addTextContextMenuComponents(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope,kotlin.Unit> builder);
+    method public static androidx.compose.ui.Modifier filterTextContextMenuComponents(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent,java.lang.Boolean> filter);
+  }
+
+}
+
+package androidx.compose.foundation.text.contextmenu.provider {
+
+  public interface TextContextMenuDataProvider {
+    method public androidx.compose.ui.geometry.Rect contentBounds(androidx.compose.ui.layout.LayoutCoordinates destinationCoordinates);
+    method public androidx.compose.foundation.text.contextmenu.data.TextContextMenuData data();
+    method public long position(androidx.compose.ui.layout.LayoutCoordinates destinationCoordinates);
+  }
+
+  public interface TextContextMenuProvider {
+    method public suspend Object? showTextContextMenu(androidx.compose.foundation.text.contextmenu.provider.TextContextMenuDataProvider dataProvider, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
+  public final class TextContextMenuProviderKt {
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider?> getLocalTextContextMenuDropdownProvider();
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider?> getLocalTextContextMenuToolbarProvider();
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider?> LocalTextContextMenuDropdownProvider;
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider?> LocalTextContextMenuToolbarProvider;
+  }
+
+}
+
 package androidx.compose.foundation.text.handwriting {
 
   public final class HandwritingDetector_androidKt {
@@ -1951,7 +2053,8 @@ package androidx.compose.foundation.text.input {
   }
 
   public sealed interface OutputTransformationAnnotationScope {
-    method public void addAnnotation(androidx.compose.ui.text.AnnotatedString.Annotation annotation, int start, int end);
+    method public void addStyle(androidx.compose.ui.text.ParagraphStyle paragraphStyle, int start, int end);
+    method public void addStyle(androidx.compose.ui.text.SpanStyle spanStyle, int start, int end);
     method public CharSequence getText();
     property public abstract CharSequence text;
   }
@@ -2089,6 +2192,11 @@ package androidx.compose.foundation.text.modifiers {
 }
 
 package androidx.compose.foundation.text.selection {
+
+  public final class PlatformSelectionBehaviors_androidKt {
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<kotlin.coroutines.CoroutineContext> getLocalTextClassifierCoroutineContext();
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<kotlin.coroutines.CoroutineContext> LocalTextClassifierCoroutineContext;
+  }
 
   public final class SelectionContainerKt {
     method @androidx.compose.runtime.Composable public static void DisableSelection(kotlin.jvm.functions.Function0<kotlin.Unit> content);

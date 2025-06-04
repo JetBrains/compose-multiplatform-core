@@ -63,7 +63,7 @@ internal fun ReverseMeasureLayout(modifier: Modifier, vararg contents: @Composab
                         layoutWidth = maxOf(layoutWidth, placeable.width)
                         layoutHeight = maxOf(layoutHeight, placeable.height)
                     }
-                }
+                },
             )
         }
 

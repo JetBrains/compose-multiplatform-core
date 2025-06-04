@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
+import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.scenecore.scene
 import org.junit.Rule
 import org.junit.Test
@@ -136,8 +137,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isSpatialUiEnabled_homeSpaceMode_returnsFalse() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text("${LocalSpatialCapabilities.current.isSpatialUiEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
@@ -148,8 +152,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isSpatialUiEnabled_homeSpaceMode_requestFullSpaceMode_returnsTrue() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text("${LocalSpatialCapabilities.current.isSpatialUiEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
@@ -161,7 +168,7 @@ class SpatialCapabilitiesTest {
     @Test
     fun isSpatialUiEnabled_fullSpaceMode_requestHomeSpaceMode_returnsFalse() {
         composeTestRule.setContent {
-            TestSetup(isFullSpace = true) {
+            TestSetup {
                 Text("${LocalSpatialCapabilities.current.isSpatialUiEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
@@ -184,8 +191,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isContent3dEnabled_homeSpaceMode_requestFullSpaceMode_returnsTrue() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text("${LocalSpatialCapabilities.current.isContent3dEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
@@ -197,7 +207,7 @@ class SpatialCapabilitiesTest {
     @Test
     fun isContent3dEnabled_fullSpaceMode_requestHomeSpaceMode_returnsFalse() {
         composeTestRule.setContent {
-            TestSetup(isFullSpace = true) {
+            TestSetup {
                 Text("${LocalSpatialCapabilities.current.isContent3dEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
@@ -220,8 +230,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isAppEnvironmentEnabled_homeSpaceMode_requestFullSpaceMode_returnsTrue() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text(text = "${LocalSpatialCapabilities.current.isAppEnvironmentEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
@@ -233,7 +246,7 @@ class SpatialCapabilitiesTest {
     @Test
     fun isAppEnvironmentEnabled_fullSpaceMode_requestHomeSpaceMode_returnsFalse() {
         composeTestRule.setContent {
-            TestSetup(isFullSpace = true) {
+            TestSetup {
                 Text(text = "${LocalSpatialCapabilities.current.isAppEnvironmentEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
@@ -256,8 +269,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isPassthroughControlEnabled_homeSpaceMode_requestFullSpaceMode_returnsTrue() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text(text = "${LocalSpatialCapabilities.current.isPassthroughControlEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
@@ -269,7 +285,7 @@ class SpatialCapabilitiesTest {
     @Test
     fun isPassthroughControlEnabled_fullSpaceMode_requestHomeSpaceMode_returnsFalse() {
         composeTestRule.setContent {
-            TestSetup(isFullSpace = true) {
+            TestSetup {
                 Text(text = "${LocalSpatialCapabilities.current.isPassthroughControlEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
@@ -292,8 +308,11 @@ class SpatialCapabilitiesTest {
 
     @Test
     fun isSpatialAudioEnabled_homeSpaceMode_requestFullSpaceMode_returnsTrue() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
         composeTestRule.setContent {
-            TestSetup(isFullSpace = false) {
+            TestSetup(runtime = runtime) {
                 Text(text = "${LocalSpatialCapabilities.current.isSpatialAudioEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
@@ -305,7 +324,7 @@ class SpatialCapabilitiesTest {
     @Test
     fun isSpatialAudioEnabled_fullSpaceMode_requestHomeSpaceMode_returnsFalse() {
         composeTestRule.setContent {
-            TestSetup(isFullSpace = true) {
+            TestSetup {
                 Text(text = "${LocalSpatialCapabilities.current.isSpatialAudioEnabled}")
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }

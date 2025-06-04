@@ -89,9 +89,7 @@ abstract class VideoRecordingTestBase(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -205,7 +203,7 @@ abstract class VideoRecordingTestBase(
         cameraProvider =
             ProcessCameraProviderWrapper(
                 ProcessCameraProvider.getInstance(context).get(),
-                enableStreamSharing
+                enableStreamSharing,
             )
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
@@ -310,7 +308,7 @@ abstract class VideoRecordingTestBase(
         // Verify.
         verifyVideoAspectRatio(
             getRotatedAspectRatio(aspectRatio, getRotationNeeded(videoCapture, cameraInfo)),
-            result.file
+            result.file,
         )
     }
 
@@ -346,7 +344,7 @@ abstract class VideoRecordingTestBase(
         verifyVideoResolution(
             context,
             result.file,
-            rotateSize(resolution, getRotationNeeded(videoCapture, cameraInfo))
+            rotateSize(resolution, getRotationNeeded(videoCapture, cameraInfo)),
         )
     }
 
@@ -445,7 +443,7 @@ abstract class VideoRecordingTestBase(
         // Checks that video can be recorded successfully when onError is received.
         triggerOnErrorAndWaitForReady(
             sessionConfig,
-            videoCapture.output.mVideoEncoderSession.readyToReleaseFuture
+            videoCapture.output.mVideoEncoderSession.readyToReleaseFuture,
         )
         // Verifies recording after triggering onError event
         recordingSession.createRecording().recordAndVerify()
@@ -473,7 +471,7 @@ abstract class VideoRecordingTestBase(
         // error listener.
         triggerOnErrorAndWaitForReady(
             sessionConfig,
-            videoCapture.output.mVideoEncoderSession.readyToReleaseFuture
+            videoCapture.output.mVideoEncoderSession.readyToReleaseFuture,
         )
         // Verifies recording after triggering onError event to the new active error listener
         recordingSession.createRecording().recordAndVerify()
@@ -630,7 +628,7 @@ abstract class VideoRecordingTestBase(
     fun canRecordWithCorrectTransformation() {
         assumeTrue(
             "No OppositeCamera for test.",
-            CameraUtil.hasCameraWithLensFacing(oppositeCameraSelector.lensFacing!!)
+            CameraUtil.hasCameraWithLensFacing(oppositeCameraSelector.lensFacing!!),
         )
 
         // Act.
@@ -640,7 +638,7 @@ abstract class VideoRecordingTestBase(
         // Assert.
         verifyMetadataRotation(
             getExpectedRotation(videoCapture, camera.cameraInfo).metadataRotation,
-            result1.file
+            result1.file,
         )
 
         instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -651,7 +649,7 @@ abstract class VideoRecordingTestBase(
         // Assert.
         verifyMetadataRotation(
             getExpectedRotation(videoCapture, oppositeCamera.cameraInfo).metadataRotation,
-            result2.file
+            result2.file,
         )
     }
 
@@ -663,28 +661,28 @@ abstract class VideoRecordingTestBase(
         val recording = recordingSession.createRecording().startAndVerify()
         camera.cameraControl.verifyIfInVideoUsage(
             true,
-            "Video started but camera still not in video usage"
+            "Video started but camera still not in video usage",
         )
 
         // Act 2 - isRecording is false after pause.
         recording.pauseAndVerify()
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "Video paused but camera still in video usage"
+            "Video paused but camera still in video usage",
         )
 
         // Act 3 - isRecording is true after resume.
         recording.resumeAndVerify()
         camera.cameraControl.verifyIfInVideoUsage(
             true,
-            "Video resumed but camera still not in video usage"
+            "Video resumed but camera still not in video usage",
         )
 
         // Act 4 - isRecording is false after stop.
         recording.stopAndVerify()
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "Video stopped but camera still in video usage"
+            "Video stopped but camera still in video usage",
         )
     }
 
@@ -700,7 +698,7 @@ abstract class VideoRecordingTestBase(
 
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "Video stopped but camera still in video usage"
+            "Video stopped but camera still in video usage",
         )
 
         // Cleanup.
@@ -712,7 +710,7 @@ abstract class VideoRecordingTestBase(
         recordingSession.createRecording().startAndVerify()
         camera.cameraControl.verifyIfInVideoUsage(
             true,
-            "Video started but camera still not in video usage"
+            "Video started but camera still not in video usage",
         )
     }
 
@@ -728,7 +726,7 @@ abstract class VideoRecordingTestBase(
 
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "Lifecycle stopped but camera still in video usage"
+            "Lifecycle stopped but camera still in video usage",
         )
     }
 
@@ -743,7 +741,7 @@ abstract class VideoRecordingTestBase(
     private fun isUseCasesCombinationSupported(
         vararg useCases: UseCase,
         withStreamSharing: Boolean,
-        useOppositeCamera: Boolean = false
+        useOppositeCamera: Boolean = false,
     ) = getCamera(useOppositeCamera).isUseCasesCombinationSupported(withStreamSharing, *useCases)
 
     /** Checks use case combination with considering StreamSharing and then binds to lifecycle. */
@@ -756,7 +754,7 @@ abstract class VideoRecordingTestBase(
             isUseCasesCombinationSupported(
                 *useCases,
                 withStreamSharing = withStreamSharing,
-                useOppositeCamera = useOppositeCamera
+                useOppositeCamera = useOppositeCamera,
             )
         )
 
@@ -764,7 +762,7 @@ abstract class VideoRecordingTestBase(
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 getCameraSelector(useOppositeCamera),
-                *useCases
+                *useCases,
             )
         }
     }
@@ -773,7 +771,7 @@ abstract class VideoRecordingTestBase(
 
     private fun getExpectedRotation(
         videoCapture: VideoCapture<Recorder>,
-        cameraInfo: CameraInfo
+        cameraInfo: CameraInfo,
     ): ExpectedRotation {
         val rotationNeeded = getRotationNeeded(videoCapture, cameraInfo)
         return if (isSurfaceProcessingEnabled(videoCapture)) {
@@ -830,7 +828,7 @@ abstract class VideoRecordingTestBase(
 
     private suspend fun CameraControl.verifyIfInVideoUsage(
         expected: Boolean,
-        message: String = ""
+        message: String = "",
     ) {
         instrumentation.waitForIdleSync() // VideoCapture observes Recorder in main thread
         // VideoUsage is updated in camera thread. So, we should ensure all tasks already submitted
@@ -856,12 +854,12 @@ abstract class VideoRecordingTestBase(
      */
     private fun triggerOnErrorAndWaitForReady(
         sessionConfig: SessionConfig,
-        readyFuture: ListenableFuture<*>? = null
+        readyFuture: ListenableFuture<*>? = null,
     ) {
         instrumentation.runOnMainSync {
             sessionConfig.errorListener!!.onError(
                 sessionConfig,
-                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN
+                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN,
             )
         }
 

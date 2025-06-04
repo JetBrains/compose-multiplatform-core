@@ -293,7 +293,7 @@ private class TransformingLazyColumnStateScrollInfoProvider(
 
                 val animation =
                     if (!state.isScrollInProgress) {
-                        state.animator.getAnimation(lastItem.key, 0)
+                        state.animator.getAnimation(lastItem.key)
                     } else {
                         null
                     }

@@ -45,7 +45,7 @@ data class CompileTimeAppFunctionMetadata(
             schemaCategory = schema?.category,
             schemaVersion = schema?.version,
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
-            response = response.toAppFunctionResponseMetadataDocument()
+            response = response.toAppFunctionResponseMetadataDocument(),
         )
     }
 }

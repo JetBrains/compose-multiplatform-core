@@ -94,7 +94,7 @@ private fun DefaultModalWideNavigationRail() {
                     Icon(Icons.Filled.Menu, "Menu")
                 }
             }
-        }
+        },
     ) {
         WideNavigationRailItem(
             railExpanded = true,
@@ -108,14 +108,14 @@ private fun DefaultModalWideNavigationRail() {
             icon = { Icon(Icons.Filled.Home, null) },
             label = { Text("Home") },
             selected = false,
-            onClick = {}
+            onClick = {},
         )
         WideNavigationRailItem(
             railExpanded = true,
             icon = { Icon(Icons.Filled.Search, null) },
             label = { Text("Search") },
             selected = false,
-            onClick = {}
+            onClick = {},
         )
     }
 }

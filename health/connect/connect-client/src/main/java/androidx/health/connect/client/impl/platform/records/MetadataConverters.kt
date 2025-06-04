@@ -34,7 +34,7 @@ internal fun PlatformMetadata.toSdkMetadata(): Metadata {
         clientRecordId = clientRecordId,
         clientRecordVersion = clientRecordVersion,
         recordingMethod = recordingMethod.toSdkRecordingMethod(),
-        device = device.toSdkDevice()
+        device = device.toSdkDevice(),
     )
 }
 

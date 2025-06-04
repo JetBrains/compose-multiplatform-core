@@ -60,7 +60,7 @@ public fun UnitTestAssertion.assertIsNotChecked(): UnitTestAssertion = assert(is
 @PublishedApi // See b/316353540; a reified version of this is available in public api.
 internal fun UnitTestAssertion.assertHasRunCallbackClickAction(
     callbackClass: Class<out ActionCallback>,
-    parameters: ActionParameters = actionParametersOf()
+    parameters: ActionParameters = actionParametersOf(),
 ): UnitTestAssertion =
     assert(hasRunCallbackClickAction(callbackClass = callbackClass, parameters = parameters))
 
@@ -91,13 +91,13 @@ public inline fun <reified T : ActionCallback> UnitTestAssertion.assertHasRunCal
 public fun UnitTestAssertion.assertHasStartActivityClickAction(
     intent: Intent,
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): UnitTestAssertion =
     assert(
         hasStartActivityClickAction(
             intent = intent,
             parameters = parameters,
-            activityOptions = activityOptions
+            activityOptions = activityOptions,
         )
     )
 
@@ -113,7 +113,7 @@ public fun UnitTestAssertion.assertHasStartActivityClickAction(
 @PublishedApi // See b/316353540; a reified version of this is available in public api.
 internal fun UnitTestAssertion.assertHasStartServiceClickAction(
     serviceClass: Class<out Service>,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): UnitTestAssertion = assert(hasStartServiceAction(serviceClass, isForegroundService))
 
 /**
@@ -140,7 +140,7 @@ public inline fun <reified T : Service> UnitTestAssertion.assertHasStartServiceC
  */
 public fun UnitTestAssertion.assertHasStartServiceClickAction(
     componentName: ComponentName,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): UnitTestAssertion = assert(hasStartServiceAction(componentName, isForegroundService))
 
 /**
@@ -154,7 +154,7 @@ public fun UnitTestAssertion.assertHasStartServiceClickAction(
  */
 public fun UnitTestAssertion.assertHasStartServiceClickAction(
     intent: Intent,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): UnitTestAssertion = assert(hasStartServiceAction(intent, isForegroundService))
 
 /**
@@ -190,7 +190,7 @@ public inline fun <reified T : BroadcastReceiver> UnitTestAssertion
  */
 public fun UnitTestAssertion.assertHasSendBroadcastClickAction(
     intentAction: String,
-    componentName: ComponentName? = null
+    componentName: ComponentName? = null,
 ): UnitTestAssertion = assert(hasSendBroadcastAction(intentAction, componentName))
 
 /**

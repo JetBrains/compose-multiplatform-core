@@ -88,7 +88,7 @@ fun CallCard(
     onAddParticipantClick: (String) -> Unit,
     onRemoveParticipantClick: (String) -> Unit,
     onChangeCallIconClick: (String) -> Unit,
-    defaultExpandedState: Boolean = false // To set initial state
+    defaultExpandedState: Boolean = false, // To set initial state
 ) {
     var isExpanded by remember { mutableStateOf(defaultExpandedState) }
     val expandedCardColor =
@@ -117,34 +117,34 @@ fun CallCard(
                             isExpanded = !isExpanded
                             Log.d(
                                 "CallCard",
-                                "[${uiState.callId}] Toggled extensions expansion to: $isExpanded"
+                                "[${uiState.callId}] Toggled extensions expansion to: $isExpanded",
                             )
                         } else {
                             Log.i("CallCard", "Extensions are not enabled for toggling.")
                         }
-                    }
-                )
+                    },
+                ),
     ) {
         Column {
             // Section 1: Always visible content (CallerInfo + Main Action Buttons)
             Column(modifier = Modifier.padding(6.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         Icons.Rounded.Face,
                         modifier = Modifier.size(48.dp),
-                        contentDescription = "Caller Icon"
+                        contentDescription = "Caller Icon",
                     )
                     Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
                         Text(
                             text = uiState.attributes.displayName.toString(),
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
                             text = uiState.attributes.address.toString(),
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
                             Text(
@@ -178,7 +178,7 @@ fun CallCard(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceAround,
                 ) {
                     if (!uiState.isLocalCallSilenceEnabled) {
                         // Show global mute if local silence isn't active/supported
@@ -187,7 +187,7 @@ fun CallCard(
                                 if (uiState.isGloballyMuted) Icons.Filled.MicOff
                                 else Icons.Filled.Mic,
                             contentDescription = if (uiState.isGloballyMuted) "Unmute" else "Mute",
-                            onClick = { onMuteClick(!uiState.isGloballyMuted) }
+                            onClick = { onMuteClick(!uiState.isGloballyMuted) },
                         )
                     }
 
@@ -196,7 +196,7 @@ fun CallCard(
                             icon = getEndpointIcon(uiState.currentEndpoint),
                             contentDescription =
                                 "Audio Route:" + " ${getEndpointName(uiState.currentEndpoint)}",
-                            onClick = { showAudioRouteDialog = true }
+                            onClick = { showAudioRouteDialog = true },
                         )
                     }
 
@@ -204,7 +204,7 @@ fun CallCard(
                         ActionIconButton(
                             icon = Icons.Filled.Pause,
                             contentDescription = "Hold",
-                            onClick = { onHoldClick(uiState.callId) }
+                            onClick = { onHoldClick(uiState.callId) },
                         )
                     }
                     // Assuming INACTIVE means locally held and can be unheld
@@ -212,14 +212,14 @@ fun CallCard(
                         ActionIconButton(
                             icon = Icons.Filled.PlayArrow,
                             contentDescription = "Unhold",
-                            onClick = { onUnholdClick(uiState.callId) }
+                            onClick = { onUnholdClick(uiState.callId) },
                         )
                     }
                     ActionIconButton(
                         icon = Icons.Filled.CallEnd,
                         contentDescription = "End Call",
                         onClick = { onEndCallClick(uiState.callId) },
-                        tint = Color.Red
+                        tint = Color.Red,
                     )
                 }
             }
@@ -239,25 +239,25 @@ fun CallCard(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.Top,
                         ) {
                             if (uiState.isCallIconExtensionEnabled) {
                                 ExtensionItem(
                                     label = "Call Icon",
-                                    onClick = { onChangeCallIconClick(uiState.callId) }
+                                    onClick = { onChangeCallIconClick(uiState.callId) },
                                 ) {
                                     if (uiState.callIconData?.bitmap != null) {
                                         Image(
                                             bitmap = uiState.callIconData.bitmap.asImageBitmap(),
                                             contentDescription = "Call Icon",
                                             modifier = Modifier.size(40.dp).clip(CircleShape),
-                                            contentScale = ContentScale.Crop
+                                            contentScale = ContentScale.Crop,
                                         )
                                     } else {
                                         Icon(
                                             Icons.Filled.Person,
                                             "Default Call Icon",
-                                            modifier = Modifier.size(40.dp)
+                                            modifier = Modifier.size(40.dp),
                                         )
                                     }
                                 }
@@ -269,16 +269,16 @@ fun CallCard(
                                     onClick = {
                                         onLocalCallSilenceClick(
                                             uiState.callId,
-                                            !uiState.isLocallyMuted
+                                            !uiState.isLocallyMuted,
                                         )
-                                    }
+                                    },
                                 ) {
                                     Icon(
                                         imageVector =
                                             if (uiState.isLocallyMuted) Icons.Filled.MicOff
                                             else Icons.Filled.Mic,
                                         contentDescription = "Local Call Silence",
-                                        modifier = Modifier.size(40.dp)
+                                        modifier = Modifier.size(40.dp),
                                     )
                                 }
                             } else {
@@ -286,7 +286,7 @@ fun CallCard(
                                 // visible
                                 Text(
                                     "Local Silence N/A",
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
                                 )
                             }
                         }
@@ -317,7 +317,7 @@ fun CallCard(
                                 onAudioRouteClick(uiState.callId, endpoint)
                                 showAudioRouteDialog = false
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Icon(
                                 imageVector = getEndpointIcon(endpoint),
@@ -325,7 +325,7 @@ fun CallCard(
                                 tint =
                                     if (endpoint == uiState.currentEndpoint)
                                         MaterialTheme.colorScheme.primary
-                                    else LocalContentColor.current
+                                    else LocalContentColor.current,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -333,7 +333,7 @@ fun CallCard(
                                 color =
                                     if (endpoint == uiState.currentEndpoint)
                                         MaterialTheme.colorScheme.primary
-                                    else LocalContentColor.current
+                                    else LocalContentColor.current,
                             )
                         }
                     }
@@ -341,7 +341,7 @@ fun CallCard(
             },
             confirmButton = {
                 TextButton(onClick = { showAudioRouteDialog = false }) { Text("Cancel") }
-            }
+            },
         )
     }
 }
@@ -361,7 +361,7 @@ fun CallCardActivePreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }
@@ -382,7 +382,7 @@ fun CallCardMutedPreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }
@@ -403,7 +403,7 @@ fun CallCardInactivePreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }
@@ -423,7 +423,7 @@ fun CallCardActiveParticipantsPreview() {
             onAddParticipantClick = {},
             onRemoveParticipantClick = {},
             onChangeCallIconClick = {},
-            onLocalCallSilenceClick = { _, _ -> }
+            onLocalCallSilenceClick = { _, _ -> },
         )
     }
 }

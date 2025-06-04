@@ -1,1 +1,110 @@
 // Signature format: 4.0
+package androidx.xr.scenecore {
+
+  public final class CameraView implements androidx.xr.scenecore.ScenePose {
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public androidx.xr.scenecore.CameraView.CameraType getCameraType();
+    method public androidx.xr.runtime.FieldOfView getFov();
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
+    property public androidx.xr.scenecore.CameraView.CameraType cameraType;
+    property public androidx.xr.runtime.FieldOfView fov;
+  }
+
+  public enum CameraView.CameraType {
+    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType LEFT_EYE;
+    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType RIGHT_EYE;
+    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType UNKNOWN;
+  }
+
+  public final class Head implements androidx.xr.scenecore.ScenePose {
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
+  }
+
+  public final class HitTestResult {
+    ctor public HitTestResult(androidx.xr.runtime.math.Vector3? hitPosition, androidx.xr.runtime.math.Vector3? surfaceNormal, int surfaceType, float distance);
+    method public float getDistance();
+    method public androidx.xr.runtime.math.Vector3? getHitPosition();
+    method public androidx.xr.runtime.math.Vector3? getSurfaceNormal();
+    method public int getSurfaceType();
+    property public float distance;
+    property public androidx.xr.runtime.math.Vector3? hitPosition;
+    property public androidx.xr.runtime.math.Vector3? surfaceNormal;
+    property public int surfaceType;
+  }
+
+  public static final class HitTestResult.SurfaceType {
+    property public static int OBJECT;
+    property public static int PLANE;
+    property public static int UNKNOWN;
+    field public static final androidx.xr.scenecore.HitTestResult.SurfaceType INSTANCE;
+    field public static final int OBJECT = 2; // 0x2
+    field public static final int PLANE = 1; // 0x1
+    field public static final int UNKNOWN = 0; // 0x0
+  }
+
+  public final class PerceptionSpace implements androidx.xr.scenecore.ScenePose {
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
+  }
+
+  public final class PlaneOrientation {
+    property public static int ANY;
+    property public static int HORIZONTAL;
+    property public static int VERTICAL;
+    field public static final int ANY = 2; // 0x2
+    field public static final int HORIZONTAL = 0; // 0x0
+    field public static final androidx.xr.scenecore.PlaneOrientation INSTANCE;
+    field public static final int VERTICAL = 1; // 0x1
+  }
+
+  public final class PlaneSemanticType {
+    property public static int ANY;
+    property public static int CEILING;
+    property public static int FLOOR;
+    property public static int TABLE;
+    property public static int WALL;
+    field public static final int ANY = 4; // 0x4
+    field public static final int CEILING = 2; // 0x2
+    field public static final int FLOOR = 1; // 0x1
+    field public static final androidx.xr.scenecore.PlaneSemanticType INSTANCE;
+    field public static final int TABLE = 3; // 0x3
+    field public static final int WALL = 0; // 0x0
+  }
+
+  public interface ScenePose {
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
+    property public abstract androidx.xr.runtime.math.Pose activitySpacePose;
+  }
+
+  public static final class ScenePose.HitTestFilter {
+    property public static int OTHER_SCENES;
+    property public static int SELF_SCENE;
+    field public static final androidx.xr.scenecore.ScenePose.HitTestFilter INSTANCE;
+    field public static final int OTHER_SCENES = 2; // 0x2
+    field public static final int SELF_SCENE = 1; // 0x1
+  }
+
+  public fun interface SpatialModeChangeListener {
+    method public void onSpatialModeChanged(androidx.xr.runtime.math.Pose recommendedPose, float recommendedScale);
+  }
+
+}
+

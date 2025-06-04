@@ -42,13 +42,13 @@ public fun NavGraphBuilder.bottomSheet(
     route: String,
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
-    content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit
+    content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit,
 ) {
     destination(
         BottomSheetNavigatorDestinationBuilder(
                 provider[BottomSheetNavigator::class],
                 route,
-                content
+                content,
             )
             .apply {
                 arguments.fastForEach { (argumentName, argument) ->
@@ -74,7 +74,7 @@ public inline fun <reified T : Any> NavGraphBuilder.bottomSheet(
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
-    noinline content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit
+    noinline content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit,
 ) {
     bottomSheet(T::class, typeMap, arguments, deepLinks, content)
 }
@@ -85,14 +85,14 @@ internal fun NavGraphBuilder.bottomSheet(
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>,
     arguments: List<NamedNavArgument>,
     deepLinks: List<NavDeepLink> = emptyList(),
-    content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit
+    content: @Composable ColumnScope.(backstackEntry: NavBackStackEntry) -> Unit,
 ) {
     destination(
         BottomSheetNavigatorDestinationBuilder(
                 provider[BottomSheetNavigator::class],
                 route,
                 typeMap,
-                content
+                content,
             )
             .apply {
                 arguments.fastForEach { (argumentName, argument) ->

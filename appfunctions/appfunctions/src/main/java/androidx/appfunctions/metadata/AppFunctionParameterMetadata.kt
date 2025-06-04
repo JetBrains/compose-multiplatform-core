@@ -61,7 +61,7 @@ public class AppFunctionParameterMetadata(
         return AppFunctionParameterMetadataDocument(
             name = name,
             isRequired = isRequired,
-            dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+            dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
         )
     }
 }
@@ -74,12 +74,12 @@ public data class AppFunctionParameterMetadataDocument(
     @Document.Id public val id: String = APP_FUNCTION_ID_EMPTY,
     @Document.StringProperty public val name: String,
     @Document.BooleanProperty public val isRequired: Boolean,
-    @Document.DocumentProperty public val dataTypeMetadata: AppFunctionDataTypeMetadataDocument
+    @Document.DocumentProperty public val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
 ) {
     public fun toAppFunctionParameterMetadata(): AppFunctionParameterMetadata =
         AppFunctionParameterMetadata(
             name = name,
             isRequired = isRequired,
-            dataType = dataTypeMetadata.toAppFunctionDataTypeMetadata()
+            dataType = dataTypeMetadata.toAppFunctionDataTypeMetadata(),
         )
 }

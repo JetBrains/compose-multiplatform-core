@@ -120,11 +120,7 @@ object InsetsRulers {
      * @see WindowInsetsCompat.Type.systemBars
      */
     val SystemBars: BasicAnimatableInsetsRulers =
-        InnerInsetsRulers(
-            StatusBars,
-            NavigationBars,
-            CaptionBar,
-        )
+        InnerInsetsRulers(StatusBars, NavigationBars, CaptionBar)
 
     /**
      * Rulers used for system gestures insets.
@@ -164,7 +160,7 @@ object InsetsRulers {
             CaptionBar,
             DisplayCutout,
             Ime,
-            TappableElement
+            TappableElement,
         )
 
     /**
@@ -179,12 +175,7 @@ object InsetsRulers {
      * @see androidx.core.view.DisplayCutoutCompat.getWaterfallInsets
      */
     val SafeGestures: BasicAnimatableInsetsRulers =
-        InnerInsetsRulers(
-            MandatorySystemGestures,
-            SystemGestures,
-            TappableElement,
-            Waterfall,
-        )
+        InnerInsetsRulers(MandatorySystemGestures, SystemGestures, TappableElement, Waterfall)
 
     /**
      * Rulers used for insets that are safe for any content. This includes [SafeGestures] and
@@ -290,7 +281,7 @@ private inline fun Placeable.PlacementScope.calculateRulerValueWhenAnimating(
     defaultValue: Float,
     animatingRulers: Array<out RectRulers>,
     valueRulers: Array<RectRulers>,
-    rulerChooser: (RectRulers) -> Ruler
+    rulerChooser: (RectRulers) -> Ruler,
 ): Float {
     val insetsValues = coordinates.findValues() ?: return defaultValue
     val isAnimating = animatingRulers.any { insetsValues[it]?.isAnimating == true }
@@ -317,7 +308,7 @@ private inline fun Placeable.PlacementScope.calculateRulerValueWhenAnimating(
 private class InnerOnlyWhenAnimatingRectRulers(
     val name: String,
     val rulers: Array<out RectRulers>,
-    val valueRulers: Array<RectRulers>
+    val valueRulers: Array<RectRulers>,
 ) : RectRulers {
     override val left =
         VerticalRuler.derived { defaultValue ->
@@ -365,7 +356,7 @@ class InnerInsetsRulers(vararg val rulers: RectRulers) : BasicAnimatableInsetsRu
                     } else {
                         ruler
                     }
-                }
+                },
         )
 
     override val target: RectRulers =
@@ -380,7 +371,7 @@ class InnerInsetsRulers(vararg val rulers: RectRulers) : BasicAnimatableInsetsRu
                     } else {
                         ruler
                     }
-                }
+                },
         )
 
     /**
@@ -729,7 +720,7 @@ private class RulerProviderModifierNode(insetsListener: InsetsListener) :
                 rulers.rulersIgnoringVisibility,
                 values.ignoringVisibility,
                 width,
-                height
+                height,
             )
         }
         if (cutoutRects.isNotEmpty()) {
@@ -746,7 +737,7 @@ private class RulerProviderModifierNode(insetsListener: InsetsListener) :
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         val width = placeable.width
@@ -763,7 +754,7 @@ private fun RulerScope.provideInsetsValues(
     rulers: RectRulers,
     insets: ValueInsets,
     width: Int,
-    height: Int
+    height: Int,
 ) {
     if (insets != UnsetValueInsets) {
         val left = insets.left.toFloat()
@@ -782,9 +773,7 @@ private fun RulerScope.provideInsetsValues(
  * A listener for WindowInsets changes. This updates the [insetsValues] values whenever values
  * change.
  */
-internal class InsetsListener(
-    val composeView: AndroidComposeView,
-) :
+internal class InsetsListener(val composeView: AndroidComposeView) :
     WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE),
     Runnable,
     OnApplyWindowInsetsListener,
@@ -834,7 +823,7 @@ internal class InsetsListener(
 
     override fun onStart(
         animation: WindowInsetsAnimationCompat,
-        bounds: BoundsCompat
+        bounds: BoundsCompat,
     ): BoundsCompat {
         val insets = savedInsets
         prepared = false
@@ -866,7 +855,7 @@ internal class InsetsListener(
 
     private fun updateInsetAnimationInfo(
         insetsValue: WindowInsetsValues,
-        animation: WindowInsetsAnimationCompat
+        animation: WindowInsetsAnimationCompat,
     ) {
         insetsValue.interpolator = animation.interpolator
         insetsValue.fraction = animation.fraction
@@ -877,7 +866,7 @@ internal class InsetsListener(
 
     override fun onProgress(
         insets: WindowInsetsCompat,
-        runningAnimations: MutableList<WindowInsetsAnimationCompat>
+        runningAnimations: MutableList<WindowInsetsAnimationCompat>,
     ): WindowInsetsCompat {
         runningAnimations.fastForEach { animation ->
             val typeMask = animation.typeMask

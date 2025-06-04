@@ -38,7 +38,7 @@ internal typealias UnitTestAssertion = GlanceNodeAssertion<MappedNode, GlanceMap
  */
 public fun UnitTestAssertion.assertHasText(
     text: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): UnitTestAssertion {
     return assert(hasText(text, ignoreCase))
 }
@@ -51,7 +51,7 @@ public fun UnitTestAssertion.assertHasText(
  */
 public fun UnitTestAssertion.assertHasTextEqualTo(
     text: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): UnitTestAssertion {
     return assert(hasTextEqualTo(text, ignoreCase))
 }
@@ -77,7 +77,7 @@ public fun UnitTestAssertion.assertHasTestTag(testTag: String): UnitTestAssertio
  */
 public fun UnitTestAssertion.assertHasContentDescription(
     value: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): UnitTestAssertion {
     return assert(hasContentDescription(value, ignoreCase))
 }
@@ -92,7 +92,7 @@ public fun UnitTestAssertion.assertHasContentDescription(
  */
 public fun UnitTestAssertion.assertHasContentDescriptionEqualTo(
     value: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): UnitTestAssertion {
     return assert(hasContentDescriptionEqualTo(value, ignoreCase))
 }
@@ -130,7 +130,7 @@ public fun UnitTestAssertion.assertHasClickAction(): UnitTestAssertion {
 internal fun <T : Activity> UnitTestAssertion.assertHasStartActivityClickAction(
     activityClass: Class<T>,
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): UnitTestAssertion {
     return assert(hasStartActivityClickAction(activityClass, parameters, activityOptions))
 }
@@ -148,7 +148,7 @@ internal fun <T : Activity> UnitTestAssertion.assertHasStartActivityClickAction(
  */
 public inline fun <reified T : Activity> UnitTestAssertion.assertHasStartActivityClickAction(
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): UnitTestAssertion {
     return assert(hasStartActivityClickAction<T>(parameters, activityOptions))
 }
@@ -164,7 +164,7 @@ public inline fun <reified T : Activity> UnitTestAssertion.assertHasStartActivit
  */
 public fun UnitTestAssertion.assertHasStartActivityClickAction(
     componentName: ComponentName,
-    parameters: ActionParameters = actionParametersOf()
+    parameters: ActionParameters = actionParametersOf(),
 ): UnitTestAssertion {
     return assert(hasStartActivityClickAction(componentName, parameters))
 }

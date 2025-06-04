@@ -137,7 +137,7 @@ abstract class AndroidXExtension(
     // gets the library group from the project path, including special cases
     private fun getLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>? = null
+        explanationBuilder: MutableList<String>? = null,
     ): LibraryGroup? {
         val overridden = overrideLibraryGroupsByProjectPath[projectPath]
         explanationBuilder?.add(
@@ -160,7 +160,7 @@ abstract class AndroidXExtension(
     // simple function to get the library group from the project path, without special cases
     private fun getStandardLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>?
+        explanationBuilder: MutableList<String>?,
     ): LibraryGroup? {
         // Get the text of the library group, something like "androidx.core"
         val parentPath = substringBeforeLastColon(projectPath)

@@ -49,7 +49,7 @@ private class RecyclerViewAdapter(val items: Int) :
     RecyclerView.Adapter<RecyclerViewAsPagerViewHolder>() {
     override fun onCreateViewHolder(
         parent: ViewGroup,
-        viewType: Int
+        viewType: Int,
     ): RecyclerViewAsPagerViewHolder {
         val view =
             LayoutInflater.from(parent.context)

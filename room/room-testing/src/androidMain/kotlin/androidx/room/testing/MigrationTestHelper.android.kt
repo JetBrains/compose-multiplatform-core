@@ -101,7 +101,7 @@ public actual open class MigrationTestHelper : TestWatcher {
     public constructor(
         instrumentation: Instrumentation,
         assetsFolder: String,
-        openFactory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory()
+        openFactory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
     ) {
         this.delegate =
             SupportSQLiteMigrationTestHelper(
@@ -109,7 +109,7 @@ public actual open class MigrationTestHelper : TestWatcher {
                 assetsFolder = assetsFolder,
                 databaseClass = null,
                 openFactory = openFactory,
-                autoMigrationSpecs = emptyList()
+                autoMigrationSpecs = emptyList(),
             )
     }
 
@@ -126,12 +126,12 @@ public actual open class MigrationTestHelper : TestWatcher {
      */
     public constructor(
         instrumentation: Instrumentation,
-        databaseClass: Class<out RoomDatabase>
+        databaseClass: Class<out RoomDatabase>,
     ) : this(
         instrumentation = instrumentation,
         databaseClass = databaseClass,
         specs = emptyList(),
-        openFactory = FrameworkSQLiteOpenHelperFactory()
+        openFactory = FrameworkSQLiteOpenHelperFactory(),
     )
 
     /**
@@ -157,7 +157,7 @@ public actual open class MigrationTestHelper : TestWatcher {
         instrumentation: Instrumentation,
         databaseClass: Class<out RoomDatabase>,
         specs: List<AutoMigrationSpec>,
-        openFactory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory()
+        openFactory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
     ) {
         val assetsFolder =
             checkNotNull(databaseClass.canonicalName).let {
@@ -173,7 +173,7 @@ public actual open class MigrationTestHelper : TestWatcher {
                 assetsFolder = assetsFolder,
                 databaseClass = databaseClass,
                 openFactory = openFactory,
-                autoMigrationSpecs = specs
+                autoMigrationSpecs = specs,
             )
     }
 
@@ -204,7 +204,7 @@ public actual open class MigrationTestHelper : TestWatcher {
         databaseFactory: () -> RoomDatabase = {
             findAndInstantiateDatabaseImpl(databaseClass.java)
         },
-        autoMigrationSpecs: List<AutoMigrationSpec> = emptyList()
+        autoMigrationSpecs: List<AutoMigrationSpec> = emptyList(),
     ) {
         val assetsFolder =
             checkNotNull(databaseClass.qualifiedName).let {
@@ -222,7 +222,7 @@ public actual open class MigrationTestHelper : TestWatcher {
                 driver = driver,
                 databaseClass = databaseClass,
                 databaseFactory = databaseFactory,
-                autoMigrationSpecs = autoMigrationSpecs
+                autoMigrationSpecs = autoMigrationSpecs,
             )
     }
 
@@ -274,7 +274,7 @@ public actual open class MigrationTestHelper : TestWatcher {
         name: String,
         version: Int,
         validateDroppedTables: Boolean,
-        vararg migrations: Migration
+        vararg migrations: Migration,
     ): SupportSQLiteDatabase {
         check(delegate is SupportSQLiteMigrationTestHelper) {
             "MigrationTestHelper functionality returning a SupportSQLiteDatabase is not possible " +
@@ -375,7 +375,7 @@ public actual open class MigrationTestHelper : TestWatcher {
 /** Base implementation of Android's [MigrationTestHelper] */
 private sealed class AndroidMigrationTestHelper(
     private val instrumentation: Instrumentation,
-    private val assetsFolder: String
+    private val assetsFolder: String,
 ) {
     protected val managedConnections = mutableListOf<WeakReference<SQLiteConnection>>()
 
@@ -412,7 +412,7 @@ private sealed class AndroidMigrationTestHelper(
         container: RoomDatabase.MigrationContainer,
         openFactory: SupportSQLiteOpenHelper.Factory?,
         sqliteDriver: SQLiteDriver?,
-        databaseFileName: String?
+        databaseFileName: String?,
     ) =
         DatabaseConfiguration(
             context = instrumentation.targetContext,
@@ -436,7 +436,7 @@ private sealed class AndroidMigrationTestHelper(
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = sqliteDriver,
-            queryCoroutineContext = null
+            queryCoroutineContext = null,
         )
 }
 
@@ -486,7 +486,7 @@ private class SupportSQLiteMigrationTestHelper(
                 configurationFactory = ::createConfiguration,
                 connectionManagerFactory = { config, openDelegate ->
                     SupportTestConnectionManager(config.copy(name = name), openDelegate)
-                }
+                },
             )
         managedConnections.add(WeakReference(connection))
         check(connection is SupportSQLiteConnection) {
@@ -499,7 +499,7 @@ private class SupportSQLiteMigrationTestHelper(
         name: String,
         version: Int,
         validateDroppedTables: Boolean,
-        migrations: Array<out Migration>
+        migrations: Array<out Migration>,
     ): SupportSQLiteDatabase {
         val dbPath = context.getDatabasePath(name)
         check(dbPath.exists()) {
@@ -518,7 +518,7 @@ private class SupportSQLiteMigrationTestHelper(
                 configurationFactory = ::createConfiguration,
                 connectionManagerFactory = { config, openDelegate ->
                     SupportTestConnectionManager(config.copy(name = name), openDelegate)
-                }
+                },
             )
         managedConnections.add(WeakReference(connection))
         check(connection is SupportSQLiteConnection) {
@@ -532,7 +532,7 @@ private class SupportSQLiteMigrationTestHelper(
 
     private class SupportTestConnectionManager(
         override val configuration: DatabaseConfiguration,
-        override val openDelegate: RoomOpenDelegate
+        override val openDelegate: RoomOpenDelegate,
     ) : TestConnectionManager() {
 
         private val driverWrapper: SQLiteDriver
@@ -569,7 +569,7 @@ private class SupportSQLiteMigrationTestHelper(
                 this@SupportTestConnectionManager.onMigrate(
                     SupportSQLiteConnection(db),
                     oldVersion,
-                    newVersion
+                    newVersion,
                 )
             }
 
@@ -592,7 +592,7 @@ private class SQLiteDriverMigrationTestHelper(
     databaseClass: KClass<out RoomDatabase>,
     databaseFactory: () -> RoomDatabase,
     private val file: File,
-    private val autoMigrationSpecs: List<AutoMigrationSpec>
+    private val autoMigrationSpecs: List<AutoMigrationSpec>,
 ) : AndroidMigrationTestHelper(instrumentation, assetsFolder) {
 
     private val databaseInstance = databaseClass.cast(databaseFactory.invoke())
@@ -602,16 +602,13 @@ private class SQLiteDriverMigrationTestHelper(
         val connection =
             createDatabaseCommon(
                 schema = schemaBundle.database,
-                configurationFactory = ::createConfiguration
+                configurationFactory = ::createConfiguration,
             )
         managedConnections.add(WeakReference(connection))
         return connection
     }
 
-    fun runMigrationsAndValidate(
-        version: Int,
-        migrations: List<Migration>,
-    ): SQLiteConnection {
+    fun runMigrationsAndValidate(version: Int, migrations: List<Migration>): SQLiteConnection {
         val schemaBundle = loadSchema(version)
         val connection =
             runMigrationsAndValidateCommon(
@@ -620,7 +617,7 @@ private class SQLiteDriverMigrationTestHelper(
                 migrations = migrations,
                 autoMigrationSpecs = autoMigrationSpecs,
                 validateUnknownTables = false,
-                configurationFactory = ::createConfiguration
+                configurationFactory = ::createConfiguration,
             )
         managedConnections.add(WeakReference(connection))
         return connection

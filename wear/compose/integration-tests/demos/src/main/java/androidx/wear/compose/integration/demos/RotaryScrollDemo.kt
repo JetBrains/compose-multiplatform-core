@@ -64,12 +64,12 @@ public fun NestedScrollPagerDemo() {
                 .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
                     RotaryScrollableDefaults.behavior(scrollableState),
-                    focusRequester = focusRequester
+                    focusRequester = focusRequester,
                 )
                 .verticalScroll(scrollableState)
                 .background(if (page == 1) Color.Gray else Color.Black)
                 .padding(30.dp),
-            Alignment.Center
+            Alignment.Center,
         ) {
             Column {
                 if (page > 0) {
@@ -97,7 +97,7 @@ public fun NestedScrollLazyColumnDemo(reverseLayout: Boolean) {
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = reverseLayout,
-        contentPadding = PaddingValues(vertical = 50.dp)
+        contentPadding = PaddingValues(vertical = 50.dp),
     ) {
         item { TopText() }
         item {
@@ -113,14 +113,14 @@ public fun NestedScrollLazyColumnDemo(reverseLayout: Boolean) {
                             RotaryScrollableDefaults.behavior(state),
                             overscrollEffect = overscrollEffect,
                             focusRequester = focusRequester,
-                            reverseDirection = reverseLayout
+                            reverseDirection = reverseLayout,
                         )
                         .overscroll(overscrollEffect)
                         .size(150.dp)
                         .background(Color.Yellow)
                         .padding(PaddingValues(30.dp)),
                 state = state,
-                reverseLayout = reverseLayout
+                reverseLayout = reverseLayout,
             ) {
                 items(20) { index -> ItemText(index) }
             }
@@ -137,7 +137,7 @@ public fun NestedScrollTLCDemo() {
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(vertical = 50.dp),
         // Disable rotary scroll in the parent as rotary is going to be handled by the child
-        rotaryScrollableBehavior = null
+        rotaryScrollableBehavior = null,
     ) {
         item { TopText() }
         item {
@@ -145,7 +145,7 @@ public fun NestedScrollTLCDemo() {
                 Modifier.hierarchicalFocusGroup(true)
                     .size(150.dp)
                     .background(Color.Yellow)
-                    .padding(PaddingValues(30.dp)),
+                    .padding(PaddingValues(30.dp))
             ) {
                 items(20) { index -> ItemText(index) }
             }
@@ -162,7 +162,7 @@ public fun NestedScrollSLCDemo() {
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(vertical = 50.dp),
         // Disable rotary scroll in the parent as rotary is going to be handled by the child
-        rotaryScrollableBehavior = null
+        rotaryScrollableBehavior = null,
     ) {
         item { TopText() }
         item {
@@ -183,12 +183,9 @@ public fun NestedScrollSLCDemo() {
 private fun ItemText(index: Int) {
     Box(
         Modifier.height(38.dp).fillMaxWidth().background(Color.Magenta),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
-        BasicText(
-            text = "Item $index",
-            modifier = Modifier,
-        )
+        BasicText(text = "Item $index", modifier = Modifier)
     }
 }
 

@@ -42,12 +42,12 @@ fun HorizontalPageIndicatorWithPagerSample() {
     Box {
         HorizontalPagerScaffold(
             pagerState = pagerState,
-            pageIndicator = { HorizontalPageIndicator(pagerState = pagerState) }
+            pageIndicator = { HorizontalPageIndicator(pagerState = pagerState) },
         ) {
             HorizontalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -68,12 +68,12 @@ fun VerticalPageIndicatorWithPagerSample() {
     Box {
         VerticalPagerScaffold(
             pagerState = pagerState,
-            pageIndicator = { VerticalPageIndicator(pagerState = pagerState) }
+            pageIndicator = { VerticalPageIndicator(pagerState = pagerState) },
         ) {
             VerticalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     Box(modifier = Modifier.fillMaxSize()) {

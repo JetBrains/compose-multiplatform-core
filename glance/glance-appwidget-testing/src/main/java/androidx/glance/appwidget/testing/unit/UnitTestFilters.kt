@@ -84,7 +84,7 @@ public fun isNotChecked(): GlanceNodeMatcher<MappedNode> =
 @PublishedApi // See b/316353540; a reified version of this is available in the public api.
 internal fun <T : ActionCallback> hasRunCallbackClickAction(
     callbackClass: Class<T>,
-    parameters: ActionParameters = actionParametersOf()
+    parameters: ActionParameters = actionParametersOf(),
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         "has run callback click action with callback class: ${callbackClass.name} and " +
@@ -137,7 +137,7 @@ public inline fun <reified T : ActionCallback> hasRunCallbackClickAction(
 public fun hasStartActivityClickAction(
     intent: Intent,
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         if (activityOptions != null) {
@@ -178,7 +178,7 @@ public fun hasStartActivityClickAction(
 @PublishedApi // See b/316353540; a reified version of this is available in the public api.
 internal fun hasStartServiceAction(
     serviceClass: Class<out Service>,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -231,7 +231,7 @@ public inline fun <reified T : Service> hasStartServiceAction(
  */
 internal fun hasStartServiceAction(
     componentName: ComponentName,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -267,7 +267,7 @@ internal fun hasStartServiceAction(
  */
 public fun hasStartServiceAction(
     intent: Intent,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -344,7 +344,7 @@ public inline fun <reified T : BroadcastReceiver> hasSendBroadcastAction():
  */
 public fun hasSendBroadcastAction(
     intentAction: String,
-    componentName: ComponentName? = null
+    componentName: ComponentName? = null,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =

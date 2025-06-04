@@ -162,7 +162,7 @@ class PaginationModelTest {
         val visiblePages =
             paginationModel.getPagesInViewport(
                 viewportTop = contentBottom + 10,
-                viewportBottom = contentBottom + 100
+                viewportBottom = contentBottom + 100,
             )
 
         // When the viewport is below the end of this model, we expect an empty range at the last

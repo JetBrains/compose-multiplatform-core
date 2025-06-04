@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
                     "loadSdk failed with errorCode: " +
                         e.loadSdkErrorCode +
                         " and errorMsg: " +
-                        e.message
+                        e.message,
                 )
             }
         }
@@ -217,7 +217,7 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.ad_format_menu_array)
+                    resources.getStringArray(R.array.ad_format_menu_array),
                 ) { position: Int ->
                     val isSupported = isSupportedOptionsCombination(position, mediationOption)
                     when (position) {
@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.mediation_dropdown_menu_array)
+                    resources.getStringArray(R.array.mediation_dropdown_menu_array),
                 ) { position: Int ->
                     isSupportedOptionsCombination(adFormat, position)
                 }
@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.ad_type_dropdown_menu_array)
+                    resources.getStringArray(R.array.ad_type_dropdown_menu_array),
                 ) { _: Int ->
                     isSupportedOptionsCombination(adFormat, mediationOption)
                 }
@@ -316,7 +316,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         ResizeComposeFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}"
+                        "${menuItem.title} ${getString(R.string.compose)}",
                     )
                 } else {
                     switchContentFragment(ResizeFragment(), menuItem.title)
@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         ScrollComposeFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}"
+                        "${menuItem.title} ${getString(R.string.compose)}",
                     )
                 } else {
                     switchContentFragment(ScrollFragment(), menuItem.title)
@@ -334,7 +334,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         LazyListFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}"
+                        "${menuItem.title} ${getString(R.string.compose)}",
                     )
                 } else {
                     switchContentFragment(PoolingContainerFragment(), menuItem.title)
@@ -343,7 +343,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         FullscreenSetupComposeFragment(),
-                        getString(R.string.fullscreen_compose_cuj)
+                        getString(R.string.fullscreen_compose_cuj),
                     )
                 } else {
                     switchContentFragment(FullscreenSetupFragment(), menuItem.title)
@@ -356,7 +356,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun isSupportedOptionsCombination(
         @AdFormat adFormat: Int,
-        @MediationOption mediationOption: Int
+        @MediationOption mediationOption: Int,
     ): Boolean {
         when (adFormat) {
             AdFormat.BANNER_AD -> return true
@@ -416,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             adFormat,
             adType,
             mediationOption,
-            drawViewabilityLayer
+            drawViewabilityLayer,
         )
     }
 

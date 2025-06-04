@@ -28,11 +28,11 @@ internal constructor(
      * Gets the unique ID of the container that the [Fragment] causing the Violation would have been
      * added to.
      */
-    val containerId: Int
+    val containerId: Int,
 ) :
     Violation(
         fragment,
         "Attempting to nest fragment $fragment within the view " +
             "of parent fragment $expectedParentFragment via container with ID $containerId " +
-            "without using parent's childFragmentManager"
+            "without using parent's childFragmentManager",
     )

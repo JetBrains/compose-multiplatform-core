@@ -92,6 +92,12 @@ androidXMultiplatform {
             }
         }
 
+        wasmJsTest {
+            dependencies {
+                implementation(libs.kotlinTestForWasmTests)
+            }
+        }
+
         jsMain {
             dependsOn(commonMain)
             dependencies {

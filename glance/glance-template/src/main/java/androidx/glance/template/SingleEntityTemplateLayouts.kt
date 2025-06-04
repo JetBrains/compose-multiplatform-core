@@ -128,7 +128,7 @@ private fun WidgetLayoutHorizontal(data: SingleEntityTemplateData) {
 private fun textList(
     title: TemplateText? = null,
     subtitle: TemplateText? = null,
-    body: TemplateText? = null
+    body: TemplateText? = null,
 ): List<TemplateText> {
     val result = mutableListOf<TemplateText>()
     title?.let { result.add(TemplateText(it.text, TextType.Title)) }
@@ -141,7 +141,7 @@ private fun textList(
 @Composable
 private fun createTopLevelModifier(
     data: SingleEntityTemplateData,
-    isImmersive: Boolean = false
+    isImmersive: Boolean = false,
 ): GlanceModifier {
     var modifier =
         GlanceModifier.fillMaxSize()

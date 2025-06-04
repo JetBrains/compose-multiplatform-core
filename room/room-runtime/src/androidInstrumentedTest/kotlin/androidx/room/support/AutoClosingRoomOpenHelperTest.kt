@@ -235,7 +235,7 @@ class AutoClosingRoomOpenHelperTest {
                 AutoCloser(0, TimeUnit.MILLISECONDS).apply {
                     initCoroutineScope(testCoroutineScope)
                     setAutoCloseCallback {}
-                }
+                },
             )
 
         assertThat(autoClosing.delegate).isSameInstanceAs(delegateOpenHelper)

@@ -158,7 +158,7 @@ class DeletionRequest(
     public class Builder
     constructor(
         @DeletionMode private val deletionMode: Int,
-        @MatchBehavior private val matchBehavior: Int
+        @MatchBehavior private val matchBehavior: Int,
     ) {
         private var start: Instant = Instant.MIN
         private var end: Instant = Instant.MAX

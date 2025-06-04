@@ -244,7 +244,7 @@ abstract class TaskUpToDateValidator :
             val validatorProvider =
                 project.gradle.sharedServices.registerIfAbsent(
                     "TaskUpToDateValidator",
-                    TaskUpToDateValidator::class.java
+                    TaskUpToDateValidator::class.java,
                 ) { spec ->
                     spec.parameters.validate = validate
                 }

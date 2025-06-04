@@ -117,7 +117,7 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
             nativePointer,
             index,
             outStrokeInput,
-            InputToolType::class.java
+            InputToolType::class.java,
         )
         return outStrokeInput
     }

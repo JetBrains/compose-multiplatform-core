@@ -78,7 +78,7 @@ internal class GLThread(
         surface: Surface?,
         width: Int,
         height: Int,
-        renderer: RenderCallback
+        renderer: RenderCallback,
     ) {
         withHandler {
             post(token) {
@@ -225,7 +225,7 @@ internal class GLThread(
                     session.surface,
                     session.width,
                     session.height,
-                    session.surfaceRenderer
+                    session.surfaceRenderer,
                 )
                 .also { session.eglSurface = it }
         }
@@ -240,7 +240,7 @@ internal class GLThread(
         surface: Surface?,
         width: Int,
         height: Int,
-        surfaceRenderer: RenderCallback
+        surfaceRenderer: RenderCallback,
     ): EGLSurface? {
         with(obtainEGLManager()) {
             return if (surface != null) {
@@ -250,7 +250,7 @@ internal class GLThread(
                     eglConfig!!,
                     surface,
                     width,
-                    height
+                    height,
                 )
             } else {
                 null
@@ -369,7 +369,7 @@ internal class GLThread(
          * Callback used to create an EGLSurface from the provided surface as well as render content
          * to the surface
          */
-        val surfaceRenderer: RenderCallback
+        val surfaceRenderer: RenderCallback,
     ) {
         /**
          * Lazily created + cached [EGLSurface] after [RenderCallback.onSurfaceCreated] is invoked.

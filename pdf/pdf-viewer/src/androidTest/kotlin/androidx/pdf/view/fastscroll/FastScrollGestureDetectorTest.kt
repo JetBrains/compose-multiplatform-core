@@ -55,7 +55,7 @@ class FastScrollGestureDetectorTest {
             thumbDrawable,
             pageIndicatorBackgroundDrawable,
             fastScrollVerticalThumbMarginEnd,
-            fastScrollPageIndicatorMarginEnd
+            fastScrollPageIndicatorMarginEnd,
         )
     private val fastScrollCalculator = FastScrollCalculator(context)
     private val fastScroller = FastScroller(fastScrollDrawer, fastScrollCalculator)
@@ -79,7 +79,7 @@ class FastScrollGestureDetectorTest {
             gestureDetector.handleEvent(
                 MotionEvent.obtain(0L, 0L, MotionEvent.ACTION_MOVE, 10f, 10f, 0),
                 parent = null,
-                viewWidth
+                viewWidth,
             )
         )
         verify(gestureHandler, never()).onFastScrollDetected(10f)

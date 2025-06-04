@@ -36,7 +36,7 @@ class SectionedItemTemplateTest {
                 .addItem(GridItem.Builder().setImage(CarIcon.COMPOSE_MESSAGE).build())
                 .setTitle(CarText.Builder("Section 2").build())
                 .setItemSize(GridSection.ITEM_SIZE_EXTRA_LARGE)
-                .build()
+                .build(),
         )
     private val testActions =
         listOf(
@@ -47,7 +47,7 @@ class SectionedItemTemplateTest {
             Action.Builder()
                 .setIcon(CarIcon.COMPOSE_MESSAGE)
                 .setBackgroundColor(CarColor.BLUE)
-                .build()
+                .build(),
         )
     private val testHeader = Header.Builder().setTitle("My title").build()
 

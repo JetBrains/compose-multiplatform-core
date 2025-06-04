@@ -463,15 +463,15 @@ package androidx.compose.runtime {
   }
 
   public final class MovableContentKt {
-    method public static kotlin.jvm.functions.Function0<kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method public static <P> kotlin.jvm.functions.Function1<P,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function1<? super P,kotlin.Unit> content);
-    method public static <P1, P2> kotlin.jvm.functions.Function2<P1,P2,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function2<? super P1,? super P2,kotlin.Unit> content);
-    method public static <P1, P2, P3> kotlin.jvm.functions.Function3<P1,P2,P3,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function3<? super P1,? super P2,? super P3,kotlin.Unit> content);
-    method public static <P1, P2, P3, P4> kotlin.jvm.functions.Function4<P1,P2,P3,P4,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function4<? super P1,? super P2,? super P3,? super P4,kotlin.Unit> content);
-    method public static <R> kotlin.jvm.functions.Function1<R,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function1<? super R,kotlin.Unit> content);
-    method public static <R, P> kotlin.jvm.functions.Function2<R,P,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function2<? super R,? super P,kotlin.Unit> content);
-    method public static <R, P1, P2> kotlin.jvm.functions.Function3<R,P1,P2,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function3<? super R,? super P1,? super P2,kotlin.Unit> content);
-    method public static <R, P1, P2, P3> kotlin.jvm.functions.Function4<R,P1,P2,P3,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function4<? super R,? super P1,? super P2,? super P3,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static kotlin.jvm.functions.Function0<kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <P> kotlin.jvm.functions.Function1<P,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function1<? super P,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <P1, P2> kotlin.jvm.functions.Function2<P1,P2,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function2<? super P1,? super P2,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <P1, P2, P3> kotlin.jvm.functions.Function3<P1,P2,P3,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function3<? super P1,? super P2,? super P3,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <P1, P2, P3, P4> kotlin.jvm.functions.Function4<P1,P2,P3,P4,kotlin.Unit> movableContentOf(kotlin.jvm.functions.Function4<? super P1,? super P2,? super P3,? super P4,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <R> kotlin.jvm.functions.Function1<R,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function1<? super R,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <R, P> kotlin.jvm.functions.Function2<R,P,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function2<? super R,? super P,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <R, P1, P2> kotlin.jvm.functions.Function3<R,P1,P2,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function3<? super R,? super P1,? super P2,kotlin.Unit> content);
+    method @androidx.compose.runtime.annotation.RememberInComposition public static <R, P1, P2, P3> kotlin.jvm.functions.Function4<R,P1,P2,P3,kotlin.Unit> movableContentWithReceiverOf(kotlin.jvm.functions.Function4<? super R,? super P1,? super P2,? super P3,kotlin.Unit> content);
   }
 
   @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public final class MovableContentState {
@@ -545,8 +545,12 @@ package androidx.compose.runtime {
   public sealed interface PausedComposition {
     method public void apply();
     method public void cancel();
+    method public boolean isApplied();
+    method public boolean isCancelled();
     method public boolean isComplete();
     method public boolean resume(androidx.compose.runtime.ShouldPauseCallback shouldPause);
+    property public abstract boolean isApplied;
+    property public abstract boolean isCancelled;
     property public abstract boolean isComplete;
   }
 
@@ -628,6 +632,7 @@ package androidx.compose.runtime {
     method public long getChangeCount();
     method public boolean getHasPendingWork();
     method public kotlinx.coroutines.flow.Flow<androidx.compose.runtime.Recomposer.State> getState();
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public default androidx.compose.runtime.tooling.CompositionObserverHandle? observe(androidx.compose.runtime.tooling.CompositionRegistrationObserver observer);
     property public abstract long changeCount;
     property public abstract boolean hasPendingWork;
     property public abstract kotlinx.coroutines.flow.Flow<androidx.compose.runtime.Recomposer.State> state;
@@ -1079,7 +1084,7 @@ package androidx.compose.runtime.snapshots {
     property public abstract androidx.compose.runtime.SnapshotMutationPolicy<T> policy;
   }
 
-  @androidx.compose.runtime.Stable public final class SnapshotStateList<T> implements kotlin.jvm.internal.markers.KMutableList java.util.List<T> java.util.RandomAccess androidx.compose.runtime.snapshots.StateObject {
+  @androidx.compose.runtime.Stable public final class SnapshotStateList<T> implements kotlin.jvm.internal.markers.KMutableList java.util.List<T> android.os.Parcelable java.util.RandomAccess androidx.compose.runtime.snapshots.StateObject {
     ctor public SnapshotStateList();
     method public void add(int index, T element);
     method public boolean add(T element);
@@ -1088,6 +1093,7 @@ package androidx.compose.runtime.snapshots {
     method public void clear();
     method public boolean contains(T element);
     method public boolean containsAll(java.util.Collection<? extends T> elements);
+    method public int describeContents();
     method public T get(int index);
     method public androidx.compose.runtime.snapshots.StateRecord getFirstStateRecord();
     method public int getSize();
@@ -1106,8 +1112,10 @@ package androidx.compose.runtime.snapshots {
     method public T set(int index, T element);
     method public java.util.List<T> subList(int fromIndex, int toIndex);
     method public java.util.List<T> toList();
+    method public void writeToParcel(android.os.Parcel parcel, int flags);
     property public androidx.compose.runtime.snapshots.StateRecord firstStateRecord;
     property public int size;
+    field public static final android.os.Parcelable.Creator<androidx.compose.runtime.snapshots.SnapshotStateList<java.lang.Object?>> CREATOR;
   }
 
   public final class SnapshotStateListKt {
@@ -1150,13 +1158,14 @@ package androidx.compose.runtime.snapshots {
     method @Deprecated public void withNoObservations(kotlin.jvm.functions.Function0<kotlin.Unit> block);
   }
 
-  @androidx.compose.runtime.Stable public final class SnapshotStateSet<T> implements kotlin.jvm.internal.markers.KMutableSet java.util.RandomAccess java.util.Set<T> androidx.compose.runtime.snapshots.StateObject {
+  @androidx.compose.runtime.Stable public final class SnapshotStateSet<T> implements kotlin.jvm.internal.markers.KMutableSet android.os.Parcelable java.util.RandomAccess java.util.Set<T> androidx.compose.runtime.snapshots.StateObject {
     ctor public SnapshotStateSet();
     method public boolean add(T element);
     method public boolean addAll(java.util.Collection<? extends T> elements);
     method public void clear();
     method public boolean contains(T element);
     method public boolean containsAll(java.util.Collection<? extends T> elements);
+    method public int describeContents();
     method public androidx.compose.runtime.snapshots.StateRecord getFirstStateRecord();
     method public int getSize();
     method public boolean isEmpty();
@@ -1166,8 +1175,10 @@ package androidx.compose.runtime.snapshots {
     method public boolean removeAll(java.util.Collection<? extends T> elements);
     method public boolean retainAll(java.util.Collection<? extends T> elements);
     method public java.util.Set<T> toSet();
+    method public void writeToParcel(android.os.Parcel parcel, int flags);
     property public androidx.compose.runtime.snapshots.StateRecord firstStateRecord;
     property public int size;
+    field public static final android.os.Parcelable.Creator<androidx.compose.runtime.snapshots.SnapshotStateSet<java.lang.Object?>> CREATOR;
   }
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface StateFactoryMarker {
@@ -1265,8 +1276,13 @@ package androidx.compose.runtime.tooling {
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface CompositionObserver {
-    method public void onBeginComposition(androidx.compose.runtime.Composition composition, java.util.Map<androidx.compose.runtime.RecomposeScope,? extends java.util.Set<?>> invalidationMap);
-    method public void onEndComposition(androidx.compose.runtime.Composition composition);
+    method public void onBeginComposition(androidx.compose.runtime.tooling.ObservableComposition composition);
+    method public void onEndComposition(androidx.compose.runtime.tooling.ObservableComposition composition);
+    method public void onReadInScope(androidx.compose.runtime.RecomposeScope scope, Object value);
+    method public void onScopeDisposed(androidx.compose.runtime.RecomposeScope scope);
+    method public void onScopeEnter(androidx.compose.runtime.RecomposeScope scope);
+    method public void onScopeExit(androidx.compose.runtime.RecomposeScope scope);
+    method public void onScopeInvalidated(androidx.compose.runtime.RecomposeScope scope, Object? value);
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface CompositionObserverHandle {
@@ -1274,14 +1290,13 @@ package androidx.compose.runtime.tooling {
   }
 
   public final class CompositionObserverKt {
-    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static androidx.compose.runtime.tooling.CompositionObserverHandle? observe(androidx.compose.runtime.Composition, androidx.compose.runtime.tooling.CompositionObserver observer);
     method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static androidx.compose.runtime.tooling.CompositionObserverHandle observe(androidx.compose.runtime.Recomposer, androidx.compose.runtime.tooling.CompositionRegistrationObserver observer);
-    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static androidx.compose.runtime.tooling.CompositionObserverHandle observe(androidx.compose.runtime.RecomposeScope, androidx.compose.runtime.tooling.RecomposeScopeObserver observer);
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static androidx.compose.runtime.tooling.CompositionObserverHandle? setObserver(androidx.compose.runtime.Composition, androidx.compose.runtime.tooling.CompositionObserver observer);
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface CompositionRegistrationObserver {
-    method public void onCompositionRegistered(androidx.compose.runtime.Recomposer recomposer, androidx.compose.runtime.Composition composition);
-    method public void onCompositionUnregistered(androidx.compose.runtime.Recomposer recomposer, androidx.compose.runtime.Composition composition);
+    method public void onCompositionRegistered(androidx.compose.runtime.tooling.ObservableComposition composition);
+    method public void onCompositionUnregistered(androidx.compose.runtime.tooling.ObservableComposition composition);
   }
 
   public final class InspectionTablesKt {
@@ -1289,10 +1304,8 @@ package androidx.compose.runtime.tooling {
     property public static androidx.compose.runtime.ProvidableCompositionLocal<java.util.Set<androidx.compose.runtime.tooling.CompositionData>?> LocalInspectionTables;
   }
 
-  @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface RecomposeScopeObserver {
-    method public void onBeginScopeComposition(androidx.compose.runtime.RecomposeScope scope);
-    method public void onEndScopeComposition(androidx.compose.runtime.RecomposeScope scope);
-    method public void onScopeDisposed(androidx.compose.runtime.RecomposeScope scope);
+  @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface ObservableComposition {
+    method public androidx.compose.runtime.tooling.CompositionObserverHandle setObserver(androidx.compose.runtime.tooling.CompositionObserver observer);
   }
 
 }

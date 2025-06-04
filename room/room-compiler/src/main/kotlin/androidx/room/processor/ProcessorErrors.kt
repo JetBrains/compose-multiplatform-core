@@ -320,7 +320,7 @@ object ProcessorErrors {
     fun unusedQueryFunctionParameter(unusedParams: List<String>): String {
         return UNUSED_QUERY_FUNCTION_PARAMETER.format(
             if (unusedParams.size > 1) "s" else "",
-            unusedParams.joinToString(",")
+            unusedParams.joinToString(","),
         )
     }
 
@@ -348,7 +348,7 @@ object ProcessorErrors {
     fun dataClassMissingNonNull(
         dataClassTypeName: String,
         missingDataClassProperties: List<String>,
-        allQueryColumns: List<String>
+        allQueryColumns: List<String>,
     ): String {
         return """
         The columns returned by the query does not have the properties
@@ -467,7 +467,7 @@ object ProcessorErrors {
     fun droppedEmbeddedIndex(
         entityName: String,
         propertyPath: String,
-        grandParent: String
+        grandParent: String,
     ): String {
         return "Indices defined in $entityName will be dropped when it is merged into" +
             " $grandParent ($propertyPath). You can re-declare them in $grandParent."
@@ -482,7 +482,7 @@ object ProcessorErrors {
     fun droppedSuperClassPropertyIndex(
         propertyName: String,
         childEntity: String,
-        superEntity: String
+        superEntity: String,
     ): String {
         return "Index defined on property `$propertyName` in $superEntity will NOT be re-used in" +
             " $childEntity. " +
@@ -495,7 +495,7 @@ object ProcessorErrors {
     fun relationCannotFindEntityProperty(
         entityName: String,
         columnName: String,
-        availableColumns: List<String>
+        availableColumns: List<String>,
     ): String {
         return "Cannot find the child entity column `$columnName` in $entityName." +
             " Options: ${availableColumns.joinToString(", ")}"
@@ -504,7 +504,7 @@ object ProcessorErrors {
     fun relationCannotFindParentEntityProperty(
         entityName: String,
         columnName: String,
-        availableColumns: List<String>
+        availableColumns: List<String>,
     ): String {
         return "Cannot find the parent entity column `$columnName` in $entityName." +
             " Options: ${availableColumns.joinToString(", ")}"
@@ -513,7 +513,7 @@ object ProcessorErrors {
     fun relationCannotFindJunctionEntityProperty(
         entityName: String,
         columnName: String,
-        availableColumns: List<String>
+        availableColumns: List<String>,
     ): String {
         return "Cannot find the child entity referencing column `$columnName` in the junction " +
             "$entityName. Options: ${availableColumns.joinToString(", ")}"
@@ -522,7 +522,7 @@ object ProcessorErrors {
     fun relationCannotFindJunctionParentProperty(
         entityName: String,
         columnName: String,
-        availableColumns: List<String>
+        availableColumns: List<String>,
     ): String {
         return "Cannot find the parent entity referencing column `$columnName` in the junction " +
             "$entityName. Options: ${availableColumns.joinToString(", ")}"
@@ -540,7 +540,7 @@ object ProcessorErrors {
         parentColumn: String,
         childColumn: String,
         parentAffinity: SQLTypeAffinity?,
-        childAffinity: SQLTypeAffinity?
+        childAffinity: SQLTypeAffinity?,
     ): String {
         return """
         The affinity of parent column ($parentColumn : $parentAffinity) does not match the type
@@ -553,7 +553,7 @@ object ProcessorErrors {
         parentColumn: String,
         junctionParentColumn: String,
         parentAffinity: SQLTypeAffinity?,
-        junctionParentAffinity: SQLTypeAffinity?
+        junctionParentAffinity: SQLTypeAffinity?,
     ): String {
         return """
         The affinity of parent column ($parentColumn : $parentAffinity) does not match the type
@@ -566,7 +566,7 @@ object ProcessorErrors {
         childColumn: String,
         junctionChildColumn: String,
         childAffinity: SQLTypeAffinity?,
-        junctionChildAffinity: SQLTypeAffinity?
+        junctionChildAffinity: SQLTypeAffinity?,
     ): String {
         return """
         The affinity of child column ($childColumn : $childAffinity) does not match the type
@@ -588,7 +588,7 @@ object ProcessorErrors {
     fun relationBadProject(
         entityQName: String,
         missingColumnNames: List<String>,
-        availableColumnNames: List<String>
+        availableColumnNames: List<String>,
     ): String {
         return """
         $entityQName does not have the following columns: ${missingColumnNames.joinToString(",")}.
@@ -625,7 +625,7 @@ object ProcessorErrors {
     fun foreignKeyParentColumnDoesNotExist(
         parentEntity: String,
         missingColumn: String,
-        allColumns: List<String>
+        allColumns: List<String>,
     ): String {
         return "($missingColumn) does not exist in $parentEntity. Available columns are" +
             " ${allColumns.joinToString(",")}"
@@ -639,7 +639,7 @@ object ProcessorErrors {
 
     fun foreignKeyColumnNumberMismatch(
         childColumns: List<String>,
-        parentColumns: List<String>
+        parentColumns: List<String>,
     ): String {
         return """
                 Number of child columns in foreign key must match number of parent columns.
@@ -661,7 +661,7 @@ object ProcessorErrors {
         parentEntity: String,
         parentColumns: List<String>,
         childEntity: String,
-        childColumns: List<String>
+        childColumns: List<String>,
     ): String {
         return """
                 $childEntity has a foreign key (${childColumns.joinToString(",")}) that references
@@ -735,7 +735,7 @@ object ProcessorErrors {
     fun ambiguousConstructor(
         dataClass: String,
         paramName: String,
-        matchingProperties: List<String>
+        matchingProperties: List<String>,
     ): String {
         return """
             Ambiguous constructor. The parameter ($paramName) in $dataClass matches multiple properties:
@@ -862,7 +862,7 @@ object ProcessorErrors {
     fun missingFtsContentProperty(
         ftsClassName: String,
         columnName: String,
-        contentClassName: String
+        contentClassName: String,
     ) =
         "External Content FTS Entity '$ftsClassName' has declared property with column name " +
             "'$columnName' that was not found in the external content entity " +
@@ -898,7 +898,7 @@ object ProcessorErrors {
 
     fun missingPrimaryKeysInPartialEntityForInsert(
         partialEntityName: String,
-        primaryKeyNames: List<String>
+        primaryKeyNames: List<String>,
     ) =
         "The partial entity $partialEntityName is missing the primary key properties " +
             "(${primaryKeyNames.joinToString()}) needed to perform an INSERT. If your single " +
@@ -906,7 +906,7 @@ object ProcessorErrors {
 
     fun missingPrimaryKeysInPartialEntityForUpsert(
         partialEntityName: String,
-        primaryKeyNames: List<String>
+        primaryKeyNames: List<String>,
     ) =
         "The partial entity $partialEntityName is missing the primary key properties " +
             "(${primaryKeyNames.joinToString()}) needed to perform an UPSERT. If your single " +
@@ -914,7 +914,7 @@ object ProcessorErrors {
 
     fun missingRequiredColumnsInPartialEntity(
         partialEntityName: String,
-        missingColumnNames: List<String>
+        missingColumnNames: List<String>,
     ) =
         "The partial entity $partialEntityName is missing required columns " +
             "(${missingColumnNames.joinToString()}) needed to perform an INSERT. These are " +
@@ -922,7 +922,7 @@ object ProcessorErrors {
 
     fun missingPrimaryKeysInPartialEntityForUpdate(
         partialEntityName: String,
-        primaryKeyNames: List<String>
+        primaryKeyNames: List<String>,
     ) =
         "The partial entity $partialEntityName is missing the primary key properties " +
             "(${primaryKeyNames.joinToString()}) needed to perform an UPDATE."
@@ -969,7 +969,7 @@ object ProcessorErrors {
         propertyName: String,
         ownerType: String,
         getterType: String,
-        propertyType: String
+        propertyType: String,
     ) =
         """
             $ownerType's $propertyName property has type $propertyType but its getter returns $getterType.
@@ -982,7 +982,7 @@ object ProcessorErrors {
         propertyName: String,
         ownerType: String,
         setterType: String,
-        propertyType: String
+        propertyType: String,
     ) =
         """
             $ownerType's $propertyName property has type $propertyType but its setter accepts $setterType.
@@ -1063,7 +1063,7 @@ object ProcessorErrors {
     fun deletedOrRenamedColumnFound(
         className: String?,
         columnName: String,
-        tableName: String
+        tableName: String,
     ): String {
         return if (className != null) {
             """
@@ -1155,7 +1155,7 @@ object ProcessorErrors {
     fun tableRenameError(
         className: String,
         originalTableName: String,
-        newTableName: String
+        newTableName: String,
     ): String {
         return "AutoMigration Failure in '$className': The table renamed from " +
             "'$originalTableName' to '$newTableName' is " +
@@ -1201,7 +1201,7 @@ object ProcessorErrors {
     fun ambiguousColumn(
         columnName: String,
         location: AmbiguousColumnLocation,
-        typeName: String?
+        typeName: String?,
     ): String {
         val (locationDesc, recommendation) =
             when (location) {
@@ -1236,7 +1236,7 @@ object ProcessorErrors {
 
     fun nullableCollectionOrArrayReturnTypeInDaoFunction(
         typeName: String,
-        returnType: String
+        returnType: String,
     ): String {
         return "The nullable `$returnType` ($typeName) return type in a DAO function is " +
             "meaningless because Room will instead return an empty `$returnType` if no rows are " +

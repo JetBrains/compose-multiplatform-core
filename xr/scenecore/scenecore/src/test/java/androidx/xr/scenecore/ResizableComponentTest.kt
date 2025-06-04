@@ -31,6 +31,8 @@ import androidx.xr.runtime.internal.ResizableComponent as RtResizableComponent
 import androidx.xr.runtime.internal.ResizeEvent as RtResizeEvent
 import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
@@ -84,7 +86,8 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
-        val resizableComponent = ResizableComponent.create(mockRuntime, Dimensions(), Dimensions())
+        val resizableComponent =
+            ResizableComponent.create(mockRuntime, FloatSize3d(), FloatSize3d())
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         verify(mockRuntime).createResizableComponent(any(), any())
@@ -152,7 +155,7 @@ class ResizableComponentTest {
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
-        val testSize = Dimensions(2f, 2f, 0f)
+        val testSize = FloatSize3d(2f, 2f, 0f)
         resizableComponent.size = testSize
 
         assertThat(resizableComponent.size).isEqualTo(testSize)
@@ -171,7 +174,7 @@ class ResizableComponentTest {
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
-        val testSize = Dimensions(0.5f, 0.6f, 0.7f)
+        val testSize = FloatSize3d(0.5f, 0.6f, 0.7f)
         resizableComponent.minimumSize = testSize
 
         assertThat(resizableComponent.minimumSize).isEqualTo(testSize)
@@ -190,7 +193,7 @@ class ResizableComponentTest {
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
-        val testSize = Dimensions(5f, 6f, 7f)
+        val testSize = FloatSize3d(5f, 6f, 7f)
         resizableComponent.maximumSize = testSize
 
         assertThat(resizableComponent.maximumSize).isEqualTo(testSize)
@@ -456,7 +459,7 @@ class ResizableComponentTest {
             )
             .thenReturn(mockRtPanelEntity)
         whenever(mockRtPanelEntity.addComponent(any())).thenReturn(true)
-        val panelEntity = PanelEntity.create(session, view, PixelDimensions(720, 480), "test")
+        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
         assertThat(panelEntity.addComponent(resizableComponent)).isTrue()
 
         verify(mockRuntime).createResizableComponent(any(), any())

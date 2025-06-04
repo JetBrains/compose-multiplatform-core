@@ -53,7 +53,7 @@ class PlayServicesCameraDeviceSetupCompatTest {
                     override fun onConfigureFailed(p0: CameraCaptureSession) {
                         // no-op
                     }
-                }
+                },
             )
         // Act.
         val result = impl.isSessionConfigurationSupported(sessionConfiguration)

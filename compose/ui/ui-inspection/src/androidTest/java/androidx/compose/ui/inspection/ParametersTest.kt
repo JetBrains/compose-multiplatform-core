@@ -174,7 +174,7 @@ class ParametersTest {
                         rule.rootId,
                         reference.build(),
                         startIndex = 5,
-                        maxElements = 5
+                        maxElements = 5,
                     )
                 )
                 .getParameterDetailsResponse
@@ -285,7 +285,7 @@ class ParametersTest {
                         rule.rootId,
                         reference.build(),
                         startIndex = 5,
-                        maxElements = 5
+                        maxElements = 5,
                     )
                 )
                 .getParameterDetailsResponse
@@ -376,7 +376,7 @@ private fun checkStringParam(
     param: Parameter,
     name: String,
     value: String,
-    index: Int = 0
+    index: Int = 0,
 ) {
     assertThat(stringList.toMap()[param.name]).isEqualTo(name)
     assertThat(stringList.toMap()[param.int32Value]).isEqualTo(value)
@@ -388,7 +388,7 @@ private fun checkIntParam(
     param: Parameter,
     name: String,
     value: Int,
-    index: Int = 0
+    index: Int = 0,
 ) {
     assertThat(stringList.toMap()[param.name]).isEqualTo(name)
     assertThat(param.int32Value).isEqualTo(value)

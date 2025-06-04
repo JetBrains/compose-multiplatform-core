@@ -45,7 +45,7 @@ public class PendingRecording
 internal constructor(
     context: Context,
     private val recorder: Recorder,
-    private val outputOptions: OutputOptions
+    private val outputOptions: OutputOptions,
 ) {
     // Application context is sufficient for all our needs, so store that to avoid leaking
     // unused resources. For attribution, ContextUtil.getApplicationContext() will retain the
@@ -107,7 +107,7 @@ internal constructor(
         if (
             PermissionChecker.checkSelfPermission(
                 applicationContext,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.RECORD_AUDIO,
             ) == PermissionChecker.PERMISSION_DENIED
         ) {
             throw SecurityException(
@@ -117,7 +117,7 @@ internal constructor(
         }
         Preconditions.checkState(
             recorder.isAudioSupported,
-            "The Recorder this recording is " + "associated to doesn't support audio."
+            "The Recorder this recording is " + "associated to doesn't support audio.",
         )
         isAudioEnabled = true
         isAudioInitialMuted = initialMuted

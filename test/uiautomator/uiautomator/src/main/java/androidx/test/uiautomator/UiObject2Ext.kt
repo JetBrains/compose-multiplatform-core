@@ -25,29 +25,30 @@ import androidx.test.uiautomator.internal.notNull
 /**
  * Performs a DFS on the accessibility tree starting from the node associated to this [UiObject2]
  * and returns the first node matching the given [block]. The node is returned as an [UiObject2]
- * that allows interacting with it. If the requested node doesn't exist, a [ViewNotFoundException]
- * is thrown. Internally it works searching periodically every [pollIntervalMs].
+ * that allows interacting with it. If the requested node doesn't exist, a
+ * [ElementNotFoundException] is thrown. Internally it works searching periodically every
+ * [pollIntervalMs].
  *
  * Example:
  * ```kotlin
- * onView { textAsString == "Search" }.click()
+ * onElement { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.onView(
+public fun UiObject2.onElement(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2 =
-    accessibilityNodeInfo.onView(
+    accessibilityNodeInfo.onElement(
         timeoutMs = timeoutMs,
         pollIntervalMs = pollIntervalMs,
-        block = block
+        block = block,
     )
 
 /**
@@ -58,24 +59,24 @@ public fun UiObject2.onView(
  *
  * Example:
  * ```kotlin
- * onView { textAsString == "Search" }.click()
+ * onElement { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition or null.
  */
 @JvmOverloads
-public fun UiObject2.onViewOrNull(
+public fun UiObject2.onElementOrNull(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2? =
-    accessibilityNodeInfo.onViewOrNull(
+    accessibilityNodeInfo.onElementOrNull(
         timeoutMs = timeoutMs,
         pollIntervalMs = pollIntervalMs,
-        block = block
+        block = block,
     )
 
 /**
@@ -86,58 +87,58 @@ public fun UiObject2.onViewOrNull(
  *
  * Example:
  * ```kotlin
- * node.onViews { isClass(Button::class.java) }
+ * node.onElements { isClass(Button::class.java) }
  * ```
  *
  * If multiple nodes are expected but they appear at different times, it's recommended to call
  * [androidx.test.uiautomator.waitForStable] before, to ensure any operation is complete.
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a list of [UiObject2] from nodes that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.onViews(
+public fun UiObject2.onElements(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): List<UiObject2> =
-    accessibilityNodeInfo.onViews(
+    accessibilityNodeInfo.onElements(
         timeoutMs = timeoutMs,
         pollIntervalMs = pollIntervalMs,
-        block = block
+        block = block,
     )
 
 /**
  * Keeps scrolling until the given [block] condition is satisfied or until the given [timeoutMs].
- * Throws a [ViewNotFoundException] if the condition is not satisfied at the end of the timeout.
+ * Throws a [ElementNotFoundException] if the condition is not satisfied at the end of the timeout.
  *
  * Example:
  * ```kotlin
- * onView { isScrollable }.scrollToView(Direction.DOWN) { id == "button" }.click()
+ * onElement { isScrollable }.scrollToElement(Direction.DOWN) { id == "button" }.click()
  * ```
  *
  * @param direction the scroll [Direction].
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.scrollToView(
+public fun UiObject2.scrollToElement(
     direction: Direction,
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2 =
-    scrollToViewOrNull(
+    scrollToElementOrNull(
             direction = direction,
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
-            block = block
+            block = block,
         )
-        .notNull(ViewNotFoundException())
+        .notNull(ElementNotFoundException())
 
 /**
  * Keeps scrolling until the given [block] condition is satisfied or until the given [timeoutMs].
@@ -145,17 +146,17 @@ public fun UiObject2.scrollToView(
  *
  * Example:
  * ```kotlin
- * onView { isScrollable }.scrollToView(Direction.DOWN) { id == "button" }.click()
+ * onElement { isScrollable }.scrollToElement(Direction.DOWN) { id == "button" }.click()
  * ```
  *
  * @param direction the scroll [Direction].
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiObject2.scrollToViewOrNull(
+public fun UiObject2.scrollToElementOrNull(
     direction: Direction,
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
@@ -164,13 +165,13 @@ public fun UiObject2.scrollToViewOrNull(
     val clock = TimeoutClock(timeoutMs = timeoutMs, sleepIntervalMs = pollIntervalMs)
     return scrollUntil(direction) {
             try {
-                return@scrollUntil onView(timeoutMs = 0, pollIntervalMs = 0, block)
-            } catch (e: ViewNotFoundException) {
+                return@scrollUntil onElement(timeoutMs = 0, pollIntervalMs = 0, block)
+            } catch (e: ElementNotFoundException) {
                 if (clock.isTimeoutOrSleep()) throw e
                 return@scrollUntil null
             }
         }
-        .notNull(ViewNotFoundException())
+        .notNull(ElementNotFoundException())
 }
 
 /**

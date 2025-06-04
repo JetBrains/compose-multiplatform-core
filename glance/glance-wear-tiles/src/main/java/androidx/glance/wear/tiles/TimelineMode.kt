@@ -27,7 +27,7 @@ import java.time.Instant
 @Suppress("DataClassDefinition")
 public data class TimeInterval(
     val start: Instant = Instant.ofEpochMilli(0),
-    val end: Instant = Instant.ofEpochMilli(Long.MAX_VALUE)
+    val end: Instant = Instant.ofEpochMilli(Long.MAX_VALUE),
 ) {
     init {
         require(end > start) { "End time shall come after start time to form a valid interval" }

@@ -46,7 +46,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                     layoutDirection = it.layoutDirection,
                     pageSpacing = it.pageSpacing,
                     contentPadding = it.mainAxisContentPadding,
-                    reverseLayout = it.reverseLayout
+                    reverseLayout = it.reverseLayout,
                 )
             }
 
@@ -62,7 +62,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                             with(param) {
                                 swipeWithVelocityAcrossMainAxis(
                                     with(rule.density) { 1.5f * MinFlingVelocityDp.toPx() },
-                                    delta
+                                    delta,
                                 )
                             }
                         }
@@ -79,7 +79,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                             with(param) {
                                 swipeWithVelocityAcrossMainAxis(
                                     with(rule.density) { 1.5f * MinFlingVelocityDp.toPx() },
-                                    delta * -1f
+                                    delta * -1f,
                                 )
                             }
                         }
@@ -108,7 +108,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                                             mainAxisContentPadding = contentPadding,
                                             reverseLayout = reverseLayout,
                                             layoutDirection = layoutDirection,
-                                            pageSpacing = pageSpacing
+                                            pageSpacing = pageSpacing,
                                         )
                                     )
                                 }

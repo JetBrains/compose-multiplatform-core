@@ -45,7 +45,7 @@ constructor(
     /** Indicates which edge the swipe starts from. */
     val swipeEdge: @SwipeEdge Int,
     /** Frame time of the back event. */
-    val frameTimeMillis: Long = 0
+    val frameTimeMillis: Long = 0,
 ) {
 
     /**
@@ -68,7 +68,7 @@ constructor(
             Api36Impl.frameTimeMillis(backEvent)
         } else {
             0
-        }
+        },
     )
 
     /**
@@ -162,7 +162,7 @@ internal object Api36Impl {
         touchY: Float,
         progress: Float,
         swipeEdge: Int,
-        frameTimeMillis: Long
+        frameTimeMillis: Long,
     ) = BackEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
 
     fun frameTimeMillis(backEvent: BackEvent) = backEvent.frameTimeMillis

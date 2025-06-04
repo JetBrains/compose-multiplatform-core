@@ -70,7 +70,7 @@ public interface UseCaseCameraRequestControl {
         /** General, default parameters. */
         DEFAULT,
         /** Parameters specifically for interoperability with Camera2. */
-        CAMERA2_CAMERA_CONTROL
+        CAMERA2_CAMERA_CONTROL,
     }
 
     // Repeating Request Parameters
@@ -286,7 +286,7 @@ constructor(
                                 ?.let { fpsRange ->
                                     setCaptureRequestOption(
                                         CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                        fpsRange
+                                        fpsRange,
                                     )
                                 }
                             config?.let { insertAllOptions(it) }
@@ -297,10 +297,7 @@ constructor(
                     )
                 infoBundleMap
                     .merge()
-                    .updateCameraStateAsync(
-                        streams = streams,
-                        sessionConfig = sessionConfig,
-                    )
+                    .updateCameraStateAsync(streams = streams, sessionConfig = sessionConfig)
             }
         } ?: canceledResult
 
@@ -316,11 +313,7 @@ constructor(
         runIfNotClosed {
             threads.confineDeferredSuspend {
                 debug { "UseCaseCameraRequestControlImpl#setTorchOffAsync" }
-                useGraphSessionOrFailed {
-                    it.setTorchOff(
-                        aeMode = aeMode,
-                    )
-                }
+                useGraphSessionOrFailed { it.setTorchOff(aeMode = aeMode) }
             }
         } ?: submitFailedResult
 
@@ -347,7 +340,7 @@ constructor(
                         awbLockBehavior = awbLockBehavior,
                         afTriggerStartAeMode = afTriggerStartAeMode,
                         convergedTimeLimitNs = timeLimitNs,
-                        lockedTimeLimitNs = timeLimitNs
+                        lockedTimeLimitNs = timeLimitNs,
                     )
                 }
             }
@@ -364,7 +357,7 @@ constructor(
                     it.update3A(
                         aeRegions = METERING_REGIONS_DEFAULT.asList(),
                         afRegions = METERING_REGIONS_DEFAULT.asList(),
-                        awbRegions = METERING_REGIONS_DEFAULT.asList()
+                        awbRegions = METERING_REGIONS_DEFAULT.asList(),
                     )
                 }
             }
@@ -383,7 +376,7 @@ constructor(
                 if (captureSequence.hasInvalidSurface()) {
                     failedResults(
                         captureSequence.size,
-                        "Capture request failed due to invalid surface"
+                        "Capture request failed due to invalid surface",
                     )
                 }
 
@@ -404,13 +397,13 @@ constructor(
         }
             ?: failedResults(
                 captureSequence.size,
-                "Capture request is cancelled on closed CameraGraph"
+                "Capture request is cancelled on closed CameraGraph",
             )
 
     override fun update3aRegions(
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
-        awbRegions: List<MeteringRectangle>?
+        awbRegions: List<MeteringRectangle>?,
     ): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
@@ -419,7 +412,7 @@ constructor(
                     it.update3A(
                         aeRegions = aeRegions ?: METERING_REGIONS_DEFAULT.asList(),
                         afRegions = afRegions ?: METERING_REGIONS_DEFAULT.asList(),
-                        awbRegions = awbRegions ?: METERING_REGIONS_DEFAULT.asList()
+                        awbRegions = awbRegions ?: METERING_REGIONS_DEFAULT.asList(),
                     )
                 }
             }

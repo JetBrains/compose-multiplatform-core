@@ -33,7 +33,7 @@ class SessionObserverContext(
      */
     val view: View?,
     /** Returns the signal options which are supported by the container hosting the UI session. */
-    val supportedSignalOptions: Set<String>
+    val supportedSignalOptions: Set<String>,
 ) {
     override fun toString() =
         "SessionObserverContext(view=$view, supportedSignalOptions=$supportedSignalOptions)"

@@ -77,7 +77,7 @@ abstract class CheckKotlinApiTargetTask : DefaultTask() {
                             "configurations are pulling in higher versions of kotlin-stdlib:\n - ",
                     postfix =
                         "\n\nRun ./gradlew $projectPath:dependencies to see which dependency is " +
-                            "pulling in the incompatible kotlin-stdlib"
+                            "pulling in the incompatible kotlin-stdlib",
                 )
             outputFile.writeText("FAILURE: $errorMessage")
             throw IllegalStateException(errorMessage)

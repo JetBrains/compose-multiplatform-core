@@ -35,7 +35,7 @@ class AppFunctionDataTypeMetadataTest {
         val arrayType2 =
             AppFunctionArrayTypeMetadata(
                 AppFunctionObjectTypeMetadata(properties2, emptyList(), "qualifiedName", false),
-                false
+                false,
             )
 
         assertThat(arrayType1a).isEqualTo(arrayType1b)
@@ -57,10 +57,7 @@ class AppFunctionDataTypeMetadataTest {
                 AppFunctionDataTypeMetadataDocument(
                     type = AppFunctionArrayTypeMetadata.TYPE,
                     itemType =
-                        AppFunctionDataTypeMetadataDocument(
-                            type = TYPE_INT,
-                            isNullable = true,
-                        ),
+                        AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = true),
                     isNullable = false,
                 )
             )
@@ -76,19 +73,19 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType),
                 isNullable = true,
-                qualifiedName = null
+                qualifiedName = null,
             )
         val allOfDataType2 =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType, referenceType),
                 isNullable = true,
-                qualifiedName = "allOf1"
+                qualifiedName = "allOf1",
             )
         val allOfDataType2a =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType, referenceType),
                 isNullable = true,
-                qualifiedName = "allOf1"
+                qualifiedName = "allOf1",
             )
 
         assertThat(allOfDataType1).isNotEqualTo(allOfDataType2)
@@ -108,7 +105,7 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(referenceType, objectType),
                 isNullable = true,
-                qualifiedName = "allOf1"
+                qualifiedName = "allOf1",
             )
 
         val document = allOfDataType.toAppFunctionDataTypeMetadataDocument()
@@ -116,7 +113,7 @@ class AppFunctionDataTypeMetadataTest {
         assertThat(document.allOf)
             .containsExactly(
                 referenceType.toAppFunctionDataTypeMetadataDocument(),
-                objectType.toAppFunctionDataTypeMetadataDocument()
+                objectType.toAppFunctionDataTypeMetadataDocument(),
             )
         assertThat(document.type).isEqualTo(AppFunctionAllOfTypeMetadata.TYPE)
         assertThat(document.isNullable).isTrue()
@@ -150,11 +147,7 @@ class AppFunctionDataTypeMetadataTest {
     fun appFunctionObjectTypeMetadata_toAppFunctionDataTypeMetadataDocument_returnsCorrectDocument() {
         val primitiveTypeInt = AppFunctionPrimitiveTypeMetadata(TYPE_INT, true)
         val primitiveTypeLong = AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false)
-        val properties =
-            mapOf(
-                "prop1" to primitiveTypeInt,
-                "prop2" to primitiveTypeLong,
-            )
+        val properties = mapOf("prop1" to primitiveTypeInt, "prop2" to primitiveTypeLong)
         val isNullable = false
         val qualifiedName = "qualifiedName"
         val requiredProperties = listOf("prop1", "prop2")
@@ -168,13 +161,13 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionNamedDataTypeMetadataDocument(
                 name = "prop1",
                 dataTypeMetadata =
-                    AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = true)
+                    AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = true),
             )
         val expectedPrimitiveDocumentProperties2 =
             AppFunctionNamedDataTypeMetadataDocument(
                 name = "prop2",
                 dataTypeMetadata =
-                    AppFunctionDataTypeMetadataDocument(type = TYPE_LONG, isNullable = false)
+                    AppFunctionDataTypeMetadataDocument(type = TYPE_LONG, isNullable = false),
             )
         val expectedAppFunctionDataTypeMetadataDocument =
             AppFunctionDataTypeMetadataDocument(
@@ -271,9 +264,9 @@ class AppFunctionDataTypeMetadataTest {
                 itemType =
                     AppFunctionDataTypeMetadataDocument(
                         type = AppFunctionDataTypeMetadata.TYPE_STRING,
-                        isNullable = false
+                        isNullable = false,
                     ),
-                isNullable = true
+                isNullable = true,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -284,9 +277,9 @@ class AppFunctionDataTypeMetadataTest {
                     itemType =
                         AppFunctionPrimitiveTypeMetadata(
                             type = AppFunctionDataTypeMetadata.TYPE_STRING,
-                            isNullable = false
+                            isNullable = false,
                         ),
-                    isNullable = true
+                    isNullable = true,
                 )
             )
     }
@@ -303,13 +296,13 @@ class AppFunctionDataTypeMetadataTest {
                             dataTypeMetadata =
                                 AppFunctionDataTypeMetadataDocument(
                                     type = AppFunctionDataTypeMetadata.TYPE_INT,
-                                    isNullable = false
-                                )
+                                    isNullable = false,
+                                ),
                         )
                     ),
                 required = listOf("property1"),
                 objectQualifiedName = "ObjectType",
-                isNullable = false
+                isNullable = false,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -322,12 +315,12 @@ class AppFunctionDataTypeMetadataTest {
                             "property1" to
                                 AppFunctionPrimitiveTypeMetadata(
                                     type = AppFunctionDataTypeMetadata.TYPE_INT,
-                                    isNullable = false
+                                    isNullable = false,
                                 )
                         ),
                     required = listOf("property1"),
                     qualifiedName = "ObjectType",
-                    isNullable = false
+                    isNullable = false,
                 )
             )
     }
@@ -338,7 +331,7 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionDataTypeMetadataDocument(
                 type = AppFunctionDataTypeMetadata.TYPE_REFERENCE,
                 dataTypeReference = "someReference",
-                isNullable = true
+                isNullable = true,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -347,7 +340,7 @@ class AppFunctionDataTypeMetadataTest {
             .isEqualTo(
                 AppFunctionReferenceTypeMetadata(
                     referenceDataType = "someReference",
-                    isNullable = true
+                    isNullable = true,
                 )
             )
     }
@@ -361,11 +354,11 @@ class AppFunctionDataTypeMetadataTest {
                     listOf(
                         AppFunctionDataTypeMetadataDocument(
                             type = AppFunctionDataTypeMetadata.TYPE_INT,
-                            isNullable = false
+                            isNullable = false,
                         )
                     ),
                 objectQualifiedName = "AllOfType",
-                isNullable = false
+                isNullable = false,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -377,11 +370,11 @@ class AppFunctionDataTypeMetadataTest {
                         listOf(
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionDataTypeMetadata.TYPE_INT,
-                                isNullable = false
+                                isNullable = false,
                             )
                         ),
                     qualifiedName = "AllOfType",
-                    isNullable = false
+                    isNullable = false,
                 )
             )
     }

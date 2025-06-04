@@ -63,7 +63,7 @@ private class SubspaceOffsetElement(public val x: Dp, public val y: Dp, public v
 private class OffsetNode(public var x: Dp, public var y: Dp, public var z: Dp) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
     override fun MeasureScope.measure(
-        measurable: Measurable,
+        measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
@@ -73,7 +73,7 @@ private class OffsetNode(public var x: Dp, public var y: Dp, public var z: Dp) :
                     Vector3(
                         x.roundToPx().toFloat(),
                         y.roundToPx().toFloat(),
-                        z.roundToPx().toFloat()
+                        z.roundToPx().toFloat(),
                     )
                 )
             )

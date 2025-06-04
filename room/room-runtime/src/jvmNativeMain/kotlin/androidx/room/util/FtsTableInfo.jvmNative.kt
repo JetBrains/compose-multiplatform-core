@@ -33,12 +33,12 @@ public actual class FtsTableInfo(
      * The set of options. Each value in the set contains the option in the following format: <key,
      * value>.
      */
-    @JvmField public actual val options: Set<String>
+    @JvmField public actual val options: Set<String>,
 ) {
     public actual constructor(
         name: String,
         columns: Set<String>,
-        createSql: String
+        createSql: String,
     ) : this(name, columns, parseFtsOptions(createSql))
 
     override fun equals(other: Any?): Boolean = equalsCommon(other)

@@ -66,7 +66,7 @@ class TextRunsTest {
         text: CharSequence,
         start: Int,
         end: Int,
-        orientation: ResolvedOrientation
+        orientation: ResolvedOrientation,
     ) = createLayoutRun(text, start, end, PAINT, orientation)
 
     private class MockCanvas(val drawTextCallback: (CharSequence, Int, Int, Paint) -> Unit) :
@@ -77,7 +77,7 @@ class TextRunsTest {
             end: Int,
             x: Float,
             y: Float,
-            paint: Paint
+            paint: Paint,
         ) {
             super.drawText(text, start, end, x, y, paint)
             drawTextCallback(text, start, end, paint)
@@ -103,7 +103,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -127,7 +127,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -151,7 +151,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -175,7 +175,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -200,7 +200,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -225,7 +225,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -250,7 +250,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }
@@ -275,7 +275,7 @@ class TextRunsTest {
                 },
                 0f,
                 0f,
-                PAINT
+                PAINT,
             )
         }
     }

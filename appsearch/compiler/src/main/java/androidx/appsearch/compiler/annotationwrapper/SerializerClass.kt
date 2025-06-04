@@ -92,14 +92,14 @@ data class SerializerClass(
                         ProcessingException(
                             "Serializer ${clazz.qualifiedName} must have a zero-param " +
                                 "constructor",
-                            clazz
+                            clazz,
                         )
                     }
             if (constructor.modifiers.contains(Modifier.PRIVATE)) {
                 throw ProcessingException(
                     "The zero-param constructor of serializer ${clazz.qualifiedName} must not " +
                         "be private",
-                    constructor
+                    constructor,
                 )
             }
             return constructor
@@ -127,7 +127,7 @@ data class SerializerClass(
 
         private fun hasSingleParamOfExactType(
             method: ExecutableElement,
-            expectedType: TypeName
+            expectedType: TypeName,
         ): Boolean {
             if (method.parameters.size != 1) {
                 return false

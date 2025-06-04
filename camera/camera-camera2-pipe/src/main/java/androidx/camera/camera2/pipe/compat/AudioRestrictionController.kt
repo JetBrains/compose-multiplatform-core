@@ -38,7 +38,7 @@ public interface AudioRestrictionController {
     /** Update the audio restriction mode of the given CameraGraph. */
     public fun updateCameraGraphAudioRestrictionMode(
         cameraGraph: CameraGraph,
-        mode: AudioRestrictionMode
+        mode: AudioRestrictionMode,
     )
 
     /** Removes the CameraGraph from the local CameraGraph to audio restriction mode mapping. */
@@ -78,7 +78,7 @@ public class AudioRestrictionControllerImpl @Inject constructor() : AudioRestric
 
     override fun updateCameraGraphAudioRestrictionMode(
         cameraGraph: CameraGraph,
-        mode: AudioRestrictionMode
+        mode: AudioRestrictionMode,
     ) {
         synchronized(lock) {
             val previousMode = computeAudioRestrictionMode()

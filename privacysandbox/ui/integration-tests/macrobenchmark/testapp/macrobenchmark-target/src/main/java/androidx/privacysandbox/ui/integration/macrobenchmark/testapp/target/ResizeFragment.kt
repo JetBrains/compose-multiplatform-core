@@ -49,7 +49,7 @@ class ResizeFragment : BaseFragment() {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -61,14 +61,14 @@ class ResizeFragment : BaseFragment() {
             currentAdType,
             currentMediationOption,
             shouldDrawViewabilityLayer,
-            waitInsideOnDraw = true
+            waitInsideOnDraw = true,
         )
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_resize, container, false)
         resizableAdHolder =
@@ -91,7 +91,7 @@ class ResizeFragment : BaseFragment() {
             currentAdType,
             currentMediationOption,
             shouldDrawViewabilityLayer,
-            true
+            true,
         )
         return inflatedView
     }
@@ -135,7 +135,7 @@ class ResizeFragment : BaseFragment() {
         TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 dpValue,
-                context?.resources?.displayMetrics
+                context?.resources?.displayMetrics,
             )
             .toInt()
 

@@ -24,7 +24,6 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_INVE
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AggregatedAppFunctionInventoryClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AggregatedAppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
-import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import androidx.appfunctions.compiler.core.toClassName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -90,10 +89,9 @@ class AppFunctionAggregateProcessor(
         val fileSpec =
             FileSpec.builder(
                     APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
-                    aggregatedInventoryClassName
+                    aggregatedInventoryClassName,
                 )
                 .addType(aggregatedInventoryClassBuilder.build())
-                .addGeneratedTimeStamp()
                 .build()
 
         codeGenerator
@@ -101,7 +99,7 @@ class AppFunctionAggregateProcessor(
                 // TODO: Collect all AppFunction files as source files set
                 Dependencies.ALL_FILES,
                 APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
-                aggregatedInventoryClassName
+                aggregatedInventoryClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
@@ -112,7 +110,7 @@ class AppFunctionAggregateProcessor(
     ): PropertySpec {
         return PropertySpec.builder(
                 AggregatedAppFunctionInventoryClass.PROPERTY_INVENTORIES_NAME,
-                List::class.asClassName().parameterizedBy(APP_FUNCTION_INVENTORY_CLASS)
+                List::class.asClassName().parameterizedBy(APP_FUNCTION_INVENTORY_CLASS),
             )
             .addModifiers(KModifier.OVERRIDE)
             .initializer(
@@ -143,7 +141,7 @@ class AppFunctionAggregateProcessor(
         val fileSpec =
             FileSpec.builder(
                     APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
-                    aggregatedInvokerClassName
+                    aggregatedInvokerClassName,
                 )
                 .addType(aggregatedInvokerClassBuilder.build())
                 .build()
@@ -153,7 +151,7 @@ class AppFunctionAggregateProcessor(
                 // TODO: Collect all AppFunction files as source files set
                 Dependencies.ALL_FILES,
                 APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
-                aggregatedInvokerClassName
+                aggregatedInvokerClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
@@ -162,7 +160,7 @@ class AppFunctionAggregateProcessor(
     private fun buildInvokersProperty(generatedInvokers: List<KSClassDeclaration>): PropertySpec {
         return PropertySpec.builder(
                 AggregatedAppFunctionInvokerClass.PROPERTY_INVOKERS_NAME,
-                List::class.asClassName().parameterizedBy(AppFunctionInvokerClass.CLASS_NAME)
+                List::class.asClassName().parameterizedBy(AppFunctionInvokerClass.CLASS_NAME),
             )
             .addModifiers(KModifier.OVERRIDE)
             .initializer(

@@ -119,10 +119,10 @@ class RememberNavBackStackTest {
     }
 }
 
-internal object TestNoSerializer : NavKey()
+internal object TestNoSerializer : NavKey
 
-@Serializable internal object TestObject : NavKey()
+@Serializable internal object TestObject : NavKey
 
-@Serializable internal class TestClass : NavKey()
+@Serializable internal class TestClass : NavKey
 
-@Serializable internal data class TestDataClass(var value: Int) : NavKey()
+@Serializable internal data class TestDataClass(var value: Int) : NavKey

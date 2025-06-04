@@ -46,7 +46,7 @@ internal constructor(
     internal val successfulCompilation: Boolean,
 
     /** List of diagnostics that were reported during compilation */
-    diagnostics: Map<Diagnostic.Kind, List<DiagnosticMessage>>
+    diagnostics: Map<Diagnostic.Kind, List<DiagnosticMessage>>,
 ) {
 
     internal abstract val generatedSources: List<Source>
@@ -108,7 +108,7 @@ internal constructor(
                 "Loading modules:",
                 "Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.",
                 "K2 kapt is in Alpha. Use with caution.",
-                "Kapt currently doesn't support language version 2.0+. Falling back to 1.9."
+                "Kapt currently doesn't support language version 2.0+. Falling back to 1.9.",
             )
     }
 }
@@ -119,10 +119,8 @@ internal constructor(
  */
 @ExperimentalProcessingApi
 class CompilationResultSubject
-internal constructor(
-    failureMetadata: FailureMetadata,
-    val compilationResult: CompilationResult,
-) : Subject<CompilationResultSubject, CompilationResult>(failureMetadata, compilationResult) {
+internal constructor(failureMetadata: FailureMetadata, val compilationResult: CompilationResult) :
+    Subject<CompilationResultSubject, CompilationResult>(failureMetadata, compilationResult) {
     /** set to true if any assertion on the subject requires it to fail (e.g. looking for errors) */
     internal var shouldSucceed: Boolean = true
 
@@ -168,7 +166,7 @@ internal constructor(
         hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.WARNING,
             expected = expected,
-            acceptPartialMatch = false
+            acceptPartialMatch = false,
         ) {
             "expected warning: $expected"
         }
@@ -183,7 +181,7 @@ internal constructor(
         hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.WARNING,
             expected = expected,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected warning: $expected"
         }
@@ -198,7 +196,7 @@ internal constructor(
         return hasDiagnosticWithPattern(
             kind = Diagnostic.Kind.WARNING,
             expectedPattern = expectedPattern,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected warning containing pattern: $expectedPattern"
         }
@@ -214,7 +212,7 @@ internal constructor(
         hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.NOTE,
             expected = expected,
-            acceptPartialMatch = false
+            acceptPartialMatch = false,
         ) {
             "expected note: $expected"
         }
@@ -229,7 +227,7 @@ internal constructor(
         hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.NOTE,
             expected = expected,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected note: $expected"
         }
@@ -244,7 +242,7 @@ internal constructor(
         return hasDiagnosticWithPattern(
             kind = Diagnostic.Kind.NOTE,
             expectedPattern = expectedPattern,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected note containing pattern: $expectedPattern"
         }
@@ -261,7 +259,7 @@ internal constructor(
         return hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.ERROR,
             expected = expected,
-            acceptPartialMatch = false
+            acceptPartialMatch = false,
         ) {
             "expected error: $expected"
         }
@@ -278,7 +276,7 @@ internal constructor(
         return hasDiagnosticWithMessage(
             kind = Diagnostic.Kind.ERROR,
             expected = expected,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected error: $expected"
         }
@@ -295,7 +293,7 @@ internal constructor(
         return hasDiagnosticWithPattern(
             kind = Diagnostic.Kind.ERROR,
             expectedPattern = expectedPattern,
-            acceptPartialMatch = true
+            acceptPartialMatch = true,
         ) {
             "expected error containing pattern: $expectedPattern"
         }
@@ -416,7 +414,7 @@ internal constructor(
             // we wrap it
             throw CompilationAssertionError(
                 compilationResult = compilationResult,
-                realError = processingException
+                realError = processingException,
             )
         }
     }
@@ -425,7 +423,7 @@ internal constructor(
         kind: Diagnostic.Kind,
         expected: String,
         acceptPartialMatch: Boolean,
-        buildErrorMessage: () -> String
+        buildErrorMessage: () -> String,
     ): DiagnosticMessagesSubject {
         fun String.trimLines() = lines().joinToString(System.lineSeparator()) { it.trim() }
         val expectedTrimmed = expected.trimLines()
@@ -448,7 +446,7 @@ internal constructor(
         kind: Diagnostic.Kind,
         expectedPattern: String,
         acceptPartialMatch: Boolean,
-        buildErrorMessage: () -> String
+        buildErrorMessage: () -> String,
     ): DiagnosticMessagesSubject {
         val diagnostics = compilationResult.diagnosticsOfKind(kind)
         val pattern = Pattern.compile(expectedPattern)
@@ -473,7 +471,7 @@ internal constructor(
      */
     private class CompilationAssertionError(
         val compilationResult: CompilationResult,
-        val realError: Throwable
+        val realError: Throwable,
     ) : AssertionError("Processor did throw an error.\n$compilationResult", realError) {
         override fun fillInStackTrace(): Throwable {
             return realError
@@ -499,13 +497,13 @@ internal class JavaCompileTestingCompilationResult(
     processor: SyntheticJavacProcessor,
     diagnostics: Map<Diagnostic.Kind, List<DiagnosticMessage>>,
     override val generatedSources: List<Source>,
-    override val generatedResources: List<Resource>
+    override val generatedResources: List<Resource>,
 ) :
     CompilationResult(
         testRunnerName = testRunner.name,
         processor = processor,
         successfulCompilation = delegate.status() == Compilation.Status.SUCCESS,
-        diagnostics = diagnostics
+        diagnostics = diagnostics,
     ) {
     override fun rawOutput(): String {
         return delegate.diagnostics().joinToString(separator = System.lineSeparator()) {
@@ -519,13 +517,13 @@ internal class KotlinCompilationResult
 constructor(
     testRunner: CompilationTestRunner,
     processor: SyntheticProcessor,
-    private val delegate: TestCompilationResult
+    private val delegate: TestCompilationResult,
 ) :
     CompilationResult(
         testRunnerName = testRunner.name,
         processor = processor,
         successfulCompilation = delegate.success,
-        diagnostics = delegate.diagnostics
+        diagnostics = delegate.diagnostics,
     ) {
     override val generatedSources: List<Source>
         get() = delegate.generatedSources

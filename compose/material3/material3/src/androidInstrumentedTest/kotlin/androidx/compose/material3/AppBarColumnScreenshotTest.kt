@@ -94,7 +94,7 @@ class AppBarColumnScreenshotTest {
             listOf(
                 AppBarItem(label = "Favorite", icon = Icons.Filled.Favorite, onClick = {}),
                 AppBarItem(label = "Add", icon = Icons.Filled.Add, onClick = {}),
-                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {})
+                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {}),
             )
 
         AppBarColumn(
@@ -108,14 +108,14 @@ class AppBarColumnScreenshotTest {
                         } else {
                             menuState.show()
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Menu,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
-            }
+            },
         ) {
             repeat(itemCount) { index ->
                 val item = appBarItems[index % 3]
@@ -125,7 +125,7 @@ class AppBarColumnScreenshotTest {
                         Icon(imageVector = item.icon, contentDescription = "Localized description")
                     },
                     enabled = true,
-                    label = item.label
+                    label = item.label,
                 )
             }
         }

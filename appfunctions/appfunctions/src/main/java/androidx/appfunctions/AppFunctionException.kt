@@ -34,7 +34,7 @@ internal constructor(
     @ErrorCode internal val internalErrorCode: Int,
     /** The error message. */
     public val errorMessage: String?,
-    internal val extras: Bundle
+    internal val extras: Bundle,
 ) : Exception(errorMessage) {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toPlatformExtensionsClass():
@@ -42,7 +42,7 @@ internal constructor(
         return com.android.extensions.appfunctions.AppFunctionException(
             internalErrorCode,
             errorMessage,
-            extras
+            extras,
         )
     }
 
@@ -53,7 +53,7 @@ internal constructor(
         return android.app.appfunctions.AppFunctionException(
             internalErrorCode,
             errorMessage,
-            extras
+            extras,
         )
     }
 
@@ -127,7 +127,7 @@ internal constructor(
                 ERROR_RESOURCE_ALREADY_EXISTS ->
                     AppFunctionElementAlreadyExistsException(
                         exception.errorMessage,
-                        exception.extras
+                        exception.extras,
                     )
                 ERROR_SYSTEM_ERROR ->
                     AppFunctionSystemUnknownException(exception.errorMessage, exception.extras)
@@ -169,7 +169,7 @@ internal constructor(
                 ERROR_RESOURCE_ALREADY_EXISTS ->
                     AppFunctionElementAlreadyExistsException(
                         exception.errorMessage,
-                        exception.extras
+                        exception.extras,
                     )
                 ERROR_SYSTEM_ERROR ->
                     AppFunctionSystemUnknownException(exception.errorMessage, exception.extras)
@@ -353,6 +353,6 @@ internal constructor(public val errorCode: Int, errorMessage: String? = null, ex
      */
     public constructor(
         errorCode: Int,
-        errorMessage: String? = null
+        errorMessage: String? = null,
     ) : this(errorCode, errorMessage, Bundle.EMPTY)
 }

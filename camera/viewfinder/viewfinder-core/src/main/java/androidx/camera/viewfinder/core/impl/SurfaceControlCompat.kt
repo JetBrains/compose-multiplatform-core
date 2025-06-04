@@ -58,7 +58,7 @@ sealed interface SurfaceControlCompat {
             format: Int,
             width: Int,
             height: Int,
-            name: String
+            name: String,
         ): SurfaceControlCompat =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 SurfaceControlApi29Impl(parent, format, width, height, name)
@@ -74,7 +74,7 @@ sealed interface SurfaceControlCompat {
         format: Int,
         width: Int,
         height: Int,
-        name: String
+        name: String,
     ) : SurfaceControlCompat {
         private val surfaceControl: SurfaceControl =
             SurfaceControl.Builder()

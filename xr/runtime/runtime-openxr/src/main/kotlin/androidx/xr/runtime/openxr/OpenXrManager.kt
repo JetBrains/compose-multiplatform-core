@@ -54,19 +54,21 @@ internal constructor(
         Config(
             Config.PlaneTrackingMode.DISABLED,
             Config.HandTrackingMode.DISABLED,
+            Config.DeviceTrackingMode.DISABLED,
             Config.DepthEstimationMode.DISABLED,
-            Config.AnchorPersistenceMode.ENABLED,
+            Config.AnchorPersistenceMode.LOCAL,
         )
         private set
 
     override fun configure(config: Config) {
         when (
+            // TODO(b/414648065): Reorder the parameters in nativeConfigureSession.
             nativeConfigureSession(
-                config.planeTracking.mode,
-                config.handTracking.mode,
-                config.depthEstimation.mode,
-                config.anchorPersistence.mode,
-                config.headTracking.mode,
+                planeTracking = config.planeTracking.mode,
+                handTracking = config.handTracking.mode,
+                deviceTracking = config.deviceTracking.mode,
+                depthEstimation = config.depthEstimation.mode,
+                anchorPersistence = config.anchorPersistence.mode,
             )
         ) {
             -2L ->
@@ -82,7 +84,7 @@ internal constructor(
         }
 
         if (config.handTracking != this.config.handTracking) {
-            if (config.handTracking == Config.HandTrackingMode.ENABLED) {
+            if (config.handTracking == Config.HandTrackingMode.BOTH) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.leftHand)
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.rightHand)
             } else {
@@ -146,8 +148,9 @@ internal constructor(
     private external fun nativeConfigureSession(
         planeTracking: Int,
         handTracking: Int,
+        deviceTracking: Int,
         depthEstimation: Int,
         anchorPersistence: Int,
-        headTracking: Int,
+        faceTracking: Int = 0,
     ): Long
 }

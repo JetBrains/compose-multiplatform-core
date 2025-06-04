@@ -100,7 +100,7 @@ private constructor(
                     source,
                     sourceValueRangeStart,
                     sourceValueRangeEnd,
-                    sourceOutOfRangeBehavior
+                    sourceOutOfRangeBehavior,
                 )
             if (enabledToolTypes != ALL_TOOL_TYPES) {
                 node = ToolTypeFilterNode(enabledToolTypes, node)
@@ -118,7 +118,7 @@ private constructor(
                     DampingNode(
                         DampingSource.TIME_IN_SECONDS,
                         responseTimeMillis.toFloat() / 1000.0f,
-                        node
+                        node,
                     )
             }
             listOf(TargetNode(target, targetModifierRangeStart, targetModifierRangeEnd, node))
@@ -238,7 +238,7 @@ private constructor(
                 InputToolType.STYLUS,
                 InputToolType.UNKNOWN,
                 InputToolType.MOUSE,
-                InputToolType.TOUCH
+                InputToolType.TOUCH,
             )
 
         /**
@@ -257,7 +257,7 @@ private constructor(
                     val node =
                         Node.wrapNative(
                             BrushBehaviorNative.newCopyOfNode(unownedNativePointer, i),
-                            inputStack
+                            inputStack,
                         )
                 ) {
                     is TerminalNode -> terminalNodes.add(node)
@@ -993,7 +993,7 @@ private constructor(
         public companion object {
             public fun wrapNative(
                 unownedNativePointer: Long,
-                inputStack: ArrayDeque<ValueNode>
+                inputStack: ArrayDeque<ValueNode>,
             ): Node =
                 when (BrushBehaviorNodeNative.getNodeType(unownedNativePointer)) {
                     0 -> SourceNode.wrapNative(unownedNativePointer)

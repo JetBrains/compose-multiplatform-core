@@ -27,7 +27,7 @@ import androidx.glance.action.actionParametersOf
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class RunCallbackAction(
     public val callbackClass: Class<out ActionCallback>,
-    public val parameters: ActionParameters
+    public val parameters: ActionParameters,
 ) : Action {
     public companion object {
 
@@ -35,7 +35,7 @@ public class RunCallbackAction(
             context: Context,
             className: String,
             glanceId: GlanceId,
-            parameters: ActionParameters
+            parameters: ActionParameters,
         ) {
             val workClass = Class.forName(className)
 
@@ -73,7 +73,7 @@ public interface ActionCallback {
  */
 public fun <T : ActionCallback> actionRunCallback(
     callbackClass: Class<T>,
-    parameters: ActionParameters = actionParametersOf()
+    parameters: ActionParameters = actionParametersOf(),
 ): Action = RunCallbackAction(callbackClass, parameters)
 
 /**

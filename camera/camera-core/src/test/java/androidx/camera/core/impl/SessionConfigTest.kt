@@ -931,13 +931,13 @@ class SessionConfigTest {
                 repeatingCallback0,
                 cameraCallback0,
                 repeatingCallback1,
-                cameraCallback1
+                cameraCallback1,
             )
         assertThat(sessionConfig.singleCameraCaptureCallbacks)
             .containsExactly(cameraCallback0, cameraCallback1)
         sessionConfig.errorListener!!.onError(
             sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
         assertThat(errorCallbackInvoked0).isTrue()
         assertThat(errorCallbackInvoked1).isTrue()
@@ -1088,7 +1088,7 @@ class SessionConfigTest {
         // listeners
         sessionConfig.errorListener!!.onError(
             sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
         assertThat(errorCallbackInvoked1).isTrue()
     }

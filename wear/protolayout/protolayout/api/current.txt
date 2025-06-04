@@ -1640,6 +1640,7 @@ package androidx.wear.protolayout.types {
 
   public final class LayoutString {
     ctor public LayoutString(String staticValue);
+    ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue);
     ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? getDynamicValue();
     method public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? getLayoutConstraint();
@@ -1651,6 +1652,7 @@ package androidx.wear.protolayout.types {
 
   public final class LayoutStringUtil {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint asLayoutConstraint(String, optional int alignment);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
     method public static androidx.wear.protolayout.types.LayoutString createLayoutString(String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern);

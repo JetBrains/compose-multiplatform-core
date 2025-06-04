@@ -25,7 +25,7 @@ import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
  */
 internal class RemoteSharedUiSessionController(
     private val uiProviderVersion: Int,
-    private val remoteSessionController: IRemoteSharedUiSessionController
+    private val remoteSessionController: IRemoteSharedUiSessionController,
 ) : androidx.privacysandbox.ui.client.IRemoteSharedUiSessionController {
     override fun close() {
         tryToCallRemoteObject(remoteSessionController) { this.close() }

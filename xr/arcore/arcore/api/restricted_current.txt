@@ -124,34 +124,34 @@ package androidx.xr.arcore {
 
   public static final class Earth.State {
     field public static final androidx.xr.arcore.Earth.State.Companion Companion;
-    field public static final androidx.xr.arcore.Earth.State ErrorApkVersionTooOld;
-    field public static final androidx.xr.arcore.Earth.State ErrorAppPreempted;
-    field public static final androidx.xr.arcore.Earth.State ErrorInternal;
-    field public static final androidx.xr.arcore.Earth.State ErrorNotAuthorized;
-    field public static final androidx.xr.arcore.Earth.State ErrorResourceExhausted;
-    field public static final androidx.xr.arcore.Earth.State Running;
-    field public static final androidx.xr.arcore.Earth.State Stopped;
+    field public static final androidx.xr.arcore.Earth.State ERROR_APK_VERSION_TOO_OLD;
+    field public static final androidx.xr.arcore.Earth.State ERROR_APP_PREEMPTED;
+    field public static final androidx.xr.arcore.Earth.State ERROR_INTERNAL;
+    field public static final androidx.xr.arcore.Earth.State ERROR_NOT_AUTHORIZED;
+    field public static final androidx.xr.arcore.Earth.State ERROR_RESOURCES_EXHAUSTED;
+    field public static final androidx.xr.arcore.Earth.State RUNNING;
+    field public static final androidx.xr.arcore.Earth.State STOPPED;
   }
 
   public static final class Earth.State.Companion {
-    property public androidx.xr.arcore.Earth.State ErrorApkVersionTooOld;
-    property public androidx.xr.arcore.Earth.State ErrorAppPreempted;
-    property public androidx.xr.arcore.Earth.State ErrorInternal;
-    property public androidx.xr.arcore.Earth.State ErrorNotAuthorized;
-    property public androidx.xr.arcore.Earth.State ErrorResourceExhausted;
-    property public androidx.xr.arcore.Earth.State Running;
-    property public androidx.xr.arcore.Earth.State Stopped;
+    property public androidx.xr.arcore.Earth.State ERROR_APK_VERSION_TOO_OLD;
+    property public androidx.xr.arcore.Earth.State ERROR_APP_PREEMPTED;
+    property public androidx.xr.arcore.Earth.State ERROR_INTERNAL;
+    property public androidx.xr.arcore.Earth.State ERROR_NOT_AUTHORIZED;
+    property public androidx.xr.arcore.Earth.State ERROR_RESOURCES_EXHAUSTED;
+    property public androidx.xr.arcore.Earth.State RUNNING;
+    property public androidx.xr.arcore.Earth.State STOPPED;
   }
 
   public static final class Earth.Surface {
     field public static final androidx.xr.arcore.Earth.Surface.Companion Companion;
-    field public static final androidx.xr.arcore.Earth.Surface Rooftop;
-    field public static final androidx.xr.arcore.Earth.Surface Terrain;
+    field public static final androidx.xr.arcore.Earth.Surface ROOFTOP;
+    field public static final androidx.xr.arcore.Earth.Surface TERRAIN;
   }
 
   public static final class Earth.Surface.Companion {
-    property public androidx.xr.arcore.Earth.Surface Rooftop;
-    property public androidx.xr.arcore.Earth.Surface Terrain;
+    property public androidx.xr.arcore.Earth.Surface ROOFTOP;
+    property public androidx.xr.arcore.Earth.Surface TERRAIN;
   }
 
   public final class Hand {

@@ -103,7 +103,7 @@ class MovablePanelApp : ComponentActivity() {
                 animationSpec =
                     infiniteRepeatable(
                         tween(30000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
+                        repeatMode = RepeatMode.Reverse,
                     ),
                 label = "moving",
             )

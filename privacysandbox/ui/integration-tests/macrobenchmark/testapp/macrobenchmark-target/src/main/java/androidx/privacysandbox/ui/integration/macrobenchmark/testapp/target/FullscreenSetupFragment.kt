@@ -33,7 +33,7 @@ class FullscreenSetupFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         val setUpView = inflater.inflate(R.layout.fragment_fullscreen_setup, container, false)
         val radioNonBlocking = setUpView.findViewById<RadioButton>(R.id.radio_non_blocking)
@@ -67,7 +67,7 @@ class FullscreenSetupFragment : BaseFragment() {
                 .launchFullscreenAd(
                     activityLauncher.toLauncherInfo(),
                     screenOrientation,
-                    backNavigation
+                    backNavigation,
                 )
         }
         return setUpView

@@ -50,22 +50,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-private val BACK_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
-private const val BACK_LENS_FACING = CameraSelector.LENS_FACING_BACK
 private const val CAPTURE_TIMEOUT = 15_000.toLong() //  15 seconds
 
 @LargeTest
 @RunWith(Parameterized::class)
 class ImageCaptureWithoutStoragePermissionTest(
     implName: String,
-    private val cameraXConfig: CameraXConfig
+    private val cameraXConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -79,7 +75,7 @@ class ImageCaptureWithoutStoragePermissionTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
@@ -88,10 +84,11 @@ class ImageCaptureWithoutStoragePermissionTest(
     private val defaultBuilder = ImageCapture.Builder()
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+    private lateinit var defaultCameraSelector: CameraSelector
 
     @Before
     fun setUp(): Unit = runBlocking {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(BACK_LENS_FACING))
+        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         createDefaultPictureFolderIfNotExist()
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
@@ -118,7 +115,7 @@ class ImageCaptureWithoutStoragePermissionTest(
         // Arrange.
         val useCase = defaultBuilder.build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, BACK_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, defaultCameraSelector, useCase)
         }
 
         val contentValues = ContentValues()
@@ -127,7 +124,7 @@ class ImageCaptureWithoutStoragePermissionTest(
             ImageCapture.OutputFileOptions.Builder(
                     context.contentResolver,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues
+                    contentValues,
                 )
                 .build()
 
@@ -171,7 +168,7 @@ class ImageCaptureWithoutStoragePermissionTest(
         suspend fun awaitCapturesAndAssert(
             timeout: Long = CAPTURE_TIMEOUT,
             savedImagesCount: Int = 0,
-            errorsCount: Int = 0
+            errorsCount: Int = 0,
         ) {
             Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
             Truth.assertThat(results.size).isEqualTo(savedImagesCount)

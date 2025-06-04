@@ -108,7 +108,7 @@ internal class ActiveCamera(
     private val androidCameraState: AndroidCameraState,
     internal val allCameraIds: Set<CameraId>,
     scope: CoroutineScope,
-    closeCallback: (ActiveCamera) -> Unit
+    closeCallback: (ActiveCamera) -> Unit,
 ) {
     val cameraId: CameraId
         get() = androidCameraState.cameraId
@@ -126,7 +126,7 @@ internal class ActiveCamera(
             // A notable bug is b/264396089 where, because camera opens took too long, we didn't
             // acquire a WakeLockToken, and thereby not issuing the request to close camera
             // eventually.
-            startTimeoutOnCreation = true
+            startTimeoutOnCreation = true,
         )
 
     init {
@@ -179,7 +179,7 @@ constructor(
     private val retryingCameraStateOpener: RetryingCameraStateOpener,
     private val camera2DeviceCloser: Camera2DeviceCloser,
     private val camera2ErrorProcessor: Camera2ErrorProcessor,
-    val threads: Threads
+    val threads: Threads,
 ) : Camera2DeviceManager {
     private val scope = threads.cameraPipeScope
 
@@ -204,7 +204,7 @@ constructor(
         sharedCameraIds: List<CameraId>,
         graphListener: GraphListener,
         isPrewarm: Boolean,
-        isForegroundObserver: (Unit) -> Boolean
+        isForegroundObserver: (Unit) -> Boolean,
     ): VirtualCamera? {
         val result = VirtualCameraState(cameraId, graphListener, scope)
         if (
@@ -219,7 +219,7 @@ constructor(
             graphListener.onGraphError(
                 GraphState.GraphStateError(
                     CameraError.ERROR_CAMERA_OPENER,
-                    willAttemptRetry = false
+                    willAttemptRetry = false,
                 )
             )
             return null
@@ -539,7 +539,7 @@ constructor(
         cameraId: CameraId,
         sharedCameraIds: List<CameraId>,
         isForegroundObserver: (Unit) -> Boolean,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ): OpenVirtualCameraResult {
         // TODO: Figure out how 1-time permissions work, and see if they can be reset without
         //   causing the application process to restart.
@@ -550,7 +550,7 @@ constructor(
             retryingCameraStateOpener.openCameraWithRetry(
                 cameraId,
                 camera2DeviceCloser,
-                isForegroundObserver
+                isForegroundObserver,
             )
         if (result.cameraState == null) {
             return OpenVirtualCameraResult.Error(result.errorCode)
@@ -579,14 +579,14 @@ constructor(
 
             pendingRequestOpen.activeCamera.connectTo(
                 request.virtualCamera,
-                pendingRequestOpen.token
+                pendingRequestOpen.token,
             )
             pendingRequestOpens.remove(pendingRequestOpen)
         }
     }
 
     private suspend fun disconnectPendingRequestOpens(
-        pendingRequestOpensToDisconnect: List<PendingRequestOpen>,
+        pendingRequestOpensToDisconnect: List<PendingRequestOpen>
     ) {
         for (pendingRequestOpen in pendingRequestOpensToDisconnect) {
             pendingRequestOpen.token.release()
@@ -596,7 +596,7 @@ constructor(
 
     private inline fun <T> List<T>.firstFromIndexOrNull(
         index: Int,
-        predicate: (T) -> Boolean
+        predicate: (T) -> Boolean,
     ): Int? {
         for (i in index..size - 1) {
             if (predicate(get(i))) {

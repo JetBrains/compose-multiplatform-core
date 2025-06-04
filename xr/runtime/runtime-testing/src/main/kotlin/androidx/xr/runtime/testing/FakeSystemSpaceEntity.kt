@@ -26,8 +26,5 @@ import java.util.concurrent.Executor
 public open class FakeSystemSpaceEntity : SystemSpaceEntity, FakeEntity() {
 
     @Suppress("ExecutorRegistration")
-    override fun setOnSpaceUpdatedListener(
-        listener: SystemSpaceEntity.OnSpaceUpdatedListener?,
-        executor: Executor?,
-    ) {}
+    override fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?) {}
 }

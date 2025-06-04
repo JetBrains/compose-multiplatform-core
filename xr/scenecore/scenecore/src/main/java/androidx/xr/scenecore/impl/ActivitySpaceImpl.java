@@ -29,6 +29,7 @@ import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.SpaceValue;
+import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -68,8 +69,11 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private final Supplier<SpatialState> mSpatialStateProvider;
     private final AtomicReference<Dimensions> mBounds = new AtomicReference<>();
     // The current scene parent aka ActivitySpace origin transform.
-    private final AtomicReference<Matrix4> mOriginTransform = new AtomicReference<>();
+
     private final boolean mUnscaledGravityAlignedActivitySpace;
+    // Spatial mode change handler will be invoked on every update to activity space origin we
+    // receive from the node transform listener.
+    private SpatialModeChangeListener mSpatialModeChangeListener;
 
     ActivitySpaceImpl(
             Node taskNode,
@@ -90,6 +94,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     }
 
     /** Returns the identity pose since this entity defines the origin of the activity space. */
+    @NonNull
     @Override
     public Pose getPoseInActivitySpace() {
         return new Pose();
@@ -149,20 +154,21 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     }
 
     public void handleOriginUpdate(Matrix4 newTransform) {
-        Matrix4 oldTransform = mOriginTransform.getAndSet(newTransform);
+        // Update the transform in case we are receiving transform update from the spatial state
+        // change.
+        mOpenXrReferenceSpaceTransform.set(newTransform);
+        Vector3 activitySpaceScale = new Vector3(1.0f, 1.0f, 1.0f);
+
+        // Handle unscaling and gravity alignment for activity space in case of origin update.
         if (mUnscaledGravityAlignedActivitySpace) {
             // Undoing the scale of the ActivitySpace.
-            Vector3 activitySpaceScale = newTransform.getScale();
             Quaternion rotation = getRotationForGravityAlignment(newTransform);
+            activitySpaceScale = newTransform.getScale();
             Log.i(TAG, "handleOriginUpdate: activitySpaceScale: " + activitySpaceScale);
             Log.i(TAG, "handleOriginUpdate: rotation: " + rotation);
             try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
                 transaction
-                        .setScale(
-                                mNode,
-                                1.0f / activitySpaceScale.getX(),
-                                1.0f / activitySpaceScale.getY(),
-                                1.0f / activitySpaceScale.getZ())
+                        .setScale(mNode, 1.0f, 1.0f, 1.0f)
                         .setOrientation(
                                 mNode,
                                 rotation.getX(),
@@ -171,6 +177,14 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                                 rotation.getW())
                         .apply();
             }
+        }
+
+        // If the activity space is unscaled gravity aligned, we need to scale the
+        // center of attention entity by the recommended scale of the activity space.
+        // Setting the pose to identity as the activity space origin is already
+        // translated to the recommended pose provided in the scene parent transform.
+        if (mSpatialModeChangeListener != null) {
+            mSpatialModeChangeListener.onSpatialModeChanged(new Pose(), activitySpaceScale);
         }
     }
 
@@ -219,6 +233,10 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         for (OnBoundsChangedListener listener : mBoundsListeners) {
             listener.onBoundsChanged(newDimensions);
         }
+    }
+
+    public void setSpatialModeChangeListener(SpatialModeChangeListener SpatialModeChangeListener) {
+        mSpatialModeChangeListener = SpatialModeChangeListener;
     }
 
     @SuppressWarnings("RestrictTo")
@@ -327,5 +345,11 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                 },
                 mExecutor);
         return updatedHitTestFuture;
+    }
+
+    @Override
+    public void onSpaceUpdated() {
+        super.onSpaceUpdated();
+        handleOriginUpdate(mOpenXrReferenceSpaceTransform.get());
     }
 }

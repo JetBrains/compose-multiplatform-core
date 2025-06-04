@@ -63,7 +63,7 @@ interface XAnnotationSpec {
         fun builder(className: XClassName): Builder =
             XAnnotationSpecImpl.Builder(
                 JavaAnnotationSpec.Builder(JAnnotationSpec.builder(className.java)),
-                KotlinAnnotationSpec.Builder(KAnnotationSpec.builder(className.kotlin))
+                KotlinAnnotationSpec.Builder(KAnnotationSpec.builder(className.kotlin)),
             )
     }
 }

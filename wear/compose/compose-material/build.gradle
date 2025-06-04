@@ -33,7 +33,7 @@ plugins {
 
 dependencies {
     api("androidx.compose.foundation:foundation:1.8.0")
-    api("androidx.compose.ui:ui:1.8.0")
+    api("androidx.compose.ui:ui:1.8.2")
     api("androidx.compose.ui:ui-text:1.8.0")
     api("androidx.compose.runtime:runtime:1.8.0")
     api(project(":wear:compose:compose-foundation"))

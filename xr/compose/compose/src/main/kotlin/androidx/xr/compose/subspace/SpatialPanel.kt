@@ -45,6 +45,7 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -65,9 +66,12 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompos
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
+import androidx.xr.compose.unit.Meter.Companion.millimeters
+import androidx.xr.compose.unit.toMeter
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.PanelEntity
 
 private const val DEFAULT_SIZE_PX = 400
@@ -85,8 +89,8 @@ public object SpatialPanelDefaults {
     /** Default shape for a Spatial Panel. */
     public val shape: SpatialShape = SpatialRoundedCornerShape(CornerSize(32.dp))
 
-    /** Default minimum dimensions for a Spatial Panel. */
-    public val minimumPanelDimension: Dimensions = Dimensions(10f, 10f, 10f)
+    /** Default minimum dimensions for a Spatial Panel in Meters. */
+    public val minimumPanelDimension: FloatSize3d = FloatSize3d(0.1f, 0.1f, 0.1f)
 }
 
 /**
@@ -151,11 +155,11 @@ public fun SpatialPanel(
         view.measure(
             MeasureSpec.makeMeasureSpec(
                 constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST
+                MeasureSpec.AT_MOST,
             ),
             MeasureSpec.makeMeasureSpec(
                 constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST
+                MeasureSpec.AT_MOST,
             ),
         )
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
@@ -251,11 +255,11 @@ private fun <T : View> AndroidViewPanel(
         view.measure(
             MeasureSpec.makeMeasureSpec(
                 constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST
+                MeasureSpec.AT_MOST,
             ),
             MeasureSpec.makeMeasureSpec(
                 constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST
+                MeasureSpec.AT_MOST,
             ),
         )
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
@@ -420,6 +424,8 @@ public fun SpatialPanel(
     shape: SpatialShape = SpatialPanelDefaults.shape,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val dialogManager = LocalDialogManager.current
+    val density = LocalDensity.current
 
     val rect = Rect(0, 0, DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)
     val activityPanelEntity = rememberCorePanelEntity {
@@ -427,10 +433,44 @@ public fun SpatialPanel(
             .also { it.launchActivity(intent) }
     }
 
-    SubspaceLayout(modifier = modifier, coreEntity = activityPanelEntity) { _, constraints ->
-        val width = DEFAULT_SIZE_PX.coerceIn(constraints.minWidth, constraints.maxWidth)
-        val height = DEFAULT_SIZE_PX.coerceIn(constraints.minHeight, constraints.maxHeight)
-        val depth = constraints.minDepth.coerceAtLeast(0)
-        layout(width, height, depth) {}
+    val scrimWidth = with(density) { activityPanelEntity.size.width.toDp().toMeter() }
+    val scrimHeight = with(density) { activityPanelEntity.size.height.toDp().toMeter() }
+
+    SpatialBox {
+        SubspaceLayout(modifier = modifier, coreEntity = activityPanelEntity) { _, constraints ->
+            val width = DEFAULT_SIZE_PX.coerceIn(constraints.minWidth, constraints.maxWidth)
+            val height = DEFAULT_SIZE_PX.coerceIn(constraints.minHeight, constraints.maxHeight)
+            val depth = constraints.minDepth.coerceAtLeast(0)
+            layout(width, height, depth) {}
+        }
+
+        if (dialogManager.isSpatialDialogActive.value) {
+            val localContext = LocalContext.current
+            val scrimView = remember {
+                View(localContext).apply {
+                    foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
+                    setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
+                }
+            }
+
+            val scrimPanelEntity =
+                rememberCorePanelEntity(shape = shape) {
+                    PanelEntity.create(
+                            session = session,
+                            view = scrimView,
+                            dimensions = FloatSize3d(scrimWidth.toM(), scrimHeight.toM()),
+                            name = entityName("ScrimPanel"),
+                            pose = Pose.Identity,
+                        )
+                        .apply {
+                            setParent(activityPanelEntity.entity)
+                            setPose(Pose(translation = Vector3(0f, 0f, 3.millimeters.toM())))
+                        }
+                }
+
+            LaunchedEffect(activityPanelEntity.size) {
+                scrimPanelEntity.size = activityPanelEntity.size
+            }
+        }
     }
 }

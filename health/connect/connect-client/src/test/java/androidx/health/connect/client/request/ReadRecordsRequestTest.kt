@@ -35,7 +35,7 @@ class ReadRecordsRequestTest {
             ReadRecordsRequest(
                 recordType = StepsRecord::class,
                 timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
-                pageSize = -1
+                pageSize = -1,
             )
         }
     }
@@ -46,7 +46,7 @@ class ReadRecordsRequestTest {
             ReadRecordsRequest(
                 recordType = StepsRecord::class,
                 timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
-                pageSize = 0
+                pageSize = 0,
             )
         }
     }
@@ -70,7 +70,7 @@ class ReadRecordsRequestTest {
             recordType = StepsRecord::class,
             timeRangeFilter = closedTimeRange,
             pageSize = 10,
-            pageToken = "token"
+            pageToken = "token",
         )
     }
 }

@@ -124,7 +124,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
                         if (!deferredPreviewFrame.isCompleted) {
                             deferredPreviewFrame.complete(it)
                         }
-                    }
+                    },
                 )
                 .await()
         val previewSurface = Surface(surfaceTextureHolder.surfaceTexture)
@@ -142,7 +142,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
                 addTarget(previewSurface)
                 set(
                     CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
                 )
             }
 
@@ -151,7 +151,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         cameraSession.setRepeatingRequest(
             requestBuilder.build(),
             CaptureCallback(cropRectWithStabilizationDeferred, 20),
-            cameraHandler
+            cameraHandler,
         )
 
         val cropRectWithStabilization = cropRectWithStabilizationDeferred.await()
@@ -160,14 +160,14 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         // Get the crop rect without any video stabilization enabled
         requestBuilder.set(
             CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF,
         )
 
         val cropRectNormalDeferred = CompletableDeferred<Rect?>()
         cameraSession.setRepeatingRequest(
             requestBuilder.build(),
             CaptureCallback(cropRectNormalDeferred),
-            cameraHandler
+            cameraHandler,
         )
 
         val cropRectNormal = cropRectNormalDeferred.await()
@@ -188,7 +188,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
 
     private suspend fun openCameraSession(
         cameraDevice: CameraDevice,
-        outputConfigs: List<OutputConfiguration>
+        outputConfigs: List<OutputConfiguration>,
     ): CameraCaptureSession {
         val deferred = CompletableDeferred<CameraCaptureSession>()
 
@@ -205,7 +205,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
                     override fun onConfigureFailed(session: CameraCaptureSession) {
                         deferred.completeExceptionally(RuntimeException("onConfigurationFailed"))
                     }
-                }
+                },
             )
 
         cameraDevice.createCaptureSession(sessionConfiguration)
@@ -214,14 +214,14 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
 
     private class CaptureCallback(
         private val deferred: CompletableDeferred<Rect?>,
-        private val numFramesToWait: Int = 1
+        private val numFramesToWait: Int = 1,
     ) : CameraCaptureSession.CaptureCallback() {
         private var numFramesReceived = 0
 
         override fun onCaptureCompleted(
             session: CameraCaptureSession,
             request: CaptureRequest,
-            result: TotalCaptureResult
+            result: TotalCaptureResult,
         ) {
             numFramesReceived++
             if (numFramesReceived >= numFramesToWait) {

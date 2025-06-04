@@ -23,7 +23,7 @@ import org.gradle.api.tasks.TaskProvider
 
 internal inline fun <reified T : Task> TaskContainer.maybeRegister(
     vararg nameParts: String,
-    noinline configureBlock: ((T) -> (Unit))? = null
+    noinline configureBlock: ((T) -> (Unit))? = null,
 ): TaskProvider<T> {
     val name = camelCase(*nameParts)
     return try {
@@ -37,7 +37,7 @@ internal inline fun <reified T : Task> TaskContainer.maybeRegister(
 
 internal inline fun <reified T : Task> TaskContainer.namedOrNull(
     vararg nameParts: String,
-    noinline configureBlock: ((T) -> (Unit))? = null
+    noinline configureBlock: ((T) -> (Unit))? = null,
 ): TaskProvider<T>? {
     val name = camelCase(*nameParts)
     return try {

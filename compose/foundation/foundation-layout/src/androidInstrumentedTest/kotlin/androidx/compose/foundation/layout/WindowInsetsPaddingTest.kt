@@ -291,7 +291,7 @@ class WindowInsetsPaddingTest {
                         top,
                         right,
                         bottom,
-                        AndroidXInsets.of(1, 2, 3, 4)
+                        AndroidXInsets.of(1, 2, 3, 4),
                     )
                 )
                 .build()
@@ -325,7 +325,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(10, 0, 0, 0)
+            sentInsets = AndroidXInsets.of(10, 0, 0, 0),
         )
     }
 
@@ -334,7 +334,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(0, 0, 12, 0)
+            sentInsets = AndroidXInsets.of(0, 0, 12, 0),
         )
     }
 
@@ -343,7 +343,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(0, 0, 0, 13)
+            sentInsets = AndroidXInsets.of(0, 0, 0, 13),
         )
     }
 
@@ -352,7 +352,7 @@ class WindowInsetsPaddingTest {
     fun navigationBarsPaddingApi30() {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
-            Modifier.navigationBarsPadding()
+            Modifier.navigationBarsPadding(),
         )
     }
 
@@ -375,7 +375,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.statusBars(),
             sentInsets = AndroidXInsets.of(0, 10, 0, 0),
-            expected = { w, h -> Rect(0f, 10f, w.toFloat(), h.toFloat()) }
+            expected = { w, h -> Rect(0f, 10f, w.toFloat(), h.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.statusBars)
         }
@@ -419,7 +419,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(10, 0, 0, 0),
-            expected = { width, height -> Rect(10f, 0f, width.toFloat(), height.toFloat()) }
+            expected = { width, height -> Rect(10f, 0f, width.toFloat(), height.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -429,7 +429,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(0, 0, 10, 0),
-            expected = { width, height -> Rect(0f, 0f, width - 10f, height.toFloat()) }
+            expected = { width, height -> Rect(0f, 0f, width - 10f, height.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -439,7 +439,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(0, 0, 0, 10),
-            expected = { width, height -> Rect(0f, 0f, width.toFloat(), height - 10f) }
+            expected = { width, height -> Rect(0f, 0f, width.toFloat(), height - 10f) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -621,9 +621,9 @@ class WindowInsetsPaddingTest {
                 sentInsets.left.toFloat(),
                 sentInsets.top.toFloat(),
                 width - sentInsets.right.toFloat(),
-                height - sentInsets.bottom.toFloat()
+                height - sentInsets.bottom.toFloat(),
             )
-        }
+        },
     ) {
         testInsetsPadding(type, sentInsets, expected) { modifier }
     }
@@ -692,7 +692,7 @@ class WindowInsetsPaddingTest {
                 sendImeStart(
                     view,
                     AndroidXInsets.of(10, 11, 12, 13),
-                    WindowInsetsCompat.Type.systemBars()
+                    WindowInsetsCompat.Type.systemBars(),
                 )
 
             val width = view.width
@@ -989,7 +989,7 @@ class WindowInsetsPaddingTest {
 
     private fun sendInsets(
         type: Int,
-        sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13)
+        sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13),
     ): WindowInsetsCompat {
         val insets = WindowInsetsCompat.Builder().setInsets(type, sentInsets).build()
         return dispatchApplyWindowInsets(insets)
@@ -1032,13 +1032,13 @@ class WindowInsetsPaddingTest {
                         composeView,
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        ),
                     )
                     composeView.setContent(content)
                     view
                 },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

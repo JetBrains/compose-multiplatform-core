@@ -118,7 +118,7 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
                 // Navigate to Settings when the settings action is triggered.
                 onNavigateToSettings = { navController.navigate(NavRoutes.SETTINGS) },
                 // Navigate to the In-Call screen when a call is started.
-                onStartCall = { navController.navigate(NavRoutes.IN_CALL) }
+                onStartCall = { navController.navigate(NavRoutes.IN_CALL) },
             )
         }
         // Define the In-Call screen destination.
@@ -134,7 +134,7 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
                     navDeepLink {
                         uriPattern = "${DEEP_LINK_BASE_URI}/${NavRoutes.IN_CALL}"
                         action = Intent.ACTION_VIEW
-                    }
+                    },
                 ),
         ) { _ ->
             InCallScreen(inCallViewModel)

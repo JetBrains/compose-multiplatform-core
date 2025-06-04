@@ -43,7 +43,7 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     fun parseSymbol(
         pattern: Regex,
         peek: Boolean = false,
-        skipInlineWhitespace: Boolean = true
+        skipInlineWhitespace: Boolean = true,
     ): String? {
         val match = pattern.find(currentLine)
         return match?.value?.also {
@@ -81,7 +81,7 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
 private val validIdentifierRegex =
     Regex(
         """
-    ^((=(?!\s?\.\.\.)|[^.;\[\]/<>:\\(){}?=,])+)
+    ^((=(?!\s?\.\.\.)|[^.;\[\]/<>:\\(){}?=,&])+)
     """
             .trimIndent()
     )

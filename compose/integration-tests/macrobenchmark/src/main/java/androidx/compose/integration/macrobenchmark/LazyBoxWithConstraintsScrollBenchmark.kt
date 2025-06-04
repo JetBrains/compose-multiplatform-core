@@ -57,7 +57,7 @@ class LazyBoxWithConstraintsScrollBenchmark(private val compilationMode: Compila
                 val intent = Intent()
                 intent.action = ACTION
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val lazyColumn = device.findObject(By.desc(CONTENT_DESCRIPTION))
             // Setting a gesture margin is important otherwise gesture nav is triggered.

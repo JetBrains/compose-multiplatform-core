@@ -34,7 +34,7 @@ public sealed interface BackgroundModifier : GlanceModifier.Element {
         public val imageProvider: ImageProvider?,
         public val contentScale: ContentScale = ContentScale.FillBounds,
         public val colorFilter: ColorFilter? = null,
-        public val alpha: Float? = null
+        public val alpha: Float? = null,
     ) : BackgroundModifier {
         override fun toString(): String =
             "BackgroundModifier(colorFilter=$colorFilter, imageProvider=$imageProvider, " +
@@ -79,11 +79,11 @@ public fun GlanceModifier.background(colorProvider: ColorProvider): GlanceModifi
  */
 @Deprecated(
     "This method has been deprecated in favor of the one that accepts a colorFilter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun GlanceModifier.background(
     imageProvider: ImageProvider,
-    contentScale: ContentScale = ContentScale.FillBounds
+    contentScale: ContentScale = ContentScale.FillBounds,
 ): GlanceModifier = this.then(BackgroundModifier.Image(imageProvider, contentScale))
 
 /**

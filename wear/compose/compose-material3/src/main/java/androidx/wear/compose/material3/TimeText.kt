@@ -104,7 +104,7 @@ public fun TimeText(
     backgroundColor: Color = TimeTextDefaults.backgroundColor(),
     timeSource: TimeSource = TimeTextDefaults.rememberTimeSource(timeFormat()),
     contentPadding: PaddingValues = TimeTextDefaults.ContentPadding,
-    content: CurvedScope.(String) -> Unit = { time -> timeTextCurvedText(time) }
+    content: CurvedScope.(String) -> Unit = { time -> timeTextCurvedText(time) },
 ) {
     val currentTime = timeSource.currentTime()
 
@@ -115,7 +115,7 @@ public fun TimeText(
                     .sizeIn(maxSweepDegrees = maxSweepAngle)
                     .padding(contentPadding.toArcPadding())
                     .background(backgroundColor, StrokeCap.Round),
-            radialAlignment = CurvedAlignment.Radial.Center
+            radialAlignment = CurvedAlignment.Radial.Center,
         ) {
             content(currentTime)
         }
@@ -218,13 +218,13 @@ public fun CurvedScope.timeTextCurvedText(time: String, style: CurvedTextStyle? 
  */
 public fun CurvedScope.timeTextSeparator(
     curvedTextStyle: CurvedTextStyle? = null,
-    contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp)
+    contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp),
 ) {
     // TimeText is intended to be hidden from TalkBack, so we clear semantics.
     curvedText(
         text = "·",
         style = curvedTextStyle,
-        modifier = CurvedModifier.padding(contentArcPadding).clearAndSetSemantics {}
+        modifier = CurvedModifier.padding(contentArcPadding).clearAndSetSemantics {},
     )
 }
 
@@ -262,7 +262,7 @@ internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
                 val receiver =
                     TimeBroadcastReceiver(
                         onTimeChanged = { currentTime = updatedTimeLambda() },
-                        onTimeZoneChanged = { calendar = Calendar.getInstance() }
+                        onTimeZoneChanged = { calendar = Calendar.getInstance() },
                     )
                 receiver.register(context)
                 awaitClose { receiver.unregister(context) }
@@ -283,19 +283,19 @@ private fun PaddingValues.toArcPadding() =
 
         override fun calculateAfterPadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateRightPadding(layoutDirection)
 
         override fun calculateBeforePadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateLeftPadding(layoutDirection)
     }
 
 /** A [BroadcastReceiver] to receive time tick, time change, and time zone change events. */
 private class TimeBroadcastReceiver(
     val onTimeChanged: () -> Unit,
-    val onTimeZoneChanged: () -> Unit
+    val onTimeZoneChanged: () -> Unit,
 ) : BroadcastReceiver() {
     private var registered = false
 

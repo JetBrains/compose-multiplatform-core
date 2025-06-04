@@ -68,12 +68,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Horizontal,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = null
+            pageIndicatorAnimationSpec = null,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = true
+            assertVisible = true,
         )
     }
 
@@ -85,12 +85,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Vertical,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = null
+            pageIndicatorAnimationSpec = null,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = true
+            assertVisible = true,
         )
     }
 
@@ -102,12 +102,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Horizontal,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = false
+            assertVisible = false,
         )
     }
 
@@ -119,12 +119,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Vertical,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = false
+            assertVisible = false,
         )
     }
 
@@ -132,18 +132,18 @@ class PagerScaffoldTest {
     fun create_pager_scaffold_and_swipe_one_page(
         orientation: Orientation,
         pageIndicatorColor: Color,
-        pageIndicatorAnimationSpec: AnimationSpec<Float>?
+        pageIndicatorAnimationSpec: AnimationSpec<Float>?,
     ) {
         rule.setContentWithTheme {
             if (orientation == Orientation.Horizontal) {
                 TestHorizontalPagerScaffold(
                     pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec
+                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
                 )
             } else {
                 TestVerticalPagerScaffold(
                     pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec
+                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
                 )
             }
         }
@@ -170,7 +170,7 @@ class PagerScaffoldTest {
     @RequiresApi(Build.VERSION_CODES.O)
     fun wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
         pageIndicatorColor: Color,
-        assertVisible: Boolean
+        assertVisible: Boolean,
     ) {
         // After a 2500 delay, the scroll indicator is animated away. Allow a little longer for the
         // animation to complete.
@@ -204,7 +204,7 @@ class PagerScaffoldTest {
                 pageIndicator = {
                     HorizontalPageIndicator(
                         pagerState = pagerState,
-                        backgroundColor = pageIndicatorColor
+                        backgroundColor = pageIndicatorColor,
                     )
                 },
                 pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
@@ -212,14 +212,14 @@ class PagerScaffoldTest {
                 HorizontalPager(
                     state = pagerState,
                     flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text("Page $page")
                             }
@@ -244,7 +244,7 @@ class PagerScaffoldTest {
                 pageIndicator = {
                     VerticalPageIndicator(
                         pagerState = pagerState,
-                        backgroundColor = pageIndicatorColor
+                        backgroundColor = pageIndicatorColor,
                     )
                 },
                 pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
@@ -252,14 +252,14 @@ class PagerScaffoldTest {
                 VerticalPager(
                     state = pagerState,
                     flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text("Page $page")
                             }

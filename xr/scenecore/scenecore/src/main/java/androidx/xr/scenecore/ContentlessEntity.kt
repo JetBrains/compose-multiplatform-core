@@ -59,7 +59,7 @@ private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
                 session.platformAdapter,
                 session.scene.entityManager,
                 name,
-                pose
+                pose,
             )
     }
 }

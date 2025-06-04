@@ -63,7 +63,7 @@ abstract class HeadlessWatchFaceClientTestBase {
             Intent(context, WatchFaceControlTestService::class.java).apply {
                 action = WatchFaceControlService.ACTION_WATCHFACE_CONTROL_SERVICE
             },
-            resourceOnlyWatchFacePackageName = null
+            resourceOnlyWatchFacePackageName = null,
         )
     }
 
@@ -84,7 +84,7 @@ abstract class HeadlessWatchFaceClientTestBase {
             hasLowBitAmbient = false,
             hasBurnInProtection = false,
             analogPreviewReferenceTimeMillis = 0,
-            digitalPreviewReferenceTimeMillis = 0
+            digitalPreviewReferenceTimeMillis = 0,
         )
 }
 
@@ -116,7 +116,7 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
                 ComplicationType.LONG_TEXT,
                 ComplicationType.SHORT_TEXT,
                 ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
+                ComplicationType.SMALL_IMAGE,
             )
         Assert.assertTrue(leftComplicationDetails.isEnabled)
 
@@ -138,7 +138,7 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
                 ComplicationType.LONG_TEXT,
                 ComplicationType.SHORT_TEXT,
                 ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
+                ComplicationType.SMALL_IMAGE,
             )
 
         Truth.assertThat(rightComplicationDetails.isEnabled).isTrue()
@@ -196,7 +196,7 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
                         exampleCanvasAnalogWatchFaceComponentName,
                         deviceConfig,
                         400,
-                        400
+                        400,
                     )!!
                     .toBundle()
             )
@@ -229,7 +229,7 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
                 "WatchFaceService.onCreate",
                 "Renderer.constructed",
                 "Renderer.onDestroy",
-                "WatchFaceService.onDestroy"
+                "WatchFaceService.onDestroy",
             )
     }
 }
@@ -254,7 +254,7 @@ class HeadlessWatchFaceClientScreenshotTest : HeadlessWatchFaceClientTestBase() 
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         bitmap.assertAgainstGolden(screenshotRule, "headlessScreenshot")
@@ -275,12 +275,12 @@ class HeadlessWatchFaceClientScreenshotTest : HeadlessWatchFaceClientTestBase() 
                     RenderParameters.HighlightLayer(
                         RenderParameters.HighlightedElement.AllComplicationSlots,
                         Color.YELLOW,
-                        Color.argb(128, 0, 0, 0) // Darken everything else.
-                    )
+                        Color.argb(128, 0, 0, 0), // Darken everything else.
+                    ),
                 ),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         bitmap.assertAgainstGolden(screenshotRule, "yellowComplicationHighlights")
@@ -301,12 +301,12 @@ class HeadlessWatchFaceClientScreenshotTest : HeadlessWatchFaceClientTestBase() 
                     RenderParameters.HighlightLayer(
                         RenderParameters.HighlightedElement.AllComplicationSlots,
                         Color.YELLOW,
-                        Color.argb(128, 0, 0, 0) // Darken everything else.
-                    )
+                        Color.argb(128, 0, 0, 0), // Darken everything else.
+                    ),
                 ),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         bitmap.assertAgainstGolden(screenshotRule, "highlightOnlyLayer")

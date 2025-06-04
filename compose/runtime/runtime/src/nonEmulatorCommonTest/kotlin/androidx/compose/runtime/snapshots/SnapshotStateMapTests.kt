@@ -190,11 +190,11 @@ class SnapshotStateMapTests {
             val two = map.entries.drop(1).first()
             assertEquals(
                 normalMap.entries.containsAll(listOf(normalOne, normalTwo)),
-                map.entries.containsAll(listOf(one, two))
+                map.entries.containsAll(listOf(one, two)),
             )
             assertEquals(
                 normalMap.entries.containsAll(listOf(one, two)),
-                map.entries.containsAll(listOf(normalOne, normalTwo))
+                map.entries.containsAll(listOf(normalOne, normalTwo)),
             )
             val independentOne =
                 object : MutableMap.MutableEntry<Int, Float> {
@@ -212,7 +212,7 @@ class SnapshotStateMapTests {
                 }
             assertEquals(
                 normalMap.entries.containsAll(listOf(independentOne, independentTwo)),
-                map.entries.containsAll(listOf(independentOne, independentTwo))
+                map.entries.containsAll(listOf(independentOne, independentTwo)),
             )
         }
     }
@@ -602,14 +602,14 @@ class SnapshotStateMapTests {
 
     private fun validateRead(
         initialMap: MutableMap<Int, Float> = defaultMap(),
-        block: (Map<Int, Float>, Map<Int, Float>) -> Unit
+        block: (Map<Int, Float>, Map<Int, Float>) -> Unit,
     ) {
         validateMaps(initialMap) { map, normalMap -> block(map, normalMap) }
     }
 
     private fun validateWrite(
         initialMap: MutableMap<Int, Float> = defaultMap(),
-        block: (MutableMap<Int, Float>) -> Unit
+        block: (MutableMap<Int, Float>) -> Unit,
     ) {
         validateMaps(initialMap) { map, normalMap ->
             block(normalMap)
@@ -620,7 +620,7 @@ class SnapshotStateMapTests {
 
     private fun validateMaps(
         map: MutableMap<Int, Float> = defaultMap(),
-        block: (MutableMap<Int, Float>, MutableMap<Int, Float>) -> Unit
+        block: (MutableMap<Int, Float>, MutableMap<Int, Float>) -> Unit,
     ) {
         val normalMap = map.toMutableMap()
         block(map, normalMap)

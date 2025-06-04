@@ -57,8 +57,8 @@ constructor(
                         buildErrorReasonForCountMismatch(
                             matcherDescription = selector.description,
                             expectedCount = 0,
-                            actualCount = matchedNodesCount
-                        )
+                            actualCount = matchedNodesCount,
+                        ),
                 )
             )
         }
@@ -79,7 +79,7 @@ constructor(
      */
     public fun assert(
         matcher: GlanceNodeMatcher<R>,
-        messagePrefixOnError: (() -> String)? = null
+        messagePrefixOnError: (() -> String)? = null,
     ): GlanceNodeAssertion<R, T> {
         var errorMessageOnFail = "Failed to assert condition: (${matcher.description})"
         if (messagePrefixOnError != null) {
@@ -111,8 +111,8 @@ constructor(
                         buildErrorReasonForCountMismatch(
                             matcherDescription = selector.description,
                             expectedCount = 1,
-                            actualCount = matchingNodes.size
-                        )
+                            actualCount = matchingNodes.size,
+                        ),
                 )
             )
         }

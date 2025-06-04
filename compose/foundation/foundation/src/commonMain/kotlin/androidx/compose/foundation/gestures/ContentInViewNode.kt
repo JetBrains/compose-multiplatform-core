@@ -67,7 +67,7 @@ internal class ContentInViewNode(
     private var orientation: Orientation,
     private val scrollingLogic: ScrollingLogic,
     private var reverseDirection: Boolean,
-    private var bringIntoViewSpec: BringIntoViewSpec?
+    private var bringIntoViewSpec: BringIntoViewSpec?,
 ) :
     Modifier.Node(),
     androidx.compose.foundation.relocation.BringIntoViewResponder,
@@ -237,7 +237,7 @@ internal class ContentInViewNode(
                                     scrollMultiplier *
                                         scrollBy(
                                                 offset = adjustedDelta.toOffset().reverseIfNeeded(),
-                                                source = NestedScrollSource.UserInput
+                                                source = NestedScrollSource.UserInput,
                                             )
                                             .reverseIfNeeded()
                                             .toFloat()
@@ -292,7 +292,7 @@ internal class ContentInViewNode(
                             animationState.value = calculateScrollDelta(bringIntoViewSpec)
                             if (DEBUG)
                                 println("[$TAG] scroll target after frame: ${animationState.value}")
-                        }
+                        },
                     )
                 }
 
@@ -342,13 +342,13 @@ internal class ContentInViewNode(
                 bringIntoViewSpec.calculateScrollDistance(
                     rectangleToMakeVisible.top,
                     rectangleToMakeVisible.bottom - rectangleToMakeVisible.top,
-                    size.height
+                    size.height,
                 )
             Horizontal ->
                 bringIntoViewSpec.calculateScrollDistance(
                     rectangleToMakeVisible.left,
                     rectangleToMakeVisible.right - rectangleToMakeVisible.left,
-                    size.width
+                    size.width,
                 )
         }
     }
@@ -407,8 +407,8 @@ internal class ContentInViewNode(
                             .calculateScrollDistance(
                                 childBounds.top,
                                 childBounds.bottom - childBounds.top,
-                                size.height
-                            )
+                                size.height,
+                            ),
                 )
             Horizontal ->
                 Offset(
@@ -417,9 +417,9 @@ internal class ContentInViewNode(
                             .calculateScrollDistance(
                                 childBounds.left,
                                 childBounds.right - childBounds.left,
-                                size.width
+                                size.width,
                             ),
-                    y = 0f
+                    y = 0f,
                 )
         }
     }
@@ -439,7 +439,7 @@ internal class ContentInViewNode(
     fun update(
         orientation: Orientation,
         reverseDirection: Boolean,
-        bringIntoViewSpec: BringIntoViewSpec?
+        bringIntoViewSpec: BringIntoViewSpec?,
     ) {
         this.orientation = orientation
         this.reverseDirection = reverseDirection

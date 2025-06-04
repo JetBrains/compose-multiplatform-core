@@ -22,6 +22,6 @@ package androidx.compose.runtime
     AnnotationTarget.FUNCTION,
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER
+    AnnotationTarget.PROPERTY_SETTER,
 )
 actual annotation class TestOnly

@@ -69,7 +69,7 @@ public object FakeThreads {
             lightweightExecutor = executor,
             lightweightDispatcher = dispatcher,
             camera2Handler = fakeHandler,
-            camera2Executor = { executor }
+            camera2Executor = { executor },
         )
     }
 }

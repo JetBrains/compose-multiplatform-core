@@ -632,7 +632,7 @@ class InvalidationTrackerTest {
     private inner class FakeRoomDatabase(
         private val shadowTablesMap: Map<String, String>,
         private val viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-        private val tableNames: Array<String>
+        private val tableNames: Array<String>,
     ) : RoomDatabase() {
 
         override fun createInvalidationTracker(): InvalidationTracker {

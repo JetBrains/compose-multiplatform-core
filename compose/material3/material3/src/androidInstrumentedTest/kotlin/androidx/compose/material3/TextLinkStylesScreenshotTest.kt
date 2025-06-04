@@ -82,7 +82,7 @@ class TextLinkStylesScreenshotTest {
                     LinkAnnotation.Clickable(
                         tag = "link2",
                         linkInteractionListener = {},
-                        styles = customLinkStyles
+                        styles = customLinkStyles,
                     )
                 ) {
                     append("Link2")

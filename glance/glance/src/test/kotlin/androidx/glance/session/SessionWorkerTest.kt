@@ -68,7 +68,7 @@ class SessionWorkerTest {
                         override fun createWorker(
                             appContext: Context,
                             workerClassName: String,
-                            workerParameters: WorkerParameters
+                            workerParameters: WorkerParameters,
                         ) = SessionWorker(appContext, workerParameters, sessionManager)
                     }
                 )
@@ -355,7 +355,7 @@ class TestSessionManager : SessionManager {
 
         suspend fun startSession(
             context: Context,
-            content: @GlanceComposable @Composable () -> Unit = {}
+            content: @GlanceComposable @Composable () -> Unit = {},
         ) =
             MutableSharedFlow<kotlin.Result<EmittableWithChildren>>().also { flow ->
                 startSession(context, TestSession(resultFlow = flow, content = content))
@@ -363,7 +363,7 @@ class TestSessionManager : SessionManager {
 
         suspend fun startDelayedProcessingSession(
             context: Context,
-            content: @GlanceComposable @Composable () -> Unit = {}
+            content: @GlanceComposable @Composable () -> Unit = {},
         ) =
             MutableSharedFlow<kotlin.Result<EmittableWithChildren>>().also { flow ->
                 startSession(
@@ -372,7 +372,7 @@ class TestSessionManager : SessionManager {
                         resultFlow = flow,
                         content = content,
                         processEmittableTreeHasInfiniteDelay = true,
-                    )
+                    ),
                 )
             }
 
@@ -422,7 +422,7 @@ class TestSession(
 
     override suspend fun processEmittableTree(
         context: Context,
-        root: EmittableWithChildren
+        root: EmittableWithChildren,
     ): Boolean {
         resultFlow?.emit(kotlin.Result.success(root))
         try {

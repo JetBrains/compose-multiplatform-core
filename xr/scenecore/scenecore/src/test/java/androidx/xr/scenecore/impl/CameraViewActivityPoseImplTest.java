@@ -24,10 +24,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
+import android.util.DisplayMetrics;
+import android.view.Display;
+import android.view.WindowManager;
 
 import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.CameraViewActivityPose.CameraType;
 import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
+import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -44,6 +48,7 @@ import com.android.extensions.xr.XrExtensions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
@@ -178,5 +183,73 @@ public final class CameraViewActivityPoseImplTest {
         assertVector3(
                 cameraActivityPoseRight.getActivitySpaceScale(),
                 new Vector3(1f, 1f, 1f).div(activitySpaceScale));
+    }
+
+    @Test
+    public void getDisplayResolutionInPixels_returnsCorrectResolution() {
+        CameraViewActivityPoseImpl cameraActivityPose =
+                createCameraViewActivityPose(
+                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+
+        Activity mockActivity = Mockito.mock(Activity.class);
+        when(mPerceptionLibrary.getActivity()).thenReturn(mockActivity);
+        WindowManager mockWindowManager = Mockito.mock(WindowManager.class);
+        Display mockDisplay = Mockito.mock(Display.class);
+        when(mockActivity.getSystemService(WindowManager.class)).thenReturn(mockWindowManager);
+        when(mockWindowManager.getDefaultDisplay()).thenReturn(mockDisplay);
+
+        final int expectedDisplayWidth = 2560;
+        final int expectedDisplayHeight = 1440;
+
+        Mockito.doAnswer(
+                        (Answer<Void>)
+                                invocation -> {
+                                    DisplayMetrics metrics = invocation.getArgument(0);
+                                    metrics.widthPixels = expectedDisplayWidth;
+                                    metrics.heightPixels = expectedDisplayHeight;
+                                    return null;
+                                })
+                .when(mockDisplay)
+                .getRealMetrics(Mockito.any(DisplayMetrics.class));
+
+        PixelDimensions resolution = cameraActivityPose.getDisplayResolutionInPixels();
+
+        // The implementation divides width by 2 for single eye resolution
+        assertThat(resolution.width).isEqualTo(expectedDisplayWidth / 2);
+        assertThat(resolution.height).isEqualTo(expectedDisplayHeight);
+    }
+
+    @Test
+    public void getDisplayResolutionInPixels_nullWindowManager_returnsZeroDimensions() {
+        CameraViewActivityPoseImpl cameraActivityPose =
+                createCameraViewActivityPose(
+                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+
+        Activity mockActivity = Mockito.mock(Activity.class);
+        when(mPerceptionLibrary.getActivity()).thenReturn(mockActivity);
+        when(mockActivity.getSystemService(WindowManager.class)).thenReturn(null);
+
+        PixelDimensions resolution = cameraActivityPose.getDisplayResolutionInPixels();
+
+        assertThat(resolution.width).isEqualTo(0);
+        assertThat(resolution.height).isEqualTo(0);
+    }
+
+    @Test
+    public void getDisplayResolutionInPixels_nullDisplay_returnsZeroDimensions() {
+        CameraViewActivityPoseImpl cameraActivityPose =
+                createCameraViewActivityPose(
+                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+
+        Activity mockActivity = Mockito.mock(Activity.class);
+        when(mPerceptionLibrary.getActivity()).thenReturn(mockActivity);
+        WindowManager mockWindowManager = Mockito.mock(WindowManager.class);
+        when(mockActivity.getSystemService(WindowManager.class)).thenReturn(mockWindowManager);
+        when(mockWindowManager.getDefaultDisplay()).thenReturn(null);
+
+        PixelDimensions resolution = cameraActivityPose.getDisplayResolutionInPixels();
+
+        assertThat(resolution.width).isEqualTo(0);
+        assertThat(resolution.height).isEqualTo(0);
     }
 }

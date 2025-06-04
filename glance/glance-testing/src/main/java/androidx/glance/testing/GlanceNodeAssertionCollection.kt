@@ -29,7 +29,7 @@ public class GlanceNodeAssertionCollection<R, T : GlanceNode<R>>
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(
     private val testContext: TestContext<R, T>,
-    private val selector: GlanceNodeSelector<R>
+    private val selector: GlanceNodeSelector<R>,
 ) {
     /**
      * Asserts that this collection of nodes is equal to the given [expectedCount].
@@ -48,8 +48,8 @@ constructor(
                         buildErrorReasonForCountMismatch(
                             matcherDescription = selector.description,
                             expectedCount = expectedCount,
-                            actualCount = actualCount
-                        )
+                            actualCount = actualCount,
+                        ),
                 )
             )
         }
@@ -66,9 +66,7 @@ constructor(
      * @throws AssertionError if the collection contains at least one element that does not satisfy
      *   the given matcher.
      */
-    public fun assertAll(
-        matcher: GlanceNodeMatcher<R>,
-    ): GlanceNodeAssertionCollection<R, T> {
+    public fun assertAll(matcher: GlanceNodeMatcher<R>): GlanceNodeAssertionCollection<R, T> {
         val errorMessageOnFail = "Failed to assertAll(${matcher.description})"
 
         val filteredNodes = testContext.findMatchingNodes(selector, errorMessageOnFail)
@@ -87,9 +85,7 @@ constructor(
      *   collection.
      * @throws AssertionError if not at least one matching node was found.
      */
-    public fun assertAny(
-        matcher: GlanceNodeMatcher<R>,
-    ): GlanceNodeAssertionCollection<R, T> {
+    public fun assertAny(matcher: GlanceNodeMatcher<R>): GlanceNodeAssertionCollection<R, T> {
         val errorMessageOnFail = "Failed to assertAny(${matcher.description})"
         val filteredNodes = testContext.findMatchingNodes(selector, errorMessageOnFail)
 
@@ -97,7 +93,7 @@ constructor(
             throw AssertionError(
                 buildErrorMessageWithReason(
                     errorMessageOnFail = errorMessageOnFail,
-                    reason = buildErrorReasonForAtLeastOneNodeExpected(selector.description)
+                    reason = buildErrorReasonForAtLeastOneNodeExpected(selector.description),
                 )
             )
         }
@@ -118,7 +114,7 @@ constructor(
     public operator fun get(index: Int): GlanceNodeAssertion<R, T> {
         return GlanceNodeAssertion(
             testContext = testContext,
-            selector = selector.addIndexedSelector(index)
+            selector = selector.addIndexedSelector(index),
         )
     }
 
@@ -128,7 +124,7 @@ constructor(
     public fun filter(matcher: GlanceNodeMatcher<R>): GlanceNodeAssertionCollection<R, T> {
         return GlanceNodeAssertionCollection(
             testContext,
-            selector.addMatcherSelector(selectorName = "filter", matcher = matcher)
+            selector.addMatcherSelector(selectorName = "filter", matcher = matcher),
         )
     }
 }

@@ -62,7 +62,7 @@ internal expect fun CompositeKeyHashCode(initial: Int): CompositeKeyHashCode
  */
 internal expect fun CompositeKeyHashCode.compoundWith(
     segment: Int,
-    shift: Int
+    shift: Int,
 ): CompositeKeyHashCode
 
 /**
@@ -79,7 +79,7 @@ internal expect fun CompositeKeyHashCode.compoundWith(
  */
 internal expect fun CompositeKeyHashCode.unCompoundWith(
     segment: Int,
-    shift: Int
+    shift: Int,
 ): CompositeKeyHashCode
 
 /**
@@ -100,7 +100,7 @@ internal expect fun CompositeKeyHashCode.unCompoundWith(
  */
 internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
     segment: CompositeKeyHashCode,
-    shift: Int
+    shift: Int,
 ): CompositeKeyHashCode
 
 /**
@@ -121,7 +121,7 @@ internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
  */
 internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
     segment: Int,
-    shift: Int
+    shift: Int,
 ): CompositeKeyHashCode
 
 /**

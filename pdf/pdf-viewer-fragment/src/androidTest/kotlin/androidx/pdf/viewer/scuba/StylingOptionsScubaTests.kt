@@ -22,6 +22,7 @@ import androidx.annotation.RequiresExtension
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.Lifecycle
+import androidx.pdf.util.Preconditions
 import androidx.pdf.viewer.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.viewer.TestPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfStylingOptions
@@ -29,6 +30,7 @@ import androidx.pdf.viewer.fragment.R
 import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE
 import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT
 import androidx.pdf.viewer.scuba.ScubaConstants.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.swipeDown
@@ -71,7 +73,7 @@ class StylingOptionsScubaTests {
                 fragmentArgs = styledFragment.arguments,
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             ) {
                 styledFragment
             }
@@ -80,6 +82,7 @@ class StylingOptionsScubaTests {
             // Register idling resource
             IdlingRegistry.getInstance()
                 .register(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance().register(fragment.pdfPagesFullyRenderedIdlingResource)
         }
     }
 
@@ -89,6 +92,7 @@ class StylingOptionsScubaTests {
             // Un-register idling resource
             IdlingRegistry.getInstance()
                 .unregister(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance().unregister(fragment.pdfPagesFullyRenderedIdlingResource)
         }
         scenario.close()
     }
@@ -107,6 +111,15 @@ class StylingOptionsScubaTests {
 
         onView(withId(R.id.pdfLoadingProgressBar))
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+
+        scenario.onFragment {
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}",
+            )
+            it.setIsAnnotationIntentResolvable(true)
+            it.isToolboxVisible = true
+        }
 
         onView(withId(R.id.pdfView)).perform(swipeUp())
         onView(withId(R.id.pdfView)).perform(swipeDown())
@@ -128,8 +141,15 @@ class StylingOptionsScubaTests {
         onView(withId(R.id.pdfLoadingProgressBar))
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
 
-        onView(withId(R.id.pdfView)).perform(swipeUp())
-        onView(withId(R.id.pdfView)).perform(swipeDown())
+        scenario.onFragment {
+            // Indicate that the upcoming scroll might trigger new tiles rendering.
+            // This makes the relevant IdlingResource busy, ensuring Espresso waits for full
+            // rendering.
+            it.pdfPagesFullyRenderedIdlingResource.startPolling()
+            it.getPdfViewInstance().scrollToPage(0)
+        }
+
+        Espresso.onIdle()
         assertScreenshot(screenshotRule, FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE)
     }
 }

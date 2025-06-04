@@ -22,13 +22,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.scene
 import kotlin.math.cos
 import kotlin.math.sin
@@ -51,7 +51,7 @@ class StandaloneActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panelContentView,
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )

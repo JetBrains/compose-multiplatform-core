@@ -27,7 +27,7 @@ import androidx.privacysandbox.ui.core.SharedUiAdapter
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 internal class LocalSharedUiSessionClient(
     private val clientVersion: Int,
-    private val sessionClient: SharedUiAdapter.SessionClient
+    private val sessionClient: SharedUiAdapter.SessionClient,
 ) : SharedUiAdapter.SessionClient {
     override fun onSessionOpened(session: SharedUiAdapter.Session) {
         sessionClient.onSessionOpened(session)

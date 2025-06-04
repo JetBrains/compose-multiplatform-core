@@ -132,7 +132,7 @@ class TextFieldSelectionManagerTest {
                     density = density,
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = mock(),
-                    constraints = Constraints()
+                    constraints = Constraints(),
                 )
             )
 
@@ -171,7 +171,7 @@ class TextFieldSelectionManagerTest {
             LegacyTextFieldState(
                 textDelegate = textDelegate,
                 recomposeScope = mock(),
-                keyboardController = null
+                keyboardController = null,
             )
         state.layoutResult = layoutResultProxy
         manager.state = state
@@ -338,7 +338,7 @@ class TextFieldSelectionManagerTest {
         manager.visualTransformation = VisualTransformation { original ->
             TransformedText(
                 AnnotatedString(original.indices.map { original[it] }.joinToString("*")),
-                offsetMapping
+                offsetMapping,
             )
         }
 
@@ -526,7 +526,7 @@ class TextFieldSelectionManagerTest {
             manager.value =
                 TextFieldValue(
                     text = text + text,
-                    selection = TextRange("Hello".length, text.length)
+                    selection = TextRange("Hello".length, text.length),
                 )
 
             manager.cut()
@@ -597,7 +597,7 @@ class TextFieldSelectionManagerTest {
             manager.value =
                 TextFieldValue(
                     text = text + text,
-                    selection = TextRange("Hello".length, text.length)
+                    selection = TextRange("Hello".length, text.length),
                 )
 
             manager.showSelectionToolbar()
@@ -621,7 +621,7 @@ class TextFieldSelectionManagerTest {
                 manager.value =
                     TextFieldValue(
                         text = text + text,
-                        selection = TextRange("Hello".length, text.length)
+                        selection = TextRange("Hello".length, text.length),
                     )
 
                 manager.showSelectionToolbar()
@@ -715,7 +715,7 @@ class TextFieldSelectionManagerTest {
             manager.value =
                 TextFieldValue(
                     text = text + text,
-                    selection = TextRange("Hello".length, text.length)
+                    selection = TextRange("Hello".length, text.length),
                 )
 
             manager.showSelectionToolbar()
@@ -739,7 +739,7 @@ class TextFieldSelectionManagerTest {
                 manager.value =
                     TextFieldValue(
                         text = text + text,
-                        selection = TextRange("Hello".length, text.length)
+                        selection = TextRange("Hello".length, text.length),
                     )
 
                 manager.showSelectionToolbar()

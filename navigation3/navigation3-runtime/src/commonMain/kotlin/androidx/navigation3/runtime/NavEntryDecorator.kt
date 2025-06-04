@@ -23,7 +23,7 @@ import kotlin.jvm.JvmSuppressWildcards
 public class NavEntryDecorator<T : Any>
 internal constructor(
     internal val onPop: (key: Any) -> Unit,
-    internal val navEntryDecorator: @Composable (entry: NavEntry<T>) -> Unit
+    internal val navEntryDecorator: @Composable (entry: NavEntry<T>) -> Unit,
 )
 
 /**
@@ -39,7 +39,7 @@ internal constructor(
  */
 public fun <T : Any> navEntryDecorator(
     onPop: (key: Any) -> Unit = {},
-    decorator: @Composable (entry: NavEntry<T>) -> Unit
+    decorator: @Composable (entry: NavEntry<T>) -> Unit,
 ): NavEntryDecorator<T> = NavEntryDecorator(onPop, decorator)
 
 /**
@@ -49,7 +49,7 @@ public fun <T : Any> navEntryDecorator(
 @Composable
 public fun <T : Any> DecorateNavEntry(
     entry: NavEntry<T>,
-    entryDecorators: List<@JvmSuppressWildcards NavEntryDecorator<*>>
+    entryDecorators: List<@JvmSuppressWildcards NavEntryDecorator<*>>,
 ) {
     @Suppress("UNCHECKED_CAST")
     (entryDecorators as List<@JvmSuppressWildcards NavEntryDecorator<T>>)

@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             .replace(
                 R.id.pdf_interaction_fragment_container_view,
                 fragment,
-                PDF_INTERACTION_FRAGMENT_TAG
+                PDF_INTERACTION_FRAGMENT_TAG,
             )
             .addToBackStack(null)
             .commitAllowingStateLoss()
@@ -186,7 +186,7 @@ class MainActivity : AppCompatActivity() {
                 view.paddingLeft,
                 systemBarsInsets.top,
                 view.paddingRight,
-                systemBarsInsets.bottom
+                systemBarsInsets.bottom,
             )
 
             WindowInsetsCompat.CONSUMED

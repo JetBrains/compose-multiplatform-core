@@ -26,6 +26,7 @@ import androidx.build.checkapi.CompilationInputs
 import androidx.build.checkapi.MultiplatformCompilationInputs
 import androidx.build.checkapi.SourceSetInputs
 import androidx.build.checkapi.getRequiredCompatibilityApiLocation
+import androidx.build.shouldGenerateBytecodeApis
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
 import org.gradle.api.Project
@@ -45,7 +46,7 @@ internal object MetalavaTasks {
         androidManifest: Provider<RegularFile>?,
         baselinesApiLocation: ApiBaselinesLocation,
         builtApiLocation: ApiLocation,
-        outputApiLocations: List<ApiLocation>
+        outputApiLocations: List<ApiLocation>,
     ) {
         val metalavaClasspath = project.getMetalavaClasspath()
         val version = project.version()
@@ -76,6 +77,8 @@ internal object MetalavaTasks {
                 // If we will be updating the api lint baselines, then we should do that before
                 // using it to validate the generated api
                 task.mustRunAfter("updateApiLintBaseline")
+
+                task.includeBytecodeApis.set(project.shouldGenerateBytecodeApis())
             }
         project.registerVersionMetadataComponent(generateApi)
 
@@ -120,7 +123,7 @@ internal object MetalavaTasks {
         val updateApiLintBaseline =
             project.tasks.register(
                 "updateApiLintBaseline",
-                UpdateApiLintBaselineTask::class.java
+                UpdateApiLintBaselineTask::class.java,
             ) { task ->
                 task.metalavaClasspath.from(metalavaClasspath)
                 task.baselines.set(baselinesApiLocation)
@@ -203,7 +206,7 @@ internal object MetalavaTasks {
             regenerateOldApis,
             updateApi,
             regenerateApis,
-            generateApi
+            generateApi,
         )
     }
 
@@ -228,7 +231,7 @@ internal object MetalavaTasks {
                         sourceSetName = "main",
                         dependsOnSourceSets = emptyList(),
                         sourcePaths = inputs.sourcePaths,
-                        dependencyClasspath = inputs.dependencyClasspath
+                        dependencyClasspath = inputs.dependencyClasspath,
                     )
                 )
             )

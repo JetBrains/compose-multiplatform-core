@@ -110,7 +110,7 @@ public suspend fun <Value : Any> queryDatabase(
     params: LoadParams<Int>,
     sourceQuery: RoomRawQuery,
     itemCount: Int,
-    convertRows: suspend (RoomRawQuery, Int) -> List<Value>
+    convertRows: suspend (RoomRawQuery, Int) -> List<Value>,
 ): LoadResult<Int, Value> {
     val key = params.key ?: 0
     val limit = getLimit(params, key)
@@ -124,7 +124,7 @@ public suspend fun <Value : Any> queryDatabase(
     val limitOffsetQuery =
         RoomRawQuery(
             sql = "SELECT * FROM ( ${sourceQuery.sql} ) LIMIT $limit OFFSET $offset",
-            onBindStatement = sourceQuery.getBindingFunction()
+            onBindStatement = sourceQuery.getBindingFunction(),
         )
 
     val data: List<Value> = convertRows(limitOffsetQuery, rowsCount)
@@ -141,7 +141,7 @@ public suspend fun <Value : Any> queryDatabase(
         prevKey = prevKey,
         nextKey = nextKey,
         itemsBefore = offset,
-        itemsAfter = maxOf(0, itemCount - nextPosToLoad)
+        itemsAfter = maxOf(0, itemCount - nextPosToLoad),
     )
 }
 

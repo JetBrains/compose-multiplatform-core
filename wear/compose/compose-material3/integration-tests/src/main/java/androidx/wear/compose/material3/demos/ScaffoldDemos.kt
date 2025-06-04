@@ -76,11 +76,7 @@ fun RandomComponent(page: Int) {
         0 -> Button(onClick = {}) { Text("Button") }
         1 ->
             RadioButton(
-                label = {
-                    Text(
-                        "Radio Button",
-                    )
-                },
+                label = { Text("Radio Button") },
                 selected = true,
                 onSelect = {},
                 enabled = true,
@@ -91,7 +87,7 @@ fun RandomComponent(page: Int) {
                 enabled = true,
                 valueRange = 1f..10f,
                 steps = 10,
-                onValueChange = {}
+                onValueChange = {},
             )
     }
 }
@@ -103,19 +99,19 @@ fun HorizontalPagerScaffoldFadeOutIndicatorDemo(navigateBack: () -> Unit) {
 
         HorizontalPagerScaffold(
             pagerState = pagerState,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         ) {
             HorizontalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     ScreenScaffold {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text("Page $page")
                             Spacer(modifier = Modifier.height(16.dp))
@@ -139,19 +135,19 @@ fun VerticalPagerScaffoldFadeOutIndicatorDemo() {
 
         VerticalPagerScaffold(
             pagerState = pagerState,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         ) {
             VerticalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     ScreenScaffold {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text("Page $page")
                             Spacer(modifier = Modifier.height(16.dp))
@@ -186,12 +182,7 @@ fun ScaffoldLoadingSLCEdgeButtonSample() {
             contentPadding = contentPadding,
         ) {
             if (loaded.value) {
-                items(10) {
-                    Button(
-                        onClick = {},
-                        label = { Text("Item ${it + 1}") },
-                    )
-                }
+                items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             } else {
                 item { Text("Loading...") }
             }

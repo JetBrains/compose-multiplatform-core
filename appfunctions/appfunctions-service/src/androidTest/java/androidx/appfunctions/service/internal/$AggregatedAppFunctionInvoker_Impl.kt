@@ -38,7 +38,7 @@ class `$AggregatedAppFunctionInvoker_Impl` : AggregatedAppFunctionInvoker() {
         override suspend fun unsafeInvoke(
             appFunctionContext: AppFunctionContext,
             functionIdentifier: String,
-            parameters: Map<String, Any?>
+            parameters: Map<String, Any?>,
         ): Any? {
             return when (functionIdentifier) {
                 AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_EXECUTION_SUCCEED -> {

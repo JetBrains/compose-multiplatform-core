@@ -56,6 +56,7 @@ public class WebViewFeature {
     /**
      *
      */
+    @SuppressLint("UnsafeOptInUsageError") // Don't mark WebViewSupportFeature as experimental.
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @StringDef(value = {
             VISUAL_STATE_CALLBACK,
@@ -124,6 +125,7 @@ public class WebViewFeature {
             CACHE_PROVIDER,
             PAYMENT_REQUEST,
             WEBVIEW_BUILDER,
+            WARM_UP_RENDERER_PROCESS,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -380,7 +382,7 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebMessagePortCompat#setWebMessageCallback(
-     *WebMessagePortCompat.WebMessageCallbackCompat)}, and
+     * WebMessagePortCompat.WebMessageCallbackCompat)}, and
      * {@link WebMessagePortCompat#setWebMessageCallback(Handler,
      * WebMessagePortCompat.WebMessageCallbackCompat)}.
      */
@@ -637,7 +639,7 @@ public class WebViewFeature {
      * {@link Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
      */
     @Profile.ExperimentalUrlPrefetch
-    public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V4";
+    public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V5";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -725,6 +727,23 @@ public class WebViewFeature {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link WebResourceResponseCompat#setCookies(List)}, as well as
+     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)} and
+     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(boolean)}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers {@link Profile#warmUpRendererProcess}.
+     */
+    @Profile.ExperimentalWarmUpRendererProcess
+    public static final String WARM_UP_RENDERER_PROCESS = "WARM_UP_RENDERER_PROCESS";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

@@ -48,7 +48,7 @@ public actual suspend fun <R> performSuspending(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> R
+    block: (SQLiteConnection) -> R,
 ): R =
     db.compatCoroutineExecute(inTransaction) {
         db.internalPerform(isReadOnly, inTransaction) { connection ->
@@ -63,7 +63,7 @@ public fun <R> performBlocking(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> R
+    block: (SQLiteConnection) -> R,
 ): R {
     db.assertNotMainThread()
     db.assertNotSuspendingTransaction()
@@ -91,7 +91,7 @@ public fun <R> performBlocking(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public actual suspend fun <R> performInTransactionSuspending(
     db: RoomDatabase,
-    block: suspend () -> R
+    block: suspend () -> R,
 ): R =
     if (db.inCompatibilityMode()) {
         db.withTransactionContext {
@@ -110,7 +110,7 @@ public actual suspend fun <R> performInTransactionSuspending(
  */
 private suspend inline fun <R> RoomDatabase.compatCoroutineExecute(
     inTransaction: Boolean,
-    crossinline block: suspend () -> R
+    crossinline block: suspend () -> R,
 ): R {
     if (inCompatibilityMode() && isOpenInternal && inTransaction()) {
         return block.invoke()
@@ -178,7 +178,7 @@ public fun query(
     db: RoomDatabase,
     sqLiteQuery: SupportSQLiteQuery,
     maybeCopy: Boolean,
-    signal: CancellationSignal?
+    signal: CancellationSignal?,
 ): Cursor {
     val cursor = db.query(sqLiteQuery, signal)
     if (maybeCopy && cursor is AbstractWindowedCursor) {

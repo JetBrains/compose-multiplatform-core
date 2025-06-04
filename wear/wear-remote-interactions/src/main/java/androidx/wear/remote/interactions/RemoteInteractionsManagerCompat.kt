@@ -46,12 +46,12 @@ internal open class RemoteInteractionsManagerCompat(context: Context) : IRemoteI
 
     override fun registerRemoteActivityHelperStatusListener(
         executor: Executor,
-        listener: Consumer<Int>
+        listener: Consumer<Int>,
     ) {
         if (isAvailabilityStatusApiSupported) {
             remoteInteractionsManager!!.registerRemoteActivityHelperStatusListener(
                 executor,
-                listener
+                listener,
             )
         } else {
             throw UnsupportedOperationException("Should not call wear sdk when not supported.")
@@ -70,14 +70,14 @@ internal open class RemoteInteractionsManagerCompat(context: Context) : IRemoteI
         dataUri: Uri,
         additionalCategories: List<String>,
         executor: Executor,
-        outcomeReceiver: OutcomeReceiver<Void?, Throwable>
+        outcomeReceiver: OutcomeReceiver<Void?, Throwable>,
     ) {
         if (isWearSdkApiStartRemoteActivitySupported) {
             remoteInteractionsManager!!.startRemoteActivity(
                 dataUri,
                 additionalCategories,
                 executor,
-                outcomeReceiver
+                outcomeReceiver,
             )
         } else {
             throw UnsupportedOperationException("Should not call wear sdk when not supported.")

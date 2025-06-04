@@ -57,7 +57,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class VideoEncoderConfigVideoProfileResolverTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     companion object {
         @JvmStatic
@@ -65,7 +65,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
 
         private const val FRAME_RATE_30 = 30
@@ -74,9 +74,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val defaultVideoSpec = VideoSpec.builder().build()
@@ -93,7 +91,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()
@@ -135,7 +133,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             videoProfile.resolution,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
 
@@ -180,7 +178,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             increasedSurfaceSize,
                             profile,
                             dynamicRange,
-                            profileFrameRate
+                            profileFrameRate,
                         )
                         .get()
                         .bitrate
@@ -195,7 +193,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             decreasedSurfaceSize,
                             profile,
                             dynamicRange,
-                            profileFrameRate
+                            profileFrameRate,
                         )
                         .get()
                         .bitrate
@@ -219,7 +217,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .bitrate
@@ -241,7 +239,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .bitrate
@@ -256,7 +254,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .bitrate
@@ -280,7 +278,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .encodeFrameRate
@@ -306,7 +304,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        expectedCaptureFrameRateRange
+                        expectedCaptureFrameRateRange,
                     )
                     .get()
                     .encodeFrameRate
@@ -334,7 +332,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        operatingRange
+                        operatingRange,
                     )
                     .get()
                     .bitrate
@@ -365,7 +363,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
                         .profile
@@ -395,7 +393,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
                         .dataSpace

@@ -126,14 +126,14 @@ fun rememberPaneExpansionState(
     anchors: List<PaneExpansionAnchor> = emptyList(),
     initialAnchoredIndex: Int = -1,
     anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior()
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
 ): PaneExpansionState =
     rememberPaneExpansionState(
         keyProvider.paneExpansionStateKey,
         anchors,
         initialAnchoredIndex,
         anchoringAnimationSpec,
-        flingBehavior
+        flingBehavior,
     )
 
 /**
@@ -160,7 +160,7 @@ fun rememberPaneExpansionState(
     anchors: List<PaneExpansionAnchor> = emptyList(),
     initialAnchoredIndex: Int = -1,
     anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior()
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
 ): PaneExpansionState {
     val dataMap = rememberSaveable(saver = PaneExpansionStateSaver()) { mutableStateMapOf() }
     val initialAnchor =
@@ -179,7 +179,7 @@ fun rememberPaneExpansionState(
                 ?: PaneExpansionStateData(currentAnchor = initialAnchor).also { dataMap[key] = it },
             anchors,
             anchoringAnimationSpec,
-            flingBehavior
+            flingBehavior,
         )
     }
     return expansionState
@@ -200,7 +200,7 @@ class PaneExpansionState
 internal constructor(
     // TODO(conradchen): Handle state change during dragging and settling
     data: PaneExpansionStateData = PaneExpansionStateData(),
-    anchors: List<PaneExpansionAnchor> = emptyList()
+    anchors: List<PaneExpansionAnchor> = emptyList(),
 ) {
     internal val firstPaneWidth
         get() =
@@ -316,7 +316,7 @@ internal constructor(
 
             override suspend fun drag(
                 dragPriority: MutatePriority,
-                block: suspend DragScope.() -> Unit
+                block: suspend DragScope.() -> Unit,
             ) = coroutineScope {
                 isDragging = true
                 dragMutex.mutateWith(dragScope, dragPriority, block)
@@ -394,7 +394,7 @@ internal constructor(
         data: PaneExpansionStateData,
         anchors: List<PaneExpansionAnchor>,
         anchoringAnimationSpec: FiniteAnimationSpec<Float>,
-        flingBehavior: FlingBehavior
+        flingBehavior: FlingBehavior,
     ) {
         dragMutex.mutate(MutatePriority.PreventUserInput) {
             this.data = data
@@ -405,7 +405,7 @@ internal constructor(
                         // When maxExpansionWidth is updated, the anchor positions will be
                         // recalculated.
                         maxExpansionWidth,
-                        it
+                        it,
                     )
             }
             if (!anchors.contains(currentAnchor)) {
@@ -459,7 +459,7 @@ internal constructor(
                 val anchorPosition =
                     measuredAnchorPositions.getPositionOfTheClosestAnchor(
                         currentMeasuredDraggingOffset,
-                        leftVelocity
+                        leftVelocity,
                     )
                 currentAnchor = anchors[anchorPosition.index]
                 animateToInternal(anchorPosition.position, leftVelocity)
@@ -488,7 +488,7 @@ internal constructor(
 
     private fun IndexedAnchorPositionList.getPositionOfTheClosestAnchor(
         currentPosition: Int,
-        velocity: Float
+        velocity: Float,
     ): IndexedAnchorPosition =
         minBy(
             when {
@@ -537,7 +537,7 @@ internal class PaneExpansionStateData(
     firstPaneWidth: Int = Unspecified,
     firstPaneProportion: Float = Float.NaN,
     currentDraggingOffset: Int = Unspecified,
-    currentAnchor: PaneExpansionAnchor? = null
+    currentAnchor: PaneExpansionAnchor? = null,
 ) {
     var firstPaneWidthState by mutableIntStateOf(firstPaneWidth)
     var firstPaneProportionState by mutableFloatStateOf(firstPaneProportion)
@@ -604,14 +604,14 @@ sealed class PaneExpansionAnchor {
             get() =
                 getString(
                     Strings.defaultPaneExpansionProportionAnchorDescription,
-                    (proportion * 100).toInt()
+                    (proportion * 100).toInt(),
                 )
 
         override val CompositionLocalConsumerModifierNode.description: String
             get() =
                 getString(
                     Strings.defaultPaneExpansionProportionAnchorDescription,
-                    (proportion * 100).toInt()
+                    (proportion * 100).toInt(),
                 )
 
         override fun positionIn(totalSizePx: Int, density: Density) =
@@ -680,14 +680,14 @@ sealed class PaneExpansionAnchor {
                 get() =
                     getString(
                         Strings.defaultPaneExpansionStartOffsetAnchorDescription,
-                        offset.value.toInt()
+                        offset.value.toInt(),
                     )
 
             override val CompositionLocalConsumerModifierNode.description
                 get() =
                     getString(
                         Strings.defaultPaneExpansionStartOffsetAnchorDescription,
-                        offset.value.toInt()
+                        offset.value.toInt(),
                     )
 
             override fun positionIn(totalSizePx: Int, density: Density) =
@@ -700,14 +700,14 @@ sealed class PaneExpansionAnchor {
                 get() =
                     getString(
                         Strings.defaultPaneExpansionEndOffsetAnchorDescription,
-                        offset.value.toInt()
+                        offset.value.toInt(),
                     )
 
             override val CompositionLocalConsumerModifierNode.description
                 get() =
                     getString(
                         Strings.defaultPaneExpansionEndOffsetAnchorDescription,
-                        offset.value.toInt()
+                        offset.value.toInt(),
                     )
 
             override fun positionIn(totalSizePx: Int, density: Density) =
@@ -751,7 +751,7 @@ sealed class PaneExpansionAnchor {
 @Composable
 internal fun rememberDefaultPaneExpansionState(
     keyProvider: () -> PaneExpansionStateKeyProvider,
-    mutable: Boolean
+    mutable: Boolean,
 ): PaneExpansionState =
     if (mutable) {
         rememberPaneExpansionState(keyProvider())
@@ -773,7 +773,7 @@ internal fun PaneExpansionStateSaver():
             val map = mutableMapOf<PaneExpansionStateKey, PaneExpansionStateData>()
             it.fastForEach { with(dataSaver) { restore(it) }!!.apply { map[key] = value } }
             map
-        }
+        },
     )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -803,7 +803,7 @@ private fun PaneExpansionStateDataSaver():
                         is PaneExpansionAnchor.Offset -> this.offset.value
                         else -> null
                     }
-                }
+                },
             )
         },
         restore = {
@@ -832,10 +832,10 @@ private fun PaneExpansionStateDataSaver():
                         firstPaneWidth = it[2] as Int,
                         firstPaneProportion = it[3] as Float,
                         currentDraggingOffset = it[4] as Int,
-                        currentAnchor = currentAnchor
+                        currentAnchor = currentAnchor,
                     )
             }
-        }
+        },
     )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -853,7 +853,7 @@ private const val TwoPaneExpansionStateKey = 1
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private fun List<PaneExpansionAnchor>.toPositions(
     maxExpansionWidth: Int,
-    density: Density
+    density: Density,
 ): IndexedAnchorPositionList {
     val anchors = IndexedAnchorPositionList(size)
     @Suppress("ListIterator") // Not necessarily a random-accessible list

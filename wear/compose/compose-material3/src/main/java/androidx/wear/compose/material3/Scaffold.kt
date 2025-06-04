@@ -87,7 +87,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     fun addScreen(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
         contentItems.add(ScreenContent(key, mutableStateOf(scrollInfoProvider), timeText))
     }
@@ -95,7 +95,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     fun updateIfNeeded(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
         contentItems
             .find { it.key == key }
@@ -150,7 +150,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
 internal fun AnimatedIndicator(
     isVisible: () -> Boolean,
     animationSpec: AnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
-    content: @Composable (BoxScope.() -> Unit)? = null
+    content: @Composable (BoxScope.() -> Unit)? = null,
 ) {
     // Skip if no indicator provided
     content?.let { pageIndicator ->
@@ -168,7 +168,7 @@ internal fun AnimatedIndicator(
                             animate(
                                 alphaValue.floatValue,
                                 targetValue,
-                                animationSpec = animationSpec
+                                animationSpec = animationSpec,
                             ) { value, _ ->
                                 alphaValue.floatValue = value
                             }
@@ -177,7 +177,7 @@ internal fun AnimatedIndicator(
             }
             Box(
                 modifier = Modifier.fillMaxSize().graphicsLayer { alpha = alphaValue.floatValue },
-                content = pageIndicator
+                content = pageIndicator,
             )
         }
     }

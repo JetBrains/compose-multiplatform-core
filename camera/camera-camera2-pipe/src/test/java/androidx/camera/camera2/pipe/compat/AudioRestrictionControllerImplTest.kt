@@ -44,7 +44,7 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph1,
-            AUDIO_RESTRICTION_VIBRATION
+            AUDIO_RESTRICTION_VIBRATION,
         )
 
         verify(listener1, times(1)).onCameraAudioRestrictionUpdated(AUDIO_RESTRICTION_VIBRATION)
@@ -52,7 +52,7 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph2,
-            AUDIO_RESTRICTION_VIBRATION_SOUND
+            AUDIO_RESTRICTION_VIBRATION_SOUND,
         )
 
         verify(listener1, times(1))
@@ -69,7 +69,7 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph1,
-            AUDIO_RESTRICTION_VIBRATION
+            AUDIO_RESTRICTION_VIBRATION,
         )
 
         verify(listener1, times(1)).onCameraAudioRestrictionUpdated(AUDIO_RESTRICTION_VIBRATION)
@@ -90,11 +90,11 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph1,
-            AUDIO_RESTRICTION_VIBRATION_SOUND
+            AUDIO_RESTRICTION_VIBRATION_SOUND,
         )
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph2,
-            AUDIO_RESTRICTION_VIBRATION
+            AUDIO_RESTRICTION_VIBRATION,
         )
 
         // If the mode hasn't changed, there shouldn't be a second update call
@@ -110,7 +110,7 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph1,
-            AUDIO_RESTRICTION_VIBRATION_SOUND
+            AUDIO_RESTRICTION_VIBRATION_SOUND,
         )
         audioRestrictionController.globalAudioRestrictionMode = AUDIO_RESTRICTION_VIBRATION
 
@@ -127,11 +127,11 @@ class AudioRestrictionControllerImplTest {
 
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph1,
-            AUDIO_RESTRICTION_VIBRATION_SOUND
+            AUDIO_RESTRICTION_VIBRATION_SOUND,
         )
         audioRestrictionController.updateCameraGraphAudioRestrictionMode(
             cameraGraph2,
-            AUDIO_RESTRICTION_VIBRATION
+            AUDIO_RESTRICTION_VIBRATION,
         )
 
         verify(listener1, times(1))

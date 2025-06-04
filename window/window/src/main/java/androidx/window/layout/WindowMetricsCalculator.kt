@@ -149,7 +149,7 @@ interface WindowMetricsCalculator {
         @RequiresApi(Build.VERSION_CODES.R)
         internal fun translateWindowMetrics(
             windowMetrics: AndroidWindowMetrics,
-            density: Float
+            density: Float,
         ): WindowMetrics {
             return WindowMetricsCompatHelper.getInstance()
                 .translateWindowMetrics(windowMetrics, density)
@@ -158,7 +158,7 @@ interface WindowMetricsCalculator {
         internal fun fromDisplayMetrics(displayMetrics: DisplayMetrics): WindowMetrics {
             return WindowMetrics(
                 Bounds(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels),
-                displayMetrics.density
+                displayMetrics.density,
             )
         }
     }

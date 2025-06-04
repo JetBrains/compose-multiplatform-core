@@ -36,7 +36,7 @@ actual constructor(
     private val database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
     viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    vararg tableNames: String
+    vararg tableNames: String,
 ) {
     private val implementation =
         TriggerBasedInvalidationTracker(
@@ -45,7 +45,7 @@ actual constructor(
             viewTables = viewTables,
             tableNames = tableNames,
             useTempTable = true,
-            onInvalidatedTablesIds = {}
+            onInvalidatedTablesIds = {},
         )
 
     /** Internal function to initialize table tracking. Invoked by generated code. */
@@ -81,7 +81,7 @@ actual constructor(
     @JvmOverloads
     public actual fun createFlow(
         vararg tables: String,
-        emitInitialState: Boolean
+        emitInitialState: Boolean,
     ): Flow<Set<String>> {
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         return implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)

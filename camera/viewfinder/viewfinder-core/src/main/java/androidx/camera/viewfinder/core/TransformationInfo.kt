@@ -93,7 +93,7 @@ constructor(
      * If not set, this value will default to [CROP_NONE], which is equivalent to an offset of the
      * height of the surface.
      */
-    val cropRectBottom: Float = CROP_NONE
+    val cropRectBottom: Float = CROP_NONE,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

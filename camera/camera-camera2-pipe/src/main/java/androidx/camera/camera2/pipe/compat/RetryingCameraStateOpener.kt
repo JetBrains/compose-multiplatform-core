@@ -89,7 +89,7 @@ constructor(private val cameraManager: Provider<CameraManager>, private val thre
     CameraOpener {
 
     @SuppressLint(
-        "MissingPermission", // Permissions are checked by calling methods.
+        "MissingPermission" // Permissions are checked by calling methods.
     )
     override fun openCamera(cameraId: CameraId, stateCallback: StateCallback) {
         val instance = cameraManager.get()
@@ -99,7 +99,7 @@ constructor(private val cameraManager: Provider<CameraManager>, private val thre
                     instance,
                     cameraId.value,
                     threads.camera2Executor,
-                    stateCallback
+                    stateCallback,
                 )
             } else {
                 instance.openCamera(cameraId.value, stateCallback, threads.camera2Handler)
@@ -144,7 +144,7 @@ constructor(private val cameraManager: Provider<CameraManager>, private val thre
                 Api28Compat.registerAvailabilityCallback(
                     manager,
                     threads.camera2Executor,
-                    availabilityCallback
+                    availabilityCallback,
                 )
             } else {
                 manager.registerAvailabilityCallback(availabilityCallback, threads.camera2Handler)
@@ -185,14 +185,14 @@ constructor(
     private val camera2Quirks: Camera2Quirks,
     private val timeSource: TimeSource,
     private val cameraInteropConfig: CameraPipe.CameraInteropConfig?,
-    private val threads: Threads
+    private val threads: Threads,
 ) {
     internal suspend fun tryOpenCamera(
         cameraId: CameraId,
         attempts: Int,
         requestTimestamp: TimestampNs,
         camera2DeviceCloser: Camera2DeviceCloser,
-        audioRestrictionController: AudioRestrictionController
+        audioRestrictionController: AudioRestrictionController,
     ): OpenCameraResult {
         val metadata = camera2MetadataProvider.getCameraMetadata(cameraId)
         val cameraState =
@@ -208,9 +208,7 @@ constructor(
                 threads,
                 audioRestrictionController,
                 cameraInteropConfig?.cameraDeviceStateCallback,
-                cameraInteropConfig?.cameraSessionStateCallback,
-                /** interopExtensionSessionStateCallback= */
-                null
+                cameraInteropConfig?.cameraCaptureSessionListener,
             )
 
         try {
@@ -271,7 +269,7 @@ constructor(
                     attempts,
                     requestTimestamp,
                     camera2DeviceCloser,
-                    audioRestrictionController
+                    audioRestrictionController,
                 )
             val elapsed = Timestamps.now(timeSource) - requestTimestamp
             with(result) {
@@ -299,7 +297,7 @@ constructor(
                         elapsed,
                         devicePolicyManager.camerasDisabled,
                         isForeground,
-                        cameraInteropConfig?.cameraOpenRetryMaxTimeoutNs
+                        cameraInteropConfig?.cameraOpenRetryMaxTimeoutNs,
                     )
                 // Always notify if the decision is to not retry the camera open, otherwise allow
                 // 1 open call to happen silently without generating an error, and notify about each
@@ -324,8 +322,8 @@ constructor(
                         timeoutMillis =
                             getRetryDelayMs(
                                 elapsed,
-                                shouldActivateActiveResume(isForeground, errorCode)
-                            )
+                                shouldActivateActiveResume(isForeground, errorCode),
+                            ),
                     )
                 ) {
                     Log.debug { "Timeout expired, retrying camera open for camera $cameraId" }
@@ -364,7 +362,7 @@ constructor(
             elapsedNs: DurationNs,
             camerasDisabledByDevicePolicy: Boolean,
             isForeground: Boolean = true,
-            cameraOpenRetryMaxTimeoutNs: DurationNs? = null
+            cameraOpenRetryMaxTimeoutNs: DurationNs? = null,
         ): Boolean {
             val shouldActiveResume = shouldActivateActiveResume(isForeground, errorCode)
             if (shouldActiveResume) Log.debug { "shouldRetry: Active resume mode is activated" }
@@ -456,7 +454,7 @@ constructor(
 
         internal fun shouldActivateActiveResume(
             isForeground: Boolean,
-            errorCode: CameraError
+            errorCode: CameraError,
         ): Boolean =
             isForeground &&
                 Build.VERSION.SDK_INT in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2) &&
@@ -466,7 +464,7 @@ constructor(
 
         internal fun getRetryTimeoutNs(
             activeResumeActivated: Boolean,
-            cameraOpenRetryMaxTimeoutNs: DurationNs? = null
+            cameraOpenRetryMaxTimeoutNs: DurationNs? = null,
         ) =
             if (!activeResumeActivated) {
                 min(defaultCameraRetryTimeoutNs, cameraOpenRetryMaxTimeoutNs)

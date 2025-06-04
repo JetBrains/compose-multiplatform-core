@@ -82,7 +82,7 @@ internal class GraphProcessorTest {
             CameraGraphId.nextId(),
             FakeGraphConfigs.graphConfig,
             graphListener3A,
-            arrayListOf(globalListener)
+            arrayListOf(globalListener),
         )
 
     @After

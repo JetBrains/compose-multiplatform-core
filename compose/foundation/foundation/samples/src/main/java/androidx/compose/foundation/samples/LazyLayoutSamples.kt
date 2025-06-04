@@ -16,16 +16,17 @@
 
 package androidx.compose.foundation.samples
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.annotation.Sampled
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -36,77 +37,128 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 
-private val Items = (0..100).toList().map { it.toString() }
-
-/**
- * In this example, the lazy layout simply lays out content based on its visibility on the screen.
- */
-@Composable
+@Sampled
 @Preview
-fun LazyLayoutDisplayVisibleItemsOnlySample() {
-    BasicNonScrollableLazyLayout(
-        modifier = Modifier.size(500.dp),
-        orientation = Orientation.Vertical,
-        items = Items
-    ) { item, index ->
-        Box(
-            modifier =
-                Modifier.width(100.dp)
-                    .height(100.dp)
-                    .background(color = if (index % 2 == 0) Color.Red else Color.Green)
-        ) {
-            Text(text = item)
+@Composable
+fun LazyLayoutPrefetchStateSample() {
+    val items = remember { (0..100).toList().map { it.toString() } }
+    var currentHandle = remember<LazyLayoutPrefetchState.PrefetchHandle?> { null }
+    val prefetchState = remember { LazyLayoutPrefetchState() }
+    // Create an item provider
+    val itemProvider = remember {
+        {
+            object : LazyLayoutItemProvider {
+                override val itemCount: Int
+                    get() = 100
+
+                @Composable
+                override fun Item(index: Int, key: Any) {
+                    Box(
+                        modifier =
+                            Modifier.width(100.dp)
+                                .height(100.dp)
+                                .background(color = if (index % 2 == 0) Color.Red else Color.Green)
+                    ) {
+                        Text(text = items[index])
+                    }
+                }
+            }
+        }
+    }
+
+    Column {
+        Button(onClick = { currentHandle = prefetchState.schedulePrecomposition(10) }) {
+            Text(text = "Prefetch Item 10")
+        }
+        Button(onClick = { currentHandle?.cancel() }) { Text(text = "Cancel Prefetch") }
+        LazyLayout(modifier = Modifier.size(500.dp), itemProvider = itemProvider) { constraints ->
+            // plug the measure policy, this is how we create and layout items.
+            val placeablesCache = mutableListOf<Pair<Placeable, Int>>()
+            fun Placeable.mainAxisSize() = width
+            fun Placeable.crossAxisSize() = height
+
+            val childConstraints =
+                Constraints(maxWidth = Constraints.Infinity, maxHeight = constraints.maxHeight)
+
+            var currentItemIndex = 0
+            var crossAxisSize = 0
+            var mainAxisSize = 0
+
+            // measure items until we either fill in the space or run out of items.
+            while (mainAxisSize < constraints.maxWidth && currentItemIndex < items.size) {
+                val itemPlaceables = compose(currentItemIndex).map { it.measure(childConstraints) }
+                for (item in itemPlaceables) {
+                    // save placeable to be placed later.
+                    placeablesCache.add(item to mainAxisSize)
+
+                    mainAxisSize += item.mainAxisSize() // item size contributes to main axis size
+                    // cross axis size will the size of tallest/widest item
+                    crossAxisSize = maxOf(crossAxisSize, item.crossAxisSize())
+                }
+                currentItemIndex++
+            }
+
+            val layoutWidth = minOf(mainAxisSize, constraints.maxHeight)
+            val layoutHeight = crossAxisSize
+
+            layout(layoutWidth, layoutHeight) {
+                // since this is a linear list all items are placed on the same cross-axis position
+                for ((placeable, position) in placeablesCache) {
+                    placeable.place(position, 0)
+                }
+            }
         }
     }
 }
 
-/**
- * A simple Layout that will place items top to down, or right to left, without any scrolling or
- * offset until they fit the viewport.
- */
-@OptIn(ExperimentalFoundationApi::class)
+/** A simple Layout that will place items right to left with scrolling support. */
+@Sampled
+@Preview
 @Composable
-private fun <T> BasicNonScrollableLazyLayout(
-    items: List<T>,
-    modifier: Modifier = Modifier,
-    orientation: Orientation = Orientation.Vertical,
-    content: @Composable (item: T, index: Int) -> Unit
-) {
-    val measurePolicy = remember(items, orientation) { basicMeasurePolicy(orientation, items.size) }
-    val itemProvider = remember(items, content) { { BasicLazyLayoutItemProvider(items, content) } }
-    LazyLayout(modifier = modifier, itemProvider = itemProvider, measurePolicy = measurePolicy)
-}
+fun LazyLayoutSample() {
+    val items = remember { (0..100).toList().map { it.toString() } }
 
-@OptIn(ExperimentalFoundationApi::class)
-private fun basicMeasurePolicy(orientation: Orientation, itemCount: Int): LazyLayoutMeasurePolicy =
-    LazyLayoutMeasurePolicy { constraints ->
-        fun Placeable.mainAxisSize() = if (orientation == Orientation.Vertical) height else width
-        fun Placeable.crossAxisSize() = if (orientation == Orientation.Vertical) width else height
+    // Create an item provider
+    val itemProvider = remember {
+        {
+            object : LazyLayoutItemProvider {
+                override val itemCount: Int
+                    get() = 100
 
-        val viewportSize =
-            if (orientation == Orientation.Vertical) constraints.maxHeight else constraints.maxWidth
+                @Composable
+                override fun Item(index: Int, key: Any) {
+                    Box(
+                        modifier =
+                            Modifier.width(100.dp)
+                                .height(100.dp)
+                                .background(color = if (index % 2 == 0) Color.Red else Color.Green)
+                    ) {
+                        Text(text = items[index])
+                    }
+                }
+            }
+        }
+    }
+
+    LazyLayout(modifier = Modifier.size(500.dp), itemProvider = itemProvider) { constraints ->
+        // plug the measure policy, this is how we create and layout items.
+        val placeablesCache = mutableListOf<Pair<Placeable, Int>>()
+        fun Placeable.mainAxisSize() = width
+        fun Placeable.crossAxisSize() = height
 
         val childConstraints =
-            Constraints(
-                maxWidth =
-                    if (orientation == Orientation.Vertical) viewportSize else Constraints.Infinity,
-                maxHeight =
-                    if (orientation == Orientation.Horizontal) viewportSize
-                    else Constraints.Infinity
-            )
+            Constraints(maxWidth = Constraints.Infinity, maxHeight = constraints.maxHeight)
 
         var currentItemIndex = 0
-        // saves placeables and their main axis position
-        val placeables = mutableListOf<Pair<Placeable, Int>>()
         var crossAxisSize = 0
         var mainAxisSize = 0
 
         // measure items until we either fill in the space or run out of items.
-        while (mainAxisSize < viewportSize && currentItemIndex < itemCount) {
+        while (mainAxisSize < constraints.maxWidth && currentItemIndex < items.size) {
             val itemPlaceables = compose(currentItemIndex).map { it.measure(childConstraints) }
             for (item in itemPlaceables) {
                 // save placeable to be placed later.
-                placeables.add(item to mainAxisSize)
+                placeablesCache.add(item to mainAxisSize)
 
                 mainAxisSize += item.mainAxisSize() // item size contributes to main axis size
                 // cross axis size will the size of tallest/widest item
@@ -115,40 +167,14 @@ private fun basicMeasurePolicy(orientation: Orientation, itemCount: Int): LazyLa
             currentItemIndex++
         }
 
-        val layoutWidth =
-            if (orientation == Orientation.Horizontal) {
-                minOf(mainAxisSize, viewportSize)
-            } else {
-                crossAxisSize
-            }
-        val layoutHeight =
-            if (orientation == Orientation.Vertical) {
-                minOf(mainAxisSize, viewportSize)
-            } else {
-                crossAxisSize
-            }
+        val layoutWidth = minOf(mainAxisSize, constraints.maxHeight)
+        val layoutHeight = crossAxisSize
 
         layout(layoutWidth, layoutHeight) {
             // since this is a linear list all items are placed on the same cross-axis position
-            for ((placeable, position) in placeables) {
-                if (orientation == Orientation.Vertical) {
-                    placeable.place(0, position)
-                } else {
-                    placeable.place(position, 0)
-                }
+            for ((placeable, position) in placeablesCache) {
+                placeable.place(position, 0)
             }
         }
-    }
-
-@OptIn(ExperimentalFoundationApi::class)
-private class BasicLazyLayoutItemProvider<T>(
-    private val items: List<T>,
-    private val content: @Composable (item: T, index: Int) -> Unit
-) : LazyLayoutItemProvider {
-    override val itemCount: Int = items.size
-
-    @Composable
-    override fun Item(index: Int, key: Any) {
-        content.invoke(items[index], index)
     }
 }

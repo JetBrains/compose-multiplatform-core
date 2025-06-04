@@ -21,13 +21,11 @@ import androidx.annotation.RestrictTo
 /** [FrameGraph] extends the capabilities of [CameraGraph] to provide stream controls. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, UnsafeWrapper {
-    public class Config(
-        public val cameraGraphConfig: CameraGraph.Config,
-    )
+    public class Config(public val cameraGraphConfig: CameraGraph.Config)
 
     public class ConcurrentConfig(
         public val cameraGraphConfigs: CameraGraph.ConcurrentConfig,
-        public val frameGraphConfigs: List<Config>
+        public val frameGraphConfigs: List<Config>,
     ) {
         init {
             val cameraGraphCount = cameraGraphConfigs.graphConfigs.size
@@ -69,7 +67,7 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, UnsafeWrapper
     public fun captureWith(
         streamIds: Set<StreamId> = emptySet(),
         parameters: Map<Any, Any?> = emptyMap(),
-        capacity: Int = 1
+        capacity: Int = 1,
     ): FrameBuffer
 
     /**

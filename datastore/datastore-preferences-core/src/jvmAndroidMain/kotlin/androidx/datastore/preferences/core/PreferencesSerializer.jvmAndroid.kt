@@ -92,7 +92,7 @@ actual object PreferencesSerializer : OkioSerializer<Preferences> {
     private fun addProtoEntryToPreferences(
         name: String,
         value: Value,
-        mutablePreferences: MutablePreferences
+        mutablePreferences: MutablePreferences,
     ) {
         return when (value.valueCase) {
             Value.ValueCase.BOOLEAN ->

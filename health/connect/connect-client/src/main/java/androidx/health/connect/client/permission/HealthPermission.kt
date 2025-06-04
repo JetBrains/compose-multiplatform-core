@@ -21,6 +21,7 @@ import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -395,6 +396,8 @@ public class HealthPermission internal constructor() {
         internal const val READ_POWER = PERMISSION_PREFIX + "READ_POWER"
         internal const val READ_SPEED = PERMISSION_PREFIX + "READ_SPEED"
 
+        internal const val READ_ACTIVITY_INTENSITY = PERMISSION_PREFIX + "READ_ACTIVITY_INTENSITY"
+
         // Read permissions for BODY_MEASUREMENTS.
         internal const val READ_BASAL_METABOLIC_RATE =
             PERMISSION_PREFIX + "READ_BASAL_METABOLIC_RATE"
@@ -455,6 +458,7 @@ public class HealthPermission internal constructor() {
         internal const val WRITE_PLANNED_EXERCISE = PERMISSION_PREFIX + "WRITE_PLANNED_EXERCISE"
         internal const val WRITE_POWER = PERMISSION_PREFIX + "WRITE_POWER"
         internal const val WRITE_SPEED = PERMISSION_PREFIX + "WRITE_SPEED"
+        internal const val WRITE_ACTIVITY_INTENSITY = PERMISSION_PREFIX + "WRITE_ACTIVITY_INTENSITY"
 
         // Write permissions for BODY_MEASUREMENTS.
         internal const val WRITE_BASAL_METABOLIC_RATE =
@@ -575,6 +579,8 @@ public class HealthPermission internal constructor() {
                 WeightRecord::class to READ_WEIGHT.substringAfter(READ_PERMISSION_PREFIX),
                 WheelchairPushesRecord::class to
                     READ_WHEELCHAIR_PUSHES.substringAfter(READ_PERMISSION_PREFIX),
+                ActivityIntensityRecord::class to
+                    READ_ACTIVITY_INTENSITY.substringAfter(READ_PERMISSION_PREFIX),
             )
 
         /**

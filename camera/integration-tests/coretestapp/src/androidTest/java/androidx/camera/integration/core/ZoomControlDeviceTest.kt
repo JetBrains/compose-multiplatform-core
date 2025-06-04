@@ -82,13 +82,11 @@ class ZoomControlDeviceTest(
     private val selectorName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -127,10 +125,10 @@ class ZoomControlDeviceTest(
                             Camera2InteropUtil.setCameraCaptureSessionCallback(
                                 implName,
                                 builder,
-                                captureCallback
+                                captureCallback,
                             )
                         }
-                        .build()
+                        .build(),
                 )
         }
 
@@ -237,7 +235,7 @@ class ZoomControlDeviceTest(
 
         captureCallback.verifyLastCaptureRequest(
             mapOf(CaptureRequest.SCALER_CROP_REGION to getSensorRect()),
-            200
+            200,
         )
     }
 
@@ -497,7 +495,7 @@ class ZoomControlDeviceTest(
                     if (value.zoomRatio != getMaxDigitalZoom()) {
                         latch.countDown()
                     }
-                }
+                },
             )
             cameraControl.setLinearZoom(0.1f)
             cameraControl.setLinearZoom(0.2f)
@@ -548,7 +546,7 @@ class ZoomControlDeviceTest(
                     if (value.linearZoom != 0f) {
                         latch.countDown()
                     }
-                }
+                },
             )
             cameraControl.setZoomRatio(1.2f)
             cameraControl.setZoomRatio(1.5f)
@@ -625,7 +623,7 @@ class ZoomControlDeviceTest(
                         awaitedValue = value
                         latch.countDown()
                     }
-                }
+                },
             )
         }
 
@@ -713,7 +711,7 @@ class ZoomControlDeviceTest(
                             1.0f,
                             MAX_ZOOM,
                             MIN_ZOOM,
-                            AdapterCameraInfo.getPercentageByRatio(1.0f, MIN_ZOOM, MAX_ZOOM)
+                            AdapterCameraInfo.getPercentageByRatio(1.0f, MIN_ZOOM, MAX_ZOOM),
                         )
                     )
                 )
@@ -726,10 +724,7 @@ class ZoomControlDeviceTest(
         runBlocking(Dispatchers.Main) {
             val zoomRatio = 3f
             val camera =
-                bindWithSessionProcessorZoomLimitation(
-                    minZoom = MIN_ZOOM,
-                    maxZoom = MAX_ZOOM,
-                )
+                bindWithSessionProcessorZoomLimitation(minZoom = MIN_ZOOM, maxZoom = MAX_ZOOM)
 
             withContext(Dispatchers.Main) {
                 camera.cameraControl.setZoomRatio(zoomRatio)
@@ -743,8 +738,8 @@ class ZoomControlDeviceTest(
                                 AdapterCameraInfo.getPercentageByRatio(
                                     zoomRatio,
                                     MIN_ZOOM,
-                                    MAX_ZOOM
-                                )
+                                    MAX_ZOOM,
+                                ),
                             )
                         )
                     )
@@ -786,7 +781,7 @@ class ZoomControlDeviceTest(
                     zoomRatio,
                     MAX_ZOOM,
                     MIN_ZOOM,
-                    AdapterCameraInfo.getPercentageByRatio(zoomRatio, MIN_ZOOM, MAX_ZOOM)
+                    AdapterCameraInfo.getPercentageByRatio(zoomRatio, MIN_ZOOM, MAX_ZOOM),
                 )
             )
         }
@@ -800,7 +795,7 @@ class ZoomControlDeviceTest(
                         AdapterCameraInfo.getZoomRatioByPercentage(linearZoom, minZoom, maxZoom),
                         maxZoom,
                         minZoom,
-                        linearZoom
+                        linearZoom,
                     )
                 )
             )
@@ -833,7 +828,7 @@ class ZoomControlDeviceTest(
                     AdapterCameraInfo.getZoomRatioByPercentage(linearZoom, MIN_ZOOM, MAX_ZOOM),
                     MAX_ZOOM,
                     MIN_ZOOM,
-                    linearZoom
+                    linearZoom,
                 )
             )
         }
@@ -869,9 +864,9 @@ class ZoomControlDeviceTest(
                     listOf(
                         Pair(
                             CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
-                            Range(minZoom, maxZoom)
+                            Range(minZoom, maxZoom),
                         )
-                    )
+                    ),
             )
         )
     }
@@ -881,7 +876,7 @@ class ZoomControlDeviceTest(
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
                 cameraSelector,
-                sessionProcessor
+                sessionProcessor,
             )
 
         return withContext(Dispatchers.Main) {
@@ -897,7 +892,7 @@ class ZoomControlDeviceTest(
                 fakeLifecycleOwner,
                 cameraSelectorWithSessionProcessor,
                 preview,
-                imageCapture
+                imageCapture,
             )
         }
     }
@@ -962,26 +957,26 @@ class ZoomControlDeviceTest(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "front",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     "back",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
+                    CameraPipeConfig.defaultConfig(),
+                ),
             )
 
         private fun ZoomState.isEquivalentTo(other: ZoomState): Boolean {

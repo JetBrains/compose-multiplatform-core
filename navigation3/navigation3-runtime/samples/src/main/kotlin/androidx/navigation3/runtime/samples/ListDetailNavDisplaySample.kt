@@ -47,7 +47,7 @@ fun <T : Any> ListDetailNavDisplay(
     onBack: () -> Unit = { if (backstack is MutableList) backstack.removeAt(backstack.size - 1) },
     windowWidthSizeClass: WindowWidthSizeClass =
         calculateWindowSizeClass(LocalActivity.current!!).widthSizeClass,
-    entryProvider: (key: T) -> NavEntry<T>
+    entryProvider: (key: T) -> NavEntry<T>,
 ) {
     val isSinglePaneLayout = (windowWidthSizeClass == WindowWidthSizeClass.Compact)
     BackHandler(isSinglePaneLayout && backstack.size > 1, onBack)

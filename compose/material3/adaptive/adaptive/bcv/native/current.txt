@@ -73,5 +73,6 @@ final val androidx.compose.material3.adaptive/separatingVerticalHingeBounds // a
     final fun (androidx.compose.material3.adaptive/Posture).<get-separatingVerticalHingeBounds>(): kotlin.collections/List<androidx.compose.ui.geometry/Rect> // androidx.compose.material3.adaptive/separatingVerticalHingeBounds.<get-separatingVerticalHingeBounds>|<get-separatingVerticalHingeBounds>@androidx.compose.material3.adaptive.Posture(){}[0]
 
 final fun androidx.compose.material3.adaptive/currentWindowAdaptiveInfo(): androidx.compose.material3.adaptive/WindowAdaptiveInfo // androidx.compose.material3.adaptive/currentWindowAdaptiveInfo|currentWindowAdaptiveInfo(){}[0]
+final fun androidx.compose.material3.adaptive/currentWindowAdaptiveInfo(kotlin/Boolean = ...): androidx.compose.material3.adaptive/WindowAdaptiveInfo // androidx.compose.material3.adaptive/currentWindowAdaptiveInfo|currentWindowAdaptiveInfo(kotlin.Boolean){}[0]
 final fun androidx.compose.material3.adaptive/currentWindowDpSize(): androidx.compose.ui.unit/DpSize // androidx.compose.material3.adaptive/currentWindowDpSize|currentWindowDpSize(){}[0]
 final fun androidx.compose.material3.adaptive/currentWindowSize(): androidx.compose.ui.unit/IntSize // androidx.compose.material3.adaptive/currentWindowSize|currentWindowSize(){}[0]

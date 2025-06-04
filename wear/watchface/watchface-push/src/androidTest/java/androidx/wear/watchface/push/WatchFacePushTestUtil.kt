@@ -69,7 +69,7 @@ internal data class FdPipe(
 internal suspend fun waitUntil(
     timeout: Long = 5000,
     interval: Long = 500,
-    condition: suspend () -> Boolean
+    condition: suspend () -> Boolean,
 ) {
     delay(interval)
     val startTime = System.currentTimeMillis()

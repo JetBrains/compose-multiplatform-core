@@ -94,7 +94,7 @@ class GlanceSessionManagerTest {
                         override fun createWorker(
                             appContext: Context,
                             workerClassName: String,
-                            workerParameters: WorkerParameters
+                            workerParameters: WorkerParameters,
                         ): ListenableWorker {
                             assertThat(workerClassName)
                                 .isEqualTo(SessionWorker::class.qualifiedName)
@@ -233,7 +233,7 @@ class TestSession : Session("session-123") {
 
     override suspend fun processEmittableTree(
         context: Context,
-        root: EmittableWithChildren
+        root: EmittableWithChildren,
     ): Boolean {
         uiTree.send(root)
         return true

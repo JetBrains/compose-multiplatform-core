@@ -64,13 +64,13 @@ abstract class PagerBenchmark : MacrobenchmarkScreen {
                     Modifier.fillMaxWidth().semantics { contentDescription = CONTENT_DESCRIPTION },
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     ScreenScaffold {
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text("Page $page")
                         }

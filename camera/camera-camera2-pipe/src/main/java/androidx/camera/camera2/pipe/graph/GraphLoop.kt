@@ -45,7 +45,7 @@ internal class GraphLoop(
     private val graphListeners: List<Request.Listener>,
     private val listeners: List<Listener>,
     private val shutdownScope: CoroutineScope,
-    dispatcher: CoroutineDispatcher
+    dispatcher: CoroutineDispatcher,
 ) : Closeable {
     internal interface Listener {
 
@@ -323,7 +323,7 @@ internal class GraphLoop(
         commands: MutableList<GraphCommand>,
         idx: Int,
         command: GraphCommand.Capture,
-        repeatAllowed: Boolean = true
+        repeatAllowed: Boolean = true,
     ) {
         if (captureProcessingEnabled) {
             if (buildAndSubmit(isRepeating = false, requests = command.requests)) {
@@ -346,7 +346,7 @@ internal class GraphLoop(
     private fun processTrigger(
         commands: MutableList<GraphCommand>,
         idx: Int,
-        command: GraphCommand.Trigger
+        command: GraphCommand.Trigger,
     ) {
         // Trigger commands take an existing repeating request, add some one-time parameters to it,
         // and the submit it exactly once.
@@ -363,7 +363,7 @@ internal class GraphLoop(
                 buildAndSubmit(
                     isRepeating = false,
                     requests = listOf(repeatingRequest),
-                    oneTimeRequiredParameters = command.triggerParameters
+                    oneTimeRequiredParameters = command.triggerParameters,
                 )
             ) {
                 commands.removeAt(idx)
@@ -383,7 +383,7 @@ internal class GraphLoop(
     private fun processRepeat(
         commands: MutableList<GraphCommand>,
         idx: Int,
-        captureAllowed: Boolean = true
+        captureAllowed: Boolean = true,
     ) {
         // Attempt to issue the repeating request at idx.
         // 1. If that fails - move backwards through the list, attempting each repeating command in
@@ -419,7 +419,7 @@ internal class GraphLoop(
     private fun processParameters(
         commands: MutableList<GraphCommand>,
         idx: Int,
-        command: GraphCommand.Parameters
+        command: GraphCommand.Parameters,
     ) {
         currentGraphParameters = command.graphParameters
         currentGraph3AParameters = command.graph3AParameters
@@ -441,7 +441,7 @@ internal class GraphLoop(
     private suspend fun processRequestProcessor(
         commands: MutableList<GraphCommand>,
         idx: Int,
-        command: GraphCommand.RequestProcessor
+        command: GraphCommand.RequestProcessor,
     ) {
         var commandsRemoved = 1
         commands.removeAt(idx)
@@ -611,7 +611,7 @@ internal class GraphLoop(
     private fun buildAndSubmit(
         isRepeating: Boolean,
         requests: List<Request>,
-        oneTimeRequiredParameters: Map<*, Any?> = emptyMap<Any, Any>()
+        oneTimeRequiredParameters: Map<*, Any?> = emptyMap<Any, Any>(),
     ): Boolean {
         val processor = currentRequestProcessor
         if (processor == null) return false
@@ -632,7 +632,7 @@ internal class GraphLoop(
                             this.putAllMetadata(requiredParameters)
                         }
                     },
-                listeners = graphListeners
+                listeners = graphListeners,
             )
 
         if (!success) {

@@ -78,7 +78,7 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                             // Navigation libraries are not in performance critical paths, so we can
                             // ignore them.
                             "navigation:navigation-compose",
-                            "wear:compose:compose-navigation"
+                            "wear:compose:compose-navigation",
                         )
 
                     // Disable ListIterator if we are not in a matching path, or we are in an
@@ -109,9 +109,9 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                         mapOf(
                             "path" to ":compose:lint:internal-lint-checks",
                             // TODO(b/206617878) remove this shadow configuration
-                            "configuration" to "shadow"
+                            "configuration" to "shadow",
                         )
-                    )
+                    ),
                 )
             }
         }
@@ -136,7 +136,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         val compilerPluginVersion = project.getVersionByName("kotlin")
         project.dependencies.add(
             COMPILER_PLUGIN_CONFIGURATION,
-            "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion"
+            "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion",
         )
 
         if (
@@ -150,7 +150,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
                 val compilerMavenDirectory =
                     File(
                         compilerProject.projectDir,
-                        "compiler/compose-compiler-snapshot-repository"
+                        "compiler/compose-compiler-snapshot-repository",
                     )
                 project.repositories.maven { it.url = compilerMavenDirectory.toURI() }
                 project.configurations.configureEach {
@@ -175,7 +175,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
                         view.attributes { attributes ->
                             attributes.attribute(
                                 Attribute.of("artifactType", String::class.java),
-                                ArtifactTypeDefinition.JAR_TYPE
+                                ArtifactTypeDefinition.JAR_TYPE,
                             )
                         }
                     }
@@ -214,7 +214,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
             compileTasks.configureEach { compile ->
                 compile.addPluginOption(
                     ComposeCompileOptions.MetricsOption,
-                    metricsIntermediateDir.path
+                    metricsIntermediateDir.path,
                 )
             }
         }
@@ -227,7 +227,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
             compileTasks.configureEach { compile ->
                 compile.addPluginOption(
                     ComposeCompileOptions.ReportsOption,
-                    reportsIntermediateDir.path
+                    reportsIntermediateDir.path,
                 )
             }
         }
@@ -236,7 +236,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
 
 private fun AbstractKotlinCompile<*>.addPluginOption(
     composeCompileOptions: ComposeCompileOptions,
-    value: String
+    value: String,
 ) {
     compilerOptions.freeCompilerArgs.addAll(
         listOf("-P", "plugin:${composeCompileOptions.pluginId}:${composeCompileOptions.key}=$value")

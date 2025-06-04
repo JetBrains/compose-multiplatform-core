@@ -20,13 +20,21 @@ import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room.deferredTransaction
 import androidx.room.immediateTransaction
+import androidx.room.useReaderConnection
 import androidx.room.useWriterConnection
 import androidx.room.withTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.coroutineContext
+import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -91,9 +99,17 @@ class CompatibilityModeTest : TestDatabaseTest() {
     @Test
     fun transaction_reUseConnection() = runTest {
         database.useWriterConnection { transactor ->
+            assertThat(transactor.inTransaction()).isFalse()
+
             transactor.immediateTransaction {
-                database.useWriterConnection {
-                    usePrepared("INSERT INTO publisher (publisherId, name) VALUES (?, ?)") { stmt ->
+                assertThat(transactor.inTransaction()).isTrue()
+
+                database.useWriterConnection { reusedConnection ->
+                    assertThat(reusedConnection.inTransaction()).isTrue()
+
+                    reusedConnection.usePrepared(
+                        "INSERT INTO publisher (publisherId, name) VALUES (?, ?)"
+                    ) { stmt ->
                         stmt.bindText(1, "p1")
                         stmt.bindText(2, "pub1")
                         stmt.step()
@@ -281,5 +297,80 @@ class CompatibilityModeTest : TestDatabaseTest() {
             }
         }
         assertThat(database.booksDao().getPublishersSuspend()).hasSize(1)
+    }
+
+    @Test
+    fun transaction_concurrent() = runTest {
+        val jobOne =
+            launch(Dispatchers.IO) {
+                database.useWriterConnection { transactor ->
+                    transactor.immediateTransaction {
+                        database.booksDao().insertPublisher("p1", "pub1")
+                    }
+                }
+            }
+        val jobTwo =
+            launch(Dispatchers.IO) {
+                database.useWriterConnection { transactor ->
+                    transactor.immediateTransaction {
+                        database.booksDao().insertPublisher("p2", "pub2")
+                    }
+                }
+            }
+        listOf(jobOne, jobTwo).joinAll()
+        assertThat(database.booksDao().getPublishersSuspend()).hasSize(2)
+    }
+
+    @Test
+    @Ignore("b/288918056") // Support read-only transaction in Room with SupportSQLite
+    fun transaction_readNotBlockedByWrite() = runTest {
+        database.booksDao().insertPublisher("p1", "pub1")
+
+        val readerLatch = CompletableDeferred<Unit>()
+        val writerLatch = CompletableDeferred<Unit>()
+
+        val jobOne =
+            launch(Dispatchers.IO) {
+                database.useWriterConnection { transactor ->
+                    transactor.immediateTransaction {
+                        readerLatch.complete(Unit)
+                        writerLatch.await()
+                        database.booksDao().insertPublisher("p2", "pub2")
+                    }
+                }
+            }
+        val jobTwo =
+            launch(Dispatchers.IO) {
+                readerLatch.await()
+                database.useReaderConnection { transactor ->
+                    transactor.deferredTransaction {
+                        assertThat(database.booksDao().getPublishersSuspend()).hasSize(1)
+                        writerLatch.complete(Unit)
+                    }
+                }
+            }
+        listOf(jobOne, jobTwo).joinAll()
+        assertThat(database.booksDao().getPublishersSuspend()).hasSize(2)
+    }
+
+    @Test
+    fun transaction_dispatcherOptimization() = runTest {
+        // Validates that we avoid a dispatcher switch when requesting for a connection being
+        // already in a transaction.
+        database.useWriterConnection {
+            it.immediateTransaction {
+                val transactionDispatcher = extractInterceptor()
+                database.useWriterConnection {
+                    assertThat(transactionDispatcher).isSameInstanceAs(extractInterceptor())
+                }
+                database.useReaderConnection {
+                    assertThat(transactionDispatcher).isSameInstanceAs(extractInterceptor())
+                }
+            }
+        }
+    }
+
+    private suspend fun extractInterceptor(): ContinuationInterceptor? {
+        return coroutineContext[ContinuationInterceptor]
     }
 }

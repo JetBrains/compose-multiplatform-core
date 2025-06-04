@@ -15,7 +15,6 @@
  */
 
 // Impl classes from kotlin.library.abi.impl are necessary to instantiate parsed declarations
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407928023
 @file:OptIn(ExperimentalLibraryAbiReader::class)
 
 package androidx.binarycompatibilityvalidator
@@ -195,7 +194,7 @@ internal fun Cursor.parseAbiType(peek: Boolean = false): AbiType? {
     return SimpleTypeImpl(
         ClassReferenceImpl(abiQualifiedName),
         arguments = typeArgs,
-        nullability = nullability
+        nullability = nullability,
     )
 }
 
@@ -233,7 +232,7 @@ internal fun Cursor.parseTypeReference(): AbiType? {
     return SimpleTypeImpl(
         TypeParameterReferenceImpl(typeParamReference),
         arguments = typeArgs,
-        nullability = nullability
+        nullability = nullability,
     )
 }
 
@@ -283,15 +282,16 @@ internal fun Cursor.parseTypeParam(peek: Boolean = false): AbiTypeParameter? {
     val variance = cursor.parseAbiVariance()
     val isReified = cursor.parseSymbol(reifiedRegex) != null
     val upperBounds = mutableListOf<AbiType>()
-    if (null != cursor.parseAbiType(peek = true)) {
+    while (null != cursor.parseAbiType(peek = true)) {
         upperBounds.add(cursor.parseAbiType()!!)
+        cursor.parseSymbol(ampersandRegex)
     }
 
     return AbiTypeParameterImpl(
         tag = tag,
         variance = variance,
         isReified = isReified,
-        upperBounds = upperBounds
+        upperBounds = upperBounds,
     )
 }
 
@@ -319,7 +319,7 @@ internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParamete
         isVararg = isVararg,
         hasDefaultArg = hasDefaultArg,
         isNoinline = isNoInline,
-        isCrossinline = isCrossinline
+        isCrossinline = isCrossinline,
     )
 }
 
@@ -462,7 +462,7 @@ private fun Cursor.parseClassKindString(peek: Boolean = false) =
 
 private enum class GetterOrSetter() {
     GETTER,
-    SETTER
+    SETTER,
 }
 
 private val constructorNameRegex = Regex("^constructor\\s<init>")
@@ -479,7 +479,7 @@ private val varargSymbolRegex = Regex("^\\.\\.\\.")
 private val openParenRegex = Regex("^\\(")
 private val closeParenRegex = Regex("^\\)")
 private val reifiedRegex = Regex("reified")
-private val contextRegex = Regex("context")
+private val contextRegex = Regex("^context")
 private val colonRegex = Regex("^:")
 private val commaRegex = Regex("^,")
 private val notNullSymbolRegex = Regex("^\\!\\!")
@@ -507,4 +507,5 @@ private val signatureMarkerRegex = Regex("-\\sSignature\\sversion:")
 private val digitRegex = Regex("^\\d+")
 private val dotRegex = Regex("^\\.")
 private val slashRegex = Regex("^/")
-private val symbolsFollowingIdentifiersWithSpaces = Regex("^[:|/={]")
+private val symbolsFollowingIdentifiersWithSpaces = Regex("^[:|/={&]")
+private val ampersandRegex = Regex("^&")

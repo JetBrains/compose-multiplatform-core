@@ -36,6 +36,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId;
 import androidx.wear.protolayout.ResourceBuilders.ImageResource;
 import androidx.wear.protolayout.ResourceBuilders.Resources;
+import androidx.wear.protolayout.renderer.ProtoLayoutVisibilityState;
 import androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance;
 
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -80,8 +81,8 @@ public class GoldenTestActivity extends Activity {
                                         mainExecutor,
                                         mainExecutor,
                                         "androidx.wear.tiles.extra.CLICKABLE_ID")
-                                .setIsViewFullyVisible(true)
                                 .build());
+        instance.setLayoutVisibility(ProtoLayoutVisibilityState.VISIBILITY_STATE_FULLY_VISIBLE);
 
         try {
             instance.renderAndAttach(checkNotNull(layout).toProto(), resources.toProto(), root)

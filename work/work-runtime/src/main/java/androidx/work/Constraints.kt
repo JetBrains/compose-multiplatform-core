@@ -116,7 +116,7 @@ class Constraints {
         requiresCharging = requiresCharging,
         requiresStorageNotLow = requiresStorageNotLow,
         requiresBatteryNotLow = requiresBatteryNotLow,
-        requiresDeviceIdle = false
+        requiresDeviceIdle = false,
     )
 
     /**
@@ -405,7 +405,7 @@ class Constraints {
         @RequiresApi(21)
         fun setRequiredNetworkRequest(
             networkRequest: NetworkRequest,
-            networkType: NetworkType
+            networkType: NetworkType,
         ): Builder {
             if (Build.VERSION.SDK_INT >= 28) {
                 if (

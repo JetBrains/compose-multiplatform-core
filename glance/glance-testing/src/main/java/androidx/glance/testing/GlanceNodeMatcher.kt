@@ -23,7 +23,7 @@ package androidx.glance.testing
  */
 public class GlanceNodeMatcher<R>(
     internal val description: String,
-    private val matcher: (GlanceNode<R>) -> Boolean
+    private val matcher: (GlanceNode<R>) -> Boolean,
 ) {
     /** Returns whether the given node is matched by this matcher. */
     public fun matches(node: GlanceNode<R>): Boolean {

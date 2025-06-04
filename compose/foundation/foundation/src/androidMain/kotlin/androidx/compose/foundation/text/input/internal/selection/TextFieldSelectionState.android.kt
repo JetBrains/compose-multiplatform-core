@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 internal fun TextFieldSelectionState.contextMenuBuilder(
     state: ContextMenuState,
     itemsAvailability: State<MenuItemsAvailability>,
-    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit
+    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit,
 ): ContextMenuScope.() -> Unit = {
     fun textFieldItem(label: TextContextMenuItems, enabled: Boolean) {
         TextItem(state, label, enabled) { onMenuItemClicked(label) }
@@ -67,7 +67,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
         enabled: Boolean,
         desiredState: TextToolbarState = TextToolbarState.None,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         textItem(resources, item, enabled) {
             onClick()
@@ -79,7 +79,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
         item: TextContextMenuItems,
         enabled: Boolean,
-        onClick: suspend () -> Unit
+        onClick: suspend () -> Unit,
     ) {
         textFieldItem(item, enabled) {
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }

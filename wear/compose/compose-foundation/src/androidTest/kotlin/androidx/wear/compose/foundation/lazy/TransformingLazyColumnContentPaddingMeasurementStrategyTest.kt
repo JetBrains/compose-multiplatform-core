@@ -52,7 +52,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             minWidth = screenWidth,
             maxWidth = screenWidth,
             minHeight = screenHeight,
-            maxHeight = screenHeight
+            maxHeight = screenHeight,
         )
 
     @Test
@@ -80,7 +80,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             strategy.measure(
                 listOf(screenHeight),
                 // Scroll is ignored as the item constrained by the screen.
-                scrollToBeConsumed = 25f
+                scrollToBeConsumed = 25f,
             )
 
         assertThat(result.visibleItems.size).isEqualTo(1)
@@ -116,10 +116,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     fun twoItemsWithFirstTopAlignedWithPadding_measuredWithCorrectOffsets() {
         val topPadding = 5.dp
         val topPaddingPx = with(density) { topPadding.roundToPx() }
-        val strategyWithTopPadding =
-            measurementStrategy(
-                PaddingValues(top = topPadding),
-            )
+        val strategyWithTopPadding = measurementStrategy(PaddingValues(top = topPadding))
 
         val result = strategyWithTopPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
 
@@ -134,10 +131,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     fun twoItemsWithLastOneAlignedWithPadding_measuredWithCorrectOffsets() {
         val bottomPadding = 5.dp
         val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
-        val strategyWithBottomPadding =
-            measurementStrategy(
-                PaddingValues(bottom = bottomPadding),
-            )
+        val strategyWithBottomPadding = measurementStrategy(PaddingValues(bottom = bottomPadding))
 
         val result = strategyWithBottomPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
 
@@ -203,7 +197,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                 listOf(
                     -screenHeight / 4 + tinyOffset,
                     screenHeight / 4 + tinyOffset,
-                    screenHeight * 3 / 4 + tinyOffset
+                    screenHeight * 3 / 4 + tinyOffset,
                 )
             )
     }
@@ -230,7 +224,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                 listOf(
                     -screenHeight / 4 + scrollAmount,
                     screenHeight / 4 + scrollAmount,
-                    screenHeight * 3 / 4 + scrollAmount
+                    screenHeight * 3 / 4 + scrollAmount,
                 )
             )
     }
@@ -241,9 +235,9 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             strategy.measure(
                 listOf(
                     // Center item that appears half of the size.
-                    screenHeight,
+                    screenHeight
                 ),
-                transformedHeight = { measuredHeight, _ -> measuredHeight / 2 }
+                transformedHeight = { measuredHeight, _ -> measuredHeight / 2 },
             )
 
         assertThat(result.canScrollForward).isFalse()
@@ -298,7 +292,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                     // Centered item.
                     screenHeight / 2,
                 ),
-                anchorItemIndex = 2
+                anchorItemIndex = 2,
             )
 
         assertThat(result.canScrollForward).isFalse()
@@ -321,7 +315,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                     if (scrollProgression.topOffsetFraction < 0.25f) {
                         measuredHeight / 2
                     } else measuredHeight
-                }
+                },
             )
 
         assertThat(result.visibleItems.size).isEqualTo(2)
@@ -346,7 +340,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                     itemSize,
                     itemSize,
                 ),
-                scrollToBeConsumed = -10 * screenHeight.toFloat()
+                scrollToBeConsumed = -10 * screenHeight.toFloat(),
             )
         assertThat(result.visibleItems.map { it.index }).isEqualTo(listOf(4, 5, 6, 7))
         assertThat(result.visibleItems.map { it.offset })
@@ -372,7 +366,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                     itemSize,
                 ),
                 anchorItemIndex = 4,
-                scrollToBeConsumed = 10 * screenHeight.toFloat()
+                scrollToBeConsumed = 10 * screenHeight.toFloat(),
             )
         assertThat(result.visibleItems.map { it.index }).isEqualTo(listOf(0, 1, 2, 3))
         assertThat(result.visibleItems.map { it.offset })
@@ -384,15 +378,12 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         val strategy =
             measurementStrategy(
                 // Padding takes the full size.
-                PaddingValues(bottom = with(density) { screenHeight.toDp() }),
+                PaddingValues(bottom = with(density) { screenHeight.toDp() })
             )
 
         val itemSize = screenHeight / 4
 
-        val result =
-            strategy.measure(
-                listOf(itemSize, itemSize),
-            )
+        val result = strategy.measure(listOf(itemSize, itemSize))
         assertThat(result.visibleItems.size).isEqualTo(2)
     }
 
@@ -401,18 +392,12 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         val strategy =
             measurementStrategy(
                 // Padding takes the full size.
-                PaddingValues(top = with(density) { screenHeight.toDp() }),
+                PaddingValues(top = with(density) { screenHeight.toDp() })
             )
 
         val itemSize = screenHeight / 4
 
-        val result =
-            strategy.measure(
-                listOf(
-                    itemSize,
-                    itemSize,
-                ),
-            )
+        val result = strategy.measure(listOf(itemSize, itemSize))
         assertThat(result.visibleItems.size).isEqualTo(2)
     }
 
@@ -435,7 +420,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             density = density,
             layoutDirection = LayoutDirection.Ltr,
             mockGraphicContext,
-            mockItemAnimator
+            mockItemAnimator,
         )
 
     private val strategy = measurementStrategy(PaddingValues())
@@ -476,7 +461,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     private class EmptyPlaceable(
         width: Int,
         height: Int,
-        val transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)?
+        val transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)?,
     ) : Placeable() {
         init {
             measuredSize = IntSize(width, height)
@@ -487,7 +472,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         override fun placeAt(
             position: IntOffset,
             zIndex: Float,
-            layerBlock: (GraphicsLayerScope.() -> Unit)?
+            layerBlock: (GraphicsLayerScope.() -> Unit)?,
         ) {}
 
         override val parentData: Any?
@@ -496,7 +481,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     private fun makeMeasuredItemProvider(
         itemHeights: List<Int>,
-        transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null
+        transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null,
     ) = MeasuredItemProvider { index, offset, measurementDirection, progressProvider ->
         TransformingLazyColumnMeasuredItem(
             index = index,
@@ -505,7 +490,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                 EmptyPlaceable(
                     width = screenWidth,
                     height = itemHeights[index],
-                    transformedHeight = transformedHeight
+                    transformedHeight = transformedHeight,
                 ),
             containerConstraints = containerConstraints,
             spacing = 8,

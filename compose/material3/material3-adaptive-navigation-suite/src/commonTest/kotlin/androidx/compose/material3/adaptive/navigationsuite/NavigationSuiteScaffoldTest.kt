@@ -35,10 +35,7 @@ class NavigationSuiteScaffoldTest {
 
     @Test
     fun navigationLayoutTypeTest_compactWidth_compactHeight() {
-        val mockAdaptiveInfo =
-            createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(0, 0),
-            )
+        val mockAdaptiveInfo = createMockAdaptiveInfo(windowSizeClass = WindowSizeClass(0, 0))
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
             .isEqualTo(NavigationSuiteType.ShortNavigationBarCompact)
@@ -48,7 +45,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_compactWidth_mediumHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
+                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -59,8 +56,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_compactWidth_expandedHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass =
-                    WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND),
+                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -71,7 +67,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_mediumWidth_compactHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND, 0),
+                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND, 0)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -85,8 +81,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -100,8 +96,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -112,7 +108,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_expandedWidth_compactHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND, 0),
+                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND, 0)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -126,8 +122,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -141,8 +137,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -151,10 +147,7 @@ class NavigationSuiteScaffoldTest {
 
     @Test
     fun navigationLayoutTypeTest_extraLargeWidth_compactHeight() {
-        val mockAdaptiveInfo =
-            createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(1600, 0),
-            )
+        val mockAdaptiveInfo = createMockAdaptiveInfo(windowSizeClass = WindowSizeClass(1600, 0))
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
             .isEqualTo(NavigationSuiteType.ShortNavigationBarMedium)
@@ -165,7 +158,7 @@ class NavigationSuiteScaffoldTest {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
                 windowSizeClass =
-                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
+                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -177,7 +170,7 @@ class NavigationSuiteScaffoldTest {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
                 windowSizeClass =
-                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND),
+                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -200,9 +193,9 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
+                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND,
                     ),
-                isTableTop = true
+                isTableTop = true,
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -216,9 +209,9 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
                     ),
-                isTableTop = true
+                isTableTop = true,
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.navigationSuiteType(mockAdaptiveInfo))
@@ -227,10 +220,7 @@ class NavigationSuiteScaffoldTest {
 
     @Test
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_compactWidth_compactHeight() {
-        val mockAdaptiveInfo =
-            createMockAdaptiveInfo(
-                WindowSizeClass(0, 0),
-            )
+        val mockAdaptiveInfo = createMockAdaptiveInfo(WindowSizeClass(0, 0))
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
             .isEqualTo(NavigationSuiteType.NavigationBar)
@@ -240,7 +230,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_compactWidth_mediumHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
+                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -251,8 +241,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_compactWidth_expandedHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass =
-                    WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND),
+                windowSizeClass = WindowSizeClass(0, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -263,7 +252,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_mediumWidth_compactHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND, 0),
+                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND, 0)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -277,8 +266,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -292,8 +281,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -304,7 +293,7 @@ class NavigationSuiteScaffoldTest {
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_expandedWidth_compactHeight() {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND, 0),
+                windowSizeClass = WindowSizeClass(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND, 0)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -318,8 +307,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -333,8 +322,8 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
-                    ),
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
+                    )
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -343,10 +332,7 @@ class NavigationSuiteScaffoldTest {
 
     @Test
     fun navigationLayoutTypeTest_calculateFromAdaptiveInfo_extraLargeWidth_compactHeight() {
-        val mockAdaptiveInfo =
-            createMockAdaptiveInfo(
-                windowSizeClass = WindowSizeClass(1600, 0),
-            )
+        val mockAdaptiveInfo = createMockAdaptiveInfo(windowSizeClass = WindowSizeClass(1600, 0))
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
             .isEqualTo(NavigationSuiteType.NavigationBar)
@@ -357,7 +343,7 @@ class NavigationSuiteScaffoldTest {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
                 windowSizeClass =
-                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
+                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -369,7 +355,7 @@ class NavigationSuiteScaffoldTest {
         val mockAdaptiveInfo =
             createMockAdaptiveInfo(
                 windowSizeClass =
-                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND),
+                    WindowSizeClass(1600, WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND)
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -392,9 +378,9 @@ class NavigationSuiteScaffoldTest {
                 windowSizeClass =
                     WindowSizeClass(
                         WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
-                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND
+                        WindowSizeClass.HEIGHT_DP_EXPANDED_LOWER_BOUND,
                     ),
-                isTableTop = true
+                isTableTop = true,
             )
 
         assertThat(NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(mockAdaptiveInfo))
@@ -403,7 +389,7 @@ class NavigationSuiteScaffoldTest {
 
     private fun createMockAdaptiveInfo(
         windowSizeClass: WindowSizeClass,
-        isTableTop: Boolean = false
+        isTableTop: Boolean = false,
     ): WindowAdaptiveInfo {
         return WindowAdaptiveInfo(windowSizeClass, Posture(isTabletop = isTableTop))
     }

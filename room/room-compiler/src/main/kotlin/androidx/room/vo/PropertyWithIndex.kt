@@ -25,7 +25,7 @@ package androidx.room.vo
 data class PropertyWithIndex(
     val property: Property,
     val indexVar: String,
-    val alwaysExists: Boolean
+    val alwaysExists: Boolean,
 ) {
     companion object {
         fun byOrder(properties: List<Property>): List<PropertyWithIndex> {
@@ -33,7 +33,7 @@ data class PropertyWithIndex(
                 PropertyWithIndex(
                     property = property,
                     indexVar = "${index + 1}",
-                    alwaysExists = true
+                    alwaysExists = true,
                 )
             }
         }

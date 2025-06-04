@@ -35,7 +35,7 @@ class FullscreenAd(private val sdkContext: Context) {
     suspend fun show(
         launcherInfo: Bundle,
         @ScreenOrientation screenOrientation: Int,
-        @BackNavigation backNavigation: Int
+        @BackNavigation backNavigation: Int,
     ) {
         val sdkActivityLauncher = SdkActivityLauncherFactory.fromLauncherInfo(launcherInfo)
         val handler =

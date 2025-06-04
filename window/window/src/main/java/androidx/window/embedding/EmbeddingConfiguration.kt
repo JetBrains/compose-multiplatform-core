@@ -30,7 +30,7 @@ import androidx.window.RequiresWindowSdkExtension
 class EmbeddingConfiguration
 private constructor(
     val dimAreaBehavior: DimAreaBehavior = DimAreaBehavior.UNDEFINED,
-    val isAutoSaveEmbeddingState: Boolean = false
+    val isAutoSaveEmbeddingState: Boolean = false,
 ) {
     /**
      * The area of dimming to apply.

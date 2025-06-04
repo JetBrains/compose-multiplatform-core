@@ -128,7 +128,7 @@ internal fun Modifier.selectionGestureInput(
 
 private suspend fun AwaitPointerEventScope.touchSelection(
     observer: TextDragObserver,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     try {
         val firstDown = down.changes.first()
@@ -157,7 +157,7 @@ private suspend fun AwaitPointerEventScope.touchSelection(
 private suspend fun AwaitPointerEventScope.mouseSelection(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     val downChange = down.changes[0]
     clicksCounter.update(downChange)
@@ -240,7 +240,7 @@ internal suspend fun PointerInputScope.selectionGesturePointerInputBtf2(
  */
 internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
     observer: TextDragObserver,
-    downEvent: PointerEvent
+    downEvent: PointerEvent,
 ) {
     try {
         val firstDown = downEvent.changes.first()
@@ -270,7 +270,7 @@ private enum class DownResolution {
     Up,
     Drag,
     Timeout,
-    Cancel
+    Cancel,
 }
 
 /**
@@ -279,7 +279,7 @@ private enum class DownResolution {
  */
 private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
     observer: TextDragObserver,
-    downEvent: PointerEvent
+    downEvent: PointerEvent,
 ) {
     try {
         val firstDown = downEvent.changes.first()
@@ -354,7 +354,7 @@ private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
 internal suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     val downChange = down.changes[0]
     if (down.keyboardModifiers.isShiftPressed) {

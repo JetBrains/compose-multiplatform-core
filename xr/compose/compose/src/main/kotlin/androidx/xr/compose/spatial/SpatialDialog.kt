@@ -17,7 +17,6 @@
 package androidx.xr.compose.spatial
 
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RestrictTo
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
@@ -35,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -54,22 +54,21 @@ import androidx.xr.runtime.math.Pose
  *   outside of it. Defaults to `true`.
  * @property usePlatformDefaultWidth whether the dialog should use the platform's default width.
  *   Defaults to `true`. This is only used in non-spatial environments.
- * @property restingLevelAnimationSpec the animation specification for the depth offset of the app
- *   content as it animates away from the user towards its recessed resting level when a spatial
+ * @property backgroundContentAnimationSpec the animation specification for the depth offset of the
+ *   app content as it animates away from the user towards its recessed resting level when a spatial
  *   dialog is shown. The same specification is used when the app content animates back towards the
  *   user to its original resting level when the dialog is dismissed. This is only used in spatial
  *   environments.
- * @property spatialElevationLevel the elevation level of the dialog. Defaults to
+ * @property elevation the elevation level of the dialog. Defaults to
  *   [SpatialElevationLevel.DialogDefault].
  * @see [SpatialDialog]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialDialogProperties(
     @get:Suppress("GetterSetterNames") public val dismissOnBackPress: Boolean = true,
     @get:Suppress("GetterSetterNames") public val dismissOnClickOutside: Boolean = true,
     @get:Suppress("GetterSetterNames") public val usePlatformDefaultWidth: Boolean = true,
-    public val restingLevelAnimationSpec: FiniteAnimationSpec<Float> = spring(),
-    public val spatialElevationLevel: SpatialElevationLevel = SpatialElevationLevel.DialogDefault,
+    public val backgroundContentAnimationSpec: FiniteAnimationSpec<Float> = spring(),
+    public val elevation: Dp = SpatialElevationLevel.DialogDefault,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -78,8 +77,8 @@ public class SpatialDialogProperties(
         if (dismissOnBackPress != other.dismissOnBackPress) return false
         if (dismissOnClickOutside != other.dismissOnClickOutside) return false
         if (usePlatformDefaultWidth != other.usePlatformDefaultWidth) return false
-        if (restingLevelAnimationSpec != other.restingLevelAnimationSpec) return false
-        if (spatialElevationLevel != other.spatialElevationLevel) return false
+        if (backgroundContentAnimationSpec != other.backgroundContentAnimationSpec) return false
+        if (elevation != other.elevation) return false
 
         return true
     }
@@ -88,28 +87,28 @@ public class SpatialDialogProperties(
         var result = dismissOnBackPress.hashCode()
         result = 31 * result + dismissOnClickOutside.hashCode()
         result = 31 * result + usePlatformDefaultWidth.hashCode()
-        result = 31 * result + restingLevelAnimationSpec.hashCode()
-        result = 31 * result + spatialElevationLevel.hashCode()
+        result = 31 * result + backgroundContentAnimationSpec.hashCode()
+        result = 31 * result + elevation.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "SpatialDialogProperties(dismissOnBackPress=$dismissOnBackPress, dismissOnClickOutside=$dismissOnClickOutside, usePlatformDefaultWidth=$usePlatformDefaultWidth, restingLevelAnimationSpec=$restingLevelAnimationSpec, spatialElevationLevel=$spatialElevationLevel)"
+        return "SpatialDialogProperties(dismissOnBackPress=$dismissOnBackPress, dismissOnClickOutside=$dismissOnClickOutside, usePlatformDefaultWidth=$usePlatformDefaultWidth, restingLevelAnimationSpec=$backgroundContentAnimationSpec, spatialElevationLevel=$elevation)"
     }
 
     public fun copy(
         dismissOnBackPress: Boolean = this.dismissOnBackPress,
         dismissOnClickOutside: Boolean = this.dismissOnClickOutside,
         usePlatformDefaultWidth: Boolean = this.usePlatformDefaultWidth,
-        restingLevelAnimationSpec: FiniteAnimationSpec<Float> = this.restingLevelAnimationSpec,
-        spatialElevationLevel: SpatialElevationLevel = this.spatialElevationLevel,
+        restingLevelAnimationSpec: FiniteAnimationSpec<Float> = this.backgroundContentAnimationSpec,
+        elevation: Dp = this.elevation,
     ): SpatialDialogProperties =
         SpatialDialogProperties(
             dismissOnBackPress = dismissOnBackPress,
             dismissOnClickOutside = dismissOnClickOutside,
             usePlatformDefaultWidth = usePlatformDefaultWidth,
-            restingLevelAnimationSpec = restingLevelAnimationSpec,
-            spatialElevationLevel = spatialElevationLevel,
+            backgroundContentAnimationSpec = restingLevelAnimationSpec,
+            elevation = elevation,
         )
 }
 
@@ -123,17 +122,16 @@ private fun SpatialDialogProperties.toBaseDialogProperties() =
 /**
  * [SpatialDialog] is a dialog that is elevated above the activity.
  *
- * When spatial dialogs are displayed the existing app content is pushed back and the dialog appears
- * on top of the content at the base elevation level. When the dialog is dismissed the reverse
- * happens with the dialog going away and the app content elevating back into place towards the
- * user.
+ * When spatial dialogs are displayed the dialog appears on top of the content at the base elevation
+ * level.
+ *
+ * In non-spatialized environments, a standard Compose Dialog is utilized to display the content.
  *
  * @param onDismissRequest a callback to be invoked when the dialog should be dismissed.
  * @param properties the dialog properties.
  * @param content the content of the dialog.
  */
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialDialog(
     onDismissRequest: () -> Unit,
     properties: SpatialDialogProperties = SpatialDialogProperties(),
@@ -170,7 +168,7 @@ private fun LayoutSpatialDialog(
         onDispose { dialogManager.isSpatialDialogActive.value = false }
     }
 
-    LaunchedEffect(Unit) { spatialElevationLevel = properties.spatialElevationLevel }
+    LaunchedEffect(Unit) { spatialElevationLevel = properties.elevation }
 
     LaunchedEffect(dialogManager.isSpatialDialogActive.value) {
         if (!dialogManager.isSpatialDialogActive.value) {
@@ -192,10 +190,10 @@ private fun LayoutSpatialDialog(
     val zDepth by
         updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
             .animateFloat(
-                transitionSpec = { properties.restingLevelAnimationSpec },
-                label = "zDepth"
+                transitionSpec = { properties.backgroundContentAnimationSpec },
+                label = "zDepth",
             ) { state ->
-                state.level.toMeter().toM()
+                state.toMeter().toM()
             }
 
     ElevatedPanel(

@@ -33,7 +33,7 @@ class ResultInternalTest(
     private val keyName: String,
     private val exceptionName: String?,
     private val exceptionString: String?,
-    private val valueInternal: ValueInternal?
+    private val valueInternal: ValueInternal?,
 ) {
 
     @Rule @JvmField val expect = Expect.create()

@@ -23,7 +23,7 @@ import androidx.room.vo.DeleteFunction
 class DeleteFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -39,21 +39,21 @@ class DeleteFunctionProcessor(
         context.checker.check(
             functionBinder.adapter != null,
             executableElement,
-            ProcessorErrors.CANNOT_FIND_DELETE_RESULT_ADAPTER
+            ProcessorErrors.CANNOT_FIND_DELETE_RESULT_ADAPTER,
         )
 
         val (entities, params) =
             delegate.extractParams(
                 targetEntityType = annotation?.get("entity")?.asType(),
                 missingParamError = ProcessorErrors.DELETE_MISSING_PARAMS,
-                onValidatePartialEntity = { _, _ -> }
+                onValidatePartialEntity = { _, _ -> },
             )
 
         return DeleteFunction(
             element = delegate.executableElement,
             entities = entities,
             parameters = params,
-            functionBinder = functionBinder
+            functionBinder = functionBinder,
         )
     }
 }

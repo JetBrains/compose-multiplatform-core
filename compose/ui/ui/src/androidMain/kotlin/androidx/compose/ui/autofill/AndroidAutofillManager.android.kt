@@ -79,7 +79,7 @@ internal class AndroidAutofillManager(
 
     override fun onFocusChanged(
         previous: FocusTargetModifierNode?,
-        current: FocusTargetModifierNode?
+        current: FocusTargetModifierNode?,
     ) {
         previous?.requireSemanticsInfo()?.let {
             if (it.semanticsConfiguration?.isAutofillable() == true) {
@@ -99,7 +99,7 @@ internal class AndroidAutofillManager(
     /** Send events to the autofill service in response to semantics changes. */
     override fun onSemanticsChanged(
         semanticsInfo: SemanticsInfo,
-        previousSemanticsConfiguration: SemanticsConfiguration?
+        previousSemanticsConfiguration: SemanticsConfiguration?,
     ) {
         val config = semanticsInfo.semanticsConfiguration
         val prevConfig = previousSemanticsConfiguration
@@ -120,7 +120,7 @@ internal class AndroidAutofillManager(
                         platformAutofillManager.notifyValueChanged(
                             view,
                             semanticsId,
-                            AutofillApi26Helper.getAutofillTextValue(newText.toString())
+                            AutofillApi26Helper.getAutofillTextValue(newText.toString()),
                         )
                     }
                 }
@@ -241,7 +241,7 @@ internal class AndroidAutofillManager(
             platformAutofillManager.notifyViewVisibilityChanged(
                 view,
                 semanticsInfo.semanticsId,
-                true
+                true,
             )
         }
     }
@@ -255,7 +255,7 @@ internal class AndroidAutofillManager(
             platformAutofillManager.notifyViewVisibilityChanged(
                 view,
                 semanticsInfo.semanticsId,
-                true
+                true,
             )
         }
     }
@@ -265,7 +265,7 @@ internal class AndroidAutofillManager(
             platformAutofillManager.notifyViewVisibilityChanged(
                 view,
                 semanticsInfo.semanticsId,
-                false
+                false,
             )
         }
     }
@@ -277,7 +277,7 @@ internal class AndroidAutofillManager(
             platformAutofillManager.notifyViewVisibilityChanged(
                 view,
                 semanticsInfo.semanticsId,
-                false
+                false,
             )
         }
     }

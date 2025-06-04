@@ -33,7 +33,7 @@ import kotlin.jvm.JvmField
 public abstract class RoomOpenDelegate(
     public val version: Int,
     public val identityHash: String,
-    public val legacyIdentityHash: String
+    public val legacyIdentityHash: String,
 ) : RoomOpenDelegateMarker {
     public abstract fun onCreate(connection: SQLiteConnection)
 
@@ -52,7 +52,7 @@ public abstract class RoomOpenDelegate(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     public class ValidationResult(
         @JvmField public val isValid: Boolean,
-        @JvmField public val expectedFoundMsg: String?
+        @JvmField public val expectedFoundMsg: String?,
     )
 }
 

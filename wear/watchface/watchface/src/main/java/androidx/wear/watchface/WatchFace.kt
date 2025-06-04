@@ -127,7 +127,7 @@ public object WatchFaceType {
 )
 public class WatchFace(
     @WatchFaceTypeIntDef public var watchFaceType: Int,
-    public val renderer: Renderer
+    public val renderer: Renderer,
 ) {
     internal var tapListener: TapListener? = null
     internal var complicationDeniedDialogIntent: Intent? = null
@@ -149,7 +149,7 @@ public class WatchFace(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun registerEditorDelegate(
             componentName: ComponentName,
-            editorDelegate: EditorDelegate
+            editorDelegate: EditorDelegate,
         ) {
             componentNameToEditorDelegate[componentName] = editorDelegate
 
@@ -217,7 +217,7 @@ public class WatchFace(
         @UiThread
         internal fun createWatchFaceService(
             componentName: ComponentName,
-            context: Context
+            context: Context,
         ): WatchFaceService {
             // Resolve the WatchFaceControlService and construct WatchFaceService using its API
             val services =
@@ -225,7 +225,7 @@ public class WatchFace(
                     Intent(WatchFaceControlService.ACTION_WATCHFACE_CONTROL_SERVICE).apply {
                         setPackage(context.packageName)
                     },
-                    0
+                    0,
                 )
 
             if (services.size != 1)
@@ -254,7 +254,7 @@ public class WatchFace(
         public suspend fun createHeadlessSessionDelegate(
             componentName: ComponentName,
             params: HeadlessWatchFaceInstanceParams,
-            context: Context
+            context: Context,
         ): EditorDelegate {
             val watchFaceService =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -314,7 +314,7 @@ public class WatchFace(
         public fun renderWatchFaceToBitmap(
             renderParameters: RenderParameters,
             instant: Instant,
-            slotIdToComplicationData: Map<Int, ComplicationData>?
+            slotIdToComplicationData: Map<Int, ComplicationData>?,
         ): Bitmap
 
         /** Signals that the activity is going away and resources should be released. */
@@ -383,7 +383,7 @@ public class WatchFace(
         public fun onTapEvent(
             @TapTypeIntDef tapType: Int,
             tapEvent: TapEvent,
-            complicationSlot: ComplicationSlot?
+            complicationSlot: ComplicationSlot?,
         )
     }
 
@@ -412,7 +412,7 @@ public class WatchFace(
         public val viewProtectionMode: Int,
         public val statusBarGravity: Int,
         @get:JvmName("isTapEventsAccepted") public val tapEventsAccepted: Boolean,
-        @ColorInt public val accentColor: Int = WatchFaceStyle.DEFAULT_ACCENT_COLOR
+        @ColorInt public val accentColor: Int = WatchFaceStyle.DEFAULT_ACCENT_COLOR,
     ) {
         init {
             if (
@@ -459,7 +459,7 @@ public class WatchFace(
          * this must be either [Color.BLACK] or [Color.WHITE]. If this is `null` then the system
          * default will be used.
          */
-        val foregroundColor: Color?
+        val foregroundColor: Color?,
     ) {
 
         public constructor() : this(null, null)
@@ -626,7 +626,7 @@ constructor(
     internal val currentUserStyleRepository: CurrentUserStyleRepository,
     @get:VisibleForTesting public var complicationSlotsManager: ComplicationSlotsManager,
     internal val broadcastsObserver: BroadcastsObserver,
-    internal var broadcastsReceiver: BroadcastsReceiver?
+    internal var broadcastsReceiver: BroadcastsReceiver?,
 ) {
     internal var editorObscuresWatchFace = false
         set(value) {
@@ -678,28 +678,28 @@ constructor(
                     DrawMode.AMBIENT,
                     WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
                     null,
-                    complicationSlotsManager.lastComplicationTapDownEvents
+                    complicationSlotsManager.lastComplicationTapDownEvents,
                 ),
             DrawMode.INTERACTIVE to
                 RenderParameters(
                     DrawMode.INTERACTIVE,
                     WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
                     null,
-                    complicationSlotsManager.lastComplicationTapDownEvents
+                    complicationSlotsManager.lastComplicationTapDownEvents,
                 ),
             DrawMode.LOW_BATTERY_INTERACTIVE to
                 RenderParameters(
                     DrawMode.LOW_BATTERY_INTERACTIVE,
                     WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
                     null,
-                    complicationSlotsManager.lastComplicationTapDownEvents
+                    complicationSlotsManager.lastComplicationTapDownEvents,
                 ),
             DrawMode.MUTE to
                 RenderParameters(
                     DrawMode.MUTE,
                     WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
                     null,
-                    complicationSlotsManager.lastComplicationTapDownEvents
+                    complicationSlotsManager.lastComplicationTapDownEvents,
                 ),
         )
 
@@ -748,7 +748,7 @@ constructor(
             }
         displayManager.registerDisplayListener(
             displayListener,
-            watchFaceHostApi.getUiThreadHandler()
+            watchFaceHostApi.getUiThreadHandler(),
         )
     }
 
@@ -760,7 +760,7 @@ constructor(
             legacyWatchFaceStyle.accentColor,
             false,
             false,
-            legacyWatchFaceStyle.tapEventsAccepted
+            legacyWatchFaceStyle.tapEventsAccepted,
         )
 
     internal fun onActionTimeZoneChanged() {
@@ -781,7 +781,7 @@ constructor(
         mockTime.minTime =
             intent.getLongExtra(
                 EXTRA_MOCK_TIME_WRAPPING_MIN_TIME,
-                MOCK_TIME_WRAPPING_MIN_TIME_DEFAULT
+                MOCK_TIME_WRAPPING_MIN_TIME_DEFAULT,
             )
         // If MOCK_TIME_WRAPPING_MIN_TIME_DEFAULT is specified then use the current time.
         if (mockTime.minTime == MOCK_TIME_WRAPPING_MIN_TIME_DEFAULT) {
@@ -845,7 +845,7 @@ constructor(
             if (it) {
                 SetFrameRateHelper.setFrameRate(
                     renderer.surfaceHolder.surface,
-                    1000f / MAX_LOW_POWER_INTERACTIVE_UPDATE_RATE_MS.toFloat()
+                    1000f / MAX_LOW_POWER_INTERACTIVE_UPDATE_RATE_MS.toFloat(),
                 )
             } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -870,7 +870,7 @@ constructor(
         if (!watchState.isHeadless) {
             WatchFace.registerEditorDelegate(
                 componentName,
-                WFEditorDelegate(headlessWatchFaceImpl = null)
+                WFEditorDelegate(headlessWatchFaceImpl = null),
             )
             registerReceivers()
         }
@@ -918,7 +918,7 @@ constructor(
                 computeDelayTillNextFrame(
                     nextDrawTimeMillis,
                     systemTimeProvider.getSystemTimeMillis(),
-                    Instant.now()
+                    Instant.now(),
                 ) > MIN_PERCEPTIBLE_DELAY_MILLIS
         ) {
             watchFaceHostApi.invalidate()
@@ -969,7 +969,7 @@ constructor(
         override fun renderWatchFaceToBitmap(
             renderParameters: RenderParameters,
             instant: Instant,
-            slotIdToComplicationData: Map<Int, ComplicationData>?
+            slotIdToComplicationData: Map<Int, ComplicationData>?,
         ): Bitmap =
             TraceEvent("WFEditorDelegate.takeScreenshot").use {
                 slotIdToComplicationData
@@ -977,7 +977,7 @@ constructor(
                     .use {
                         renderer.takeScreenshot(
                             ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")),
-                            renderParameters
+                            renderParameters,
                         )
                     }
             }
@@ -1144,14 +1144,14 @@ constructor(
     internal fun computeDelayTillNextFrame(
         startTimeMillis: Long,
         currentTimeMillis: Long,
-        nowInstant: Instant
+        nowInstant: Instant,
     ): Long {
         // Limit update rate to conserve power when the battery is low and not charging.
         val updateRateMillis =
             if (watchState.isBatteryLowAndNotCharging.getValueOr(false)) {
                 max(
                     renderer.interactiveDrawModeUpdateDelayMillis,
-                    MAX_LOW_POWER_INTERACTIVE_UPDATE_RATE_MS
+                    MAX_LOW_POWER_INTERACTIVE_UPDATE_RATE_MS,
                 )
             } else {
                 renderer.interactiveDrawModeUpdateDelayMillis
@@ -1254,12 +1254,12 @@ constructor(
                                 it.id to it.complicationData.toApiComplicationData()
                             }
                         },
-                        instant
+                        instant,
                     )
                     .use {
                         renderer.takeScreenshot(
                             ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")),
-                            RenderParameters(params.renderParametersWireFormat)
+                            RenderParameters(params.renderParametersWireFormat),
                         )
                     }
             SharedMemoryImage.ashmemWriteImageBundle(bitmap)
@@ -1269,7 +1269,7 @@ constructor(
     internal fun createRemoteWatchFaceView(
         hostToken: IBinder,
         width: Int,
-        height: Int
+        height: Int,
     ): RemoteWatchFaceView? =
         TraceEvent("WatchFaceImpl.createRemoteWatchFaceView").use {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -1278,7 +1278,7 @@ constructor(
                     this,
                     hostToken,
                     width,
-                    height
+                    height,
                 )
             } else {
                 return null
@@ -1297,13 +1297,13 @@ constructor(
                     params.complicationData?.let {
                         mapOf(params.complicationSlotId to it.toApiComplicationData())
                     },
-                    Instant.ofEpochMilli(params.calendarTimeMillis)
+                    Instant.ofEpochMilli(params.calendarTimeMillis),
                 )
                 .use {
                     val zonedDateTime =
                         ZonedDateTime.ofInstant(
                             Instant.ofEpochMilli(params.calendarTimeMillis),
-                            ZoneId.of("UTC")
+                            ZoneId.of("UTC"),
                         )
                     // Compute the bounds of the complication based on the display rather than
                     // the headless renderer (which may be smaller).
@@ -1313,7 +1313,7 @@ constructor(
                                 0,
                                 0,
                                 Resources.getSystem().displayMetrics.widthPixels,
-                                Resources.getSystem().displayMetrics.heightPixels
+                                Resources.getSystem().displayMetrics.heightPixels,
                             )
                         )
 
@@ -1325,7 +1325,7 @@ constructor(
                             Rect(0, 0, bounds.width(), bounds.height()),
                             zonedDateTime,
                             RenderParameters(params.renderParametersWireFormat),
-                            params.complicationSlotId
+                            params.complicationSlotId,
                         )
                         picture.endRecording()
                         complicationBitmap =
@@ -1333,21 +1333,21 @@ constructor(
                                 picture,
                                 bounds.width(),
                                 bounds.height(),
-                                Bitmap.Config.ARGB_8888
+                                Bitmap.Config.ARGB_8888,
                             )
                     } else {
                         complicationBitmap =
                             Bitmap.createBitmap(
                                 bounds.width(),
                                 bounds.height(),
-                                Bitmap.Config.ARGB_8888
+                                Bitmap.Config.ARGB_8888,
                             )
                         slot.renderer.render(
                             Canvas(complicationBitmap),
                             Rect(0, 0, bounds.width(), bounds.height()),
                             zonedDateTime,
                             RenderParameters(params.renderParametersWireFormat),
-                            params.complicationSlotId
+                            params.complicationSlotId,
                         )
                     }
                     val bundle = SharedMemoryImage.ashmemWriteImageBundle(complicationBitmap)
@@ -1420,14 +1420,14 @@ internal object CreateRemoteWatchFaceViewHelper {
         watchFaceImpl: WatchFaceImpl,
         hostToken: IBinder,
         width: Int,
-        height: Int
+        height: Int,
     ): RemoteWatchFaceView {
         val context = watchFaceHostApi.getContext()
         val host =
             SurfaceControlViewHost(
                 context,
                 context.getSystemService(WindowManager::class.java).defaultDisplay,
-                hostToken
+                hostToken,
             )
         val view = SurfaceView(context)
         view.layoutParams =
@@ -1436,7 +1436,7 @@ internal object CreateRemoteWatchFaceViewHelper {
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                    PixelFormat.TRANSLUCENT
+                    PixelFormat.TRANSLUCENT,
                 )
                 .apply { title = "RemoteWatchFaceView" }
         host.setView(view, width, height)
@@ -1449,19 +1449,19 @@ internal object CreateRemoteWatchFaceViewHelper {
                     params.userStyle?.let {
                         UserStyle(
                             UserStyleData(it),
-                            watchFaceImpl.currentUserStyleRepository.schema
+                            watchFaceImpl.currentUserStyleRepository.schema,
                         )
                     },
                     params.idAndComplicationDatumWireFormats?.associate {
                         it.id to it.complicationData.toApiComplicationData()
                     },
-                    instant
+                    instant,
                 )
                 .use {
                     watchFaceImpl.renderer.renderScreenshotToSurface(
                         ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")),
                         RenderParameters(params.renderParametersWireFormat),
-                        surfaceHolder
+                        surfaceHolder,
                     )
                 }
         }

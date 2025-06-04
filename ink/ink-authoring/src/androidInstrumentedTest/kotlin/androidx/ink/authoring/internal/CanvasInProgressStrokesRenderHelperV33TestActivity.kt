@@ -116,7 +116,7 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
                     canvas,
                     inProgressStroke,
                     strokeToScreenTransform,
-                    textureAnimationProgress
+                    textureAnimationProgress,
                 )
             }
 
@@ -130,7 +130,7 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
                     canvas,
                     inProgressStroke,
                     strokeToScreenTransform,
-                    textureAnimationProgress
+                    textureAnimationProgress,
                 )
             }
         }
@@ -245,7 +245,7 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
             override fun executeDelayed(
                 command: Runnable,
                 delayTime: Long,
-                delayTimeUnit: TimeUnit
+                delayTimeUnit: TimeUnit,
             ) {
                 if (delayTime == 0L) {
                     execute(command)

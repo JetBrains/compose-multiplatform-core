@@ -37,13 +37,13 @@ import androidx.xr.runtime.internal.SpatialPointerIcon;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 
 import org.junit.After;
@@ -83,7 +83,7 @@ public final class SpatialPointerComponentImplTest {
                         mActivity,
                         mMakeFakeExecutor,
                         mXrExtensions,
-                        new FakeImpressApi(),
+                        new FakeImpressApiImpl(),
                         new EntityManager(),
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,

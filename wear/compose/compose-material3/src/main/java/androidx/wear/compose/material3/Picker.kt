@@ -143,7 +143,7 @@ public fun Picker(
     gradientColor: Color = MaterialTheme.colorScheme.background,
     userScrollEnabled: Boolean = true,
     rotaryScrollableBehavior: RotaryScrollableBehavior? = PickerDefaults.rotarySnapBehavior(state),
-    option: @Composable PickerScope.(index: Int) -> Unit
+    option: @Composable PickerScope.(index: Int) -> Unit,
 ) {
     require(gradientRatio in 0f..0.5f) { "gradientRatio should be between 0.0 and 0.5" }
     val pickerScope = remember(state) { PickerScopeImpl(state) }
@@ -203,7 +203,7 @@ public fun Picker(
                                     drawShim(
                                         gradientColor,
                                         shimHeight,
-                                        animatedShimColorAlpha.value
+                                        animatedShimColorAlpha.value,
                                     )
                                 }
                                 if (gradientRatio > 0.0f) {
@@ -236,7 +236,7 @@ public fun Picker(
             verticalArrangement = Arrangement.spacedBy(space = verticalSpacing),
             flingBehavior = pickerFlingBehavior(state),
             autoCentering = AutoCenteringParams(itemIndex = 0),
-            userScrollEnabled = userScrollEnabled
+            userScrollEnabled = userScrollEnabled,
         )
         if (readOnly && readOnlyLabel != null) {
             readOnlyLabel()
@@ -270,13 +270,13 @@ public fun Picker(
 public fun rememberPickerState(
     @IntRange(from = 1) initialNumberOfOptions: Int,
     @IntRange(from = 0) initiallySelectedIndex: Int = 0,
-    shouldRepeatOptions: Boolean = true
+    shouldRepeatOptions: Boolean = true,
 ): PickerState =
     rememberSaveable(
         initialNumberOfOptions,
         initiallySelectedIndex,
         shouldRepeatOptions,
-        saver = PickerState.Saver
+        saver = PickerState.Saver,
     ) {
         PickerState(initialNumberOfOptions, initiallySelectedIndex, shouldRepeatOptions)
     }
@@ -295,7 +295,7 @@ public fun rememberPickerState(
 public class PickerState(
     @IntRange(from = 1) initialNumberOfOptions: Int,
     @IntRange(from = 0) initiallySelectedIndex: Int = 0,
-    @get:Suppress("GetterSetterNames") public val shouldRepeatOptions: Boolean = true
+    @get:Suppress("GetterSetterNames") public val shouldRepeatOptions: Boolean = true,
 ) : ScrollableState {
     init {
         verifyNumberOfOptions(initialNumberOfOptions)
@@ -314,7 +314,7 @@ public class PickerState(
                 positiveModulo(
                     selectedOptionIndex.coerceAtMost(newNumberOfOptions - 1) -
                         scalingLazyListState.centerItemIndex,
-                    newNumberOfOptions
+                    newNumberOfOptions,
                 )
             _numberOfOptions = newNumberOfOptions
         }
@@ -362,15 +362,15 @@ public class PickerState(
                     PickerState(
                         initialNumberOfOptions = saved[0] as Int,
                         initiallySelectedIndex = saved[1] as Int,
-                        shouldRepeatOptions = saved[2] as Boolean
+                        shouldRepeatOptions = saved[2] as Boolean,
                     )
-                }
+                },
             )
     }
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         scalingLazyListState.scroll(scrollPriority, block)
     }
@@ -472,7 +472,7 @@ private fun pickerScalingParams(
     minTransitionArea: Float = 0.45f,
     maxTransitionArea: Float = 0.45f,
     scaleInterpolator: Easing = CubicBezierEasing(0.25f, 0.00f, 0.75f, 1.00f),
-    viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 5f).toInt() }
+    viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 5f).toInt() },
 ): ScalingParams =
     ScalingLazyColumnDefaults.scalingParams(
         edgeScale = edgeScale,
@@ -482,7 +482,7 @@ private fun pickerScalingParams(
         minTransitionArea = minTransitionArea,
         maxTransitionArea = maxTransitionArea,
         scaleInterpolator = scaleInterpolator,
-        viewportVerticalOffsetResolver = viewportVerticalOffsetResolver
+        viewportVerticalOffsetResolver = viewportVerticalOffsetResolver,
     )
 
 /**
@@ -495,12 +495,12 @@ private fun pickerScalingParams(
 @Composable
 private fun pickerFlingBehavior(
     state: PickerState,
-    decay: DecayAnimationSpec<Float> = exponentialDecay()
+    decay: DecayAnimationSpec<Float> = exponentialDecay(),
 ): FlingBehavior {
     return ScalingLazyColumnDefaults.snapFlingBehavior(
         state = state.scalingLazyListState,
         snapOffset = 0.dp,
-        decay = decay
+        decay = decay,
     )
 }
 
@@ -536,7 +536,7 @@ private fun ContentDrawScope.drawShim(gradientColor: Color, height: Float, alpha
     drawRect(
         color = colorWithAlpha,
         topLeft = Offset(0f, size.height - height),
-        size = Size(size.width, height)
+        size = Size(size.width, height),
     )
 }
 
@@ -546,14 +546,14 @@ private fun ContentDrawScope.drawGradient(gradientColor: Color, gradientRatio: F
         Brush.linearGradient(
             colors = listOf(gradientColor, Color.Transparent),
             start = Offset(size.width / 2, 0f),
-            end = Offset(size.width / 2, size.height * gradientRatio)
+            end = Offset(size.width / 2, size.height * gradientRatio),
         )
     )
     drawRect(
         Brush.linearGradient(
             colors = listOf(Color.Transparent, gradientColor),
             start = Offset(size.width / 2, size.height * (1 - gradientRatio)),
-            end = Offset(size.width / 2, size.height)
+            end = Offset(size.width / 2, size.height),
         )
     )
 }
@@ -576,7 +576,7 @@ internal fun pickerTextOption(
     { value: Int, pickerSelected: Boolean ->
         Box(
             modifier = Modifier.fillMaxSize().height(optionHeight),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = indexToText(value),

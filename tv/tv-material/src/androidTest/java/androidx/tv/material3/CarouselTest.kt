@@ -383,7 +383,7 @@ class CarouselTest {
                                 .size(200.dp)
                                 .border(2.dp, if (isFocused) Color.Red else Color.Black)
                                 .onFocusChanged { fs -> isFocused = fs.isFocused }
-                                .focusable()
+                                .focusable(),
                     )
                 }
                 item {
@@ -395,14 +395,14 @@ class CarouselTest {
                                 .border(2.dp, Color.Black),
                         carouselState = rememberCarouselState(),
                         itemCount = 3,
-                        autoScrollDurationMillis = delayBetweenItems
+                        autoScrollDurationMillis = delayBetweenItems,
                     ) {
                         SampleCarouselItem(index = it) {
                             Box(
                                 modifier =
                                     Modifier.animateEnterExit(
                                         enter = slideInHorizontally(),
-                                        exit = slideOutHorizontally()
+                                        exit = slideOutHorizontally(),
                                     )
                             ) {
                                 Column(modifier = Modifier.align(Alignment.BottomStart)) {
@@ -422,7 +422,7 @@ class CarouselTest {
                                 .size(250.dp)
                                 .border(2.dp, if (isFocused) Color.Red else Color.Black)
                                 .onFocusChanged { fs -> isFocused = fs.isFocused }
-                                .focusable()
+                                .focusable(),
                     )
                 }
             }
@@ -537,7 +537,7 @@ class CarouselTest {
                                 numberOfTimesTabGainedFocus++
                             }
                         },
-                    selectedTabIndex = selectedTabIndex
+                    selectedTabIndex = selectedTabIndex,
                 ) {
                     tabs.forEachIndexed { index, tab ->
                         Tab(
@@ -566,7 +566,7 @@ class CarouselTest {
         itemProgression.forEach {
             performKeyPress(
                 if (it < 0) NativeKeyEvent.KEYCODE_DPAD_LEFT else NativeKeyEvent.KEYCODE_DPAD_RIGHT,
-                abs(it)
+                abs(it),
             )
             rule.waitForIdle()
         }
@@ -728,7 +728,7 @@ class CarouselTest {
             }
             SampleCarousel(
                 itemCount = itemCount,
-                timeToDisplayItemMillis = itemDisplayDurationMs
+                timeToDisplayItemMillis = itemDisplayDurationMs,
             ) { index ->
                 if (index >= itemCount) {
                     // itemIndex requested should not be greater than itemCount. User could be
@@ -838,7 +838,7 @@ private fun SampleCarousel(
     carouselState: CarouselState = rememberCarouselState(),
     itemCount: Int = 3,
     timeToDisplayItemMillis: Long = delayBetweenItems,
-    content: @Composable AnimatedContentScope.(index: Int) -> Unit
+    content: @Composable AnimatedContentScope.(index: Int) -> Unit,
 ) {
     Carousel(
         modifier = Modifier.padding(5.dp).fillMaxWidth().height(200.dp).testTag("pager"),
@@ -849,7 +849,7 @@ private fun SampleCarousel(
             CarouselDefaults.IndicatorRow(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).testTag("indicator"),
                 activeItemIndex = carouselState.activeItemIndex,
-                itemCount = itemCount
+                itemCount = itemCount,
             )
         },
         content = { content(it) },
@@ -881,10 +881,7 @@ private fun SampleButton(text: String = "Play") {
     )
 }
 
-private fun checkNodeCompletelyVisible(
-    rule: ComposeContentTestRule,
-    tag: String,
-): Boolean {
+private fun checkNodeCompletelyVisible(rule: ComposeContentTestRule, tag: String): Boolean {
     rule.waitForIdle()
 
     val rootRect = rule.onRoot().getUnclippedBoundsInRoot()
@@ -915,7 +912,7 @@ private fun performLongKeyPress(rule: ComposeContentTestRule, keyCode: Int, coun
                 0,
                 0,
                 0,
-                0
+                0,
             )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(firstKeyDownEvent))
         rule.waitForIdle()
@@ -930,7 +927,7 @@ private fun performLongKeyPress(rule: ComposeContentTestRule, keyCode: Int, coun
                 5,
                 0,
                 0,
-                0
+                0,
             )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(repeatedKeyDownEvent))
         rule.waitForIdle()
@@ -945,7 +942,7 @@ private fun performLongKeyPress(rule: ComposeContentTestRule, keyCode: Int, coun
                 0,
                 0,
                 0,
-                0
+                0,
             )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyUpEvent))
         rule.waitForIdle()

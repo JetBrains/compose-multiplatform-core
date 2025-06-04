@@ -74,7 +74,7 @@ public fun GlanceModifier.clickable(block: () -> Unit): GlanceModifier =
 @Composable
 public fun GlanceModifier.clickable(
     @DrawableRes rippleOverride: Int = NoRippleOverride,
-    block: () -> Unit
+    block: () -> Unit,
 ): GlanceModifier =
     this.then(ActionModifier(action = action(block = block), rippleOverride = rippleOverride))
 
@@ -87,7 +87,7 @@ public fun GlanceModifier.clickable(
  */
 public fun GlanceModifier.clickable(
     onClick: Action,
-    @DrawableRes rippleOverride: Int = NoRippleOverride
+    @DrawableRes rippleOverride: Int = NoRippleOverride,
 ): GlanceModifier = this.then(ActionModifier(action = onClick, rippleOverride = rippleOverride))
 
 /**
@@ -107,14 +107,14 @@ public fun GlanceModifier.clickable(
 public fun GlanceModifier.clickable(
     key: String? = null,
     @DrawableRes rippleOverride: Int = NoRippleOverride,
-    block: () -> Unit
+    block: () -> Unit,
 ): GlanceModifier =
     this.then(ActionModifier(action = action(key, block), rippleOverride = rippleOverride))
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ActionModifier(
     public val action: Action,
-    @DrawableRes public val rippleOverride: Int = NoRippleOverride
+    @DrawableRes public val rippleOverride: Int = NoRippleOverride,
 ) : GlanceModifier.Element {
     override fun toString(): String {
         return "ActionModifier(action=$action, rippleOverride=$rippleOverride)"

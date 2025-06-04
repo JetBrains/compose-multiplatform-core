@@ -131,7 +131,7 @@ class NetworkNotRoamingController(tracker: ConstraintTracker<NetworkState>) :
                 .debug(
                     TAG,
                     "Not-roaming network constraint is not supported before API 24, " +
-                        "only checking for connected state."
+                        "only checking for connected state.",
                 )
             !value.isConnected
         } else !value.isConnected || !value.isNotRoaming
@@ -183,7 +183,7 @@ class NetworkMeteredController(tracker: ConstraintTracker<NetworkState>) :
                 .debug(
                     TAG,
                     "Metered network constraint is not supported before API 26, " +
-                        "only checking for connected state."
+                        "only checking for connected state.",
                 )
             !value.isConnected
         } else !value.isConnected || !value.isMetered

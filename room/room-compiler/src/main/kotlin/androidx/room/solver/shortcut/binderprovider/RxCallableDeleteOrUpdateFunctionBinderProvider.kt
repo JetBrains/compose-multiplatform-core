@@ -48,7 +48,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
         return LambdaDeleteOrUpdateFunctionBinder(
             typeArg = typeArg,
             functionName = rxType.factoryMethodName,
-            adapter = adapter
+            adapter = adapter,
         )
     }
 
@@ -60,7 +60,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
                 RxCompletableDeleteOrUpdateFunctionBinderProvider(context, RxType.RX2_COMPLETABLE),
                 RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_SINGLE),
                 RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_MAYBE),
-                RxCompletableDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_COMPLETABLE)
+                RxCompletableDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_COMPLETABLE),
             )
     }
 }
@@ -89,7 +89,7 @@ private class RxCompletableDeleteOrUpdateFunctionBinderProvider(context: Context
 
 private class RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(
     context: Context,
-    rxType: RxType
+    rxType: RxType,
 ) : RxCallableDeleteOrUpdateFunctionBinderProvider(context, rxType) {
 
     /** Since Maybe can have null values, the lambda returned must allow for null values. */

@@ -167,4 +167,14 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Override
+    @ExperimentalWarmUpRendererProcess
+    public void warmUpRendererProcess() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.WARM_UP_RENDERER_PROCESS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.warmUpRendererProcess();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
 }

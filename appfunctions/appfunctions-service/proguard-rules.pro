@@ -20,6 +20,11 @@
     public *;
 }
 
+# Keeps PlatformAppFunctionService because the caller is from IPC
+-keep,allowoptimization class androidx.appfunctions.service.PlatformAppFunctionService {
+    public *;
+}
+
 # Keeps ExtensionAppFunctionService because the caller is from IPC
 -keep,allowoptimization class androidx.appfunctions.service.ExtensionAppFunctionService {
     public *;

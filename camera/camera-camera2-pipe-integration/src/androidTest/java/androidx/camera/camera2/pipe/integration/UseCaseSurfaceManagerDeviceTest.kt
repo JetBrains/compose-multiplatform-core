@@ -239,8 +239,8 @@ class UseCaseSurfaceManagerDeviceTest {
                         useCaseThreads,
                         cameraPipe,
                         InactiveSurfaceCloserImpl(),
-                        SessionConfigAdapter(useCases = useCases)
-                    )
+                        SessionConfigAdapter(useCases = useCases),
+                    ),
             )
 
         // Act.
@@ -279,7 +279,7 @@ class UseCaseSurfaceManagerDeviceTest {
             ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2).apply {
                 setOnImageAvailableListener(
                     onImageAvailableListener,
-                    HandlerCompat.createAsync(handlerThread.looper)
+                    HandlerCompat.createAsync(handlerThread.looper),
                 )
             }
 
@@ -302,11 +302,11 @@ class UseCaseSurfaceManagerDeviceTest {
                     camera2ConfigBuilder
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AF_MODE,
-                            CaptureRequest.CONTROL_AF_MODE_AUTO
+                            CaptureRequest.CONTROL_AF_MODE_AUTO,
                         )
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                     addImplementationOptions(camera2ConfigBuilder.build())
                 }

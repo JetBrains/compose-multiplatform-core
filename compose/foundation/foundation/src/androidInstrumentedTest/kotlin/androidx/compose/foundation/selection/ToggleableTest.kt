@@ -127,17 +127,17 @@ class ToggleableTest {
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.On, onClick = {})
                         .testTag("checkedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.Off, onClick = {})
                         .testTag("unCheckedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.Indeterminate, onClick = {})
                         .testTag("indeterminateToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -145,7 +145,7 @@ class ToggleableTest {
         fun hasIndeterminateState(): SemanticsMatcher =
             SemanticsMatcher.expectValue(
                 SemanticsProperties.ToggleableState,
-                ToggleableState.Indeterminate
+                ToggleableState.Indeterminate,
             )
 
         fun roleNotSet(): SemanticsMatcher =
@@ -178,12 +178,12 @@ class ToggleableTest {
                 Box(
                     Modifier.toggleable(value = true, onValueChange = {})
                         .testTag("checkedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.toggleable(value = false, onValueChange = {})
                         .testTag("unCheckedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -208,9 +208,9 @@ class ToggleableTest {
                     Modifier.triStateToggleable(
                         state = ToggleableState.On,
                         onClick = {},
-                        enabled = false
+                        enabled = false,
                     ),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -227,7 +227,7 @@ class ToggleableTest {
             Box {
                 Box(
                     Modifier.toggleable(value = checked, onValueChange = onCheckedChange),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -254,8 +254,8 @@ class ToggleableTest {
                             .toggleable(
                                 value = checked,
                                 onValueChange = onCheckedChange,
-                                enabled = enabled.value
-                            )
+                                enabled = enabled.value,
+                            ),
                 )
             }
         }
@@ -292,7 +292,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -342,7 +342,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                     ) {
                         BasicText("ToggleableText")
@@ -394,7 +394,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -447,7 +447,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                     ) {
                         BasicText("ToggleableText")
@@ -500,7 +500,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -548,7 +548,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                 ) {
                     BasicText("ToggleableText")
@@ -590,7 +590,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                 ) {
                     BasicText("ToggleableText")
@@ -655,7 +655,7 @@ class ToggleableTest {
                         value = true,
                         onValueChange = {},
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("toggleable")
@@ -667,7 +667,7 @@ class ToggleableTest {
                     "interactionSource",
                     "enabled",
                     "role",
-                    "onValueChange"
+                    "onValueChange",
                 )
         }
     }
@@ -700,7 +700,7 @@ class ToggleableTest {
                         state = ToggleableState.On,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("triStateToggleable")
@@ -712,7 +712,7 @@ class ToggleableTest {
                     "interactionSource",
                     "enabled",
                     "role",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -726,7 +726,7 @@ class ToggleableTest {
                 value = toggled,
                 interactionSource = interactionSource,
                 indication = null,
-                onValueChange = { toggled = true }
+                onValueChange = { toggled = true },
             )
         }
     }
@@ -740,7 +740,7 @@ class ToggleableTest {
                 state = toggleableState,
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = { toggleableState = ToggleableState.On }
+                onClick = { toggleableState = ToggleableState.On },
             )
         }
     }
@@ -751,7 +751,7 @@ class ToggleableTest {
         testToggleableMinTouchTarget {
             Modifier.triStateToggleable(
                 state = toggleableState,
-                onClick = { toggleableState = ToggleableState.On }
+                onClick = { toggleableState = ToggleableState.On },
             )
         }
     }
@@ -791,7 +791,7 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
@@ -825,7 +825,7 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
@@ -859,7 +859,7 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
@@ -893,7 +893,7 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
@@ -925,7 +925,7 @@ class ToggleableTest {
                 modifier =
                     Modifier.testTag("toggleable")
                         .focusRequester(focusRequester)
-                        .triStateToggleable(ToggleableState(toggled)) { toggled = !toggled }
+                        .triStateToggleable(ToggleableState(toggled)) { toggled = !toggled },
             )
         }
 
@@ -961,8 +961,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1009,8 +1009,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1056,8 +1056,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1104,8 +1104,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1139,8 +1139,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1208,7 +1208,7 @@ class ToggleableTest {
                                 value = false,
                                 interactionSource = interactionSource,
                                 indication = null,
-                            ) {}
+                            ) {},
                 )
             }
         }
@@ -1264,8 +1264,8 @@ class ToggleableTest {
                             value = false,
                             interactionSource = interactionSource,
                             indication = null,
-                            enabled = enabled.value
-                        ) {}
+                            enabled = enabled.value,
+                        ) {},
                 )
             }
         }
@@ -1324,8 +1324,8 @@ class ToggleableTest {
                         modifier =
                             Modifier.testTag("toggleable").toggleable(
                                 value = false,
-                                interactionSource = interactionSource
-                            ) {}
+                                interactionSource = interactionSource,
+                            ) {},
                     )
                 }
             }
@@ -1356,8 +1356,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").toggleable(
                             value = false,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1388,8 +1388,8 @@ class ToggleableTest {
                         modifier =
                             Modifier.testTag("toggleable").triStateToggleable(
                                 state = state,
-                                interactionSource = interactionSource
-                            ) {}
+                                interactionSource = interactionSource,
+                            ) {},
                     )
                 }
             }
@@ -1421,8 +1421,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").triStateToggleable(
                             state = state,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1446,7 +1446,7 @@ class ToggleableTest {
             Modifier.toggleable(
                 value = toggleInput,
                 interactionSource = null,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1459,7 +1459,7 @@ class ToggleableTest {
             Modifier.toggleable(
                 value = toggleInput,
                 interactionSource = interactionSource,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1472,7 +1472,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = null,
                 indication = null,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1486,7 +1486,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = interactionSource,
                 indication = null,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1500,7 +1500,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1514,14 +1514,14 @@ class ToggleableTest {
                 value = true,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         val modifier2 =
             Modifier.toggleable(
                 value = true,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1538,7 +1538,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1553,14 +1553,14 @@ class ToggleableTest {
                 value = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         val modifier2 =
             Modifier.toggleable(
                 value = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1574,7 +1574,7 @@ class ToggleableTest {
             Modifier.triStateToggleable(
                 state = ToggleableState(toggleInput),
                 interactionSource = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1587,7 +1587,7 @@ class ToggleableTest {
             Modifier.triStateToggleable(
                 state = ToggleableState(toggleInput),
                 interactionSource = interactionSource,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1600,7 +1600,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = null,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1614,7 +1614,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1628,7 +1628,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1642,14 +1642,14 @@ class ToggleableTest {
                 state = ToggleableState.On,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.triStateToggleable(
                 state = ToggleableState.On,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1666,7 +1666,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1681,14 +1681,14 @@ class ToggleableTest {
                 state = ToggleableState.On,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.triStateToggleable(
                 state = ToggleableState.On,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal

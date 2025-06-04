@@ -92,7 +92,7 @@ internal fun Modifier.circularWavyProgressIndicator(
     gapSize: Dp,
     amplitude: (progress: Float) -> Float,
     wavelength: Dp,
-    waveSpeed: Dp
+    waveSpeed: Dp,
 ): Modifier =
     this.then(
         DeterminateCircularWavyProgressElement(
@@ -104,7 +104,7 @@ internal fun Modifier.circularWavyProgressIndicator(
             gapSize = gapSize,
             amplitude = amplitude,
             wavelength = wavelength,
-            waveSpeed = waveSpeed
+            waveSpeed = waveSpeed,
         )
     )
 
@@ -131,7 +131,7 @@ internal fun Modifier.circularWavyProgressIndicator(
     gapSize: Dp,
     @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
     wavelength: Dp,
-    waveSpeed: Dp
+    waveSpeed: Dp,
 ): Modifier =
     this.then(
         IndeterminateCircularWavyProgressElement(
@@ -142,7 +142,7 @@ internal fun Modifier.circularWavyProgressIndicator(
             gapSize = gapSize,
             amplitude = amplitude,
             wavelength = wavelength,
-            waveSpeed = waveSpeed
+            waveSpeed = waveSpeed,
         )
     )
 
@@ -155,7 +155,7 @@ private abstract class BaseCircularWavyProgressElement<N : BaseCircularWavyProgr
     open val trackStroke: Stroke,
     open val gapSize: Dp,
     open val wavelength: Dp,
-    open val waveSpeed: Dp
+    open val waveSpeed: Dp,
 ) : ModifierNodeElement<N>() {
 
     override fun update(node: N) {
@@ -313,7 +313,7 @@ private abstract class BaseCircularWavyProgressNode(
         wavelength: Float,
         strokeWidth: Float,
         size: Size,
-        path: Path
+        path: Path,
     ): Path? = circularShapes.getTrackPath(path = path)
 
     /** A function that returns a progress [Path] for a given progress. */
@@ -323,12 +323,12 @@ private abstract class BaseCircularWavyProgressNode(
         strokeWidth: Float,
         size: Size,
         supportMotion: Boolean,
-        path: Path
+        path: Path,
     ): Path =
         circularShapes.getProgressPath(
             amplitude = amplitude,
             path = path,
-            repeatPath = supportMotion
+            repeatPath = supportMotion,
         )
 
     /**
@@ -368,7 +368,7 @@ private abstract class BaseCircularWavyProgressNode(
                             infiniteRepeatable(
                                 animation = tween(durationMillis, easing = LinearEasing),
                                 repeatMode = RepeatMode.Restart,
-                            )
+                            ),
                     ) {
                         // Update the state on each frame
                         waveOffsetState.floatValue = value % 1f
@@ -397,7 +397,7 @@ private class DeterminateCircularWavyProgressElement(
     override val gapSize: Dp,
     val amplitude: (progress: Float) -> Float,
     override val wavelength: Dp,
-    override val waveSpeed: Dp
+    override val waveSpeed: Dp,
 ) :
     BaseCircularWavyProgressElement<DeterminateCircularWavyProgressNode>(
         color = color,
@@ -406,7 +406,7 @@ private class DeterminateCircularWavyProgressElement(
         trackStroke = trackStroke,
         gapSize = gapSize,
         wavelength = wavelength,
-        waveSpeed = waveSpeed
+        waveSpeed = waveSpeed,
     ) {
 
     override fun create(): DeterminateCircularWavyProgressNode =
@@ -419,7 +419,7 @@ private class DeterminateCircularWavyProgressElement(
             trackStrokeParameter = trackStroke,
             gapSizeParameter = gapSize,
             wavelengthParameter = wavelength,
-            waveSpeedParameter = waveSpeed
+            waveSpeedParameter = waveSpeed,
         )
 
     override fun update(node: DeterminateCircularWavyProgressNode) {
@@ -461,7 +461,7 @@ private class IndeterminateCircularWavyProgressElement(
     override val gapSize: Dp,
     @FloatRange(from = 0.0, to = 1.0) val amplitude: Float,
     override val wavelength: Dp,
-    override val waveSpeed: Dp
+    override val waveSpeed: Dp,
 ) :
     BaseCircularWavyProgressElement<IndeterminateCircularWavyProgressNode>(
         color = color,
@@ -470,7 +470,7 @@ private class IndeterminateCircularWavyProgressElement(
         trackStroke = trackStroke,
         gapSize = gapSize,
         wavelength = wavelength,
-        waveSpeed = waveSpeed
+        waveSpeed = waveSpeed,
     ) {
 
     override fun create(): IndeterminateCircularWavyProgressNode =
@@ -482,7 +482,7 @@ private class IndeterminateCircularWavyProgressElement(
             gapSizeParameter = gapSize,
             amplitudeParameter = amplitude,
             wavelengthParameter = wavelength,
-            waveSpeedParameter = waveSpeed
+            waveSpeedParameter = waveSpeed,
         )
 
     override fun update(node: IndeterminateCircularWavyProgressNode) {
@@ -530,7 +530,7 @@ private class DeterminateCircularWavyProgressNode(
         trackStrokeParameter = trackStrokeParameter,
         gapSizeParameter = gapSizeParameter,
         wavelengthParameter = wavelengthParameter,
-        waveSpeedParameter = waveSpeedParameter
+        waveSpeedParameter = waveSpeedParameter,
     ) {
 
     // Amplitude animation
@@ -593,7 +593,7 @@ private class DeterminateCircularWavyProgressNode(
                                         IncreasingAmplitudeAnimationSpec
                                     } else {
                                         DecreasingAmplitudeAnimationSpec
-                                    }
+                                    },
                             ) {
                                 amplitudeState.floatValue = value
                             }
@@ -611,7 +611,7 @@ private class DeterminateCircularWavyProgressNode(
                     size = size,
                     wavelength = currentWavelengthPx,
                     strokeWidth = stroke.width,
-                    requiresMorph = amplitudeAnimationJob != null
+                    requiresMorph = amplitudeAnimationJob != null,
                 )
 
                 // Update the vertexCountForCurrentAnimation after the circularShapes.update().
@@ -655,14 +655,14 @@ private class DeterminateCircularWavyProgressNode(
                         wavelength = currentWavelengthPx,
                         gapSize = currentGapPx,
                         stroke = stroke,
-                        trackStroke = trackStroke
+                        trackStroke = trackStroke,
                     )
                     drawCircularIndicator(
                         color = color,
                         trackColor = trackColor,
                         stroke = stroke,
                         trackStroke = trackStroke,
-                        drawingCache = progressDrawingCache
+                        drawingCache = progressDrawingCache,
                     )
                 }
             }
@@ -687,7 +687,7 @@ private class IndeterminateCircularWavyProgressNode(
         trackStrokeParameter = trackStrokeParameter,
         gapSizeParameter = gapSizeParameter,
         wavelengthParameter = wavelengthParameter,
-        waveSpeedParameter = waveSpeedParameter
+        waveSpeedParameter = waveSpeedParameter,
     ) {
 
     // Specific animations for indeterminate progress
@@ -756,7 +756,7 @@ private class IndeterminateCircularWavyProgressNode(
                     globalRotationAnim.animateTo(
                         targetValue =
                             globalRotationAnim.value + CircularGlobalRotationDegreesTarget,
-                        animationSpec = circularIndeterminateGlobalRotationAnimationSpec
+                        animationSpec = circularIndeterminateGlobalRotationAnimationSpec,
                     ) {
                         cacheDrawNode.invalidateDraw()
                     }
@@ -767,7 +767,7 @@ private class IndeterminateCircularWavyProgressNode(
                     additionalRotationAnim.animateTo(
                         targetValue =
                             additionalRotationAnim.value + CircularAdditionalRotationDegreesTarget,
-                        animationSpec = circularIndeterminateRotationAnimationSpec
+                        animationSpec = circularIndeterminateRotationAnimationSpec,
                     ) {
                         cacheDrawNode.invalidateDraw()
                     }
@@ -783,7 +783,7 @@ private class IndeterminateCircularWavyProgressNode(
                             )
                                 CircularIndeterminateMaxProgress
                             else CircularIndeterminateMinProgress,
-                        animationSpec = circularIndeterminateProgressAnimationSpec
+                        animationSpec = circularIndeterminateProgressAnimationSpec,
                     ) {
                         cacheDrawNode.invalidateDraw()
                     }
@@ -807,7 +807,7 @@ private class IndeterminateCircularWavyProgressNode(
                     size = size,
                     wavelength = currentWavelengthPx,
                     strokeWidth = stroke.width,
-                    requiresMorph = amplitude > 0f && amplitude < 1f
+                    requiresMorph = amplitude > 0f && amplitude < 1f,
                 )
 
                 // Update the vertexCountForCurrentAnimation after the circularShapes.update().
@@ -851,7 +851,7 @@ private class IndeterminateCircularWavyProgressNode(
                         wavelength = currentWavelengthPx,
                         gapSize = currentGapPx,
                         stroke = stroke,
-                        trackStroke = trackStroke
+                        trackStroke = trackStroke,
                     )
 
                     // Draw
@@ -868,7 +868,7 @@ private class IndeterminateCircularWavyProgressNode(
                             trackColor = trackColor,
                             stroke = stroke,
                             trackStroke = trackStroke,
-                            drawingCache = progressDrawingCache
+                            drawingCache = progressDrawingCache,
                         )
                     }
                 }
@@ -990,11 +990,11 @@ private class CircularProgressDrawingCache {
                 strokeWidth: Float,
                 size: Size,
                 supportsMotion: Boolean,
-                path: Path
+                path: Path,
             ) -> Path,
         trackPathProvider:
             (
-                amplitude: Float, wavelength: Float, strokeWidth: Float, size: Size, path: Path
+                amplitude: Float, wavelength: Float, strokeWidth: Float, size: Size, path: Path,
             ) -> Path?,
         enableProgressMotion: Boolean,
         @FloatRange(from = 0.0, to = 1.0) startProgress: Float,
@@ -1004,7 +1004,7 @@ private class CircularProgressDrawingCache {
         @FloatRange(from = 0.0, fromInclusive = false) wavelength: Float,
         @FloatRange(from = 0.0) gapSize: Float,
         stroke: Stroke,
-        trackStroke: Stroke
+        trackStroke: Stroke,
     ) {
         val pathsUpdates =
             updateFullPaths(
@@ -1016,13 +1016,13 @@ private class CircularProgressDrawingCache {
                 wavelength = wavelength,
                 gapSize = gapSize,
                 stroke = stroke,
-                trackStroke = trackStroke
+                trackStroke = trackStroke,
             )
         updateDrawPaths(
             forceUpdate = pathsUpdates,
             startProgress = startProgress,
             endProgress = endProgress,
-            waveOffset = waveOffset
+            waveOffset = waveOffset,
         )
     }
 
@@ -1067,11 +1067,11 @@ private class CircularProgressDrawingCache {
                 strokeWidth: Float,
                 size: Size,
                 supportsMotion: Boolean,
-                path: Path
+                path: Path,
             ) -> Path,
         trackPathProvider:
             (
-                amplitude: Float, wavelength: Float, strokeWidth: Float, size: Size, path: Path
+                amplitude: Float, wavelength: Float, strokeWidth: Float, size: Size, path: Path,
             ) -> Path?,
         enableProgressMotion: Boolean,
         @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
@@ -1121,7 +1121,7 @@ private class CircularProgressDrawingCache {
             stroke.width,
             size,
             enableProgressMotion,
-            fullProgressPath
+            fullProgressPath,
         )
         processPath(fullProgressPath, size, scaleMatrix)
         progressPathMeasure.setPath(path = fullProgressPath, forceClosed = true)
@@ -1180,7 +1180,7 @@ private class CircularProgressDrawingCache {
         forceUpdate: Boolean,
         @FloatRange(from = 0.0, to = 1.0) startProgress: Float,
         @FloatRange(from = 0.0, to = 1.0) endProgress: Float,
-        @FloatRange(from = 0.0, to = 1.0) waveOffset: Float
+        @FloatRange(from = 0.0, to = 1.0) waveOffset: Float,
     ) {
         require(currentSize != Size.Unspecified) {
             "updateDrawPaths was called before updateFullPaths"
@@ -1215,7 +1215,7 @@ private class CircularProgressDrawingCache {
             progressPathMeasure.getSegment(
                 startDistance = pStart + startStopShift,
                 stopDistance = pStop + startStopShift,
-                destination = progressPathToDraw
+                destination = progressPathToDraw,
             )
 
             val offsetAngle = coercedWaveOffset * 360 % 360
@@ -1239,7 +1239,7 @@ private class CircularProgressDrawingCache {
             progressPathMeasure.getSegment(
                 startDistance = pStart,
                 stopDistance = pStop,
-                destination = progressPathToDraw
+                destination = progressPathToDraw,
             )
         }
         if (trackPathLength > 0) {
@@ -1248,7 +1248,7 @@ private class CircularProgressDrawingCache {
             trackPathMeasure.getSegment(
                 startDistance = tStart,
                 stopDistance = tStop,
-                destination = trackPathToDraw
+                destination = trackPathToDraw,
             )
         }
 
@@ -1321,7 +1321,7 @@ private class CircularShapes {
         size: Size,
         @FloatRange(from = 0.0, fromInclusive = false) wavelength: Float,
         @FloatRange(from = 0.0, fromInclusive = false) strokeWidth: Float,
-        requiresMorph: Boolean
+        requiresMorph: Boolean,
     ) {
         require(wavelength > 0f) { "Wavelength should be greater than zero" }
         if (size == currentSize && wavelength == currentWavelength) {
@@ -1347,7 +1347,7 @@ private class CircularShapes {
                         numVerticesPerRadius = numVertices,
                         innerRadius = 0.75f,
                         rounding = CornerRounding(radius = 0.35f, smoothing = 0.4f),
-                        innerRounding = CornerRounding(radius = 0.5f)
+                        innerRounding = CornerRounding(radius = 0.5f),
                     )
                     .normalized()
             if (requiresMorph) {
@@ -1377,7 +1377,7 @@ private class CircularShapes {
         path: Path,
         repeatPath: Boolean,
         rotationPivotX: Float = 0.5f,
-        rotationPivotY: Float = 0.5f
+        rotationPivotY: Float = 0.5f,
     ): Path {
         if (activeIndicatorMorph != null) {
             activeIndicatorMorph!!.toPath(

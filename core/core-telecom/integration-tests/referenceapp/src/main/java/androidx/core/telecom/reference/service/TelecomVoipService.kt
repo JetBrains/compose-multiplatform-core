@@ -126,13 +126,13 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         val setActiveChannel: Channel<Unit> = Channel(Channel.CONFLATED),
         val setInactiveChannel: Channel<Unit> = Channel(Channel.CONFLATED),
         val disconnectChannel: Channel<Unit> = Channel(Channel.CONFLATED),
-        val switchAudioChannel: Channel<CallEndpointCompat> = Channel(Channel.CONFLATED)
+        val switchAudioChannel: Channel<CallEndpointCompat> = Channel(Channel.CONFLATED),
     )
 
     // Encapsulates channels and the handling coroutine Job for a single call
     private class CallController(
         val job: Job, // The main job handling this call's lifecycle and actions
-        val actions: CallActions
+        val actions: CallActions,
     )
 
     override fun onCreate() {
@@ -208,7 +208,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                                 initializeExtensions(
                                     callId = callId,
                                     settings = loadAllExtensionSettings(applicationContext),
-                                    scope = this
+                                    scope = this,
                                 )
 
                             onCall {
@@ -218,7 +218,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                                     initializeAndMonitorCall(
                                         callId = callId,
                                         callAttributes = callAttributes,
-                                        initializedExtensions = initializedExtensionsHolder
+                                        initializedExtensions = initializedExtensionsHolder,
                                     )
                                 }
                                 launch {
@@ -242,7 +242,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                         updateCallDataInternal(callId) {
                             it.copy(
                                 callState = CallState.UNKNOWN,
-                                callException = CallException(CallException.ERROR_UNKNOWN)
+                                callException = CallException(CallException.ERROR_UNKNOWN),
                             )
                         }
                     } finally {
@@ -257,7 +257,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private fun initializeExtensions(
         callId: String,
         settings: ExtensionSettings,
-        scope: ExtensionInitializationScope
+        scope: ExtensionInitializationScope,
     ): InitializedExtensionsHolder {
         var localCallSilenceExt: LocalCallSilenceExtension? = null
         var callIconExt: CallIconExtension? = null
@@ -271,7 +271,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                 scope.addLocalCallSilenceExtension(false) { isSilenced ->
                     Log.i(
                         TAG,
-                        "[$callId] Local Silence Update Received" + " via Callback: $isSilenced"
+                        "[$callId] Local Silence Update Received" + " via Callback: $isSilenced",
                     )
                     updateCallDataInternal(callId) { it.copy(isLocallyMuted = isSilenced) }
                 }
@@ -310,7 +310,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                 Log.i(
                     TAG,
                     "[$callId] Kick Participant Request Received" +
-                        " via Callback: ${participantToKick.id}"
+                        " via Callback: ${participantToKick.id}",
                 )
                 participantsMgr.handleRemoteKickRequest(participantToKick)
                 updateCallDataInternal(callId) {
@@ -325,7 +325,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             iconData = iconData,
             participants = participantsExt,
             raiseHand = raiseHandExt,
-            participantsManager = participantsMgr
+            participantsManager = participantsMgr,
         )
     }
 
@@ -336,7 +336,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private suspend fun CallControlScope.initializeAndMonitorCall(
         callId: String,
         callAttributes: CallAttributesCompat,
-        initializedExtensions: InitializedExtensionsHolder
+        initializedExtensions: InitializedExtensionsHolder,
     ) {
         // Set the initial call state
         val initialState =
@@ -363,8 +363,8 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                 notificationId,
                 mCallNotificationManager.buildOutgoingCallNotification(
                     notificationId,
-                    callAttributes
-                )
+                    callAttributes,
+                ),
             )
         }
 
@@ -381,7 +381,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             availableEndpoints.collect { endpoints ->
                 Log.i(
                     TAG,
-                    "[$callId] Available Endpoints updated: ${endpoints.joinToString { it.name }}"
+                    "[$callId] Available Endpoints updated: ${endpoints.joinToString { it.name }}",
                 )
                 updateCallDataInternal(callId) { it.copy(availableEndpoints = endpoints) }
             }
@@ -438,7 +438,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             val participantControl =
                 ParticipantControl(
                     onParticipantAdded = manager::addParticipant,
-                    onParticipantRemoved = manager::removeParticipant
+                    onParticipantRemoved = manager::removeParticipant,
                 )
 
             updateCallDataInternal(callId) { it.copy(participantExtension = participantControl) }
@@ -447,7 +447,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         }
             ?: Log.d(
                 TAG,
-                "[$callId] Participant collection/controls skipped" + " (extension disabled)"
+                "[$callId] Participant collection/controls skipped" + " (extension disabled)",
             )
     }
 
@@ -465,7 +465,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         attributes: CallAttributesCompat,
         state: CallState,
         initializedExtensions: InitializedExtensionsHolder,
-        exception: CallException? = null
+        exception: CallException? = null,
     ): CallData {
         return CallData(
             callId = callId,
@@ -477,7 +477,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             availableEndpoints = emptyList(),
             isParticipantExtensionEnabled = initializedExtensions.participants != null,
             isLocalCallSilenceEnabled = initializedExtensions.localCallSilence != null,
-            isCallIconExtensionEnabled = initializedExtensions.callIcon != null
+            isCallIconExtensionEnabled = initializedExtensions.callIcon != null,
         )
     }
 
@@ -508,13 +508,13 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private suspend fun handleCallActions(
         callId: String,
         callActions: CallActions,
-        callControlScope: CallControlScope
+        callControlScope: CallControlScope,
     ) {
         Log.d(TAG, "[$callId] Starting action handler loop.")
         // Helper function to wrap control actions
         suspend fun executeControlAction(
             action: suspend () -> CallControlResult,
-            successState: CallState? = null
+            successState: CallState? = null,
         ) {
             handleControlResult(callId, action(), successState)
         }
@@ -555,7 +555,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private fun handleControlResult(
         callId: String,
         result: CallControlResult,
-        successState: CallState? = null
+        successState: CallState? = null,
     ) {
         when (result) {
             is CallControlResult.Success -> {
@@ -641,7 +641,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             ?: {
                 Log.w(
                     TAG,
-                    "[$callId] endCall: No active call found, attempting" + " direct cleanup"
+                    "[$callId] endCall: No active call found, attempting" + " direct cleanup",
                 )
                 ensureActiveCallRemoved(callId)
             }
@@ -686,7 +686,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         } else {
             Log.i(
                 TAG,
-                "[$callId] CallData not found in list during disconnect, removing controller."
+                "[$callId] CallData not found in list during disconnect, removing controller.",
             )
         }
     }
@@ -729,20 +729,20 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                             CallAttributesCompat(
                                 name,
                                 (loadPhoneNumberPrefix(mContext!!) + number).toUri(),
-                                DIRECTION_INCOMING
+                                DIRECTION_INCOMING,
                             )
                         val notificationId = callId.toInt()
                         val notification =
                             mCallNotificationManager.buildIncomingCallNotification(
                                 notificationId,
-                                attributes
+                                attributes,
                             )
                         startForegroundWithNotification(notificationId, notification)
                         setCallActive(callId)
                     } else {
                         Log.w(
                             TAG,
-                            "addNewIncomingCall received " + "without $EXTRA_SIMULATED_NUMBER"
+                            "addNewIncomingCall received " + "without $EXTRA_SIMULATED_NUMBER",
                         )
                         stopSelf(startId) // Stop this specific start request if data is missing
                     }
@@ -778,7 +778,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                 notification,
                 /* foregroundServiceType */ (ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL),
             )
             mIsCurrentlyInForeground = true // Set flag AFTER successful call
             Log.i(TAG, "[$notificationId] Called startForeground successfully.")
@@ -794,7 +794,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             Log.e(
                 TAG,
                 "[$notificationId] Permission error calling" + " startForeground:${e.message}",
-                e
+                e,
             )
             mIsCurrentlyInForeground = false // Ensure flag is false on error
             // Handle lack of permission
@@ -803,7 +803,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             Log.e(
                 TAG,
                 "[$notificationId] Generic error calling startForeground:" + " ${e.message}",
-                e
+                e,
             )
             mIsCurrentlyInForeground = false // Ensure flag is false on error
             // Handle other unexpected errors
@@ -851,7 +851,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             Log.i(
                 TAG,
                 "checkAndStopForegroundIfNeeded: No active calls remaining." +
-                    " Stopping foreground state."
+                    " Stopping foreground state.",
             )
             // Stop foreground state and remove the *last* associated notification.
             // Note: The specific notification removed depends on the last ID used with
@@ -867,7 +867,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             Log.v(
                 TAG,
                 "checkAndStopForegroundIfNeeded: Active calls still present." +
-                    " Maintaining foreground state."
+                    " Maintaining foreground state.",
             )
             // You might want to ensure the foreground notification reflects the current primary
             // call if you have multiple active calls and one disconnects, but that logic

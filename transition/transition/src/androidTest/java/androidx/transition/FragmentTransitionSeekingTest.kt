@@ -518,7 +518,7 @@ class FragmentTransitionSeekingTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event.targetState == Lifecycle.State.RESUMED) {
                                 fragment2ResumedLatch.countDown()

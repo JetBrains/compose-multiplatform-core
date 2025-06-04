@@ -468,7 +468,7 @@ class OnBackPressedHandlerTest {
                 onHasEnabledCallbacksChanged = {
                     reportedHasEnabledCallbacks = it
                     reportCount++
-                }
+                },
             )
 
         assertWithMessage("initial reportCount").that(reportCount).isEqualTo(0)

@@ -18,33 +18,15 @@ package androidx.xr.glimmer
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.modifier.ProvidableModifierLocal
-import androidx.compose.ui.modifier.modifierLocalOf
 
 /**
  * Calculates the preferred content color for [backgroundColor]. This will return either
  * [Color.White] or [Color.Black], depending on the luminance of the background color.
  *
- * @see ModifierLocalContentColor
  * @see surface
  */
 public fun calculateContentColor(backgroundColor: Color): Color =
     if (backgroundColor.luminance() < LuminanceContrastRatioBreakpoint) Color.White else Color.Black
-
-/**
- * ModifierLocal containing the preferred content color for text and iconography within a surface.
- * Most surfaces should be [Color.Black], so content color is typically [Color.White]. In a few
- * cases where surfaces are filled with a different color, the content color may be [Color.Black] to
- * improve contrast. For cases where higher emphasis is required, content color may be a different
- * color from the theme, such as [Colors.primary].
- *
- * Content color is automatically provided by [surface], and calculated from the provided background
- * color by default. To manually calculate the default content color for a provided background
- * color, use [calculateContentColor].
- */
-public val ModifierLocalContentColor: ProvidableModifierLocal<Color> = modifierLocalOf {
-    Color.White
-}
 
 /**
  * Contrast ratio is defined as (L1 + 0.05) / (L2 + 0.05) where L1 is the relative luminance of the

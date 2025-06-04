@@ -41,7 +41,7 @@ interface ProduceStateScope<T> : MutableState<T>, CoroutineScope {
 
 private class ProduceStateScopeImpl<T>(
     state: MutableState<T>,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : ProduceStateScope<T>, MutableState<T> by state {
 
     override suspend fun awaitDispose(onDispose: () -> Unit): Nothing {
@@ -101,7 +101,7 @@ fun <T> produceState(initialValue: T, producer: suspend ProduceStateScope<T>.() 
 fun <T> produceState(
     initialValue: T,
     key1: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -132,7 +132,7 @@ fun <T> produceState(
     initialValue: T,
     key1: Any?,
     key2: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1, key2) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -164,7 +164,7 @@ fun <T> produceState(
     key1: Any?,
     key2: Any?,
     key3: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1, key2, key3) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -194,7 +194,7 @@ fun <T> produceState(
 fun <T> produceState(
     initialValue: T,
     vararg keys: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     @Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")

@@ -132,6 +132,15 @@ const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
 /** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
 const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
 
+/**
+ * This and [METALAVA_OPT_OUT_BYTECODE_API_PROJECTS] are temporary properties to control which
+ * projects will have bytecode-only APIs generated until the feature is enabled for all projects. If
+ * a project path starts with one of the opt-in prefixes and is not one of the opt-out paths, it
+ * will have bytecode-only APIs generated.
+ */
+const val METALAVA_OPT_IN_BYTECODE_API_PREFIXES = "androidx.metalava.optInBytecodeApiPrefixes"
+const val METALAVA_OPT_OUT_BYTECODE_API_PROJECTS = "androidx.metalava.optOutBytecodeApiProjects"
+
 val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
@@ -165,6 +174,8 @@ val ALL_ANDROIDX_PROPERTIES =
         FilteredAnchorTask.PROP_PATH_PREFIX,
         YARN_OFFLINE_MODE,
         FORCE_BENCHMARK_AOT_COMPILATION,
+        METALAVA_OPT_IN_BYTECODE_API_PREFIXES,
+        METALAVA_OPT_OUT_BYTECODE_API_PROJECTS,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
 
 /**
@@ -257,3 +268,13 @@ fun Project.isCustomCompileSdkAllowed(): Boolean =
 
 fun Project.findBooleanProperty(propName: String): Boolean? =
     project.providers.gradleProperty(propName).map { it.toBoolean() }.getOrNull()
+
+private fun Project.optInBytecodeApiPrefixes() =
+    project.providers.gradleProperty(METALAVA_OPT_IN_BYTECODE_API_PREFIXES).get().split(",")
+
+private fun Project.optOutBytecodeApiProjects() =
+    project.providers.gradleProperty(METALAVA_OPT_OUT_BYTECODE_API_PROJECTS).get().split(",")
+
+fun Project.shouldGenerateBytecodeApis() =
+    optInBytecodeApiPrefixes().any { project.path.startsWith(it) } &&
+        optOutBytecodeApiProjects().none { project.path == it }

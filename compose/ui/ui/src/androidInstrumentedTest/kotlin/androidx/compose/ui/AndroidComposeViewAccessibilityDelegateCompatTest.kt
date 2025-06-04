@@ -177,7 +177,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     AccessibilityActionCompat(ACTION_CLICK, clickActionLabel),
                     AccessibilityActionCompat(ACTION_DISMISS, dismissActionLabel),
                     AccessibilityActionCompat(ACTION_EXPAND, expandActionLabel),
-                    AccessibilityActionCompat(ACTION_COLLAPSE, collapseActionLabel)
+                    AccessibilityActionCompat(ACTION_COLLAPSE, collapseActionLabel),
                 )
             assertThat(info.stateDescription).isEqualTo(state)
             assertThat(info.viewIdResourceName).isEqualTo(tag)
@@ -798,7 +798,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     .contains(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionSetProgress,
-                            setProgressActionLabel
+                            setProgressActionLabel,
                         )
                     )
             }
@@ -844,21 +844,21 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 .containsAtLeast(
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_SET_SELECTION,
-                        setSelectionActionLabel
+                        setSelectionActionLabel,
                     ),
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_SET_TEXT,
-                        setTextActionLabel
+                        setTextActionLabel,
                     ),
                     AccessibilityActionCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                    AccessibilityActionCompat.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
+                    AccessibilityActionCompat.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
                 )
             if (SDK_INT >= 26) {
                 assertThat(info.unwrap().availableExtraData)
                     .containsExactly(
                         "androidx.compose.ui.semantics.id",
                         "androidx.compose.ui.semantics.testTag",
-                        EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                        EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                     )
             }
         }
@@ -1029,7 +1029,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     ExtraDataShapeTypeKey,
                     ExtraDataShapeRectKey,
                     ExtraDataShapeRectCornersKey,
-                    ExtraDataShapeRegionKey
+                    ExtraDataShapeRegionKey,
                 )
         }
     }
@@ -1053,7 +1053,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     ExtraDataShapeTypeKey,
                     ExtraDataShapeRectKey,
                     ExtraDataShapeRectCornersKey,
-                    ExtraDataShapeRegionKey
+                    ExtraDataShapeRegionKey,
                 )
         }
     }
@@ -1080,7 +1080,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1097,7 +1097,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1129,7 +1129,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1143,7 +1143,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1176,7 +1176,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1193,7 +1193,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1211,7 +1211,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             3.dp.toPx(),
                             3.dp.toPx(),
                             4.dp.toPx(),
-                            4.dp.toPx()
+                            4.dp.toPx(),
                         )
                     )
             }
@@ -1242,7 +1242,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1256,7 +1256,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1273,7 +1273,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -1292,7 +1292,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             3.dp.toPx(),
                             3.dp.toPx(),
                             4.dp.toPx(),
-                            4.dp.toPx()
+                            4.dp.toPx(),
                         )
                     )
             }
@@ -1324,7 +1324,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1378,7 +1378,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1430,7 +1430,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1445,7 +1445,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -1474,7 +1474,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1503,7 +1503,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1516,7 +1516,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -2130,7 +2130,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         actual.id == expected.id &&
                         actual.label == expected.label
                 },
-                "has same id and label as"
+                "has same id and label as",
             )
 
         internal val AccessibilityEventComparator =
@@ -2169,7 +2169,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 

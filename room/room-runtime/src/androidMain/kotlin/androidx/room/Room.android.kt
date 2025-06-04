@@ -40,7 +40,7 @@ public actual object Room {
     @JvmStatic
     public fun <T : RoomDatabase> inMemoryDatabaseBuilder(
         context: Context,
-        klass: Class<T>
+        klass: Class<T>,
     ): RoomDatabase.Builder<T> {
         return RoomDatabase.Builder(context, klass, null)
     }
@@ -59,7 +59,7 @@ public actual object Room {
      */
     public inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
         context: Context,
-        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) },
     ): RoomDatabase.Builder<T> {
         return RoomDatabase.Builder(T::class, null, factory, context)
     }
@@ -79,7 +79,7 @@ public actual object Room {
     public fun <T : RoomDatabase> databaseBuilder(
         context: Context,
         klass: Class<T>,
-        name: String?
+        name: String?,
     ): RoomDatabase.Builder<T> {
         require(!name.isNullOrBlank()) {
             "Cannot build a database with null or empty name." +
@@ -109,7 +109,7 @@ public actual object Room {
     public inline fun <reified T : RoomDatabase> databaseBuilder(
         context: Context,
         name: String,
-        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) },
     ): RoomDatabase.Builder<T> {
         require(name.isNotBlank()) {
             "Cannot build a database with empty name." +

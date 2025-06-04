@@ -111,7 +111,7 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                     if (
                         receiver.hasPreviewForCategory(
                             this@GlanceAppWidgetDemoActivity,
-                            WIDGET_CATEGORY_HOME_SCREEN
+                            WIDGET_CATEGORY_HOME_SCREEN,
                         )
                     ) {
                         Log.i(TAG, "Skipped updating previews for $receiver")
@@ -154,9 +154,9 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                             manager.getGlanceIds(provider).map { id ->
                                 AppWidgetDesc(
                                     appWidgetId = id,
-                                    sizes = manager.getAppWidgetSizes(id)
+                                    sizes = manager.getAppWidgetSizes(id),
                                 )
-                            }
+                            },
                     )
                 }
 
@@ -182,7 +182,7 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                                         receiver = it.receiver,
                                         preview =
                                             it.provider.getDeclaredConstructor().newInstance(),
-                                        previewState = emptyPreferences()
+                                        previewState = emptyPreferences(),
                                     )
                                 }
                             }
@@ -215,12 +215,12 @@ fun ShowAppWidget(index: Int, widgetDesc: AppWidgetDesc) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("Instance ${index + 1}")
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             widgetDesc.sizes
                 .sortedBy { it.width.value * it.height.value }
@@ -229,7 +229,7 @@ fun ShowAppWidget(index: Int, widgetDesc: AppWidgetDesc) {
                         String.format(
                             "Size ${index + 1}: %.0f dp x %.0f dp",
                             size.width.value,
-                            size.height.value
+                            size.height.value,
                         )
                     )
                 }
@@ -243,10 +243,7 @@ data class ProviderData(
     val appWidgets: List<AppWidgetDesc>,
 )
 
-data class AppWidgetDesc(
-    val appWidgetId: GlanceId,
-    val sizes: List<DpSize>,
-)
+data class AppWidgetDesc(val appWidgetId: GlanceId, val sizes: List<DpSize>)
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 private fun KClass<out GlanceAppWidgetReceiver>.hasPreviewForCategory(

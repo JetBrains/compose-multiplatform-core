@@ -68,7 +68,7 @@ class FastScrollDrawerTest {
                 thumbDrawable,
                 pageIndicatorBackgroundDrawable,
                 fastScrollVerticalThumbMarginEnd,
-                fastScrollPageIndicatorMarginEnd
+                fastScrollPageIndicatorMarginEnd,
             )
     }
 
@@ -89,7 +89,7 @@ class FastScrollDrawerTest {
                 leftCaptor.capture(),
                 topCaptor.capture(),
                 rightCaptor.capture(),
-                bottomCaptor.capture()
+                bottomCaptor.capture(),
             )
         verify(thumbDrawable).draw(spyCanvas)
 

@@ -107,7 +107,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     Invalidation.LookaheadMeasurement
                 } else {
                     Invalidation.Measurement
-                }
+                },
             )
         }
     }
@@ -560,7 +560,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     private fun remeasureAndRelayoutIfNeeded(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean = true,
-        relayoutNeeded: Boolean = true
+        relayoutNeeded: Boolean = true,
     ): Boolean {
         var sizeChanged = false
         if (layoutNode.isDeactivated) {
@@ -628,12 +628,12 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     if (!request.isLookahead) {
                         request.node.requestRemeasure(
                             forceRequest = request.isForced,
-                            invalidateIntrinsics = false
+                            invalidateIntrinsics = false,
                         )
                     } else {
                         request.node.requestLookaheadRemeasure(
                             forceRequest = request.isForced,
-                            invalidateIntrinsics = false
+                            invalidateIntrinsics = false,
                         )
                     }
                 }
@@ -798,5 +798,5 @@ internal enum class Invalidation {
     LookaheadMeasurement,
     LookaheadPlacement,
     Measurement,
-    Placement
+    Placement,
 }

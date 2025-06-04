@@ -40,7 +40,7 @@ class NativeLibraryBundler(private val project: Project) {
     fun addNativeLibrariesToResources(
         jvmTarget: KotlinJvmTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME
+        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME,
     ) {
         val combineTask =
             project.tasks.register(
@@ -48,9 +48,9 @@ class NativeLibraryBundler(private val project: Project) {
                     .appendCapitalized(
                         jvmTarget.name,
                         nativeCompilation.archiveName,
-                        compilationName
+                        compilationName,
                     ),
-                CombineObjectFilesTask::class.java
+                CombineObjectFilesTask::class.java,
             ) {
                 it.outputDirectory.set(
                     project.layout.buildDirectory.dir(
@@ -77,7 +77,7 @@ class NativeLibraryBundler(private val project: Project) {
         androidTarget: KotlinAndroidTarget,
         nativeCompilation: MultiTargetNativeCompilation,
         forTest: Boolean,
-        provideSourceDirectories: Sources.() -> (SourceDirectories.Layered?)
+        provideSourceDirectories: Sources.() -> (SourceDirectories.Layered?),
     ) {
         project.androidExtension.onVariants(project.androidExtension.selector().all()) { variant ->
             fun setup(name: String, sources: SourceDirectories.Layered?) {
@@ -91,15 +91,15 @@ class NativeLibraryBundler(private val project: Project) {
                                 nativeCompilation.archiveName,
                                 "for",
                                 name,
-                                androidTarget.name
+                                androidTarget.name,
                             ),
-                        CombineObjectFilesTask::class.java
+                        CombineObjectFilesTask::class.java,
                     )
                 combineTask.configureFrom(nativeCompilation) { it.family == Family.ANDROID }
 
                 sources.addGeneratedSourceDirectory(
                     taskProvider = combineTask,
-                    wiredWith = { it.outputDirectory }
+                    wiredWith = { it.outputDirectory },
                 )
             }
 

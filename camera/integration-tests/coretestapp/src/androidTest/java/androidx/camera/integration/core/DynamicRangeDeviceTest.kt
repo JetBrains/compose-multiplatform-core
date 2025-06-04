@@ -84,9 +84,7 @@ class DynamicRangeDeviceTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -118,7 +116,7 @@ class DynamicRangeDeviceTest(
                 DataSpace.TRANSFER_GAMMA2_6,
                 DataSpace.TRANSFER_GAMMA2_8,
                 DataSpace.TRANSFER_SMPTE_170M,
-                DataSpace.TRANSFER_SRGB
+                DataSpace.TRANSFER_SRGB,
             )
 
         @JvmStatic
@@ -202,7 +200,7 @@ class DynamicRangeDeviceTest(
         bindPreviewAndVerifyDynamicRangeAppliedToCamera(
             dynamicRange = null, // Should default to SDR
             possibleColorStandards = null, // Do not check ColorSpace for SDR; could be many.
-            possibleColorTransfers = POSSIBLE_COLOR_TRANSFERS_SDR
+            possibleColorTransfers = POSSIBLE_COLOR_TRANSFERS_SDR,
         )
     }
 
@@ -213,7 +211,7 @@ class DynamicRangeDeviceTest(
         bindPreviewAndVerifyDynamicRangeAppliedToCamera(
             dynamicRange = HLG_10_BIT,
             possibleColorStandards = setOf(DataSpace.STANDARD_BT2020),
-            possibleColorTransfers = setOf(DataSpace.TRANSFER_HLG)
+            possibleColorTransfers = setOf(DataSpace.TRANSFER_HLG),
         )
     }
 
@@ -227,7 +225,7 @@ class DynamicRangeDeviceTest(
                 setOf(
                     MediaFormat.COLOR_STANDARD_BT709,
                     MediaFormat.COLOR_STANDARD_BT601_PAL,
-                    MediaFormat.COLOR_STANDARD_BT601_NTSC
+                    MediaFormat.COLOR_STANDARD_BT601_NTSC,
                 ),
             possibleColorTransfers = setOf(MediaFormat.COLOR_TRANSFER_SDR_VIDEO),
         )
@@ -280,7 +278,7 @@ class DynamicRangeDeviceTest(
                     val surfaceTextureHolder =
                         SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
                                 surfaceRequest.resolution.width,
-                                surfaceRequest.resolution.height
+                                surfaceRequest.resolution.height,
                             ) { surfaceTexture ->
                                 dataSpace.set(surfaceTexture.dataSpace)
                                 latch.countDown()

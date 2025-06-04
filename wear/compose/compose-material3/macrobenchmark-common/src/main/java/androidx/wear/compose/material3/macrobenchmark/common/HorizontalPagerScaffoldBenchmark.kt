@@ -32,7 +32,7 @@ object HorizontalPagerScaffoldBenchmark : PagerBenchmark() {
 
                 HorizontalPagerScaffold(
                     pagerState = pagerState,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     pager(pagerState)
                 }

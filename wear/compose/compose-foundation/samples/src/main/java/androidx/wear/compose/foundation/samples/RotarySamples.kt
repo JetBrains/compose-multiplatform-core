@@ -57,16 +57,16 @@ fun RotaryScrollSample() {
                 .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
                     behavior = RotaryScrollableDefaults.behavior(scrollableState),
-                    focusRequester = focusRequester
+                    focusRequester = focusRequester,
                 ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        state = scrollableState
+        state = scrollableState,
     ) {
         items(300) {
             BasicText(
                 text = "item $it",
                 modifier = Modifier.background(Color.Gray),
-                style = TextStyle.Default.copy()
+                style = TextStyle.Default.copy(),
             )
         }
     }
@@ -87,11 +87,11 @@ fun RotaryScrollWithOverscrollSample() {
             .rotaryScrollable(
                 behavior = RotaryScrollableDefaults.behavior(scrollableState),
                 focusRequester = focusRequester,
-                overscrollEffect = overscrollEffect
+                overscrollEffect = overscrollEffect,
             )
             .verticalScroll(scrollableState, overscrollEffect)
             .overscroll(overscrollEffect),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Top")
         Spacer(modifier = Modifier.height(screenHeightDp / 2))
@@ -137,12 +137,12 @@ fun RotarySnapSample() {
                                     override val totalItemCount: Int
                                         get() = scrollableState.layoutInfo.totalItemsCount
                                 }
-                            }
+                            },
                         ),
                     focusRequester = focusRequester,
                 ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        state = scrollableState
+        state = scrollableState,
     ) {
         items(300) {
             BasicText(text = "item $it", modifier = Modifier.background(Color.Gray).height(50.dp))

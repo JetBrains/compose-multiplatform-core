@@ -52,7 +52,7 @@ public fun hasTestTag(testTag: String): GlanceNodeMatcher<MappedNode> =
 
 private fun <T> hasSemanticsPropertyValue(
     key: SemanticsPropertyKey<T>,
-    expectedValue: T
+    expectedValue: T,
 ): GlanceNodeMatcher<MappedNode> {
     return GlanceNodeMatcher("${key.name} = '$expectedValue'") { node ->
         node.value.emittable.modifier.any {
@@ -75,7 +75,7 @@ private fun <T> hasSemanticsPropertyValue(
  */
 public fun hasContentDescription(
     value: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -88,7 +88,7 @@ public fun hasContentDescription(
                     semanticsModifier = it,
                     value = value,
                     substring = true,
-                    ignoreCase = ignoreCase
+                    ignoreCase = ignoreCase,
                 )
         }
     }
@@ -107,7 +107,7 @@ public fun hasContentDescription(
  */
 public fun hasContentDescriptionEqualTo(
     value: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -119,7 +119,7 @@ public fun hasContentDescriptionEqualTo(
                     semanticsModifier = it,
                     value = value,
                     substring = false,
-                    ignoreCase = ignoreCase
+                    ignoreCase = ignoreCase,
                 )
         }
     }
@@ -129,7 +129,7 @@ private fun hasContentDescription(
     semanticsModifier: SemanticsModifier,
     value: String,
     substring: Boolean = false,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): Boolean {
     val contentDescription =
         semanticsModifier.configuration
@@ -174,7 +174,7 @@ public fun hasText(text: String, ignoreCase: Boolean = false): GlanceNodeMatcher
  */
 public fun hasTextEqualTo(
     text: String,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(description = "text == '$text' (ignoreCase: '$ignoreCase')") { node ->
         val emittable = node.value.emittable
@@ -225,7 +225,7 @@ public fun hasNoClickAction(): GlanceNodeMatcher<MappedNode> =
 internal fun <T : Activity> hasStartActivityClickAction(
     activityClass: Class<T>,
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =
@@ -270,12 +270,12 @@ internal fun <T : Activity> hasStartActivityClickAction(
  */
 public inline fun <reified T : Activity> hasStartActivityClickAction(
     parameters: ActionParameters = actionParametersOf(),
-    activityOptions: Bundle? = null
+    activityOptions: Bundle? = null,
 ): GlanceNodeMatcher<MappedNode> =
     hasStartActivityClickAction(
         activityClass = T::class.java,
         parameters = parameters,
-        activityOptions = activityOptions
+        activityOptions = activityOptions,
     )
 
 /**
@@ -293,7 +293,7 @@ public fun hasAnyDescendant(matcher: GlanceNodeMatcher<MappedNode>): GlanceNodeM
     @SuppressLint("ListIterator") // this is not a hot code path
     fun checkIfSubtreeMatchesRecursive(
         matcher: GlanceNodeMatcher<MappedNode>,
-        node: GlanceNode<MappedNode>
+        node: GlanceNode<MappedNode>,
     ): Boolean {
         if (matcher.matchesAny(node.children())) {
             return true
@@ -322,7 +322,7 @@ public fun hasAnyDescendant(matcher: GlanceNodeMatcher<MappedNode>): GlanceNodeM
  */
 public fun hasStartActivityClickAction(
     componentName: ComponentName,
-    parameters: ActionParameters = actionParametersOf()
+    parameters: ActionParameters = actionParametersOf(),
 ): GlanceNodeMatcher<MappedNode> =
     GlanceNodeMatcher(
         description =

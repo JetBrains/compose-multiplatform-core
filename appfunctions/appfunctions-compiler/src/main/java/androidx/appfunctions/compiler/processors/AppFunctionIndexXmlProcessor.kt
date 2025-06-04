@@ -43,9 +43,7 @@ import javax.xml.transform.stream.StreamResult
  * would be packaged into the APK's asset when assembled, so that the AppSearch indexer can look up
  * the asset and inject metadata into platform AppSearch database accordingly.
  */
-class AppFunctionIndexXmlProcessor(
-    private val codeGenerator: CodeGenerator,
-) : SymbolProcessor {
+class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
@@ -55,7 +53,7 @@ class AppFunctionIndexXmlProcessor(
             )
         generateIndexXml(
             appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
-            resolvedAnnotatedSerializableProxies
+            resolvedAnnotatedSerializableProxies,
         )
         return emptyList()
     }
@@ -69,7 +67,7 @@ class AppFunctionIndexXmlProcessor(
      */
     private fun generateIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ) {
         if (appFunctionsByClass.isEmpty()) {
             return
@@ -79,7 +77,7 @@ class AppFunctionIndexXmlProcessor(
 
     private fun writeXmlFile(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ) {
         val appFunctionMetadataList =
             appFunctionsByClass.flatMap {
@@ -107,7 +105,7 @@ class AppFunctionIndexXmlProcessor(
             appFunctionElement.appendChild(
                 xmlDocument.createElementWithTextNode(
                     APP_FUNCTION_ID_TAG,
-                    sanitizedAppFunctionMetadata.id
+                    sanitizedAppFunctionMetadata.id,
                 )
             )
             appFunctionsElement.appendChild(appFunctionElement)
@@ -131,11 +129,11 @@ class AppFunctionIndexXmlProcessor(
             .createNewFile(
                 Dependencies(
                     aggregating = true,
-                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray()
+                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray(),
                 ),
                 XML_PACKAGE_NAME,
                 XML_FILE_NAME,
-                XML_EXTENSION
+                XML_EXTENSION,
             )
             .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
     }

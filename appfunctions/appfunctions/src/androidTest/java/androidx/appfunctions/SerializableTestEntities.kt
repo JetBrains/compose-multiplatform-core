@@ -22,9 +22,7 @@ import androidx.appfunctions.internal.AppFunctionSerializableFactory
 
 class MissingFactoryClass(val item: String)
 
-data class Attachment(
-    val uri: String,
-)
+data class Attachment(val uri: String)
 
 data class Note(val title: String, val attachment: Attachment)
 
@@ -48,7 +46,7 @@ class `$NoteFactory` : AppFunctionSerializableFactory<Note> {
             title = checkNotNull(appFunctionData.getString("title")),
             attachment =
                 checkNotNull(appFunctionData.getAppFunctionData("attachment"))
-                    .deserialize(Attachment::class.java)
+                    .deserialize(Attachment::class.java),
         )
     }
 
@@ -59,8 +57,8 @@ class `$NoteFactory` : AppFunctionSerializableFactory<Note> {
                 "attachment",
                 AppFunctionData.serialize(
                     appFunctionSerializable.attachment,
-                    Attachment::class.java
-                )
+                    Attachment::class.java,
+                ),
             )
             .build()
     }

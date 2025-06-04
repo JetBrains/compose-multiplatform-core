@@ -267,7 +267,7 @@ class SimpleChannelFlowTest {
 
     private fun <T> createFlow(
         impl: Impl,
-        block: suspend TestProducerScope<T>.() -> Unit
+        block: suspend TestProducerScope<T>.() -> Unit,
     ): Flow<T> {
         return when (impl) {
             Impl.ChannelFlow -> channelFlow { ChannelFlowTestProducerScope(this).block() }

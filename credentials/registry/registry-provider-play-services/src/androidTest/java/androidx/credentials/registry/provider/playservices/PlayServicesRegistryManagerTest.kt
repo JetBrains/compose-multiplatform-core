@@ -55,7 +55,7 @@ class PlayServicesRegistryManagerTest {
                                 "id",
                                 ByteArray(4),
                                 ByteArray(8),
-                                intentAction = "com.example.ACTION_GET_CRED"
+                                intentAction = "com.example.ACTION_GET_CRED",
                             ) {}
                     )
 

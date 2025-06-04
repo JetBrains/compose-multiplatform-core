@@ -54,7 +54,6 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -62,6 +61,7 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeRepository;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -161,7 +161,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private long mCurrentTimeMillis = 1000000000L;
     private ActivitySpaceImpl mActivitySpace;
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
-    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =
             Mockito.mock(SplitEngineSubspaceManager.class);
 

@@ -18,8 +18,6 @@ package androidx.camera.lifecycle
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraProvider
@@ -72,7 +70,6 @@ public interface LifecycleCameraProvider : CameraProvider {
      * reaches a [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or
      * [unbindAll].
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalSessionConfig
     public fun isBound(sessionConfig: SessionConfig): Boolean
@@ -108,7 +105,6 @@ public interface LifecycleCameraProvider : CameraProvider {
      * @throws IllegalStateException If not called on main thread.
      * @throws UnsupportedOperationException If called in concurrent mode.
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalSessionConfig
     public fun unbind(sessionConfig: SessionConfig): Unit
@@ -179,7 +175,7 @@ public interface LifecycleCameraProvider : CameraProvider {
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        vararg useCases: UseCase?
+        vararg useCases: UseCase?,
     ): Camera
 
     /**
@@ -197,7 +193,7 @@ public interface LifecycleCameraProvider : CameraProvider {
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        useCaseGroup: UseCaseGroup
+        useCaseGroup: UseCaseGroup,
     ): Camera
 
     /**
@@ -248,13 +244,12 @@ public interface LifecycleCameraProvider : CameraProvider {
      *
      * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalSessionConfig
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        sessionConfig: SessionConfig
+        sessionConfig: SessionConfig,
     ): Camera
 
     /**
@@ -356,7 +351,7 @@ public interface LifecycleCameraProvider : CameraProvider {
             return Futures.transform(
                 lifecycleCameraProvider.initAsync(context, cameraXConfig),
                 { lifecycleCameraProvider },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
     }

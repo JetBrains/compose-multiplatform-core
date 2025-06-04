@@ -22,22 +22,22 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.Text
 
-@Preview
 @Composable
 fun TypographySample() {
     val typography = GlimmerTheme.typography
     LazyColumn(
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { TypeItem("titleLarge", style = typography.titleLarge) }
         item { TypeItem("titleMedium", style = typography.titleMedium) }
@@ -48,15 +48,21 @@ fun TypographySample() {
     }
 }
 
+@Preview
+@Composable
+private fun TypographyPreview() {
+    GlimmerTheme { TypographySample() }
+}
+
 @Composable
 private fun TypeItem(name: String, style: TextStyle, modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxWidth().padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        BasicText(text = name, style = style.copy(color = Color.White))
+        Text(name, style = style)
         val typeInformation =
             with(style) { "$fontSize / $lineHeight • ${fontWeight?.weight} • $letterSpacing" }
-        BasicText(text = typeInformation, style = TextStyle(color = Color.White))
+        Text(typeInformation, fontSize = 16.sp, fontWeight = FontWeight.Normal)
     }
 }

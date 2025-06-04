@@ -31,19 +31,15 @@ public class SendBroadcastActionAction(
 ) : SendBroadcastAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SendBroadcastComponentAction(
-    public val componentName: ComponentName,
-) : SendBroadcastAction
+public class SendBroadcastComponentAction(public val componentName: ComponentName) :
+    SendBroadcastAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SendBroadcastClassAction(
-    public val receiverClass: Class<out BroadcastReceiver>,
-) : SendBroadcastAction
+public class SendBroadcastClassAction(public val receiverClass: Class<out BroadcastReceiver>) :
+    SendBroadcastAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SendBroadcastIntentAction(
-    public val intent: Intent,
-) : SendBroadcastAction
+public class SendBroadcastIntentAction(public val intent: Intent) : SendBroadcastAction
 
 /**
  * Creates an [Action] that launches the [BroadcastReceiver] specified by the given action.

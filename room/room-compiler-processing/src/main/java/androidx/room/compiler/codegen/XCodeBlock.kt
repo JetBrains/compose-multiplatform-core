@@ -55,7 +55,7 @@ interface XCodeBlock {
             name: String,
             typeName: XTypeName,
             isMutable: Boolean = false,
-            assignExpr: XCodeBlock? = null
+            assignExpr: XCodeBlock? = null,
         ): Builder
 
         fun beginControlFlow(controlFlow: String, vararg args: Any?): Builder
@@ -77,13 +77,13 @@ interface XCodeBlock {
             name: String,
             typeName: XTypeName,
             assignExprFormat: String,
-            vararg assignExprArgs: Any?
+            vararg assignExprArgs: Any?,
         ) = apply {
             addLocalVariable(
                 name = name,
                 typeName = typeName,
                 isMutable = false,
-                assignExpr = of(assignExprFormat, *assignExprArgs)
+                assignExpr = of(assignExprFormat, *assignExprArgs),
             )
         }
 
@@ -98,7 +98,7 @@ interface XCodeBlock {
         fun beginForEachControlFlow(
             itemVarName: String,
             typeName: XTypeName,
-            iteratorVarName: String
+            iteratorVarName: String,
         ) = applyTo { language ->
             when (language) {
                 CodeLanguage.JAVA ->
@@ -136,7 +136,7 @@ interface XCodeBlock {
         fun builder(): Builder =
             XCodeBlockImpl.Builder(
                 JavaCodeBlock.Builder(JCodeBlock.builder()),
-                KotlinCodeBlock.Builder(KCodeBlock.builder())
+                KotlinCodeBlock.Builder(KCodeBlock.builder()),
             )
 
         @JvmStatic fun of(format: String, vararg args: Any?) = builder().add(format, *args).build()
@@ -191,7 +191,7 @@ interface XCodeBlock {
                     add(
                         "%T.getKotlinClass(%T.class)",
                         XClassName.get("kotlin.jvm", "JvmClassMappingKt"),
-                        typeName
+                        typeName,
                     )
                 CodeLanguage.KOTLIN -> add("%T::class", typeName)
             }
@@ -205,16 +205,13 @@ interface XCodeBlock {
          * For Kotlin this will emit: `if (<condition>) <leftExpr> else <rightExpr>)`
          */
         @JvmStatic
-        fun ofTernaryIf(
-            condition: XCodeBlock,
-            leftExpr: XCodeBlock,
-            rightExpr: XCodeBlock,
-        ) = buildCodeBlock { language ->
-            when (language) {
-                CodeLanguage.JAVA -> add("%L ? %L : %L", condition, leftExpr, rightExpr)
-                CodeLanguage.KOTLIN -> add("if (%L) %L else %L", condition, leftExpr, rightExpr)
+        fun ofTernaryIf(condition: XCodeBlock, leftExpr: XCodeBlock, rightExpr: XCodeBlock) =
+            buildCodeBlock { language ->
+                when (language) {
+                    CodeLanguage.JAVA -> add("%L ? %L : %L", condition, leftExpr, rightExpr)
+                    CodeLanguage.KOTLIN -> add("if (%L) %L else %L", condition, leftExpr, rightExpr)
+                }
             }
-        }
 
         /**
          * Convenience code block of an extension function call.

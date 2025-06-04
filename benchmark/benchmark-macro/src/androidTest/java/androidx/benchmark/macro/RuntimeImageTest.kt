@@ -35,7 +35,7 @@ class RuntimeImageTest {
 
     @SuppressLint("BanThreadSleep")
     private fun captureRecyclerViewListStartupMetrics(
-        testName: String,
+        testName: String
     ): Map<String, SingleMetricResult> =
         macrobenchmarkWithStartupMode(
                 uniqueName = "${className}_$testName",
@@ -63,7 +63,7 @@ class RuntimeImageTest {
                         // iter to save some time
                         Thread.sleep(5000)
                     }
-                }
+                },
             )
             .metrics
 
@@ -81,7 +81,7 @@ class RuntimeImageTest {
         // observed >700 in practice, lower threshold used to be resilient
         assertTrue(
             classLoadCount.all { it > 500 },
-            "too few class loads seen, observed: $classLoadCount"
+            "too few class loads seen, observed: $classLoadCount",
         )
     }
 }

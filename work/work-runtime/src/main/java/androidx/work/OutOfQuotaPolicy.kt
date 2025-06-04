@@ -27,5 +27,5 @@ enum class OutOfQuotaPolicy {
      * When the app does not have any expedited job quota, the expedited work request will be
      * dropped and no work requests are enqueued.
      */
-    DROP_WORK_REQUEST
+    DROP_WORK_REQUEST,
 }

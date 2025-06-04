@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class ProjectIsolationIssueTest :
     GradleLintDetectorTest(
         detector = DiscouragedGradleMethodDetector(),
-        issues = listOf(DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE)
+        issues = listOf(DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE),
     ) {
     @Test
     fun `Test usage of TaskContainer#create`() {

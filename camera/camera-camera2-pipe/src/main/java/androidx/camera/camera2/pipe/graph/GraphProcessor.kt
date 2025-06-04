@@ -147,7 +147,7 @@ constructor(
                 graphListeners = graphListeners + listOfNotNull(captureLimiter),
                 listeners = listOfNotNull(graphListener3A, captureLimiter),
                 shutdownScope = threads.cameraPipeScope,
-                dispatcher = threads.lightweightDispatcher
+                dispatcher = threads.lightweightDispatcher,
             )
 
         captureLimiter?.graphLoop = graphLoop

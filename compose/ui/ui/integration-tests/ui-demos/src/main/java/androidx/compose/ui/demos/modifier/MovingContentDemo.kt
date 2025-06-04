@@ -60,7 +60,7 @@ fun MovingContentDemo() {
         animateIntAsState(
             targetValue = if (moved) 100 else 0,
             animationSpec = tween(durationMillis = 5000),
-            label = "offset"
+            label = "offset",
         )
 
     Column(
@@ -68,11 +68,11 @@ fun MovingContentDemo() {
     ) {
         Button(
             onClick = { moved = !moved },
-            modifier = Modifier.width(500.dp).testTag("frameRateTag")
+            modifier = Modifier.width(500.dp).testTag("frameRateTag"),
         ) {
             Text(
                 shortText,
-                modifier = Modifier.requestedFrameRate(30f).offset { IntOffset(x = offset, y = 0) }
+                modifier = Modifier.requestedFrameRate(30f).offset { IntOffset(x = offset, y = 0) },
             )
         }
     }

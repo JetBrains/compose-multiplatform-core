@@ -46,7 +46,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class SurfaceOrientedMeteringPointFactoryTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraRule =
@@ -155,7 +155,7 @@ class SurfaceOrientedMeteringPointFactoryTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 }

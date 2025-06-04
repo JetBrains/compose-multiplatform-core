@@ -63,7 +63,7 @@ public class EmittableBox : EmittableWithChildren() {
 public fun Box(
     modifier: GlanceModifier = GlanceModifier,
     contentAlignment: Alignment = Alignment.TopStart,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableBox,
@@ -71,6 +71,6 @@ public fun Box(
             this.set(modifier) { this.modifier = it }
             this.set(contentAlignment) { this.contentAlignment = it }
         },
-        content = content
+        content = content,
     )
 }

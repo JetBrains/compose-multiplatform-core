@@ -175,7 +175,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         CoreAppTestUtil.launchAutoClosedForegroundActivity(
             context,
             InstrumentationRegistry.getInstrumentation(),
-            countingIdlingResource
+            countingIdlingResource,
         )
     }
 

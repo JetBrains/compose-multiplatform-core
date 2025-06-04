@@ -82,7 +82,7 @@ internal class ProgressIndicatorTestCase(private val type: ProgressIndicatorType
                 LinearWavyProgressIndicator(
                     progress = { state.value },
                     amplitude = { 1f },
-                    waveSpeed = 0.dp
+                    waveSpeed = 0.dp,
                 )
             ProgressIndicatorType.Circular -> CircularProgressIndicator(progress = { state.value })
             // We set the waveSpeed to zero and a constant amplitude of 0.0 to eliminate the
@@ -91,7 +91,7 @@ internal class ProgressIndicatorTestCase(private val type: ProgressIndicatorType
                 CircularWavyProgressIndicator(
                     progress = { state.value },
                     amplitude = { 0f },
-                    waveSpeed = 0.dp
+                    waveSpeed = 0.dp,
                 )
         }
     }
@@ -110,5 +110,5 @@ enum class ProgressIndicatorType {
     Linear,
     LinearWavy,
     Circular,
-    CircularWavy
+    CircularWavy,
 }

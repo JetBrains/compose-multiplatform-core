@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 fun ExtensionItem(label: String, onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick).padding(4.dp)
+        modifier = Modifier.clickable(onClick = onClick).padding(4.dp),
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(4.dp))

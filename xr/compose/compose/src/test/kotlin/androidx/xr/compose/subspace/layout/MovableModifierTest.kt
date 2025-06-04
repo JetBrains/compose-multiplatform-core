@@ -108,7 +108,7 @@ class MovableModifierTest {
                     ) {
                         Button(
                             modifier = Modifier.testTag("button"),
-                            onClick = { panelWidth += 50.dp }
+                            onClick = { panelWidth += 50.dp },
                         ) {
                             Text(text = "Sample button for testing")
                         }

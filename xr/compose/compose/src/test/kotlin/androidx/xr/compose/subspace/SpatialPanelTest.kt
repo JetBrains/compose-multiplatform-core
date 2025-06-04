@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -51,6 +52,7 @@ import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
@@ -97,7 +99,7 @@ class SpatialPanelTest {
                         Column {
                             Text(
                                 "Hello World long text",
-                                style = MaterialTheme.typography.headlineLarge
+                                style = MaterialTheme.typography.headlineLarge,
                             )
                         }
                     }
@@ -298,6 +300,82 @@ class SpatialPanelTest {
 
         assertThat(launchIntent?.component?.className)
             .isEqualTo(SpatialPanelActivity::class.java.name)
+    }
+
+    @Test
+    fun activityPanel_scrimAdds() {
+        val showDialog = mutableStateOf(false)
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(
+                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                        shape = SpatialRoundedCornerShape(CornerSize(50)),
+                    )
+                    if (showDialog.value) {
+                        SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                            Text("Spatial Dialog")
+                        }
+                    }
+                }
+            }
+        }
+        val session = composeTestRule.activity.session
+
+        // Verify the initial set of PanelEntities in the scene before the dialog is shown:
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
+
+        showDialog.value = true
+        composeTestRule.waitForIdle()
+
+        // Verify the set of PanelEntities after the SpatialDialog is displayed:
+        // Activity Panel
+        // Main PanelEntity
+        // SpatialDialog
+        // Activity Scrim Panel
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(4)
+    }
+
+    @Test
+    fun activityPanel_scrimRemoves() {
+        val showDialog = mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(
+                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                        shape = SpatialRoundedCornerShape(CornerSize(50)),
+                    )
+                    if (showDialog.value) {
+                        SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                            Text("Spatial Dialog")
+                        }
+                    }
+                }
+            }
+        }
+        val session = composeTestRule.activity.session
+
+        // Verify the set of PanelEntities before the SpatialDialog is dismissed:
+        // SpatialDialog
+        // Activity Scrim Panel
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(4)
+
+        showDialog.value = false
+        composeTestRule.waitForIdle()
+
+        // Verify the set of PanelEntities after the SpatialDialog is dismissed:
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
     }
 
     private fun getBasePanelEntity(tag: String): BasePanelEntity<*>? {

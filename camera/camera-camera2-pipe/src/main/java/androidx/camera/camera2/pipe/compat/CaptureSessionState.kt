@@ -106,7 +106,7 @@ internal class CaptureSessionState(
         CREATING,
         CREATED,
         CLOSING,
-        CLOSED
+        CLOSED,
     }
 
     private val sessionDisconnected = CountDownLatch(1)
@@ -236,14 +236,14 @@ internal class CaptureSessionState(
                         ConfiguredCameraCaptureSession(
                             session,
                             GraphRequestProcessor.from(captureSequenceProcessor),
-                            captureSequenceProcessor
+                            captureSequenceProcessor,
                         )
                 } else {
                     captureSession =
                         ConfiguredCameraCaptureSession(
                             session,
                             GraphRequestProcessor.from(captureSequenceProcessor),
-                            null
+                            null,
                         )
                 }
                 cameraCaptureSession = captureSession
@@ -572,7 +572,7 @@ internal class CaptureSessionState(
     @GuardedBy("lock")
     private fun updateTrackedSurfaces(
         oldSurfaceMap: Map<StreamId, Surface>,
-        newSurfaceMap: Map<StreamId, Surface>
+        newSurfaceMap: Map<StreamId, Surface>,
     ) {
         val oldSurfaces = oldSurfaceMap.values.toSet()
         val newSurfaces = newSurfaceMap.values.toSet()
@@ -597,7 +597,7 @@ internal class CaptureSessionState(
     private data class ConfiguredCameraCaptureSession(
         val session: CameraCaptureSessionWrapper,
         val processor: GraphRequestProcessor,
-        val captureSequenceProcessor: Camera2CaptureSequenceProcessor?
+        val captureSequenceProcessor: Camera2CaptureSequenceProcessor?,
     )
 
     private companion object {

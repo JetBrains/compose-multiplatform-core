@@ -82,7 +82,7 @@ public class SandboxedPdfDocument(
     private val dispatcher: CoroutineDispatcher,
     override val pageCount: Int,
     override val isLinearized: Boolean,
-    override val formType: Int
+    override val formType: Int,
 ) : PdfDocument {
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
@@ -102,7 +102,7 @@ public class SandboxedPdfDocument(
 
     override suspend fun getPageInfo(
         pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): PdfDocument.PageInfo {
         return withDocument { document ->
             // TODO(b/407777410): Update the logic so that callers can refetch the information in
@@ -125,7 +125,7 @@ public class SandboxedPdfDocument(
                     pageNumber,
                     dimensions.height,
                     dimensions.width,
-                    formWidgetInfo
+                    formWidgetInfo,
                 )
             }
         }
@@ -137,14 +137,14 @@ public class SandboxedPdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags
+        pageInfoFlags: PdfDocument.PageInfoFlags,
     ): List<PdfDocument.PageInfo> {
         return pageRange.map { getPageInfo(pageNumber = it, pageInfoFlags = pageInfoFlags) }
     }
 
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         return withDocument { document ->
             SparseArray<List<PageMatchBounds>>(pageRange.last + 1).apply {
@@ -161,7 +161,7 @@ public class SandboxedPdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection? {
         return withDocument { document ->
             val startBoundary =
@@ -179,7 +179,7 @@ public class SandboxedPdfDocument(
                 .selectPageText(
                     pageNumber,
                     android.graphics.pdf.models.selection.SelectionBoundary(0),
-                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE)
+                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE),
                 )
                 ?.toContentClass()
         }
@@ -251,7 +251,7 @@ public class SandboxedPdfDocument(
                     document.getPageBitmap(
                         pageNumber,
                         scaledPageSizePx.width,
-                        scaledPageSizePx.height
+                        scaledPageSizePx.height,
                     ) ?: getDefaultBitmap(scaledPageSizePx.width, scaledPageSizePx.height)
                 } else {
                     val offsetX = tileRegion.left
@@ -263,7 +263,7 @@ public class SandboxedPdfDocument(
                         scaledPageSizePx.width,
                         scaledPageSizePx.height,
                         offsetX,
-                        offsetY
+                        offsetY,
                     ) ?: getDefaultBitmap(tileRegion.width(), tileRegion.height())
                 }
             }

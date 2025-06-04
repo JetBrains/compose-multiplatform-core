@@ -64,9 +64,9 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
             modeToggleButton = {
                 TimePickerDialogDefaults.DisplayModeToggle(
                     onDisplayModeChange = {},
-                    displayMode = TimePickerDisplayMode.Picker
+                    displayMode = TimePickerDisplayMode.Picker,
                 )
-            }
+            },
         ) {
             TimePicker(state = rememberTimePickerState())
         }

@@ -45,7 +45,7 @@ internal abstract class TextFieldSelectionAsserter<T>(
         textToolbar,
         spyTextActionModeCallback,
         hapticFeedback,
-        getActual
+        getActual,
     ) {
     var selection: TextRange = 0.collapsed
     var cursorHandleShown = false
@@ -131,7 +131,7 @@ internal class TextField1SelectionAsserter(
         textToolbar,
         spyTextActionModeCallback,
         hapticFeedback,
-        getActual
+        getActual,
     ) {
     override fun subAssert() {
         Truth.assertAbout(TextFieldValueSubject.withContent(textContent))
@@ -211,7 +211,7 @@ internal class TextField2SelectionAsserter(
         textToolbar,
         spyTextActionModeCallback,
         hapticFeedback,
-        getActual
+        getActual,
     ) {
     override fun subAssert() {
         Truth.assertAbout(TextFieldStateSubject.withContent(textContent))

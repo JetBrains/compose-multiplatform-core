@@ -40,7 +40,7 @@ import kotlin.math.max
 internal class PaginationModel(
     val pageSpacingPx: Int,
     val numPages: Int,
-    topPageMarginPx: Int = 0
+    topPageMarginPx: Int = 0,
 ) : Parcelable {
 
     init {
@@ -163,7 +163,7 @@ internal class PaginationModel(
     fun getPagesInViewport(
         viewportTop: Int,
         viewportBottom: Int,
-        includePartial: Boolean = true
+        includePartial: Boolean = true,
     ): PagesInViewport {
         // If the top of the viewport exceeds the bottom of the last page whose dimensions are
         // known, return an empty range at the bottom of this model, and indicate that layout is

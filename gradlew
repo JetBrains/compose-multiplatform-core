@@ -22,6 +22,7 @@ else
     export OUT_DIR="$CHECKOUT_ROOT/out"
 fi
 export GRADLE_USER_HOME="$OUT_DIR/.gradle"
+export KONAN_DATA_DIR="$OUT_DIR/.konan"
 
 ORG_GRADLE_JVMARGS="$(cd $SCRIPT_PATH && grep org.gradle.jvmargs gradle.properties | sed 's/^/-D/')"
 if [ -n "$DIST_DIR" ]; then

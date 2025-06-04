@@ -704,7 +704,7 @@ private fun createTestSpl(
     context: Context,
     setDividerDrawable: Boolean = true,
     childPanesAcceptTouchEvents: Boolean = false,
-    collapsibleContentViews: Boolean = false
+    collapsibleContentViews: Boolean = false,
 ): SlidingPaneLayout =
     SlidingPaneLayout(context).apply {
         addView(
@@ -750,14 +750,14 @@ private fun createTestSpl(
 private fun View.measureAndLayoutForTest(width: Int = 100, height: Int = 100) {
     measure(
         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
     )
     layout(0, 0, measuredWidth, measuredHeight)
 }
 
 private class TestDividerDrawable(
     private val intrinsicWidth: Int = 10,
-    private val intrinsicHeight: Int = 20
+    private val intrinsicHeight: Int = 20,
 ) : Drawable() {
 
     override fun draw(canvas: Canvas) {}
@@ -799,7 +799,7 @@ private class TestPaneView(context: Context) : View(context) {
                 MeasureSpec.AT_MOST -> suggestedMinimumHeight.coerceAtMost(heightSize)
                 MeasureSpec.UNSPECIFIED -> suggestedMinimumHeight
                 else -> error("bad width mode $heightMode")
-            }
+            },
         )
     }
 
@@ -810,11 +810,8 @@ private class TestPaneView(context: Context) : View(context) {
 }
 
 /** Create a test [MotionEvent]; this will have bogus time values, no history */
-private fun motionEvent(
-    action: Int,
-    x: Float,
-    y: Float,
-) = MotionEvent.obtain(0L, 0L, action, x, y, 0)
+private fun motionEvent(action: Int, x: Float, y: Float) =
+    MotionEvent.obtain(0L, 0L, action, x, y, 0)
 
 private fun downEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_DOWN, x, y)
 
@@ -847,7 +844,7 @@ private fun motionEvent(action: Int, x: Int, y: Int, source: Int, toolType: Int)
         /*deviceId=*/ 0,
         /*edgeFlags=*/ 0,
         source,
-        /*flags=*/ 0
+        /*flags=*/ 0,
     )
 }
 

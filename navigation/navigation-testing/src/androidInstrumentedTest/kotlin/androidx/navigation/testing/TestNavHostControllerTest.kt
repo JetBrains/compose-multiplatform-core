@@ -124,6 +124,6 @@ class NoOpActivityNavigator : ActivityNavigator(ApplicationProvider.getApplicati
         destination: Destination,
         args: Bundle?,
         navOptions: NavOptions?,
-        navigatorExtras: Navigator.Extras?
+        navigatorExtras: Navigator.Extras?,
     ) = destination
 }

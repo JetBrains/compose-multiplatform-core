@@ -127,7 +127,7 @@ class RemoteActivityHelperTest {
         val shadowPackageManager = shadowOf(context.packageManager)
         shadowPackageManager!!.setSystemFeature(
             RemoteInteractionsUtil.SYSTEM_FEATURE_WATCH,
-            isWatch
+            isWatch,
         )
     }
 
@@ -165,7 +165,7 @@ class RemoteActivityHelperTest {
             mRemoteActivityHelper
                 .startRemoteActivityLegacy(
                     Intent(Intent.ACTION_VIEW).setData(Uri.EMPTY),
-                    testNodeId
+                    testNodeId,
                 )
                 .get()
         }
@@ -281,7 +281,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -314,7 +314,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -343,7 +343,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -363,7 +363,7 @@ class RemoteActivityHelperTest {
         expectedExtraIntent: Intent,
         expectedNodeId: String,
         expectedPackageName: String,
-        actualIntent: Intent
+        actualIntent: Intent,
     ) {
         assertEquals(expectedExtraIntent, getTargetIntent(actualIntent))
         assertEquals(expectedNodeId, getTargetNodeId(actualIntent))
@@ -546,7 +546,7 @@ class RemoteActivityHelperTest {
             listOf(
                 RemoteActivityHelper.STATUS_AVAILABLE,
                 RemoteActivityHelper.STATUS_UNAVAILABLE,
-                RemoteActivityHelper.STATUS_TEMPORARILY_UNAVAILABLE
+                RemoteActivityHelper.STATUS_TEMPORARILY_UNAVAILABLE,
             )) {
             whenever(remoteInteractionsManager.isAvailabilityStatusApiSupported).thenReturn(true)
             doAnswer {

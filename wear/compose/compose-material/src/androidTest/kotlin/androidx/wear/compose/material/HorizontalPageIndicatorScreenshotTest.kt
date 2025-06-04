@@ -84,7 +84,7 @@ class HorizontalPageIndicatorScreenshotTest {
 
     private fun selected_page(
         indicatorStyle: PageIndicatorStyle,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -107,7 +107,7 @@ class HorizontalPageIndicatorScreenshotTest {
                     pageIndicatorState = pageIndicatorState(0.5f),
                     selectedColor = Color.Yellow,
                     unselectedColor = Color.Red,
-                    indicatorSize = 15.dp
+                    indicatorSize = 15.dp,
                 )
             }
         }
@@ -127,7 +127,7 @@ class HorizontalPageIndicatorScreenshotTest {
                 pageIndicatorState = pageIndicatorState(),
                 selectedColor = Color.Yellow,
                 unselectedColor = Color.Red,
-                indicatorSize = 15.dp
+                indicatorSize = 15.dp,
             )
         }
     }

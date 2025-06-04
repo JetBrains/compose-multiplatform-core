@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
-import android.util.Pair
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
@@ -30,10 +29,11 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.config.CameraAppComponent
 import androidx.camera.camera2.pipe.integration.config.CameraModule
+import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraDeviceSurfaceManager
-import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.SurfaceConfig
+import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
 
 /**
@@ -45,7 +45,7 @@ import androidx.camera.core.impl.UseCaseConfig
 public class CameraSurfaceAdapter(
     context: Context,
     cameraComponent: Any?,
-    availableCameraIds: Set<String>
+    availableCameraIds: Set<String>,
 ) : CameraDeviceSurfaceManager {
     private val component = cameraComponent as CameraAppComponent
     private val supportedSurfaceCombinationMap =
@@ -60,7 +60,7 @@ public class CameraSurfaceAdapter(
     /** Prepare supportedSurfaceCombinationMap for surface adapter. */
     private fun initSupportedSurfaceCombinationMap(
         context: Context,
-        availableCameraIds: Set<String>
+        availableCameraIds: Set<String>,
     ) {
         for (cameraId in availableCameraIds) {
             try {
@@ -73,16 +73,18 @@ public class CameraSurfaceAdapter(
                         cameraMetadata,
                         StreamConfigurationMapCompat(
                             streamConfigurationMap,
-                            OutputSizesCorrector(cameraMetadata, streamConfigurationMap)
-                        )
+                            OutputSizesCorrector(cameraMetadata, streamConfigurationMap),
+                        ),
                     )
                 supportedSurfaceCombinationMap[cameraId] =
                     SupportedSurfaceCombination(
                         context,
                         cameraMetadata,
-                        CameraModule.provideEncoderProfilesProvider(cameraId, cameraQuirks)
+                        CameraModule.provideEncoderProfilesProvider(cameraId, cameraQuirks),
+                        // TODO: Create and use a proper impl. of FeatureCombinationQuery
+                        FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
                     )
-            } catch (exception: DoNotDisturbException) {
+            } catch (_: DoNotDisturbException) {
                 Log.error {
                     "Failed to create supported surface combinations: " +
                         "Do Not Disturb mode is on"
@@ -104,14 +106,14 @@ public class CameraSurfaceAdapter(
         cameraMode: Int,
         cameraId: String,
         imageFormat: Int,
-        size: Size
+        size: Size,
     ): SurfaceConfig {
         checkIfSupportedCombinationExist(cameraId)
 
         return supportedSurfaceCombinationMap[cameraId]!!.transformSurfaceConfig(
             cameraMode,
             imageFormat,
-            size
+            size,
         )
     }
 
@@ -148,7 +150,8 @@ public class CameraSurfaceAdapter(
         isPreviewStabilizationOn: Boolean,
         hasVideoCapture: Boolean,
         allowFeatureCombinationResolutions: Boolean,
-    ): Pair<Map<UseCaseConfig<*>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>> {
+        findMaxSupportedFrameRate: Boolean,
+    ): SurfaceStreamSpecQueryResult {
 
         if (!checkIfSupportedCombinationExist(cameraId)) {
             throw IllegalArgumentException(
@@ -163,6 +166,7 @@ public class CameraSurfaceAdapter(
             isPreviewStabilizationOn,
             hasVideoCapture,
             allowFeatureCombinationResolutions,
+            findMaxSupportedFrameRate,
         )
     }
 }

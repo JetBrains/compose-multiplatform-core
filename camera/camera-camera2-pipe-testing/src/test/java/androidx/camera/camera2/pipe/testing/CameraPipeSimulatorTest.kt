@@ -40,13 +40,13 @@ class CameraPipeSimulatorTest {
         FakeCameraMetadata(
             cameraId = FakeCameraIds.next(),
             characteristics =
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_BACK)
+                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_BACK),
         )
     private val frontCameraMetadata =
         FakeCameraMetadata(
             cameraId = FakeCameraIds.next(),
             characteristics =
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_FRONT)
+                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_FRONT),
         )
 
     private val streamConfig = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
@@ -58,7 +58,7 @@ class CameraPipeSimulatorTest {
         CameraPipeSimulator.create(
             testScope,
             context,
-            listOf(frontCameraMetadata, backCameraMetadata)
+            listOf(frontCameraMetadata, backCameraMetadata),
         )
 
     @Test
@@ -163,15 +163,9 @@ class CameraPipeSimulatorTest {
     @Test
     fun cameraPipeSimulatorCanCreateConcurrentCameraGraphs() {
         val config1 =
-            CameraGraph.Config(
-                camera = frontCameraMetadata.camera,
-                streams = listOf(streamConfig),
-            )
+            CameraGraph.Config(camera = frontCameraMetadata.camera, streams = listOf(streamConfig))
         val config2 =
-            CameraGraph.Config(
-                camera = backCameraMetadata.camera,
-                streams = listOf(streamConfig),
-            )
+            CameraGraph.Config(camera = backCameraMetadata.camera, streams = listOf(streamConfig))
         val concurrentCameras = listOf(config1, config2)
 
         val cameraGraphs =

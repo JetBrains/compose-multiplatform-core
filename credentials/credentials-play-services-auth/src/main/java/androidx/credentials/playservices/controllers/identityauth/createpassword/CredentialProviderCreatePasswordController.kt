@@ -50,7 +50,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
         SavePasswordRequest,
         Unit,
         CreateCredentialResponse,
-        CreateCredentialException
+        CreateCredentialException,
     >(context) {
 
     /** The callback object state, used in the protected handleResponse method. */
@@ -77,7 +77,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
                             createCredentialExceptionTypeToException,
                         executor = executor,
                         callback = callback,
-                        cancellationSignal
+                        cancellationSignal,
                     )
                 )
                     return
@@ -89,7 +89,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
         request: CreatePasswordRequest,
         callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -138,7 +138,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
         }
         return createCredentialExceptionTypeToException(
             errName,
-            "During save password, found " + "password failure response from one tap ${e.message}"
+            "During save password, found " + "password failure response from one tap ${e.message}",
         )
     }
 
@@ -147,7 +147,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
             Log.w(
                 TAG,
                 "Returned request code " +
-                    "${CONTROLLER_REQUEST_CODE} which does not match what was given $uniqueRequestCode"
+                    "${CONTROLLER_REQUEST_CODE} which does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -156,7 +156,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                cancellationSignal,
             )
         )
             return

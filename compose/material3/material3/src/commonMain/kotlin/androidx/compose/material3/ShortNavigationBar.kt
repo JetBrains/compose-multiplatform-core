@@ -97,12 +97,9 @@ fun ShortNavigationBar(
     contentColor: Color = ShortNavigationBarDefaults.contentColor,
     windowInsets: WindowInsets = ShortNavigationBarDefaults.windowInsets,
     arrangement: ShortNavigationBarArrangement = ShortNavigationBarDefaults.arrangement,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    Surface(
-        color = containerColor,
-        contentColor = contentColor,
-    ) {
+    Surface(color = containerColor, contentColor = contentColor) {
         Layout(
             modifier =
                 modifier
@@ -121,7 +118,7 @@ fun ShortNavigationBar(
                     else -> {
                         throw IllegalArgumentException("Invalid ItemsArrangement value.")
                     }
-                }
+                },
         )
     }
 }
@@ -329,7 +326,7 @@ object ShortNavigationBarItemDefaults {
 private class EqualWeightContentMeasurePolicy : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val width = constraints.maxWidth
         var itemHeight = constraints.minHeight
@@ -381,7 +378,7 @@ private class EqualWeightContentMeasurePolicy : MeasurePolicy {
 private class CenteredContentMeasurePolicy : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val width = constraints.maxWidth
         var itemHeight = constraints.minHeight

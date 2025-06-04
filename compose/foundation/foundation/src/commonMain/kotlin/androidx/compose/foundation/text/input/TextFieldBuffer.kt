@@ -301,7 +301,7 @@ internal constructor(
         end: Int,
         text: CharSequence,
         textStart: Int = 0,
-        textEnd: Int = text.length
+        textEnd: Int = text.length,
     ) {
         requirePrecondition(start <= end) { "Expected start=$start <= end=$end" }
         requirePrecondition(textStart <= textEnd) {
@@ -450,14 +450,14 @@ internal constructor(
         composition: TextRange? = this.composition,
         composingAnnotations: List<PlacedAnnotation>? =
             this.composingAnnotations?.asMutableList()?.takeIf { it.isNotEmpty() },
-        outputAnnotations: List<PlacedAnnotation>? = null
+        outputAnnotations: List<PlacedAnnotation>? = null,
     ): TextFieldCharSequence =
         TextFieldCharSequence(
             text = buffer.toString(),
             selection = selection,
             composition = composition,
             composingAnnotations = composingAnnotations,
-            outputAnnotations = outputAnnotations
+            outputAnnotations = outputAnnotations,
         )
 
     private fun requireValidIndex(index: Int, startExclusive: Boolean, endExclusive: Boolean) {
@@ -529,7 +529,7 @@ internal fun adjustTextRange(
     originalRange: TextRange,
     replaceStart: Int,
     replaceEnd: Int,
-    insertedTextLength: Int
+    insertedTextLength: Int,
 ): TextRange {
     var selStart = originalRange.min
     var selEnd = originalRange.max
@@ -663,7 +663,7 @@ inline fun ChangeList.forEachChangeReversed(
 internal inline fun findCommonPrefixAndSuffix(
     a: CharSequence,
     b: CharSequence,
-    onFound: (aPrefixStart: Int, aSuffixStart: Int, bPrefixStart: Int, bSuffixStart: Int) -> Unit
+    onFound: (aPrefixStart: Int, aSuffixStart: Int, bPrefixStart: Int, bSuffixStart: Int) -> Unit,
 ) {
     var aStart = 0
     var aEnd = a.length

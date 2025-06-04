@@ -1781,7 +1781,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.ItemList getItemList();
   }
 
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi public final class SectionedItemTemplate implements androidx.car.app.model.Template {
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class SectionedItemTemplate implements androidx.car.app.model.Template {
     method public java.util.List<androidx.car.app.model.Action!> getActions();
     method public androidx.car.app.model.Header? getHeader();
     method public java.util.List<androidx.car.app.model.Section<? extends java.lang.Object!>!> getSections();
@@ -2345,6 +2345,7 @@ package androidx.car.app.notification {
 
   public static final class CarAppExtender.Builder {
     ctor public CarAppExtender.Builder();
+    method public androidx.car.app.notification.CarAppExtender.Builder addAction(android.app.Notification.Action);
     method public androidx.car.app.notification.CarAppExtender.Builder addAction(@DrawableRes int, CharSequence, android.app.PendingIntent);
     method public androidx.car.app.notification.CarAppExtender build();
     method public androidx.car.app.notification.CarAppExtender.Builder setChannelId(String);

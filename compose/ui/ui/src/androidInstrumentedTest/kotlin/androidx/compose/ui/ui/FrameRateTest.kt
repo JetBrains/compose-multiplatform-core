@@ -271,7 +271,7 @@ class FrameRateTest {
         val alpha by
             animateFloatAsState(
                 targetValue = targetAlpha,
-                animationSpec = tween(durationMillis = 100)
+                animationSpec = tween(durationMillis = 100),
             )
 
         Button(
@@ -279,12 +279,12 @@ class FrameRateTest {
             modifier =
                 Modifier.testTag("frameRateTag")
                     .requestedFrameRate(secondFrameRate)
-                    .background(LocalContentColor.current.copy(alpha = alpha))
+                    .background(LocalContentColor.current.copy(alpha = alpha)),
         ) {
             Text(
                 text = "Click Me for alpha change $firstFrameRate",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(firstFrameRate)
+                modifier = Modifier.requestedFrameRate(firstFrameRate),
             )
         }
     }
@@ -300,7 +300,7 @@ class FrameRateTest {
             onClick = {
                 scrollToIndex = 49
                 coroutineScope.launch { listState.animateScrollToItem(scrollToIndex) }
-            }
+            },
         ) {
             Text("Scroll to 50")
         }
@@ -325,14 +325,14 @@ class FrameRateTest {
         val alpha by
             animateFloatAsState(
                 targetValue = targetAlpha,
-                animationSpec = tween(durationMillis = 100)
+                animationSpec = tween(durationMillis = 100),
             )
 
         Button(onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f }) {
             Text(
                 text = "Click for $frameRate fps",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(frameRate)
+                modifier = Modifier.requestedFrameRate(frameRate),
             )
         }
     }
@@ -346,7 +346,7 @@ class FrameRateTest {
             animateDpAsState(
                 targetValue = if (moved) 100.dp else 0.dp,
                 animationSpec = tween(durationMillis = 100),
-                label = "offset"
+                label = "offset",
             )
 
         Column(
@@ -358,7 +358,7 @@ class FrameRateTest {
         ) {
             Button(
                 onClick = { moved = !moved },
-                modifier = Modifier.width(500.dp).testTag("frameRateTag")
+                modifier = Modifier.width(500.dp).testTag("frameRateTag"),
             ) {
                 Text(shortText, modifier = Modifier.offset(x = offset))
             }
@@ -386,16 +386,14 @@ class FrameRateTest {
         val size by
             animateDpAsState(
                 targetValue = if (expanded) 300.dp else 200.dp,
-                animationSpec = tween(durationMillis = 100)
+                animationSpec = tween(durationMillis = 100),
             )
 
         Button(
             onClick = { expanded = !expanded },
-            modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size)
+            modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size),
         ) {
-            Text(
-                "Click Me for size change $frameRate",
-            )
+            Text("Click Me for size change $frameRate")
         }
     }
 
@@ -417,7 +415,7 @@ class FrameRateTest {
                 .background(Color.Gray)
                 .fillMaxWidth()
                 .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Button(onClick = { isRow = !isRow }) { Text("toggle") }
 

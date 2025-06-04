@@ -77,10 +77,9 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.EdgeOffset.Companion.outer
-import androidx.xr.compose.spatial.EdgeOffset.Companion.overlap
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -110,7 +109,7 @@ private fun App() {
     var contentText by remember { mutableStateOf("Opening additional context.") }
     var showPopup by remember { mutableStateOf(false) }
 
-    Orbiter(position = OrbiterEdge.Start, offset = overlap(8.dp)) {
+    Orbiter(position = ContentEdge.Start, offset = 8.dp, offsetType = OrbiterOffsetType.Overlap) {
         NavigationRail(
             modifier =
                 Modifier.width(80.dp).height(IntrinsicSize.Min).clip(RoundedCornerShape(20.dp))
@@ -150,7 +149,7 @@ private fun App() {
             )
         }
     }
-    Orbiter(position = OrbiterEdge.End, offset = outer(72.dp)) {
+    Orbiter(position = ContentEdge.End, offset = 72.dp, offsetType = OrbiterOffsetType.OuterEdge) {
         Row(
             modifier = Modifier.animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
@@ -165,7 +164,7 @@ private fun App() {
                     Text(
                         text = contentText,
                         modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -256,9 +255,8 @@ private fun RowItem(modifier: Modifier = Modifier, content: @Composable () -> Un
     Surface(
         color = Color.Gray,
         modifier = modifier.padding(20.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)),
-    ) {
-        content()
-    }
+        content = content,
+    )
 }
 
 @Composable

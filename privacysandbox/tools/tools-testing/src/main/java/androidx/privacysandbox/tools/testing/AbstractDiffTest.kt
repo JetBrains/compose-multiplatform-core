@@ -40,10 +40,7 @@ abstract class AbstractDiffTest {
      * @param inputSources List of input sources read from the test-data directory with
      *   [subdirectoryName].
      */
-    abstract fun generateSources(
-        inputSources: List<Source>,
-        outputDirectory: Path,
-    ): List<Source>
+    abstract fun generateSources(inputSources: List<Source>, outputDirectory: Path): List<Source>
 
     protected val generatedSources: List<Source> by lazy {
         val inputSources =

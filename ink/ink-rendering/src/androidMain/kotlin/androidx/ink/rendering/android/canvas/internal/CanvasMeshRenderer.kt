@@ -249,7 +249,7 @@ internal class CanvasMeshRenderer(
     ) {
         fillObjectToCanvasLinearComponent(
             meshToCanvasTransform,
-            objectToCanvasLinearComponentScratch
+            objectToCanvasLinearComponentScratch,
         )
         val cachedMeshData = inkMeshToAndroidMesh[inkMesh]
         val uniformBugFixed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
@@ -353,7 +353,7 @@ internal class CanvasMeshRenderer(
         inProgressStroke.populateInput(scratchLastInput, inputCount - 1)
         fillObjectToCanvasLinearComponent(
             strokeToScreenTransform,
-            objectToCanvasLinearComponentScratch
+            objectToCanvasLinearComponentScratch,
         )
         val brushCoatCount = inProgressStroke.getBrushCoatCount()
         for (coatIndex in 0 until brushCoatCount) {
@@ -600,7 +600,7 @@ internal class CanvasMeshRenderer(
         return AndroidMesh(
             obtainShaderMetadata(
                     inProgressStroke.getMeshFormat(coatIndex, meshIndex),
-                    isPacked = false
+                    isPacked = false,
                 )
                 .meshSpecification,
             AndroidMesh.TRIANGLES,

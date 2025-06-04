@@ -39,7 +39,7 @@ class ReadMedicalResourcesResponseTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -54,13 +54,13 @@ class ReadMedicalResourcesResponseTest {
             ReadMedicalResourcesResponse(
                 listOf(MEDICAL_RESOURCE, MEDICAL_RESOURCE),
                 NEXT_PAGE_TOKEN,
-                REMAINING_COUNT
+                REMAINING_COUNT,
             )
         val response4 =
             ReadMedicalResourcesResponse(
                 listOf(MEDICAL_RESOURCE),
                 NEXT_PAGE_TOKEN + "diff",
-                REMAINING_COUNT
+                REMAINING_COUNT,
             )
         val response5 =
             ReadMedicalResourcesResponse(medicalResources, NEXT_PAGE_TOKEN, REMAINING_COUNT + 1)
@@ -96,7 +96,7 @@ class ReadMedicalResourcesResponseTest {
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_IMMUNIZATION,
-                "fhir_rs_id"
+                "fhir_rs_id",
             )
         }
         private val FHIR_VERSION_4_0_1 by lazy { FhirVersion.Companion.parseFhirVersion("4.0.1") }
@@ -109,7 +109,7 @@ class ReadMedicalResourcesResponseTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
         }
         private const val NEXT_PAGE_TOKEN = "nextPageToken"

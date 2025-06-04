@@ -65,7 +65,7 @@ object DeviceInfo {
                     "/system/sd/xbin/su",
                     "/system/bin/failsafe/su",
                     "/data/local/su",
-                    "/su/bin/su"
+                    "/su/bin/su",
                 )
                 .any { File(it).exists() }
 
@@ -140,7 +140,7 @@ object DeviceInfo {
         if (artMainlinePackage == null) {
             Log.d(
                 BenchmarkState.TAG,
-                "No ART mainline module found on API ${Build.VERSION.SDK_INT}"
+                "No ART mainline module found on API ${Build.VERSION.SDK_INT}",
             )
             return if (Build.VERSION.SDK_INT >= 34) {
                 // defer error to avoid crashing during init
@@ -169,7 +169,7 @@ object DeviceInfo {
                         val versionString =
                             x.substring(
                                 startIndex = offset + prefix.length,
-                                endIndex = x.indexOf(' ', offset + prefix.length)
+                                endIndex = x.indexOf(' ', offset + prefix.length),
                             )
                         versionCode = versionString.toLong()
                     }
@@ -221,7 +221,7 @@ object DeviceInfo {
                     changes quickly. For this reason they should not be used for
                     benchmarking. Use a '-user' or '-userdebug' system image.
                 """
-                            .trimIndent()
+                            .trimIndent(),
                 ),
                 conditionalError(
                     hasError = isEmulator,
@@ -234,7 +234,7 @@ object DeviceInfo {
                     benchmark improvements might not carry over to a real user's
                     experience (or even regress real device performance).
                 """
-                            .trimIndent()
+                            .trimIndent(),
                 ),
                 conditionalError(
                     hasError = initialBatteryPercent < MINIMUM_BATTERY_PERCENT,
@@ -247,8 +247,8 @@ object DeviceInfo {
                     Wait for your battery to charge to at least $MINIMUM_BATTERY_PERCENT%.
                     Currently at $initialBatteryPercent%.
                 """
-                            .trimIndent()
-                )
+                            .trimIndent(),
+                ),
             )
     }
 

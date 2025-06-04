@@ -22,10 +22,4 @@ import android.content.Context
 public interface AppFunctionContext {
     /** The Android context. */
     public val context: Context
-
-    /**
-     * Return the name of the package that invoked this AppFunction. You can use this information to
-     * validate the caller.
-     */
-    public val callingPackageName: String
 }

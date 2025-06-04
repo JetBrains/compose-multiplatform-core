@@ -41,7 +41,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
         val retryables: Set<Int> =
             setOf(
                 CommonStatusCodes.NETWORK_ERROR,
-                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL
+                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL,
             )
 
         // Generic controller request code used by all controllers
@@ -106,7 +106,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
         /** Shuttles back exceptions only related to the hidden activity that can't be parceled */
         internal fun getCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): GetCredentialException {
             return when (typeName) {
                 GET_CANCELED -> {
@@ -142,7 +142,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
 
         internal fun createCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): CreateCredentialException {
             return when (typeName) {
                 CREATE_CANCELED -> {
@@ -170,7 +170,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
     fun generateHiddenActivityIntent(
         resultReceiver: ResultReceiver,
         hiddenIntent: Intent,
-        typeTag: String
+        typeTag: String,
     ) {
         hiddenIntent.putExtra(TYPE_TAG, typeTag)
         hiddenIntent.putExtra(ACTIVITY_REQUEST_CODE_TAG, CONTROLLER_REQUEST_CODE)

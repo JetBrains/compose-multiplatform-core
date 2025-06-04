@@ -102,7 +102,7 @@ private fun InsertReplaceDeleteDemo() {
         "To move the cursor around, use the GBoard menu to get at selection controls, plug in a " +
             "hardware keyboard, or use the Running Devices tool in Android Studio with a " +
             "physical device. On an emulator, your host's hardware arrow keys won't work.",
-        style = MaterialTheme.typography.caption
+        style = MaterialTheme.typography.caption,
     )
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -163,7 +163,7 @@ private fun InsertReplaceDeleteDemo() {
                             drawLine(
                                 Color.Blue,
                                 start = cursorRect.topCenter,
-                                end = cursorRect.bottomCenter
+                                end = cursorRect.bottomCenter,
                             )
                         } else {
                             val selectionPath =
@@ -172,7 +172,7 @@ private fun InsertReplaceDeleteDemo() {
                                 selectionPath,
                                 Color.Blue,
                                 alpha = 0.8f,
-                                style = Stroke(width = 1.dp.toPx())
+                                style = Stroke(width = 1.dp.toPx()),
                             )
                         }
                     },
@@ -180,7 +180,7 @@ private fun InsertReplaceDeleteDemo() {
         Icon(
             Icons.AutoMirrored.Default.KeyboardArrowRight,
             contentDescription = null,
-            modifier = Modifier.alignBy { (it.measuredHeight * 0.75f).toInt() }
+            modifier = Modifier.alignBy { (it.measuredHeight * 0.75f).toInt() },
         )
         BasicTextField(
             state = state,
@@ -263,7 +263,7 @@ private fun BoldItalicEveryOtherChar() {
                     val italic = SpanStyle(fontStyle = FontStyle.Italic)
                     var toggle = true
                     repeat(text.length / 2 + 1) {
-                        addAnnotation(if (toggle) bold else italic, i, i + 1)
+                        addStyle(if (toggle) bold else italic, i, i + 1)
                         toggle = !toggle
                         i += 2
                     }
@@ -282,9 +282,7 @@ private fun ColorAnimationDemo() {
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
         outputTransformation =
-            AnnotatedOutputTransformation {
-                addAnnotation(SpanStyle(color = color), 0, text.length)
-            },
+            AnnotatedOutputTransformation { addStyle(SpanStyle(color = color), 0, text.length) },
         decorator = demoDecorationBox,
     )
 }

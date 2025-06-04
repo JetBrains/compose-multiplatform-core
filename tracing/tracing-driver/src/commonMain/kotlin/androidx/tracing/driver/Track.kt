@@ -42,7 +42,7 @@ public abstract class Track(
      * used to connect recorded trace events to the containing track.
      */
     @JvmField // avoid getter generation
-    internal val uuid: Long
+    internal val uuid: Long,
 ) {
     /**
      * Any time we emit trace packets relevant to this process. We need to make sure the necessary
@@ -68,7 +68,7 @@ public abstract class Track(
     /** Emit is internal, but it must be sure to only access */
     internal inline fun emitTraceEvent(
         immediateDispatch: Boolean = false,
-        block: (TraceEvent) -> Unit
+        block: (TraceEvent) -> Unit,
     ) {
         currentPacketArray.apply {
             block(packets[fillCount])

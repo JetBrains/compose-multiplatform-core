@@ -42,11 +42,11 @@ inline fun <T> remember(key1: Any?, crossinline calculation: @DisallowComposable
 inline fun <T> remember(
     key1: Any?,
     key2: Any?,
-    crossinline calculation: @DisallowComposableCalls () -> T
+    crossinline calculation: @DisallowComposableCalls () -> T,
 ): T {
     return currentComposer.cache(
         currentComposer.changed(key1) or currentComposer.changed(key2),
-        calculation
+        calculation,
     )
 }
 
@@ -60,13 +60,13 @@ inline fun <T> remember(
     key1: Any?,
     key2: Any?,
     key3: Any?,
-    crossinline calculation: @DisallowComposableCalls () -> T
+    crossinline calculation: @DisallowComposableCalls () -> T,
 ): T {
     return currentComposer.cache(
         currentComposer.changed(key1) or
             currentComposer.changed(key2) or
             currentComposer.changed(key3),
-        calculation
+        calculation,
     )
 }
 
@@ -78,7 +78,7 @@ inline fun <T> remember(
 @Composable
 inline fun <T> remember(
     vararg keys: Any?,
-    crossinline calculation: @DisallowComposableCalls () -> T
+    crossinline calculation: @DisallowComposableCalls () -> T,
 ): T {
     var invalid = false
     for (key in keys) invalid = invalid or currentComposer.changed(key)
@@ -224,7 +224,7 @@ val currentCompositionLocalContext: CompositionLocalContext
  */
 @Deprecated(
     "Prefer the higher-precision currentCompositeKeyHashCode",
-    ReplaceWith("currentCompositeKeyHashCode")
+    ReplaceWith("currentCompositeKeyHashCode"),
 )
 @Suppress("DEPRECATION")
 val currentCompositeKeyHash: Int
@@ -270,7 +270,7 @@ val currentCompositeKeyHashCode: CompositeKeyHashCode
 @Composable
 inline fun <T : Any, reified E : Applier<*>> ComposeNode(
     noinline factory: () -> T,
-    update: @DisallowComposableCalls Updater<T>.() -> Unit
+    update: @DisallowComposableCalls Updater<T>.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startNode()
@@ -304,7 +304,7 @@ inline fun <T : Any, reified E : Applier<*>> ComposeNode(
 @Composable
 inline fun <T : Any, reified E : Applier<*>> ReusableComposeNode(
     noinline factory: () -> T,
-    update: @DisallowComposableCalls Updater<T>.() -> Unit
+    update: @DisallowComposableCalls Updater<T>.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startReusableNode()
@@ -341,7 +341,7 @@ inline fun <T : Any, reified E : Applier<*>> ReusableComposeNode(
 inline fun <T : Any?, reified E : Applier<*>> ComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startNode()
@@ -379,7 +379,7 @@ inline fun <T : Any?, reified E : Applier<*>> ComposeNode(
 inline fun <T : Any?, reified E : Applier<*>> ReusableComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startReusableNode()
@@ -422,7 +422,7 @@ inline fun <T, reified E : Applier<*>> ComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
     noinline skippableUpdate: @Composable SkippableUpdater<T>.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startNode()
@@ -468,7 +468,7 @@ inline fun <T, reified E : Applier<*>> ReusableComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
     noinline skippableUpdate: @Composable SkippableUpdater<T>.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startReusableNode()

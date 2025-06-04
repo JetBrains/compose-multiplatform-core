@@ -36,14 +36,14 @@ fun ActionIconButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp).clip(CircleShape)) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             modifier = Modifier.size(24.dp),
-            tint = tint
+            tint = tint,
         )
     }
 }

@@ -52,7 +52,7 @@ internal class KaptCompilationStep(
 
     override fun execute(
         workingDir: File,
-        arguments: CompilationStepArguments
+        arguments: CompilationStepArguments,
     ): CompilationStepResult {
         if (annotationProcessors.isEmpty()) {
             return CompilationStepResult.skip(arguments)
@@ -76,7 +76,7 @@ internal class KaptCompilationStep(
                 delegateProcessors.set(annotationProcessors)
                 KotlinCliRunner.runKotlinCli(
                     arguments = argumentsWithKapt,
-                    destinationDir = workingDir.resolve(CLASS_OUT_FOLDER_NAME)
+                    destinationDir = workingDir.resolve(CLASS_OUT_FOLDER_NAME),
                 )
             } finally {
                 delegateProcessors.remove()
@@ -84,12 +84,12 @@ internal class KaptCompilationStep(
         val generatedSources =
             listOfNotNull(
                 workingDir.resolve(JAVA_SRC_OUT_FOLDER_NAME).toSourceSet(),
-                workingDir.resolve(KOTLIN_SRC_OUT_FOLDER_NAME).toSourceSet()
+                workingDir.resolve(KOTLIN_SRC_OUT_FOLDER_NAME).toSourceSet(),
             )
         val diagnostics =
             resolveDiagnostics(
                 diagnostics = result.diagnostics,
-                sourceSets = arguments.sourceSets + generatedSources
+                sourceSets = arguments.sourceSets + generatedSources,
             )
         val outputResources = workingDir.resolve(RESOURCES_OUT_FOLDER_NAME)
         val outputClasspath = listOf(result.compiledClasspath) + outputResources
@@ -106,13 +106,13 @@ internal class KaptCompilationStep(
             nextCompilerArguments =
                 arguments.copy(sourceSets = arguments.sourceSets + generatedSources),
             outputClasspath = outputClasspath,
-            generatedResources = generatedResources
+            generatedResources = generatedResources,
         )
     }
 
     private fun createKaptCliOptions(
         workingDir: File,
-        arguments: CompilationStepArguments
+        arguments: CompilationStepArguments,
     ): List<Pair<KaptCliOption, String>> = buildList {
         add(KaptCliOption.APT_MODE_OPTION to AptMode.STUBS_AND_APT.stringValue)
         add(
@@ -145,7 +145,7 @@ internal class KaptCompilationStep(
             // annotation processor option.
             put(
                 "kapt.kotlin.generated",
-                workingDir.resolve(KOTLIN_SRC_OUT_FOLDER_NAME).also { it.mkdirs() }.canonicalPath
+                workingDir.resolve(KOTLIN_SRC_OUT_FOLDER_NAME).also { it.mkdirs() }.canonicalPath,
             )
             putAll(processorOptions)
         }

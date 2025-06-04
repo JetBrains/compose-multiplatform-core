@@ -73,7 +73,7 @@ fun BTFResetCredentialsDemo() {
                     contentType = ContentType.NewUsername + ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
         BasicTextField(
             state = remember { TextFieldState() },
@@ -82,7 +82,7 @@ fun BTFResetCredentialsDemo() {
                     contentType = ContentType.NewPassword + ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         // Submit button
@@ -107,7 +107,7 @@ fun BasicTextFieldAutofill() {
                     contentType = ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         BasicTextField(
@@ -117,7 +117,7 @@ fun BasicTextFieldAutofill() {
                     contentType = ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         // Submit button
@@ -143,7 +143,7 @@ fun BasicSecureTextFieldAutofillDemo() {
                     contentType = ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
         BasicSecureTextField(
             state = remember { TextFieldState() },
@@ -158,7 +158,7 @@ fun BasicSecureTextFieldAutofillDemo() {
                     contentType = ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -194,7 +194,7 @@ fun LegacyTextFieldAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -202,7 +202,7 @@ fun LegacyTextFieldAutofillDemo() {
             value = passwordInput,
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
-            modifier = Modifier.semantics { contentType = ContentType.Password }
+            modifier = Modifier.semantics { contentType = ContentType.Password },
         )
 
         // Submit button
@@ -226,7 +226,7 @@ fun OutlinedTextFieldAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -234,7 +234,7 @@ fun OutlinedTextFieldAutofillDemo() {
             value = passwordInput,
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
-            modifier = Modifier.semantics { contentType = ContentType.Password }
+            modifier = Modifier.semantics { contentType = ContentType.Password },
         )
 
         // Submit button
@@ -258,7 +258,7 @@ fun OutlinedTextFieldVisualTransformationAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -267,7 +267,7 @@ fun OutlinedTextFieldVisualTransformationAutofillDemo() {
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
             modifier = Modifier.semantics { contentType = ContentType.Password },
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
         )
 
         // Submit button

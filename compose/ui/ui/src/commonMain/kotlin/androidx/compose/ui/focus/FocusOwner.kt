@@ -53,7 +53,7 @@ internal interface FocusOwner : FocusManager {
      * @param previouslyFocusedRect The bounds of the currently focused item.
      * @return true if the owner successfully requested focus from the framework. False otherwise.
      */
-    fun requestFocusForOwner(focusDirection: FocusDirection?, previouslyFocusedRect: Rect?): Boolean
+    fun requestOwnerFocus(focusDirection: FocusDirection?, previouslyFocusedRect: Rect?): Boolean
 
     /**
      * This function searches the compose hierarchy for the next focus target based on the supplied
@@ -68,7 +68,7 @@ internal interface FocusOwner : FocusManager {
     fun focusSearch(
         focusDirection: FocusDirection,
         focusedRect: Rect?,
-        onFound: (FocusTargetNode) -> Boolean
+        onFound: (FocusTargetNode) -> Boolean,
     ): Boolean?
 
     /**
@@ -111,8 +111,18 @@ internal interface FocusOwner : FocusManager {
         force: Boolean,
         refreshFocusEvents: Boolean,
         clearOwnerFocus: Boolean,
-        focusDirection: FocusDirection
+        focusDirection: FocusDirection,
     ): Boolean
+
+    /**
+     * Clear focus from the owner.
+     *
+     * When we are in keyboard mode and clear focus from the owner, the system automatically assigns
+     * focus to the default item. In cases where we want to delay default focus assignment until the
+     * new content is ready, we can call [clearFocus] with clearOwnerFocus = false, and then call
+     * this function when the content is ready to receive focus.
+     */
+    fun clearOwnerFocus()
 
     /** Searches for the currently focused item, and returns its coordinates as a rect. */
     fun getFocusRect(): Rect?
@@ -137,14 +147,14 @@ internal interface FocusOwner : FocusManager {
     /** Dispatches a rotary scroll event through the compose hierarchy. */
     fun dispatchRotaryEvent(
         event: RotaryScrollEvent,
-        onFocusedItem: () -> Boolean = { false }
+        onFocusedItem: () -> Boolean = { false },
     ): Boolean
 
     /** Dispatches an indirect touch event through the compose hierarchy. */
     @ExperimentalComposeUiApi
     fun dispatchIndirectTouchEvent(
         event: IndirectTouchEvent,
-        onFocusedItem: () -> Boolean = { false }
+        onFocusedItem: () -> Boolean = { false },
     ): Boolean
 
     /** Schedule a FocusTarget node to be invalidated after onApplyChanges. */

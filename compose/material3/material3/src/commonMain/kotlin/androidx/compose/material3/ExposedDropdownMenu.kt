@@ -156,7 +156,7 @@ fun ExposedDropdownMenuBox(
             object : ExposedDropdownMenuBoxScopeImpl() {
                 override fun Modifier.menuAnchor(
                     type: ExposedDropdownMenuAnchorType,
-                    enabled: Boolean
+                    enabled: Boolean,
                 ): Modifier =
                     this.focusRequester(focusRequester)
                         .then(
@@ -194,8 +194,7 @@ fun ExposedDropdownMenuBox(
                                 maxHeight = constraints.constrainHeight(menuMaxHeight),
                                 minWidth =
                                     if (matchAnchorWidth) menuWidth else constraints.minWidth,
-                                maxWidth =
-                                    if (matchAnchorWidth) menuWidth else constraints.maxWidth,
+                                maxWidth = if (matchAnchorWidth) menuWidth else constraints.maxWidth,
                             )
                         val placeable = measurable.measure(menuConstraints)
                         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
@@ -254,7 +253,7 @@ sealed class ExposedDropdownMenuBoxScope {
      */
     abstract fun Modifier.menuAnchor(
         type: ExposedDropdownMenuAnchorType,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Modifier
 
     /**
@@ -359,7 +358,7 @@ sealed class ExposedDropdownMenuBoxScope {
     @Deprecated(
         level = DeprecationLevel.WARNING,
         message = "Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters",
-        replaceWith = ReplaceWith("menuAnchor(type, enabled)")
+        replaceWith = ReplaceWith("menuAnchor(type, enabled)"),
     )
     fun Modifier.menuAnchor(): Modifier =
         menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -405,7 +404,7 @@ sealed class ExposedDropdownMenuBoxScope {
         level = DeprecationLevel.HIDDEN,
         message =
             "Maintained for binary compatibility. " +
-                "Use overload with customization options parameters."
+                "Use overload with customization options parameters.",
     )
     @Composable
     fun ExposedDropdownMenu(
@@ -496,10 +495,7 @@ object ExposedDropdownMenuDefaults {
      */
     @ExperimentalMaterial3Api
     @Composable
-    fun TrailingIcon(
-        expanded: Boolean,
-        modifier: Modifier = Modifier,
-    ) {
+    fun TrailingIcon(expanded: Boolean, modifier: Modifier = Modifier) {
         Icon(Icons.Filled.ArrowDropDown, null, modifier.rotate(if (expanded) 180f else 0f))
     }
 
@@ -1114,7 +1110,7 @@ object ExposedDropdownMenuDefaults {
         disabledPlaceholderColor: Color =
             FilledAutocompleteTokens.FieldDisabledInputTextColor.value.copy(
                 alpha = FilledAutocompleteTokens.FieldDisabledInputTextOpacity
-            )
+            ),
     ): TextFieldColors =
         textFieldColors(
             focusedTextColor = textColor,
@@ -1214,7 +1210,7 @@ object ExposedDropdownMenuDefaults {
         disabledPlaceholderColor: Color =
             OutlinedAutocompleteTokens.FieldDisabledInputTextColor.value.copy(
                 alpha = OutlinedAutocompleteTokens.FieldDisabledInputTextOpacity
-            )
+            ),
     ): TextFieldColors =
         outlinedTextFieldColors(
             focusedTextColor = textColor,
@@ -1271,7 +1267,7 @@ internal class ExposedDropdownMenuPositionProvider(
     val topWindowInsets: Int,
     val keyboardSignalState: State<Unit>? = null,
     val verticalMargin: Int = with(density) { MenuVerticalMargin.roundToPx() },
-    val onPositionCalculated: (anchorBounds: IntRect, menuBounds: IntRect) -> Unit = { _, _ -> }
+    val onPositionCalculated: (anchorBounds: IntRect, menuBounds: IntRect) -> Unit = { _, _ -> },
 ) : PopupPositionProvider {
     // Horizontal position
     private val startToAnchorStart = MenuPosition.startToAnchorStart()
@@ -1289,7 +1285,7 @@ internal class ExposedDropdownMenuPositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         // Workaround for b/326394521
         // Read the state because we want any changes to the state to trigger recalculation.
@@ -1310,7 +1306,7 @@ internal class ExposedDropdownMenuPositionProvider(
                     leftToWindowLeft
                 } else {
                     rightToWindowRight
-                }
+                },
             )
         var x = 0
         for (index in xCandidates.indices) {
@@ -1319,7 +1315,7 @@ internal class ExposedDropdownMenuPositionProvider(
                     anchorBounds = anchorBounds,
                     windowSize = windowSize,
                     menuWidth = popupContentSize.width,
-                    layoutDirection = layoutDirection
+                    layoutDirection = layoutDirection,
                 )
             if (
                 index == xCandidates.lastIndex ||
@@ -1338,7 +1334,7 @@ internal class ExposedDropdownMenuPositionProvider(
                     topToWindowTop
                 } else {
                     bottomToWindowBottom
-                }
+                },
             )
         var y = 0
         for (index in yCandidates.indices) {
@@ -1346,7 +1342,7 @@ internal class ExposedDropdownMenuPositionProvider(
                 yCandidates[index].position(
                     anchorBounds = anchorBounds,
                     windowSize = windowSize,
-                    menuHeight = popupContentSize.height
+                    menuHeight = popupContentSize.height,
                 )
             if (
                 index == yCandidates.lastIndex ||
@@ -1360,15 +1356,14 @@ internal class ExposedDropdownMenuPositionProvider(
         val menuOffset = IntOffset(x, y)
         onPositionCalculated(
             /* anchorBounds = */ anchorBounds,
-            /* menuBounds = */ IntRect(offset = menuOffset, size = popupContentSize)
+            /* menuBounds = */ IntRect(offset = menuOffset, size = popupContentSize),
         )
         return menuOffset
     }
 }
 
-private class ExposedDropdownMenuAnchorElement(
-    val updateStateOnAttach: () -> Unit,
-) : ModifierNodeElement<ExposedDropdownMenuAnchorNode>() {
+private class ExposedDropdownMenuAnchorElement(val updateStateOnAttach: () -> Unit) :
+    ModifierNodeElement<ExposedDropdownMenuAnchorNode>() {
     override fun create() = ExposedDropdownMenuAnchorNode(updateStateOnAttach)
 
     override fun update(node: ExposedDropdownMenuAnchorNode) {
@@ -1392,9 +1387,7 @@ private class ExposedDropdownMenuAnchorElement(
     }
 }
 
-private class ExposedDropdownMenuAnchorNode(
-    var updateStateOnAttach: () -> Unit,
-) : Modifier.Node() {
+private class ExposedDropdownMenuAnchorNode(var updateStateOnAttach: () -> Unit) : Modifier.Node() {
     override fun onAttach() {
         updateStateOnAttach()
     }

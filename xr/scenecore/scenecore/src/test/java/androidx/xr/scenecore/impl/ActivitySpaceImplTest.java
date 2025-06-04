@@ -40,10 +40,10 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.runtime.testing.FakeSpatialModeChangeListener;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -52,6 +52,7 @@ import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.environment.ShadowEnvironmentVisibilityState;
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState;
+import com.android.extensions.xr.node.NodeRepository;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.Bounds;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
@@ -60,6 +61,7 @@ import com.android.extensions.xr.space.SpatialCapabilities;
 import com.android.extensions.xr.space.SpatialState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -87,38 +89,42 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
             Mockito.mock(ImpSplitEngineRenderer.class);
 
     private XrExtensions mXrExtensions;
-    private FakeImpressApi mFakeImpressApi;
+    private FakeImpressApiImpl mFakeImpressApi;
     private JxrPlatformAdapter mTestRuntime;
     private ActivitySpaceImpl mActivitySpace;
+    private NodeRepository mNodeRepository = NodeRepository.getInstance();
+
+    private JxrPlatformAdapter createTestJxrPlatformAdapter(
+            boolean unScaledGravityAlignedActivitySpace) {
+        return JxrPlatformAdapterAxr.create(
+                mActivity,
+                mFakeExecutor,
+                mXrExtensions,
+                mFakeImpressApi,
+                new EntityManager(),
+                mPerceptionLibrary,
+                mSplitEngineSubspaceManager,
+                mSplitEngineRenderer,
+                /* useSplitEngine= */ false,
+                unScaledGravityAlignedActivitySpace);
+    }
 
     @Before
     public void setUp() {
         mXrExtensions = XrExtensionsProvider.getXrExtensions();
-        mFakeImpressApi = new FakeImpressApi();
+        mFakeImpressApi = new FakeImpressApiImpl();
         when(mPerceptionLibrary.initSession(eq(mActivity), anyInt(), eq(mFakeExecutor)))
                 .thenReturn(immediateFuture(Mockito.mock(Session.class)));
 
         mTestRuntime =
-                JxrPlatformAdapterAxr.create(
-                        mActivity,
-                        mFakeExecutor,
-                        mXrExtensions,
-                        mFakeImpressApi,
-                        new EntityManager(),
-                        mPerceptionLibrary,
-                        mSplitEngineSubspaceManager,
-                        mSplitEngineRenderer,
-                        /* useSplitEngine= */ false,
-                        /* unscaledGravityAlignedActivitySpace= */ false);
+                createTestJxrPlatformAdapter(/* unScaledGravityAlignedActivitySpace= */ false);
 
         mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
 
         // This is slightly hacky. We're grabbing the singleton instance of the ActivitySpaceImpl
-        // that
-        // was created by the RuntimeImpl. Ideally we'd have an interface to inject the
-        // ActivitySpace
-        // for testing.  For now this is fine since there isn't an interface difference (yet).
-        assertThat(mActivitySpace).isInstanceOf(ActivitySpaceImpl.class);
+        // that was created by the RuntimeImpl. Ideally we'd have an interface to inject the
+        // ActivitySpace for testing.  For now this is fine since there isn't an interface
+        // difference (yet).
         assertThat(mActivitySpace).isNotNull();
     }
 
@@ -302,5 +308,82 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
         assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
         assertThat(rotation.getZ()).isWithin(0.001f).of(-0.707f);
         assertThat(rotation.getW()).isWithin(0.001f).of(0.707f);
+    }
+
+    @Test
+    public void handleOriginUpdate_unscaledGravityAlignedFalse_handlerCalled() {
+        FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
+        mActivitySpace.setSpatialModeChangeListener(handler);
+
+        Quaternion initialRotation = Quaternion.fromEulerAngles(30, 0, 0);
+        Matrix4 newTransform =
+                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(2.5f, 2.5f, 2.5f));
+
+        mActivitySpace.handleOriginUpdate(newTransform);
+
+        assertThat(handler.getLastRecommendedPose()).isEqualTo(new Pose());
+        assertThat(handler.getLastRecommendedScale()).isEqualTo(new Vector3(1.0f, 1.0f, 1.0f));
+        assertThat(handler.getUpdateCount()).isEqualTo(1);
+    }
+
+    @Test
+    public void
+            handleOriginUpdate_unscaledGravityAlignedTrue_scaleAndRotationApplied_handlerCalled() {
+        FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
+        mTestRuntime =
+                createTestJxrPlatformAdapter(/* unScaledGravityAlignedActivitySpace= */ true);
+        mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
+        mActivitySpace.setSpatialModeChangeListener(handler);
+
+        Quaternion initialRotation = Quaternion.fromEulerAngles(45, 0, 0);
+        Matrix4 newTransform =
+                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(2.0f, 2.0f, 2.0f));
+
+        mActivitySpace.handleOriginUpdate(newTransform);
+
+        Vector3 activitySpaceScale =
+                RuntimeUtils.getVector3(mNodeRepository.getScale(mActivitySpace.getNode()));
+        assertVector3(activitySpaceScale, new Vector3(1.0f, 1.0f, 1.0f));
+        Quaternion activitySpaceRotation =
+                RuntimeUtils.getQuaternion(
+                        mNodeRepository.getOrientation(mActivitySpace.getNode()));
+        Quaternion expectedRotation = mActivitySpace.getRotationForGravityAlignment(newTransform);
+        assertThat(activitySpaceRotation.getX()).isWithin(0.001f).of(expectedRotation.getX());
+        assertThat(activitySpaceRotation.getY()).isWithin(0.001f).of(expectedRotation.getY());
+        assertThat(activitySpaceRotation.getZ()).isWithin(0.001f).of(expectedRotation.getZ());
+        assertThat(activitySpaceRotation.getW()).isWithin(0.001f).of(expectedRotation.getW());
+
+        assertThat(handler.getLastRecommendedPose()).isEqualTo(new Pose());
+        assertVector3(handler.getLastRecommendedScale(), new Vector3(2.0f, 2.0f, 2.0f));
+        assertThat(handler.getUpdateCount()).isEqualTo(1);
+    }
+
+    @Test
+    public void handleOriginUpdate_noHandler_doesNotCallHandler() {
+        FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
+        mTestRuntime =
+                createTestJxrPlatformAdapter(/* unScaledGravityAlignedActivitySpace= */ true);
+        mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
+        mActivitySpace.setSpatialModeChangeListener(null);
+
+        Quaternion initialRotation = Quaternion.fromEulerAngles(0, 0, 90);
+        Matrix4 newTransform =
+                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(3f, 3f, 3f));
+
+        mActivitySpace.handleOriginUpdate(newTransform);
+
+        Vector3 activitySpaceScale =
+                RuntimeUtils.getVector3(mNodeRepository.getScale(mActivitySpace.getNode()));
+        assertVector3(activitySpaceScale, new Vector3(1.0f, 1.0f, 1.0f));
+        Quaternion activitySpaceRotation =
+                RuntimeUtils.getQuaternion(
+                        mNodeRepository.getOrientation(mActivitySpace.getNode()));
+        Quaternion expectedRotation = mActivitySpace.getRotationForGravityAlignment(newTransform);
+        assertThat(activitySpaceRotation.getX()).isWithin(0.001f).of(expectedRotation.getX());
+        assertThat(activitySpaceRotation.getY()).isWithin(0.001f).of(expectedRotation.getY());
+        assertThat(activitySpaceRotation.getZ()).isWithin(0.001f).of(expectedRotation.getZ());
+        assertThat(activitySpaceRotation.getW()).isWithin(0.001f).of(expectedRotation.getW());
+
+        assertThat(handler.getUpdateCount()).isEqualTo(0);
     }
 }

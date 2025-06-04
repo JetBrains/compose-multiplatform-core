@@ -149,7 +149,7 @@ class CommonLifecycleRegistryTest {
             .containsExactly(
                 Lifecycle.Event.ON_CREATE,
                 Lifecycle.Event.ON_START,
-                Lifecycle.Event.ON_RESUME
+                Lifecycle.Event.ON_RESUME,
             )
             .inOrder()
     }

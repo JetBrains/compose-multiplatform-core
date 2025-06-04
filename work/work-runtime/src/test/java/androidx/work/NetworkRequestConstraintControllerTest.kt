@@ -53,7 +53,7 @@ import org.robolectric.shadows.ShadowNetworkCapabilities
     manifest = Config.NONE,
     maxSdk = 30, // On APIs 31+ the Robolectric impl of canBeSatisfiedBy is broken.
     minSdk = 28,
-    shadows = [ExtendedShadowConnectivityManager::class]
+    shadows = [ExtendedShadowConnectivityManager::class],
 )
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
@@ -149,7 +149,7 @@ class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
     override fun registerNetworkCallback(
         request: NetworkRequest?,
         networkCallback: ConnectivityManager.NetworkCallback?,
-        handler: Handler?
+        handler: Handler?,
     ) {
         super.registerNetworkCallback(request, networkCallback, handler)
         val network = activeNetwork ?: return

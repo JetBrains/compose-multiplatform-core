@@ -64,7 +64,7 @@ internal suspend fun PointerInputScope.detectDragGesturesAfterLongPressWithObser
         onDragEnd = { observer.onStop() },
         onDrag = { _, offset -> observer.onDrag(offset) },
         onDragStart = { observer.onStart(it) },
-        onDragCancel = { observer.onCancel() }
+        onDragCancel = { observer.onCancel() },
     )
 
 /**
@@ -108,6 +108,6 @@ private suspend fun PointerInputScope.detectDragGesturesWithObserver(observer: T
         onDragEnd = { observer.onStop() },
         onDrag = { _, offset -> observer.onDrag(offset) },
         onDragStart = { observer.onStart(it) },
-        onDragCancel = { observer.onCancel() }
+        onDragCancel = { observer.onCancel() },
     )
 }

@@ -44,7 +44,7 @@ constructor(
      * This will be non-null when [Build.VERSION.SDK_INT] is greater than
      * [Build.VERSION_CODES.UPSIDE_DOWN_CAKE].
      */
-    val inputTransferToken: InputTransferToken?
+    val inputTransferToken: InputTransferToken?,
 ) {
     constructor() : this(null, null)
 
@@ -108,7 +108,7 @@ constructor(
             fun deriveInputTransferToken(bundle: Bundle): InputTransferToken? {
                 return bundle.getParcelable(
                     KEY_INPUT_TRANSFER_TOKEN,
-                    InputTransferToken::class.java
+                    InputTransferToken::class.java,
                 )
             }
 

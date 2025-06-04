@@ -27,17 +27,18 @@ import androidx.xr.compose.unit.VolumeConstraints
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface MeasurePolicy {
     /**
-     * The function that defines the measurement and layout. Each [Measurable] in the [measurables]
-     * list corresponds to a layout child of the layout, and children can be measured using the
-     * [Measurable.measure] method. This method takes the [VolumeConstraints] which the child should
-     * respect; different children can be measured with different constraints.
+     * The function that defines the measurement and layout. Each [SubspaceMeasurable] in the
+     * [measurables] list corresponds to a layout child of the layout, and children can be measured
+     * using the [SubspaceMeasurable.measure] method. This method takes the [VolumeConstraints]
+     * which the child should respect; different children can be measured with different
+     * constraints.
      *
      * [MeasureResult] objects are usually created using the [MeasureScope.layout] factory, which
      * takes the calculated size of this layout, its alignment lines, and a block defining the
      * positioning of the children layouts.
      */
     public fun MeasureScope.measure(
-        measurables: List<Measurable>,
+        measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
     ): MeasureResult
 }

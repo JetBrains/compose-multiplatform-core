@@ -337,11 +337,7 @@ class SandboxedPdfDocumentTest {
 
         private suspend fun openDocument(filename: String): PdfDocument {
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val loader =
-                SandboxedPdfLoader(
-                    context,
-                    Dispatchers.Main,
-                )
+            val loader = SandboxedPdfLoader(context, Dispatchers.Main)
             val uri = TestUtils.openFile(context, filename)
 
             return loader.openDocument(uri)

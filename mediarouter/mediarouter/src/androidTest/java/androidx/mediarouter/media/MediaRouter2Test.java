@@ -139,46 +139,41 @@ public class MediaRouter2Test {
 
     @Test
     @MediumTest
-    public void selectFromMr1_shouldNotBeTrackedByMr2ProviderService() throws Exception {
+    public void selectFromMr1AndStopFromSystem_unselect() throws Exception {
         CountDownLatch onRouteSelectedLatch = new CountDownLatch(1);
         CountDownLatch onRouteUnselectedLatch = new CountDownLatch(1);
         CountDownLatch onRouteEnabledLatch = new CountDownLatch(1);
         String descriptorId = StubMediaRouteProviderService.ROUTE_ID1;
-        int unselectReason = MediaRouter.UNSELECT_REASON_STOPPED;
 
-        addCallback(
-                new MediaRouter.Callback() {
-                    @Override
-                    public void onRouteSelected(
-                            @NonNull MediaRouter router,
-                            @NonNull RouteInfo selectedRoute,
-                            int reason,
-                            @NonNull RouteInfo requestedRoute) {
-                        if (TextUtils.equals(selectedRoute.getDescriptorId(), descriptorId)
-                                && reason == MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
-                            onRouteSelectedLatch.countDown();
-                        }
-                    }
+        addCallback(new MediaRouter.Callback() {
+            @Override
+            public void onRouteSelected(@NonNull MediaRouter router,
+                    @NonNull RouteInfo selectedRoute, int reason,
+                    @NonNull RouteInfo requestedRoute) {
+                if (TextUtils.equals(selectedRoute.getDescriptorId(), descriptorId)
+                        && reason == MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
+                    onRouteSelectedLatch.countDown();
+                }
+            }
 
-                    @Override
-                    public void onRouteUnselected(
-                            @NonNull MediaRouter router, @NonNull RouteInfo route, int reason) {
-                        if (TextUtils.equals(route.getDescriptorId(), descriptorId)
-                                && reason == unselectReason) {
-                            onRouteUnselectedLatch.countDown();
-                        }
-                    }
+            @Override
+            public void onRouteUnselected(
+                    @NonNull MediaRouter router, @NonNull RouteInfo route, int reason) {
+                if (TextUtils.equals(route.getDescriptorId(), descriptorId)
+                        && reason == MediaRouter.UNSELECT_REASON_STOPPED) {
+                    onRouteUnselectedLatch.countDown();
+                }
+            }
 
-                    @Override
-                    public void onRouteChanged(
-                            @NonNull MediaRouter router, @NonNull RouteInfo route) {
-                        if (onRouteUnselectedLatch.getCount() == 0
-                                && TextUtils.equals(route.getDescriptorId(), descriptorId)
-                                && route.isEnabled()) {
-                            onRouteEnabledLatch.countDown();
-                        }
-                    }
-                });
+            @Override
+            public void onRouteChanged(@NonNull MediaRouter router, @NonNull RouteInfo route) {
+                if (onRouteUnselectedLatch.getCount() == 0
+                        && TextUtils.equals(route.getDescriptorId(), descriptorId)
+                        && route.isEnabled()) {
+                    onRouteEnabledLatch.countDown();
+                }
+            }
+        });
         waitForRoutesAdded();
         assertNotNull(mRoutes);
 
@@ -188,12 +183,16 @@ public class MediaRouter2Test {
         getInstrumentation().runOnMainSync(() -> mRouter.selectRoute(routeToSelect));
         assertTrue(onRouteSelectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
 
-        // The MR1 route controller shouldn't be reported to MR2 provider service.
-        assertTrue(mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
-
-        // Unselect the selected route.
-        getInstrumentation().runOnMainSync(() -> mRouter.unselect(unselectReason));
-
+        // Wait for a session being created.
+        PollingCheck.waitFor(TIMEOUT_MS,
+                () -> !mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
+        //TODO: Find a correct session info
+        for (RoutingSessionInfo sessionInfo : mMr2ProviderServiceAdapter.getAllSessionInfo()) {
+            getInstrumentation().runOnMainSync(() ->
+                    mMr2ProviderServiceAdapter.onReleaseSession(
+                            MediaRoute2ProviderService.REQUEST_ID_NONE,
+                            sessionInfo.getId()));
+        }
         assertTrue(onRouteUnselectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
         // Make sure the route is enabled
         assertTrue(onRouteEnabledLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
@@ -258,11 +257,6 @@ public class MediaRouter2Test {
                                         mContext.getPackageName(),
                                         StubMediaRouteProviderService.ROUTE_ID1,
                                         /* sessionHints= */ null));
-
-        // Wait for a session being created.
-        PollingCheck.waitFor(
-                TIMEOUT_MS, () -> !mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
-
         StubMediaRouteProviderService.StubMediaRouteProvider.StubRouteController createdController =
                 mProvider.mControllers.get(StubMediaRouteProviderService.ROUTE_ID1);
         assertNotNull(createdController); // Avoids nullability warning.
@@ -277,7 +271,7 @@ public class MediaRouter2Test {
 
     @SmallTest
     @Test
-    public void onBinderDied_shouldClearRouteControllers() throws Exception {
+    public void onBinderDied_releaseRoutingSessions() throws Exception {
         String descriptorId = StubMediaRouteProviderService.ROUTE_ID1;
 
         waitForRoutesAdded();
@@ -288,47 +282,27 @@ public class MediaRouter2Test {
 
         getInstrumentation().runOnMainSync(() -> mRouter.selectRoute(routeToSelect));
 
+        // Wait for a session being created.
+        PollingCheck.waitFor(TIMEOUT_MS,
+                () -> !mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
+
         try {
-            List<MediaRouteProvider.RouteController> routeControllers =
-                    mServiceImpl.mClients.stream()
-                            .map(
-                                    client ->
-                                            getApi30Client(client)
-                                                    .findControllerByRouteId(descriptorId))
-                            .collect(Collectors.toList());
-
-            // Verify that a route controller is created.
-            assertFalse(routeControllers.isEmpty());
-            // The MR1 route controller shouldn't be reported to MR2 provider service.
-            assertTrue(mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
-
             List<Messenger> messengers =
                     mServiceImpl.mClients.stream()
                             .map(client -> client.mMessenger)
                             .collect(Collectors.toList());
-            getInstrumentation()
-                    .runOnMainSync(() -> messengers.forEach(mServiceImpl::onBinderDied));
-
-            routeControllers =
-                    mServiceImpl.mClients.stream()
-                            .map(
-                                    client ->
-                                            getApi30Client(client)
-                                                    .findControllerByRouteId(descriptorId))
-                            .collect(Collectors.toList());
-
-            // It should have no route controller.
-            assertTrue(routeControllers.isEmpty());
-            // The MR1 route controller shouldn't be reported to MR2 provider service.
-            assertTrue(mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
+            getInstrumentation().runOnMainSync(() ->
+                    messengers.forEach(mServiceImpl::onBinderDied));
+            // It should have no session info.
+            PollingCheck.waitFor(TIMEOUT_MS,
+                    () -> mMr2ProviderServiceAdapter.getAllSessionInfo().isEmpty());
         } finally {
             // Rebind for future tests
-            getInstrumentation()
-                    .runOnMainSync(
-                            () -> {
-                                MediaRouter.sGlobal.mRegisteredProviderWatcher.stop();
-                                MediaRouter.sGlobal.mRegisteredProviderWatcher.start();
-                            });
+            getInstrumentation().runOnMainSync(
+                    () -> {
+                        MediaRouter.sGlobal.mRegisteredProviderWatcher.stop();
+                        MediaRouter.sGlobal.mRegisteredProviderWatcher.start();
+                    });
         }
     }
 
@@ -346,6 +320,7 @@ public class MediaRouter2Test {
                 onRouterParamsChangedLatch.countDown();
             }
         });
+
         Bundle extras = new Bundle();
         extras.putString("test-key", "test-value");
         MediaRouterParams params = new MediaRouterParams.Builder().setExtras(extras).build();
@@ -384,10 +359,5 @@ public class MediaRouter2Test {
         latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS);
         getInstrumentation().runOnMainSync(() -> mRoutes = mRouter.getRoutes().stream().collect(
                 Collectors.toMap(route -> route.getDescriptorId(), route -> route)));
-    }
-
-    MediaRouteProviderService.MediaRouteProviderServiceImplApi30.ClientRecord getApi30Client(
-            MediaRouteProviderService.MediaRouteProviderServiceImplBase.ClientRecord client) {
-        return (MediaRouteProviderService.MediaRouteProviderServiceImplApi30.ClientRecord) client;
     }
 }

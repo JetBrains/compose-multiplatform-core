@@ -35,13 +35,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,13 +68,13 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import java.io.File
@@ -85,6 +83,8 @@ import kotlinx.coroutines.launch
 
 /** Test app for integrated Drm functionality. */
 class VideoPlayerDrmTestActivity : ComponentActivity() {
+    private val TAG = "VideoPlayerDrmTestActivity"
+
     private var exoPlayer: ExoPlayer? = null
     private val activity = this
 
@@ -94,24 +94,34 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
     private var surfaceEntity: SurfaceEntity? = null
     private var movableComponent: MovableComponent? = null // movable component for surfaceEntity
+    private var movableComponentMp: MovableComponent? = null // movable component for MainPanel
+
     private var videoPlaying by mutableStateOf<Boolean>(false)
     private var queueWithDelay by mutableStateOf<Boolean>(true)
     private var controlPanelEntity: PanelEntity? = null
 
     private val pickMedia =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            Log.i("VideoPlayerDrmTestActivity", "Media Selected")
+            Log.i(TAG, "Media Selected")
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i(TAG, "onCreate")
 
         val session = (Session.create(this) as SessionCreateSuccess).session
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
 
-        setContent { HelloWorld(session, activity) }
+        if (movableComponentMp == null) {
+            movableComponentMp = MovableComponent.create(session)
+            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
+        }
+
+        setContent { BootstrapUi(session, activity) }
+
+        checkExternalStoragePermission()
     }
 
     override fun onDestroy() {
@@ -133,7 +143,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     private fun togglePassthrough(session: Session) {
         val passthroughOpacity: Float =
             session.scene.spatialEnvironment.getCurrentPassthroughOpacity()
-        Log.i("TogglePassthrough", "TogglePassthrough!")
+        Log.i(TAG, "TogglePassthrough!")
         when (passthroughOpacity) {
             0.0f -> session.scene.spatialEnvironment.setPassthroughOpacityPreference(1.0f)
             1.0f -> session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
@@ -172,9 +182,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 panelContentView,
                 // These are about the right size to fit the buttons without a lot of invisible
                 // panel edges
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "playerControls",
-                Pose(Vector3(0.0f, -0.4f, -0.85f)), // kind of low, but within a 1m radius
+                Pose(Vector3(0.0f, -0.25f, 0.25f)), // below and slightly in front of the canvas
             )
         controlPanelEntity!!.setParent(surfaceEntity!!)
 
@@ -209,6 +219,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     }
 
     fun destroySurfaceEntity() {
+        Log.i(TAG, "destroySurfaceEntity")
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
@@ -218,16 +229,16 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         }
     }
 
-    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): Dimensions {
+    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
         when (stereoMode) {
             SurfaceEntity.StereoMode.MONO,
             SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
-                return Dimensions(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
-                return Dimensions(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
-                return Dimensions(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
+                return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -241,8 +252,8 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         loop: Boolean = true,
         protected: Boolean = false,
     ) {
+        Log.i(TAG, "playVideo: $videoUri $protected")
         if (surfaceEntity == null) {
-
             val surfaceContentLevel =
                 if (protected) {
                     SurfaceEntity.ContentSecurityLevel.PROTECTED
@@ -256,7 +267,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             // angles and distances) (only on quad canvas)
             movableComponent = MovableComponent.create(session)
             // The quad has a radius of 1.0 meters
-            movableComponent!!.size = Dimensions(1.0f, 1.0f, 1.0f)
+            movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
             if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
                 val unused = surfaceEntity!!.addComponent(movableComponent!!)
@@ -305,21 +316,21 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                         surfaceEntity?.canvasShape =
                             SurfaceEntity.CanvasShape.Quad(dimensions.width, dimensions.height)
                         movableComponent?.size =
-                            surfaceEntity?.dimensions ?: Dimensions(1.0f, 1.0f, 1.0f)
+                            surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f)
                     }
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
+                    Log.i(TAG, "onPlaybackStateChanged: $playbackState")
                     // Update videoPlaying based on ExoPlayer's isPlaying property.
                     videoPlaying = exoPlayer?.isPlaying ?: false // Use safe call and elvis operator
-
                     if (playbackState == Player.STATE_ENDED) {
                         destroySurfaceEntity()
                     }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Log.e("VideoPlayerTestActivity", "Player error: $error")
+                    Log.e(TAG, "Player error: $error")
                 }
             }
         )
@@ -335,7 +346,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     // TODO: b/324947709 - Refactor common @Composable code into a utility library for common usage
     // across sample apps.
     @Composable
-    fun HelloWorld(session: Session, activity: Activity) {
+    fun BootstrapUi(session: Session, activity: Activity) {
         // Add a panel to the main activity with a button to toggle passthrough
         LaunchedEffect(Unit) {
             activity.setContentView(
@@ -360,8 +371,6 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
     @Composable
     fun VideoPlayerControls(session: Session) {
-        var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
-        var featherRadiusY by remember { mutableFloatStateOf(0.0f) }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -375,76 +384,6 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     Text(text = "End Video", fontSize = 10.sp)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Feather Radius", fontSize = 10.sp)
-                Column {
-                    Slider(
-                        value = featherRadiusX,
-                        onValueChange = {
-                            featherRadiusX = it
-                            surfaceEntity!!.featherRadiusX = featherRadiusX
-                        },
-                        valueRange = 0.0f..0.5f,
-                    )
-                    Slider(
-                        value = featherRadiusY,
-                        onValueChange = {
-                            featherRadiusY = it
-                            surfaceEntity!!.featherRadiusY = featherRadiusY
-                        },
-                        valueRange = 0.0f..0.5f,
-                    )
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f)
-                        // Move the Quad-shaped canvas to a spot in front of the User.
-                        surfaceEntity!!.setPose(
-                            session.scene.spatialUser.head?.transformPoseTo(
-                                Pose(
-                                    Vector3(0.0f, 0.0f, -1.5f),
-                                    Quaternion(0.0f, 0.0f, 0.0f, 1.0f)
-                                ),
-                                session.scene.activitySpace,
-                            )!!
-                        )
-                    }
-                ) {
-                    Text(text = "Set Quad", fontSize = 10.sp)
-                }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f)
-                    }
-                ) {
-                    Text(text = "Set Vr360", fontSize = 10.sp)
-                }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f)
-                    }
-                ) {
-                    Text(text = "Set Vr180", fontSize = 10.sp)
-                }
-            } // end row
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO }) {
-                    Text(text = "Mono", fontSize = 10.sp)
-                }
-                Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM }
-                ) {
-                    Text(text = "Top-Bottom", fontSize = 10.sp)
-                }
-                Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE }
-                ) {
-                    Text(text = "Side-by-Side", fontSize = 10.sp)
-                }
-            } // end row
         } // end column
     }
 
@@ -463,6 +402,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     ) {
         val file = File(videoUri)
         if (!file.exists()) {
+            Log.e(TAG, "File ($videoUri) does not exist. Did you download all the assets?")
             Toast.makeText(
                     activity,
                     "File ($videoUri) does not exist. Did you download all the assets?",
@@ -493,6 +433,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         val file = File(videoUri)
         var enabled = true
         if (!file.exists()) {
+            Log.e(TAG, "File ($videoUri) does not exist. Did you download all the assets?")
             Toast.makeText(
                     activity,
                     "File ($videoUri) does not exist. Did you download all the assets?",
@@ -502,12 +443,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             enabled = false
         }
 
-        Button(
-            enabled = enabled,
-            onClick = onClick,
-        ) {
-            Text(text = buttonText, fontSize = 20.sp)
-        }
+        Button(enabled = enabled, onClick = onClick) { Text(text = buttonText, fontSize = 20.sp) }
     }
 
     @Composable
@@ -519,10 +455,10 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 session = session,
                 videoUri = videoUri,
                 stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
-                pose = Pose(Vector3(0.0f, -0.65f, 0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+                pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
                 canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
                 loop = true,
-                protected = false
+                protected = false,
             )
         }
 
@@ -537,15 +473,18 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 },
             onClick = {
                 if (!videoPlaying) {
+                    Log.i(TAG, "(No Video Playing) Play Non-Drm Video")
                     playVideoAction()
                 } else {
                     destroySurfaceEntity()
                     if (queueWithDelay) {
+                        Log.i(TAG, "(Video Playing) Queue Non-Drm Video")
                         lifecycleScope.launch {
                             delay(300)
                             playVideoAction()
                         }
                     } else {
+                        Log.i(TAG, "Immediate Queue Non-Drm Video")
                         playVideoAction()
                     }
                 }
@@ -554,10 +493,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     }
 
     @Composable
-    fun DrmVideoButton(
-        session: Session,
-        activity: Activity,
-    ) {
+    fun DrmVideoButton(session: Session, activity: Activity) {
         val videoUri =
             Environment.getExternalStorageDirectory().getPath() +
                 "/Download/sdr_singleview_protected.mp4"
@@ -566,10 +502,10 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 session = session,
                 videoUri = videoUri,
                 stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
-                pose = Pose(Vector3(0.0f, -0.65f, 0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+                pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
                 canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
                 loop = true,
-                protected = true
+                protected = true,
             )
         }
 
@@ -584,15 +520,18 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 },
             onClick = {
                 if (!videoPlaying) {
+                    Log.i(TAG, "(No Video Playing) Play Drm Video")
                     playVideoAction()
                 } else {
                     destroySurfaceEntity()
                     if (queueWithDelay) {
+                        Log.i(TAG, "Queue Drm Video")
                         lifecycleScope.launch {
                             delay(300)
                             playVideoAction()
                         }
                     } else {
+                        Log.i(TAG, "Immediate Queue Drm Video")
                         playVideoAction()
                     }
                 }
@@ -602,7 +541,6 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
     @Composable
     fun VideoPlayerTestActivityUI(session: Session, activity: Activity) {
-        val movableComponentMP = remember { mutableStateOf<MovableComponent?>(null) }
         val videoPaused = remember { mutableStateOf(false) }
 
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -614,23 +552,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 Button(onClick = { togglePassthrough(session) }) {
                     Text(text = "Toggle Passthrough", fontSize = 30.sp)
                 }
-                Button(
-                    onClick = {
-                        session.scene.spatialEnvironment.requestFullSpaceMode()
-                        // Set up the MoveableComponent on the first jump into FSM so the user can
-                        // move the
-                        // Main Panel out of the way.
-                        if (movableComponentMP.value == null) {
-                            movableComponentMP.value = MovableComponent.create(session)
-                            val unused =
-                                session.scene.mainPanelEntity.addComponent(
-                                    movableComponentMP.value!!
-                                )
-                        }
-                        // We do this here to ensure that the Permissions popup isn't clipped.
-                        checkExternalStoragePermission()
-                    }
-                ) {
+                Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
                     Text(text = "Request FSM", fontSize = 30.sp)
                 }
                 Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
@@ -641,12 +563,12 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(text = "Queue with delay:")
                     Switch(
                         checked = queueWithDelay,
-                        onCheckedChange = { newValue -> queueWithDelay = newValue }
+                        onCheckedChange = { newValue -> queueWithDelay = newValue },
                     )
                 }
             }
@@ -654,7 +576,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.weight(1f).padding(8.dp),
             ) {
-                Text(text = "(Stereo) SurfaceEntity", fontSize = 50.sp)
+                Text(text = "SurfaceEntity Video Drm Test", fontSize = 30.sp)
 
                 Button(
                     onClick = {

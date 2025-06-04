@@ -52,7 +52,7 @@ class JetsnackScrollBenchmark(val compilationMode: CompilationMode) {
 
                 val contentList = device.findObject(By.res("snack_list"))
                 scrollActions(contentList, idleMethod = { device.waitForComposeIdle() })
-            }
+            },
         )
 
     @Test
@@ -67,7 +67,7 @@ class JetsnackScrollBenchmark(val compilationMode: CompilationMode) {
 
                 val contentList = device.findObject(By.res(resPkg, "snackFeedRecyclerView"))
                 scrollActions(contentList, idleMethod = { device.waitForIdle() })
-            }
+            },
         )
 
     @OptIn(ExperimentalMetricApi::class)
@@ -83,7 +83,7 @@ class JetsnackScrollBenchmark(val compilationMode: CompilationMode) {
                 startActivityAndWait(intent)
 
                 measureBlock()
-            }
+            },
         )
 
     private fun MacrobenchmarkScope.scrollActions(contentList: UiObject2, idleMethod: () -> Unit) {

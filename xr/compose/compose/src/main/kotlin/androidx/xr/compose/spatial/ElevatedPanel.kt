@@ -49,10 +49,10 @@ import androidx.xr.compose.subspace.rememberCorePanelEntity
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 
 internal object ElevatedPanelDefaults {
     /** Default shape for a Spatial Panel. */
@@ -65,22 +65,23 @@ internal object ElevatedPanelDefaults {
  */
 @Composable
 internal fun ElevatedPanel(
-    spatialElevationLevel: SpatialElevationLevel,
+    elevation: Dp,
     contentSize: IntSize,
     shape: SpatialShape = ElevatedPanelDefaults.shape,
     contentOffset: Offset? = null,
-    transitionSpec:
-        @Composable
-        Transition.Segment<SpatialElevationLevel>.() -> FiniteAnimationSpec<Dp> =
-        {
-            spring()
-        },
+    elevationTransitionSpec: @Composable Transition.Segment<Dp>.() -> FiniteAnimationSpec<Dp> = {
+        spring()
+    },
     content: @Composable () -> Unit,
 ) {
     val parentView = LocalView.current
     val zDepth by
-        updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
-            .animateDp(transitionSpec = transitionSpec, label = "zDepth") { state -> state.level }
+        updateTransition(targetState = elevation, label = "restingLevelTransition").animateDp(
+            transitionSpec = elevationTransitionSpec,
+            label = "zDepth",
+        ) { state ->
+            state
+        }
     var parentViewSize by remember { mutableStateOf(parentView.size) }
     DisposableEffect(parentView) {
         val listener =
@@ -119,7 +120,7 @@ internal fun ElevatedPanel(
             PanelEntity.create(
                 session = session,
                 view = view,
-                pixelDimensions = contentSize.run { PixelDimensions(width, height) },
+                pixelDimensions = contentSize.run { IntSize2d(width, height) },
                 name = "ElevatedPanel:${view.id}",
             )
         }

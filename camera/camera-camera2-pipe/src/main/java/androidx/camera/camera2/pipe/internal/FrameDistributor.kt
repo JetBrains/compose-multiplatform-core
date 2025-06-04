@@ -53,7 +53,7 @@ import androidx.camera.camera2.pipe.media.OutputImage
  */
 internal class FrameDistributor(
     imageSources: Map<StreamId, ImageSource>,
-    private val frameCaptureQueue: FrameCaptureQueue
+    private val frameCaptureQueue: FrameCaptureQueue,
 ) : AutoCloseable, Request.Listener {
     /**
      * Listener to observe new [FrameReferences][FrameReference] as they are started by the camera.
@@ -92,12 +92,12 @@ internal class FrameDistributor(
                 if (image != null) {
                     imageDistributor.onOutputResult(
                         outputTimestamp,
-                        OutputResult.from(OutputImage.from(imageStreamId, imageOutputId, image))
+                        OutputResult.from(OutputImage.from(imageStreamId, imageOutputId, image)),
                     )
                 } else {
                     imageDistributor.onOutputResult(
                         outputTimestamp,
-                        OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+                        OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
                     )
                 }
             }
@@ -115,7 +115,7 @@ internal class FrameDistributor(
     override fun onStarted(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        timestamp: CameraTimestamp
+        timestamp: CameraTimestamp,
     ) {
         // When the camera begins exposing a frame, create a placeholder for all of the outputs that
         // will be produced, and tell each of the image distributors to expect results for this
@@ -127,7 +127,7 @@ internal class FrameDistributor(
             cameraFrameNumber = frameNumber,
             cameraTimestamp = timestamp,
             outputNumber = frameNumber.value, // Number to match output against
-            outputListener = frameState.frameInfoOutput
+            outputListener = frameState.frameInfoOutput,
         )
 
         // Tell each imageDistributor to expect an Image at the provided CameraTimestamp.
@@ -140,7 +140,7 @@ internal class FrameDistributor(
                 cameraFrameNumber = frameNumber,
                 cameraTimestamp = timestamp,
                 outputNumber = timestamp.value, // Number to match output against
-                outputListener = imageOutput
+                outputListener = imageOutput,
             )
 
             if (!requestMetadata.streams.keys.contains(imageOutput.streamId)) {
@@ -173,7 +173,7 @@ internal class FrameDistributor(
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         // Tell the frameInfo distributor that the metadata for this exposure has been computed and
         // can be distributed.
@@ -183,7 +183,7 @@ internal class FrameDistributor(
     override fun onBufferLost(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        stream: StreamId
+        stream: StreamId,
     ) {
         // Tell the specific image distributor for this stream that the output has failed and will
         // not arrive for this frame. When onBufferLost occurs, other images and metadata may still
@@ -194,12 +194,12 @@ internal class FrameDistributor(
     override fun onFailed(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        requestFailure: RequestFailure
+        requestFailure: RequestFailure,
     ) {
         // Metadata will not arrive for this frame:
         frameInfoDistributor.onOutputResult(
             frameNumber.value,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_FAILED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_FAILED),
         )
 
         // There are two scenarios:

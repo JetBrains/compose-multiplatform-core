@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color
 @Stable
 class OverscrollConfiguration(
     val glowColor: Color = Color(0xff666666), // taken from EdgeEffect.java defaults
-    val drawPadding: PaddingValues = PaddingValues()
+    val drawPadding: PaddingValues = PaddingValues(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -70,7 +70,7 @@ class OverscrollConfiguration(
 @Deprecated(
     "Providing `OverscrollConfiguration` through `LocalOverscrollConfiguration` to disable / configure overscroll has been replaced with `LocalOverscrollFactory` and `rememberPlatformOverscrollFactory`. To disable overscroll, instead of `LocalOverscrollConfiguration provides null`, use `LocalOverscrollFactory provides null`. To change the glow color / padding, instead of `LocalOverscrollConfiguration provides OverscrollConfiguration(myColor, myPadding)`, use `LocalOverscrollFactory provides rememberPlatformOverscrollFactory(myColor, myPadding)`",
     replaceWith =
-        ReplaceWith("LocalOverscrollFactory", "androidx.compose.foundation.LocalOverscrollFactory")
+        ReplaceWith("LocalOverscrollFactory", "androidx.compose.foundation.LocalOverscrollFactory"),
 )
 @ExperimentalFoundationApi
 val LocalOverscrollConfiguration =

@@ -45,7 +45,7 @@ internal fun transitionAwareLifecycleNavEntryDecorator(backStack: List<Any>, isS
 private fun LifecycleOwner(
     maxLifecycle: Lifecycle.State = Lifecycle.State.RESUMED,
     parentLifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val childLifecycleOwner = remember(parentLifecycleOwner) { ChildLifecycleOwner() }
     // Pass LifecycleEvents from the parent down to the child

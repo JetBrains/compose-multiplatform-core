@@ -24,7 +24,7 @@ import kotlin.jvm.JvmInline
 /** Maps values to a set of scopes. */
 @JvmInline
 internal value class ScopeMap<Key : Any, Scope : Any>(
-    val map: MutableScatterMap<Any, Any> = mutableScatterMapOf(),
+    val map: MutableScatterMap<Any, Any> = mutableScatterMapOf()
 ) {
 
     /** The number of values in the map. */

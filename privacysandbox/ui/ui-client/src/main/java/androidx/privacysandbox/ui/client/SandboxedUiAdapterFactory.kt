@@ -75,7 +75,7 @@ object SandboxedUiAdapterFactory {
                     )
             return ClientDelegatingAdapter(
                 IDelegatingSandboxedUiAdapter.Stub.asInterface(uiAdapterBinder),
-                createFromCoreLibInfo(delegate)
+                createFromCoreLibInfo(delegate),
             )
         }
 
@@ -107,14 +107,14 @@ object SandboxedUiAdapterFactory {
             Class.forName(
                 "androidx.privacysandbox.ui.core.SandboxedUiAdapter\$SessionClient",
                 /* initialize = */ false,
-                uiProviderBinder.javaClass.classLoader
+                uiProviderBinder.javaClass.classLoader,
             )
 
         private val targetSessionDataClass =
             Class.forName(
                 "androidx.privacysandbox.ui.core.SessionData",
                 /* initialize = */ false,
-                uiProviderBinder.javaClass.classLoader
+                uiProviderBinder.javaClass.classLoader,
             )
 
         private val targetSessionDataCompanionObject =
@@ -127,7 +127,7 @@ object SandboxedUiAdapterFactory {
             Class.forName(
                     "androidx.privacysandbox.ui.core.LocalUiAdapter",
                     /*initialize=*/ false,
-                    uiProviderBinder.javaClass.classLoader
+                    uiProviderBinder.javaClass.classLoader,
                 )
                 .getMethod(
                     "openLocalSession",
@@ -138,7 +138,7 @@ object SandboxedUiAdapterFactory {
                     Int::class.java,
                     Boolean::class.java,
                     Executor::class.java,
-                    targetSessionClientClass
+                    targetSessionClientClass,
                 )
 
         private val fromBundleMethod: Method =
@@ -151,7 +151,7 @@ object SandboxedUiAdapterFactory {
             initialHeight: Int,
             isZOrderOnTop: Boolean,
             clientExecutor: Executor,
-            client: SandboxedUiAdapter.SessionClient
+            client: SandboxedUiAdapter.SessionClient,
         ) {
             try {
                 // We can't pass the client object as-is since it's been created on a different
@@ -160,7 +160,7 @@ object SandboxedUiAdapterFactory {
                     Proxy.newProxyInstance(
                         uiProviderBinder.javaClass.classLoader,
                         arrayOf(targetSessionClientClass),
-                        SessionClientProxyHandler(uiProviderVersion, client)
+                        SessionClientProxyHandler(uiProviderVersion, client),
                     )
 
                 openLocalSessionMethod.invoke(
@@ -169,13 +169,13 @@ object SandboxedUiAdapterFactory {
                     context,
                     fromBundleMethod.invoke(
                         targetSessionDataCompanionObject,
-                        SessionData.toBundle(sessionData)
+                        SessionData.toBundle(sessionData),
                     ),
                     initialWidth,
                     initialHeight,
                     isZOrderOnTop,
                     clientExecutor,
-                    sessionClientProxy
+                    sessionClientProxy,
                 )
             } catch (exception: Throwable) {
                 client.onSessionError(exception)
@@ -242,7 +242,7 @@ object SandboxedUiAdapterFactory {
             initialHeight: Int,
             isZOrderOnTop: Boolean,
             clientExecutor: Executor,
-            client: SandboxedUiAdapter.SessionClient
+            client: SandboxedUiAdapter.SessionClient,
         ) {
             val mDisplayManager =
                 context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
@@ -256,7 +256,7 @@ object SandboxedUiAdapterFactory {
                     initialWidth,
                     initialHeight,
                     isZOrderOnTop,
-                    RemoteSessionClient(uiProviderVersion, context, client, clientExecutor)
+                    RemoteSessionClient(uiProviderVersion, context, client, clientExecutor),
                 )
             }
         }
@@ -265,7 +265,7 @@ object SandboxedUiAdapterFactory {
             val uiProviderVersion: Int,
             val context: Context,
             val client: SandboxedUiAdapter.SessionClient,
-            val clientExecutor: Executor
+            val clientExecutor: Executor,
         ) : IRemoteSessionClient.Stub() {
 
             lateinit var contentView: ContentView
@@ -274,7 +274,7 @@ object SandboxedUiAdapterFactory {
                 surfacePackage: SurfaceControlViewHost.SurfacePackage,
                 remoteSessionController: IRemoteSessionController,
                 isZOrderOnTop: Boolean,
-                signalOptions: List<String>
+                signalOptions: List<String>,
             ) {
                 val remoteSessionControllerWithVersionCheck =
                     RemoteSessionController(uiProviderVersion, remoteSessionController)
@@ -304,7 +304,7 @@ object SandboxedUiAdapterFactory {
                             contentView,
                             remoteSessionControllerWithVersionCheck,
                             surfacePackage,
-                            signalOptions.toSet()
+                            signalOptions.toSet(),
                         )
                     )
                 }
@@ -330,7 +330,7 @@ object SandboxedUiAdapterFactory {
             val contentView: ContentView,
             val remoteSessionController: androidx.privacysandbox.ui.client.IRemoteSessionController,
             val surfacePackage: SurfaceControlViewHost.SurfacePackage,
-            override val signalOptions: Set<String>
+            override val signalOptions: Set<String>,
         ) : SandboxedUiAdapter.Session {
 
             override val view: View = contentView
@@ -348,7 +348,7 @@ object SandboxedUiAdapterFactory {
                         /* left = */ parentView.paddingLeft,
                         /* top = */ parentView.paddingTop,
                         /* right = */ parentView.paddingLeft + width,
-                        /* bottom = */ parentView.paddingTop + height
+                        /* bottom = */ parentView.paddingTop + height,
                     )
                 }
 

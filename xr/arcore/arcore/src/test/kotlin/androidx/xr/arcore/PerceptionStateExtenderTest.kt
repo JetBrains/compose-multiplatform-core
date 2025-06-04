@@ -188,13 +188,13 @@ class PerceptionStateExtenderTest {
                 .isEqualTo(handJoints[jointType]!!.translation)
             assertRotationEquals(
                 leftHandJoints[jointType]!!.rotation,
-                handJoints[jointType]!!.rotation
+                handJoints[jointType]!!.rotation,
             )
             assertThat(rightHandJoints[jointType]!!.translation)
                 .isEqualTo(handJoints[jointType]!!.translation)
             assertRotationEquals(
                 rightHandJoints[jointType]!!.rotation,
-                handJoints[jointType]!!.rotation
+                handJoints[jointType]!!.rotation,
             )
         }
     }

@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.LayoutDirection.Rtl
  */
 internal fun FocusTargetNode.customFocusSearch(
     focusDirection: FocusDirection,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
 ): FocusRequester {
     val focusProperties = fetchFocusProperties()
     return when (focusDirection) {
@@ -123,7 +123,7 @@ internal fun FocusTargetNode.focusSearch(
     focusDirection: FocusDirection,
     layoutDirection: LayoutDirection,
     previouslyFocusedRect: Rect?,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean? {
     return when (focusDirection) {
         Next,

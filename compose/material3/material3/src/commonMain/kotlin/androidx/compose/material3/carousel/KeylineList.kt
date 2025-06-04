@@ -245,14 +245,14 @@ internal fun keylineListOf(
     carouselMainAxisSize: Float,
     itemSpacing: Float,
     carouselAlignment: CarouselAlignment,
-    keylines: KeylineListScope.() -> Unit
+    keylines: KeylineListScope.() -> Unit,
 ): KeylineList {
     val keylineListScope = KeylineListScopeImpl()
     keylines.invoke(keylineListScope)
     return keylineListScope.createWithAlignment(
         carouselMainAxisSize,
         itemSpacing,
-        carouselAlignment
+        carouselAlignment,
     )
 }
 
@@ -265,7 +265,7 @@ internal fun keylineListOf(
     itemSpacing: Float,
     pivotIndex: Int,
     pivotOffset: Float,
-    keylines: KeylineListScope.() -> Unit
+    keylines: KeylineListScope.() -> Unit,
 ): KeylineList {
     val keylineListScope = KeylineListScopeImpl()
     keylines.invoke(keylineListScope)
@@ -273,7 +273,7 @@ internal fun keylineListOf(
         carouselMainAxisSize,
         itemSpacing,
         pivotIndex,
-        pivotOffset
+        pivotOffset,
     )
 }
 
@@ -318,7 +318,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         carouselMainAxisSize: Float,
         itemSpacing: Float,
         pivotIndex: Int,
-        pivotOffset: Float
+        pivotOffset: Float,
     ): KeylineList {
         val keylines =
             createKeylinesWithPivot(
@@ -329,7 +329,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 itemMainAxisSize = focalItemSize,
                 carouselMainAxisSize = carouselMainAxisSize,
                 itemSpacing,
-                tmpKeylines
+                tmpKeylines,
             )
         return KeylineList(keylines)
     }
@@ -337,7 +337,7 @@ private class KeylineListScopeImpl : KeylineListScope {
     fun createWithAlignment(
         carouselMainAxisSize: Float,
         itemSpacing: Float,
-        carouselAlignment: CarouselAlignment
+        carouselAlignment: CarouselAlignment,
     ): KeylineList {
         val lastFocalIndex = findLastFocalIndex()
         val focalItemCount = lastFocalIndex - firstFocalIndex
@@ -373,7 +373,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 itemMainAxisSize = focalItemSize,
                 carouselMainAxisSize = carouselMainAxisSize,
                 itemSpacing,
-                tmpKeylines
+                tmpKeylines,
             )
         return KeylineList(keylines)
     }
@@ -422,7 +422,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         itemMainAxisSize: Float,
         carouselMainAxisSize: Float,
         itemSpacing: Float,
-        tmpKeylines: List<TmpKeyline>
+        tmpKeylines: List<TmpKeyline>,
     ): List<Keyline> {
         val pivot = tmpKeylines[pivotIndex]
         val keylines = mutableListOf<Keyline>()
@@ -443,7 +443,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 isFocal = pivotIndex in firstFocalIndex..lastFocalIndex,
                 isAnchor = pivot.isAnchor,
                 isPivot = true,
-                cutoff = pivotCutoff
+                cutoff = pivotCutoff,
             )
         )
 
@@ -467,8 +467,8 @@ private class KeylineListScopeImpl : KeylineListScope {
                     isFocal = originalIndex in firstFocalIndex..lastFocalIndex,
                     isAnchor = tmp.isAnchor,
                     isPivot = false,
-                    cutoff = cutoff
-                )
+                    cutoff = cutoff,
+                ),
             )
 
             offset -= tmp.size + itemSpacing
@@ -498,7 +498,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                     isFocal = originalIndex in firstFocalIndex..lastFocalIndex,
                     isAnchor = tmp.isAnchor,
                     isPivot = false,
-                    cutoff = cutoff
+                    cutoff = cutoff,
                 )
             )
 
@@ -548,7 +548,7 @@ internal fun lerp(start: Keyline, end: Keyline, fraction: Float): Keyline {
         isFocal = if (fraction < .5f) start.isFocal else end.isFocal,
         isAnchor = if (fraction < .5f) start.isAnchor else end.isAnchor,
         isPivot = if (fraction < .5f) start.isPivot else end.isPivot,
-        cutoff = androidx.compose.ui.util.lerp(start.cutoff, end.cutoff, fraction)
+        cutoff = androidx.compose.ui.util.lerp(start.cutoff, end.cutoff, fraction),
     )
 }
 

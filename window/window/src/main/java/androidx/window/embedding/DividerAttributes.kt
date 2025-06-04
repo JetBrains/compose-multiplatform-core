@@ -52,7 +52,7 @@ private constructor(
     @RequiresWindowSdkExtension(6)
     private constructor(
         @IntRange(from = WIDTH_SYSTEM_DEFAULT.toLong()) widthDp: Int = WIDTH_SYSTEM_DEFAULT,
-        @ColorInt color: Int = COLOR_SYSTEM_DEFAULT
+        @ColorInt color: Int = COLOR_SYSTEM_DEFAULT,
     ) : DividerAttributes(widthDp, color) {
 
         override fun equals(other: Any?): Boolean {
@@ -293,7 +293,6 @@ private constructor(
         /**
          * A drag range represented as an interval of the primary container's split ratios.
          *
-         * @constructor constructs a new [SplitRatioDragRange]
          * @property minRatio the minimum split ratio of the primary container that the user is
          *   allowed to drag to. When the divider is dragged beyond this ratio, the system will
          *   choose to either fully expand the secondary container, or move the divider back to this
@@ -302,6 +301,7 @@ private constructor(
          *   allowed to drag to. When the divider is dragged beyond this ratio, the system will
          *   choose to either fully expand the primary container, or move the divider back to this
          *   ratio.
+         * @constructor constructs a new [SplitRatioDragRange]
          * @throws IllegalArgumentException if the provided values are invalid.
          */
         class SplitRatioDragRange(

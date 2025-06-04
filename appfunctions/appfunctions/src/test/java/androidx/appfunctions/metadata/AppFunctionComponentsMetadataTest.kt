@@ -66,7 +66,7 @@ class AppFunctionComponentsMetadataTest {
                         AppFunctionDataTypeMetadataDocument(
                             type = AppFunctionDataTypeMetadata.TYPE_INT,
                             isNullable = false,
-                        )
+                        ),
                 ),
                 AppFunctionNamedDataTypeMetadataDocument(
                     name = "dataType2",
@@ -74,7 +74,7 @@ class AppFunctionComponentsMetadataTest {
                         AppFunctionDataTypeMetadataDocument(
                             type = AppFunctionDataTypeMetadata.TYPE_STRING,
                             isNullable = true,
-                        )
+                        ),
                 ),
             )
     }
@@ -91,7 +91,7 @@ class AppFunctionComponentsMetadataTest {
                                 AppFunctionDataTypeMetadataDocument(
                                     type = AppFunctionDataTypeMetadata.TYPE_INT,
                                     isNullable = false,
-                                )
+                                ),
                         ),
                         AppFunctionNamedDataTypeMetadataDocument(
                             name = "dataType2",
@@ -99,8 +99,8 @@ class AppFunctionComponentsMetadataTest {
                                 AppFunctionDataTypeMetadataDocument(
                                     type = AppFunctionDataTypeMetadata.TYPE_STRING,
                                     isNullable = true,
-                                )
-                        )
+                                ),
+                        ),
                     )
             )
 
@@ -113,13 +113,13 @@ class AppFunctionComponentsMetadataTest {
                         "dataType1" to
                             AppFunctionPrimitiveTypeMetadata(
                                 AppFunctionDataTypeMetadata.TYPE_INT,
-                                false
+                                false,
                             ),
                         "dataType2" to
                             AppFunctionPrimitiveTypeMetadata(
                                 AppFunctionDataTypeMetadata.TYPE_STRING,
-                                true
-                            )
+                                true,
+                            ),
                     )
                 )
             )

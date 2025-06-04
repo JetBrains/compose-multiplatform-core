@@ -40,11 +40,7 @@ class AppFunctionInstantTest {
 
     @Test
     fun toInstant_convertsCorrectly() {
-        val appFunctionInstant =
-            AppFunctionInstant(
-                epochSecond = 1000,
-                nanoAdjustment = 2000,
-            )
+        val appFunctionInstant = AppFunctionInstant(epochSecond = 1000, nanoAdjustment = 2000)
 
         val convertedInstant = appFunctionInstant.toInstant()
 

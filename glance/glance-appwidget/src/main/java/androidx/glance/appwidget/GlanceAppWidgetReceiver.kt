@@ -92,12 +92,12 @@ public abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
+        appWidgetIds: IntArray,
     ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             Log.w(
                 TAG,
-                "Using Glance in devices with API<23 is untested and might behave unexpectedly."
+                "Using Glance in devices with API<23 is untested and might behave unexpectedly.",
             )
         }
         goAsync(coroutineContext) {
@@ -111,7 +111,7 @@ public abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
-        newOptions: Bundle
+        newOptions: Bundle,
     ) {
         goAsync(coroutineContext) {
             updateManager(context)
@@ -145,7 +145,7 @@ public abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
                     val componentName =
                         ComponentName(
                             context.packageName,
-                            checkNotNull(javaClass.canonicalName) { "no canonical name" }
+                            checkNotNull(javaClass.canonicalName) { "no canonical name" },
                         )
                     val ids =
                         if (intent.hasExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)) {
@@ -153,11 +153,7 @@ public abstract class GlanceAppWidgetReceiver : AppWidgetProvider() {
                         } else {
                             appWidgetManager.getAppWidgetIds(componentName)
                         }
-                    onUpdate(
-                        context,
-                        appWidgetManager,
-                        ids,
-                    )
+                    onUpdate(context, appWidgetManager, ids)
                 }
                 LambdaActionBroadcasts.ActionTriggerLambda -> {
                     val actionKey =

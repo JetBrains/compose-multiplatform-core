@@ -39,12 +39,12 @@ constructor(
     public val functionIdentifier: String,
     public val functionParameters: AppFunctionData,
     /** Whether the parameters in this request is encoded in the jetpack format or not. */
-    @get:RestrictTo(LIBRARY_GROUP) public val useJetpackSchema: Boolean
+    @get:RestrictTo(LIBRARY_GROUP) public val useJetpackSchema: Boolean,
 ) {
     public constructor(
         targetPackageName: String,
         functionIdentifier: String,
-        functionParameters: AppFunctionData
+        functionParameters: AppFunctionData,
     ) : this(targetPackageName, functionIdentifier, functionParameters, useJetpackSchema = true)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -69,7 +69,7 @@ constructor(
     public fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionRequest {
         return android.app.appfunctions.ExecuteAppFunctionRequest.Builder(
                 targetPackageName,
-                functionIdentifier
+                functionIdentifier,
             )
             .setParameters(functionParameters.genericDocument)
             .setExtras(
@@ -91,13 +91,13 @@ constructor(
         targetPackageName: String = this.targetPackageName,
         functionIdentifier: String = this.functionIdentifier,
         functionParameters: AppFunctionData = this.functionParameters,
-        useJetpackSchema: Boolean = this.useJetpackSchema
+        useJetpackSchema: Boolean = this.useJetpackSchema,
     ): ExecuteAppFunctionRequest =
         ExecuteAppFunctionRequest(
             targetPackageName,
             functionIdentifier,
             functionParameters,
-            useJetpackSchema
+            useJetpackSchema,
         )
 
     public companion object {
@@ -115,9 +115,9 @@ constructor(
                 functionParameters =
                     AppFunctionData(
                         request.parameters,
-                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY
+                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
                     ),
-                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false)
+                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
         }
 
@@ -132,9 +132,9 @@ constructor(
                 functionParameters =
                     AppFunctionData(
                         request.parameters,
-                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY
+                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
                     ),
-                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false)
+                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
         }
     }

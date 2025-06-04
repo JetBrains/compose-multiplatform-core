@@ -1231,7 +1231,7 @@ class MeasureAndLayoutDelegateTest {
                             activeLayers--
                         }
                     }
-                }
+                },
             )
 
         assertThat(activeLayers).isEqualTo(1)
@@ -1277,7 +1277,7 @@ class MeasureAndLayoutDelegateTest {
                             activeLayers--
                         }
                     }
-                }
+                },
             )
 
         assertThat(activeLayers).isEqualTo(1)

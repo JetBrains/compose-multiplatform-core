@@ -30,7 +30,6 @@ import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -38,6 +37,7 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeRepository;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 
 import org.junit.After;
@@ -52,7 +52,7 @@ import org.robolectric.android.controller.ActivityController;
 @RunWith(RobolectricTestRunner.class)
 public class MainPanelEntityImplTest {
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
     private final Activity mHostActivity = mActivityController.create().start().get();

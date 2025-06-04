@@ -79,10 +79,7 @@ fun <T> T.createManagedSdkActivityLauncher(
 fun <T> T.createUnmanagedSdkActivityLauncher(
     allowLaunch: () -> Boolean
 ): LocalUnmanagedSdkActivityLauncher<T> where T : Activity {
-    return LocalUnmanagedSdkActivityLauncher(
-        activity = this,
-        allowLaunch = allowLaunch,
-    )
+    return LocalUnmanagedSdkActivityLauncher(activity = this, allowLaunch = allowLaunch)
 }
 
 /**
@@ -176,7 +173,7 @@ T : Activity {
 private class LocalSdkActivityLauncherDelegate<T>(
     activity: T,
     allowLaunch: () -> Boolean,
-    onDispose: (() -> Unit)? = null
+    onDispose: (() -> Unit)? = null,
 ) : LocalSdkActivityLauncher where T : Activity {
     /**
      * Internal state for [LocalManagedSdkActivityLauncher], cleared when the launcher is disposed.
@@ -185,7 +182,7 @@ private class LocalSdkActivityLauncherDelegate<T>(
         val activity: T,
         val allowLaunch: () -> Boolean,
         val sdkSandboxManager: SdkSandboxManagerCompat,
-        val onDispose: (() -> Unit)?
+        val onDispose: (() -> Unit)?,
     ) where T : Activity
 
     private val stateReference: AtomicReference<LocalLauncherState<T>?> =
@@ -194,7 +191,7 @@ private class LocalSdkActivityLauncherDelegate<T>(
                 activity,
                 allowLaunch,
                 SdkSandboxManagerCompat.from(activity),
-                onDispose
+                onDispose,
             )
         )
 
@@ -223,7 +220,7 @@ private class SdkActivityLauncherBinderDelegate(private val launcher: SdkActivit
 
     override fun launchSdkActivity(
         sdkActivityHandlerToken: IBinder?,
-        callback: ISdkActivityLauncherCallback?
+        callback: ISdkActivityLauncherCallback?,
     ) {
         requireNotNull(sdkActivityHandlerToken)
         requireNotNull(callback)

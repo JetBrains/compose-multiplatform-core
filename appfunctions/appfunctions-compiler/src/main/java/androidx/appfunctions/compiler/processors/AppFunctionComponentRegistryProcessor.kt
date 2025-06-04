@@ -107,7 +107,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
             .generateRegistry(
                 resolver.getModuleName().asString(),
                 AppFunctionComponentRegistryAnnotation.Category.FUNCTION,
-                functionComponents
+                functionComponents,
             )
     }
 
@@ -119,7 +119,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
             annotatedSchemaDefinitions.map { annotatedSchemaDefinition ->
                 AppFunctionComponent(
                     qualifiedName = annotatedSchemaDefinition.qualifiedName,
-                    sourceFiles = annotatedSchemaDefinition.getSourceFiles()
+                    sourceFiles = annotatedSchemaDefinition.getSourceFiles(),
                 )
             }
 
@@ -127,7 +127,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
             .generateRegistry(
                 resolver.getModuleName().asString(),
                 AppFunctionComponentRegistryAnnotation.Category.SCHEMA_DEFINITION,
-                schemaDefinitionComponents
+                schemaDefinitionComponents,
             )
     }
 }

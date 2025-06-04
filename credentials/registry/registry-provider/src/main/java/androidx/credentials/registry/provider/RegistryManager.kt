@@ -82,7 +82,7 @@ public abstract class RegistryManager internal constructor() {
             object :
                 CredentialManagerCallback<
                     RegisterCredentialsResponse,
-                    RegisterCredentialsException
+                    RegisterCredentialsException,
                 > {
                 override fun onResult(result: RegisterCredentialsResponse) {
                     if (continuation.isActive) {
@@ -103,7 +103,7 @@ public abstract class RegistryManager internal constructor() {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -137,7 +137,7 @@ public abstract class RegistryManager internal constructor() {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -162,7 +162,7 @@ public abstract class RegistryManager internal constructor() {
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
     )
 
     /**
@@ -179,6 +179,6 @@ public abstract class RegistryManager internal constructor() {
     public abstract fun clearCredentialRegistryAsync(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
     )
 }

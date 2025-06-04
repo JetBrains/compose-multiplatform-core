@@ -286,7 +286,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 Boolean::class.ensureQualifiedName(),
                 String::class.ensureQualifiedName(),
                 Unit::class.ensureQualifiedName(),
-                ANDROID_PENDING_INTENT
+                ANDROID_PENDING_INTENT,
             )
 
         private val SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES =
@@ -294,7 +294,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 LocalDateTime::class.ensureQualifiedName(),
                 ANDROID_URI,
                 ZoneId::class.ensureQualifiedName(),
-                Instant::class.ensureQualifiedName()
+                Instant::class.ensureQualifiedName(),
             )
 
         private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST = setOf(String::class.ensureQualifiedName())

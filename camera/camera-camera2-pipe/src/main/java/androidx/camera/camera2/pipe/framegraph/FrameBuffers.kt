@@ -53,7 +53,7 @@ internal class FrameBuffers
 @Inject
 internal constructor(
     private val cameraGraph: CameraGraph,
-    @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope
+    @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope,
 ) : FrameDistributor.FrameStartedListener {
     private val lock = Any()
     @GuardedBy("lock") private val buffers = mutableListOf<FrameBufferImpl>()
@@ -63,7 +63,7 @@ internal constructor(
     internal fun attach(
         streams: Set<StreamId>,
         parameters: Map<Any, Any?>,
-        capacity: Int
+        capacity: Int,
     ): FrameBuffer {
         val frameBuffer = FrameBufferImpl(this, streams, parameters, capacity)
         val modified =
@@ -133,7 +133,7 @@ internal constructor(
                     Request(
                         streams = streams.toList(),
                         parameters = parameters.filterToCaptureRequestParameters(),
-                        extras = parameters.filterToMetadataParameters()
+                        extras = parameters.filterToMetadataParameters(),
                     )
                 )
             }

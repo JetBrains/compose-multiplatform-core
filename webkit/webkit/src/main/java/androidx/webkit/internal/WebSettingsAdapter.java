@@ -290,4 +290,20 @@ public class WebSettingsAdapter {
     public boolean getHasEnrolledInstrumentEnabled() {
         return mBoundaryInterface.getHasEnrolledInstrumentEnabled();
     }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)}
+     */
+    public void setCookieAccessForShouldInterceptRequestEnabled(boolean enabled) {
+        mBoundaryInterface.setIncludeCookiesOnIntercept(enabled);
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getIncludeCookiesOnShouldInterceptRequest(WebSettings)}
+     */
+    public boolean getCookieAccessForShouldInterceptRequestEnabled() {
+        return mBoundaryInterface.getIncludeCookiesOnIntercept();
+    }
 }

@@ -78,7 +78,7 @@ internal class PruningCamera2DeviceManagerImplTest {
             override suspend fun openCameraWithRetry(
                 cameraId: CameraId,
                 camera2DeviceCloser: Camera2DeviceCloser,
-                isForegroundObserver: (Unit) -> Boolean
+                isForegroundObserver: (Unit) -> Boolean,
             ): OpenCameraResult {
                 val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
                 val fakeCamera2MetadataProvider =
@@ -103,7 +103,7 @@ internal class PruningCamera2DeviceManagerImplTest {
 
             override fun openAndAwaitCameraWithRetry(
                 cameraId: CameraId,
-                camera2DeviceCloser: Camera2DeviceCloser
+                camera2DeviceCloser: Camera2DeviceCloser,
             ): AwaitOpenCameraResult {
                 TODO("Not yet implemented")
             }
@@ -254,7 +254,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     eq(androidCameraState),
                     any(),
                     any(),
-                    any()
+                    any(),
                 )
         }
 
@@ -696,10 +696,7 @@ internal class PruningCamera2DeviceManagerImplTest {
             val requestOpen1 = createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1)
             val requestClose1 = createFakeRequestClose(cameraId0)
             var requestList =
-                mutableListOf<CameraRequest>(
-                    RequestCloseById(cameraId0),
-                    requestClose1,
-                )
+                mutableListOf<CameraRequest>(RequestCloseById(cameraId0), requestClose1)
             deviceManager.prune(requestList)
             assertEquals(requestList.first(), requestClose1)
 
@@ -818,11 +815,7 @@ internal class PruningCamera2DeviceManagerImplTest {
             val fakeRequestOpen2 =
                 createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener2, isPrewarm = true)
 
-            val requestList =
-                mutableListOf<CameraRequest>(
-                    fakeRequestOpen1,
-                    fakeRequestOpen2,
-                )
+            val requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
             deviceManager.prune(requestList)
             // The latter RequestOpen is a prewarm, and should thus not prune the former RequestOpen
             assertEquals(requestList.size, 2)
@@ -839,22 +832,14 @@ internal class PruningCamera2DeviceManagerImplTest {
             val fakeRequestOpen3 =
                 createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener3, isPrewarm = true)
 
-            var requestList =
-                mutableListOf<CameraRequest>(
-                    fakeRequestOpen1,
-                    fakeRequestOpen2,
-                )
+            var requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
             deviceManager.prune(requestList)
             // If we have a prewarm request with the same camera that hasn't be processed, it should
             // be pruned.
             assertEquals(requestList.size, 1)
             assertEquals(requestList.first(), fakeRequestOpen2)
 
-            requestList =
-                mutableListOf<CameraRequest>(
-                    fakeRequestOpen1,
-                    fakeRequestOpen3,
-                )
+            requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen3)
             deviceManager.prune(requestList)
             // If we have consecutive prewarm requests for the same camera, the former can be pruned
             assertEquals(requestList.size, 1)

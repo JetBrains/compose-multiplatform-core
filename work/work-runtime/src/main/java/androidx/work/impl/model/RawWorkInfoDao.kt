@@ -50,5 +50,5 @@ interface RawWorkInfoDao {
 
 fun RawWorkInfoDao.getWorkInfoPojosFlow(
     dispatcher: CoroutineDispatcher,
-    query: SupportSQLiteQuery
+    query: SupportSQLiteQuery,
 ): Flow<List<WorkInfo>> = getWorkInfoPojosFlow(query).dedup(dispatcher)

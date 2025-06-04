@@ -119,14 +119,14 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
         scrollAndCheckState(
             scrollBehavior = scrollBehavior,
             scrollBy = 20.dp,
-            scrolledBackgroundColor = colors.toolbarContainerColor
+            scrolledBackgroundColor = colors.toolbarContainerColor,
         )
     }
 
@@ -139,10 +139,10 @@ class FloatingToolbarTest {
                     FloatingToolbarState(
                         initialOffsetLimit = -Float.MAX_VALUE,
                         initialOffset = 0f,
-                        initialContentOffset = 0f
+                        initialContentOffset = 0f,
                     ),
                 snapAnimationSpec = spring(),
-                flingAnimationSpec = splineBasedDecay<Float>(rule.density)
+                flingAnimationSpec = splineBasedDecay<Float>(rule.density),
             )
         lateinit var colors: FloatingToolbarColors
 
@@ -159,14 +159,14 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
         scrollAndCheckState(
             scrollBehavior = scrollBehavior,
             scrollBy = 20.dp,
-            scrolledBackgroundColor = colors.toolbarContainerColor
+            scrolledBackgroundColor = colors.toolbarContainerColor,
         )
     }
 
@@ -185,7 +185,7 @@ class FloatingToolbarTest {
                         text.forEach {
                             Box(Modifier.minimumInteractiveComponentSize()) { Text(it) }
                         }
-                    }
+                    },
                 )
             }
             .assertHeightIsEqualTo(64.0.dp)
@@ -210,14 +210,14 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
         scrollAndCheckState(
             scrollBehavior = scrollBehavior,
             scrollBy = 20.dp,
-            scrolledBackgroundColor = colors.toolbarContainerColor
+            scrolledBackgroundColor = colors.toolbarContainerColor,
         )
     }
 
@@ -230,10 +230,10 @@ class FloatingToolbarTest {
                     FloatingToolbarState(
                         initialOffsetLimit = -Float.MAX_VALUE,
                         initialOffset = 0f,
-                        initialContentOffset = 0f
+                        initialContentOffset = 0f,
                     ),
                 snapAnimationSpec = spring(),
-                flingAnimationSpec = splineBasedDecay<Float>(rule.density)
+                flingAnimationSpec = splineBasedDecay<Float>(rule.density),
             )
         lateinit var colors: FloatingToolbarColors
 
@@ -250,21 +250,21 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
         scrollAndCheckState(
             scrollBehavior = scrollBehavior,
             scrollBy = 20.dp,
-            scrolledBackgroundColor = colors.toolbarContainerColor
+            scrolledBackgroundColor = colors.toolbarContainerColor,
         )
     }
 
     private fun scrollAndCheckState(
         scrollBehavior: FloatingToolbarScrollBehavior,
         scrollBy: Dp,
-        scrolledBackgroundColor: Color
+        scrolledBackgroundColor: Color,
     ) {
         val scrollByPx: Float
         val containerSizePx: Float
@@ -317,7 +317,7 @@ class FloatingToolbarTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -344,7 +344,7 @@ class FloatingToolbarTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -367,7 +367,7 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
@@ -389,7 +389,7 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
@@ -414,7 +414,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -440,7 +440,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -465,7 +465,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -491,7 +491,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -521,7 +521,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -553,7 +553,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -578,7 +578,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -604,7 +604,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -629,7 +629,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -655,7 +655,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -685,7 +685,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -717,7 +717,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -1012,7 +1012,7 @@ class FloatingToolbarTest {
                 onCollapsed = { expanded = false },
                 toolbarNestedScrollEnabled = false,
                 initialValue = expanded,
-                reverseLayout = true
+                reverseLayout = true,
             )
         }
 
@@ -1032,7 +1032,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
         }
 
@@ -1055,7 +1055,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
             thresholdPx =
                 with(LocalDensity.current) {
@@ -1089,7 +1089,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
             thresholdPx = with(LocalDensity.current) { customThreshold.toPx() }
         }
@@ -1197,11 +1197,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1235,11 +1235,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1273,11 +1273,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1311,11 +1311,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1434,7 +1434,7 @@ class FloatingToolbarTest {
         onCollapsed: () -> Unit,
         toolbarNestedScrollEnabled: Boolean = true,
         initialValue: Boolean = true,
-        reverseLayout: Boolean = false
+        reverseLayout: Boolean = false,
     ) {
         Column(
             modifier =
@@ -1444,7 +1444,7 @@ class FloatingToolbarTest {
                             expanded = initialValue,
                             reverseLayout = reverseLayout,
                             onExpand = onExpanded,
-                            onCollapse = onCollapsed
+                            onCollapse = onCollapsed,
                         )
                     } else {
                         Modifier
@@ -1453,7 +1453,7 @@ class FloatingToolbarTest {
             Box(modifier = Modifier.fillMaxWidth().height(80.dp))
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().testTag(MainLayoutTag).weight(1f),
-                reverseLayout = reverseLayout
+                reverseLayout = reverseLayout,
             ) {
                 items(100) {
                     Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)) {
@@ -1488,7 +1488,7 @@ class FloatingToolbarTest {
         }
         IconButton(
             onClick = { /* doSomething() */ },
-            modifier = Modifier.testTag(FloatingToolbarContentLastItemTestTag)
+            modifier = Modifier.testTag(FloatingToolbarContentLastItemTestTag),
         ) {
             Icon(Icons.Filled.MoreVert, contentDescription = "Localized description")
         }

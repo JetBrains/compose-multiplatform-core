@@ -137,7 +137,7 @@ public open class AppWidgetSession(
                                 appWidgetMinSize(
                                     context.resources.displayMetrics,
                                     manager,
-                                    id.appWidgetId
+                                    id.appWidgetId,
                                 )
                             if (options == null) {
                                 options = manager.getAppWidgetOptions(id.appWidgetId)
@@ -163,7 +163,7 @@ public open class AppWidgetSession(
 
     override suspend fun processEmittableTree(
         context: Context,
-        root: EmittableWithChildren
+        root: EmittableWithChildren,
     ): Boolean {
         if (root.shouldIgnoreResult()) return false
         root as RemoteViewsRoot
@@ -221,7 +221,7 @@ public open class AppWidgetSession(
                     Log.i(
                         TAG,
                         "Received UpdateAppWidgetOptions(${event.newOptions}) event" +
-                            "for session($key)"
+                            "for session($key)",
                     )
                 }
                 Snapshot.withMutableSnapshot { options = event.newOptions }
@@ -284,7 +284,7 @@ public open class AppWidgetSession(
                 context,
                 glanceId = id,
                 appWidgetId = id.appWidgetId,
-                throwable = throwable
+                throwable = throwable,
             )
         } else {
             throw throwable // rethrow the error if we can't display it

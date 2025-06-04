@@ -30,11 +30,7 @@ import androidx.credentials.internal.FrameworkClassParsingException
  *   [CreatePublicKeyCredentialResponse] is [PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL])
  * @property data the response data in the [Bundle] format
  */
-abstract class CreateCredentialResponse
-internal constructor(
-    val type: String,
-    val data: Bundle,
-) {
+abstract class CreateCredentialResponse internal constructor(val type: String, val data: Bundle) {
     companion object {
 
         /**

@@ -157,7 +157,7 @@ abstract class StableAidlCompile : DefaultTask() {
             extraArgsWithSdk,
             sourceDirsAsFiles,
             projectImportList,
-            dependencyImportDirs.get().map { it.asFile }
+            dependencyImportDirs.get().map { it.asFile },
         )
     }
 
@@ -216,7 +216,7 @@ abstract class StableAidlCompile : DefaultTask() {
                     parameters.packagedOutputDir.orNull?.asFile,
                     depFileProcessor,
                     request.root.toPath(),
-                    request.file.toPath()
+                    request.file.toPath(),
                 )
             }
         }
@@ -233,7 +233,7 @@ abstract class StableAidlCompile : DefaultTask() {
             extraArgs: List<String>,
             sourceFolders: Collection<File>,
             projectImportList: Collection<Directory>,
-            dependencyImportList: Collection<File>
+            dependencyImportList: Collection<File>,
         ) {
             for (dir in sourceFolders) {
                 workerExecutor.noIsolation().submit(StableAidlCompileRunnable::class.java) {

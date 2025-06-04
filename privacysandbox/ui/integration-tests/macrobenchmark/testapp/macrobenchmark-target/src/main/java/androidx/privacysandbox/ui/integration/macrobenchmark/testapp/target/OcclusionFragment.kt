@@ -26,7 +26,7 @@ class OcclusionFragment : BaseHiddenFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val inflatedView = inflater.inflate(R.layout.hidden_fragment_occlusion, container, false)
         val ssv = inflatedView.findViewById<SandboxedSdkView>(R.id.ad_layout)
@@ -36,7 +36,7 @@ class OcclusionFragment : BaseHiddenFragment() {
             currentMediationOption,
             ssv,
             shouldDrawViewabilityLayer,
-            waitInsideOnDraw = true
+            waitInsideOnDraw = true,
         )
         val button: Button = inflatedView.findViewById<Button>(R.id.alpha_button)
         button.setOnClickListener {

@@ -29,10 +29,8 @@ internal class XCodeBlockImpl(
 
     override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
 
-    internal class Builder(
-        val java: JavaCodeBlock.Builder,
-        val kotlin: KotlinCodeBlock.Builder,
-    ) : XSpec.Builder(), XCodeBlock.Builder {
+    internal class Builder(val java: JavaCodeBlock.Builder, val kotlin: KotlinCodeBlock.Builder) :
+        XSpec.Builder(), XCodeBlock.Builder {
         private val delegates: List<XCodeBlock.Builder> = listOf(java, kotlin)
 
         override fun add(code: XCodeBlock) = apply { delegates.forEach { it.add(code) } }
@@ -49,7 +47,7 @@ internal class XCodeBlockImpl(
             name: String,
             typeName: XTypeName,
             isMutable: Boolean,
-            assignExpr: XCodeBlock?
+            assignExpr: XCodeBlock?,
         ) = apply {
             delegates.forEach { it.addLocalVariable(name, typeName, isMutable, assignExpr) }
         }

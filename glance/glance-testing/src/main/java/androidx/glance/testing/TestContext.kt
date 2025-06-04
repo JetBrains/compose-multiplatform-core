@@ -58,7 +58,7 @@ public class TestContext<R, T : GlanceNode<R>> {
      */
     public fun findMatchingNodes(
         selector: GlanceNodeSelector<R>,
-        errorMessageOnFail: String
+        errorMessageOnFail: String,
     ): List<GlanceNode<R>> {
         val allNodes = getAllNodes()
         val selectionResult = selector.map(allNodes)
@@ -67,7 +67,7 @@ public class TestContext<R, T : GlanceNode<R>> {
             throw AssertionError(
                 buildErrorMessageWithReason(
                     errorMessageOnFail = errorMessageOnFail,
-                    reason = selectionResult.errorMessageOnNoMatch
+                    reason = selectionResult.errorMessageOnNoMatch,
                 )
             )
         }

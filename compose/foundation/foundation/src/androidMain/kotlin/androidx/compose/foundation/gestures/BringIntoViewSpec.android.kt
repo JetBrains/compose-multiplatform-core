@@ -51,7 +51,7 @@ internal val PivotBringIntoViewSpec =
         override fun calculateScrollDistance(
             offset: Float,
             size: Float,
-            containerSize: Float
+            containerSize: Float,
         ): Float {
             val leadingEdgeOfItemRequestingFocus = offset
             val trailingEdgeOfItemRequestingFocus = offset + size

@@ -97,7 +97,7 @@ object SensorPatternUtil {
         // Skip for b/342016557
         assumeFalse(
             "Emulator API 30 reports incorrect supported available test pattern modes",
-            Build.VERSION.SDK_INT == 30 && AndroidUtil.isEmulator()
+            Build.VERSION.SDK_INT == 30 && AndroidUtil.isEmulator(),
         )
         // Skip for b/412262667
         assumeFalse(
@@ -105,7 +105,7 @@ object SensorPatternUtil {
             (Build.VERSION.SDK_INT == 33 ||
                 Build.VERSION.SDK_INT == 34 ||
                 Build.VERSION.SDK_INT == 35 ||
-                Build.VERSION.SDK_INT == 36) && AndroidUtil.isEmulator()
+                Build.VERSION.SDK_INT == 36) && AndroidUtil.isEmulator(),
         )
 
         with(Camera2InteropUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
@@ -131,7 +131,7 @@ object SensorPatternUtil {
                 createMinimalProcessedSolidColorCaptureRequestOptions(
                     colorChannel,
                     camera.cameraInfo,
-                    implName
+                    implName,
                 )
             )
         }
@@ -196,7 +196,7 @@ object SensorPatternUtil {
     private fun createMinimalProcessedSolidColorCaptureRequestOptions(
         colorChannel: ColorChannel,
         cameraInfo: CameraInfo,
-        implName: String
+        implName: String,
     ): Camera2InteropUtil.CaptureRequestOptionsWrapper {
         val sensorData =
             when (colorChannel) {
@@ -206,7 +206,7 @@ object SensorPatternUtil {
                         /*r=*/ 0xFFFFFFFF.toInt(),
                         /*g_even=*/ 0,
                         /*g_odd=*/ 0,
-                        /*b=*/ 0
+                        /*b=*/ 0,
                     )
                 }
                 ColorChannel.GREEN -> {
@@ -215,7 +215,7 @@ object SensorPatternUtil {
                         /*r=*/ 0,
                         /*g_even=*/ 0xFFFFFFFF.toInt(),
                         /*g_odd=*/ 0xFFFFFFFF.toInt(),
-                        /*b=*/ 0
+                        /*b=*/ 0,
                     )
                 }
                 ColorChannel.BLUE -> {
@@ -224,7 +224,7 @@ object SensorPatternUtil {
                         /*r=*/ 0,
                         /*g_even=*/ 0,
                         /*g_odd=*/ 0,
-                        /*b=*/ 0xFFFFFFFF.toInt()
+                        /*b=*/ 0xFFFFFFFF.toInt(),
                     )
                 }
             }
@@ -235,7 +235,7 @@ object SensorPatternUtil {
 
                 setCaptureRequestOption(
                     SENSOR_TEST_PATTERN_MODE,
-                    SENSOR_TEST_PATTERN_MODE_SOLID_COLOR
+                    SENSOR_TEST_PATTERN_MODE_SOLID_COLOR,
                 )
 
                 with(Camera2InteropUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
@@ -246,7 +246,7 @@ object SensorPatternUtil {
                     if (COLOR_CORRECTION_ABERRATION_MODE_OFF isOneOf availableAberrationModes) {
                         setCaptureRequestOption(
                             COLOR_CORRECTION_ABERRATION_MODE,
-                            COLOR_CORRECTION_ABERRATION_MODE_OFF
+                            COLOR_CORRECTION_ABERRATION_MODE_OFF,
                         )
                     }
 
@@ -267,7 +267,7 @@ object SensorPatternUtil {
                         ) {
                             setCaptureRequestOption(
                                 DISTORTION_CORRECTION_MODE,
-                                DISTORTION_CORRECTION_MODE_OFF
+                                DISTORTION_CORRECTION_MODE_OFF,
                             )
                         }
                     }
@@ -299,19 +299,19 @@ object SensorPatternUtil {
                     if (hardwareLevel isOneOf (FULL + LEVEL_3)) {
                         setCaptureRequestOption(
                             COLOR_CORRECTION_MODE,
-                            COLOR_CORRECTION_MODE_TRANSFORM_MATRIX
+                            COLOR_CORRECTION_MODE_TRANSFORM_MATRIX,
                         )
 
                         setCaptureRequestOption(
                             COLOR_CORRECTION_GAINS,
-                            RggbChannelVector(1f, 1f, 1f, 1f)
+                            RggbChannelVector(1f, 1f, 1f, 1f),
                         )
 
                         setCaptureRequestOption(
                             COLOR_CORRECTION_TRANSFORM,
                             ColorSpaceTransform(
                                 intArrayOf(1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1)
-                            )
+                            ),
                         )
                     }
 
@@ -325,8 +325,8 @@ object SensorPatternUtil {
                             TonemapCurve(
                                 floatArrayOf(0f, 0f, 1f, 1f),
                                 floatArrayOf(0f, 0f, 1f, 1f),
-                                floatArrayOf(0f, 0f, 1f, 1f)
-                            )
+                                floatArrayOf(0f, 0f, 1f, 1f),
+                            ),
                         )
                     }
                 }

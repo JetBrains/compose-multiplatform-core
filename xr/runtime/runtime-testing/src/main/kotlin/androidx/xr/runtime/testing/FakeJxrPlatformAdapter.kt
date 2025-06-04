@@ -51,6 +51,7 @@ import androidx.xr.runtime.internal.ResizableComponent
 import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper
 import androidx.xr.runtime.internal.SpatialCapabilities
 import androidx.xr.runtime.internal.SpatialEnvironment
+import androidx.xr.runtime.internal.SpatialModeChangeListener
 import androidx.xr.runtime.internal.SpatialPointerComponent
 import androidx.xr.runtime.internal.SpatialVisibility
 import androidx.xr.runtime.internal.SubspaceNodeEntity
@@ -112,6 +113,9 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper =
         FakeMediaPlayerExtensionsWrapper()
+
+    override var spatialModeChangeListener: SpatialModeChangeListener =
+        FakeSpatialModeChangeListener()
 
     override fun getCameraViewActivityPose(
         @CameraViewActivityPose.CameraType cameraType: Int
@@ -207,6 +211,13 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     ) {}
 
     override fun clearSpatialVisibilityChangedListener() {}
+
+    override fun addPerceivedResolutionChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<PixelDimensions>,
+    ) {}
+
+    override fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>) {}
 
     override fun createLoggingEntity(pose: Pose): LoggingEntity =
         object : LoggingEntity, FakeEntity() {}

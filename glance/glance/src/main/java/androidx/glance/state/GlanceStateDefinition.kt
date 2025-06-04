@@ -71,7 +71,7 @@ public interface ConfigManager {
     public suspend fun <T> getValue(
         context: Context,
         definition: GlanceStateDefinition<T>,
-        fileKey: String
+        fileKey: String,
     ): T
 
     /**
@@ -85,7 +85,7 @@ public interface ConfigManager {
         context: Context,
         definition: GlanceStateDefinition<T>,
         fileKey: String,
-        updateBlock: suspend (T) -> T
+        updateBlock: suspend (T) -> T,
     ): T
 
     /**
@@ -94,7 +94,7 @@ public interface ConfigManager {
     public suspend fun deleteStore(
         context: Context,
         definition: GlanceStateDefinition<*>,
-        fileKey: String
+        fileKey: String,
     )
 }
 
@@ -108,20 +108,20 @@ public object GlanceState : ConfigManager {
     override suspend fun <T> getValue(
         context: Context,
         definition: GlanceStateDefinition<T>,
-        fileKey: String
+        fileKey: String,
     ): T = getDataStore(context, definition, fileKey).data.first()
 
     override suspend fun <T> updateValue(
         context: Context,
         definition: GlanceStateDefinition<T>,
         fileKey: String,
-        updateBlock: suspend (T) -> T
+        updateBlock: suspend (T) -> T,
     ): T = getDataStore(context, definition, fileKey).updateData(updateBlock)
 
     override suspend fun deleteStore(
         context: Context,
         definition: GlanceStateDefinition<*>,
-        fileKey: String
+        fileKey: String,
     ) {
         mutex.withLock {
             dataStores.remove(fileKey)
@@ -134,7 +134,7 @@ public object GlanceState : ConfigManager {
     private suspend fun <T> getDataStore(
         context: Context,
         definition: GlanceStateDefinition<T>,
-        fileKey: String
+        fileKey: String,
     ): DataStore<T> =
         mutex.withLock {
             dataStores.getOrPut(fileKey) { definition.getDataStore(context, fileKey) }

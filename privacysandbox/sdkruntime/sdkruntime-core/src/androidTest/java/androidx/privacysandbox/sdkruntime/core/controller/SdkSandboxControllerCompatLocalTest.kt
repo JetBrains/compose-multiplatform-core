@@ -113,11 +113,7 @@ class SdkSandboxControllerCompatLocalTest {
     fun getAppOwnedSdkSandboxInterfaces_returnsListFromLocalImpl() {
         val expectedResult =
             listOf(
-                AppOwnedSdkSandboxInterfaceCompat(
-                    name = "TestSdk",
-                    version = 42,
-                    binder = Binder(),
-                )
+                AppOwnedSdkSandboxInterfaceCompat(name = "TestSdk", version = 42, binder = Binder())
             )
         SdkSandboxControllerCompat.injectLocalImpl(TestStubImpl(appOwnedSdks = expectedResult))
 
@@ -180,7 +176,7 @@ class SdkSandboxControllerCompatLocalTest {
             listenerCompat =
                 object : SdkSandboxClientImportanceListenerCompat {
                     override fun onForegroundImportanceChanged(isForeground: Boolean) {}
-                }
+                },
         )
 
         assertThat(stubLocalImpl.clientImportanceListeners).isEmpty()
@@ -216,7 +212,7 @@ class SdkSandboxControllerCompatLocalTest {
             }
         controllerCompat.registerSdkSandboxClientImportanceListener(
             executor = Runnable::run,
-            listenerCompat = listenerCompat
+            listenerCompat = listenerCompat,
         )
 
         assertThat(stubLocalImpl.clientImportanceListeners).containsKey(listenerCompat)
@@ -236,7 +232,7 @@ class SdkSandboxControllerCompatLocalTest {
             }
         controllerCompat.registerSdkSandboxClientImportanceListener(
             executor = Runnable::run,
-            listenerCompat = listenerCompat
+            listenerCompat = listenerCompat,
         )
         assertThat(stubLocalImpl.clientImportanceListeners).containsKey(listenerCompat)
 
@@ -266,7 +262,7 @@ class SdkSandboxControllerCompatLocalTest {
         private val appOwnedSdks: List<AppOwnedSdkSandboxInterfaceCompat> = emptyList(),
         private val loadSdkResult: SandboxedSdkCompat? = null,
         private val loadSdkError: LoadSdkCompatException? = null,
-        private val clientPackageName: String = ""
+        private val clientPackageName: String = "",
     ) : SdkSandboxControllerCompat.SandboxControllerImpl {
         var token: IBinder? = null
 
@@ -281,7 +277,7 @@ class SdkSandboxControllerCompatLocalTest {
             sdkName: String,
             params: Bundle,
             executor: Executor,
-            callback: LoadSdkCallback
+            callback: LoadSdkCallback,
         ) {
             lastLoadSdkName = sdkName
             lastLoadSdkParams = params
@@ -294,7 +290,7 @@ class SdkSandboxControllerCompatLocalTest {
                         loadSdkError
                             ?: LoadSdkCompatException(
                                 LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
-                                "Shouldn't be called without setting result or error"
+                                "Shouldn't be called without setting result or error",
                             )
                     )
                 }
@@ -323,7 +319,7 @@ class SdkSandboxControllerCompatLocalTest {
 
         override fun registerSdkSandboxClientImportanceListener(
             executor: Executor,
-            listenerCompat: SdkSandboxClientImportanceListenerCompat
+            listenerCompat: SdkSandboxClientImportanceListenerCompat,
         ) {
             clientImportanceListeners[listenerCompat] = executor
         }

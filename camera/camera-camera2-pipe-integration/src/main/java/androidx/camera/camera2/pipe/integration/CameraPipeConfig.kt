@@ -38,7 +38,7 @@ public class CameraPipeConfig private constructor() {
         @JvmStatic
         public fun from(
             sharedAppContext: Context? = null,
-            sharedThreadConfig: CameraThreadConfig? = null
+            sharedThreadConfig: CameraThreadConfig? = null,
         ): CameraXConfig {
             val cameraFactoryProvider = CameraFactoryProvider(sharedAppContext, sharedThreadConfig)
             return CameraXConfig.Builder()

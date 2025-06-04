@@ -46,7 +46,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                 R.drawable.ic_bug_report_24px,
                 R.drawable.ic_face_24px,
                 R.drawable.baseline_directions_boat_filled_24,
-                R.drawable.ic_explore_white_24dp
+                R.drawable.ic_explore_white_24dp,
             )
     }
 
@@ -66,7 +66,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                         carContext.getString(
                             R.string.sectioned_item_template_radio_button_section_title
                         ),
-                    numberOfRows = 5
+                    numberOfRows = 5,
                 ) { rowBuilder, index ->
                     rowBuilder.setOnClickListener { showToast("Active radio button index: $index") }
                 }
@@ -89,7 +89,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
             createRowSectionBuilder(
                     sectionTitle =
                         carContext.getString(R.string.sectioned_item_template_toggle_section_title),
-                    numberOfRows = 5
+                    numberOfRows = 5,
                 ) { rowBuilder, index ->
                     rowBuilder.setToggle(
                         Toggle.Builder { isToggled -> showToast("$index: $isToggled") }.build()
@@ -103,7 +103,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                         carContext.getString(
                             R.string.sectioned_item_template_lots_of_rows_section_title
                         ),
-                    numberOfRows = 150
+                    numberOfRows = 150,
                 )
                 .build()
         )
@@ -122,7 +122,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
     private fun createRowSectionBuilder(
         sectionTitle: String,
         numberOfRows: Int,
-        rowBuilderAugment: ((builder: Row.Builder, index: Int) -> Unit)? = null
+        rowBuilderAugment: ((builder: Row.Builder, index: Int) -> Unit)? = null,
     ): RowSection.Builder {
         val builder = RowSection.Builder().setTitle(sectionTitle)
 
@@ -148,7 +148,7 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                         CarIcon.Builder(
                                 IconCompat.createWithResource(
                                     carContext,
-                                    imageResources[i % imageResources.size]
+                                    imageResources[i % imageResources.size],
                                 )
                             )
                             .setTint(CarColor.PRIMARY)

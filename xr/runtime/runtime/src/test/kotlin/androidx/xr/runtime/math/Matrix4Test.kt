@@ -117,7 +117,7 @@ class Matrix4Test {
                     21f,
                     22f,
                     23f,
-                    24f
+                    24f,
                 )
             )
 
@@ -173,7 +173,7 @@ class Matrix4Test {
                     21f,
                     22f,
                     23f,
-                    24f
+                    24f,
                 )
             )
 
@@ -508,7 +508,7 @@ class Matrix4Test {
                         4f,
                         8f,
                         12f,
-                        16f
+                        16f,
                     )
                 )
             )
@@ -788,7 +788,7 @@ class Matrix4Test {
                         13f,
                         14f,
                         15f,
-                        16f
+                        16f,
                     )
                 )
                 .data

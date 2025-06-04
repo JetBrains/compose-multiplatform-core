@@ -58,7 +58,7 @@ class PagerOfLazyGridBenchmark(private val compilationMode: CompilationMode) {
                 val intent = Intent()
                 intent.action = Action
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.text(NextDescription))
             repeat(3) {

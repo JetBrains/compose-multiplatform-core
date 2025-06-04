@@ -80,7 +80,7 @@ private constructor(
         availableSpace: Float,
         itemSpacing: Float,
         beforeContentPadding: Float,
-        afterContentPadding: Float
+        afterContentPadding: Float,
     ) : this(
         defaultKeylines = defaultKeylines,
         startKeylineSteps =
@@ -88,7 +88,7 @@ private constructor(
                 defaultKeylines,
                 availableSpace,
                 itemSpacing,
-                beforeContentPadding
+                beforeContentPadding,
             ),
         endKeylineSteps =
             getEndKeylineSteps(defaultKeylines, availableSpace, itemSpacing, afterContentPadding),
@@ -135,7 +135,7 @@ private constructor(
     internal fun getKeylineListForScrollOffset(
         scrollOffset: Float,
         maxScrollOffset: Float,
-        roundToNearestStep: Boolean = false
+        roundToNearestStep: Boolean = false,
     ): KeylineList {
         // The scroll offset could sometimes be slightly negative due to rounding; it should always
         // be positive
@@ -154,7 +154,7 @@ private constructor(
                 outputMax = 0f,
                 inputMin = 0f,
                 inputMax = startShiftOffset,
-                value = positiveScrollOffset
+                value = positiveScrollOffset,
             )
         var shiftPoints = startShiftPoints
         var steps = startKeylineSteps
@@ -166,7 +166,7 @@ private constructor(
                     outputMax = 1f,
                     inputMin = endShiftOffset,
                     inputMax = maxScrollOffset,
-                    value = positiveScrollOffset
+                    value = positiveScrollOffset,
                 )
             shiftPoints = endShiftPoints
             steps = endKeylineSteps
@@ -187,7 +187,7 @@ private constructor(
         return lerp(
             steps[shiftPointRange.fromStepIndex],
             steps[shiftPointRange.toStepIndex],
-            shiftPointRange.steppedInterpolation
+            shiftPointRange.steppedInterpolation,
         )
     }
 
@@ -251,26 +251,26 @@ private constructor(
  */
 private fun getStartShiftDistance(
     startKeylineSteps: List<KeylineList>,
-    beforeContentPadding: Float
+    beforeContentPadding: Float,
 ): Float {
     if (startKeylineSteps.isEmpty()) return 0f
     return max(
         startKeylineSteps.last().first().unadjustedOffset -
             startKeylineSteps.first().first().unadjustedOffset,
-        beforeContentPadding
+        beforeContentPadding,
     )
 }
 
 /** Returns the total scroll offset needed to move through the entire list of [endKeylineSteps]. */
 private fun getEndShiftDistance(
     endKeylineSteps: List<KeylineList>,
-    afterContentPadding: Float
+    afterContentPadding: Float,
 ): Float {
     if (endKeylineSteps.isEmpty()) return 0f
     return max(
         endKeylineSteps.first().last().unadjustedOffset -
             endKeylineSteps.last().last().unadjustedOffset,
-        afterContentPadding
+        afterContentPadding,
     )
 }
 
@@ -292,7 +292,7 @@ private fun getStartKeylineSteps(
     defaultKeylines: KeylineList,
     carouselMainAxisSize: Float,
     itemSpacing: Float,
-    beforeContentPadding: Float
+    beforeContentPadding: Float,
 ): List<KeylineList> {
     if (defaultKeylines.isEmpty()) return emptyList()
 
@@ -308,7 +308,7 @@ private fun getStartKeylineSteps(
                     itemSpacing,
                     beforeContentPadding,
                     defaultKeylines.firstFocal,
-                    defaultKeylines.firstFocalIndex
+                    defaultKeylines.firstFocalIndex,
                 )
             )
         }
@@ -328,7 +328,7 @@ private fun getStartKeylineSteps(
                 srcIndex = 0,
                 dstIndex = 0,
                 carouselMainAxisSize = carouselMainAxisSize,
-                itemSpacing = itemSpacing
+                itemSpacing = itemSpacing,
             )
         )
         return steps
@@ -350,7 +350,7 @@ private fun getStartKeylineSteps(
                 srcIndex = defaultKeylines.firstNonAnchorIndex,
                 dstIndex = dstIndex,
                 carouselMainAxisSize = carouselMainAxisSize,
-                itemSpacing = itemSpacing
+                itemSpacing = itemSpacing,
             )
         )
         i++
@@ -364,7 +364,7 @@ private fun getStartKeylineSteps(
                 itemSpacing,
                 beforeContentPadding,
                 steps.last().firstFocal,
-                steps.last().firstFocalIndex
+                steps.last().firstFocalIndex,
             )
     }
 
@@ -389,7 +389,7 @@ private fun getEndKeylineSteps(
     defaultKeylines: KeylineList,
     carouselMainAxisSize: Float,
     itemSpacing: Float,
-    afterContentPadding: Float
+    afterContentPadding: Float,
 ): List<KeylineList> {
     if (defaultKeylines.isEmpty()) return emptyList()
     val steps: MutableList<KeylineList> = mutableListOf()
@@ -404,7 +404,7 @@ private fun getEndKeylineSteps(
                     itemSpacing,
                     -afterContentPadding,
                     defaultKeylines.lastFocal,
-                    defaultKeylines.lastFocalIndex
+                    defaultKeylines.lastFocalIndex,
                 )
             )
         }
@@ -424,7 +424,7 @@ private fun getEndKeylineSteps(
                 srcIndex = 0,
                 dstIndex = 0,
                 carouselMainAxisSize = carouselMainAxisSize,
-                itemSpacing = itemSpacing
+                itemSpacing = itemSpacing,
             )
         )
         return steps
@@ -447,7 +447,7 @@ private fun getEndKeylineSteps(
                 srcIndex = defaultKeylines.lastNonAnchorIndex,
                 dstIndex = dstIndex,
                 carouselMainAxisSize = carouselMainAxisSize,
-                itemSpacing = itemSpacing
+                itemSpacing = itemSpacing,
             )
         steps.add(keylines)
         i++
@@ -461,7 +461,7 @@ private fun getEndKeylineSteps(
                 itemSpacing,
                 -afterContentPadding,
                 steps.last().lastFocal,
-                steps.last().lastFocalIndex
+                steps.last().lastFocalIndex,
             )
     }
 
@@ -478,7 +478,7 @@ private fun createShiftedKeylineListForContentPadding(
     itemSpacing: Float,
     contentPadding: Float,
     pivot: Keyline,
-    pivotIndex: Int
+    pivotIndex: Int,
 ): KeylineList {
     val numberOfNonAnchorKeylines = from.fastFilter { !it.isAnchor }.count()
     val sizeReduction = contentPadding / numberOfNonAnchorKeylines
@@ -489,7 +489,7 @@ private fun createShiftedKeylineListForContentPadding(
             carouselMainAxisSize = carouselMainAxisSize,
             itemSpacing = itemSpacing,
             pivotIndex = pivotIndex,
-            pivotOffset = pivot.offset - (sizeReduction / 2f) + contentPadding
+            pivotOffset = pivot.offset - (sizeReduction / 2f) + contentPadding,
         ) {
             from.fastForEach { k -> add(k.size - abs(sizeReduction), k.isAnchor) }
         }
@@ -511,7 +511,7 @@ private fun moveKeylineAndCreateShiftedKeylineList(
     srcIndex: Int,
     dstIndex: Int,
     carouselMainAxisSize: Float,
-    itemSpacing: Float
+    itemSpacing: Float,
 ): KeylineList {
     // -1 if the pivot is shifting left/top, 1 if shifting right/bottom
     val pivotDir = if (srcIndex > dstIndex) 1 else -1
@@ -552,7 +552,7 @@ private fun moveKeylineAndCreateShiftedKeylineList(
 private fun getStepInterpolationPoints(
     totalShiftDistance: Float,
     steps: List<KeylineList>,
-    isShiftingLeft: Boolean
+    isShiftingLeft: Boolean,
 ): FloatList {
     val points = mutableFloatListOf(0f)
     if (totalShiftDistance == 0f || steps.isEmpty()) {
@@ -578,13 +578,13 @@ private fun getStepInterpolationPoints(
 private data class ShiftPointRange(
     val fromStepIndex: Int,
     val toStepIndex: Int,
-    val steppedInterpolation: Float
+    val steppedInterpolation: Float,
 )
 
 private fun getShiftPointRange(
     stepsCount: Int,
     shiftPoint: FloatList,
-    interpolation: Float
+    interpolation: Float,
 ): ShiftPointRange {
     var lowerBounds = shiftPoint[0]
     (1 until stepsCount).forEach { i ->
@@ -593,7 +593,7 @@ private fun getShiftPointRange(
             return ShiftPointRange(
                 fromStepIndex = i - 1,
                 toStepIndex = i,
-                steppedInterpolation = lerp(0f, 1f, lowerBounds, upperBounds, interpolation)
+                steppedInterpolation = lerp(0f, 1f, lowerBounds, upperBounds, interpolation),
             )
         }
         lowerBounds = upperBounds
@@ -613,7 +613,7 @@ private fun lerp(
     outputMax: Float,
     inputMin: Float,
     inputMax: Float,
-    value: Float
+    value: Float,
 ): Float {
     if (value <= inputMin) {
         return outputMin

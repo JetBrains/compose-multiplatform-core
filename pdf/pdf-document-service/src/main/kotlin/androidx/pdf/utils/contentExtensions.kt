@@ -64,7 +64,7 @@ public fun android.graphics.pdf.models.selection.PageSelection.toContentClass():
             page = page,
             start = start.toContentClass(),
             stop = stop.toContentClass(),
-            selectedTextContents = selectedTextContents.map { it.toContentClass() }
+            selectedTextContents = selectedTextContents.map { it.toContentClass() },
         )
     }
 
@@ -114,7 +114,7 @@ public fun android.graphics.pdf.models.FormWidgetInfo.toContentClass(): FormWidg
             isMultiLineText,
             maxLength = maxLength.takeIf { it != -1 },
             fontSize = fontSize.takeIf { it.toDouble() != 0.0 },
-            listItems.map { item -> item.toContentClass() }.takeIf { it.isNotEmpty() }
+            listItems.map { item -> item.toContentClass() }.takeIf { it.isNotEmpty() },
         )
     }
 

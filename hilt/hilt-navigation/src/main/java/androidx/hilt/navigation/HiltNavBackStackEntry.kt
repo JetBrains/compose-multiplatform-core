@@ -38,7 +38,7 @@ import dagger.hilt.android.internal.lifecycle.HiltViewModelFactory
 @JvmName("create")
 public fun HiltViewModelFactory(
     context: Context,
-    navBackStackEntry: NavBackStackEntry
+    navBackStackEntry: NavBackStackEntry,
 ): ViewModelProvider.Factory {
     return HiltViewModelFactory(context, navBackStackEntry.defaultViewModelProviderFactory)
 }
@@ -56,7 +56,7 @@ public fun HiltViewModelFactory(
 @JvmName("create")
 public fun HiltViewModelFactory(
     context: Context,
-    delegateFactory: ViewModelProvider.Factory
+    delegateFactory: ViewModelProvider.Factory,
 ): ViewModelProvider.Factory {
     val activity =
         context.let {
@@ -75,6 +75,6 @@ public fun HiltViewModelFactory(
         }
     return HiltViewModelFactory.createInternal(
         /* activity = */ activity,
-        /* delegateFactory = */ delegateFactory
+        /* delegateFactory = */ delegateFactory,
     )
 }

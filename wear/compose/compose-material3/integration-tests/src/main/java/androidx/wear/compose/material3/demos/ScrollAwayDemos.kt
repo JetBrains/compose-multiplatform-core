@@ -51,7 +51,7 @@ val ScrollAwayDemos =
     listOf(
         ComposableDemo("Scaling Lazy Column") { ScrollAwaySample() },
         ComposableDemo("LazyColumn") { Centralize { ScrollAwayLazyColumn() } },
-        ComposableDemo("Column") { Centralize { ScrollAwayColumn() } }
+        ComposableDemo("Column") { Centralize { ScrollAwayColumn() } },
     )
 
 @Composable
@@ -68,17 +68,17 @@ fun ScrollAwayLazyColumn() {
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
-                            flingBehavior = ScrollableDefaults.flingBehavior()
+                            flingBehavior = ScrollableDefaults.flingBehavior(),
                         ),
-                        focusRequester = focusRequester
-                    )
+                        focusRequester = focusRequester,
+                    ),
         ) {
             item {
                 ListHeader {
                     Text(
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                         text = "Lazy Column",
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -102,9 +102,9 @@ fun ScrollAwayLazyColumn() {
                     screenStage = {
                         if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                         else ScreenStage.Idle
-                    }
+                    },
                 ),
-            content = { curvedText("ScrollAway") }
+            content = { curvedText("ScrollAway") },
         )
     }
 }
@@ -122,16 +122,16 @@ fun ScrollAwayColumn() {
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
-                            flingBehavior = ScrollableDefaults.flingBehavior()
+                            flingBehavior = ScrollableDefaults.flingBehavior(),
                         ),
-                        focusRequester = focusRequester
+                        focusRequester = focusRequester,
                     )
         ) {
             ListHeader {
                 Text(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     text = "Column",
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
             repeat(5) {
@@ -154,9 +154,9 @@ fun ScrollAwayColumn() {
                     screenStage = {
                         if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                         else ScreenStage.Idle
-                    }
+                    },
                 ),
-            content = { curvedText("ScrollAway") }
+            content = { curvedText("ScrollAway") },
         )
     }
 }

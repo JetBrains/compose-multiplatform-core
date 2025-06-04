@@ -69,7 +69,7 @@ public interface PdfPage : AutoCloseable {
         left: Int,
         top: Int,
         scaledPageWidth: Int,
-        scaledPageHeight: Int
+        scaledPageHeight: Int,
     )
 
     /**

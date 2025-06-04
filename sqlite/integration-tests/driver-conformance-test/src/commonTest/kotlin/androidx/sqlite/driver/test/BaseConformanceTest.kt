@@ -116,7 +116,7 @@ abstract class BaseConformanceTest {
                     "realCol_double",
                     "realCol_float",
                     "textCol",
-                    "blobCol"
+                    "blobCol",
                 )
                 .inOrder()
             assertThat(it.getColumnType(0)).isEqualTo(SQLITE_DATA_INTEGER)

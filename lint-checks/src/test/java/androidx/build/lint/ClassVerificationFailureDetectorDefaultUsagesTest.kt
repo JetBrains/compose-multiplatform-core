@@ -35,7 +35,7 @@ class ClassVerificationFailureDetectorDefaultUsagesTest :
         stubs =
             arrayOf(
                 // AndroidManifest with minSdkVersion=14
-                manifest().minSdk(14),
+                manifest().minSdk(14)
             ),
     ) {
 

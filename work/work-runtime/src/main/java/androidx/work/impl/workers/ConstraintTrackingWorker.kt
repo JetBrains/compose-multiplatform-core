@@ -50,7 +50,7 @@ import kotlinx.coroutines.withContext
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class ConstraintTrackingWorker(
     appContext: Context,
-    private val workerParameters: WorkerParameters
+    private val workerParameters: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParameters) {
 
     override suspend fun doWork(): Result {
@@ -81,14 +81,14 @@ class ConstraintTrackingWorker(
                 workerFactory.createWorkerWithDefaultFallback(
                     applicationContext,
                     className,
-                    workerParameters
+                    workerParameters,
                 )
             } catch (e: Throwable) {
                 logd(TAG) { "No worker to delegate to." }
 
                 workManagerImpl.configuration.workerInitializationExceptionHandler?.safeAccept(
                     WorkerExceptionInfo(className, workerParameters, e),
-                    TAG
+                    TAG,
                 )
                 return Result.failure()
             }
@@ -121,7 +121,7 @@ class ConstraintTrackingWorker(
     private suspend fun runWorker(
         delegate: ListenableWorker,
         workConstraintsTracker: WorkConstraintsTracker,
-        workSpec: WorkSpec
+        workSpec: WorkSpec,
     ): Result = coroutineScope {
         val atomicReason = AtomicInteger(STOP_REASON_NOT_STOPPED)
         val future = delegate.startWork()

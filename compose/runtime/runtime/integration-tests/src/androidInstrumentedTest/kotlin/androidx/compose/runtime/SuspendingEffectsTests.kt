@@ -82,17 +82,17 @@ class SuspendingEffectsTests : BaseComposeTest() {
                 assertNotEquals(
                     choreographerTime,
                     Long.MIN_VALUE,
-                    "Choreographer callback never ran"
+                    "Choreographer callback never ran",
                 )
                 assertNotEquals(
                     awaitFrameTime,
                     Long.MAX_VALUE,
-                    "awaitFrameNanos callback never ran"
+                    "awaitFrameNanos callback never ran",
                 )
                 assertEquals(
                     choreographerTime,
                     awaitFrameTime,
-                    "expected same values from choreographer post and awaitFrameNanos"
+                    "expected same values from choreographer post and awaitFrameNanos",
                 )
             }
     }
@@ -115,17 +115,17 @@ class SuspendingEffectsTests : BaseComposeTest() {
                 assertNotEquals(
                     choreographerTime,
                     Long.MIN_VALUE,
-                    "Choreographer callback never ran"
+                    "Choreographer callback never ran",
                 )
                 assertNotEquals(
                     awaitFrameTime,
                     Long.MAX_VALUE,
-                    "awaitFrameNanos callback never ran"
+                    "awaitFrameNanos callback never ran",
                 )
                 assertEquals(
                     choreographerTime,
                     awaitFrameTime,
-                    "expected same values from choreographer post and awaitFrameNanos"
+                    "expected same values from choreographer post and awaitFrameNanos",
                 )
             }
     }
@@ -153,14 +153,14 @@ class SuspendingEffectsTests : BaseComposeTest() {
             .then {
                 assertTrue(
                     coroutineScope?.isActive == true,
-                    "coroutine scope should be active after initial composition"
+                    "coroutine scope should be active after initial composition",
                 )
             }
             .then { toggle = false }
             .then {
                 assertTrue(
                     coroutineScope?.isActive == false,
-                    "coroutine scope should be cancelled after leaving composition"
+                    "coroutine scope should be cancelled after leaving composition",
                 )
             }
     }
@@ -187,7 +187,7 @@ class SuspendingEffectsTests : BaseComposeTest() {
                 assertSame(
                     recomposerClock,
                     rememberCoroutineScopeFrameClock,
-                    "rememberCoroutineScope clock"
+                    "rememberCoroutineScope clock",
                 )
             }
     }

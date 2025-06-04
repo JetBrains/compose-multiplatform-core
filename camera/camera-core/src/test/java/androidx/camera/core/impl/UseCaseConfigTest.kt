@@ -43,7 +43,7 @@ class UseCaseConfigTest {
         val range = Range(120, 120)
         useCaseBuilder.mutableConfig.insertOption(
             UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
-            range
+            range,
         )
         Truth.assertThat(useCaseBuilder.useCaseConfig.targetHighSpeedFrameRate).isEqualTo(range)
     }

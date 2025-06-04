@@ -92,7 +92,7 @@ class LazyGridHeadersTest {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.height(300.dp).testTag(LazyGridTag),
-                state = rememberLazyGridState().also { state = it }
+                state = rememberLazyGridState().also { state = it },
             ) {
                 stickyHeader {
                     Spacer(Modifier.height(101.dp).fillMaxWidth().testTag(firstHeaderTag))
@@ -132,7 +132,7 @@ class LazyGridHeadersTest {
         rule.setContentWithTestViewConfiguration {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier.height(300.dp).testTag(LazyGridTag)
+                modifier = Modifier.height(300.dp).testTag(LazyGridTag),
             ) {
                 stickyHeader {
                     Spacer(Modifier.height(101.dp).fillMaxWidth().testTag(firstHeaderTag))
@@ -197,7 +197,7 @@ class LazyGridHeadersTest {
             LazyHorizontalGrid(
                 rows = GridCells.Fixed(3),
                 modifier = Modifier.width(300.dp).testTag(LazyGridTag),
-                state = rememberLazyGridState().also { state = it }
+                state = rememberLazyGridState().also { state = it },
             ) {
                 stickyHeader {
                     Spacer(Modifier.width(101.dp).fillMaxHeight().testTag(firstHeaderTag))
@@ -237,7 +237,7 @@ class LazyGridHeadersTest {
         rule.setContentWithTestViewConfiguration {
             LazyHorizontalGrid(
                 rows = GridCells.Fixed(3),
-                modifier = Modifier.width(300.dp).testTag(LazyGridTag)
+                modifier = Modifier.width(300.dp).testTag(LazyGridTag),
             ) {
                 stickyHeader {
                     Spacer(Modifier.width(101.dp).fillMaxHeight().testTag(firstHeaderTag))
@@ -274,7 +274,7 @@ class LazyGridHeadersTest {
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.requiredSize(itemIndexDp * 4),
                 state = rememberLazyGridState().also { state = it },
-                contentPadding = PaddingValues(top = itemIndexDp * 2)
+                contentPadding = PaddingValues(top = itemIndexDp * 2),
             ) {
                 stickyHeader { Spacer(Modifier.requiredSize(itemIndexDp).testTag(headerTag)) }
 
@@ -292,7 +292,7 @@ class LazyGridHeadersTest {
             Assert.assertEquals(0, state.layoutInfo.visibleItemsInfo.first().index)
             Assert.assertEquals(
                 itemIndexPx / 2 - /* content padding size */ itemIndexPx * 2,
-                state.layoutInfo.visibleItemsInfo.first().offset.y
+                state.layoutInfo.visibleItemsInfo.first().offset.y,
             )
         }
 
@@ -312,7 +312,7 @@ class LazyGridHeadersTest {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.height(itemSizeDp * 3.5f),
-                state = state
+                state = state,
             ) {
                 stickyHeader {
                     Spacer(Modifier.height(itemSizeDp).fillMaxWidth().testTag(firstHeaderTag))

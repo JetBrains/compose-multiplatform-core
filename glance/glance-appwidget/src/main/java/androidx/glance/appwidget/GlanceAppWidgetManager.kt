@@ -187,7 +187,7 @@ public class GlanceAppWidgetManager(private val context: Context) {
         val appWidgetId =
             configurationIntent.extras?.getInt(
                 AppWidgetManager.EXTRA_APPWIDGET_ID,
-                AppWidgetManager.INVALID_APPWIDGET_ID
+                AppWidgetManager.INVALID_APPWIDGET_ID,
             ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
@@ -274,8 +274,7 @@ public class GlanceAppWidgetManager(private val context: Context) {
                                 state = previewState,
                                 options = Bundle.EMPTY,
                                 size =
-                                    previewSize
-                                        ?: info.getMinSize(context.resources.displayMetrics),
+                                    previewSize ?: info.getMinSize(context.resources.displayMetrics),
                             )
                         putParcelable(AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, snapshot)
                     }
@@ -284,7 +283,7 @@ public class GlanceAppWidgetManager(private val context: Context) {
                 appWidgetManager,
                 target,
                 previewBundle,
-                successCallback
+                successCallback,
             )
         }
         return false
@@ -360,7 +359,7 @@ public class GlanceAppWidgetManager(private val context: Context) {
                     Log.w(
                         TAG,
                         "setWidgetPreview call for $componentName with categories $category was " +
-                            "rate-limited"
+                            "rate-limited",
                     )
                 }
                 result
@@ -567,7 +566,7 @@ public suspend inline fun <reified T : GlanceAppWidgetReceiver> GlanceAppWidgetM
     widgetCategories: IntSet =
         intSetOf(
             WIDGET_CATEGORY_HOME_SCREEN or WIDGET_CATEGORY_KEYGUARD or WIDGET_CATEGORY_SEARCHBOX
-        ),
+        )
 ): @GlanceAppWidgetManager.SetWidgetPreviewsResult Int {
     return setWidgetPreviews(T::class, widgetCategories)
 }

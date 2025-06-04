@@ -26,9 +26,7 @@ import androidx.annotation.RestrictTo
 @SuppressLint("NewApi")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
 class TopicsManagerApi31Ext9Impl(context: Context) :
-    TopicsManagerImplCommon(
-        android.adservices.topics.TopicsManager.get(context),
-    ) {
+    TopicsManagerImplCommon(android.adservices.topics.TopicsManager.get(context)) {
     override fun convertRequest(
         request: GetTopicsRequest
     ): android.adservices.topics.GetTopicsRequest {

@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseViewBundle(
     @SerialName("viewName") public val viewName: String,
-    @SerialName("createSql") public val createSql: String
+    @SerialName("createSql") public val createSql: String,
 ) : SchemaEquality<DatabaseViewBundle> {
 
     /** CREATE VIEW SQL query that uses the actual view name. */

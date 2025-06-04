@@ -88,7 +88,7 @@ constructor(
         dataOriginFilter: Set<DataOrigin> = emptySet(),
         ascendingOrder: Boolean = true,
         pageSize: Int = 1000,
-        pageToken: String? = null
+        pageToken: String? = null,
     ) : this(
         recordType = recordType,
         timeRangeFilter = timeRangeFilter,
@@ -112,7 +112,7 @@ constructor(
             ascendingOrder = ascendingOrder,
             pageSize = pageSize,
             pageToken = newPageToken,
-            deduplicateStrategy = deduplicateStrategy
+            deduplicateStrategy = deduplicateStrategy,
         )
     }
 

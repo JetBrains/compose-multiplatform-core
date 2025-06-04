@@ -121,7 +121,7 @@ class ResizableModifierTest {
                     ) {
                         Button(
                             modifier = Modifier.testTag("button"),
-                            onClick = { panelWidth += 50.dp }
+                            onClick = { panelWidth += 50.dp },
                         ) {
                             Text(text = "Click to change width")
                         }
@@ -206,7 +206,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -242,7 +242,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -345,7 +345,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -386,7 +386,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -611,7 +611,7 @@ class ResizableModifierTest {
 
     private fun assertResizableComponentMaxSizeIsSet(
         testTag: String = "panel",
-        size: DpVolumeSize
+        size: DpVolumeSize,
     ) {
         val resizableComponent =
             composeTestRule
@@ -642,7 +642,7 @@ class ResizableModifierTest {
 
     private fun assertResizableComponentMinSizeIsSet(
         testTag: String = "panel",
-        size: DpVolumeSize
+        size: DpVolumeSize,
     ) {
         val resizableComponent =
             composeTestRule

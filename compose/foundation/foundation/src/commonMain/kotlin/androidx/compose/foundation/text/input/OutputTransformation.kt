@@ -20,6 +20,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
 
 /**
  * A function ([transformOutput]) that transforms the text presented to a user by a
@@ -56,6 +58,8 @@ fun interface OutputTransformation {
 /**
  * A special type of [OutputTransformation] that enables adding styling and annotations to the
  * rendered text.
+ *
+ * @sample androidx.compose.foundation.samples.BasicTextFieldAnnotatedOutputTransformationSample
  */
 fun interface AnnotatedOutputTransformation : OutputTransformation {
 
@@ -76,10 +80,16 @@ sealed interface OutputTransformationAnnotationScope {
     val text: CharSequence
 
     /**
-     * Adds the given [annotation] to the text range between [start] (inclusive) and [end]
+     * Adds the given [spanStyle] to the text range between [start] (inclusive) and [end]
      * (exclusive).
      */
-    fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int)
+    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int)
+
+    /**
+     * Adds the given [paragraphStyle] to the text range between [start] (inclusive) and [end]
+     * (exclusive).
+     */
+    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int)
 }
 
 /**
@@ -93,9 +103,15 @@ internal class MutableOutputTransformationAnnotationScope : OutputTransformation
 
     override var text: CharSequence = ""
 
-    override fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
+    private fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
         annotationRangeList.add(AnnotatedString.Range(annotation, start, end))
     }
+
+    override fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) =
+        addAnnotation(spanStyle, start, end)
+
+    override fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) =
+        addAnnotation(paragraphStyle, start, end)
 
     /**
      * Call this function after [OutputTransformation.transformOutput], before

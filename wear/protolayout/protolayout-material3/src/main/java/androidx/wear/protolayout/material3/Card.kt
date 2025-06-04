@@ -121,7 +121,7 @@ public fun MaterialScope.titleCard(
     style: TitleCardStyle = defaultTitleCardStyle(),
     contentPadding: Padding = style.innerPadding,
     @HorizontalAlignment
-    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START
+    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START,
 ): LayoutElement =
     card(
         onClick = onClick,
@@ -129,7 +129,7 @@ public fun MaterialScope.titleCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForTitleCard(
             title =
@@ -139,7 +139,7 @@ public fun MaterialScope.titleCard(
                             typography = style.titleTypography,
                             color = colors.titleColor,
                             maxLines = 2,
-                            alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                            alignment = horizontalAlignment.horizontalAlignToTextAlign(),
                         )
                 ) {
                     title()
@@ -151,7 +151,7 @@ public fun MaterialScope.titleCard(
                             TextElementStyle(
                                 typography = style.contentTypography,
                                 color = colors.contentColor,
-                                alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
                             )
                     ) {
                         it()
@@ -164,14 +164,14 @@ public fun MaterialScope.titleCard(
                             TextElementStyle(
                                 typography = style.timeTypography,
                                 color = colors.timeColor,
-                                alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
                             )
                     ) {
                         it()
                     }
                 },
             horizontalAlignment = horizontalAlignment,
-            style = style
+            style = style,
         )
     }
 
@@ -261,7 +261,7 @@ public fun MaterialScope.appCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForAppCard(
             title =
@@ -283,7 +283,7 @@ public fun MaterialScope.appCard(
                             TextElementStyle(
                                 typography = style.contentTypography,
                                 color = colors.contentColor,
-                                alignment = TEXT_ALIGN_START
+                                alignment = TEXT_ALIGN_START,
                             )
                     ) {
                         it()
@@ -296,7 +296,7 @@ public fun MaterialScope.appCard(
                             TextElementStyle(
                                 typography = style.timeTypography,
                                 color = colors.timeColor,
-                                alignment = TEXT_ALIGN_END
+                                alignment = TEXT_ALIGN_END,
                             )
                     ) {
                         it()
@@ -309,7 +309,7 @@ public fun MaterialScope.appCard(
                             TextElementStyle(
                                 typography = style.labelTypography,
                                 color = colors.labelColor,
-                                alignment = TEXT_ALIGN_START
+                                alignment = TEXT_ALIGN_START,
                             )
                     ) {
                         it()
@@ -327,7 +327,7 @@ public fun MaterialScope.appCard(
                         it()
                     }
                 },
-            style = style
+            style = style,
         )
     }
 
@@ -411,7 +411,7 @@ public fun MaterialScope.textDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForDataCard(
             title =
@@ -419,7 +419,7 @@ public fun MaterialScope.textDataCard(
                     defaultTextElementStyle =
                         TextElementStyle(
                             typography = style.titleTypography,
-                            color = colors.titleColor
+                            color = colors.titleColor,
                         )
                 ) {
                     title()
@@ -430,7 +430,7 @@ public fun MaterialScope.textDataCard(
                         defaultTextElementStyle =
                             TextElementStyle(
                                 typography = style.contentTypography,
-                                color = colors.contentColor
+                                color = colors.contentColor,
                             )
                     ) {
                         it()
@@ -442,7 +442,7 @@ public fun MaterialScope.textDataCard(
                         defaultTextElementStyle =
                             TextElementStyle(
                                 typography = style.secondaryLabelTypography,
-                                color = colors.secondaryTextColor
+                                color = colors.secondaryTextColor,
                             )
                     ) {
                         it()
@@ -542,7 +542,7 @@ public fun MaterialScope.iconDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForDataCard(
             title =
@@ -550,7 +550,7 @@ public fun MaterialScope.iconDataCard(
                     defaultTextElementStyle =
                         TextElementStyle(
                             typography = style.titleTypography,
-                            color = colors.titleColor
+                            color = colors.titleColor,
                         )
                 ) {
                     title()
@@ -561,7 +561,7 @@ public fun MaterialScope.iconDataCard(
                         defaultTextElementStyle =
                             TextElementStyle(
                                 typography = style.contentTypography,
-                                color = colors.contentColor
+                                color = colors.contentColor,
                             )
                     ) {
                         it()
@@ -574,14 +574,14 @@ public fun MaterialScope.iconDataCard(
                             IconStyle(
                                 width = style.iconSize.toDp(),
                                 height = style.iconSize.toDp(),
-                                tintColor = colors.secondaryIconColor
+                                tintColor = colors.secondaryIconColor,
                             )
                     ) {
                         it()
                     }
                 },
             style = style,
-            titleContentPlacement = titleContentPlacement
+            titleContentPlacement = titleContentPlacement,
         )
     }
 
@@ -655,7 +655,7 @@ public fun MaterialScope.graphicDataCard(
         modifier = modifier.background(colors.backgroundColor).clip(shape),
         width = expand(),
         height = height,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForGraphicDataCard(
             title =
@@ -664,7 +664,7 @@ public fun MaterialScope.graphicDataCard(
                         TextElementStyle(
                             typography = style.titleTypography,
                             color = colors.titleColor,
-                            alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                            alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
                         )
                 ) {
                     title()
@@ -676,7 +676,7 @@ public fun MaterialScope.graphicDataCard(
                             TextElementStyle(
                                 typography = style.contentTypography,
                                 color = colors.contentColor,
-                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
                             )
                     ) {
                         it()
@@ -687,7 +687,7 @@ public fun MaterialScope.graphicDataCard(
                     defaultProgressIndicatorStyle =
                         ProgressIndicatorStyle(color = colors.graphicProgressIndicatorColors),
                     defaultIconStyle =
-                        IconStyle(tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor)
+                        IconStyle(tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor),
                 ) {
                     graphic()
                 },
@@ -702,7 +702,7 @@ public fun MaterialScope.graphicDataCard(
                     HORIZONTAL_ALIGN_START
                 } else {
                     horizontalAlignment
-                }
+                },
         )
     }
 
@@ -751,7 +751,7 @@ public fun MaterialScope.card(
     height: ContainerDimension = wrapWithMinTapTargetDimension(),
     backgroundContent: (MaterialScope.() -> LayoutElement)? = null,
     contentPadding: Padding = padding(DEFAULT_CONTENT_PADDING),
-    content: (MaterialScope.() -> LayoutElement)
+    content: (MaterialScope.() -> LayoutElement),
 ): LayoutElement =
     componentContainer(
         onClick = onClick,
@@ -761,5 +761,5 @@ public fun MaterialScope.card(
         backgroundContent = backgroundContent,
         contentPadding = contentPadding,
         metadataTag = METADATA_TAG,
-        content = content
+        content = content,
     )

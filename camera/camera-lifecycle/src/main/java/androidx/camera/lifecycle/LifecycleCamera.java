@@ -16,6 +16,8 @@
 
 package androidx.camera.lifecycle;
 
+import static androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination.resolveFeatureCombination;
+
 import android.annotation.SuppressLint;
 import android.os.Build;
 
@@ -31,6 +33,7 @@ import androidx.camera.core.LegacySessionConfig;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
+import androidx.camera.core.featurecombination.Feature;
 import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
@@ -47,7 +50,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A {@link CameraUseCaseAdapter} whose starting and stopping is controlled by a
@@ -280,13 +285,22 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             mCameraUseCaseAdapter.setTargetHighSpeedFrameRate(
                     sessionConfig.getTargetHighSpeedFrameRate());
 
-            mCameraUseCaseAdapter.addUseCases(
-                    sessionConfig.getUseCases(),
-                    ResolvedFeatureCombination.Companion.resolveFeatureCombination(
-                            sessionConfig,
-                            (CameraInfoInternal) getCameraInfo()
-                    )
-            );
+            ResolvedFeatureCombination resolvedFeatureCombination = resolveFeatureCombination(
+                    sessionConfig, (CameraInfoInternal) getCameraInfo());
+
+            sessionConfig.getFeatureSelectionListenerExecutor().execute(
+                    () -> {
+                        Set<Feature> features = new HashSet<>();
+
+                        if (resolvedFeatureCombination != null) {
+                            features.addAll(resolvedFeatureCombination.getFeatures());
+                        }
+
+                        sessionConfig.getFeatureSelectionListener().accept(features);
+                    });
+
+            mCameraUseCaseAdapter.addUseCases(sessionConfig.getUseCases(),
+                    resolvedFeatureCombination);
         }
     }
 

@@ -63,7 +63,7 @@ class ScrollToNodeTest(private val config: TestConfig) {
         val reverseLayout: Boolean,
         val viewportSize: ViewportSize,
         val targetPosition: StartPosition,
-        val hasNestedScrollConsumer: Boolean
+        val hasNestedScrollConsumer: Boolean,
     ) {
         val viewportSizePx: Int
             get() = viewportSize.sizePx
@@ -140,7 +140,7 @@ class ScrollToNodeTest(private val config: TestConfig) {
                                             reverseLayout = reverseScrolling,
                                             viewportSize = viewportSize,
                                             targetPosition = targetPosition,
-                                            hasNestedScrollConsumer = nestedScrollConsumer
+                                            hasNestedScrollConsumer = nestedScrollConsumer,
                                         )
                                         .also { add(it) }
                                 }
@@ -186,7 +186,7 @@ class ScrollToNodeTest(private val config: TestConfig) {
         expectError<AssertionError>(
             expectError = config.targetPosition == NotInList,
             expectedMessage =
-                "No node found that matches TestTag = 'target' in scrollable " + "container.*"
+                "No node found that matches TestTag = 'target' in scrollable " + "container.*",
         ) {
             rule.onNodeWithTag(containerTag).performScrollToNode(hasTestTag(itemTag))
         }
@@ -256,7 +256,7 @@ class ScrollToNodeTest(private val config: TestConfig) {
             ClickableTestBox(
                 color = Color.Yellow,
                 // Don't add the tag if the test says there is no target in the list
-                tag = if (config.targetPosition != NotInList) itemTag else defaultTag
+                tag = if (config.targetPosition != NotInList) itemTag else defaultTag,
             )
         }
         items(itemsAround) {
@@ -267,26 +267,26 @@ class ScrollToNodeTest(private val config: TestConfig) {
     enum class Orientation {
         HorizontalLtr,
         HorizontalRtl,
-        Vertical
+        Vertical,
     }
 
     enum class ViewportSize(val sizePx: Int) {
         SmallerThanItem(smallViewport),
-        BiggerThenItem(bigViewport)
+        BiggerThenItem(bigViewport),
     }
 
     enum class StartPosition(
         val indexForSmallViewport: Int,
         val offsetForSmallViewport: Int,
         val indexForBigViewport: Int,
-        val offsetForBigViewport: Int
+        val offsetForBigViewport: Int,
     ) {
         FullyAfter(0, 0, 0, 0),
         PartiallyAfter(itemsAround - 1, 50, itemsAround - 1, 0),
         CenterAlignedIn(itemsAround, 10, itemsAround - 1, 75),
         PartiallyBefore(itemsAround, 70, itemsAround, 50),
         FullyBefore(2 * itemsAround, 20, 2 * itemsAround - 1, 50),
-        NotInList(0, 0, 0, 0)
+        NotInList(0, 0, 0, 0),
     }
 
     private val verticalNestedScrollConsumer =

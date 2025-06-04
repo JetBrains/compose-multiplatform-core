@@ -86,7 +86,7 @@ public fun <T> Deferred<T>.asVoidListenableFuture(): ListenableFuture<Void> =
             Function {
                 return@Function null
             },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
 
 /**
@@ -182,9 +182,7 @@ public fun <T, R> Deferred<T>.propagateCompletion(
  * @param cause If it's an instance of [CancellationException], [Deferred.cancel] is invoked for
  *   this, otherwise, [CompletableDeferred.completeExceptionally] is invoked.
  */
-public fun <T> CompletableDeferred<T>.completeFailing(
-    cause: Throwable,
-) {
+public fun <T> CompletableDeferred<T>.completeFailing(cause: Throwable) {
     if (cause is CancellationException) {
         cancel(cause)
     } else {

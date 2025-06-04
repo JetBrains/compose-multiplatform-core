@@ -215,13 +215,29 @@ class SessionConfigTest {
     }
 
     @Test
+    fun sessionConfig_constructorWithVarargUseCase() {
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val imageAnalysis = ImageAnalysis.Builder().build()
+        val sessionConfig = SessionConfig(preview, imageCapture, imageAnalysis)
+
+        assertThat(sessionConfig.useCases).containsExactly(preview, imageCapture, imageAnalysis)
+        assertThat(sessionConfig.viewPort).isEqualTo(null)
+        assertThat(sessionConfig.effects).isEmpty()
+        assertThat(sessionConfig.targetHighSpeedFrameRate).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
+        assertThat(sessionConfig.requiredFeatures).isEmpty()
+        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.isLegacy).isFalse()
+    }
+
+    @Test
     fun sessionConfig_conflictingReqFeatures_throwsIllegalArgumentExceptionWithCorrectMessage() {
         // Arrange
         val requiredFeatures =
             setOf(
                 FPS_60,
                 FakeDynamicRangeFeature(DynamicRange.SDR),
-                FakeDynamicRangeFeature(DynamicRange.HLG_10_BIT)
+                FakeDynamicRangeFeature(DynamicRange.HLG_10_BIT),
             )
 
         // Act & assert
@@ -266,7 +282,7 @@ class SessionConfigTest {
             SessionConfig(
                 useCases = useCases,
                 requiredFeatures = setOf(FPS_60),
-                preferredFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+                preferredFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
             )
         }
     }
@@ -280,7 +296,7 @@ class SessionConfigTest {
         assertThrows<IllegalArgumentException> {
             SessionConfig(
                 useCases = listOf(ImageAnalysis.Builder().build()),
-                preferredFeatures = features
+                preferredFeatures = features,
             )
         }
     }
@@ -288,9 +304,7 @@ class SessionConfigTest {
     @Test
     fun sessionConfig_imageAnalysisAddedWithoutFeatureParam_noExceptionThrown() {
         // Act & assert
-        SessionConfig(
-            useCases = listOf(ImageAnalysis.Builder().build()),
-        )
+        SessionConfig(useCases = listOf(ImageAnalysis.Builder().build()))
     }
 
     @Test

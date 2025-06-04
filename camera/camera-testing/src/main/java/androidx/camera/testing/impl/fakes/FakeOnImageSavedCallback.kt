@@ -51,7 +51,7 @@ public class FakeOnImageSavedCallback(captureCount: Int = 1) : ImageCapture.OnIm
     public suspend fun awaitCapturesAndAssert(
         timeout: Duration = CAPTURE_TIMEOUT,
         capturedImagesCount: Int = 0,
-        errorsCount: Int = 0
+        errorsCount: Int = 0,
     ) {
         Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
         Truth.assertThat(results.size).isEqualTo(capturedImagesCount)

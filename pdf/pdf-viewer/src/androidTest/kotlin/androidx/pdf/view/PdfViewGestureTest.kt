@@ -53,8 +53,8 @@ class PdfViewGestureTest {
                 },
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
             )
             activity.setContentView(container)
         }

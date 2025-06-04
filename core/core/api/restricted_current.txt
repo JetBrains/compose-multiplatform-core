@@ -348,8 +348,8 @@ package androidx.core.app {
     method public static boolean getUsesChronometer(android.app.Notification);
     method @androidx.core.app.NotificationCompat.NotificationVisibility public static int getVisibility(android.app.Notification);
     method public static boolean hasPromotableCharacteristics(android.app.Notification);
-    method public static boolean hasRequestedPromotedOngoing(android.app.Notification);
     method public static boolean isGroupSummary(android.app.Notification);
+    method public static boolean isRequestPromotedOngoing(android.app.Notification);
     method public static android.graphics.Bitmap? reduceLargeIconSize(android.content.Context, android.graphics.Bitmap?);
     field public static final int BADGE_ICON_LARGE = 2; // 0x2
     field public static final int BADGE_ICON_NONE = 0; // 0x0
@@ -4033,6 +4033,7 @@ package androidx.core.view {
     method public androidx.core.graphics.Insets getInsets(@androidx.core.view.WindowInsetsCompat.Type.InsetsType int);
     method public androidx.core.graphics.Insets getInsetsIgnoringVisibility(@androidx.core.view.WindowInsetsCompat.Type.InsetsType int);
     method @Deprecated public androidx.core.graphics.Insets getMandatorySystemGestureInsets();
+    method public android.graphics.Rect? getPrivacyIndicatorBounds();
     method public androidx.core.view.RoundedCornerCompat? getRoundedCorner(@androidx.core.view.RoundedCornerCompat.Position int);
     method @Deprecated public int getStableInsetBottom();
     method @Deprecated public int getStableInsetLeft();
@@ -4070,6 +4071,7 @@ package androidx.core.view {
     method public androidx.core.view.WindowInsetsCompat.Builder setInsets(@androidx.core.view.WindowInsetsCompat.Type.InsetsType int, androidx.core.graphics.Insets);
     method public androidx.core.view.WindowInsetsCompat.Builder setInsetsIgnoringVisibility(@androidx.core.view.WindowInsetsCompat.Type.InsetsType int, androidx.core.graphics.Insets);
     method @Deprecated public androidx.core.view.WindowInsetsCompat.Builder setMandatorySystemGestureInsets(androidx.core.graphics.Insets);
+    method public androidx.core.view.WindowInsetsCompat.Builder setPrivacyIndicatorBounds(android.graphics.Rect?);
     method public androidx.core.view.WindowInsetsCompat.Builder setRoundedCorner(@androidx.core.view.RoundedCornerCompat.Position int, androidx.core.view.RoundedCornerCompat?);
     method @Deprecated public androidx.core.view.WindowInsetsCompat.Builder setStableInsets(androidx.core.graphics.Insets);
     method @Deprecated public androidx.core.view.WindowInsetsCompat.Builder setSystemGestureInsets(androidx.core.graphics.Insets);

@@ -36,6 +36,7 @@ import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -55,134 +56,9 @@ class AppFunctionDataTest {
     }
 
     @Test
-    fun testGenericReadWrite_asParameters_conformSpec() {
-        val builder =
-            AppFunctionData.Builder(
-                TEST_PARAMETER_METADATA,
-                AppFunctionComponentsMetadata(),
-            )
-
-        builder.setGenericField("int", 234, Int::class.java)
-        builder.setGenericField("long", 123L, Long::class.java)
-        builder.setGenericField("float", 100.0f, Float::class.java)
-        builder.setGenericField("double", 50.0, Double::class.java)
-        builder.setGenericField("boolean", true, Boolean::class.java)
-        builder.setGenericField("string", "testString", String::class.java)
-        builder.setGenericField(
-            "pendingIntent",
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-            PendingIntent::class.java,
-        )
-        builder.setGenericField("intArray", intArrayOf(4, 5, 6), IntArray::class.java)
-        builder.setGenericField("longArray", longArrayOf(1L, 2L, 3L), LongArray::class.java)
-        builder.setGenericField(
-            "floatArray",
-            floatArrayOf(10.0f, 20.0f, 30.0f),
-            FloatArray::class.java
-        )
-        builder.setGenericField(
-            "doubleArray",
-            doubleArrayOf(4.0, 5.0, 6.0),
-            DoubleArray::class.java
-        )
-        builder.setGenericField(
-            "booleanArray",
-            booleanArrayOf(false, true, false),
-            BooleanArray::class.java
-        )
-        builder.setGenericField(
-            "byteArray",
-            byteArrayOf(10.toByte(), 20.toByte()),
-            ByteArray::class.java
-        )
-        builder.setGenericListField("stringList", listOf("1", "2", "3"), String::class.java)
-        builder.setGenericListField(
-            "pendingIntentList",
-            listOf(
-                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-                PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-            ),
-            PendingIntent::class.java
-        )
-        val data = builder.build()
-
-        assertThat(data.getGenericField("int", Int::class.java)).isEqualTo(234)
-        assertThat(data.getGenericField("long", Long::class.java)).isEqualTo(123L)
-        assertThat(data.getGenericField("float", Float::class.java)).isEqualTo(100.0f)
-        assertThat(data.getGenericField("double", Double::class.java)).isEqualTo(50.0)
-        assertThat(data.getGenericField("boolean", Boolean::class.java)).isTrue()
-        assertThat(data.getGenericField("string", String::class.java)).isEqualTo("testString")
-        assertThat(data.getGenericField("pendingIntent", PendingIntent::class.java))
-            .isEqualTo(
-                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-            )
-        assertThat(data.getGenericField("intArray", IntArray::class.java))
-            .asList()
-            .containsExactly(4, 5, 6)
-        assertThat(data.getGenericField("longArray", LongArray::class.java))
-            .asList()
-            .containsExactly(1L, 2L, 3L)
-        assertThat(data.getGenericField("floatArray", FloatArray::class.java))
-            .usingExactEquality()
-            .containsExactly(10.0f, 20.0f, 30.0f)
-        assertThat(data.getGenericField("doubleArray", DoubleArray::class.java))
-            .usingExactEquality()
-            .containsExactly(4.0, 5.0, 6.0)
-        assertThat(data.getGenericField("booleanArray", BooleanArray::class.java))
-            .asList()
-            .containsExactly(false, true, false)
-        assertThat(data.getGenericField("byteArray", ByteArray::class.java))
-            .asList()
-            .containsExactly(10.toByte(), 20.toByte())
-        assertThat(data.getGenericListField<String, List<String>>("stringList", String::class.java))
-            .containsExactly("1", "2", "3")
-        assertThat(
-                data.getGenericListField<PendingIntent, List<PendingIntent>>(
-                    "pendingIntentList",
-                    PendingIntent::class.java
-                )
-            )
-            .containsExactly(
-                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-                PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-            )
-    }
-
-    @Test
-    fun testReadWriteGeneric_nestedObjectParameter() {
-        val data =
-            AppFunctionData.Builder("")
-                .setGenericField(
-                    "note",
-                    Note(title = "testTitle", attachment = Attachment("testUri")),
-                    Note::class.java,
-                )
-                .setGenericListField(
-                    "noteList",
-                    listOf(
-                        Note(title = "testTitle1", attachment = Attachment("testUri1")),
-                        Note(title = "testTitle2", attachment = Attachment("testUri2")),
-                    ),
-                    Note::class.java,
-                )
-                .build()
-
-        assertThat(data.getGenericField("note", Note::class.java))
-            .isEqualTo(Note(title = "testTitle", attachment = Attachment("testUri")))
-        assertThat(data.getGenericListField<Note, List<Note>>("noteList", Note::class.java))
-            .containsExactly(
-                Note(title = "testTitle1", attachment = Attachment("testUri1")),
-                Note(title = "testTitle2", attachment = Attachment("testUri2")),
-            )
-    }
-
-    @Test
     fun testReadWrite_asParameters_conformSpec() {
         val builder =
-            AppFunctionData.Builder(
-                TEST_PARAMETER_METADATA,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(TEST_PARAMETER_METADATA, AppFunctionComponentsMetadata())
 
         builder.setInt("int", 234)
         builder.setLong("long", 123L)
@@ -192,7 +68,7 @@ class AppFunctionDataTest {
         builder.setString("string", "testString")
         builder.setPendingIntent(
             "pendingIntent",
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
@@ -206,7 +82,7 @@ class AppFunctionDataTest {
             listOf(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-            )
+            ),
         )
         val data = builder.build()
 
@@ -245,10 +121,7 @@ class AppFunctionDataTest {
     @Test
     fun testWrite_asParameters_notConformSpec() {
         val builder =
-            AppFunctionData.Builder(
-                TEST_PARAMETER_METADATA,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(TEST_PARAMETER_METADATA, AppFunctionComponentsMetadata())
 
         assertThrows(IllegalArgumentException::class.java) {
             builder.setIntArray("int", intArrayOf(100, 200))
@@ -285,7 +158,7 @@ class AppFunctionDataTest {
                 "pendingIntent",
                 listOf(
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-                )
+                ),
             )
         }
         assertThrows(IllegalArgumentException::class.java) {
@@ -334,7 +207,7 @@ class AppFunctionDataTest {
         assertThrows(IllegalArgumentException::class.java) {
             builder.setPendingIntent(
                 "pendingIntentList",
-                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
         }
         assertThrows(IllegalArgumentException::class.java) {
@@ -345,10 +218,7 @@ class AppFunctionDataTest {
     @Test
     fun testRead_asParameters_notConformSpec() {
         val builder =
-            AppFunctionData.Builder(
-                TEST_PARAMETER_METADATA,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(TEST_PARAMETER_METADATA, AppFunctionComponentsMetadata())
         builder.setInt("int", 234)
         builder.setLong("long", 123L)
         builder.setFloat("float", 100.0f)
@@ -357,7 +227,7 @@ class AppFunctionDataTest {
         builder.setString("string", "testString")
         builder.setPendingIntent(
             "pendingIntent",
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
@@ -368,7 +238,7 @@ class AppFunctionDataTest {
         builder.setStringList("stringList", listOf("1", "2", "3"))
         builder.setPendingIntentList(
             "pendingIntentList",
-            listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE))
+            listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)),
         )
         val data = builder.build()
 
@@ -436,7 +306,7 @@ class AppFunctionDataTest {
         builder.setString("string", "testString")
         builder.setPendingIntent(
             "pendingIntent",
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
@@ -450,7 +320,7 @@ class AppFunctionDataTest {
             listOf(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
-            )
+            ),
         )
         val data = builder.build()
 
@@ -525,7 +395,7 @@ class AppFunctionDataTest {
                 "pendingIntent",
                 listOf(
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-                )
+                ),
             )
         }
         assertThrows(IllegalArgumentException::class.java) {
@@ -574,7 +444,7 @@ class AppFunctionDataTest {
         assertThrows(IllegalArgumentException::class.java) {
             builder.setPendingIntent(
                 "pendingIntentList",
-                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+                PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
         }
         assertThrows(IllegalArgumentException::class.java) {
@@ -593,7 +463,7 @@ class AppFunctionDataTest {
         builder.setString("string", "testString")
         builder.setPendingIntent(
             "pendingIntent",
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
@@ -604,7 +474,7 @@ class AppFunctionDataTest {
         builder.setStringList("stringList", listOf("1", "2", "3"))
         builder.setPendingIntentList(
             "pendingIntentList",
-            listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE))
+            listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)),
         )
         val data = builder.build()
 
@@ -668,24 +538,24 @@ class AppFunctionDataTest {
                     "data",
                     AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
                         .setLong("long", 100)
-                        .build()
+                        .build(),
                 )
                 .setAppFunctionDataList(
                     "dataList",
                     listOf(
                         AppFunctionData.Builder(
                                 TEST_OBJECT_METADATA,
-                                AppFunctionComponentsMetadata()
+                                AppFunctionComponentsMetadata(),
                             )
                             .setDouble("double", 20.0)
                             .build(),
                         AppFunctionData.Builder(
                                 TEST_OBJECT_METADATA,
-                                AppFunctionComponentsMetadata()
+                                AppFunctionComponentsMetadata(),
                             )
                             .setString("string", "testString")
-                            .build()
-                    )
+                            .build(),
+                    ),
                 )
                 .build()
 
@@ -698,16 +568,71 @@ class AppFunctionDataTest {
     }
 
     @Test
+    fun getAppFunctionData_arrayWithReferenceType() {
+        val personMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "firstName" to
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                    ),
+                required = listOf(),
+                qualifiedName =
+                    "com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable",
+                isNullable = true,
+            )
+        val componentMetadata =
+            AppFunctionComponentsMetadata(dataTypes = mapOf("Person" to personMetadata))
+        val personsMetadata =
+            AppFunctionArrayTypeMetadata(
+                AppFunctionReferenceTypeMetadata("Person", isNullable = false),
+                isNullable = false,
+            )
+
+        val data =
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "persons",
+                            dataType = personsMetadata,
+                            isRequired = true,
+                        )
+                    ),
+                    componentMetadata,
+                )
+                .setAppFunctionDataList(
+                    "persons",
+                    listOf(
+                        AppFunctionData.Builder(
+                                objectTypeMetadata = personMetadata,
+                                componentMetadata = componentMetadata,
+                            )
+                            .setString("firstName", "John")
+                            .build(),
+                        AppFunctionData.Builder(
+                                objectTypeMetadata = personMetadata,
+                                componentMetadata = componentMetadata,
+                            )
+                            .setString("firstName", "Mary")
+                            .build(),
+                    ),
+                )
+                .build()
+
+        assertThat(data.getAppFunctionDataList("persons")).hasSize(2)
+        val persons = data.getAppFunctionDataList("persons")
+        assertThat(persons?.get(0)?.getString("firstName")).isEqualTo("John")
+        assertThat(persons?.get(1)?.getString("firstName")).isEqualTo("Mary")
+    }
+
+    @Test
     fun testReadWrite_nestedAppFunctionData_conformSpec() {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
                     mapOf(
                         "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
                     ),
                 required = emptyList(),
                 qualifiedName = "innerData",
@@ -723,10 +648,7 @@ class AppFunctionDataTest {
         val innerDataBuilder =
             AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
         val outerDataBuilder =
-            AppFunctionData.Builder(
-                outerObjectType,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
 
         innerDataBuilder.setDouble("innerDouble", 500.0)
         outerDataBuilder.setAppFunctionData("nestedData", innerDataBuilder.build())
@@ -743,10 +665,7 @@ class AppFunctionDataTest {
                 properties =
                     mapOf(
                         "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
                     ),
                 required = emptyList(),
                 qualifiedName = "innerData",
@@ -757,10 +676,7 @@ class AppFunctionDataTest {
                 properties =
                     mapOf(
                         "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_LONG,
-                                isNullable = false,
-                            )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
                     ),
                 required = emptyList(),
                 qualifiedName = "innerData",
@@ -776,10 +692,7 @@ class AppFunctionDataTest {
         val incorrectInnerDataBuilder =
             AppFunctionData.Builder(incorrectInnerObjectType, AppFunctionComponentsMetadata())
         val outerDataBuilder =
-            AppFunctionData.Builder(
-                outerObjectType,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
 
         incorrectInnerDataBuilder.setLong("innerDouble", 500)
         assertThrows(IllegalArgumentException::class.java) {
@@ -794,10 +707,7 @@ class AppFunctionDataTest {
                 properties =
                     mapOf(
                         "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
                     ),
                 required = emptyList(),
                 qualifiedName = "innerData",
@@ -808,10 +718,7 @@ class AppFunctionDataTest {
                 properties =
                     mapOf(
                         "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_LONG,
-                                isNullable = false,
-                            )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
                     ),
                 required = emptyList(),
                 qualifiedName = "innerData",
@@ -830,10 +737,7 @@ class AppFunctionDataTest {
         val incorrectInnerDataBuilder =
             AppFunctionData.Builder(incorrectInnerObjectType, AppFunctionComponentsMetadata())
         val outerDataBuilder =
-            AppFunctionData.Builder(
-                outerObjectType,
-                AppFunctionComponentsMetadata(),
-            )
+            AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
 
         correctInnerDataBuilder.setDouble("innerDouble", 500.0)
         incorrectInnerDataBuilder.setLong("innerDouble", 500)
@@ -841,7 +745,7 @@ class AppFunctionDataTest {
         assertThrows(IllegalArgumentException::class.java) {
             outerDataBuilder.setAppFunctionDataList(
                 "nestedDataList",
-                listOf(correctInnerDataBuilder.build(), incorrectInnerDataBuilder.build())
+                listOf(correctInnerDataBuilder.build(), incorrectInnerDataBuilder.build()),
             )
         }
     }
@@ -875,7 +779,7 @@ class AppFunctionDataTest {
                     "attachment",
                     AppFunctionData.Builder("androidx.appfunctions.Attachment")
                         .setString("uri", "Test Uri")
-                        .build()
+                        .build(),
                 )
                 .build()
 
@@ -894,7 +798,7 @@ class AppFunctionDataTest {
                     "attachment",
                     AppFunctionData.Builder("androidx.appfunctions.Attachment")
                         .setString("uri", "Test Uri")
-                        .build()
+                        .build(),
                 )
                 .build()
 
@@ -941,6 +845,7 @@ class AppFunctionDataTest {
 
         val data = AppFunctionData(gd, extras)
 
+        assertThat(data.containsKey("id")).isTrue()
         assertThat(data.getString("id")).isEqualTo("123456")
     }
 
@@ -997,7 +902,7 @@ class AppFunctionDataTest {
                                 itemType =
                                     AppFunctionPrimitiveTypeMetadata(TYPE_PENDING_INTENT, false),
                                 isNullable = false,
-                            )
+                            ),
                     ),
                 required = emptyList(),
                 qualifiedName = "test",
@@ -1009,56 +914,37 @@ class AppFunctionDataTest {
                 AppFunctionParameterMetadata(
                     name = "int",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_INT,
-                            isNullable = false,
-                        ),
+                    dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "long",
                     isRequired = true,
                     dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_LONG,
-                            isNullable = false,
-                        ),
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "float",
                     isRequired = true,
                     dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_FLOAT,
-                            isNullable = false,
-                        ),
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_FLOAT, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "double",
                     isRequired = true,
                     dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_DOUBLE,
-                            isNullable = false,
-                        ),
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "boolean",
                     isRequired = true,
                     dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_BOOLEAN,
-                            isNullable = false,
-                        ),
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_BOOLEAN, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "string",
                     isRequired = true,
                     dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_STRING,
-                            isNullable = false,
-                        ),
+                        AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "pendingIntent",
@@ -1179,7 +1065,7 @@ class AppFunctionDataTest {
                 AppFunctionParameterMetadata(
                     name = "data",
                     isRequired = true,
-                    dataType = TEST_OBJECT_METADATA
+                    dataType = TEST_OBJECT_METADATA,
                 ),
                 AppFunctionParameterMetadata(
                     name = "dataList",
@@ -1187,9 +1073,9 @@ class AppFunctionDataTest {
                     dataType =
                         AppFunctionArrayTypeMetadata(
                             itemType = TEST_OBJECT_METADATA,
-                            isNullable = false
-                        )
-                )
+                            isNullable = false,
+                        ),
+                ),
             )
     }
 }

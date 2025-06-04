@@ -21,8 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.SoftwareType
 import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
@@ -65,9 +65,9 @@ android {
 
 dependencies {
     api(libs.jspecify)
-    ksp("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.7.0")
     api("androidx.core:core:1.12.0")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     api("androidx.annotation:annotation-experimental:1.4.1")
     api(libs.guavaListenableFuture)
@@ -83,7 +83,7 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
     androidTestImplementation(project(":lifecycle:lifecycle-runtime-testing"))
-    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.room:room-testing:2.7.0")
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoCore)
@@ -106,8 +106,7 @@ ksp {
 androidx {
     name = "WorkManager Runtime"
     type = SoftwareType.PUBLISHED_LIBRARY
-    //TODO(b/407640603): Migrate to Kotlin 2. Task :work:work-runtime:kspReleaseKotlin fails
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false

@@ -434,7 +434,7 @@ class RectListIntegrationTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = {}
+                        onPress = {},
                     )
             )
         }
@@ -687,7 +687,7 @@ class RectListIntegrationTest {
             lazyListState = lazyListState,
             rootSizePx = rootSizePx,
             viewPortCount = viewPortCount,
-            pages = pages
+            pages = pages,
         )
 
         with(rule.density) {
@@ -709,7 +709,7 @@ class RectListIntegrationTest {
                     left = 0.dp,
                     top = 0.dp,
                     right = rootSizePx.toDp(),
-                    bottom = listItemHeight.toDp()
+                    bottom = listItemHeight.toDp(),
                 )
 
             rule.onNodeWithTag("Item-6").assertRectCount(5)
@@ -734,7 +734,7 @@ class RectListIntegrationTest {
             lazyListState = lazyListState,
             rootSizePx = rootSizePx,
             viewPortCount = viewPortCount,
-            pages = pages
+            pages = pages,
         )
 
         with(rule.density) {
@@ -764,7 +764,7 @@ class RectListIntegrationTest {
                     left = 0.dp,
                     top = 0.dp,
                     right = rootSizePx.toDp(),
-                    bottom = listItemHeight.toDp()
+                    bottom = listItemHeight.toDp(),
                 )
 
             rule.onNodeWithTag("Item-8").assertRectCount(5)
@@ -823,44 +823,38 @@ class RectListIntegrationTest {
         }
     }
 
-    internal fun SemanticsNodeInteraction.assertRectDp(
-        left: Dp,
-        top: Dp,
-        right: Dp,
-        bottom: Dp,
-    ) = withRect { l, t, r, b ->
-        if (
-            !approxEquals(left, l) ||
-                !approxEquals(top, t) ||
-                !approxEquals(right, r) ||
-                !approxEquals(bottom, b)
-        ) {
-            val actualL = convertToDp(l)
-            val actualT = convertToDp(t)
-            val actualR = convertToDp(r)
-            val actualB = convertToDp(b)
+    internal fun SemanticsNodeInteraction.assertRectDp(left: Dp, top: Dp, right: Dp, bottom: Dp) =
+        withRect { l, t, r, b ->
+            if (
+                !approxEquals(left, l) ||
+                    !approxEquals(top, t) ||
+                    !approxEquals(right, r) ||
+                    !approxEquals(bottom, b)
+            ) {
+                val actualL = convertToDp(l)
+                val actualT = convertToDp(t)
+                val actualR = convertToDp(r)
+                val actualB = convertToDp(b)
 
-            val expectDpString = "[$left, $top, $right, $bottom]"
-            val actualDpString = "[$actualL, $actualT, $actualR, $actualB]"
+                val expectDpString = "[$left, $top, $right, $bottom]"
+                val actualDpString = "[$actualL, $actualT, $actualR, $actualB]"
 
-            throw ComparisonFailure(
-                "expected <$expectDpString> but was: <$actualDpString>",
-                expectDpString,
-                actualDpString
-            )
+                throw ComparisonFailure(
+                    "expected <$expectDpString> but was: <$actualDpString>",
+                    expectDpString,
+                    actualDpString,
+                )
+            }
         }
-    }
 
-    internal fun SemanticsNodeInteraction.assertRectTopWithinRange(
-        min: Dp,
-        max: Dp,
-    ) = withRect { _, t, _, _ ->
-        val topDp = convertToDp(t)
+    internal fun SemanticsNodeInteraction.assertRectTopWithinRange(min: Dp, max: Dp) =
+        withRect { _, t, _, _ ->
+            val topDp = convertToDp(t)
 
-        if (topDp < min || topDp > max) {
-            error("top was $topDp but was expected to be between [$min, $max]")
+            if (topDp < min || topDp > max) {
+                error("top was $topDp but was expected to be between [$min, $max]")
+            }
         }
-    }
 
     inline internal fun SemanticsNodeInteraction.withRect(
         crossinline block: Density.(l: Int, t: Int, r: Int, b: Int) -> Unit

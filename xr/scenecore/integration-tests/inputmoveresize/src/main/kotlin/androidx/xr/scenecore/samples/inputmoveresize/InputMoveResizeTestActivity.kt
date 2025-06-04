@@ -29,18 +29,18 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.BasePanelEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.MoveListener
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
 import androidx.xr.scenecore.scene
@@ -92,15 +92,15 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
     private val resizeListener =
         object : ResizeListener {
-            override fun onResizeStart(entity: Entity, originalSize: Dimensions) {
+            override fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {
                 Log.i(TAG, "$entity Start $originalSize")
             }
 
-            override fun onResizeUpdate(entity: Entity, newSize: Dimensions) {
+            override fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {
                 Log.i(TAG, "$entity Update $newSize")
             }
 
-            override fun onResizeEnd(entity: Entity, finalSize: Dimensions) {
+            override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
                 Log.i(TAG, "$entity End $finalSize")
                 (entity as BasePanelEntity<*>).setSize(finalSize)
             }
@@ -131,7 +131,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panel,
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )

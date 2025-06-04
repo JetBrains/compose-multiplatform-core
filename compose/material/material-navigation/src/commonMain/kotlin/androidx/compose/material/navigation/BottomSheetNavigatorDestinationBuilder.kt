@@ -44,7 +44,7 @@ class BottomSheetNavigatorDestinationBuilder :
     public constructor(
         navigator: BottomSheetNavigator,
         route: String,
-        content: @Composable ColumnScope.(NavBackStackEntry) -> Unit
+        content: @Composable ColumnScope.(NavBackStackEntry) -> Unit,
     ) : super(navigator, route) {
         this.bottomSheetNavigator = navigator
         this.content = content
@@ -63,7 +63,7 @@ class BottomSheetNavigatorDestinationBuilder :
         navigator: BottomSheetNavigator,
         route: KClass<*>,
         typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>,
-        content: @Composable ColumnScope.(NavBackStackEntry) -> Unit
+        content: @Composable ColumnScope.(NavBackStackEntry) -> Unit,
     ) : super(navigator, route, typeMap) {
         this.bottomSheetNavigator = navigator
         this.content = content

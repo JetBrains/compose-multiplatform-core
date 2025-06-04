@@ -39,7 +39,7 @@ class ScrollFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_scroll, container, false)
         bottomBannerView = SandboxedSdkView(requireActivity())
@@ -53,7 +53,7 @@ class ScrollFragment : BaseFragment() {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {
         currentAdFormat = adFormat
         currentAdType = adType
@@ -78,7 +78,7 @@ class ScrollFragment : BaseFragment() {
                 currentAdType,
                 currentMediationOption,
                 bottomBannerView,
-                shouldDrawViewabilityLayer
+                shouldDrawViewabilityLayer,
             )
         }
     }
@@ -88,7 +88,7 @@ class ScrollFragment : BaseFragment() {
             currentAdType,
             currentMediationOption,
             clippingBoundBannerView,
-            shouldDrawViewabilityLayer
+            shouldDrawViewabilityLayer,
         )
     }
 }

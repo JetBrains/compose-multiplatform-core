@@ -122,7 +122,7 @@ class BasicTextContextMenuProviderTest {
     fun whenRemovingAnchorLayout_contextMenuIsClosed() {
         var showAnchorLayout by mutableStateOf(true)
         runProviderTest(
-            outerContent = { content -> OuterBox { if (showAnchorLayout) content() } },
+            outerContent = { content -> OuterBox { if (showAnchorLayout) content() } }
         ) {
             rule.onNodeWithTag(AnchorLayoutTag).assertIsDisplayed()
 
@@ -176,7 +176,7 @@ class BasicTextContextMenuProviderTest {
         runProviderTest(
             outerContent = { content ->
                 OuterBox(Modifier.offset { IntOffset(length, length) }.size(150.dp)) { content() }
-            },
+            }
         ) {
             val contextMenuCoroutine = showTextContextMenu(testDataProvider(1))
 
@@ -222,7 +222,7 @@ class BasicTextContextMenuProviderTest {
                 ProvideBasicTextContextMenu(
                     modifier = Modifier.testTag(AnchorLayoutTag),
                     providableCompositionLocal = LocalTestContextMenuProvider,
-                    contextMenu = contextMenu
+                    contextMenu = contextMenu,
                 ) {
                     provider = LocalTestContextMenuProvider.current!!
                     InnerBox()
@@ -345,10 +345,9 @@ private fun InnerBox() {
 private fun ProvideTestBasicTextContextMenu(
     onContextMenuComposition:
         (
-            session: TextContextMenuSession?,
-            anchorLayoutCoordinates: () -> LayoutCoordinates,
+            session: TextContextMenuSession?, anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ProvideBasicTextContextMenu(
         modifier = Modifier.testTag(AnchorLayoutTag),
@@ -368,14 +367,14 @@ private fun TestContextMenu(
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.testTag(ContextMenuTag).background(Color.LightGray).padding(4.dp)
+        modifier = Modifier.testTag(ContextMenuTag).background(Color.LightGray).padding(4.dp),
     ) {
         dataProvider.data().components.fastForEach {
             when (it) {
                 is TextContextMenuItem ->
                     BasicText(
                         text = it.label,
-                        modifier = Modifier.testTag(it.label).clickable { it.onClick(session) }
+                        modifier = Modifier.testTag(it.label).clickable { it.onClick(session) },
                     )
             }
         }

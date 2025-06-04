@@ -75,6 +75,7 @@ import androidx.xr.runtime.internal.ResizableComponent;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpatialCapabilities;
 import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SurfaceEntity;
@@ -93,7 +94,6 @@ import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
 import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -111,6 +111,7 @@ import com.android.extensions.xr.node.ReformOptions;
 import com.android.extensions.xr.node.ShadowInputEvent;
 import com.android.extensions.xr.node.ShadowNode;
 import com.android.extensions.xr.node.Vec3;
+import com.android.extensions.xr.space.PerceivedResolution;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
 import com.android.extensions.xr.space.ShadowSpatialState;
 import com.android.extensions.xr.space.SpatialState;
@@ -118,6 +119,7 @@ import com.android.extensions.xr.space.VisibilityState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -152,7 +154,7 @@ public final class JxrPlatformAdapterAxrTest {
 
     private static final int SUBSPACE_ID = 5;
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private final Node mSubspaceNode = mXrExtensions.createNode();
     private final SubspaceNode mExpectedSubspace = new SubspaceNode(SUBSPACE_ID, mSubspaceNode);
     private final FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
@@ -317,6 +319,21 @@ public final class JxrPlatformAdapterAxrTest {
 
     private Entity createContentlessEntity(Pose pose) {
         return mRuntime.createEntity(pose, "test", mRuntime.getActivitySpaceRootImpl());
+    }
+
+    private void sendVisibilityState(ShadowXrExtensions shadowXrExtensions, int visibilityState) {
+        sendVisibilityState(shadowXrExtensions, visibilityState, 1, 1);
+    }
+
+    private void sendVisibilityState(ShadowXrExtensions shadowXrExtensions, int width, int height) {
+        sendVisibilityState(shadowXrExtensions, VisibilityState.FULLY_VISIBLE, width, height);
+    }
+
+    private void sendVisibilityState(
+            ShadowXrExtensions shadowXrExtensions, int visibilityState, int width, int height) {
+        shadowXrExtensions.sendVisibilityState(
+                mActivity,
+                new VisibilityState(visibilityState, new PerceivedResolution(width, height)));
     }
 
     @Test
@@ -2316,7 +2333,7 @@ public final class JxrPlatformAdapterAxrTest {
 
         assertThat(surfaceEntityQuad).isNotNull();
         assertThat(surfaceEntityQuad).isInstanceOf(SurfaceEntityImpl.class);
-        FakeImpressApi.StereoSurfaceEntityData quadData =
+        FakeImpressApiImpl.StereoSurfaceEntityData quadData =
                 mFakeImpressApi
                         .getStereoSurfaceEntities()
                         .get(((SurfaceEntityImpl) surfaceEntityQuad).getEntityImpressNode());
@@ -2331,7 +2348,7 @@ public final class JxrPlatformAdapterAxrTest {
 
         assertThat(surfaceEntitySphere).isNotNull();
         assertThat(surfaceEntitySphere).isInstanceOf(SurfaceEntityImpl.class);
-        FakeImpressApi.StereoSurfaceEntityData sphereData =
+        FakeImpressApiImpl.StereoSurfaceEntityData sphereData =
                 mFakeImpressApi
                         .getStereoSurfaceEntities()
                         .get(((SurfaceEntityImpl) surfaceEntitySphere).getEntityImpressNode());
@@ -2346,7 +2363,7 @@ public final class JxrPlatformAdapterAxrTest {
 
         assertThat(surfaceEntityHemisphere).isNotNull();
         assertThat(surfaceEntityHemisphere).isInstanceOf(SurfaceEntityImpl.class);
-        FakeImpressApi.StereoSurfaceEntityData hemisphereData =
+        FakeImpressApiImpl.StereoSurfaceEntityData hemisphereData =
                 mFakeImpressApi
                         .getStereoSurfaceEntities()
                         .get(((SurfaceEntityImpl) surfaceEntityHemisphere).getEntityImpressNode());
@@ -2356,13 +2373,14 @@ public final class JxrPlatformAdapterAxrTest {
         // TODO: b/366588688 - Move these into tests for SurfaceEntityImpl
         assertThat(quadData.getStereoMode()).isEqualTo(SurfaceEntity.StereoMode.SIDE_BY_SIDE);
         assertThat(quadData.getCanvasShape())
-                .isEqualTo(FakeImpressApi.StereoSurfaceEntityData.CanvasShape.QUAD);
+                .isEqualTo(FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape.QUAD);
         assertThat(sphereData.getStereoMode()).isEqualTo(SurfaceEntity.StereoMode.TOP_BOTTOM);
         assertThat(sphereData.getCanvasShape())
-                .isEqualTo(FakeImpressApi.StereoSurfaceEntityData.CanvasShape.VR_360_SPHERE);
+                .isEqualTo(FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape.VR_360_SPHERE);
         assertThat(hemisphereData.getStereoMode()).isEqualTo(SurfaceEntity.StereoMode.MONO);
         assertThat(hemisphereData.getCanvasShape())
-                .isEqualTo(FakeImpressApi.StereoSurfaceEntityData.CanvasShape.VR_180_HEMISPHERE);
+                .isEqualTo(
+                        FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape.VR_180_HEMISPHERE);
 
         assertThat(quadData.getWidth()).isEqualTo(kTestWidth);
         assertThat(quadData.getHeight()).isEqualTo(kTestHeight);
@@ -2398,7 +2416,7 @@ public final class JxrPlatformAdapterAxrTest {
                         .getStereoSurfaceEntities()
                         .get(((SurfaceEntityImpl) surfaceEntityQuad).getEntityImpressNode());
         assertThat(quadData.getCanvasShape())
-                .isEqualTo(FakeImpressApi.StereoSurfaceEntityData.CanvasShape.VR_360_SPHERE);
+                .isEqualTo(FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape.VR_360_SPHERE);
         assertThat(quadData.getStereoMode()).isEqualTo(SurfaceEntity.StereoMode.TOP_BOTTOM);
 
         Surface surface = surfaceEntityQuad.getSurface();
@@ -2503,8 +2521,8 @@ public final class JxrPlatformAdapterAxrTest {
                                         node ->
                                                 node.getMaterialOverride() != null
                                                         && node.getMaterialOverride().getType()
-                                                                == FakeImpressApi.MaterialData.Type
-                                                                        .WATER)
+                                                                == FakeImpressApiImpl.MaterialData
+                                                                        .Type.WATER)
                                 .toArray())
                 .hasLength(1);
     }
@@ -2520,23 +2538,19 @@ public final class JxrPlatformAdapterAxrTest {
         ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
 
         // VISIBLE
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.FULLY_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.FULLY_VISIBLE);
         verify(mockListener).accept(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
 
         // PARTIALLY_VISIBLE
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.PARTIALLY_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.PARTIALLY_VISIBLE);
         verify(mockListener).accept(new SpatialVisibility(SpatialVisibility.PARTIALLY_WITHIN_FOV));
 
         // OUTSIDE_OF_FOV
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.NOT_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.NOT_VISIBLE);
         verify(mockListener).accept(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV));
 
         // UNKNOWN
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.UNKNOWN));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.UNKNOWN);
         verify(mockListener).accept(new SpatialVisibility(SpatialVisibility.UNKNOWN));
     }
 
@@ -2552,15 +2566,13 @@ public final class JxrPlatformAdapterAxrTest {
 
         // Listener 1 is set and called once.
         mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockListener1);
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.FULLY_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.FULLY_VISIBLE);
         verify(mockListener1).accept(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
         verify(mockListener2, never()).accept(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
 
         // Listener 2 is set and called once. Listener 1 is not called again.
         mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockListener2);
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.NOT_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.NOT_VISIBLE);
         verify(mockListener2).accept(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV));
         verify(mockListener1, never()).accept(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV));
     }
@@ -2579,18 +2591,18 @@ public final class JxrPlatformAdapterAxrTest {
                 (Consumer<SpatialVisibility>) mock(Consumer.class);
         mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockListener);
 
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
         // Verify that the callback is called once when the visibility changes.
         ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.FULLY_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.FULLY_VISIBLE);
         verify(mockListener).accept(any());
 
         // Clear the listener and verify that the callback is not called a second time.
         mRuntime.clearSpatialVisibilityChangedListener();
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.NOT_VISIBLE));
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.PARTIALLY_VISIBLE));
+        sendVisibilityState(shadowXrExtensions, VisibilityState.NOT_VISIBLE);
+        sendVisibilityState(shadowXrExtensions, VisibilityState.PARTIALLY_VISIBLE);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isFalse();
         verify(mockListener).accept(any());
     }
 
@@ -2602,24 +2614,168 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void dispose_closesSpatialVisibilitySubscription() {
+    public void dispose_closesSpatialVisibilityAndPerceivedResolutionSubscription() {
         @SuppressWarnings(value = "unchecked")
-        Consumer<SpatialVisibility> mockListener =
+        Consumer<SpatialVisibility> mockSpatialVisListener =
                 (Consumer<SpatialVisibility>) mock(Consumer.class);
-        mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockListener);
+        mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockSpatialVisListener);
+
+        @SuppressWarnings(value = "unchecked")
+        Consumer<PixelDimensions> mockPerceivedResListener =
+                (Consumer<PixelDimensions>) mock(Consumer.class);
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockPerceivedResListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
 
         // Verify that the callback is called once when the visibility changes.
         ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.FULLY_VISIBLE));
-        verify(mockListener).accept(any());
+        sendVisibilityState(shadowXrExtensions, VisibilityState.FULLY_VISIBLE);
+        verify(mockSpatialVisListener).accept(any());
+        verify(mockPerceivedResListener).accept(any());
 
-        // Ensure dispose() clears the listener that the callback is not called a second time.
+        // Ensure dispose() clears the listener that the callbacks are not called a second time.
         mRuntime.dispose();
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.NOT_VISIBLE));
-        shadowXrExtensions.sendVisibilityState(
-                mActivity, new VisibilityState(VisibilityState.PARTIALLY_VISIBLE));
-        verify(mockListener).accept(any());
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isFalse();
+        sendVisibilityState(shadowXrExtensions, VisibilityState.NOT_VISIBLE);
+        sendVisibilityState(shadowXrExtensions, VisibilityState.PARTIALLY_VISIBLE);
+        verify(mockSpatialVisListener).accept(any());
+        verify(mockPerceivedResListener).accept(any());
+    }
+
+    @Test
+    public void
+            clearSpatialVisibilityChangedListener_doesNotStopPerceivedResolutionListener() {
+        @SuppressWarnings("unchecked")
+        Consumer<SpatialVisibility> mockSpatialListener =
+                (Consumer<SpatialVisibility>) mock(Consumer.class);
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockPerceivedResListener =
+                (Consumer<PixelDimensions>) mock(Consumer.class);
+
+        mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockSpatialListener);
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockPerceivedResListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        mRuntime.clearSpatialVisibilityChangedListener();
+        // Perceived resolution listener is still active, so callback should remain registered.
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+        sendVisibilityState(shadowXrExtensions, SpatialVisibility.WITHIN_FOV, 10, 20);
+        verify(mockSpatialListener, never()).accept(any());
+        verify(mockPerceivedResListener).accept(any());
+    }
+
+    @Test
+    public void addPerceivedResolutionChangedListener_registersCombinedCallbackFirstTime() {
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockListener = (Consumer<PixelDimensions>) mock(Consumer.class);
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isFalse();
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+        verify(mockListener, never()).accept(any());
+
+        sendVisibilityState(shadowXrExtensions, 10, 20);
+        verify(mockListener).accept(new PixelDimensions(10, 20));
+    }
+
+    @Test
+    public void removePerceivedResolutionChangedListener_clearsCombinedCallbackIfLastListener() {
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockListener = (Consumer<PixelDimensions>) mock(Consumer.class);
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        sendVisibilityState(shadowXrExtensions, 10, 20);
+        verify(mockListener).accept(new PixelDimensions(10, 20));
+
+        mRuntime.removePerceivedResolutionChangedListener(mockListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isFalse();
+
+        // It shouldn't be called a second time
+        sendVisibilityState(shadowXrExtensions, 10, 20);
+        verify(mockListener, times(1)).accept(new PixelDimensions(10, 20));
+    }
+
+    @Test
+    public void
+            removePerceivedResolutionChangedListener_doesNotStopSpatialListener() {
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+        @SuppressWarnings("unchecked")
+        Consumer<SpatialVisibility> mockSpatialListener =
+                (Consumer<SpatialVisibility>) mock(Consumer.class);
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockPerceivedResListener =
+                (Consumer<PixelDimensions>) mock(Consumer.class);
+
+        mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockSpatialListener);
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockPerceivedResListener);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        mRuntime.removePerceivedResolutionChangedListener(mockPerceivedResListener);
+        // Spatial listener still active, so callback should remain registered.
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        sendVisibilityState(shadowXrExtensions, SpatialVisibility.WITHIN_FOV, 10, 20);
+        verify(mockSpatialListener).accept(any());
+        verify(mockPerceivedResListener, never()).accept(any());
+    }
+
+    @Test
+    public void
+            removePerceivedResolutionChangedListener_doesNotStopAnotherPerceivedResListener() {
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockListener1 = (Consumer<PixelDimensions>) mock(Consumer.class);
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockListener2 = (Consumer<PixelDimensions>) mock(Consumer.class);
+
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockListener1);
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockListener2);
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        mRuntime.removePerceivedResolutionChangedListener(mockListener1);
+        // mockListener2 still active, so callback should remain registered.
+        assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isTrue();
+
+        sendVisibilityState(shadowXrExtensions, 10, 20);
+        verify(mockListener2).accept(any());
+        verify(mockListener1, never()).accept(any());
+    }
+
+    @Test
+    public void combinedCallback_dispatchesToBothListenersCorrectly() {
+        @SuppressWarnings("unchecked")
+        Consumer<SpatialVisibility> mockSpatialListener =
+                (Consumer<SpatialVisibility>) mock(Consumer.class);
+        @SuppressWarnings("unchecked")
+        Consumer<PixelDimensions> mockPerceivedResListener =
+                (Consumer<PixelDimensions>) mock(Consumer.class);
+
+        mRuntime.setSpatialVisibilityChangedListener(directExecutor(), mockSpatialListener);
+        mRuntime.addPerceivedResolutionChangedListener(directExecutor(), mockPerceivedResListener);
+
+        ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
+        sendVisibilityState(shadowXrExtensions, SpatialVisibility.OUTSIDE_FOV, 30, 40);
+
+        verify(mockSpatialListener)
+                .accept(eq(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV)));
+        verify(mockPerceivedResListener).accept(eq(new PixelDimensions(30, 40)));
+    }
+
+    @Test
+    public void spatialStateChangeHandler_invokedWhenSpatialStateChangesToFSM() {
+        SpatialState spatialState = ShadowSpatialState.create();
+        SpatialModeChangeListener mockSpatialModeChangeListener =
+                mock(SpatialModeChangeListener.class);
+        mRuntime.setSpatialModeChangeListener(mockSpatialModeChangeListener);
+        ShadowSpatialState.extract(spatialState)
+                .setSpatialCapabilities(ShadowSpatialCapabilities.createAll());
+        ShadowSpatialState.extract(spatialState).setSceneParentTransform(new Mat4f(new float[16]));
+        mRuntime.onSpatialStateChanged(spatialState);
+        verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any());
     }
 }

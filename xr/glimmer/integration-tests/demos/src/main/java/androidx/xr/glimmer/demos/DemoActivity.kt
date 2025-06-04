@@ -37,7 +37,7 @@ class DemoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             SystemBarStyle.dark(Color.TRANSPARENT),
-            SystemBarStyle.dark(Color.TRANSPARENT)
+            SystemBarStyle.dark(Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
 
@@ -51,7 +51,7 @@ class DemoActivity : ComponentActivity() {
 
                 DemoApp(
                     currentDemo = navigator.currentDemo,
-                    onNavigateToDemo = { demo -> navigator.navigateTo(demo) }
+                    onNavigateToDemo = { demo -> navigator.navigateTo(demo) },
                 )
             }
     }
@@ -61,7 +61,7 @@ private class Navigator
 private constructor(
     private val backDispatcher: OnBackPressedDispatcher,
     initialDemo: Demo,
-    private val backStack: MutableList<Demo>
+    private val backStack: MutableList<Demo>,
 ) {
     constructor(
         rootDemo: Demo,
@@ -100,10 +100,7 @@ private constructor(
     }
 
     companion object {
-        fun Saver(
-            rootDemo: Demo,
-            backDispatcher: OnBackPressedDispatcher,
-        ): Saver<Navigator, *> =
+        fun Saver(rootDemo: Demo, backDispatcher: OnBackPressedDispatcher): Saver<Navigator, *> =
             listSaver(
                 save = { navigator ->
                     (navigator.backStack + navigator.currentDemo).map { it.title }
@@ -116,7 +113,7 @@ private constructor(
                         }
                     val initial = backStack.removeAt(backStack.lastIndex)
                     Navigator(backDispatcher, initial, backStack)
-                }
+                },
             )
 
         fun findDemo(demo: Demo, title: String): Demo? {

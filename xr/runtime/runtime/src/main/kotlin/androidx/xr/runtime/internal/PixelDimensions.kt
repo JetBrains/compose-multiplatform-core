@@ -22,6 +22,18 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class PixelDimensions(@JvmField public val width: Int, @JvmField public val height: Int) {
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PixelDimensions) return false
+        if (width != other.width || height != other.height) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return 31 * width + height
+    }
+
     override fun toString(): String {
         return super.toString() + ": w $width x h $height"
     }

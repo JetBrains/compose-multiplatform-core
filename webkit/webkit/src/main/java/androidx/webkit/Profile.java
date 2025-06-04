@@ -254,4 +254,29 @@ public interface Profile {
     void setSpeculativeLoadingConfig(@NonNull SpeculativeLoadingConfig
             speculativeLoadingConfig);
 
+    /**
+     * Denotes that the WarmUpRendererProcess API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalWarmUpRendererProcess {
+    }
+
+    /**
+     * Initiates warm-up of the renderer process associated with this Profile.
+     * <p>
+     * If no renderer currently exists for the profile, this will kick off the process of
+     * starting one in the background. This call does not block or guarantee that the
+     * renderer will be fully started by the time it returns.
+     * <p>
+     * This can be used to reduce perceived latency when a renderer is needed shortly after.
+     */
+    @RequiresFeature(name = WebViewFeature.WARM_UP_RENDERER_PROCESS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalWarmUpRendererProcess
+    void warmUpRendererProcess();
+
 }

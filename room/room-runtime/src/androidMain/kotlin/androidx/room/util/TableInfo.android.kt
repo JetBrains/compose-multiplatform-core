@@ -38,7 +38,7 @@ actual constructor(
     @JvmField public actual val name: String,
     @JvmField public actual val columns: Map<String, Column>,
     @JvmField public actual val foreignKeys: Set<ForeignKey>,
-    @JvmField public actual val indices: Set<Index>?
+    @JvmField public actual val indices: Set<Index>?,
 ) {
     /** Identifies from where the info object was created. */
     @Retention(AnnotationRetention.SOURCE)
@@ -50,7 +50,7 @@ actual constructor(
     public constructor(
         name: String,
         columns: Map<String, Column>,
-        foreignKeys: Set<ForeignKey>
+        foreignKeys: Set<ForeignKey>,
     ) : this(name, columns, foreignKeys, emptySet<Index>())
 
     actual override fun equals(other: Any?): Boolean = equalsCommon(other)
@@ -113,7 +113,7 @@ actual constructor(
         @JvmField public actual val notNull: Boolean,
         @JvmField public actual val primaryKeyPosition: Int,
         @JvmField public actual val defaultValue: String?,
-        @CreatedFrom @JvmField public actual val createdFrom: Int
+        @CreatedFrom @JvmField public actual val createdFrom: Int,
     ) {
         /**
          * The column type after it is normalized to one of the basic types according to
@@ -136,7 +136,7 @@ actual constructor(
             name: String,
             type: String,
             notNull: Boolean,
-            primaryKeyPosition: Int
+            primaryKeyPosition: Int,
         ) : this(name, type, notNull, primaryKeyPosition, null, CREATED_FROM_UNKNOWN)
 
         public companion object {
@@ -160,7 +160,7 @@ actual constructor(
         @JvmField public actual val onDelete: String,
         @JvmField public actual val onUpdate: String,
         @JvmField public actual val columnNames: List<String>,
-        @JvmField public actual val referenceColumnNames: List<String>
+        @JvmField public actual val referenceColumnNames: List<String>,
     ) {
         actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 
@@ -176,7 +176,7 @@ actual constructor(
         @JvmField public actual val name: String,
         @JvmField public actual val unique: Boolean,
         @JvmField public actual val columns: List<String>,
-        @JvmField public actual var orders: List<String>
+        @JvmField public actual var orders: List<String>,
     ) {
         init {
             orders = orders.ifEmpty { List(columns.size) { androidx.room.Index.Order.ASC.name } }
@@ -191,12 +191,12 @@ actual constructor(
         public constructor(
             name: String,
             unique: Boolean,
-            columns: List<String>
+            columns: List<String>,
         ) : this(
             name,
             unique,
             columns,
-            List<String>(columns.size) { androidx.room.Index.Order.ASC.name }
+            List<String>(columns.size) { androidx.room.Index.Order.ASC.name },
         )
 
         actual override fun equals(other: Any?): Boolean = equalsCommon(other)

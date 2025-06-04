@@ -24,11 +24,11 @@ import android.view.Surface;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
 import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
-import androidx.camera.core.featurecombination.Feature;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.internal.compat.MediaActionSoundCompat;
@@ -329,6 +329,39 @@ public interface CameraInfo {
     }
 
     /**
+     * Returns an unordered set of the frame rate ranges, in frames per second, supported by this
+     * device's AE algorithm for a specific {@link SessionConfig}.
+     *
+     * <p>These are the frame rate ranges that the AE algorithm on the device can support when a
+     * particular {@link SessionConfig} is applied. This allows for querying supported frame rates
+     * based on the specific configuration of {@link UseCase}s, which might influence the
+     * available ranges.
+     *
+     * <p>When CameraX is configured to run with the camera2 implementation, this list will be
+     * derived from
+     * {@link android.hardware.camera2.CameraCharacteristics#CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES}
+     * , though ranges may be added or removed for compatibility reasons or due to constraints
+     * imposed by the {@link SessionConfig}.
+     *
+     * <p>The returned set of frame rate ranges is guaranteed to be supported with the given
+     * {@link SessionConfig}. An empty set will be returned if the provided {@link SessionConfig}
+     * is invalid.
+     *
+     * <p>The returned set does not have any ordering guarantees and frame rate ranges may overlap.
+     *
+     * @param sessionConfig The {@link SessionConfig} to query supported frame rate ranges for.
+     * @return The set of FPS ranges supported by the device's AE algorithm for the given session
+     * config.
+     * @see androidx.camera.video.VideoCapture.Builder#setTargetFrameRate(Range)
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @ExperimentalSessionConfig
+    default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
+            @NonNull SessionConfig sessionConfig) {
+        return Collections.emptySet();
+    }
+
+    /**
      * Returns if logical multi camera is supported on the device.
      *
      * <p>A logical camera is a grouping of two or more of those physical cameras.
@@ -517,24 +550,19 @@ public interface CameraInfo {
     }
 
     /**
-     * Returns if the combination of provided {@link UseCase} lists and {@link Feature} lists is
+     * Returns if the combination of features set to the provided {@link SessionConfig} is
      * supported.
      *
-     * @param useCases The set of use cases.
-     * @param features The set of features.
+     * @param sessionConfig The {@link SessionConfig} containing some required or preferred
+     *   features.
      * @return Whether a feature combination is supported or not.
      * @throws IllegalArgumentException If some features conflict with each other by having
      *   different values for the same feature type and can thus never be supported together.
      */
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: Expose the API for public release.
     @ExperimentalFeatureCombination
-    default boolean isFeatureCombinationSupported(@NonNull Set<@NonNull UseCase> useCases,
-            @NonNull Set<@NonNull Feature> features) {
-        // TODO: Consider taking something like a UseCaseGroup or SessionConfig of
-        //  FeatureCombination that may accept functionalities like ViewPort, CameraEffect etc too.
-        //  We can just take the whole FeatureCombination as parameter then and add extra listener
-        //  function to know the exact features selected. But this is still TBD.
-
+    default boolean isFeatureCombinationSupported(@NonNull SessionConfig sessionConfig) {
         return false;
     }
 }

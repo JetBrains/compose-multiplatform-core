@@ -52,7 +52,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = -1,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
 
         val formWidgetInfo1 =
@@ -65,7 +65,7 @@ class PdfFormFillingTest {
                 editableText = false,
                 multiLineText = false,
                 maxLength = -1,
-                fontSize = 0f
+                fontSize = 0f,
             )
 
         val formWidgetInfo2 =
@@ -78,7 +78,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = 10,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
 
         val formWidgetInfo3 =
@@ -91,7 +91,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = -1,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
 
         val expectedWidgetInfos =
@@ -110,7 +110,7 @@ class PdfFormFillingTest {
                 readOnly = true,
                 editableText = false,
                 fontSize = 0.0f,
-                listItems = emptyList()
+                listItems = emptyList(),
             )
 
         val combo1Choices: List<ListItem> =
@@ -140,7 +140,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Wolfberry", selected = false),
                 ListItem(label = "Xigua", selected = false),
                 ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false)
+                ListItem(label = "Zucchini", selected = false),
             )
 
         val comboBox1 =
@@ -152,14 +152,14 @@ class PdfFormFillingTest {
                 readOnly = false,
                 editableText = false,
                 fontSize = 0.0f,
-                listItems = combo1Choices
+                listItems = combo1Choices,
             )
 
         val editableChoices =
             listOf(
                 ListItem(label = "Foo", selected = false),
                 ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false)
+                ListItem(label = "Qux", selected = false),
             )
 
         val editableComboBox =
@@ -171,7 +171,7 @@ class PdfFormFillingTest {
                 readOnly = false,
                 editableText = true,
                 fontSize = 12.0f,
-                listItems = editableChoices
+                listItems = editableChoices,
             )
 
         val expectedWidgetInfos = listOf(editableComboBox, comboBox1, readOnlyComboBox)
@@ -187,7 +187,7 @@ class PdfFormFillingTest {
                 widgetRect = Rect(135, 30, 155, 50),
                 textValue = "true",
                 accessibilityLabel = "readOnlyCheckbox",
-                readOnly = true
+                readOnly = true,
             )
 
         val checkBox =
@@ -197,14 +197,14 @@ class PdfFormFillingTest {
                 widgetRect = Rect(135, 70, 155, 90),
                 textValue = "false",
                 accessibilityLabel = "checkbox",
-                readOnly = false
+                readOnly = false,
             )
 
         verifyFormWidgetInfos(
             CLICK_FORM,
             0,
             intArrayOf(FormWidgetInfo.WIDGET_TYPE_CHECKBOX),
-            listOf(readOnlyCheckBox, checkBox)
+            listOf(readOnlyCheckBox, checkBox),
         )
     }
 
@@ -217,7 +217,7 @@ class PdfFormFillingTest {
                 widgetRect = Rect(135, 70, 155, 90),
                 textValue = "false",
                 accessibilityLabel = "checkbox",
-                readOnly = false
+                readOnly = false,
             )
 
         val clickPoint = Point(145, 80)
@@ -230,7 +230,7 @@ class PdfFormFillingTest {
                 widgetRect = Rect(135, 70, 155, 90),
                 textValue = "true",
                 accessibilityLabel = "checkbox",
-                readOnly = false
+                readOnly = false,
             )
 
         verifyApplyEdit(CLICK_FORM, 0, editRec, before, after)
@@ -245,7 +245,7 @@ class PdfFormFillingTest {
                 widgetRect = widgetArea,
                 readOnly = false,
                 textValue = "false",
-                accessibilityLabel = ""
+                accessibilityLabel = "",
             )
         val clickPoint = Point(95, 240)
         val click = FormEditRecord(pageNumber = 0, widgetIndex = 5, clickPoint = clickPoint)
@@ -255,7 +255,7 @@ class PdfFormFillingTest {
                 widgetRect = widgetArea,
                 readOnly = false,
                 textValue = "true",
-                accessibilityLabel = ""
+                accessibilityLabel = "",
             )
         val expectedDirtyArea: List<Rect> = listOf(widgetArea)
         verifyApplyEdit(CLICK_FORM, 0, click, before, after, expectedDirtyArea)
@@ -268,7 +268,7 @@ class PdfFormFillingTest {
             listOf(
                 ListItem(label = "Foo", selected = false),
                 ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false)
+                ListItem(label = "Qux", selected = false),
             )
         val widgetBefore =
             makeComboBox(
@@ -279,7 +279,7 @@ class PdfFormFillingTest {
                 accessibilityLabel = "Combo_Editable",
                 editableText = true,
                 fontSize = 12.0f,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
         val selectBar =
             FormEditRecord(pageNumber = 0, widgetIndex = 0, selectedIndices = intArrayOf(1))
@@ -287,7 +287,7 @@ class PdfFormFillingTest {
             listOf(
                 ListItem(label = "Foo", selected = false),
                 ListItem(label = "Bar", selected = true),
-                ListItem(label = "Qux", selected = false)
+                ListItem(label = "Qux", selected = false),
             )
         val widgetAfter =
             makeComboBox(
@@ -298,7 +298,7 @@ class PdfFormFillingTest {
                 accessibilityLabel = "Combo_Editable",
                 editableText = true,
                 fontSize = 12.0f,
-                listItems = choicesAfter
+                listItems = choicesAfter,
             )
 
         verifyApplyEdit(
@@ -307,7 +307,7 @@ class PdfFormFillingTest {
             selectBar,
             widgetBefore,
             widgetAfter,
-            listOf(comboboxArea)
+            listOf(comboboxArea),
         )
     }
 
@@ -318,7 +318,7 @@ class PdfFormFillingTest {
             listOf(
                 ListItem(label = "Foo", selected = false),
                 ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false)
+                ListItem(label = "Qux", selected = false),
             )
         val widgetBefore =
             makeComboBox(
@@ -329,7 +329,7 @@ class PdfFormFillingTest {
                 accessibilityLabel = "Combo_Editable",
                 editableText = true,
                 fontSize = 12.0f,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
         val setText = FormEditRecord(pageNumber = 0, widgetIndex = 0, text = "Gecko tail")
 
@@ -342,7 +342,7 @@ class PdfFormFillingTest {
                 accessibilityLabel = "Combo_Editable",
                 editableText = true,
                 fontSize = 12.0f,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
 
         verifyApplyEdit(COMBO_BOX_FORM, 0, setText, widgetBefore, widgetAfter, listOf(comboboxArea))
@@ -362,7 +362,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Ontario", selected = false),
                 ListItem(label = "Prince Edward Island", selected = false),
                 ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = true)
+                ListItem(label = "Saskatchewan", selected = true),
             )
         val widgetBefore =
             makeListbox(
@@ -372,7 +372,7 @@ class PdfFormFillingTest {
                 textValue = "Saskatchewan",
                 accessibilityLabel = "Listbox_SingleSelectLastSelected",
                 multiSelect = false,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
         val clearSelection =
             FormEditRecord(pageNumber = 0, widgetIndex = 6, selectedIndices = intArrayOf(0))
@@ -387,7 +387,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Ontario", selected = false),
                 ListItem(label = "Prince Edward Island", selected = false),
                 ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = false)
+                ListItem(label = "Saskatchewan", selected = false),
             )
         val widgetAfter =
             makeListbox(
@@ -397,7 +397,7 @@ class PdfFormFillingTest {
                 textValue = "Alberta",
                 accessibilityLabel = "Listbox_SingleSelectLastSelected",
                 multiSelect = false,
-                listItems = choicesAfter
+                listItems = choicesAfter,
             )
 
         verifyApplyEdit(
@@ -406,7 +406,7 @@ class PdfFormFillingTest {
             clearSelection,
             widgetBefore,
             widgetAfter,
-            listOf(widgetArea)
+            listOf(widgetArea),
         )
     }
 
@@ -423,7 +423,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = -1,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
 
         val setText = FormEditRecord(pageNumber = 0, widgetIndex = 0, text = "Gecko tail")
@@ -438,7 +438,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = -1,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
         val expectedDirtyArea: List<Rect> = listOf(widgetArea)
         verifyApplyEdit(TEXT_FORM, 0, setText, widgetBefore, widgetAfter, expectedDirtyArea)
@@ -474,7 +474,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Wolfberry", selected = false),
                 ListItem(label = "Xigua", selected = false),
                 ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false)
+                ListItem(label = "Zucchini", selected = false),
             )
         val widgetBefore =
             makeListbox(
@@ -484,7 +484,7 @@ class PdfFormFillingTest {
                 textValue = "Banana",
                 accessibilityLabel = "Listbox_MultiSelect",
                 multiSelect = true,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
         val selectMultiple =
             FormEditRecord(pageNumber = 0, widgetIndex = 1, selectedIndices = intArrayOf(1, 2, 3))
@@ -515,7 +515,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Wolfberry", selected = false),
                 ListItem(label = "Xigua", selected = false),
                 ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false)
+                ListItem(label = "Zucchini", selected = false),
             )
         val widgetAfter =
             makeListbox(
@@ -525,7 +525,7 @@ class PdfFormFillingTest {
                 textValue = "Banana",
                 accessibilityLabel = "Listbox_MultiSelect",
                 multiSelect = true,
-                listItems = choicesAfter
+                listItems = choicesAfter,
             )
 
         verifyApplyEdit(
@@ -534,7 +534,7 @@ class PdfFormFillingTest {
             selectMultiple,
             widgetBefore,
             widgetAfter,
-            listOf(widgetArea)
+            listOf(widgetArea),
         )
     }
 
@@ -552,7 +552,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Ontario", selected = false),
                 ListItem(label = "Prince Edward Island", selected = false),
                 ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = true)
+                ListItem(label = "Saskatchewan", selected = true),
             )
         val widgetBefore =
             makeListbox(
@@ -562,7 +562,7 @@ class PdfFormFillingTest {
                 textValue = "Saskatchewan",
                 accessibilityLabel = "Listbox_SingleSelectLastSelected",
                 multiSelect = false,
-                listItems = choicesBefore
+                listItems = choicesBefore,
             )
         val clearSelection =
             FormEditRecord(pageNumber = 0, widgetIndex = 6, selectedIndices = IntArray(0))
@@ -577,7 +577,7 @@ class PdfFormFillingTest {
                 ListItem(label = "Ontario", selected = false),
                 ListItem(label = "Prince Edward Island", selected = false),
                 ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = false)
+                ListItem(label = "Saskatchewan", selected = false),
             )
         val widgetAfter =
             makeListbox(
@@ -587,7 +587,7 @@ class PdfFormFillingTest {
                 textValue = "",
                 accessibilityLabel = "Listbox_SingleSelectLastSelected",
                 multiSelect = false,
-                listItems = choicesAfter
+                listItems = choicesAfter,
             )
 
         verifyApplyEdit(
@@ -596,7 +596,7 @@ class PdfFormFillingTest {
             clearSelection,
             widgetBefore,
             widgetAfter,
-            listOf(widgetArea)
+            listOf(widgetArea),
         )
     }
 
@@ -613,7 +613,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = 10,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
         val clearText = FormEditRecord(pageNumber = 0, widgetIndex = 2, text = "")
         val widgetAfter =
@@ -626,7 +626,7 @@ class PdfFormFillingTest {
                 editableText = true,
                 multiLineText = false,
                 maxLength = 10,
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
 
         verifyApplyEdit(TEXT_FORM, 0, clearText, widgetBefore, widgetAfter, listOf(widgetArea))
@@ -685,7 +685,7 @@ class PdfFormFillingTest {
             FormEditRecord(
                 pageNumber = 0,
                 widgetIndex = 1,
-                selectedIndices = intArrayOf(100, 365, 1436)
+                selectedIndices = intArrayOf(100, 365, 1436),
             )
 
         verifyApplyEditThrowsException(COMBO_BOX_FORM, 0, setBadChoice)
@@ -786,20 +786,20 @@ class PdfFormFillingTest {
         private suspend fun verifyFormWidgetInfos(
             fileName: String,
             pageNum: Int,
-            expectedWidgetInfoList: List<FormWidgetInfo>
+            expectedWidgetInfoList: List<FormWidgetInfo>,
         ) {
             withDocument(fileName) { document ->
                 val actualFormWidgetInfos =
                     document.getPageInfo(
                         pageNum,
-                        PdfDocument.PageInfoFlags.of(INCLUDE_FORM_WIDGET_INFO)
+                        PdfDocument.PageInfoFlags.of(INCLUDE_FORM_WIDGET_INFO),
                     )
                 assertThat(actualFormWidgetInfos.formWidgetInfos)
                     .hasSize(expectedWidgetInfoList.size)
                 for (i in 0..expectedWidgetInfoList.size - 1) {
                     assertEquals(
                         actualFormWidgetInfos.formWidgetInfos!![i],
-                        expectedWidgetInfoList[i]
+                        expectedWidgetInfoList[i],
                     )
                 }
             }
@@ -809,7 +809,7 @@ class PdfFormFillingTest {
             fileName: String,
             pageNum: Int,
             types: IntArray = intArrayOf(),
-            expectedWidgetInfoList: List<FormWidgetInfo>
+            expectedWidgetInfoList: List<FormWidgetInfo>,
         ) {
             withDocument(fileName) { document ->
                 val actualFormWidgetInfos = document.getFormWidgetInfos(pageNum, types)
@@ -826,7 +826,7 @@ class PdfFormFillingTest {
             editRecord: FormEditRecord,
             before: FormWidgetInfo,
             after: FormWidgetInfo,
-            expectedDirtyArea: List<Rect>? = null
+            expectedDirtyArea: List<Rect>? = null,
         ) {
             withDocument(fileName) { document ->
                 val formWidgetInfos =
@@ -852,7 +852,7 @@ class PdfFormFillingTest {
         private suspend fun verifyApplyEditThrowsException(
             fileName: String,
             pageNum: Int,
-            editRecord: FormEditRecord
+            editRecord: FormEditRecord,
         ) {
             withDocument(fileName) { document ->
                 assertThrows(IllegalArgumentException::class.java) {
@@ -869,7 +869,7 @@ class PdfFormFillingTest {
             readOnly: Boolean,
             editableText: Boolean,
             fontSize: Float,
-            listItems: List<ListItem>
+            listItems: List<ListItem>,
         ): FormWidgetInfo {
             return FormWidgetInfo(
                 widgetType = FormWidgetInfo.WIDGET_TYPE_COMBOBOX,
@@ -880,7 +880,7 @@ class PdfFormFillingTest {
                 readOnly = readOnly,
                 editableText = editableText,
                 fontSize = fontSize.takeIf { it > 0 },
-                listItems = listItems
+                listItems = listItems,
             )
         }
 
@@ -889,7 +889,7 @@ class PdfFormFillingTest {
             widgetRect: Rect,
             readOnly: Boolean,
             textValue: String,
-            accessibilityLabel: String
+            accessibilityLabel: String,
         ): FormWidgetInfo {
             return FormWidgetInfo(
                 widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
@@ -897,7 +897,7 @@ class PdfFormFillingTest {
                 widgetRect = widgetRect,
                 textValue = textValue,
                 accessibilityLabel = accessibilityLabel,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
 
@@ -908,7 +908,7 @@ class PdfFormFillingTest {
             textValue: String,
             accessibilityLabel: String,
             multiSelect: Boolean,
-            listItems: List<ListItem>
+            listItems: List<ListItem>,
         ): FormWidgetInfo {
             return FormWidgetInfo(
                 widgetType = FormWidgetInfo.WIDGET_TYPE_LISTBOX,
@@ -918,7 +918,7 @@ class PdfFormFillingTest {
                 accessibilityLabel = accessibilityLabel,
                 readOnly = readOnly,
                 multiSelect = multiSelect,
-                listItems = listItems
+                listItems = listItems,
             )
         }
 
@@ -931,7 +931,7 @@ class PdfFormFillingTest {
             editableText: Boolean,
             multiLineText: Boolean,
             maxLength: Int,
-            fontSize: Float
+            fontSize: Float,
         ): FormWidgetInfo {
             return FormWidgetInfo(
                 widgetType = FormWidgetInfo.WIDGET_TYPE_TEXTFIELD,
@@ -943,7 +943,7 @@ class PdfFormFillingTest {
                 editableText = editableText,
                 multiLineText = multiLineText,
                 maxLength = maxLength.takeIf { it >= 0 }, // Only include if > 0
-                fontSize = fontSize.takeIf { it > 0 } // Only include if > 0
+                fontSize = fontSize.takeIf { it > 0 }, // Only include if > 0
             )
         }
     }

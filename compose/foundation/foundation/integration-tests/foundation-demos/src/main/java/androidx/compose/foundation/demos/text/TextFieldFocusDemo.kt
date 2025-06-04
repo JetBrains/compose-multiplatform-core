@@ -183,7 +183,7 @@ private fun DemoTextField(initText: String, multiLine: Boolean, startWithFocus: 
 private data class KeyState(
     val keyEvent: KeyEvent,
     val downTime: Long = System.nanoTime(),
-    val isUp: Boolean = false
+    val isUp: Boolean = false,
 )
 
 @Composable

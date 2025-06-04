@@ -69,7 +69,7 @@ class RoomKmpGradlePluginTest {
             |  }
             |
             |  compilerOptions {
-            |    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+            |    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0
             |  }
             |}
             |
@@ -114,7 +114,7 @@ class RoomKmpGradlePluginTest {
                 CLEAN_TASK,
                 ANDROID_COMPILE_TASK,
                 NATIVE_COMPILE_TASK,
-                projectDir = projectSetup.rootDir
+                projectDir = projectSetup.rootDir,
             )
             .let { result ->
                 result.assertTaskOutcome(ANDROID_COMPILE_TASK, TaskOutcome.SUCCESS)
@@ -181,7 +181,7 @@ class RoomKmpGradlePluginTest {
                 @Query("SELECT * FROM NativeEntity")
                 fun blockingQuery(): NativeEntity
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)
@@ -207,7 +207,7 @@ class RoomKmpGradlePluginTest {
                 @Insert
                 fun blockingInsert(entity: NativeEntity)
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)
@@ -233,7 +233,7 @@ class RoomKmpGradlePluginTest {
                 @Transaction
                 fun blockingTransaction() { }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)

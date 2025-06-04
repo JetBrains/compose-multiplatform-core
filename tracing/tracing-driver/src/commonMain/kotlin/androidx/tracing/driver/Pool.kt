@@ -26,7 +26,7 @@ package androidx.tracing.driver
 internal class Pool<T>(
     private val size: Int,
     private val isDebug: Boolean,
-    private val factory: (owner: Pool<T>) -> T
+    private val factory: (owner: Pool<T>) -> T,
 ) {
     private var counter: AtomicLong? = null
 

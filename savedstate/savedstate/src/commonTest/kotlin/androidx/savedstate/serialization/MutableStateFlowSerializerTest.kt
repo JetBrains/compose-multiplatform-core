@@ -104,7 +104,7 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
                     serializersModule = SerializersModule {
                         contextual(User::class, serializer<User>())
                     }
-                }
+                },
         )
     }
 
@@ -138,7 +138,7 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
                 checkEncoded = {
                     assertThat(size()).isEqualTo(1)
                     assertThat(getString("")).isEqualTo("foo")
-                }
+                },
             )
     }
 
@@ -157,26 +157,26 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
                 checkEncoded = {
                     assertThat(size()).isEqualTo(1)
                     assertThat(getString("bar")).isEqualTo("foo")
-                }
+                },
             )
     }
 
     private inline fun <reified T : Any> testEncodeDecode(
         mutableState: MutableStateFlow<T>,
         serializer: KSerializer<MutableStateFlow<T>> = MutableStateFlowSerializer<T>(),
-        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
+        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
     ) {
         val encoded =
             encodeToSavedState(
                 serializer = serializer,
                 configuration = configuration,
-                value = mutableState
+                value = mutableState,
             )
         val decoded =
             decodeFromSavedState<MutableStateFlow<T>>(
                 deserializer = serializer,
                 configuration = configuration,
-                savedState = encoded
+                savedState = encoded,
             )
         assertThat(decoded.value).isEqualTo(mutableState.value)
     }
@@ -192,7 +192,7 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
     @Serializable
     private enum class MyEnum {
         A,
-        B
+        B,
     }
 
     @Serializable

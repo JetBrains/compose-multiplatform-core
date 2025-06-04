@@ -25,7 +25,7 @@ import androidx.room.PrimaryKey
 @Entity
 data class Preference(
     @ColumnInfo(name = "key") @PrimaryKey val key: String,
-    @ColumnInfo(name = "long_value") val value: Long?
+    @ColumnInfo(name = "long_value") val value: Long?,
 ) {
     constructor(key: String, value: Boolean) : this(key, if (value) 1L else 0L)
 }

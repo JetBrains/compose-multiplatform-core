@@ -71,7 +71,7 @@ internal class CredentialProviderFactory(val context: Context) {
      */
     fun getBestAvailableProvider(
         request: Any,
-        shouldFallbackToPreU: Boolean = true
+        shouldFallbackToPreU: Boolean = true,
     ): CredentialProvider? {
         if (request is CreateRestoreCredentialRequest || request == TYPE_CLEAR_RESTORE_CREDENTIAL) {
             return tryCreateClosedSourceProviderFromManifest()
@@ -154,7 +154,7 @@ internal class CredentialProviderFactory(val context: Context) {
 
     private fun instantiatePreUProvider(
         classNames: List<String>,
-        context: Context
+        context: Context,
     ): CredentialProvider? {
         var provider: CredentialProvider? = null
         for (className in classNames) {
@@ -180,7 +180,7 @@ internal class CredentialProviderFactory(val context: Context) {
         val packageInfo =
             context.packageManager.getPackageInfo(
                 context.packageName,
-                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES,
             )
 
         val classNames = mutableListOf<String>()

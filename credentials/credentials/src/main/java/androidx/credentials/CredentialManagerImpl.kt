@@ -175,7 +175,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             pendingGetCredentialHandle,
             cancellationSignal,
             executor,
-            callback
+            callback,
         )
     }
 

@@ -86,7 +86,7 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
         file: F = testFile,
         scope: CoroutineScope = dataStoreScope,
         initTasksList: List<suspend (api: InitializerApi<Byte>) -> Unit> = listOf(),
-        corruptionHandler: CorruptionHandler<Byte> = NoOpCorruptionHandler<Byte>()
+        corruptionHandler: CorruptionHandler<Byte> = NoOpCorruptionHandler<Byte>(),
     ): DataStore<Byte> {
         return DataStoreImpl(
             storage =
@@ -95,15 +95,15 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
                     {
                         MultiProcessCoordinator(
                             dataStoreScope.coroutineContext,
-                            getJavaFile(testFile)
+                            getJavaFile(testFile),
                         )
-                    }
+                    },
                 ) {
                     file
                 },
             scope = scope,
             initTasksList = initTasksList,
-            corruptionHandler = corruptionHandler
+            corruptionHandler = corruptionHandler,
         )
     }
 
@@ -117,7 +117,7 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
             testIO.getStore(
                 serializerConfig,
                 dataStoreScope,
-                { MultiProcessCoordinator(dataStoreScope.coroutineContext, getJavaFile(testFile)) }
+                { MultiProcessCoordinator(dataStoreScope.coroutineContext, getJavaFile(testFile)) },
             ) {
                 testFile
             }
@@ -266,10 +266,10 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
                 {
                     MultiProcessCoordinator(
                         dataStoreScope.coroutineContext,
-                        getJavaFile(fileProducer())
+                        getJavaFile(fileProducer()),
                     )
                 },
-                fileProducer
+                fileProducer,
             )
 
         assertThrows<IOException> { newStore.data.first() }
@@ -754,7 +754,7 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
                 newDataStore(
                     corruptionHandler = testingHandler,
                     file = testFile,
-                    scope = backgroundScope
+                    scope = backgroundScope,
                 )
 
             assertThat(newStore.data.first()).isEqualTo(10)
@@ -767,7 +767,7 @@ abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
             testIO.getStore(
                 TestingSerializerConfig(defaultValue = 99),
                 dataStoreScope,
-                { MultiProcessCoordinator(dataStoreScope.coroutineContext, getJavaFile(testFile)) }
+                { MultiProcessCoordinator(dataStoreScope.coroutineContext, getJavaFile(testFile)) },
             ) {
                 testFile
             }

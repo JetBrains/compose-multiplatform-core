@@ -40,7 +40,7 @@ open class DelegatingWorkerFactory : WorkerFactory() {
     final override fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters
+        workerParameters: WorkerParameters,
     ): ListenableWorker? {
         // If none of the delegates can instantiate a ListenableWorker return null
         // so we can fallback to the default factory which is based on reflection.

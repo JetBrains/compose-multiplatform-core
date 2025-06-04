@@ -112,7 +112,7 @@ class Draggable2DTest {
         setDraggable2DContent {
             Modifier.draggable2D(
                 onDragStarted = { startTrigger += 1 },
-                onDragStopped = { stopTrigger += 1 }
+                onDragStopped = { stopTrigger += 1 },
             ) {}
         }
         rule.runOnIdle {
@@ -188,7 +188,7 @@ class Draggable2DTest {
             if (total.x < 20f) {
                 Modifier.draggable2D(
                     onDragStopped = { dragStopped += 1 },
-                    startDragImmediately = true
+                    startDragImmediately = true,
                 ) {
                     total += it
                 }
@@ -214,7 +214,7 @@ class Draggable2DTest {
             Modifier.draggable2D(
                 onDragStopped = { dragStopped += 1 },
                 onDragStarted = { dragStarted += 1 },
-                startDragImmediately = true
+                startDragImmediately = true,
             ) {
                 total += it
             }
@@ -251,7 +251,7 @@ class Draggable2DTest {
             Modifier.draggable2D(
                 onDragStopped = { dragStopped += 1 },
                 enabled = enabled,
-                onDrag = {}
+                onDrag = {},
             )
         }
         rule.onNodeWithTag(draggable2DBoxTag).performTouchInput {
@@ -273,7 +273,7 @@ class Draggable2DTest {
             Modifier.draggable2D(
                 onDragStopped = { dragStopped += 1 },
                 onDrag = {},
-                reverseDirection = reverseDirection
+                reverseDirection = reverseDirection,
             )
         }
         rule.onNodeWithTag(draggable2DBoxTag).performTouchInput {
@@ -296,7 +296,7 @@ class Draggable2DTest {
             touchSlop = LocalViewConfiguration.current.touchSlop
             Modifier.draggable2D(
                 onDrag = { total += it },
-                startDragImmediately = startDragImmediately
+                startDragImmediately = startDragImmediately,
             )
         }
         val delta = touchSlop!! / 2f
@@ -420,7 +420,7 @@ class Draggable2DTest {
                     modifier =
                         Modifier.testTag(draggable2DBoxTag).size(300.dp).draggable2D {
                             outerDrag += it
-                        }
+                        },
                 ) {
                     Box(
                         modifier =
@@ -454,7 +454,7 @@ class Draggable2DTest {
                             Orientation.Horizontal
                         ) {
                             outerDrag += it
-                        }
+                        },
                 ) {
                     Box(
                         modifier =
@@ -571,7 +571,7 @@ class Draggable2DTest {
             scope = rememberCoroutineScope()
             Modifier.draggable2D(
                 enabled = enabledState.value,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             ) {}
         }
 
@@ -629,7 +629,7 @@ class Draggable2DTest {
             this.swipeWithVelocity(
                 start = this.topLeft,
                 end = this.bottomRight,
-                endVelocity = 2000f
+                endVelocity = 2000f,
             )
         }
         rule.runOnIdle { assertThat(latestVelocity).isEqualTo(Velocity(maxVelocity, maxVelocity)) }
@@ -723,7 +723,7 @@ class Draggable2DTest {
         setDraggable2DContent {
             Modifier.draggable2D(
                 state = rememberDraggable2DState {},
-                onDragStopped = { velocity -> flingVelocity = velocity }
+                onDragStopped = { velocity -> flingVelocity = velocity },
             )
         }
         // Drag, stop and release. The resulting velocity should be zero because we lost the
@@ -755,7 +755,7 @@ class Draggable2DTest {
                             onDragStopped = { _ ->
                                 runningJob =
                                     scope.launch { delay(10_000L) } // long running operation
-                            }
+                            },
                         )
             )
         }
@@ -791,7 +791,7 @@ class Draggable2DTest {
                             enabled = true,
                             state = rememberDraggable2DState {},
                             onDragStarted = { offset -> onDragStartedOffset = offset },
-                            startDragImmediately = false
+                            startDragImmediately = false,
                         )
             )
         }
@@ -864,7 +864,7 @@ class Draggable2DTest {
         startDragImmediately: Boolean = false,
         onDragStarted: (startedPosition: Offset) -> Unit = {},
         onDragStopped: (velocity: Velocity) -> Unit = {},
-        onDrag: (Offset) -> Unit
+        onDrag: (Offset) -> Unit,
     ): Modifier = composed {
         val state = rememberDraggable2DState(onDrag)
         draggable2D(
@@ -874,7 +874,7 @@ class Draggable2DTest {
             startDragImmediately = startDragImmediately,
             onDragStarted = onDragStarted,
             onDragStopped = onDragStopped,
-            state = state
+            state = state,
         )
     }
 
@@ -886,7 +886,7 @@ class Draggable2DTest {
         startDragImmediately: Boolean = false,
         onDragStarted: (startedPosition: Offset) -> Unit = {},
         onDragStopped: (velocity: Float) -> Unit = {},
-        onDrag: (Float) -> Unit
+        onDrag: (Float) -> Unit,
     ): Modifier = composed {
         val state = rememberDraggableState(onDrag)
         draggable(
@@ -897,7 +897,7 @@ class Draggable2DTest {
             startDragImmediately = startDragImmediately,
             onDragStarted = { onDragStarted(it) },
             onDragStopped = { onDragStopped(it) },
-            state = state
+            state = state,
         )
     }
 }

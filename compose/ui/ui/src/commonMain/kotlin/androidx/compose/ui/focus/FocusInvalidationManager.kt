@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.focus
 
-import androidx.collection.MutableScatterSet
 import androidx.collection.mutableScatterSetOf
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -24,6 +23,7 @@ import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
 import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitSelfAndChildren
 import androidx.compose.ui.util.fastForEach
@@ -34,10 +34,8 @@ import androidx.compose.ui.util.fastForEach
  * when nodes are scheduled for invalidation.
  */
 internal class FocusInvalidationManager(
-    private val onRequestApplyChangesListener: (() -> Unit) -> Unit,
-    private val invalidateOwnerFocusState: () -> Unit,
-    private val rootFocusStateFetcher: () -> FocusState,
-    private val activeFocusTargetNodeFetcher: () -> FocusTargetNode?
+    private val focusOwner: FocusOwner,
+    private val owner: Owner,
 ) {
     private val focusTargetNodes = mutableScatterSetOf<FocusTargetNode>()
     private val focusEventNodes = mutableScatterSetOf<FocusEventModifierNode>()
@@ -50,7 +48,7 @@ internal class FocusInvalidationManager(
 
     fun scheduleInvalidation(node: FocusTargetNode) {
         if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled) {
-            focusTargetNodes.scheduleInvalidation(node)
+            if (focusTargetNodes.add(node)) scheduleInvalidation()
         } else {
             focusTargetNodesLegacy.scheduleInvalidationLegacy(node)
         }
@@ -58,7 +56,7 @@ internal class FocusInvalidationManager(
 
     fun scheduleInvalidation(node: FocusEventModifierNode) {
         if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled) {
-            focusEventNodes.scheduleInvalidation(node)
+            if (focusEventNodes.add(node)) scheduleInvalidation()
         } else {
             focusEventNodesLegacy.scheduleInvalidationLegacy(node)
         }
@@ -68,8 +66,11 @@ internal class FocusInvalidationManager(
         focusPropertiesNodesLegacy.scheduleInvalidationLegacy(node)
     }
 
-    fun scheduleInvalidationForOwner() {
-        setUpOnRequestApplyChangesListener()
+    fun scheduleInvalidation() {
+        if (!isInvalidationScheduled) {
+            owner.registerOnEndApplyChangesListener(::invalidateNodes)
+            isInvalidationScheduled = true
+        }
     }
 
     fun hasPendingInvalidation(): Boolean {
@@ -82,19 +83,6 @@ internal class FocusInvalidationManager(
         }
     }
 
-    private fun <T> MutableScatterSet<T>.scheduleInvalidation(node: T) {
-        if (add(node)) {
-            setUpOnRequestApplyChangesListener()
-        }
-    }
-
-    private fun setUpOnRequestApplyChangesListener() {
-        if (!isInvalidationScheduled) {
-            onRequestApplyChangesListener.invoke(::invalidateNodes)
-            isInvalidationScheduled = true
-        }
-    }
-
     private fun <T> MutableList<T>.scheduleInvalidationLegacy(node: T) {
         if (add(node)) {
             // If this is the first node scheduled for invalidation,
@@ -104,7 +92,7 @@ internal class FocusInvalidationManager(
                     focusEventNodesLegacy.size +
                     focusPropertiesNodesLegacy.size == 1
             ) {
-                onRequestApplyChangesListener.invoke(::invalidateNodes)
+                owner.registerOnEndApplyChangesListener(::invalidateNodes)
             }
         }
     }
@@ -118,7 +106,7 @@ internal class FocusInvalidationManager(
     }
 
     private fun invalidateNodesOptimized() {
-        val activeFocusTargetNode = activeFocusTargetNodeFetcher()
+        val activeFocusTargetNode = focusOwner.activeFocusTargetNode
         if (activeFocusTargetNode == null) {
             // If there is no active focus node, dispatch the Inactive state to event nodes.
             focusEventNodes.forEach { it.onFocusEvent(Inactive) }
@@ -131,7 +119,7 @@ internal class FocusInvalidationManager(
             var traversedFocusTargetCount = 0
             activeFocusTargetNode.visitAncestors(
                 Nodes.FocusTarget or Nodes.FocusEvent,
-                includeSelf = true
+                includeSelf = true,
             ) {
                 // Keep track of whether we traversed past the first target node ancestor of the
                 // active focus target node, so that all the subsequent event nodes are sent the
@@ -168,7 +156,7 @@ internal class FocusInvalidationManager(
     }
 
     private fun invalidateNodesLegacy() {
-        if (!rootFocusStateFetcher().hasFocus) {
+        if (!focusOwner.rootState.hasFocus) {
             // If root doesn't have focus, skip full invalidation and default to the Inactive state.
             focusEventNodesLegacy.fastForEach { it.onFocusEvent(Inactive) }
             focusTargetNodesLegacy.fastForEach { node ->
@@ -270,5 +258,20 @@ internal class FocusInvalidationManager(
         }
         checkPrecondition(focusEventNodesLegacy.isEmpty()) { "Unprocessed FocusEvent nodes" }
         checkPrecondition(focusTargetNodesLegacy.isEmpty()) { "Unprocessed FocusTarget nodes" }
+    }
+
+    /**
+     * At the end of the invalidations, we need to ensure that the focus system is in a valid state.
+     */
+    private fun invalidateOwnerFocusState() {
+        // If an active item is removed, we currently clear focus from the hierarchy. We don't
+        // clear focus from the root because that could cause initial focus logic to be re-run.
+        // Now that all the invalidations are complete, we run owner.clearFocus() if needed.
+        if (
+            (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled &&
+                focusOwner.activeFocusTargetNode == null) || focusOwner.rootState == Inactive
+        ) {
+            focusOwner.clearOwnerFocus()
+        }
     }
 }

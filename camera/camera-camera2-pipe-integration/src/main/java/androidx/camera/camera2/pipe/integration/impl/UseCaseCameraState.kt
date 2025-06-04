@@ -142,7 +142,7 @@ constructor(
                 streams,
                 template,
                 listeners,
-                sessionConfig
+                sessionConfig,
             )
 
             if (updateSignal == null) {
@@ -168,7 +168,7 @@ constructor(
         appendInternalParameters: Boolean = true,
         streams: Set<StreamId>? = null,
         template: RequestTemplate? = null,
-        listeners: Set<Request.Listener>? = null
+        listeners: Set<Request.Listener>? = null,
     ) {
         synchronized(lock) {
             // See updateAsync for details.
@@ -179,7 +179,7 @@ constructor(
                 appendInternalParameters,
                 streams,
                 template,
-                listeners
+                listeners,
             )
             if (updating) {
                 return
@@ -290,7 +290,7 @@ constructor(
                                     listeners =
                                         currentListeners.toMutableList().also { listeners ->
                                             listeners.add(requestListener)
-                                        }
+                                        },
                                 )
                             }
                         result = updateSignal
@@ -411,7 +411,7 @@ constructor(
     @Suppress("UNCHECKED_CAST")
     private fun <T> Camera2ImplConfig.Builder.setCaptureRequestOptionWithType(
         key: CaptureRequest.Key<T>,
-        value: Any
+        value: Any,
     ) {
         setCaptureRequestOption(key, value as T)
     }
@@ -441,7 +441,7 @@ constructor(
 
         private fun completeExceptionally(
             requestMetadata: RequestMetadata,
-            requestFailure: RequestFailure? = null
+            requestFailure: RequestFailure? = null,
         ) {
             threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 requestMetadata[USE_CASE_CAMERA_STATE_CUSTOM_TAG]?.let { requestNo ->
@@ -453,7 +453,7 @@ constructor(
                                     (requestFailure?.reason?.let {
                                         " with CaptureFailure.reason = $it"
                                     } ?: "")
-                            )
+                            ),
                         )
                     }
                 }
@@ -469,7 +469,7 @@ constructor(
 
         private fun ArrayDeque<RequestSignal>.completeExceptionally(
             requestNo: Int,
-            throwable: Throwable
+            throwable: Throwable,
         ) {
             while (isNotEmpty() && first().requestNo <= requestNo) {
                 first().signal.completeExceptionally(throwable)

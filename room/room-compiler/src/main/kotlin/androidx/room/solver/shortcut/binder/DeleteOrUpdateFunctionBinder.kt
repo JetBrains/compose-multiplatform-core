@@ -40,6 +40,6 @@ abstract class DeleteOrUpdateFunctionBinder(val adapter: DeleteOrUpdateFunctionA
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, XTypeSpec>>,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     )
 }

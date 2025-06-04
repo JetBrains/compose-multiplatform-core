@@ -43,7 +43,7 @@ class TextTest {
                     text = TEXT,
                     color = COLOR.argb,
                     typography = Typography.TITLE_MEDIUM,
-                    settings = listOf(roundness)
+                    settings = listOf(roundness),
                 )
             }
         val provider = LayoutElementAssertionsProvider(text)

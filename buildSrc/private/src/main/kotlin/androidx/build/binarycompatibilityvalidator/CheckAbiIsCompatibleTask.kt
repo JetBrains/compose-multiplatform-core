@@ -123,7 +123,7 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
                 previousDump,
                 parameters.baseline.get().asFile.takeIf { it.exists() },
                 validate = true,
-                shouldFreeze = parameters.shouldFreeze.get()
+                shouldFreeze = parameters.shouldFreeze.get(),
             )
         } catch (e: ValidationException) {
             if (parameters.shouldFreeze.get()) {
@@ -131,7 +131,7 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
                     frozenApiErrorMessage(
                         parameters.referenceVersion.get(),
                         previousApiDump = File(parameters.previousApiPath.get()),
-                        currentApiDump = File(parameters.currentApiPath.get())
+                        currentApiDump = File(parameters.currentApiPath.get()),
                     )
                 )
             }
@@ -148,7 +148,7 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
     private fun frozenApiErrorMessage(
         referenceVersion: String,
         previousApiDump: File,
-        currentApiDump: File
+        currentApiDump: File,
     ) =
         "The API surface was finalized in $referenceVersion. Revert the changes unless you have " +
             "permission from Android API Council. " +

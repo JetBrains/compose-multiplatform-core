@@ -48,13 +48,10 @@ internal class CameraFactoryAdapter(
     threadConfig: CameraThreadConfig,
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
     availableCamerasSelector: CameraSelector?,
-    private val streamSpecsCalculator: StreamSpecsCalculator
+    private val streamSpecsCalculator: StreamSpecsCalculator,
 ) : CameraFactory {
     private val cameraCoordinator: CameraCoordinatorAdapter =
-        CameraCoordinatorAdapter(
-            lazyCameraPipe.value,
-            lazyCameraPipe.value.cameras(),
-        )
+        CameraCoordinatorAdapter(lazyCameraPipe.value, lazyCameraPipe.value.cameras())
     private val appComponent: CameraAppComponent by lazy {
         Debug.traceStart { "CameraFactoryAdapter#appComponent" }
         val timeSource = SystemTimeSource()
@@ -67,7 +64,7 @@ internal class CameraFactoryAdapter(
                         threadConfig,
                         lazyCameraPipe.value,
                         camera2InteropCallbacks,
-                        cameraCoordinator
+                        cameraCoordinator,
                     )
                 )
                 .build()
@@ -86,7 +83,7 @@ internal class CameraFactoryAdapter(
             LinkedHashSet(
                 CameraCompatibilityFilter.getBackwardCompatibleCameraIds(
                     appComponent.getCameraDevices(),
-                    optimizedCameraIds
+                    optimizedCameraIds,
                 )
             )
     }

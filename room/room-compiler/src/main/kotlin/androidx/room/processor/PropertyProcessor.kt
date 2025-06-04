@@ -33,7 +33,7 @@ class PropertyProcessor(
     val bindingScope: BindingScope,
     val propertyParent:
         EmbeddedProperty?, // pass only if this is processed as a child of Embedded property
-    val onBindingError: (property: Property, errorMsg: String) -> Unit
+    val onBindingError: (property: Property, errorMsg: String) -> Unit,
 ) {
     val context = baseContext.fork(element)
 
@@ -65,14 +65,14 @@ class PropertyProcessor(
         context.checker.notUnbound(
             member,
             element,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_ENTITY_PROPERTIES
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_ENTITY_PROPERTIES,
         )
 
         val adapter =
             context.typeAdapterStore.findColumnTypeAdapter(
                 member,
                 affinity,
-                skipDefaultConverter = false
+                skipDefaultConverter = false,
             )
         val adapterAffinity = adapter?.typeAffinity ?: affinity
         val nonNull = Property.calcNonNull(member, propertyParent)
@@ -89,11 +89,11 @@ class PropertyProcessor(
                     extractDefaultValue(
                         columnInfoAnnotation?.get("defaultValue")?.asString(),
                         adapterAffinity,
-                        nonNull
+                        nonNull,
                     ),
                 parent = propertyParent,
                 indexed = columnInfoAnnotation?.get("index")?.asBoolean() == true,
-                nonNull = nonNull
+                nonNull = nonNull,
             )
 
         // TODO(b/273592453): Figure out a way to detect value classes in KAPT and guard against it.
@@ -117,7 +117,7 @@ class PropertyProcessor(
                 property.statementBinder =
                     context.typeAdapterStore.findStatementValueBinder(
                         property.type,
-                        property.affinity
+                        property.affinity,
                     )
                 if (property.statementBinder == null) {
                     onBindingError(property, ProcessorErrors.CANNOT_FIND_STMT_BINDER)
@@ -127,7 +127,7 @@ class PropertyProcessor(
                 property.statementValueReader =
                     context.typeAdapterStore.findStatementValueReader(
                         property.type,
-                        property.affinity
+                        property.affinity,
                     )
                 if (property.statementValueReader == null) {
                     onBindingError(property, ProcessorErrors.CANNOT_FIND_STMT_READER)
@@ -141,7 +141,7 @@ class PropertyProcessor(
     private fun extractDefaultValue(
         value: String?,
         affinity: SQLTypeAffinity?,
-        propertyNonNull: Boolean
+        propertyNonNull: Boolean,
     ): String? {
         if (value == null) {
             return null
@@ -173,7 +173,7 @@ class PropertyProcessor(
     enum class BindingScope {
         TWO_WAY, // both bind and read.
         BIND_TO_STMT, // just value to statement
-        READ_FROM_STMT // just statement to value
+        READ_FROM_STMT, // just statement to value
     }
 }
 

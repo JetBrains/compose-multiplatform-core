@@ -57,20 +57,20 @@ class FormFillingBenchmark(private var talkbackEnabled: Boolean, private val typ
                 listOf(
                     TraceSectionMetric(
                         sectionName = CREATE_ANI_TRACE,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = ACCESSIBILITY_EVENT_TRACE,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             iterations = 10,
             setupBlock = {
@@ -94,7 +94,7 @@ class FormFillingBenchmark(private var talkbackEnabled: Boolean, private val typ
                 // to be sent, for talkback to assign focus, and finally for talkback to trigger
                 // createAccessibilityNodeInfo calls which is the thing we want to measure.
                 performScrollAndWait(millis = 10_000)
-            }
+            },
         )
     }
 
@@ -108,12 +108,12 @@ class FormFillingBenchmark(private var talkbackEnabled: Boolean, private val typ
                     FrameTimingMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             iterations = 10,
             setupBlock = {
@@ -138,7 +138,7 @@ class FormFillingBenchmark(private var talkbackEnabled: Boolean, private val typ
                 // every frame deadline of 20ms.
                 repeat(100) { performScrollAndWait(millis = 20) }
                 Thread.sleep(10_000)
-            }
+            },
         )
     }
 

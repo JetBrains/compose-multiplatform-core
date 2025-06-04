@@ -240,7 +240,7 @@ internal class RoomSupportSQLiteDatabase(roomDatabase: RoomDatabase) : SupportSQ
         conflictAlgorithm: Int,
         values: ContentValues,
         whereClause: String?,
-        whereArgs: Array<out Any?>?
+        whereArgs: Array<out Any?>?,
     ): Int {
         val valuesSize = values.size()
         require(valuesSize > 0) { "Empty values" }

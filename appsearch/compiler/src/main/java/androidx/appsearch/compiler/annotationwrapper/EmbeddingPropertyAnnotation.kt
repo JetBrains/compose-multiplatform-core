@@ -36,7 +36,7 @@ data class EmbeddingPropertyAnnotation(
         configClassName = CONFIG_CLASS,
         genericDocGetterName = "getPropertyEmbedding",
         genericDocArrayGetterName = "getPropertyEmbeddingArray",
-        genericDocSetterName = "setPropertyEmbedding"
+        genericDocSetterName = "setPropertyEmbedding",
     ) {
     companion object {
         val CLASS_NAME: ClassName =
@@ -54,7 +54,7 @@ data class EmbeddingPropertyAnnotation(
         @Throws(ProcessingException::class)
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): EmbeddingPropertyAnnotation {
             val name = annotationParams["name"] as? String
             return EmbeddingPropertyAnnotation(

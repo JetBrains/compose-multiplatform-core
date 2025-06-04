@@ -38,7 +38,7 @@ class PagingTest(private val driver: SQLiteDriver) : BasePagingTest() {
     override fun getRoomDatabase(): SampleDatabase {
         return Room.databaseBuilder<SampleDatabase>(
                 context = instrumentation.targetContext,
-                name = file.path
+                name = file.path,
             )
             .setDriver(driver)
             .setQueryCoroutineContext(Dispatchers.IO)

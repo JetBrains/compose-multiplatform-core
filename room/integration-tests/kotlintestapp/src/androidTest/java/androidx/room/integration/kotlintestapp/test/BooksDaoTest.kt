@@ -87,7 +87,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId),
-            `is`<java.util.Optional<Book>>(java.util.Optional.of(TestUtil.BOOK_1))
+            `is`<java.util.Optional<Book>>(java.util.Optional.of(TestUtil.BOOK_1)),
         )
     }
 
@@ -96,7 +96,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     fun bookByIdJavaOptionalEmpty() {
         assertThat(
             booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId),
-            `is`<java.util.Optional<Book>>(java.util.Optional.empty())
+            `is`<java.util.Optional<Book>>(java.util.Optional.empty()),
         )
     }
 
@@ -108,7 +108,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             booksDao.getBookListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Book>(TestUtil.BOOK_1)
+            `is`<Book>(TestUtil.BOOK_1),
         )
     }
 
@@ -120,7 +120,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             booksDao.getBookOptional(TestUtil.BOOK_1.bookId),
-            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1))
+            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1)),
         )
     }
 
@@ -132,7 +132,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1))
+            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1)),
         )
     }
 
@@ -140,7 +140,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     fun bookByIdOptionalListenableFutureAbsent() {
         assertThat(
             booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Optional<Book>>(Optional.absent())
+            `is`<Optional<Book>>(Optional.absent()),
         )
     }
 
@@ -148,7 +148,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     fun bookByIdOptionalAbsent() {
         assertThat(
             booksDao.getBookOptional(TestUtil.BOOK_1.bookId),
-            `is`<Optional<Book>>(Optional.absent())
+            `is`<Optional<Book>>(Optional.absent()),
         )
     }
 
@@ -195,7 +195,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             database.booksDao().getBooksWithPublisher(),
-            `is`<List<BookWithPublisher>>(expectedList)
+            `is`<List<BookWithPublisher>>(expectedList),
         )
     }
 
@@ -212,7 +212,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             database.booksDao().getBooksWithPublisherListenableFuture().get(),
-            `is`<List<BookWithPublisher>>(expectedList)
+            `is`<List<BookWithPublisher>>(expectedList),
         )
     }
 
@@ -257,7 +257,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         assertThat(actualPublisherWithBooks.publisher, `is`<Publisher>(TestUtil.PUBLISHER))
         assertThat(
             actualPublisherWithBooks.sales,
-            `is`(listOf(TestUtil.BOOK_1.salesCnt, TestUtil.BOOK_2.salesCnt))
+            `is`(listOf(TestUtil.BOOK_1.salesCnt, TestUtil.BOOK_2.salesCnt)),
         )
     }
 
@@ -318,7 +318,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         assertThat(
             booksDao.findByLanguages(setOf(Lang.EN, Lang.TR)),
-            `is`(listOf(book1, book2, book3))
+            `is`(listOf(book1, book2, book3)),
         )
 
         assertThat(booksDao.findByLanguages(setOf(Lang.TR)), `is`(listOf(book1, book2)))
@@ -413,7 +413,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
                 booksDao.addAuthorPublisherBooks(
                     author = TestUtil.AUTHOR_1,
                     publisher = TestUtil.PUBLISHER,
-                    books = arrayOf(TestUtil.BOOK_1, TestUtil.BOOK_1)
+                    books = arrayOf(TestUtil.BOOK_1, TestUtil.BOOK_1),
                 )
                 fail("addAuthorPublisherBooks should have failed")
             } catch (ex: SQLiteConstraintException) {

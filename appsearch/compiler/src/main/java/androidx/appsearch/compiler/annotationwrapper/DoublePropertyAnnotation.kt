@@ -20,10 +20,7 @@ import com.squareup.javapoet.ClassName
 import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.DoubleProperty` annotation. */
-data class DoublePropertyAnnotation(
-    override val name: String,
-    override val isRequired: Boolean,
-) :
+data class DoublePropertyAnnotation(override val name: String, override val isRequired: Boolean) :
     DataPropertyAnnotation(
         className = CLASS_NAME,
         configClassName = CONFIG_CLASS,
@@ -44,7 +41,7 @@ data class DoublePropertyAnnotation(
          */
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): DoublePropertyAnnotation {
             val name = annotationParams["name"] as? String
             return DoublePropertyAnnotation(

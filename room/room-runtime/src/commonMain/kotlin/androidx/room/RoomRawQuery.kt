@@ -38,7 +38,7 @@ constructor(
      *
      * Only `bind*()` calls should be invoked on the received statement.
      */
-    onBindStatement: (SQLiteStatement) -> Unit = {}
+    onBindStatement: (SQLiteStatement) -> Unit = {},
 ) {
     private val bindingFunction: (SQLiteStatement) -> Unit = {
         onBindStatement.invoke(BindOnlySQLiteStatement(it))

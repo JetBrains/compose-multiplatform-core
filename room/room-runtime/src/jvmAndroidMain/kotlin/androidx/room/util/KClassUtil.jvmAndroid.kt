@@ -46,7 +46,7 @@ public fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String
         throw RuntimeException(
             "Cannot find implementation for ${klass.canonicalName}. $implName does not " +
                 "exist. Is Room annotation processor correctly configured?",
-            e
+            e,
         )
     } catch (e: IllegalAccessException) {
         throw RuntimeException("Cannot access the constructor ${klass.canonicalName}", e)

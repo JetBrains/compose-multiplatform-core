@@ -56,7 +56,7 @@ class InvalidationTrackerFlowTest {
         database =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .build()

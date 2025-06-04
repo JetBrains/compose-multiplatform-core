@@ -40,7 +40,7 @@ private fun reschedulePendingWorkers(workManagerImpl: WorkManagerImpl) {
     Schedulers.schedule(
         workManagerImpl.configuration,
         workManagerImpl.workDatabase,
-        workManagerImpl.schedulers
+        workManagerImpl.schedulers,
     )
 }
 
@@ -70,7 +70,7 @@ fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkById",
-        workManagerImpl.workTaskExecutor.serialTaskExecutor
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
     ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction { cancel(workManagerImpl, id.toString()) }
@@ -88,7 +88,7 @@ fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkByTag_$tag",
-        executor = workManagerImpl.workTaskExecutor.serialTaskExecutor
+        executor = workManagerImpl.workTaskExecutor.serialTaskExecutor,
     ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction {
@@ -112,7 +112,7 @@ fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkByName_$name",
-        workManagerImpl.workTaskExecutor.serialTaskExecutor
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
     ) {
         forNameInline(name, workManagerImpl)
         reschedulePendingWorkers(workManagerImpl)
@@ -139,7 +139,7 @@ fun forAll(workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelAllWork",
-        workManagerImpl.workTaskExecutor.serialTaskExecutor
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
     ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction {

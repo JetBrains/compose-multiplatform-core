@@ -55,7 +55,7 @@ class SliderTest {
                 onValueChange = {},
                 valueRange = 0f..10f,
                 steps = 5,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -72,7 +72,7 @@ class SliderTest {
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20f }
@@ -89,7 +89,7 @@ class SliderTest {
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20f }
@@ -114,7 +114,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -134,7 +134,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -154,7 +154,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -172,7 +172,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -189,7 +189,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -207,7 +207,7 @@ class SliderTest {
                 enabled = false,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -225,7 +225,7 @@ class SliderTest {
                 enabled = false,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -242,7 +242,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -259,7 +259,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -281,9 +281,9 @@ class SliderTest {
                     Icon(
                         modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
-                }
+                },
             )
         }
 
@@ -308,7 +308,7 @@ class SliderTest {
                     Icon(
                         modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
                 },
             )
@@ -327,12 +327,7 @@ class SliderTest {
     @Test
     fun sets_custom_description_for_decrease_icon() {
         rule.setContentWithTheme {
-            Slider(
-                modifier = Modifier.testTag(TEST_TAG),
-                value = 0f,
-                steps = 5,
-                onValueChange = {},
-            )
+            Slider(modifier = Modifier.testTag(TEST_TAG), value = 0f, steps = 5, onValueChange = {})
         }
 
         rule.waitForIdle()
@@ -349,12 +344,7 @@ class SliderTest {
     @Test
     fun sets_custom_description_for_increase_icon() {
         rule.setContentWithTheme {
-            Slider(
-                modifier = Modifier.testTag(TEST_TAG),
-                value = 0f,
-                steps = 5,
-                onValueChange = {},
-            )
+            Slider(modifier = Modifier.testTag(TEST_TAG), value = 0f, steps = 5, onValueChange = {})
         }
 
         rule.waitForIdle()
@@ -375,7 +365,7 @@ class SliderTest {
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -389,7 +379,7 @@ class SliderTest {
                 value = 2,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -403,7 +393,7 @@ class SliderTest {
                 value = 2,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 10, 2),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -417,7 +407,7 @@ class SliderTest {
                 value = 6,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 16, 6),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -433,7 +423,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20 }
@@ -449,7 +439,7 @@ class SliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20 }
@@ -465,7 +455,7 @@ class SliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -483,7 +473,7 @@ class SliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -501,7 +491,7 @@ class SliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -597,14 +587,14 @@ class SliderTest {
         onValueChange: (Float) -> Unit,
         modifier: Modifier = Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
-        steps: Int
+        steps: Int,
     ) {
         Slider(
             modifier = modifier,
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
         )
     }
 
@@ -613,7 +603,7 @@ class SliderTest {
         value: Int,
         onValueChange: (Int) -> Unit,
         modifier: Modifier = Modifier,
-        valueProgression: IntProgression
+        valueProgression: IntProgression,
     ) {
         Slider(
             modifier = modifier,

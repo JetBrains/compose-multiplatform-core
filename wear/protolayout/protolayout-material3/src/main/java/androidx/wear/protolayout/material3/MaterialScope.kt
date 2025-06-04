@@ -75,7 +75,7 @@ internal constructor(
     internal val defaultBackgroundImageStyle: BackgroundImageStyle,
     internal val defaultAvatarImageStyle: AvatarImageStyle,
     internal val layoutSlotsPresence: LayoutSlotsPresence,
-    internal val defaultProgressIndicatorStyle: ProgressIndicatorStyle
+    internal val defaultProgressIndicatorStyle: ProgressIndicatorStyle,
 ) {
     /** Color Scheme used within this scope and its components. */
     public val colorScheme: ColorScheme = theme.colorScheme
@@ -156,7 +156,7 @@ public fun materialScope(
     deviceConfiguration: DeviceParameters,
     allowDynamicTheme: Boolean = true,
     defaultColorScheme: ColorScheme = ColorScheme(),
-    layout: MaterialScope.() -> LayoutElement
+    layout: MaterialScope.() -> LayoutElement,
 ): LayoutElement =
     MaterialScope(
             context = context,
@@ -168,7 +168,7 @@ public fun materialScope(
                         if (allowDynamicTheme) {
                             dynamicColorScheme(
                                 context = context,
-                                defaultColorScheme = defaultColorScheme
+                                defaultColorScheme = defaultColorScheme,
                             )
                         } else {
                             defaultColorScheme
@@ -179,7 +179,7 @@ public fun materialScope(
             defaultBackgroundImageStyle = BackgroundImageStyle(),
             defaultAvatarImageStyle = AvatarImageStyle(),
             layoutSlotsPresence = LayoutSlotsPresence(),
-            defaultProgressIndicatorStyle = ProgressIndicatorStyle()
+            defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
         )
         .layout()
 
@@ -203,7 +203,7 @@ public fun materialScopeFromLayout(
                         if (allowDynamicTheme) {
                             dynamicColorScheme(
                                 context = context,
-                                defaultColorScheme = defaultColorScheme
+                                defaultColorScheme = defaultColorScheme,
                             )
                         } else {
                             defaultColorScheme
@@ -244,7 +244,7 @@ internal class TextElementStyle(
 internal class IconStyle(
     val width: ImageDimension = 24.toDp(),
     val height: ImageDimension = 24.toDp(),
-    val tintColor: LayoutColor = ColorTokens.PRIMARY.argb
+    val tintColor: LayoutColor = ColorTokens.PRIMARY.argb,
 )
 
 internal class BackgroundImageStyle(
@@ -253,7 +253,7 @@ internal class BackgroundImageStyle(
     val overlayColor: LayoutColor? = ColorTokens.BACKGROUND.argb.withOpacity(ratio = 0.6f),
     val shape: Corner = ShapeTokens.CORNER_LARGE,
     @ContentScaleMode
-    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS,
 )
 
 internal class AvatarImageStyle(
@@ -261,15 +261,13 @@ internal class AvatarImageStyle(
     val height: ImageDimension = 24.toDp(),
     val shape: Corner = ShapeTokens.CORNER_FULL,
     @ContentScaleMode
-    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS,
 )
 
 internal class LayoutSlotsPresence(
     val isTitleSlotPresent: Boolean = false,
     val isBottomSlotEdgeButton: Boolean = false,
-    val isBottomSlotPresent: Boolean = isBottomSlotEdgeButton
+    val isBottomSlotPresent: Boolean = isBottomSlotEdgeButton,
 )
 
-internal class ProgressIndicatorStyle(
-    val color: ProgressIndicatorColors? = null,
-)
+internal class ProgressIndicatorStyle(val color: ProgressIndicatorColors? = null)

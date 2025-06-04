@@ -112,14 +112,12 @@ fun ListDetailPaneScaffoldSample() {
         directive = scaffoldNavigator.scaffoldDirective,
         scaffoldState = scaffoldNavigator.scaffoldState,
         listPane = {
-            AnimatedPane(
-                modifier = Modifier.preferredWidth(200.dp),
-            ) {
+            AnimatedPane(modifier = Modifier.preferredWidth(200.dp)) {
                 ListPaneContent(
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
@@ -129,10 +127,10 @@ fun ListDetailPaneScaffoldSample() {
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
-        }
+        },
     )
 }
 
@@ -151,14 +149,12 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
         directive = scaffoldNavigator.scaffoldDirective,
         scaffoldState = scaffoldNavigator.scaffoldState,
         listPane = {
-            AnimatedPane(
-                modifier = Modifier.preferredWidth(200.dp),
-            ) {
+            AnimatedPane(modifier = Modifier.preferredWidth(200.dp)) {
                 ListPaneContent(
                     items = items,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
@@ -169,7 +165,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
                     hasExtraPane = true,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
@@ -179,16 +175,16 @@ fun ListDetailPaneScaffoldSampleWithExtraPane() {
                     extraItems = extraItems,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
         paneExpansionState =
             rememberPaneExpansionState(
                 keyProvider = scaffoldNavigator.scaffoldValue,
-                anchors = PaneExpansionAnchors
+                anchors = PaneExpansionAnchors,
             ),
-        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) },
     )
 }
 
@@ -210,7 +206,7 @@ fun SupportingPaneScaffoldSample() {
                 MainPaneContent(
                     scaffoldNavigator = scaffoldNavigator,
                     hasExtraPane = true,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
@@ -223,16 +219,16 @@ fun SupportingPaneScaffoldSample() {
                     extraItems = extraItems,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
         paneExpansionState =
             rememberPaneExpansionState(
                 keyProvider = scaffoldNavigator.scaffoldValue,
-                anchors = PaneExpansionAnchors
+                anchors = PaneExpansionAnchors,
             ),
-        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) },
     )
 }
 
@@ -276,7 +272,7 @@ fun SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet() {
                 MainPaneContent(
                     scaffoldNavigator = scaffoldNavigator,
                     hasExtraPane = true,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
@@ -294,16 +290,16 @@ fun SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet() {
                     extraItems = extraItems,
                     selectedItem = selectedItem,
                     scaffoldNavigator = scaffoldNavigator,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
                 )
             }
         },
         paneExpansionState =
             rememberPaneExpansionState(
                 keyProvider = scaffoldNavigator.scaffoldValue,
-                anchors = PaneExpansionAnchors
+                anchors = PaneExpansionAnchors,
             ),
-        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) }
+        paneExpansionDragHandle = { state -> PaneExpansionDragHandleSample(state) },
     )
 }
 
@@ -322,7 +318,7 @@ fun ThreePaneScaffoldScope.PaneExpansionDragHandleSample(
                 LocalMinimumInteractiveComponentSize.current,
                 interactionSource,
             ),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }
 
@@ -364,7 +360,7 @@ fun <T> levitateAdaptStrategySample(): ThreePaneScaffoldNavigator<T> {
                                     onClick = {
                                         coroutineScope.launch { navigator?.navigateBack() }
                                     }
-                                )
+                                ),
                         )
                 )
         )
@@ -429,14 +425,14 @@ fun NavigableListDetailPaneScaffoldSample() {
                         onClick = { backBehaviorIndex = 0 },
                         text =
                             "PopUntilScaffoldValueChange - Back navigation forces a change in " +
-                                "which pane(s) is/are shown."
+                                "which pane(s) is/are shown.",
                     )
                     RadioButtonRow(
                         selected = backBehaviorIndex == 1,
                         onClick = { backBehaviorIndex = 1 },
                         text =
                             "PopUntilCurrentDestinationChange - Back navigation forces a " +
-                                "change in which pane is currently considered \"active\"."
+                                "change in which pane is currently considered \"active\".",
                     )
                     RadioButtonRow(
                         selected = backBehaviorIndex == 2,
@@ -445,7 +441,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             "PopUntilContentChange - Back navigation forces a change in the " +
                                 "content of any pane or which pane(s) is/are shown.\nNote: this " +
                                 "may result in unintuitive behavior if the device size changes " +
-                                "in the middle of the navigation."
+                                "in the middle of the navigation.",
                     )
                     RadioButtonRow(
                         selected = backBehaviorIndex == 3,
@@ -453,13 +449,9 @@ fun NavigableListDetailPaneScaffoldSample() {
                         text =
                             "PopLatest - No special back handling.\nNote: this may result in " +
                                 "unintuitive behavior if the device size changes in the middle " +
-                                "of the navigation."
+                                "of the navigation.",
                     )
-                    Button(
-                        onClick = { navController.navigate(listDetailRoute) },
-                    ) {
-                        Text("Next")
-                    }
+                    Button(onClick = { navController.navigate(listDetailRoute) }) { Text("Next") }
                 }
             }
         }
@@ -474,7 +466,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             items = items,
                             selectedItem = selectedItem,
                             scaffoldNavigator = scaffoldNavigator,
-                            coroutineScope = coroutineScope
+                            coroutineScope = coroutineScope,
                         )
                     }
                 },
@@ -486,7 +478,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             scaffoldNavigator = scaffoldNavigator,
                             hasExtraPane = true,
                             backBehavior = backBehavior,
-                            coroutineScope = coroutineScope
+                            coroutineScope = coroutineScope,
                         )
                     }
                 },
@@ -497,7 +489,7 @@ fun NavigableListDetailPaneScaffoldSample() {
                             selectedItem = selectedItem,
                             scaffoldNavigator = scaffoldNavigator,
                             backBehavior = backBehavior,
-                            coroutineScope = coroutineScope
+                            coroutineScope = coroutineScope,
                         )
                     }
                 },
@@ -560,12 +552,9 @@ private fun ListPaneContent(
     selectedItem: NavItemData?,
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEachIndexed { index, item ->
             ListCard(
                 title = item,
@@ -579,7 +568,7 @@ private fun ListPaneContent(
                             contentKey = NavItemData(index),
                         )
                     }
-                }
+                },
             )
         }
     }
@@ -594,7 +583,7 @@ private fun DetailPaneContent(
     modifier: Modifier = Modifier,
     hasExtraPane: Boolean = false,
     backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
 ) {
     val title: String
     val description: String
@@ -614,9 +603,7 @@ private fun DetailPaneContent(
         backButton = {
             BackButton(
                 visible = !scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.List),
-                onClick = {
-                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
-                },
+                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
             )
         },
     ) {
@@ -644,7 +631,7 @@ private fun MainPaneContent(
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
     hasExtraPane: Boolean = false,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
 ) {
     val title = "My content"
     val description =
@@ -680,15 +667,12 @@ private fun MainPaneContent(
 private fun SupportingPaneContent(modifier: Modifier = Modifier) {
     val items = listOf("Item 1", "Item 2", "Item 3")
     var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEachIndexed { index, item ->
             ListCard(
                 title = item,
                 highlight = index == selectedIndex,
-                onClick = { selectedIndex = index }
+                onClick = { selectedIndex = index },
             )
         }
     }
@@ -702,7 +686,7 @@ private fun ExtraPaneContent(
     scaffoldNavigator: ThreePaneScaffoldNavigator<NavItemData>,
     modifier: Modifier = Modifier,
     backBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
 ) {
     val item =
         if (selectedItem != null && selectedItem.showExtra) extraItems[selectedItem.index] else ""
@@ -714,9 +698,7 @@ private fun ExtraPaneContent(
         backButton = {
             BackButton(
                 visible = scaffoldNavigator.canNavigateBack(backBehavior),
-                onClick = {
-                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
-                },
+                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
             )
         },
     ) {
@@ -751,11 +733,7 @@ private fun BasicScreen(
 }
 
 @Composable
-private fun BackButton(
-    visible: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun BackButton(visible: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
@@ -764,7 +742,7 @@ private fun BackButton(
     ) {
         IconButton(
             onClick = onClick,
-            content = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            content = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") },
         )
     }
 }
@@ -778,17 +756,10 @@ private fun RadioButtonRow(
 ) {
     Row(
         modifier =
-            modifier.selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton,
-            ),
+            modifier.selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-        )
+        RadioButton(selected = selected, onClick = onClick)
         Text(text)
     }
 }

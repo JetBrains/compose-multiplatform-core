@@ -40,7 +40,7 @@ class UpdateAdCounterHistogramRequest
 public constructor(
     val adSelectionId: Long,
     @FrequencyCapFilters.AdEventType val adEventType: Int,
-    val callerAdTech: AdTechIdentifier
+    val callerAdTech: AdTechIdentifier,
 ) {
     init {
         require(adEventType != FrequencyCapFilters.AD_EVENT_TYPE_WIN) {
@@ -97,7 +97,7 @@ public constructor(
         return android.adservices.adselection.UpdateAdCounterHistogramRequest.Builder(
                 adSelectionId,
                 adEventType,
-                callerAdTech.convertToAdServices()
+                callerAdTech.convertToAdServices(),
             )
             .build()
     }

@@ -377,7 +377,7 @@ internal class SavedStateRegistryOwnerDelegateTest : RobolectricTest() {
         private fun <T : Any> createRestoredState(
             key: String,
             serializer: KSerializer<T>,
-            value: T
+            value: T,
         ): SavedState {
             val components = savedState {
                 putSavedState(key, encodeToSavedState(serializer, value))

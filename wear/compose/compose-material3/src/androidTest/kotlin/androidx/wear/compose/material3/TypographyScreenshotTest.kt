@@ -61,7 +61,7 @@ class TypographyScreenshotTest {
 
     enum class TextFont {
         ROBOTO,
-        ROBOTO_FLEX
+        ROBOTO_FLEX,
     }
 
     @Test
@@ -71,7 +71,7 @@ class TypographyScreenshotTest {
                 text = "ArcLarge123",
                 font = font,
                 style = MaterialTheme.typography.arcLarge,
-                variationSettings = TypographyVariableFontsTokens.ArcLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.ArcLargeVariationSettings,
             )
         }
     }
@@ -83,7 +83,7 @@ class TypographyScreenshotTest {
                 text = "ArcMedium123",
                 font = font,
                 style = MaterialTheme.typography.arcMedium,
-                variationSettings = TypographyVariableFontsTokens.ArcMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.ArcMediumVariationSettings,
             )
         }
     }
@@ -95,7 +95,7 @@ class TypographyScreenshotTest {
                 text = "ArcSmall123",
                 font = font,
                 style = MaterialTheme.typography.arcSmall,
-                variationSettings = TypographyVariableFontsTokens.ArcSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.ArcSmallVariationSettings,
             )
         }
     }
@@ -107,7 +107,7 @@ class TypographyScreenshotTest {
                 text = "BodyExtraSmall",
                 font = font,
                 style = MaterialTheme.typography.bodyExtraSmall,
-                variationSettings = TypographyVariableFontsTokens.BodyExtraSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.BodyExtraSmallVariationSettings,
             )
         }
     }
@@ -119,7 +119,7 @@ class TypographyScreenshotTest {
                 text = "BodySmall",
                 font = font,
                 style = MaterialTheme.typography.bodySmall,
-                variationSettings = TypographyVariableFontsTokens.BodySmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.BodySmallVariationSettings,
             )
         }
     }
@@ -131,7 +131,7 @@ class TypographyScreenshotTest {
                 text = "BodyMedium",
                 font = font,
                 style = MaterialTheme.typography.bodyMedium,
-                variationSettings = TypographyVariableFontsTokens.BodyMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.BodyMediumVariationSettings,
             )
         }
     }
@@ -143,7 +143,7 @@ class TypographyScreenshotTest {
                 text = "BodyLarge",
                 font = font,
                 style = MaterialTheme.typography.bodyLarge,
-                variationSettings = TypographyVariableFontsTokens.BodyLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.BodyLargeVariationSettings,
             )
         }
     }
@@ -155,7 +155,7 @@ class TypographyScreenshotTest {
                 text = "DisplaySmall",
                 font = font,
                 style = MaterialTheme.typography.displaySmall,
-                variationSettings = TypographyVariableFontsTokens.DisplaySmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.DisplaySmallVariationSettings,
             )
         }
     }
@@ -167,7 +167,7 @@ class TypographyScreenshotTest {
                 text = "DisplayMedium",
                 font = font,
                 style = MaterialTheme.typography.displayMedium,
-                variationSettings = TypographyVariableFontsTokens.DisplayMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.DisplayMediumVariationSettings,
             )
         }
     }
@@ -179,7 +179,7 @@ class TypographyScreenshotTest {
                 text = "DisplayLarge",
                 font = font,
                 style = MaterialTheme.typography.displayLarge,
-                variationSettings = TypographyVariableFontsTokens.DisplayLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.DisplayLargeVariationSettings,
             )
         }
     }
@@ -191,7 +191,7 @@ class TypographyScreenshotTest {
                 text = "LabelSmall",
                 font = font,
                 style = MaterialTheme.typography.labelSmall,
-                variationSettings = TypographyVariableFontsTokens.LabelSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.LabelSmallVariationSettings,
             )
         }
     }
@@ -203,7 +203,7 @@ class TypographyScreenshotTest {
                 text = "LabelMedium",
                 font = font,
                 style = MaterialTheme.typography.labelMedium,
-                variationSettings = TypographyVariableFontsTokens.LabelMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.LabelMediumVariationSettings,
             )
         }
     }
@@ -215,7 +215,7 @@ class TypographyScreenshotTest {
                 text = "LabelLarge",
                 font = font,
                 style = MaterialTheme.typography.labelLarge,
-                variationSettings = TypographyVariableFontsTokens.LabelLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.LabelLargeVariationSettings,
             )
         }
     }
@@ -227,7 +227,7 @@ class TypographyScreenshotTest {
                 text = "TitleSmall",
                 font = font,
                 style = MaterialTheme.typography.titleSmall,
-                variationSettings = TypographyVariableFontsTokens.TitleSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.TitleSmallVariationSettings,
             )
         }
     }
@@ -239,7 +239,7 @@ class TypographyScreenshotTest {
                 text = "TitleMedium",
                 font = font,
                 style = MaterialTheme.typography.titleMedium,
-                variationSettings = TypographyVariableFontsTokens.TitleMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.TitleMediumVariationSettings,
             )
         }
     }
@@ -251,7 +251,7 @@ class TypographyScreenshotTest {
                 text = "TitleLarge",
                 font = font,
                 style = MaterialTheme.typography.titleLarge,
-                variationSettings = TypographyVariableFontsTokens.TitleLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.TitleLargeVariationSettings,
             )
         }
     }
@@ -263,7 +263,7 @@ class TypographyScreenshotTest {
                 text = "NumeralExtraSmall",
                 font = font,
                 style = MaterialTheme.typography.numeralExtraSmall,
-                variationSettings = TypographyVariableFontsTokens.NumeralExtraSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.NumeralExtraSmallVariationSettings,
             )
         }
     }
@@ -275,7 +275,7 @@ class TypographyScreenshotTest {
                 text = "NumeralSmall123",
                 font = font,
                 style = MaterialTheme.typography.numeralSmall,
-                variationSettings = TypographyVariableFontsTokens.NumeralSmallVariationSettings
+                variationSettings = TypographyVariableFontsTokens.NumeralSmallVariationSettings,
             )
         }
     }
@@ -287,7 +287,7 @@ class TypographyScreenshotTest {
                 text = "NumeralMedium123",
                 font = font,
                 style = MaterialTheme.typography.numeralMedium,
-                variationSettings = TypographyVariableFontsTokens.NumeralMediumVariationSettings
+                variationSettings = TypographyVariableFontsTokens.NumeralMediumVariationSettings,
             )
         }
     }
@@ -299,7 +299,7 @@ class TypographyScreenshotTest {
                 text = "NumeralLarge123",
                 font = font,
                 style = MaterialTheme.typography.numeralLarge,
-                variationSettings = TypographyVariableFontsTokens.NumeralLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.NumeralLargeVariationSettings,
             )
         }
     }
@@ -311,7 +311,7 @@ class TypographyScreenshotTest {
                 text = "NumeralExtraLarge123",
                 font = font,
                 style = MaterialTheme.typography.numeralExtraLarge,
-                variationSettings = TypographyVariableFontsTokens.NumeralExtraLargeVariationSettings
+                variationSettings = TypographyVariableFontsTokens.NumeralExtraLargeVariationSettings,
             )
         }
     }
@@ -321,12 +321,12 @@ class TypographyScreenshotTest {
         text: String,
         font: TextFont,
         style: TextStyle,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) {
         ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
             Box(
                 modifier = Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = text, style = getTextStyle(font, style, variationSettings))
             }
@@ -338,14 +338,14 @@ class TypographyScreenshotTest {
         text: String,
         font: TextFont,
         style: CurvedTextStyle,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) {
         ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
             CurvedLayout(Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG)) {
                 curvedRow {
                     curvedText(
                         text = text,
-                        style = getCurvedTextStyle(font, style, variationSettings)
+                        style = getCurvedTextStyle(font, style, variationSettings),
                     )
                 }
             }
@@ -355,7 +355,7 @@ class TypographyScreenshotTest {
     private fun getTextStyle(
         font: TextFont,
         style: TextStyle,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) =
         when (font) {
             TextFont.ROBOTO ->
@@ -363,7 +363,7 @@ class TypographyScreenshotTest {
                     fontFamily =
                         createRobotoFontFamily(
                             fontWeight = style.fontWeight ?: FontWeight.Normal,
-                            variationSettings = variationSettings
+                            variationSettings = variationSettings,
                         )
                 )
             TextFont.ROBOTO_FLEX ->
@@ -371,7 +371,7 @@ class TypographyScreenshotTest {
                     fontFamily =
                         createRobotoFlexFontFamily(
                             fontWeight = style.fontWeight ?: FontWeight.Normal,
-                            variationSettings = variationSettings
+                            variationSettings = variationSettings,
                         )
                 )
         }
@@ -379,7 +379,7 @@ class TypographyScreenshotTest {
     private fun getCurvedTextStyle(
         font: TextFont,
         style: CurvedTextStyle,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) =
         when (font) {
             TextFont.ROBOTO ->
@@ -387,7 +387,7 @@ class TypographyScreenshotTest {
                     fontFamily =
                         createRobotoFontFamily(
                             fontWeight = style.fontWeight ?: FontWeight.Normal,
-                            variationSettings = variationSettings
+                            variationSettings = variationSettings,
                         )
                 )
             TextFont.ROBOTO_FLEX ->
@@ -395,30 +395,30 @@ class TypographyScreenshotTest {
                     fontFamily =
                         createRobotoFlexFontFamily(
                             fontWeight = style.fontWeight ?: FontWeight.Normal,
-                            variationSettings = variationSettings
+                            variationSettings = variationSettings,
                         )
                 )
         }
 
     private fun createRobotoFontFamily(
         fontWeight: FontWeight,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) =
         Font(
                 familyName = DeviceFontFamilyName(FontFamily.SansSerif.name),
                 weight = fontWeight,
-                variationSettings = variationSettings
+                variationSettings = variationSettings,
             )
             .toFontFamily()
 
     private fun createRobotoFlexFontFamily(
         fontWeight: FontWeight,
-        variationSettings: FontVariation.Settings
+        variationSettings: FontVariation.Settings,
     ) =
         Font(
                 resId = getFontId("robotoflex_variable"),
                 weight = fontWeight,
-                variationSettings = variationSettings
+                variationSettings = variationSettings,
             )
             .toFontFamily()
 
@@ -431,7 +431,7 @@ class TypographyScreenshotTest {
         rule.verifyScreenshot(
             methodName = testName.goldenIdentifier(),
             screenshotRule = screenshotRule,
-            content = { content() }
+            content = { content() },
         )
     }
 }

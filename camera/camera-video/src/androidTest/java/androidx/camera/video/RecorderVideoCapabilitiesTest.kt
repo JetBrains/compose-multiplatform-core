@@ -55,9 +55,7 @@ class RecorderVideoCapabilitiesTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -71,7 +69,7 @@ class RecorderVideoCapabilitiesTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
@@ -85,7 +83,7 @@ class RecorderVideoCapabilitiesTest(
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
@@ -100,7 +98,7 @@ class RecorderVideoCapabilitiesTest(
                 VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
                 cameraInfo,
                 QUALITY_SOURCE_REGULAR,
-                VideoEncoderInfoImpl.FINDER
+                VideoEncoderInfoImpl.FINDER,
             )
     }
 
@@ -130,14 +128,14 @@ class RecorderVideoCapabilitiesTest(
         for (sourceType in
             listOf(
                 VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
-                VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
+                VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES,
             )) {
             val capabilities =
                 RecorderVideoCapabilities(
                     sourceType,
                     cameraInfo,
                     Recorder.VIDEO_RECORDING_TYPE_HIGH_SPEED,
-                    VideoEncoderInfoImpl.FINDER
+                    VideoEncoderInfoImpl.FINDER,
                 )
             assertThat(capabilities.supportedDynamicRanges).isEmpty()
         }

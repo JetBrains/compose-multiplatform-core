@@ -21,6 +21,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
+import androidx.camera.core.impl.UseCaseConfig
+import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
 
 /**
@@ -35,7 +37,7 @@ import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
  */
 public enum class UseCaseType(
     public val surfaceClass: Class<*>?,
-    public val defaultImageFormat: Int
+    public val defaultImageFormat: Int,
 ) {
     // TODO: b/400852239 - Check if the surface class types are appropriate
 
@@ -93,6 +95,26 @@ public enum class UseCaseType(
                 VIDEO_CAPTURE
             } else {
                 UNDEFINED
+            }
+        }
+
+        /**
+         * Returns the [UseCaseType] corresponding to the given [UseCaseConfig] for feature
+         * combination.
+         *
+         * If the given use case config is not supported for feature combination, [UNDEFINED] is
+         * returned.
+         *
+         * @return The corresponding [UseCaseType]. If the use case config is not supported with
+         *   feature combination, [UseCaseType.UNDEFINED] is returned.
+         */
+        @JvmStatic
+        public fun UseCaseConfig<*>.getFeatureComboUseCaseType(): UseCaseType {
+            return when (captureType) {
+                CaptureType.IMAGE_CAPTURE -> IMAGE_CAPTURE
+                CaptureType.PREVIEW -> PREVIEW
+                CaptureType.VIDEO_CAPTURE -> VIDEO_CAPTURE
+                else -> UNDEFINED
             }
         }
     }

@@ -216,7 +216,7 @@ class FlowAdapterTest {
         val people =
             mutableListOf<MutableStateFlow<Person?>>(
                 MutableStateFlow(Person("Ford", MutableStateFlow(Car("Model T")))),
-                MutableStateFlow(Person("Musk", MutableStateFlow(Car("Model 3"))))
+                MutableStateFlow(Person("Musk", MutableStateFlow(Car("Model 3")))),
             )
 
         var carValue: Any? = null

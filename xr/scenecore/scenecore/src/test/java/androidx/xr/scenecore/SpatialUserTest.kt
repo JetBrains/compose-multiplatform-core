@@ -57,7 +57,7 @@ class SpatialUserTest {
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
-        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         spatialUser = SpatialUser.create(session.runtime.lifecycleManager, mockRuntime)
     }
 

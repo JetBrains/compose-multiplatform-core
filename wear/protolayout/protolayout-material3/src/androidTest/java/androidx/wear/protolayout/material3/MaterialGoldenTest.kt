@@ -40,7 +40,7 @@ class MaterialGoldenTest(private val expected: String, private val testCase: Run
             rule = mScreenshotRule,
             layout = testCase.layout,
             expected = expected,
-            isRtlDirection = false
+            isRtlDirection = false,
         )
     }
 
@@ -52,7 +52,7 @@ class MaterialGoldenTest(private val expected: String, private val testCase: Run
             rule = mScreenshotRule,
             layout = testCase.layout,
             expected = expected + "_rtl",
-            isRtlDirection = true
+            isRtlDirection = true,
         )
     }
 
@@ -70,7 +70,7 @@ class MaterialGoldenTest(private val expected: String, private val testCase: Run
                 RunnerUtils.convertToTestParameters(
                     TestCasesGenerator.generateTestCases(),
                     isForRtr = true,
-                    isForLtr = true
+                    isForLtr = true,
                 )
             )
 

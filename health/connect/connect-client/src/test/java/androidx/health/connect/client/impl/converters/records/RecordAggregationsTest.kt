@@ -50,7 +50,7 @@ class RecordAggregationsTest {
                             endZoneOffset = null,
                             metadata = Metadata.manualEntry(),
                         )
-                    )
+                    ),
             )
 
         assertEquals(1.kilocalories, total)

@@ -34,7 +34,7 @@ import org.gradle.api.provider.Provider
 internal fun Project.registerCopyPrivacySandboxMainAppApksTask(
     variant: Variant,
     outputProviders: ApkOutputProviders,
-    excludeTestApk: Provider<RegularFile>
+    excludeTestApk: Provider<RegularFile>,
 ): Provider<CopyApksFromOutputProviderTask> =
     registerCopyApksFromOutputProviderTask(
         taskName = "CopyPrivacySandboxMainAppApks${variant.name}",
@@ -43,14 +43,14 @@ internal fun Project.registerCopyPrivacySandboxMainAppApksTask(
         excludeTestApk,
         outputFileNamePrefix = "${path.asFilenamePrefix()}-${variant.name}-sandbox-enabled",
         outputApkModelFileName = "PrivacySandboxMainAppApksModel${variant.name}.json",
-        deviceSpec = mainSandboxDeviceSpec(variant.minSdk.apiLevel)
+        deviceSpec = mainSandboxDeviceSpec(variant.minSdk.apiLevel),
     )
 
 @Suppress("UnstableApiUsage") // ApkOutputProviders b/397701480
 internal fun Project.registerCopyPrivacySandboxCompatAppApksTask(
     variant: Variant,
     outputProviders: ApkOutputProviders,
-    excludeTestApk: Provider<RegularFile>
+    excludeTestApk: Provider<RegularFile>,
 ): Provider<CopyApksFromOutputProviderTask> =
     registerCopyApksFromOutputProviderTask(
         taskName = "CopyPrivacySandboxCompatAppApks${variant.name}",
@@ -59,12 +59,12 @@ internal fun Project.registerCopyPrivacySandboxCompatAppApksTask(
         excludeTestApk,
         outputFileNamePrefix = "${path.asFilenamePrefix()}-${variant.name}-sandbox-compat",
         outputApkModelFileName = "PrivacySandboxCompatAppApksModel${variant.name}.json",
-        deviceSpec = compatSandboxDeviceSpec(variant.minSdk.apiLevel)
+        deviceSpec = compatSandboxDeviceSpec(variant.minSdk.apiLevel),
     )
 
 internal fun Project.registerCopyAppApkFromArtifactsTask(
     variant: Variant,
-    configureAction: Consumer<CopyApkFromArtifactsTask> // For lazy task init
+    configureAction: Consumer<CopyApkFromArtifactsTask>, // For lazy task init
 ): Provider<CopyApkFromArtifactsTask> =
     tasks.register("CopyAppApk${variant.name}", CopyApkFromArtifactsTask::class.java) { task ->
         task.appLoader.set(variant.artifacts.getBuiltArtifactsLoader())
@@ -86,7 +86,7 @@ private fun Project.registerCopyApksFromOutputProviderTask(
     excludeTestApk: Provider<RegularFile>,
     outputFileNamePrefix: String,
     outputApkModelFileName: String,
-    deviceSpec: DeviceSpec
+    deviceSpec: DeviceSpec,
 ): Provider<CopyApksFromOutputProviderTask> {
     val copyApksTask =
         tasks.register(taskName, CopyApksFromOutputProviderTask::class.java) { task ->
@@ -107,7 +107,7 @@ private fun Project.registerCopyApksFromOutputProviderTask(
     outputProviders.provideApkOutputToTask(
         copyApksTask,
         CopyApksFromOutputProviderTask::apkOutput,
-        deviceSpec
+        deviceSpec,
     )
 
     return copyApksTask

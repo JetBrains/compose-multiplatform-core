@@ -89,7 +89,7 @@ fun IconToggleButtonDemo() {
                 IconToggleButtonsDemo(
                     enabled = true,
                     initialChecked = true,
-                    size = IconToggleButtonDefaults.ExtraLargeSize
+                    size = IconToggleButtonDefaults.ExtraLargeSize,
                 )
             }
         }
@@ -100,7 +100,7 @@ fun IconToggleButtonDemo() {
                 IconToggleButtonsDemo(
                     enabled = true,
                     initialChecked = true,
-                    size = IconToggleButtonDefaults.LargeSize
+                    size = IconToggleButtonDefaults.LargeSize,
                 )
             }
         }
@@ -111,7 +111,7 @@ fun IconToggleButtonDemo() {
                 IconToggleButtonsDemo(
                     enabled = true,
                     initialChecked = true,
-                    size = IconToggleButtonDefaults.Size
+                    size = IconToggleButtonDefaults.Size,
                 )
             }
         }
@@ -122,7 +122,7 @@ fun IconToggleButtonDemo() {
                 IconToggleButtonsDemo(
                     enabled = true,
                     initialChecked = true,
-                    size = IconToggleButtonDefaults.SmallSize
+                    size = IconToggleButtonDefaults.SmallSize,
                 )
             }
         }
@@ -223,14 +223,14 @@ fun IconToggleButtonDemo() {
 private fun IconToggleButtonsDemo(
     enabled: Boolean,
     initialChecked: Boolean,
-    size: Dp = IconToggleButtonDefaults.Size
+    size: Dp = IconToggleButtonDefaults.Size,
 ) {
     var checked by remember { mutableStateOf(initialChecked) }
     IconToggleButton(
         checked = checked,
         enabled = enabled,
         modifier = Modifier.touchTargetAwareSize(size),
-        onCheckedChange = { checked = !checked }
+        onCheckedChange = { checked = !checked },
     ) {
         if (checked) {
             WifiOnIcon(Modifier.size(IconToggleButtonDefaults.iconSizeFor(size)))
@@ -244,7 +244,7 @@ private fun IconToggleButtonsDemo(
 private fun AnimatedIconToggleButtonsDemo(
     enabled: Boolean,
     initialChecked: Boolean,
-    size: Dp = IconToggleButtonDefaults.Size
+    size: Dp = IconToggleButtonDefaults.Size,
 ) {
     val checked = remember { mutableStateOf(initialChecked) }
     IconToggleButton(
@@ -266,7 +266,7 @@ private fun AnimatedIconToggleButtonsDemo(
 private fun VariantAnimatedIconToggleButtonsDemo(
     enabled: Boolean,
     initialChecked: Boolean,
-    size: Dp = IconToggleButtonDefaults.Size
+    size: Dp = IconToggleButtonDefaults.Size,
 ) {
     val checked = remember { mutableStateOf(initialChecked) }
     IconToggleButton(

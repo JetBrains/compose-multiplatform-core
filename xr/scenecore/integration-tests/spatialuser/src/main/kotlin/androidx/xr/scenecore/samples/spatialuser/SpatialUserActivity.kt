@@ -26,13 +26,13 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.scene
 import kotlin.math.tan
 import kotlinx.coroutines.delay
@@ -59,7 +59,7 @@ class SpatialUserActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.spatialuser_activity)
         session.resume()
-        session.configure(Config(headTracking = HeadTrackingMode.ENABLED))
+        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 
         // Create a single panel with text
         @SuppressLint("InflateParams")
@@ -68,7 +68,7 @@ class SpatialUserActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panelContentView,
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
             )
@@ -79,7 +79,7 @@ class SpatialUserActivity : AppCompatActivity() {
             val pos =
                 session.scene.spatialUser.head?.transformPoseTo(
                     poseOffset,
-                    session.scene.activitySpace
+                    session.scene.activitySpace,
                 )
             if (pos != null) {
                 panelEntity.setPose(pos)

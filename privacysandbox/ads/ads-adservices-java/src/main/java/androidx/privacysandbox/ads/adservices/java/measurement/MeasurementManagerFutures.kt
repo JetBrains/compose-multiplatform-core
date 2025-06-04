@@ -61,7 +61,7 @@ abstract class MeasurementManagerFutures internal constructor() {
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_ATTRIBUTION)
     abstract fun registerSourceAsync(
         attributionSource: Uri,
-        inputEvent: InputEvent?
+        inputEvent: InputEvent?,
     ): ListenableFuture<Unit>
 
     /**
@@ -108,7 +108,7 @@ abstract class MeasurementManagerFutures internal constructor() {
     @SuppressWarnings("MissingNullability")
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_ATTRIBUTION)
     abstract fun registerWebTriggerAsync(
-        request: WebTriggerRegistrationRequest,
+        request: WebTriggerRegistrationRequest
     ): ListenableFuture<Unit>
 
     /**
@@ -137,7 +137,7 @@ abstract class MeasurementManagerFutures internal constructor() {
         @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_ATTRIBUTION)
         override fun registerSourceAsync(
             attributionSource: Uri,
-            inputEvent: InputEvent?
+            inputEvent: InputEvent?,
         ): ListenableFuture<Unit> {
             return CoroutineScope(Dispatchers.Default)
                 .async { mMeasurementManager.registerSource(attributionSource, inputEvent) }
@@ -176,7 +176,7 @@ abstract class MeasurementManagerFutures internal constructor() {
         @DoNotInline
         @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_ATTRIBUTION)
         override fun registerWebTriggerAsync(
-            request: WebTriggerRegistrationRequest,
+            request: WebTriggerRegistrationRequest
         ): ListenableFuture<Unit> {
             return CoroutineScope(Dispatchers.Default)
                 .async { mMeasurementManager.registerWebTrigger(request) }

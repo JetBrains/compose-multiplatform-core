@@ -86,10 +86,13 @@ internal fun migrateLegacyIdGenerator(context: Context, sqLiteDatabase: SupportS
         val nextAlarmId = sharedPreferences.getInt(NEXT_ALARM_MANAGER_ID_KEY, INITIAL_ID)
         sqLiteDatabase.beginTransaction()
         try {
-            sqLiteDatabase.execSQL(INSERT_PREFERENCE, arrayOf(NEXT_JOB_SCHEDULER_ID_KEY, nextJobId))
             sqLiteDatabase.execSQL(
                 INSERT_PREFERENCE,
-                arrayOf(NEXT_ALARM_MANAGER_ID_KEY, nextAlarmId)
+                arrayOf<Any>(NEXT_JOB_SCHEDULER_ID_KEY, nextJobId),
+            )
+            sqLiteDatabase.execSQL(
+                INSERT_PREFERENCE,
+                arrayOf<Any>(NEXT_ALARM_MANAGER_ID_KEY, nextAlarmId),
             )
             // Cleanup
             sharedPreferences.edit().clear().apply()

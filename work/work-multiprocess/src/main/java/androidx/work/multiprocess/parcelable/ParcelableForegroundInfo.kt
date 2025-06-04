@@ -35,7 +35,7 @@ data class ParcelableForegroundInfo(val foregroundInfo: ForegroundInfo) : Parcel
             ForegroundInfo(
                 parcel.readInt(),
                 ParcelUtils.readParcelable(parcel, Notification::class.java),
-                parcel.readInt()
+                parcel.readInt(),
             )
     )
 

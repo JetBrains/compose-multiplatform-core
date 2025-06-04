@@ -76,7 +76,7 @@ internal class TextStringSimpleNode(
     private var softWrap: Boolean = true,
     private var maxLines: Int = Int.MAX_VALUE,
     private var minLines: Int = DefaultMinLines,
-    private var overrideColor: ColorProducer? = null
+    private var overrideColor: ColorProducer? = null,
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode, SemanticsModifierNode {
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -99,7 +99,7 @@ internal class TextStringSimpleNode(
                         overflow,
                         softWrap,
                         maxLines,
-                        minLines
+                        minLines,
                     )
             }
             return _layoutCache!!
@@ -163,7 +163,7 @@ internal class TextStringSimpleNode(
         maxLines: Int,
         softWrap: Boolean,
         fontFamilyResolver: FontFamily.Resolver,
-        overflow: TextOverflow
+        overflow: TextOverflow,
     ): Boolean {
         var changed: Boolean
 
@@ -209,7 +209,7 @@ internal class TextStringSimpleNode(
                 overflow = overflow,
                 softWrap = softWrap,
                 maxLines = maxLines,
-                minLines = minLines
+                minLines = minLines,
             )
         }
 
@@ -263,7 +263,7 @@ internal class TextStringSimpleNode(
                 overflow,
                 softWrap,
                 maxLines,
-                minLines
+                minLines,
             ) ?: return false
         } else {
             val newTextSubstitution = TextSubstitutionValue(text, updatedText)
@@ -275,7 +275,7 @@ internal class TextStringSimpleNode(
                     overflow,
                     softWrap,
                     maxLines,
-                    minLines
+                    minLines,
                 )
             substitutionLayoutCache.density = layoutCache.density
             newTextSubstitution.layoutCache = substitutionLayoutCache
@@ -349,7 +349,7 @@ internal class TextStringSimpleNode(
     /** Text layout happens here */
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         trace("TextStringSimpleNode::measure") {
             val layoutCache = getLayoutCacheForMeasure()
@@ -379,7 +379,7 @@ internal class TextStringSimpleNode(
                         minWidth = layoutSize.width,
                         maxWidth = layoutSize.width,
                         minHeight = layoutSize.height,
-                        maxHeight = layoutSize.height
+                        maxHeight = layoutSize.height,
                     )
                 )
 
@@ -391,24 +391,24 @@ internal class TextStringSimpleNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return getLayoutCacheForMeasure().minIntrinsicWidth(layoutDirection)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCacheForMeasure().intrinsicHeight(width, layoutDirection)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = getLayoutCacheForMeasure().maxIntrinsicWidth(layoutDirection)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCacheForMeasure().intrinsicHeight(width, layoutDirection)
 
     /** Optimized Text draw. */
@@ -445,7 +445,7 @@ internal class TextStringSimpleNode(
                         alpha = alpha,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        textDecoration = textDecoration
+                        textDecoration = textDecoration,
                     )
                 } else {
                     val overrideColorVal = overrideColor?.invoke() ?: Color.Unspecified
@@ -462,7 +462,7 @@ internal class TextStringSimpleNode(
                         color = color,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        textDecoration = textDecoration
+                        textDecoration = textDecoration,
                     )
                 }
             } finally {

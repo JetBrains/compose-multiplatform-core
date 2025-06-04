@@ -43,7 +43,7 @@ import kotlin.math.max
 
 internal class RectManager(
     /** [LayoutNode.semanticsId] to [LayoutNode] mapping, maintained by Owner. */
-    private val layoutNodes: IntObjectMap<LayoutNode> = intObjectMapOf(),
+    private val layoutNodes: IntObjectMap<LayoutNode> = intObjectMapOf()
 ) {
     val rects: RectList = RectList()
 
@@ -153,7 +153,7 @@ internal class RectManager(
         throttleMillis: Long,
         debounceMillis: Long,
         node: DelegatableNode,
-        callback: (RelativeLayoutBounds) -> Unit
+        callback: (RelativeLayoutBounds) -> Unit,
     ): RegistrationHandle {
         return throttledCallbacks.registerOnRectChanged(
             id,
@@ -169,7 +169,7 @@ internal class RectManager(
         throttleMillis: Long,
         debounceMillis: Long,
         node: DelegatableNode,
-        callback: (RelativeLayoutBounds) -> Unit
+        callback: (RelativeLayoutBounds) -> Unit,
     ): RegistrationHandle {
         return throttledCallbacks.registerOnGlobalChange(
             id = id,
@@ -197,7 +197,7 @@ internal class RectManager(
             rects.updateFlagsFor(
                 value = layoutNode.semanticsId,
                 focusable = focusable,
-                gesturable = gesturable
+                gesturable = gesturable,
             )
         }
     }
@@ -224,7 +224,7 @@ internal class RectManager(
     fun onLayoutPositionChanged(
         layoutNode: LayoutNode,
         position: IntOffset,
-        firstPlacement: Boolean
+        firstPlacement: Boolean,
     ) {
         @OptIn(ExperimentalComposeUiApi::class) if (!ComposeUiFlags.isRectTrackingEnabled) return
         // Our goal here is to get the right "root" coordinates for every layout. We can use
@@ -344,7 +344,7 @@ internal class RectManager(
                 b,
                 parentId = parentId,
                 focusable = layoutNode.nodes.has(Nodes.FocusTarget),
-                gesturable = layoutNode.nodes.has(Nodes.PointerInput)
+                gesturable = layoutNode.nodes.has(Nodes.PointerInput),
             )
         }
         invalidate()
@@ -369,7 +369,7 @@ internal class RectManager(
                 b,
                 parentId = parentId,
                 focusable = layoutNode.nodes.has(Nodes.FocusTarget),
-                gesturable = layoutNode.nodes.has(Nodes.PointerInput)
+                gesturable = layoutNode.nodes.has(Nodes.PointerInput),
             )
         }
         invalidate()

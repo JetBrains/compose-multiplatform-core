@@ -19,12 +19,17 @@ package androidx.xr.scenecore.impl;
 import android.util.Log;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.PerceivedResolutionResult;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape;
 import androidx.xr.runtime.internal.TextureResource;
+import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -56,6 +61,11 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     private CanvasShape mCanvasShape;
     private float mFeatherRadiusX = 0.0f;
     private float mFeatherRadiusY = 0.0f;
+    private boolean mContentColorMetadataSet = false;
+    @ColorSpace private int mColorSpace = SurfaceEntity.ColorSpace.BT709;
+    @ColorTransfer private int mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
+    @ColorRange private int mColorRange = SurfaceEntity.ColorRange.FULL;
+    private int mMaxContentLightLevel = 0;
 
     // Converts SurfaceEntity's ContentSecurityLevel to an Impress ContentSecurityLevel.
     private static int toImpressContentSecurityLevel(
@@ -231,10 +241,88 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         return mFeatherRadiusY;
     }
 
+    @Override
+    @ColorSpace
+    public int getColorSpace() {
+        return mColorSpace;
+    }
+
+    @Override
+    @ColorTransfer
+    public int getColorTransfer() {
+        return mColorTransfer;
+    }
+
+    @Override
+    @ColorRange
+    public int getColorRange() {
+        return mColorRange;
+    }
+
+    @Override
+    public int getMaxCLL() {
+        return mMaxContentLightLevel;
+    }
+
+    @Override
+    public boolean getContentColorMetadataSet() {
+        return mContentColorMetadataSet;
+    }
+
+    @Override
+    public void setContentColorMetadata(
+            @ColorSpace int colorSpace,
+            @ColorTransfer int colorTransfer,
+            @ColorRange int colorRange,
+            int maxCLL) {
+        mColorSpace = colorSpace;
+        mColorTransfer = colorTransfer;
+        mColorRange = colorRange;
+        mMaxContentLightLevel = maxCLL;
+        mContentColorMetadataSet = true;
+        mImpressApi.setContentColorMetadataForStereoSurface(
+                mEntityImpressNode, colorSpace, colorTransfer, colorRange, maxCLL);
+    }
+
+    @Override
+    public void resetContentColorMetadata() {
+        mColorSpace = SurfaceEntity.ColorSpace.BT709;
+        mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
+        mColorRange = SurfaceEntity.ColorRange.FULL;
+        mMaxContentLightLevel = 0;
+        mContentColorMetadataSet = false;
+        mImpressApi.resetContentColorMetadataForStereoSurface(mEntityImpressNode);
+    }
+
     // Note this returns the Impress node for the entity, not the subspace. The subspace Impress
     // node
     // is the parent of the entity Impress node.
     int getEntityImpressNode() {
         return mEntityImpressNode;
+    }
+
+    @NonNull
+    @Override
+    public PerceivedResolutionResult getPerceivedResolution() {
+        // Get the Camera View with which to compute Perceived Resolution
+        CameraViewActivityPose cameraView =
+                PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
+        if (cameraView == null) {
+            return new PerceivedResolutionResult.InvalidCameraView();
+        }
+
+        // Compute the width, height, and depth in activity space units
+        Dimensions dimensionsInLocalUnits = getDimensions();
+        Vector3 activitySpaceScale = getScale(Space.ACTIVITY);
+        Dimensions dimensionsInActivitySpace =
+                new Dimensions(
+                        dimensionsInLocalUnits.width * activitySpaceScale.getX(),
+                        dimensionsInLocalUnits.height * activitySpaceScale.getY(),
+                        dimensionsInLocalUnits.depth * activitySpaceScale.getZ());
+
+        return PerceivedResolutionUtils.getPerceivedResolutionOf3DBox(
+                cameraView,
+                /* boxDimensionsInActivitySpace= */ dimensionsInActivitySpace,
+                /* boxPositionInActivitySpace= */ getPose(Space.ACTIVITY).getTranslation());
     }
 }

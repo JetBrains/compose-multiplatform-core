@@ -102,12 +102,9 @@ class VerticalTextBuilder {
         fontSize: TextUnit = TextUnit.Unspecified,
         textColor: Color = Color.Unspecified,
         backgroundColor: Color = Color.Unspecified,
-        block: @Composable VerticalTextBuilder.() -> R
+        block: @Composable VerticalTextBuilder.() -> R,
     ): R =
-        withSpan(
-            TextStyleSpan(fontSize, textColor, backgroundColor, LocalDensity.current),
-            block,
-        )
+        withSpan(TextStyleSpan(fontSize, textColor, backgroundColor, LocalDensity.current), block)
 
     var result = SpannableStringBuilder()
 }

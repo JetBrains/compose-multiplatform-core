@@ -477,12 +477,12 @@ fun WorkSpecDao.getWorkStatusPojoFlowDataForIds(id: UUID): Flow<WorkInfo?> =
 
 fun WorkSpecDao.getWorkStatusPojoFlowForName(
     dispatcher: CoroutineDispatcher,
-    name: String
+    name: String,
 ): Flow<List<WorkInfo>> = getWorkStatusPojoFlowForName(name).dedup(dispatcher)
 
 fun WorkSpecDao.getWorkStatusPojoFlowForTag(
     dispatcher: CoroutineDispatcher,
-    tag: String
+    tag: String,
 ): Flow<List<WorkInfo>> = getWorkStatusPojoFlowForTag(tag).dedup(dispatcher)
 
 internal fun Flow<List<WorkSpec.WorkInfoPojo>>.dedup(

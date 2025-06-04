@@ -211,7 +211,7 @@ sealed class CompilationMode {
                     $packageName should use the latest version of `androidx.profileinstaller`
                     for stable benchmarks. ($result)"
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
         Log.d(TAG, "Killing process $packageName")
@@ -219,10 +219,7 @@ sealed class CompilationMode {
     }
 
     @RequiresApi(24)
-    internal abstract fun compileImpl(
-        scope: MacrobenchmarkScope,
-        warmupBlock: () -> Unit,
-    )
+    internal abstract fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit)
 
     @RequiresApi(24) internal abstract fun shouldReset(): Boolean
 
@@ -303,7 +300,7 @@ sealed class CompilationMode {
          * If greater than 0, your macrobenchmark will run an extra [warmupIterations] times before
          * compilation, to prepare
          */
-        @IntRange(from = 0) val warmupIterations: Int = 0
+        @IntRange(from = 0) val warmupIterations: Int = 0,
     ) : CompilationMode() {
         init {
             require(warmupIterations >= 0) {
@@ -349,7 +346,7 @@ sealed class CompilationMode {
             if (warmupIterations > 0) {
                 scope.withKillMode(
                     current = scope.killMode,
-                    override = scope.killMode.copy(flushArtProfiles = true)
+                    override = scope.killMode.copy(flushArtProfiles = true),
                 ) {
                     check(!scope.hasFlushedArtProfiles)
                     repeat(warmupIterations) { warmupBlock() }
@@ -429,7 +426,7 @@ sealed class CompilationMode {
             if (Build.VERSION.SDK_INT >= 24) {
                 Partial(
                     baselineProfileMode = BaselineProfileMode.UseIfAvailable,
-                    warmupIterations = 0
+                    warmupIterations = 0,
                 )
             } else {
                 // API 23 is always fully compiled
@@ -465,7 +462,7 @@ sealed class CompilationMode {
         fun compileResetErrorString(
             packageName: String,
             output: String,
-            isEmulator: Boolean
+            isEmulator: Boolean,
         ): String {
             return "Unable to reset compilation of $packageName (out=$output)." +
                 if (output.contains("could not be compiled") && isEmulator) {

@@ -130,19 +130,12 @@ open class SelectionContainerContextMenuTest {
     ) {
         val initialClipboardText = "clip"
 
-        val clipboard =
-            FakeClipboard(
-                initialText = initialClipboardText,
-                supportsClipEntry = true,
-            )
+        val clipboard = FakeClipboard(initialText = initialClipboardText, supportsClipEntry = true)
 
         var selection by mutableStateOf<Selection?>(null)
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
-                SelectionContainer(
-                    selection = selection,
-                    onSelectionChange = { selection = it },
-                ) {
+                SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
                     BasicText(defaultText, modifier = Modifier.testTag(textTag))
                 }
             }
@@ -178,9 +171,7 @@ open class SelectionContainerContextMenuTest {
     // region Context Menu Correct Item Tests
     @Test
     fun contextMenu_noSelection_itemsMatch() =
-        runCorrectItemsTest(
-            selectionAmount = SelectionAmount.NONE,
-        ) { selection ->
+        runCorrectItemsTest(selectionAmount = SelectionAmount.NONE) { selection ->
             assertThat(selection).isNull()
             rule.assertContextMenuItems(
                 cutState = ContextMenuItemState.DOES_NOT_EXIST,
@@ -193,9 +184,7 @@ open class SelectionContainerContextMenuTest {
 
     @Test
     fun contextMenu_partialSelection_itemsMatch() =
-        runCorrectItemsTest(
-            selectionAmount = SelectionAmount.PARTIAL,
-        ) { selection ->
+        runCorrectItemsTest(selectionAmount = SelectionAmount.PARTIAL) { selection ->
             assertThat(selection).isNotNull()
             assertThat(selection!!.toTextRange()).isEqualTo(TextRange(5, 9))
             rule.assertContextMenuItems(
@@ -209,9 +198,7 @@ open class SelectionContainerContextMenuTest {
 
     @Test
     fun contextMenu_fullSelection_itemsMatch() =
-        runCorrectItemsTest(
-            selectionAmount = SelectionAmount.ALL,
-        ) { selection ->
+        runCorrectItemsTest(selectionAmount = SelectionAmount.ALL) { selection ->
             assertThat(selection).isNotNull()
             assertThat(selection!!.toTextRange()).isEqualTo(TextRange(0, 14))
             rule.assertContextMenuItems(
@@ -226,7 +213,7 @@ open class SelectionContainerContextMenuTest {
     private enum class SelectionAmount {
         NONE,
         PARTIAL,
-        ALL
+        ALL,
     }
 
     private fun runCorrectItemsTest(
@@ -235,20 +222,13 @@ open class SelectionContainerContextMenuTest {
     ) {
         val text = "Text Text Text"
 
-        val clipboard =
-            FakeClipboard(
-                initialText = "Clipboard Text",
-                supportsClipEntry = true,
-            )
+        val clipboard = FakeClipboard(initialText = "Clipboard Text", supportsClipEntry = true)
 
         var selection by mutableStateOf<Selection?>(null)
 
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
-                SelectionContainer(
-                    selection = selection,
-                    onSelectionChange = { selection = it },
-                ) {
+                SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
                     BasicText(text, modifier = Modifier.testTag(textTag))
                 }
             }

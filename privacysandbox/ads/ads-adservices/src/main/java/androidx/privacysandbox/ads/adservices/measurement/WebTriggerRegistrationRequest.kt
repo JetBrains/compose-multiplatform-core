@@ -56,7 +56,7 @@ public constructor(val webTriggerParams: List<WebTriggerParams>, val destination
         android.adservices.measurement.WebTriggerRegistrationRequest {
         return android.adservices.measurement.WebTriggerRegistrationRequest.Builder(
                 convertWebTriggerParams(webTriggerParams),
-                destination
+                destination,
             )
             .build()
     }

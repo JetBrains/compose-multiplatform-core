@@ -29,7 +29,7 @@ package androidx.privacysandbox.ads.adservices.topics
 class GetTopicsRequest
 public constructor(
     val adsSdkName: String = "",
-    @get:JvmName("shouldRecordObservation") val shouldRecordObservation: Boolean = false
+    @get:JvmName("shouldRecordObservation") val shouldRecordObservation: Boolean = false,
 ) {
     override fun toString(): String {
         return "GetTopicsRequest: " +

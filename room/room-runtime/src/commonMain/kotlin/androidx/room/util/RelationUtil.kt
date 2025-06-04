@@ -36,7 +36,7 @@ import kotlin.jvm.JvmName
 public fun <K : Any, V> recursiveFetchMap(
     map: MutableMap<K, V>,
     isRelationCollection: Boolean,
-    fetchBlock: (MutableMap<K, V>) -> Unit
+    fetchBlock: (MutableMap<K, V>) -> Unit,
 ) {
     val tmpMap = mutableMapOf<K, V>()
     var count = 0
@@ -76,7 +76,7 @@ public fun <K : Any, V> recursiveFetchMap(
 public fun <V> recursiveFetchLongSparseArray(
     map: LongSparseArray<V>,
     isRelationCollection: Boolean,
-    fetchBlock: (LongSparseArray<V>) -> Unit
+    fetchBlock: (LongSparseArray<V>) -> Unit,
 ) {
     val tmpMap = LongSparseArray<V>(MAX_BIND_PARAMETER_CNT)
     var count = 0

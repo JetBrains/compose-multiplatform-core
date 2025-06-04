@@ -121,7 +121,7 @@ abstract class SdkResourceGenerator : DefaultTask() {
             project: Project,
             kspVersion: String = project.getVersionByName("ksp"),
             agpVersion: String = project.getVersionByName("androidGradlePlugin"),
-            kgpVersion: String = project.getVersionByName("kotlin")
+            kgpVersion: String = project.getVersionByName("kotlin"),
         ): TaskProvider<SdkResourceGenerator> {
             val generatedDirectory = project.layout.buildDirectory.dir("generated/resources")
             return project.tasks.register(TASK_NAME, SdkResourceGenerator::class.java) {

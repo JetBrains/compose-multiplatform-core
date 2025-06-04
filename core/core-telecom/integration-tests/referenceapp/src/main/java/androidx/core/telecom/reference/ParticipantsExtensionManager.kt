@@ -41,7 +41,7 @@ class ParticipantsExtensionManager {
                 "Participant 0",
                 isHandRaised = false,
                 isActive = false,
-                isSelf = true
+                isSelf = true,
             )
     }
 
@@ -62,7 +62,7 @@ class ParticipantsExtensionManager {
                         name = "Participant $id",
                         isHandRaised = false,
                         isActive = false,
-                        isSelf = false
+                        isSelf = false,
                     )
                 )
             }
@@ -104,7 +104,7 @@ class ParticipantsExtensionManager {
                         } else {
                             p.isHandRaised
                         },
-                    isSelf = p.isSelf
+                    isSelf = p.isSelf,
                 )
             }
         }
@@ -122,7 +122,7 @@ class ParticipantsExtensionManager {
                             name = p.name,
                             isActive = p.isActive,
                             isHandRaised = isHandRaised,
-                            isSelf = p.isSelf
+                            isSelf = p.isSelf,
                         )
                     )
                 } else {
@@ -153,7 +153,7 @@ class ParticipantsExtensionManager {
             if (candidate == null) {
                 Log.w(
                     "ParticipantsManager",
-                    "Attempted to kick unknown participant: ${participant.id}"
+                    "Attempted to kick unknown participant: ${participant.id}",
                 )
                 return@update state // Participant not found
             }

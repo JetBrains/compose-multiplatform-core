@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.common.BaseActivityPose;
 
 /** A ActivityPose representing the origin of the OpenXR reference space. */
 final class PerceptionSpaceActivityPoseImpl extends BaseActivityPose

@@ -32,9 +32,7 @@ import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMe
  *   [TextContextMenuSession.close] on the [TextContextMenuSession] receiver to close the context
  *   menu item as a result of the click.
  */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuItem
-internal constructor(
+class TextContextMenuItem(
     key: Any,
     val label: String,
     val leadingIcon: Int = Resources.ID_NULL,
@@ -43,3 +41,17 @@ internal constructor(
     override fun toString(): String =
         "TextContextMenuItem(key=$key, label=\"$label\", leadingIcon=$leadingIcon)"
 }
+
+/**
+ * Key for context menu items added for the Android PROCESS_TEXT intent actions. You can use this
+ * key to filter the PROCESS_TEXT components by calling
+ * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents].
+ */
+class ProcessTextKey
+internal constructor(
+    /**
+     * There can be multiple PROCESS_TEXT items in the context menu and each of them has a different
+     * id.
+     */
+    val id: Int
+)

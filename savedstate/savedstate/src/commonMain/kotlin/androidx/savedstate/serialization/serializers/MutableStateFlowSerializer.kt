@@ -74,9 +74,8 @@ public inline fun <reified T> MutableStateFlowSerializer(): MutableStateFlowSeri
  * @param T The type of the value stored in the [MutableStateFlow].
  * @param valueSerializer The [KSerializer] used to serialize and deserialize the inner value.
  */
-public class MutableStateFlowSerializer<T>(
-    private val valueSerializer: KSerializer<T>,
-) : KSerializer<MutableStateFlow<T>> {
+public class MutableStateFlowSerializer<T>(private val valueSerializer: KSerializer<T>) :
+    KSerializer<MutableStateFlow<T>> {
 
     @OptIn(ExperimentalSerializationApi::class)
     override val descriptor: SerialDescriptor = run {

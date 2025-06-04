@@ -84,12 +84,12 @@ class PlaneTest {
         val plane1 =
             Plane(
                 FakeRuntimePlane(type = RuntimePlane.Type.HORIZONTAL_UPWARD_FACING),
-                xrResourcesManager
+                xrResourcesManager,
             )
         val plane2 =
             Plane(
                 FakeRuntimePlane(type = RuntimePlane.Type.HORIZONTAL_DOWNWARD_FACING),
-                xrResourcesManager
+                xrResourcesManager,
             )
         val plane3 = Plane(FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL), xrResourcesManager)
 

@@ -52,7 +52,7 @@ import androidx.wear.protolayout.material3.tokens.TextStyle
  */
 internal class MaterialTheme(
     internal val colorScheme: ColorScheme = ColorScheme(),
-    internal val shapes: Shapes = Shapes()
+    internal val shapes: Shapes = Shapes(),
 ) {
     /** Retrieves the [FontStyle.Builder] with the typography name. */
     internal fun getFontStyleBuilder(@TypographyToken typographyToken: Int) =
@@ -69,7 +69,7 @@ internal fun createFontStyleBuilder(
     @TypographyToken typographyToken: Int,
     deviceConfiguration: DeviceParameters? = null,
     isScalable: Boolean = true,
-    @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = listOf()
+    @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = listOf(),
 ): FontStyle.Builder {
     val textStyle: TextStyle = Typography.fromToken(typographyToken)
     val sizeSp: SpProp = textStyle.size

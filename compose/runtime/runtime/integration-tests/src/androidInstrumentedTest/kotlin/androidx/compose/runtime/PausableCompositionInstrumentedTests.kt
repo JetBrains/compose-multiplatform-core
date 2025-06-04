@@ -280,7 +280,7 @@ class PausableCompositionInstrumentedTests {
                         outerCompositionHappened = true
                         DisposableEffectWrapper(
                             onComposed = { recompositionTrigger },
-                            onApplied = { applyCalls++ }
+                            onApplied = { applyCalls++ },
                         )
                     }
 
@@ -376,7 +376,7 @@ class PausableCompositionInstrumentedTests {
                         outerCompositionHappened = true
                         RememberWrapper(
                             onComposed = { recompositionTrigger },
-                            onRemembered = { rememberCalls++ }
+                            onRemembered = { rememberCalls++ },
                         )
                     }
 
@@ -429,6 +429,47 @@ class PausableCompositionInstrumentedTests {
         }
         rule.waitForIdle()
     }
+
+    @Test
+    fun precomposingWithPauseAndExtraRecomposition_updateModifierDuringRecompositionNotCrashing() {
+        // initialize SubcomposeLayout with one composition in a reuse pool
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var addSlot by mutableStateOf(true)
+
+        var modifier by mutableStateOf(Modifier.drawBehind {})
+        val content = @Composable { LayoutWrapper(modifier) }
+
+        rule.setContent {
+            SubcomposeLayout(state) {
+                if (addSlot) {
+                    subcompose("for-reuse", content)
+                }
+                layout(10, 10) {}
+            }
+        }
+        rule.runOnIdle { addSlot = false }
+
+        val precomposition =
+            rule.runOnIdle {
+                val precomposition = state.createPausedPrecomposition(Unit, content)
+
+                // resume and pause before composing Wrapper
+                precomposition.resume { true }
+
+                // trigger recomposition
+                modifier = Modifier
+
+                precomposition
+            }
+
+        rule.runOnIdle {
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
+            }
+
+            precomposition.apply()
+        }
+    }
 }
 
 @Composable
@@ -448,4 +489,9 @@ fun RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
         object {}
     }
     println(a)
+}
+
+@Composable
+fun LayoutWrapper(modifier: Modifier) {
+    Layout(modifier) { measurables, constraints -> layout(10, 10) {} }
 }

@@ -62,7 +62,7 @@ class StableAidlPluginTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         // Tasks should contain those defined in StableAidlTasks.
@@ -97,7 +97,7 @@ class StableAidlPluginTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         // Tasks should contain those defined in StableAidlTasks.
@@ -132,7 +132,7 @@ class StableAidlPluginTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         // Tasks should contain those defined in StableAidlTasks.

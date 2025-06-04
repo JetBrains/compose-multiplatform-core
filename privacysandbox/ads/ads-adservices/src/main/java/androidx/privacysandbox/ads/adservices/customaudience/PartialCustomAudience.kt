@@ -41,7 +41,7 @@ constructor(
     val name: String,
     val activationTime: Instant? = null,
     val expirationTime: Instant? = null,
-    val userBiddingSignals: AdSelectionSignals? = null
+    val userBiddingSignals: AdSelectionSignals? = null,
 ) {
     /** Checks whether two PartialCustomAudience objects contain the same information. */
     override fun equals(other: Any?): Boolean {

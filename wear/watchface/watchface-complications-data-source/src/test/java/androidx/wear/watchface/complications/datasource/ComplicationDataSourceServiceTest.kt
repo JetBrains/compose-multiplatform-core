@@ -73,7 +73,7 @@ class ComplicationDataSourceServiceTest {
         object : IComplicationManager.Stub() {
             override fun updateComplicationData(
                 complicationSlotId: Int,
-                data: WireComplicationData?
+                data: WireComplicationData?,
             ) {
                 try {
                     mRemoteManager.updateComplicationData(complicationSlotId, data)
@@ -119,7 +119,7 @@ class ComplicationDataSourceServiceTest {
 
         override fun onComplicationRequest(
             request: ComplicationRequest,
-            listener: ComplicationRequestListener
+            listener: ComplicationRequestListener,
         ) {
             lastRequest = request
             try {
@@ -190,7 +190,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val id = 123
@@ -211,7 +211,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val id = 123
@@ -224,9 +224,9 @@ class ComplicationDataSourceServiceTest {
             Bundle().apply {
                 putInt(
                     IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE,
-                    TargetWatchFaceSafety.SAFE
+                    TargetWatchFaceSafety.SAFE,
                 )
-            }
+            },
         )
 
         runUiThreadTasksWhileAwaitingDataLatch(1000)
@@ -239,7 +239,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val id = 123
@@ -249,7 +249,7 @@ class ComplicationDataSourceServiceTest {
             id,
             ComplicationType.LONG_TEXT.toWireComplicationType(),
             mLocalManager,
-            Bundle()
+            Bundle(),
         )
 
         runUiThreadTasksWhileAwaitingDataLatch(1000)
@@ -263,7 +263,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val id = 123
@@ -324,7 +324,7 @@ class ComplicationDataSourceServiceTest {
         mService.previewData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello preview").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
 
@@ -340,7 +340,7 @@ class ComplicationDataSourceServiceTest {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     enum class GetComplicationPreviewDataInvalidScenario(
         val data: ComplicationData,
-        val message: String
+        val message: String,
     ) {
         INVALID_PREVIEW_DATA(INVALID_DATA, INVALID_DATA_ERROR_MESSAGE),
         DYNAMIC_RANGED_VALUE(
@@ -349,48 +349,48 @@ class ComplicationDataSourceServiceTest {
                     fallbackValue = 0f,
                     min = 0f,
                     max = 10f,
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .setText(ComplicationText.EMPTY)
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
         DYNAMIC_LONG_TEXT(
             LongTextComplicationData.Builder(
                     text = DynamicComplicationText(DynamicString.constant("Long Text"), "fallback"),
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
         DYNAMIC_LONG_TITLE(
             LongTextComplicationData.Builder(
                     text = ComplicationText.EMPTY,
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .setTitle(DynamicComplicationText(DynamicString.constant("Long Title"), "fallback"))
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
         DYNAMIC_SHORT_TEXT(
             ShortTextComplicationData.Builder(
                     text =
                         DynamicComplicationText(DynamicString.constant("Short Text"), "fallback"),
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
         DYNAMIC_SHORT_TITLE(
             ShortTextComplicationData.Builder(
                     text = ComplicationText.EMPTY,
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .setTitle(
                     DynamicComplicationText(DynamicString.constant("Short Title"), "fallback")
                 )
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
         DYNAMIC_CONTENT_DESCRIPTION(
             LongTextComplicationData.Builder(
@@ -399,7 +399,7 @@ class ComplicationDataSourceServiceTest {
                         DynamicComplicationText(DynamicString.constant("Long Text"), "fallback"),
                 )
                 .build(),
-            "Preview data must not have dynamic values."
+            "Preview data must not have dynamic values.",
         ),
     }
 
@@ -433,9 +433,9 @@ class ComplicationDataSourceServiceTest {
                 TimeInterval(Instant.ofEpochSecond(1000), Instant.ofEpochSecond(4000)),
                 LongTextComplicationData.Builder(
                         PlainComplicationText.Builder("A").build(),
-                        ComplicationText.EMPTY
+                        ComplicationText.EMPTY,
                     )
-                    .build()
+                    .build(),
             )
         )
         timeline.add(
@@ -443,19 +443,19 @@ class ComplicationDataSourceServiceTest {
                 TimeInterval(Instant.ofEpochSecond(6000), Instant.ofEpochSecond(8000)),
                 LongTextComplicationData.Builder(
                         PlainComplicationText.Builder("B").build(),
-                        ComplicationText.EMPTY
+                        ComplicationText.EMPTY,
                     )
-                    .build()
+                    .build(),
             )
         )
         mService.responseDataTimeline =
             ComplicationDataTimeline(
                 LongTextComplicationData.Builder(
                         PlainComplicationText.Builder("default").build(),
-                        ComplicationText.EMPTY
+                        ComplicationText.EMPTY,
                     )
                     .build(),
-                timeline
+                timeline,
             )
 
         val id = 123
@@ -503,7 +503,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val thread = HandlerThread("testThread")
@@ -519,7 +519,7 @@ class ComplicationDataSourceServiceTest {
                     response.set(
                         mProvider.onSynchronousComplicationRequest(
                             123,
-                            ComplicationType.LONG_TEXT.toWireComplicationType()
+                            ComplicationType.LONG_TEXT.toWireComplicationType(),
                         )
                     )
                     doneLatch.countDown()
@@ -546,7 +546,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val thread = HandlerThread("testThread")
@@ -566,9 +566,9 @@ class ComplicationDataSourceServiceTest {
                             Bundle().apply {
                                 putInt(
                                     IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE,
-                                    TargetWatchFaceSafety.SAFE
+                                    TargetWatchFaceSafety.SAFE,
                                 )
-                            }
+                            },
                         )
                     )
                     doneLatch.countDown()
@@ -593,7 +593,7 @@ class ComplicationDataSourceServiceTest {
         mService.responseData =
             LongTextComplicationData.Builder(
                     PlainComplicationText.Builder("hello").build(),
-                    ComplicationText.EMPTY
+                    ComplicationText.EMPTY,
                 )
                 .build()
         val thread = HandlerThread("testThread")
@@ -610,7 +610,7 @@ class ComplicationDataSourceServiceTest {
                         mProvider.onSynchronousComplicationRequest2(
                             id,
                             ComplicationType.LONG_TEXT.toWireComplicationType(),
-                            Bundle()
+                            Bundle(),
                         )
                     )
                     doneLatch.countDown()
@@ -650,7 +650,7 @@ class ComplicationDataSourceServiceTest {
                     response.set(
                         mProvider.onSynchronousComplicationRequest(
                             123,
-                            INVALID_DATA.type.toWireComplicationType()
+                            INVALID_DATA.type.toWireComplicationType(),
                         )
                     )
                 } catch (e: RemoteException) {
@@ -690,7 +690,7 @@ class ComplicationDataSourceServiceTest {
                     response.set(
                         mProvider.onSynchronousComplicationRequest(
                             123,
-                            INVALID_DATA.type.toWireComplicationType()
+                            INVALID_DATA.type.toWireComplicationType(),
                         )
                     )
                 } catch (e: RemoteException) {
@@ -730,7 +730,7 @@ class ComplicationDataSourceServiceTest {
                     response.set(
                         mProvider.onSynchronousComplicationRequest(
                             123,
-                            INVALID_DATA.type.toWireComplicationType()
+                            INVALID_DATA.type.toWireComplicationType(),
                         )
                     )
                 } catch (e: RemoteException) {
@@ -761,7 +761,7 @@ class ComplicationDataSourceServiceTest {
                     value = 100f, // Higher than max.
                     min = 0f,
                     max = 10f,
-                    contentDescription = ComplicationText.EMPTY
+                    contentDescription = ComplicationText.EMPTY,
                 )
                 .setText(ComplicationText.EMPTY)
                 .build()

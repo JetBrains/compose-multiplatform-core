@@ -36,10 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
@@ -63,7 +63,7 @@ class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
             PanelEntity.create(
                 session = mSession,
                 view = mHeadLockedPanelView,
-                pixelDimensions = PixelDimensions(800, 360),
+                pixelDimensions = IntSize2d(800, 360),
                 name = "headLockedPanel",
                 pose = Pose(Vector3(0f, 0f, 0f)),
             )
@@ -117,7 +117,7 @@ class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
                 ) {
                     Text(
                         text = (if (modelIsHidden) "Show Panel" else "Hide Panel"),
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
                     )
                 }
                 // Toggle headlocked UI

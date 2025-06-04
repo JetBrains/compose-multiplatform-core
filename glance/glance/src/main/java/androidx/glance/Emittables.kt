@@ -30,7 +30,7 @@ public interface Emittable {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class EmittableWithChildren(
     internal var maxDepth: Int = Int.MAX_VALUE,
-    internal val resetsDepthForChildren: Boolean = false
+    internal val resetsDepthForChildren: Boolean = false,
 ) : Emittable {
     public val children: MutableList<Emittable> = mutableListOf<Emittable>()
 

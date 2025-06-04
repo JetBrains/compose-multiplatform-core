@@ -336,7 +336,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
         companion object {
             fun create(
                 shape: PartitionedMesh,
-                strokeToScreenTransform: Matrix
+                strokeToScreenTransform: Matrix,
             ): PartitionedMeshPathData {
                 val paths = buildList {
                     for (groupIndex in 0 until shape.getRenderGroupCount()) {
@@ -350,7 +350,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
                 return PartitionedMeshPathData(
                     Matrix(strokeToScreenTransform),
                     paths,
-                    shape.nativePointer
+                    shape.nativePointer,
                 )
             }
         }

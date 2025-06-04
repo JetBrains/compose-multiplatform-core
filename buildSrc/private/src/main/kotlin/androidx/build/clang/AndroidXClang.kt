@@ -34,7 +34,7 @@ class AndroidXClang(val project: Project) {
                 MultiTargetNativeCompilation(
                     project = project,
                     archiveName = archiveName,
-                    outputKind = outputKind
+                    outputKind = outputKind,
                 )
             }
         configure.execute(multiTargetNativeCompilation)

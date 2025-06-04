@@ -65,7 +65,7 @@ class RubyTest {
             val text: CharSequence,
             val start: Int,
             val end: Int,
-            val paint: Paint
+            val paint: Paint,
         )
 
         val invocations = mutableListOf<DrawTextRunCall>()
@@ -76,7 +76,7 @@ class RubyTest {
             end: Int,
             x: Float,
             y: Float,
-            paint: Paint
+            paint: Paint,
         ) {
             super.drawText(text, start, end, x, y, paint)
             invocations.add(DrawTextRunCall(text, start, end, Paint(paint)))

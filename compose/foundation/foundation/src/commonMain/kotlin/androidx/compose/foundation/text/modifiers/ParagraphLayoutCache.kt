@@ -53,7 +53,7 @@ internal class ParagraphLayoutCache(
     private var overflow: TextOverflow = TextOverflow.Clip,
     private var softWrap: Boolean = true,
     private var maxLines: Int = Int.MAX_VALUE,
-    private var minLines: Int = DefaultMinLines
+    private var minLines: Int = DefaultMinLines,
 ) {
 
     /**
@@ -200,7 +200,7 @@ internal class ParagraphLayoutCache(
     private fun useMinLinesConstrainer(
         constraints: Constraints,
         layoutDirection: LayoutDirection,
-        style: TextStyle = this.style
+        style: TextStyle = this.style,
     ): Constraints {
         val localMin =
             MinLinesConstrainer.from(
@@ -208,7 +208,7 @@ internal class ParagraphLayoutCache(
                     layoutDirection,
                     style,
                     density!!,
-                    fontFamilyResolver
+                    fontFamilyResolver,
                 )
                 .also { mMinLinesConstrainer = it }
         return localMin.coerceMinLines(inConstraints = constraints, minLines = minLines)
@@ -245,7 +245,7 @@ internal class ParagraphLayoutCache(
         overflow: TextOverflow,
         softWrap: Boolean,
         maxLines: Int,
-        minLines: Int
+        minLines: Int,
     ) {
         this.text = text
         this.style = style
@@ -278,7 +278,7 @@ internal class ParagraphLayoutCache(
                     annotations = listOf(),
                     density = density!!,
                     fontFamilyResolver = fontFamilyResolver,
-                    placeholders = listOf()
+                    placeholders = listOf(),
                 )
             } else {
                 localIntrinsics
@@ -303,10 +303,10 @@ internal class ParagraphLayoutCache(
                     constraints,
                     softWrap,
                     overflow,
-                    localParagraphIntrinsics.maxIntrinsicWidth
+                    localParagraphIntrinsics.maxIntrinsicWidth,
                 ),
             maxLines = finalMaxLines(softWrap, overflow, maxLines),
-            overflow = overflow
+            overflow = overflow,
         )
     }
 
@@ -316,7 +316,7 @@ internal class ParagraphLayoutCache(
      */
     private fun newLayoutWillBeDifferent(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Boolean {
         // paragraph and paragraphIntrinsics are from previous run
         val localParagraph = paragraph ?: return true
@@ -384,7 +384,7 @@ internal class ParagraphLayoutCache(
                 localDensity,
                 localLayoutDirection,
                 fontFamilyResolver,
-                finalConstraints
+                finalConstraints,
             ),
             MultiParagraph(
                 MultiParagraphIntrinsics(
@@ -392,13 +392,13 @@ internal class ParagraphLayoutCache(
                     style = style,
                     placeholders = emptyList(),
                     density = localDensity,
-                    fontFamilyResolver = fontFamilyResolver
+                    fontFamilyResolver = fontFamilyResolver,
                 ),
                 finalConstraints,
                 maxLines,
-                overflow
+                overflow,
             ),
-            layoutSize
+            layoutSize,
         )
     }
 

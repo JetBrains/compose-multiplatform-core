@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class PdfLambdaIdlingResource(
     private val resourceName: String,
-    internal var isIdleCondition: () -> Boolean
+    internal var isIdleCondition: () -> Boolean,
 ) : IdlingResource {
     private val isIdleNow = AtomicBoolean(false)
     private var resourceCallback: IdlingResource.ResourceCallback? = null

@@ -28,7 +28,7 @@ import kotlinx.coroutines.withContext
  */
 internal class SuspendingPagingSourceFactory<Key : Any, Value : Any>(
     private val dispatcher: CoroutineDispatcher,
-    private val delegate: () -> PagingSource<Key, Value>
+    private val delegate: () -> PagingSource<Key, Value>,
 ) : () -> PagingSource<Key, Value> {
     suspend fun create(): PagingSource<Key, Value> {
         return withContext(dispatcher) { delegate() }

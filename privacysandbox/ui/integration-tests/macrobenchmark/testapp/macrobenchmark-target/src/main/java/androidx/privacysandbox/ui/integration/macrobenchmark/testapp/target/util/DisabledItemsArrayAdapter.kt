@@ -33,7 +33,7 @@ import android.widget.TextView
 class DisabledItemsArrayAdapter(
     context: Context,
     items: Array<String>,
-    private val isEnabledCondition: (Int) -> Boolean
+    private val isEnabledCondition: (Int) -> Boolean,
 ) : ArrayAdapter<CharSequence>(context, android.R.layout.simple_spinner_item, items) {
     init {
         setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)

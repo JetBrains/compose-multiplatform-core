@@ -43,7 +43,7 @@ internal val instrumentationPackageMediaDir =
 internal fun command(
     cmd: String,
     isFailureBlock: (String) -> (Boolean) = { it.isNotBlank() },
-    block: (BufferedReader) -> (String) = { it.readText() }
+    block: (BufferedReader) -> (String) = { it.readText() },
 ): String {
     Log.d(TAG, "Executing: $cmd")
     return uiAutomation

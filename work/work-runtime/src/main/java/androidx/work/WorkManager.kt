@@ -289,7 +289,7 @@ abstract class WorkManager internal constructor() {
     fun beginUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        request: OneTimeWorkRequest
+        request: OneTimeWorkRequest,
     ): WorkContinuation {
         return beginUniqueWork(uniqueWorkName, existingWorkPolicy, listOf(request))
     }
@@ -323,7 +323,7 @@ abstract class WorkManager internal constructor() {
     abstract fun beginUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        requests: List<OneTimeWorkRequest>
+        requests: List<OneTimeWorkRequest>,
     ): WorkContinuation
 
     /**
@@ -346,7 +346,7 @@ abstract class WorkManager internal constructor() {
     open fun enqueueUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        request: OneTimeWorkRequest
+        request: OneTimeWorkRequest,
     ): Operation {
         return enqueueUniqueWork(uniqueWorkName, existingWorkPolicy, listOf(request))
     }
@@ -371,7 +371,7 @@ abstract class WorkManager internal constructor() {
     abstract fun enqueueUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        requests: List<OneTimeWorkRequest>
+        requests: List<OneTimeWorkRequest>,
     ): Operation
 
     /**
@@ -393,7 +393,7 @@ abstract class WorkManager internal constructor() {
     abstract fun enqueueUniquePeriodicWork(
         uniqueWorkName: String,
         existingPeriodicWorkPolicy: ExistingPeriodicWorkPolicy,
-        request: PeriodicWorkRequest
+        request: PeriodicWorkRequest,
     ): Operation
 
     /**

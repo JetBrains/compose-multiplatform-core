@@ -321,13 +321,13 @@ class BasicCallControlsTest : BaseTelecomTest() {
                         } else {
                             assertEquals(
                                 CallControlResult.Success(),
-                                answer(CallAttributesCompat.CALL_TYPE_AUDIO_CALL)
+                                answer(CallAttributesCompat.CALL_TYPE_AUDIO_CALL),
                             )
                         }
                         TestUtils.waitOnCallState(call!!, Call.STATE_ACTIVE)
                         assertEquals(
                             CallControlResult.Success(),
-                            disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                         )
                     }
                 }
@@ -351,7 +351,7 @@ class BasicCallControlsTest : BaseTelecomTest() {
                         }
                         assertEquals(
                             CallControlResult.Success(),
-                            disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                         )
                     }
                 }
@@ -371,7 +371,7 @@ class BasicCallControlsTest : BaseTelecomTest() {
                         assertNotEquals(CallControlResult.Success(), setInactive())
                         assertEquals(
                             CallControlResult.Success(),
-                            disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                         )
                     }
                 }
@@ -402,12 +402,12 @@ class BasicCallControlsTest : BaseTelecomTest() {
                         // request an endpoint switch
                         assertEquals(
                             CallControlResult.Success(),
-                            requestEndpointChange(anotherEndpoint!!)
+                            requestEndpointChange(anotherEndpoint!!),
                         )
                     }
                     assertEquals(
                         CallControlResult.Success(),
-                        disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                        disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                     )
                 }
             }
@@ -439,7 +439,7 @@ class BasicCallControlsTest : BaseTelecomTest() {
                         waitForMuteStateChange(!initialMuteState, isMuted)
                         assertEquals(
                             CallControlResult.Success(),
-                            disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                         )
                     }
                 }
@@ -463,7 +463,7 @@ class BasicCallControlsTest : BaseTelecomTest() {
 
     private fun getAnotherEndpoint(
         currentEndpoint: CallEndpointCompat,
-        availableEndpoints: List<CallEndpointCompat>
+        availableEndpoints: List<CallEndpointCompat>,
     ): CallEndpointCompat? {
         for (endpoint in availableEndpoints) {
             if (endpoint.type != currentEndpoint.type) {

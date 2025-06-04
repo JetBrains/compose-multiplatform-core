@@ -64,14 +64,14 @@ private constructor(
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
     seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
         minLinesToShowCollapse,
         minCrossAxisSizeToShowCollapse,
         seeMoreGetter,
-        collapseGetter
+        collapseGetter,
     ) {
 
     companion object {
@@ -139,7 +139,7 @@ private constructor(
                 minRowsToShowCollapse,
                 minHeightToShowCollapsePx,
                 expandIndicator,
-                collapseIndicator
+                collapseIndicator,
             ) {
                 val seeMoreGetter = { state: FlowLayoutOverflowState ->
                     @Composable {
@@ -160,7 +160,7 @@ private constructor(
                     minLinesToShowCollapse = minRowsToShowCollapse,
                     minCrossAxisSizeToShowCollapse = minHeightToShowCollapsePx,
                     seeMoreGetter = seeMoreGetter,
-                    collapseGetter = collapseGetter
+                    collapseGetter = collapseGetter,
                 )
             }
         }
@@ -193,14 +193,14 @@ private constructor(
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
     seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
         minLinesToShowCollapse,
         minCrossAxisSizeToShowCollapse,
         seeMoreGetter,
-        collapseGetter
+        collapseGetter,
     ) {
     @Deprecated("FlowLayout overflow is no longer maintained")
     @ExperimentalLayoutApi
@@ -272,7 +272,7 @@ private constructor(
                 minColumnsToShowCollapse,
                 minWidthToShowCollapsePx,
                 expandIndicator,
-                collapseIndicator
+                collapseIndicator,
             ) {
                 val seeMoreGetter = { state: FlowLayoutOverflowState ->
                     @Composable {
@@ -293,7 +293,7 @@ private constructor(
                     minLinesToShowCollapse = minColumnsToShowCollapse,
                     minCrossAxisSizeToShowCollapse = minWidthToShowCollapsePx,
                     seeMoreGetter = seeMoreGetter,
-                    collapseGetter = collapseGetter
+                    collapseGetter = collapseGetter,
                 )
             }
         }
@@ -326,14 +326,14 @@ private constructor(
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
     seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
         minLinesToShowCollapse,
         minCrossAxisSizeToShowCollapse,
         seeMoreGetter,
-        collapseGetter
+        collapseGetter,
     ) {
 
     @Deprecated("FlowLayout overflow is no longer maintained")
@@ -370,7 +370,7 @@ private constructor(
             }
             return ContextualFlowRowOverflow(
                 OverflowType.ExpandIndicator,
-                seeMoreGetter = seeMoreGetter
+                seeMoreGetter = seeMoreGetter,
             )
         }
 
@@ -410,7 +410,7 @@ private constructor(
                 minRowsToShowCollapse,
                 minHeightToShowCollapsePx,
                 expandIndicator,
-                collapseIndicator
+                collapseIndicator,
             ) {
                 val seeMoreGetter = { state: FlowLayoutOverflowState ->
                     @Composable {
@@ -431,7 +431,7 @@ private constructor(
                     minLinesToShowCollapse = minRowsToShowCollapse,
                     minCrossAxisSizeToShowCollapse = minHeightToShowCollapsePx,
                     seeMoreGetter = seeMoreGetter,
-                    collapseGetter = collapseGetter
+                    collapseGetter = collapseGetter,
                 )
             }
         }
@@ -464,14 +464,14 @@ private constructor(
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
     seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
         minLinesToShowCollapse,
         minCrossAxisSizeToShowCollapse,
         seeMoreGetter,
-        collapseGetter
+        collapseGetter,
     ) {
 
     @Deprecated("ContextualFlowLayouts are no longer maintained")
@@ -508,7 +508,7 @@ private constructor(
             }
             return ContextualFlowColumnOverflow(
                 OverflowType.ExpandIndicator,
-                seeMoreGetter = seeMoreGetter
+                seeMoreGetter = seeMoreGetter,
             )
         }
 
@@ -548,7 +548,7 @@ private constructor(
                 minColumnsToShowCollapse,
                 minWidthToShowCollapsePx,
                 expandIndicator,
-                collapseIndicator
+                collapseIndicator,
             ) {
                 val seeMoreGetter = { state: FlowLayoutOverflowState ->
                     @Composable {
@@ -569,7 +569,7 @@ private constructor(
                     minLinesToShowCollapse = minColumnsToShowCollapse,
                     minCrossAxisSizeToShowCollapse = minWidthToShowCollapsePx,
                     seeMoreGetter = seeMoreGetter,
-                    collapseGetter = collapseGetter
+                    collapseGetter = collapseGetter,
                 )
             }
         }
@@ -596,14 +596,14 @@ sealed class FlowLayoutOverflow(
     private val minLinesToShowCollapse: Int = 0,
     private val minCrossAxisSizeToShowCollapse: Int = 0,
     private val seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    private val collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null
+    private val collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
 ) {
     internal fun createOverflowState() =
         FlowLayoutOverflowState(type, minLinesToShowCollapse, minCrossAxisSizeToShowCollapse)
 
     internal fun addOverflowComposables(
         state: FlowLayoutOverflowState,
-        list: MutableList<@Composable () -> Unit>
+        list: MutableList<@Composable () -> Unit>,
     ) {
         val expandIndicator = seeMoreGetter?.let { getter -> getter(state) }
         val collapseIndicator = collapseGetter?.let { getter -> getter(state) }
@@ -628,7 +628,7 @@ sealed class FlowLayoutOverflow(
 
 internal fun lazyInt(
     errorMessage: String = "Lazy item is not yet initialized",
-    initializer: () -> Int
+    initializer: () -> Int,
 ): Lazy<Int> = LazyImpl(initializer, errorMessage)
 
 private class LazyImpl(val initializer: () -> Int, val errorMessage: String) : Lazy<Int> {
@@ -660,7 +660,7 @@ internal data class FlowLayoutOverflowState
 internal constructor(
     internal val type: FlowLayoutOverflow.OverflowType,
     internal val minLinesToShowCollapse: Int,
-    internal val minCrossAxisSizeToShowCollapse: Int
+    internal val minCrossAxisSizeToShowCollapse: Int,
 ) {
     internal val shownItemCount: Int
         get() {
@@ -694,7 +694,7 @@ internal constructor(
     internal fun ellipsisSize(
         hasNext: Boolean,
         lineIndex: Int,
-        totalCrossAxisSize: Int
+        totalCrossAxisSize: Int,
     ): IntIntPair? {
         return when (type) {
             FlowLayoutOverflow.OverflowType.Visible -> null
@@ -723,7 +723,7 @@ internal constructor(
     internal fun ellipsisInfo(
         hasNext: Boolean,
         lineIndex: Int,
-        totalCrossAxisSize: Int
+        totalCrossAxisSize: Int,
     ): FlowLayoutBuildingBlocks.WrapEllipsisInfo? {
         return when (type) {
             FlowLayoutOverflow.OverflowType.Visible -> null
@@ -837,7 +837,7 @@ internal constructor(
     internal fun setOverflowMeasurables(
         measurePolicy: FlowLineMeasurePolicy,
         constraints: Constraints,
-        getOverflowMeasurable: ((isExpandable: Boolean, numberOfItemsShown: Int) -> Measurable?)
+        getOverflowMeasurable: ((isExpandable: Boolean, numberOfItemsShown: Int) -> Measurable?),
     ) {
         this.itemShown = 0
         this.getOverflowMeasurable = getOverflowMeasurable

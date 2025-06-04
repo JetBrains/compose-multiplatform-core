@@ -32,7 +32,7 @@ public class AppFunctionSchemaMetadata(
     /** The unique name of the schema within its category. */
     public val name: String,
     /** The version of the schema. This is used to track the changes to the schema over time. */
-    public val version: Long
+    public val version: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

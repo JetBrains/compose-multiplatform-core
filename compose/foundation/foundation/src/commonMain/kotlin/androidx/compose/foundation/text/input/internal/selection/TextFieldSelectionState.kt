@@ -55,6 +55,7 @@ import androidx.compose.foundation.text.input.internal.selection.TextToolbarStat
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Selection
 import androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
+import androidx.compose.foundation.text.selection.PlatformSelectionBehaviors
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionLayout
 import androidx.compose.foundation.text.selection.containsInclusive
@@ -112,6 +113,9 @@ import kotlinx.coroutines.launch
  * @param readOnly If true, selection behaviors still work, but the text field cannot be edited.
  * @param isFocused True iff component is focused and the window is focused.
  * @param isPassword True if the text field is for a password.
+ * @param toolbarRequester The [ToolbarRequester] used to show and hide text floating toolbar.
+ * @param coroutineScope The [coroutineScope] bounds to the composition.
+ * @param platformSelectionBehaviors The platform specific selection behaviors.
  */
 @OptIn(ExperimentalFoundationApi::class)
 internal class TextFieldSelectionState(
@@ -123,6 +127,8 @@ internal class TextFieldSelectionState(
     var isFocused: Boolean,
     private var isPassword: Boolean,
     private val toolbarRequester: ToolbarRequester,
+    private val coroutineScope: CoroutineScope,
+    private val platformSelectionBehaviors: PlatformSelectionBehaviors?,
 ) {
     var enabled: Boolean = enabled
         private set
@@ -213,7 +219,7 @@ internal class TextFieldSelectionState(
     enum class InputType {
         None,
         Touch,
-        Mouse
+        Mouse,
     }
 
     /**
@@ -300,7 +306,7 @@ internal class TextFieldSelectionState(
             position = if (includePosition) getCursorRect().bottomCenter else Offset.Unspecified,
             lineHeight = lineHeight,
             direction = ResolvedTextDirection.Ltr,
-            handlesCrossed = false
+            handlesCrossed = false,
         )
     }
 
@@ -361,7 +367,7 @@ internal class TextFieldSelectionState(
             left = coercedCursorCenterX - cursorWidth / 2,
             right = coercedCursorCenterX + cursorWidth / 2,
             top = cursorRect.top,
-            bottom = cursorRect.bottom
+            bottom = cursorRect.bottom,
         )
     }
 
@@ -372,7 +378,7 @@ internal class TextFieldSelectionState(
         density: Density,
         enabled: Boolean,
         readOnly: Boolean,
-        isPassword: Boolean
+        isPassword: Boolean,
     ) {
         if (!enabled) {
             hideTextToolbar()
@@ -414,10 +420,10 @@ internal class TextFieldSelectionState(
                                 } else {
                                     Handle.SelectionEnd
                                 },
-                            position = getAdjustedCoordinates(getHandlePosition(isStartHandle))
+                            position = getAdjustedCoordinates(getHandlePosition(isStartHandle)),
                         )
                     },
-                    onUp = { clearHandleDragging() }
+                    onUp = { clearHandleDragging() },
                 )
             }.invokeOnCompletion {
                 clearHandleDragging()
@@ -473,7 +479,7 @@ internal class TextFieldSelectionState(
     suspend fun PointerInputScope.detectTextFieldTapGestures(
         interactionSource: MutableInteractionSource?,
         requestFocus: () -> Unit,
-        showKeyboard: () -> Unit
+        showKeyboard: () -> Unit,
     ) = detectTextFieldTapGestures(this@TextFieldSelectionState, interactionSource, requestFocus, showKeyboard)
 
     /**
@@ -590,7 +596,7 @@ internal class TextFieldSelectionState(
                             // change
                             hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         }
-                    }
+                    },
             )
         } finally {
             onDragStop()
@@ -672,14 +678,14 @@ internal class TextFieldSelectionState(
                 } else {
                     textLayoutState.getOffsetForPosition(
                         position = dragBeginPosition,
-                        coerceInVisibleBounds = false
+                        coerceInVisibleBounds = false,
                     )
                 }
 
             val endOffset: Int =
                 textLayoutState.getOffsetForPosition(
                     position = dragPosition,
-                    coerceInVisibleBounds = false
+                    coerceInVisibleBounds = false,
                 )
 
             var newSelection =
@@ -738,6 +744,7 @@ internal class TextFieldSelectionState(
         private var dragBeginPosition: Offset = Offset.Unspecified
         private var dragTotalDistance: Offset = Offset.Zero
         private var actingHandle: Handle = Handle.SelectionEnd // start with a placeholder.
+        private var isLongPressSelectionOnly = true
 
         private fun onDragStop() {
             // Only execute clear-up if drag was actually ongoing.
@@ -751,6 +758,35 @@ internal class TextFieldSelectionState(
 
                 directDragGestureInitiator = InputType.None
                 requestFocus()
+
+                val platformSelectionBehaviors =
+                    this@TextFieldSelectionState.platformSelectionBehaviors ?: return
+                val text = textFieldState.visualText.text
+                val selection = textFieldState.visualText.selection
+                if (isLongPressSelectionOnly && text.isNotEmpty() && !selection.collapsed) {
+                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        val suggestedSelection =
+                            platformSelectionBehaviors.suggestSelectionForLongPressOrDoubleClick(
+                                text,
+                                selection,
+                            )
+
+                        // Ideally, the selection suggestion job should be cancelled whenever the
+                        // selection or text is updated. However, implementing this for all
+                        // selection/editing options is unmaintainable. Therefore, we only require
+                        // that the text and selection remain unchanged since the selection
+                        // suggestion was made.
+                        if (
+                            !isPassword &&
+                                suggestedSelection != null &&
+                                textFieldState.visualText.text == text &&
+                                textFieldState.visualText.selection == selection &&
+                                suggestedSelection != textFieldState.visualText.selection
+                        ) {
+                            textFieldState.selectCharsIn(suggestedSelection)
+                        }
+                    }
+                }
             }
         }
 
@@ -775,6 +811,7 @@ internal class TextFieldSelectionState(
             dragBeginPosition = startPoint
             dragTotalDistance = Offset.Zero
             previousRawDragOffset = -1
+            isLongPressSelectionOnly = true
 
             if (textLayoutState.layoutResult == null) return
 
@@ -785,6 +822,7 @@ internal class TextFieldSelectionState(
                 hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 textFieldState.placeCursorBeforeCharAt(offset)
                 showCursorHandle = true
+                isLongPressSelectionOnly = false
                 updateTextToolbarState(Cursor)
             } else {
                 if (textFieldState.visualText.isEmpty()) return
@@ -851,12 +889,12 @@ internal class TextFieldSelectionState(
                     dragBeginOffsetInText.takeIf { it >= 0 }
                         ?: textLayoutState.getOffsetForPosition(
                             position = dragBeginPosition,
-                            coerceInVisibleBounds = false
+                            coerceInVisibleBounds = false,
                         )
                 endOffset =
                     textLayoutState.getOffsetForPosition(
                         position = currentDragPosition,
-                        coerceInVisibleBounds = false
+                        coerceInVisibleBounds = false,
                     )
 
                 if (dragBeginOffsetInText < 0 && startOffset == endOffset) {
@@ -925,6 +963,7 @@ internal class TextFieldSelectionState(
                             }
                         }
                     }
+                isLongPressSelectionOnly = false
             }
 
             // Do not allow selection to collapse on itself while dragging. Selection can
@@ -1006,7 +1045,7 @@ internal class TextFieldSelectionState(
                         if (prevSelection.collapsed || !newSelection.collapsed) {
                             textFieldState.selectCharsIn(newSelection)
                         }
-                    }
+                    },
             )
         } finally {
             logDebug {
@@ -1141,7 +1180,7 @@ internal class TextFieldSelectionState(
             left = min(startOffset.x, endOffset.x),
             right = max(startOffset.x, endOffset.x),
             top = min(startTop, endTop),
-            bottom = max(startOffset.y, endOffset.y)
+            bottom = max(startOffset.y, endOffset.y),
         )
     }
 
@@ -1153,7 +1192,7 @@ internal class TextFieldSelectionState(
      */
     internal fun getSelectionHandleState(
         isStartHandle: Boolean,
-        includePosition: Boolean
+        includePosition: Boolean,
     ): TextFieldHandleState {
         val handle = if (isStartHandle) Handle.SelectionStart else Handle.SelectionEnd
 
@@ -1194,7 +1233,7 @@ internal class TextFieldSelectionState(
             position = coercedPosition,
             lineHeight = layoutResult.getLineHeight(handleOffset),
             direction = direction,
-            handlesCrossed = handlesCrossed
+            handlesCrossed = handlesCrossed,
         )
     }
 
@@ -1211,7 +1250,7 @@ internal class TextFieldSelectionState(
             textLayoutResult = layoutResult,
             offset = offset,
             isStart = isStartHandle,
-            areHandlesCrossed = selection.reversed
+            areHandlesCrossed = selection.reversed,
         )
     }
 
@@ -1344,7 +1383,7 @@ internal class TextFieldSelectionState(
                 TransferableContent(
                     clipEntry = clipEntry,
                     source = TransferableContent.Source.Clipboard,
-                    clipMetadata = clipMetadata
+                    clipMetadata = clipMetadata,
                 )
             )
 
@@ -1353,7 +1392,7 @@ internal class TextFieldSelectionState(
         remaining?.clipEntry?.readPlainText()?.let { clipboardText ->
             textFieldState.replaceSelectedText(
                 clipboardText,
-                undoBehavior = TextFieldEditUndoBehavior.NeverMerge
+                undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
             )
         }
     }
@@ -1371,7 +1410,7 @@ internal class TextFieldSelectionState(
 
         textFieldState.replaceSelectedText(
             clipboardText,
-            undoBehavior = TextFieldEditUndoBehavior.NeverMerge
+            undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
         )
     }
 
@@ -1466,7 +1505,7 @@ internal class TextFieldSelectionState(
         isStartHandle: Boolean,
         adjustment: SelectionAdjustment,
         allowPreviousSelectionCollapsed: Boolean = false,
-        isStartOfSelection: Boolean = false
+        isStartOfSelection: Boolean = false,
     ): TextRange {
         val newSelection =
             getTextFieldSelection(
@@ -1499,7 +1538,7 @@ internal class TextFieldSelectionState(
         rawEndOffset: Int,
         previousSelection: TextRange?,
         isStartHandle: Boolean,
-        adjustment: SelectionAdjustment
+        adjustment: SelectionAdjustment,
     ): TextRange {
         val layoutResult = textLayoutState.layoutResult ?: return TextRange.Zero
 
@@ -1657,7 +1696,7 @@ internal enum class TextToolbarState {
 internal inline fun TextFieldSelectionState.menuItem(
     enabled: Boolean,
     desiredState: TextToolbarState,
-    crossinline operation: () -> Unit
+    crossinline operation: () -> Unit,
 ): (() -> Unit)? =
     if (!enabled) null
     else {

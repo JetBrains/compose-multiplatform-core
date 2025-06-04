@@ -71,7 +71,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED
+                TextOrientation.MIXED,
             )
         }
 
@@ -191,7 +191,7 @@ class LineBreakerTest {
                 enEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED
+                TextOrientation.MIXED,
             )
         }
 
@@ -283,7 +283,7 @@ class LineBreakerTest {
                 enEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.UPRIGHT
+                TextOrientation.UPRIGHT,
             )
         }
 
@@ -389,7 +389,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED
+                TextOrientation.MIXED,
             )
         }
 
@@ -474,7 +474,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED
+                TextOrientation.MIXED,
             )
         }
 

@@ -46,10 +46,8 @@ import kotlinx.coroutines.withContext
  * @constructor Creates a new [SandboxedPdfLoader] instance.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class SandboxedPdfLoader(
-    context: Context,
-    private val dispatcher: CoroutineDispatcher,
-) : PdfLoader {
+public class SandboxedPdfLoader(context: Context, private val dispatcher: CoroutineDispatcher) :
+    PdfLoader {
     private val context = context.applicationContext
 
     internal var testingConnection: PdfServiceConnection? = null
@@ -89,13 +87,13 @@ public class SandboxedPdfLoader(
             dispatcher,
             binder.numPages(),
             binder.isPdfLinearized(),
-            binder.getFormType()
+            binder.getFormType(),
         )
     }
 
     private fun handlePdfLoadingError(
         pfd: ParcelFileDescriptor,
-        status: PdfLoadingStatus
+        status: PdfLoadingStatus,
     ): Exception {
         // The PdfDocument is not created in case of any error, so close the file descriptor
         // here only to release resources and prevent leaks.
@@ -122,5 +120,5 @@ internal enum class PdfLoadingStatus {
     WRONG_PASSWORD, // Incorrect password was provided for a password-protected PDF.
     PDF_ERROR, // Invalid or Corrupt pdf file was provided
     LOADING_ERROR, // A general error occurred while trying to load the PDF
-    UNKNOWN
+    UNKNOWN,
 }

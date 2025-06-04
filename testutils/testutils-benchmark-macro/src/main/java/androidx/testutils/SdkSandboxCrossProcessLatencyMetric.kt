@@ -40,7 +40,7 @@ public class SdkSandboxCrossProcessLatencyMetric(
     private val endPointName: String,
     private val eventName: String,
     private val occurrenceOfBeginTrace: TraceOccurrence = TraceOccurrence.FIRST,
-    private val occurrenceOfEndTrace: TraceOccurrence = TraceOccurrence.FIRST
+    private val occurrenceOfEndTrace: TraceOccurrence = TraceOccurrence.FIRST,
 ) : TraceMetric() {
     /**
      * There may be multiple occurrences of the tracepoint in the traces collected. For example, if
@@ -54,13 +54,13 @@ public class SdkSandboxCrossProcessLatencyMetric(
      */
     enum class TraceOccurrence {
         FIRST,
-        LAST
+        LAST,
     }
 
     @OptIn(ExperimentalMetricApi::class)
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val query =
             """

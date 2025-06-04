@@ -158,7 +158,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
         contentPadding: PaddingValues = PaddingValues(0.dp),
-        cacheWindow: LazyLayoutCacheWindow
+        cacheWindow: LazyLayoutCacheWindow,
     ) {
         rule.setContent {
             @OptIn(ExperimentalFoundationApi::class)
@@ -166,7 +166,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    cacheWindow = cacheWindow
+                    cacheWindow = cacheWindow,
                 )
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f)

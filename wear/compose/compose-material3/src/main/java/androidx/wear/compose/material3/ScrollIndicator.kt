@@ -123,7 +123,7 @@ public fun ScrollIndicator(
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
     reverseDirection: Boolean = false,
-    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }
@@ -139,7 +139,7 @@ public fun ScrollIndicator(
         color = colors.indicatorColor,
         modifier = modifier.onSizeChanged { containerSize = it },
         reverseDirection = reverseDirection,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 }
 
@@ -179,7 +179,7 @@ public fun ScrollIndicator(
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
     reverseDirection: Boolean = false,
-    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }
     IndicatorImpl(
@@ -187,7 +187,7 @@ public fun ScrollIndicator(
             ScalingLazyColumnStateAdapter(
                 state = state,
                 overscrollEffect = overscrollEffect,
-                reduceMotionEnabled = LocalReduceMotion.current
+                reduceMotionEnabled = LocalReduceMotion.current,
             ),
         indicatorHeight = ScrollIndicatorDefaults.indicatorHeight,
         indicatorWidth = ScrollIndicatorDefaults.indicatorWidth,
@@ -236,7 +236,7 @@ public fun ScrollIndicator(
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
     reverseDirection: Boolean = false,
-    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }
 
@@ -245,7 +245,7 @@ public fun ScrollIndicator(
             TransformingLazyColumnStateAdapter(
                 state = state,
                 overscrollEffect = overscrollEffect,
-                reduceMotionEnabled = LocalReduceMotion.current
+                reduceMotionEnabled = LocalReduceMotion.current,
             ),
         indicatorHeight = ScrollIndicatorDefaults.indicatorHeight,
         indicatorWidth = ScrollIndicatorDefaults.indicatorWidth,
@@ -254,7 +254,7 @@ public fun ScrollIndicator(
         background = colors.trackColor,
         color = colors.indicatorColor,
         reverseDirection = reverseDirection,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 }
 
@@ -292,7 +292,7 @@ public fun ScrollIndicator(
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
     reverseDirection: Boolean = false,
-    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }
     IndicatorImpl(
@@ -300,7 +300,7 @@ public fun ScrollIndicator(
             LazyColumnStateAdapter(
                 state = state,
                 overscrollEffect = overscrollEffect,
-                reduceMotionEnabled = LocalReduceMotion.current
+                reduceMotionEnabled = LocalReduceMotion.current,
             ),
         indicatorHeight = ScrollIndicatorDefaults.indicatorHeight,
         indicatorWidth = ScrollIndicatorDefaults.indicatorWidth,
@@ -309,7 +309,7 @@ public fun ScrollIndicator(
         background = colors.trackColor,
         color = colors.indicatorColor,
         reverseDirection = reverseDirection,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 }
 
@@ -380,10 +380,7 @@ public object ScrollIndicatorDefaults {
  * @param indicatorColor Color used to draw the indicator of [ScrollIndicator].
  * @param trackColor Color used to draw the track of [ScrollIndicator].
  */
-public class ScrollIndicatorColors(
-    public val indicatorColor: Color,
-    public val trackColor: Color,
-) {
+public class ScrollIndicatorColors(public val indicatorColor: Color, public val trackColor: Color) {
     /**
      * Returns a copy of this ScrollIndicatorColors optionally overriding some of the values.
      *
@@ -480,7 +477,7 @@ internal fun IndicatorImpl(
     color: Color = MaterialTheme.colorScheme.onBackground,
     reverseDirection: Boolean = false,
     rsbSide: Boolean = true,
-    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val currentDensity = LocalDensity.current.density
@@ -556,13 +553,13 @@ internal fun IndicatorImpl(
                         launch {
                             sizeFractionAnimatable.animateTo(
                                 it.size,
-                                animationSpec = updatedPositionAnimationSpec
+                                animationSpec = updatedPositionAnimationSpec,
                             )
                         }
                         launch {
                             positionFractionAnimatable.animateTo(
                                 it.position,
-                                animationSpec = updatedPositionAnimationSpec
+                                animationSpec = updatedPositionAnimationSpec,
                             )
                         }
                     }
@@ -606,7 +603,7 @@ internal fun IndicatorImpl(
                     sizeFractionAnimatable.value,
                     gapPadding,
                     arcRadius,
-                    sweepDegrees
+                    sweepDegrees,
                 )
             }
     )
@@ -649,7 +646,7 @@ internal class ScrollStateAdapter(
     private val scrollState: ScrollState,
     private val overscrollEffect: OffsetOverscrollEffect?,
     private val reduceMotionEnabled: Boolean,
-    private val scrollableContainerSize: () -> IntSize
+    private val scrollableContainerSize: () -> IntSize,
 ) : IndicatorState {
 
     override val positionFraction: Float
@@ -675,7 +672,7 @@ internal class ScrollStateAdapter(
                 fraction,
                 overscrollEffect?.overscrollFraction,
                 scrollState,
-                reduceMotionEnabled
+                reduceMotionEnabled,
             )
         }
 
@@ -701,7 +698,7 @@ internal class ScrollStateAdapter(
 internal class ScalingLazyColumnStateAdapter(
     private val state: ScalingLazyListState,
     private val overscrollEffect: OffsetOverscrollEffect?,
-    private val reduceMotionEnabled: Boolean
+    private val reduceMotionEnabled: Boolean,
 ) : IndicatorState {
 
     private var currentSizeFraction: Float = 0f
@@ -752,7 +749,7 @@ internal class ScalingLazyColumnStateAdapter(
                 currentSizeFraction,
                 overscrollEffect?.overscrollFraction,
                 state,
-                reduceMotionEnabled
+                reduceMotionEnabled,
             )
         }
 
@@ -844,7 +841,7 @@ internal class ScalingLazyColumnStateAdapter(
 internal class TransformingLazyColumnStateAdapter(
     private val state: TransformingLazyColumnState,
     private val overscrollEffect: OffsetOverscrollEffect?,
-    private val reduceMotionEnabled: Boolean
+    private val reduceMotionEnabled: Boolean,
 ) : IndicatorState {
     private var latestSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
@@ -891,7 +888,7 @@ internal class TransformingLazyColumnStateAdapter(
                     latestSizeFraction,
                     overscrollEffect?.overscrollFraction,
                     state,
-                    reduceMotionEnabled
+                    reduceMotionEnabled,
                 )
             }
 
@@ -912,7 +909,7 @@ internal class TransformingLazyColumnStateAdapter(
             val lastVisibleItemSize =
                 (viewportSize.height - lastVisibleItem.offset).coerceIn(
                     0,
-                    lastVisibleItem.transformedHeight + extraPadding
+                    lastVisibleItem.transformedHeight + extraPadding,
                 )
 
             // Coerce item size to at least 1 to avoid divide by zero for zero height items
@@ -951,7 +948,7 @@ internal class TransformingLazyColumnStateAdapter(
 internal class LazyColumnStateAdapter(
     private val state: LazyListState,
     private val overscrollEffect: OffsetOverscrollEffect?,
-    private val reduceMotionEnabled: Boolean
+    private val reduceMotionEnabled: Boolean,
 ) : IndicatorState {
     private var latestSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
@@ -1001,7 +998,7 @@ internal class LazyColumnStateAdapter(
                 latestSizeFraction,
                 overscrollEffect?.overscrollFraction,
                 state,
-                reduceMotionEnabled
+                reduceMotionEnabled,
             )
         }
 
@@ -1067,8 +1064,8 @@ private fun ContentDrawScope.drawCurvedIndicatorSegment(
             center =
                 Offset(
                     arcTopLeft.x + radius + radius * cos(angle),
-                    arcTopLeft.y + radius + radius * sin(angle)
-                )
+                    arcTopLeft.y + radius + radius * sin(angle),
+                ),
         )
     } else {
         // Draw indicator arc.
@@ -1079,7 +1076,7 @@ private fun ContentDrawScope.drawCurvedIndicatorSegment(
             useCenter = false,
             topLeft = arcTopLeft,
             size = arcSize,
-            style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round)
+            style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round),
         )
     }
 }
@@ -1095,13 +1092,13 @@ private fun ContentDrawScope.drawCurvedIndicator(
     indicatorSize: Float,
     gapPadding: Float,
     arcRadius: Float,
-    sweepDegrees: Float
+    sweepDegrees: Float,
 ) {
     // Define size for the arcs and calculate arc's top-left position.
     val arcSize =
         Size(
             diameter - 2 * paddingHorizontalPx - indicatorWidthPx,
-            diameter - 2 * paddingHorizontalPx - indicatorWidthPx
+            diameter - 2 * paddingHorizontalPx - indicatorWidthPx,
         )
     val arcTopLeft =
         Offset(
@@ -1176,7 +1173,7 @@ private fun applyOverscrollIfRequired(
     sizeFraction: Float,
     overscrollFraction: Float?,
     state: ScrollableState,
-    reduceMotionEnabled: Boolean
+    reduceMotionEnabled: Boolean,
 ): Float =
     if (overscrollFraction == null || reduceMotionEnabled) sizeFraction
     else {

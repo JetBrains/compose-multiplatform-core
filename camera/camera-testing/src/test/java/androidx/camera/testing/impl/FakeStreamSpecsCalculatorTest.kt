@@ -72,19 +72,19 @@ class FakeStreamSpecsCalculatorTest {
                 dynamicRange = dynamicRange,
                 expectedFrameRateRange = frameRateRange,
                 imageFormat = INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
-                previewStabilizationMode = stabilizationMode
+                previewStabilizationMode = stabilizationMode,
             )
 
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(expectedStreamSpec)
 
-        val streamSpecs =
+        val result =
             fakeStreamSpecsCalculator.calculateSuggestedStreamSpecs(
                 cameraMode = CameraMode.DEFAULT,
                 cameraInfoInternal = fakeCameraInfo,
                 newUseCases = listOf(useCase),
             )
 
-        assertThat(streamSpecs[useCase]).isEqualTo(expectedStreamSpec)
+        assertThat(result.streamSpecs[useCase]).isEqualTo(expectedStreamSpec)
     }
 
     @Test
@@ -110,7 +110,7 @@ class FakeStreamSpecsCalculatorTest {
                 dynamicRange = previewDynamicRange,
                 expectedFrameRateRange = previewFpsRange,
                 imageFormat = INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
-                previewStabilizationMode = previewStabilizationMode
+                previewStabilizationMode = previewStabilizationMode,
             )
 
         val expectedImageCaptureStreamSpec =
@@ -118,22 +118,22 @@ class FakeStreamSpecsCalculatorTest {
                 dynamicRange = DynamicRange.UNSPECIFIED,
                 expectedFrameRateRange = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
                 imageFormat = ImageFormat.JPEG_R,
-                previewStabilizationMode = StabilizationMode.UNSPECIFIED
+                previewStabilizationMode = StabilizationMode.UNSPECIFIED,
             )
 
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
             expectedPreviewStreamSpec,
-            expectedImageCaptureStreamSpec
+            expectedImageCaptureStreamSpec,
         )
 
-        val streamSpecs =
+        val result =
             fakeStreamSpecsCalculator.calculateSuggestedStreamSpecs(
                 cameraMode = CameraMode.DEFAULT,
                 cameraInfoInternal = fakeCameraInfo,
                 newUseCases = listOf(preview, imageCapture),
             )
 
-        assertThat(streamSpecs[preview]).isEqualTo(expectedPreviewStreamSpec)
-        assertThat(streamSpecs[imageCapture]).isEqualTo(expectedImageCaptureStreamSpec)
+        assertThat(result.streamSpecs[preview]).isEqualTo(expectedPreviewStreamSpec)
+        assertThat(result.streamSpecs[imageCapture]).isEqualTo(expectedImageCaptureStreamSpec)
     }
 }

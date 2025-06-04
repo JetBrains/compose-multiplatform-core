@@ -23,6 +23,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
+import androidx.xr.runtime.math.FloatSize3d
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
@@ -35,8 +36,8 @@ import java.util.concurrent.Executor
 public class ResizableComponent
 private constructor(
     private val platformAdapter: JxrPlatformAdapter,
-    minimumSize: Dimensions,
-    maximumSize: Dimensions,
+    minimumSize: FloatSize3d,
+    maximumSize: FloatSize3d,
 ) : Component {
     private val resizeListenerMap = ConcurrentHashMap<ResizeListener, RtResizeEventListener>()
     /**
@@ -45,7 +46,7 @@ private constructor(
      * apps can still override it. The default value is set to 1 meter, updated to the size of the
      * entity when attached.
      */
-    public var size: Dimensions = kDimensionsOneMeter
+    public var size: FloatSize3d = kDimensionsOneMeter
         set(value) {
             if (field != value) {
                 field = value
@@ -58,7 +59,7 @@ private constructor(
      * user can resize the bounding box of the entity. The size of the content inside that bounding
      * box is fully controlled by the application.
      */
-    public var minimumSize: Dimensions = minimumSize
+    public var minimumSize: FloatSize3d = minimumSize
         set(value) {
             if (field != value) {
                 field = value
@@ -71,7 +72,7 @@ private constructor(
      * can resize the bounding box of the entity. The size of the content inside that bounding box
      * is fully controlled by the application.
      */
-    public var maximumSize: Dimensions = maximumSize
+    public var maximumSize: FloatSize3d = maximumSize
         set(value) {
             if (field != value) {
                 field = value
@@ -231,16 +232,16 @@ private constructor(
     }
 
     public companion object {
-        private val kDimensionsOneMeter = Dimensions(1f, 1f, 1f)
+        private val kDimensionsOneMeter = FloatSize3d(1f, 1f, 1f)
         /** Defaults min and max sizes in meters. */
-        internal val kMinimumSize: Dimensions = Dimensions(0f, 0f, 0f)
-        internal val kMaximumSize: Dimensions = Dimensions(10f, 10f, 10f)
+        internal val kMinimumSize: FloatSize3d = FloatSize3d(0f, 0f, 0f)
+        internal val kMaximumSize: FloatSize3d = FloatSize3d(10f, 10f, 10f)
 
         /** Factory function for creating [ResizableComponent] instance. */
         internal fun create(
             platformAdapter: JxrPlatformAdapter,
-            minimumSize: Dimensions = kMinimumSize,
-            maximumSize: Dimensions = kMaximumSize,
+            minimumSize: FloatSize3d = kMinimumSize,
+            maximumSize: FloatSize3d = kMaximumSize,
         ): ResizableComponent {
             return ResizableComponent(platformAdapter, minimumSize, maximumSize)
         }
@@ -267,8 +268,8 @@ private constructor(
         @JvmStatic
         public fun create(
             session: Session,
-            minimumSize: Dimensions = ResizableComponent.kMinimumSize,
-            maximumSize: Dimensions = ResizableComponent.kMaximumSize,
+            minimumSize: FloatSize3d = ResizableComponent.kMinimumSize,
+            maximumSize: FloatSize3d = ResizableComponent.kMaximumSize,
         ): ResizableComponent =
             ResizableComponent.create(session.platformAdapter, minimumSize, maximumSize)
     }

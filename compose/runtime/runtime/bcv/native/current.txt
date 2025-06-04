@@ -474,6 +474,10 @@ sealed interface androidx.compose.runtime/PausableComposition : androidx.compose
 }
 
 sealed interface androidx.compose.runtime/PausedComposition { // androidx.compose.runtime/PausedComposition|null[0]
+    abstract val isApplied // androidx.compose.runtime/PausedComposition.isApplied|{}isApplied[0]
+        abstract fun <get-isApplied>(): kotlin/Boolean // androidx.compose.runtime/PausedComposition.isApplied.<get-isApplied>|<get-isApplied>(){}[0]
+    abstract val isCancelled // androidx.compose.runtime/PausedComposition.isCancelled|{}isCancelled[0]
+        abstract fun <get-isCancelled>(): kotlin/Boolean // androidx.compose.runtime/PausedComposition.isCancelled.<get-isCancelled>|<get-isCancelled>(){}[0]
     abstract val isComplete // androidx.compose.runtime/PausedComposition.isComplete|{}isComplete[0]
         abstract fun <get-isComplete>(): kotlin/Boolean // androidx.compose.runtime/PausedComposition.isComplete.<get-isComplete>|<get-isComplete>(){}[0]
 

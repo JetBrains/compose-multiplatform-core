@@ -73,7 +73,7 @@ internal interface WearSdkComplicationsApi {
         override suspend fun updateComplication(
             id: Int,
             data: WearSdkComplicationData,
-            executor: Executor
+            executor: Executor,
         ) {
             try {
                 suspendForOutcomeReceiver<Void> { outcomeReceiver ->
@@ -117,7 +117,7 @@ internal class WearSdkActiveComplicationConfig(
     val providerComponent: ComponentName,
     val id: Int,
     val dataType: ComplicationType,
-    val targetWatchFace: Int
+    val targetWatchFace: Int,
 ) {
     internal constructor(
         config: ActiveComplicationConfig
@@ -125,7 +125,7 @@ internal class WearSdkActiveComplicationConfig(
         config.config.providerComponent,
         config.config.id,
         ComplicationType.fromWireType(config.config.dataType),
-        config.targetWatchFaceSafety
+        config.targetWatchFaceSafety,
     )
 
     /**
@@ -137,7 +137,7 @@ internal class WearSdkActiveComplicationConfig(
     ): Pair<ComponentName, ComplicationRequest> =
         Pair(
             providerComponent,
-            ComplicationRequest(id, dataType, immediateResponseRequired, targetWatchFace)
+            ComplicationRequest(id, dataType, immediateResponseRequired, targetWatchFace),
         )
 }
 
@@ -156,15 +156,15 @@ internal open class WearSdkComplicationRequestListener
 internal constructor(
     val id: Int,
     val dataType: Int,
-    val continuation: Continuation<Pair<Int, WearSdkComplicationData>>
+    val continuation: Continuation<Pair<Int, WearSdkComplicationData>>,
 ) : ComplicationDataSourceService.ComplicationRequestListener {
     internal constructor(
         request: ComplicationRequest,
-        continuation: Continuation<Pair<Int, WearSdkComplicationData>>
+        continuation: Continuation<Pair<Int, WearSdkComplicationData>>,
     ) : this(
         request.complicationInstanceId,
         request.complicationType.toWireComplicationType(),
-        continuation
+        continuation,
     )
 
     override fun onComplicationData(complicationData: AndroidXComplicationData?) {
@@ -245,7 +245,7 @@ internal interface WearSdkComplicationDataRequester {
         ): Pair<Int, WearSdkComplicationData> = suspendCancellableCoroutine { continuation ->
             requester.onComplicationRequest(
                 request,
-                WearSdkComplicationRequestListener(request, continuation)
+                WearSdkComplicationRequestListener(request, continuation),
             )
         }
     }

@@ -43,7 +43,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
           abstract fun getDao(): MyDao
         }
         """
-                .trimIndent()
+                .trimIndent(),
         )
 
     @Test
@@ -73,11 +73,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 var variableNullableString: String? = null
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -98,7 +98,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
               fun addEntity(item: MyEntity)
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaEntity =
             Source.java(
@@ -125,11 +125,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
               }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, javaEntity, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -162,7 +162,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                     @JvmField var variableNullableFieldString: String? = null
                 }
                 """
-                                .trimIndent()
+                                .trimIndent(),
                         )
                     )
             )
@@ -181,12 +181,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
               fun addEntity(item: MyEntity)
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            compiledFiles = lib
+            compiledFiles = lib,
         )
     }
 
@@ -218,11 +218,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                     internal set
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -255,11 +255,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val double: Double,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -292,11 +292,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val double: Double?,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -325,11 +325,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val nullableBoolean: Boolean?,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -357,11 +357,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val nullableString: String?,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -390,11 +390,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val nullableByteArray: ByteArray?,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -428,11 +428,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 BANANA
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -467,11 +467,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 BANANA
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -507,11 +507,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val stringData: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -549,11 +549,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 fun toString(foo: Foo): String = foo.data
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -585,7 +585,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             data class Foo(val num: Long)
             data class Bar(val data: String)
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val converterSrc =
             Source.java(
@@ -612,11 +612,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, converterSrc, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -655,11 +655,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 fun toString(foo: Foo): String = foo.data
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -703,11 +703,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 fun toFoo(bar: Bar): Foo = Foo(bar.data)
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -752,11 +752,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 fun toFoo(bar: Bar): Foo = Foo(bar.data)
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -795,11 +795,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 internal fun toString(foo: Foo): String = foo.data
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -824,11 +824,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Int,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -867,7 +867,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources =
@@ -880,9 +880,9 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                     COMMON.RX2_PAGING_SOURCE,
                     COMMON.RX3_PAGING_SOURCE,
                     COMMON.LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE,
-                    COMMON.LISTENABLE_FUTURE_PAGING_SOURCE
+                    COMMON.LISTENABLE_FUTURE_PAGING_SOURCE,
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -909,11 +909,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val string: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -946,11 +946,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val string: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -992,11 +992,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val id: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1042,11 +1042,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val text: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1089,11 +1089,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val floatColumn: Float,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1125,12 +1125,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName),
-            jvmDefaultMode = jvmDefaultMode
+            jvmDefaultMode = jvmDefaultMode,
         )
     }
 
@@ -1163,7 +1163,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
@@ -1234,12 +1234,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
             expectedFilePath = getTestGoldenPath(testName),
-            jvmDefaultMode = jvmDefaultMode
+            jvmDefaultMode = jvmDefaultMode,
         )
     }
 
@@ -1290,7 +1290,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
@@ -1328,11 +1328,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val data: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1378,11 +1378,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val data: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1412,11 +1412,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Int,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1433,7 +1433,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 abstract fun getDao(): MyDao
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val src =
@@ -1461,11 +1461,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String?
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, dbSource),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1482,7 +1482,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 abstract fun getDao(): MyDao
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val src =
             Source.kotlin(
@@ -1521,11 +1521,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other2: Long
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, dbSource),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1549,11 +1549,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1578,11 +1578,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1607,11 +1607,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1637,11 +1637,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -1698,7 +1698,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val artistKey: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1769,7 +1769,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songArtist: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1809,7 +1809,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val artistKey: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1846,7 +1846,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val artistKey: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1893,7 +1893,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val text: String,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1945,7 +1945,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val data: ByteBuffer,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -1998,11 +1998,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 var variableChar: Char = ' '
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2031,13 +2031,13 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources =
                 listOf(src, databaseSrc, COMMON.DATA_SOURCE_FACTORY, COMMON.POSITIONAL_DATA_SOURCE),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            withKsp2 = false
+            withKsp2 = false,
         )
     }
 
@@ -2072,14 +2072,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    src,
-                    databaseSrc,
-                ),
+            sources = listOf(src, databaseSrc),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2090,10 +2086,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.RX2_MAYBE,
                         COMMON.RX2_COMPLETABLE,
                         COMMON.PUBLISHER,
-                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION
+                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2128,14 +2124,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    src,
-                    databaseSrc,
-                ),
+            sources = listOf(src, databaseSrc),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2146,10 +2138,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.RX3_MAYBE,
                         COMMON.RX3_COMPLETABLE,
                         COMMON.PUBLISHER,
-                        COMMON.RX3_EMPTY_RESULT_SET_EXCEPTION
+                        COMMON.RX3_EMPTY_RESULT_SET_EXCEPTION,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2181,14 +2173,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    src,
-                    databaseSrc,
-                ),
+            sources = listOf(src, databaseSrc),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2199,10 +2187,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.RX2_MAYBE,
                         COMMON.RX2_COMPLETABLE,
                         COMMON.PUBLISHER,
-                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION
+                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2234,14 +2222,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    src,
-                    databaseSrc,
-                ),
+            sources = listOf(src, databaseSrc),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2252,10 +2236,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.RX3_MAYBE,
                         COMMON.RX3_COMPLETABLE,
                         COMMON.PUBLISHER,
-                        COMMON.RX3_EMPTY_RESULT_SET_EXCEPTION
+                        COMMON.RX3_EMPTY_RESULT_SET_EXCEPTION,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2311,7 +2295,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.FLOW, COMMON.COROUTINES_ROOM),
@@ -2362,7 +2346,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
@@ -2379,7 +2363,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.PUBLISHER,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2426,7 +2410,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
@@ -2443,7 +2427,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.PUBLISHER,
                     )
                 ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2490,17 +2474,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    src,
-                    databaseSrc,
-                    COMMON.LISTENABLE_FUTURE,
-                    COMMON.GUAVA_ROOM,
-                ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            sources = listOf(src, databaseSrc, COMMON.LISTENABLE_FUTURE, COMMON.GUAVA_ROOM),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2519,7 +2497,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 ListenableFuture<MyEntity> getListenableFuture(String... arg);
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val entitySrc =
             Source.kotlin(
@@ -2534,17 +2512,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    daoSrc,
-                    entitySrc,
-                    databaseSrc,
-                ),
+            sources = listOf(daoSrc, entitySrc, databaseSrc),
             compiledFiles = compileFiles(listOf(COMMON.LISTENABLE_FUTURE, COMMON.GUAVA_ROOM)),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2573,12 +2546,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA))
+            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA)),
         )
     }
 
@@ -2612,11 +2585,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2657,7 +2630,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 int updateList(List<MyEntity> entity);
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val entitySrc =
             Source.kotlin(
@@ -2672,16 +2645,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val other: String
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(
-                    daoSrc,
-                    entitySrc,
-                    databaseSrc,
-                ),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            sources = listOf(daoSrc, entitySrc, databaseSrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2733,11 +2701,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val genericData: GenericValueClass<String>
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -2761,11 +2729,11 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val pk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 }

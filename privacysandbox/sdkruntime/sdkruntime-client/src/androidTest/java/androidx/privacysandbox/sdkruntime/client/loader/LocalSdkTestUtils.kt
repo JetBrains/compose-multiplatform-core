@@ -97,7 +97,7 @@ internal class SdkControllerWrapper(private val controller: Any) {
         val proxy =
             classLoader.createProxyFor(
                 SdkSandboxActivityHandlerCompat::class.java.name,
-                "onActivityCreated"
+                "onActivityCreated",
             ) {
                 handler.setResult(it!![0]!!)
             }
@@ -121,7 +121,7 @@ internal class SdkControllerWrapper(private val controller: Any) {
         val proxy =
             classLoader.createProxyFor(
                 SdkSandboxClientImportanceListenerCompat::class.java.name,
-                "onForegroundImportanceChanged"
+                "onForegroundImportanceChanged",
             ) {
                 listener.addStateChangeEvent(it!![0]!! as Boolean)
             }
@@ -129,7 +129,7 @@ internal class SdkControllerWrapper(private val controller: Any) {
         controller.callMethod(
             "registerSdkSandboxClientImportanceListener",
             Executor { p -> p.run() },
-            proxy
+            proxy,
         )
 
         listener.proxy = proxy
@@ -261,7 +261,7 @@ internal fun SandboxedSdkCompat.asTestSdk(): SdkControllerWrapper {
  */
 private fun createSdkControllerWrapperFor(
     classLoader: ClassLoader,
-    sdkContext: Any
+    sdkContext: Any,
 ): SdkControllerWrapper {
     val sdkController =
         classLoader
@@ -351,7 +351,7 @@ private fun Any.callSuspendMethod(methodName: String, vararg args: Any?): Any? {
 private fun ClassLoader.createProxyFor(
     className: String,
     methodName: String,
-    handler: (args: Array<Any?>?) -> Any?
+    handler: (args: Array<Any?>?) -> Any?,
 ): Any {
     return createProxyFor(className) { calledMethodName, args ->
         if (calledMethodName == methodName) {
@@ -367,7 +367,7 @@ private fun ClassLoader.createProxyFor(
 /** Create Dynamic Proxy that handles all methods of [className]. */
 private fun ClassLoader.createProxyFor(
     className: String,
-    handler: (methodName: String, args: Array<Any?>?) -> Any?
+    handler: (methodName: String, args: Array<Any?>?) -> Any?,
 ): Any {
     return Proxy.newProxyInstance(this, arrayOf(getClass(className))) { proxy, method, args ->
         when (method.name) {

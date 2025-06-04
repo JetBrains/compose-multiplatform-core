@@ -275,7 +275,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 documentViewModel.searchDocument(
                     query = s.toString(),
-                    visiblePageRange = _pdfView.visiblePages
+                    visiblePageRange = _pdfView.visiblePages,
                 )
             }
 
@@ -326,7 +326,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
         arguments?.let { args ->
@@ -355,7 +355,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                         // we should not consume this event as the events are required in PdfView
                         return false
                     }
-                }
+                },
             )
 
         _pdfView.setOnTouchListener { _, event ->
@@ -382,7 +382,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 pdfView = _pdfView,
                 selectedHighlightColor =
                     requireContext().getColor(R.color.selected_highlight_color),
-                highlightColor = requireContext().getColor(R.color.highlight_color)
+                highlightColor = requireContext().getColor(R.color.highlight_color),
             )
         pdfSearchViewManager = PdfSearchViewManager(_pdfSearchView)
 
@@ -406,7 +406,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                     /* set = */ null,
                     /* attrs = */ androidx.pdf.R.styleable.PdfView,
                     /* defStyleAttr = */ NO_DEFAULT_ATTR,
-                    /* defStyleRes = */ resId
+                    /* defStyleRes = */ resId,
                 )
 
         for (i in 0 until pdfViewStyledAttrs.indexCount) {
@@ -469,8 +469,8 @@ public open class PdfViewerFragment constructor() : Fragment() {
                     pdfContainer = view,
                     // As the decorView is a top-level view, insets must not be consumed here.
                     // They must be propagated to child views for adjustments at their level.
-                    dispatchMode = DISPATCH_MODE_CONTINUE_ON_SUBTREE
-                )
+                    dispatchMode = DISPATCH_MODE_CONTINUE_ON_SUBTREE,
+                ),
             )
         }
     }
@@ -498,7 +498,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
             object : PdfView.OnSelectionChangedListener {
                 override fun onSelectionChanged(
                     previousSelection: Selection?,
-                    newSelection: Selection?
+                    newSelection: Selection?,
                 ) {
                     newSelection?.let { isTextSearchActive = false }
                 }
@@ -652,11 +652,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
     }
 
     private fun handleLoading() {
-        setViewVisibility(
-            pdfView = GONE,
-            loadingView = VISIBLE,
-            errorView = GONE,
-        )
+        setViewVisibility(pdfView = GONE, loadingView = VISIBLE, errorView = GONE)
         // Cancel view state collection upon new document load.
         // These state should only be relevant if document is loaded successfully.
         cancelViewStateCollection()
@@ -674,11 +670,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
         _pdfView.pdfDocument = uiState.pdfDocument
         _toolboxView.setPdfDocument(uiState.pdfDocument)
         setAnnotationIntentResolvability(uiState.pdfDocument.uri)
-        setViewVisibility(
-            pdfView = VISIBLE,
-            loadingView = GONE,
-            errorView = GONE,
-        )
+        setViewVisibility(pdfView = VISIBLE, loadingView = GONE, errorView = GONE)
         // Start collection of view states like search, toolbox, etc. once document is loaded.
         collectViewStates()
     }
@@ -700,23 +692,15 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 RuntimeException(
                     context?.resources?.getString(androidx.pdf.R.string.pdf_error)
                         ?: uiState.exception.message,
-                    uiState.exception
+                    uiState.exception,
                 )
             )
         }
 
-        setViewVisibility(
-            pdfView = GONE,
-            loadingView = GONE,
-            errorView = VISIBLE,
-        )
+        setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = VISIBLE)
     }
 
-    private fun setViewVisibility(
-        pdfView: Int,
-        loadingView: Int,
-        errorView: Int,
-    ) {
+    private fun setViewVisibility(pdfView: Int, loadingView: Int, errorView: Int) {
         this._pdfView.visibility = pdfView
         this.loadingView.visibility = loadingView
         this.errorView.visibility = errorView

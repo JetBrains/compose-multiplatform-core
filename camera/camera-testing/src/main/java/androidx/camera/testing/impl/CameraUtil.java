@@ -730,6 +730,11 @@ public final class CameraUtil {
                 numberOfCamera = getBackwardCompatibleCameraIdListOrThrow().size();
             } catch (IllegalStateException e) {
                 Logger.e(LOG_TAG, "Unable to check camera availability.", e);
+            } catch (IllegalArgumentException e) {
+                Logger.e(LOG_TAG,
+                        "Unable to access camera device. This could be due to a Camera HAL issue "
+                                + "or an incorrect device ID.",
+                        e);
             }
         } else {
             numberOfCamera = android.hardware.Camera.getNumberOfCameras();

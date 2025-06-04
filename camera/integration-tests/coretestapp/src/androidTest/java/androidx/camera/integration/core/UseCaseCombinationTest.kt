@@ -89,9 +89,7 @@ class UseCaseCombinationTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -412,7 +410,7 @@ class UseCaseCombinationTest(
                 preview,
                 imageCapture,
                 imageAnalysis,
-                videoCapture
+                videoCapture,
             )
         )
 
@@ -547,14 +545,14 @@ class UseCaseCombinationTest(
             verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
             verifyStatusTimeoutMs = 18000L,
             qualitySelector = QualitySelector.from(quality),
-            aspectRatio = AspectRatio.RATIO_4_3
+            aspectRatio = AspectRatio.RATIO_4_3,
         )
         val selector =
             ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         checkNotNull(qualitySize),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
@@ -584,7 +582,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -613,7 +611,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -643,7 +641,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -672,14 +670,14 @@ class UseCaseCombinationTest(
             verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
             verifyStatusTimeoutMs = 18000L,
             qualitySelector = QualitySelector.from(quality),
-            aspectRatio = AspectRatio.RATIO_4_3
+            aspectRatio = AspectRatio.RATIO_4_3,
         )
         val selector =
             ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         checkNotNull(qualitySize),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
@@ -708,7 +706,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -737,7 +735,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -766,7 +764,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -793,7 +791,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         checkNotNull(qualitySize),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
@@ -816,7 +814,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -839,7 +837,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -862,7 +860,7 @@ class UseCaseCombinationTest(
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         quality.getTypicalSizes().first(),
-                        ResolutionStrategy.FALLBACK_RULE_NONE
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
                     )
                 )
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
@@ -878,7 +876,7 @@ class UseCaseCombinationTest(
     private fun initPreview(
         monitor: PreviewMonitor,
         setSurfaceProvider: Boolean = true,
-        resolutionSelector: ResolutionSelector? = null
+        resolutionSelector: ResolutionSelector? = null,
     ): Preview {
         return Preview.Builder()
             .apply {
@@ -897,7 +895,7 @@ class UseCaseCombinationTest(
 
     private fun initImageAnalysis(
         analyzer: ImageAnalysis.Analyzer?,
-        resolutionSelector: ResolutionSelector? = null
+        resolutionSelector: ResolutionSelector? = null,
     ): ImageAnalysis {
         return ImageAnalysis.Builder()
             .apply {
@@ -927,9 +925,7 @@ class UseCaseCombinationTest(
         callback.verifyCapture(timeMillis = timeMillis)
     }
 
-    private fun ImageCapture.triggerCapturing(
-        useFlash: Boolean = false,
-    ): ImageCaptureCallback {
+    private fun ImageCapture.triggerCapturing(useFlash: Boolean = false): ImageCaptureCallback {
         val callback = ImageCaptureCallback()
 
         if (useFlash) {
@@ -950,7 +946,7 @@ class UseCaseCombinationTest(
                     // Just in case same imageCapture is bound to rear camera later
                     screenFlash = null
                 }
-            }
+            },
         )
 
         return callback

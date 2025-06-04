@@ -102,7 +102,7 @@ internal fun <T> FiniteAnimationSpec<T>.delayMillis(
 private class WrappedAnimationSpec<T>(
     val wrapped: FiniteAnimationSpec<T>,
     val speedupFactor: Float,
-    val startDelayNanos: Long = 0
+    val startDelayNanos: Long = 0,
 ) : FiniteAnimationSpec<T> {
     override fun <V : AnimationVector> vectorize(
         converter: TwoWayConverter<T, V>
@@ -113,14 +113,14 @@ private class WrappedAnimationSpec<T>(
 private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
     val wrapped: VectorizedFiniteAnimationSpec<V>,
     val speedupFactor: Float,
-    val startDelayNanos: Long = 0
+    val startDelayNanos: Long = 0,
 ) : VectorizedFiniteAnimationSpec<V> {
 
     override fun getValueFromNanos(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V =
         if (playTimeNanos < startDelayNanos) {
             initialValue
@@ -129,7 +129,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
                 ((playTimeNanos - startDelayNanos) * speedupFactor).toLong(),
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             )
         }
 
@@ -137,7 +137,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V =
         if (playTimeNanos < startDelayNanos) {
             initialVelocity
@@ -146,7 +146,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
                 ((playTimeNanos - startDelayNanos) * speedupFactor).toLong(),
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             ) * speedupFactor
         }
 
@@ -235,7 +235,7 @@ internal fun FadeLabel(
         color = color,
         style = style,
         maxLines = maxLines,
-        textAlign = textAlign
+        textAlign = textAlign,
     )
 }
 

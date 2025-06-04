@@ -45,7 +45,7 @@ import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal fun AppFunctionData.unsafeGetParameterValue(
-    parameterMetadata: AppFunctionParameterMetadata,
+    parameterMetadata: AppFunctionParameterMetadata
 ): Any? =
     try {
         val value =
@@ -57,7 +57,7 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                     unsafeGetSingleProperty(
                         parameterMetadata.name,
                         TYPE_OBJECT,
-                        castDataType.qualifiedName
+                        castDataType.qualifiedName,
                     )
                 }
                 is AppFunctionArrayTypeMetadata -> {
@@ -67,7 +67,7 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                     unsafeGetSingleProperty(
                         parameterMetadata.name,
                         TYPE_OBJECT,
-                        castDataType.referenceDataType
+                        castDataType.referenceDataType,
                     )
                 }
                 else ->
@@ -86,7 +86,7 @@ internal fun AppFunctionData.unsafeGetParameterValue(
         Log.d(
             APP_FUNCTIONS_TAG,
             "Parameter ${parameterMetadata.name} should be the type of ${parameterMetadata.dataType}",
-            e
+            e,
         )
         throw AppFunctionInvalidArgumentException(
             "Parameter ${parameterMetadata.name} should be the type of ${parameterMetadata.dataType}"
@@ -96,7 +96,7 @@ internal fun AppFunctionData.unsafeGetParameterValue(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun AppFunctionData.getArrayTypeParameterValue(
     key: String,
-    arrayDataTypeMetadata: AppFunctionArrayTypeMetadata
+    arrayDataTypeMetadata: AppFunctionArrayTypeMetadata,
 ): Any? {
     val itemType = arrayDataTypeMetadata.itemType
     return when (itemType) {

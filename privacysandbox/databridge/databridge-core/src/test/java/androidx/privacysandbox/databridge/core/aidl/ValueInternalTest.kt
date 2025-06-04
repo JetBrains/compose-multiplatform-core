@@ -31,7 +31,7 @@ import org.robolectric.RobolectricTestRunner
 class ValueInternalParametrizedTest(
     private val type: String,
     private val isValueNull: Boolean,
-    private val value: Any?
+    private val value: Any?,
 ) {
 
     @Rule @JvmField val expect = Expect.create()
@@ -68,7 +68,7 @@ class ValueInternalParametrizedTest(
                 arrayOf("BYTE_ARRAY", false, byteArrayOf(1, 2, 3)),
                 arrayOf("STRING", true, null),
                 arrayOf("INT", true, null),
-                arrayOf("BOOLEAN", true, null)
+                arrayOf("BOOLEAN", true, null),
             )
         }
     }

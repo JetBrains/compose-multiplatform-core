@@ -93,7 +93,7 @@ class PdfViewPaginationTest {
                 activity.findViewById<View>(PDF_VIEW_ID).apply {
                     measure(
                         MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
-                        MeasureSpec.makeMeasureSpec(200, MeasureSpec.EXACTLY)
+                        MeasureSpec.makeMeasureSpec(200, MeasureSpec.EXACTLY),
                     )
                     layout(0, 0, 100, 200)
                 }
@@ -257,7 +257,7 @@ class PdfViewPaginationTest {
                         0,
                         (topPageMarginPx * zoom).roundToInt(),
                         (500F * zoom).roundToInt(),
-                        ((1000F + topPageMarginPx) * zoom).roundToInt()
+                        ((1000F + topPageMarginPx) * zoom).roundToInt(),
                     )
                 )
             assertThat(listener.zoomLevel).isWithin(0.01F).of(zoom)
@@ -292,7 +292,7 @@ class PdfViewPaginationTest {
                         0,
                         (topPageMarginPx * zoom).roundToInt(),
                         (500F * zoom).roundToInt(),
-                        ((1000F + topPageMarginPx) * zoom).roundToInt()
+                        ((1000F + topPageMarginPx) * zoom).roundToInt(),
                     )
                 )
             assertThat(listener.zoomLevel).isWithin(0.01F).of(zoom)
@@ -481,7 +481,7 @@ class PdfViewPaginationTest {
                     pdfDocument = fakePdfDocument
                     id = PDF_VIEW_ID
                 },
-                ViewGroup.LayoutParams(width, height)
+                ViewGroup.LayoutParams(width, height),
             )
             activity.setContentView(container)
         }
@@ -509,7 +509,7 @@ private class PdfViewportListener : PdfView.OnViewportChangedListener {
         firstVisiblePage: Int,
         visiblePagesCount: Int,
         pageLocations: SparseArray<Rect>,
-        zoomLevel: Float
+        zoomLevel: Float,
     ) {
         this.firstVisiblePage = firstVisiblePage
         this.firstPageLocation = Rect(pageLocations.get(firstVisiblePage))

@@ -44,13 +44,13 @@ class SdkSandboxControllerClientImportanceListenerTest {
     fun registerSdkSandboxClientImportanceListener_withoutApiAvailable_doNothing() {
         assumeFalse(
             "Requires ClientImportanceListener API not available",
-            isClientImportanceListenerAvailable()
+            isClientImportanceListenerAvailable(),
         )
 
         val controllerCompat = sdkSandboxControllerMockRule.controllerCompat
         controllerCompat.registerSdkSandboxClientImportanceListener(
             executor = Runnable::run,
-            listenerCompat = mock(SdkSandboxClientImportanceListenerCompat::class.java)
+            listenerCompat = mock(SdkSandboxClientImportanceListenerCompat::class.java),
         )
     }
 
@@ -58,7 +58,7 @@ class SdkSandboxControllerClientImportanceListenerTest {
     fun unregisterSdkSandboxClientImportanceListener_withoutApiAvailable_doNothing() {
         assumeFalse(
             "Requires ClientImportanceListener API not available",
-            isClientImportanceListenerAvailable()
+            isClientImportanceListenerAvailable(),
         )
 
         val controllerCompat = sdkSandboxControllerMockRule.controllerCompat
@@ -72,7 +72,7 @@ class SdkSandboxControllerClientImportanceListenerTest {
     fun registerSdkSandboxClientImportanceListener_withApiAvailable_delegatesToPlatformApi() {
         assumeTrue(
             "Requires ClientImportanceListener API available",
-            isClientImportanceListenerAvailable()
+            isClientImportanceListenerAvailable(),
         )
 
         val controllerCompat = sdkSandboxControllerMockRule.controllerCompat
@@ -97,14 +97,14 @@ class SdkSandboxControllerClientImportanceListenerTest {
     fun unregisterSdkSandboxClientImportanceListener_withApiAvailable_delegatesToPlatformApi() {
         assumeTrue(
             "Requires ClientImportanceListener API available",
-            isClientImportanceListenerAvailable()
+            isClientImportanceListenerAvailable(),
         )
 
         val controllerCompat = sdkSandboxControllerMockRule.controllerCompat
         val compatListener = mock(SdkSandboxClientImportanceListenerCompat::class.java)
         controllerCompat.registerSdkSandboxClientImportanceListener(
             executor = Runnable::run,
-            listenerCompat = compatListener
+            listenerCompat = compatListener,
         )
         val platformRegisteredListenerCaptor =
             ArgumentCaptor.forClass(SdkSandboxClientImportanceListener::class.java)

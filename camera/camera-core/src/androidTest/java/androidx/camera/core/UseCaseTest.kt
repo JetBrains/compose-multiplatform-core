@@ -333,7 +333,7 @@ class UseCaseTest {
             fakeUseCase.mergeConfigs(
                 FakeCameraInfoInternal(0, CameraSelector.LENS_FACING_BACK),
                 extendedConfig,
-                defaultConfig
+                defaultConfig,
             )
         assertThat(mergedConfig.targetName).isEqualTo(targetName)
     }
@@ -568,7 +568,7 @@ class UseCaseTest {
         fakeCameraDeviceSurfaceManager.setSuggestedStreamSpec(
             cameraId,
             FakeUseCaseConfig::class.java,
-            TEST_STREAM_SPEC
+            TEST_STREAM_SPEC,
         )
         val useCaseConfigFactory: UseCaseConfigFactory = FakeUseCaseConfigFactory()
         val cameraCoordinator: CameraCoordinator = FakeCameraCoordinator()
@@ -576,7 +576,7 @@ class UseCaseTest {
             fakeCamera,
             cameraCoordinator,
             StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager),
-            useCaseConfigFactory
+            useCaseConfigFactory,
         )
     }
 

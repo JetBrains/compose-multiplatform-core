@@ -44,7 +44,7 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         CreateCredentialRequest,
         CreateCredentialResponse,
         androidx.credentials.CreateCredentialResponse,
-        CreateCredentialException
+        CreateCredentialException,
     >(context) {
 
     override fun invokePlayServices(
@@ -52,10 +52,10 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         callback:
             CredentialManagerCallback<
                 androidx.credentials.CreateCredentialResponse,
-                CreateCredentialException
+                CreateCredentialException,
             >,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         if (CredentialProviderPlayServicesImpl.Companion.cancellationReviewer(cancellationSignal)) {
             return
@@ -134,7 +134,7 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
             candidateQueryData = request.candidateQueryData,
             origin = request.origin,
             requestJson = request.requestJson,
-            resultReceiver = null
+            resultReceiver = null,
         )
     }
 
@@ -143,7 +143,7 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
     ): androidx.credentials.CreateCredentialResponse {
         return androidx.credentials.CreateCredentialResponse.createFrom(
             response.type,
-            response.data
+            response.data,
         )
     }
 

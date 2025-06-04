@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
 import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
@@ -28,6 +29,7 @@ import androidx.xr.runtime.internal.InputEvent as RtInputEvent
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo as RtHitInfo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MoveEvent as RtMoveEvent
+import androidx.xr.runtime.internal.PerceivedResolutionResult as RtPerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
@@ -38,11 +40,17 @@ import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RtTextureSampler
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Ray
-import androidx.xr.scenecore.ActivityPose.HitTestFilter
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
+import androidx.xr.scenecore.ScenePose.HitTestFilter
+import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 
 internal class HandlerExecutor(val handler: Handler) : Executor {
     override fun execute(command: Runnable) {
@@ -54,45 +62,47 @@ internal class HandlerExecutor(val handler: Handler) : Executor {
     }
 }
 
-/** Extension function that converts a [Dimensions] to [RtDimensions]. */
-internal fun Dimensions.toRtDimensions(): RtDimensions {
+/** Extension function that converts a [androidx.xr.runtime.math.FloatSize3d] to [RtDimensions]. */
+internal fun FloatSize3d.toRtDimensions(): RtDimensions {
     return RtDimensions(width, height, depth)
 }
 
-/** Extension function that converts a [RtDimensions] to [Dimensions]. */
-internal fun RtDimensions.toDimensions(): Dimensions {
-    return Dimensions(width, height, depth)
+/** Extension function that converts a [RtDimensions] to [FloatSize3d]. */
+internal fun RtDimensions.toFloatSize3d(): FloatSize3d {
+    return FloatSize3d(width, height, depth)
 }
 
-/** Extension function that converts a [PixelDimensions] to [RtPixelDimensions]. */
-internal fun PixelDimensions.toRtPixelDimensions(): RtPixelDimensions {
+/**
+ * Extension function that converts a [androidx.xr.runtime.math.IntSize2d] to [RtPixelDimensions].
+ */
+internal fun IntSize2d.toRtPixelDimensions(): RtPixelDimensions {
     return RtPixelDimensions(width, height)
 }
 
-/** Extension function that converts a [RtPixelDimensions] to [PixelDimensions]. */
-internal fun RtPixelDimensions.toPixelDimensions(): PixelDimensions {
-    return PixelDimensions(width, height)
+/** Extension function that converts a [RtPixelDimensions] to [IntSize2d]. */
+internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
+    return IntSize2d(width, height)
 }
 
 /** Extension function that converts [Int] to [JxrPlatformAdapter.PlaneType]. */
 internal fun Int.toRtPlaneType(): RtPlaneType {
     return when (this) {
-        PlaneType.HORIZONTAL -> RtPlaneType.HORIZONTAL
-        PlaneType.VERTICAL -> RtPlaneType.VERTICAL
-        PlaneType.ANY -> RtPlaneType.ANY
-        else -> error("Unknown Plane Type: $PlaneType")
+        PlaneOrientation.HORIZONTAL -> RtPlaneType.HORIZONTAL
+        PlaneOrientation.VERTICAL -> RtPlaneType.VERTICAL
+        PlaneOrientation.ANY -> RtPlaneType.ANY
+        else -> error("Unknown Plane Type: $PlaneOrientation")
     }
 }
 
 /** Extension function that converts [Int] to [JxrPlatformAdapter.PlaneSemantic]. */
 internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
-        PlaneSemantic.WALL -> RtPlaneSemantic.WALL
-        PlaneSemantic.FLOOR -> RtPlaneSemantic.FLOOR
-        PlaneSemantic.CEILING -> RtPlaneSemantic.CEILING
-        PlaneSemantic.TABLE -> RtPlaneSemantic.TABLE
-        PlaneSemantic.ANY -> RtPlaneSemantic.ANY
-        else -> error("Unknown Plane Semantic: $PlaneSemantic")
+        PlaneSemanticType.WALL -> RtPlaneSemantic.WALL
+        PlaneSemanticType.FLOOR -> RtPlaneSemantic.FLOOR
+        PlaneSemanticType.CEILING -> RtPlaneSemantic.CEILING
+        PlaneSemanticType.TABLE -> RtPlaneSemantic.TABLE
+        PlaneSemanticType.ANY -> RtPlaneSemantic.ANY
+        else -> error("Unknown Plane Semantic: $PlaneSemanticType")
     }
 }
 
@@ -163,7 +173,7 @@ internal fun RtSpatialVisibility.toSpatialVisibility(): SpatialVisibility {
 
 /** Extension function that converts a [RtResizeEvent] to a [ResizeEvent]. */
 internal fun RtResizeEvent.toResizeEvent(): ResizeEvent {
-    return ResizeEvent(resizeState.toResizeState(), newSize.toDimensions())
+    return ResizeEvent(resizeState.toResizeState(), newSize.toFloatSize3d())
 }
 
 /**
@@ -322,5 +332,43 @@ internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon? {
         RtSpatialPointerIcon.TYPE_CIRCLE -> SpatialPointerIconCircle
         RtSpatialPointerIcon.TYPE_DEFAULT -> null
         else -> error("Unknown spatial pointer icon type: $this")
+    }
+}
+
+/**
+ * Extension function that converts a [RtPerceivedResolutionResult] to [PerceivedResolutionResult].
+ */
+internal fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): PerceivedResolutionResult {
+    return when (this) {
+        is RtPerceivedResolutionResult.Success ->
+            PerceivedResolutionResult.Success(this.perceivedResolution.toIntSize2d())
+        is RtPerceivedResolutionResult.EntityTooClose -> PerceivedResolutionResult.EntityTooClose()
+        is RtPerceivedResolutionResult.InvalidCameraView ->
+            PerceivedResolutionResult.InvalidCameraView()
+    }
+}
+
+internal suspend fun <T> ListenableFuture<T>.awaitSuspending(): T {
+    val deferred = CompletableDeferred<T>(coroutineContext[Job])
+    val futureBeingAwaited = this
+
+    this.addListener(
+        Runnable {
+            try {
+                deferred.complete(this.get())
+            } catch (e: Throwable) {
+                Log.e("AwaitSuspending", "ListenableFuture failed: $futureBeingAwaited", e)
+                deferred.completeExceptionally(e)
+            }
+        },
+        DirectExecutor,
+    )
+
+    return deferred.await()
+}
+
+private object DirectExecutor : Executor {
+    override fun execute(command: Runnable) {
+        command.run()
     }
 }

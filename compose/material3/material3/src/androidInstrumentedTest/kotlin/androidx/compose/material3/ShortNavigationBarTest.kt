@@ -82,7 +82,7 @@ class ShortNavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -104,7 +104,7 @@ class ShortNavigationBarTest {
                             icon = { Icon(Icons.Filled.Favorite, null) },
                             label = { Text("Item $index") },
                             selected = index == 0,
-                            onClick = {}
+                            onClick = {},
                         )
                     }
                 }
@@ -132,7 +132,7 @@ class ShortNavigationBarTest {
         val itemCoords = mutableMapOf<Int, LayoutCoordinates>()
         rule.setMaterialContent(
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 ShortNavigationBar {
@@ -145,7 +145,7 @@ class ShortNavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -197,7 +197,7 @@ class ShortNavigationBarTest {
             1000.dp,
             200.dp,
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 ShortNavigationBar(arrangement = ShortNavigationBarArrangement.Centered) {
@@ -211,7 +211,7 @@ class ShortNavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -224,7 +224,7 @@ class ShortNavigationBarTest {
                 itemsSpacePercentage = .6f,
                 numberOfItems = 3,
                 parentCoords = parentCoords,
-                itemCoords = itemCoords
+                itemCoords = itemCoords,
             )
         }
     }
@@ -237,7 +237,7 @@ class ShortNavigationBarTest {
             1000.dp,
             200.dp,
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 ShortNavigationBar(arrangement = ShortNavigationBarArrangement.Centered) {
@@ -251,7 +251,7 @@ class ShortNavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -264,7 +264,7 @@ class ShortNavigationBarTest {
                 itemsSpacePercentage = .7f,
                 numberOfItems = 4,
                 parentCoords = parentCoords,
-                itemCoords = itemCoords
+                itemCoords = itemCoords,
             )
         }
     }
@@ -277,7 +277,7 @@ class ShortNavigationBarTest {
             1000.dp,
             200.dp,
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 ShortNavigationBar(arrangement = ShortNavigationBarArrangement.Centered) {
@@ -291,7 +291,7 @@ class ShortNavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -304,7 +304,7 @@ class ShortNavigationBarTest {
                 itemsSpacePercentage = .8f,
                 numberOfItems = 5,
                 parentCoords = parentCoords,
-                itemCoords = itemCoords
+                itemCoords = itemCoords,
             )
         }
     }
@@ -317,7 +317,7 @@ class ShortNavigationBarTest {
             1000.dp,
             200.dp,
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 ShortNavigationBar(arrangement = ShortNavigationBarArrangement.Centered) {
@@ -331,7 +331,7 @@ class ShortNavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -344,7 +344,7 @@ class ShortNavigationBarTest {
                 itemsSpacePercentage = .9f,
                 numberOfItems = 6,
                 parentCoords = parentCoords,
-                itemCoords = itemCoords
+                itemCoords = itemCoords,
             )
         }
     }
@@ -356,7 +356,7 @@ class ShortNavigationBarTest {
         rule.setMaterialContent(lightColorScheme()) {
             ShortNavigationBar(
                 modifier = Modifier.testTag("TAG"),
-                arrangement = ShortNavigationBarArrangement.Centered
+                arrangement = ShortNavigationBarArrangement.Centered,
             ) {
                 repeat(4) { index ->
                     ShortNavigationBarItem(
@@ -394,14 +394,14 @@ class ShortNavigationBarTest {
                     colors = customItemColors,
                     icon = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Red) },
                     label = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Blue) },
-                    onClick = {}
+                    onClick = {},
                 )
                 ShortNavigationBarItem(
                     selected = false,
                     colors = customItemColors,
                     icon = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Green) },
                     label = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.White) },
-                    onClick = {}
+                    onClick = {},
                 )
                 ShortNavigationBarItem(
                     enabled = false,
@@ -409,7 +409,7 @@ class ShortNavigationBarTest {
                     colors = customItemColors,
                     icon = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Gray) },
                     label = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Black) },
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -423,7 +423,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 label = { Text("ItemText") },
                 selected = true,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -444,7 +444,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 label = { Text("ItemText") },
                 selected = true,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -466,7 +466,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 label = { Text("ItemText") },
                 selected = true,
-                onClick = { clicks++ }
+                onClick = { clicks++ },
             )
         }
 
@@ -483,7 +483,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                 label = null,
                 selected = false,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -511,7 +511,7 @@ class ShortNavigationBarTest {
                             .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
                     },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
                 ShortNavigationBarItem(
                     colors = customColors,
@@ -521,7 +521,7 @@ class ShortNavigationBarTest {
                     },
                     label = { Truth.assertThat(LocalContentColor.current).isEqualTo(Color.Green) },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -537,7 +537,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                 label = { Text("ItemText") },
                 selected = true,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -582,7 +582,7 @@ class ShortNavigationBarTest {
                 iconPosition = NavigationItemIconPosition.Start,
                 label = { Text("ItemText", Modifier.testTag("label")) },
                 selected = true,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -639,7 +639,7 @@ class ShortNavigationBarTest {
                 icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                 label = null,
                 selected = false,
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -660,7 +660,7 @@ private fun Density.assertWidthAndPositions(
     itemsSpacePercentage: Float,
     numberOfItems: Int,
     parentCoords: LayoutCoordinates,
-    itemCoords: Map<Int, LayoutCoordinates>
+    itemCoords: Map<Int, LayoutCoordinates>,
 ) {
     val width = parentCoords.size.width
     val padding = width * paddingPercentage
@@ -680,7 +680,7 @@ private fun ComposeContentTestRule.setContentWithSimulatedSize(
     simulatedHeight: Dp,
     colorScheme: ColorScheme,
     modifier: Modifier = Modifier,
-    composable: @Composable () -> Unit
+    composable: @Composable () -> Unit,
 ) {
     setContent {
         val currentDensity = LocalDensity.current
@@ -692,11 +692,7 @@ private fun ComposeContentTestRule.setContentWithSimulatedSize(
         MaterialTheme(colorScheme = colorScheme) {
             Surface(modifier = modifier) {
                 CompositionLocalProvider(LocalDensity provides simulatedDensity) {
-                    Box(
-                        Modifier.fillMaxWidth().height(simulatedHeight),
-                    ) {
-                        composable()
-                    }
+                    Box(Modifier.fillMaxWidth().height(simulatedHeight)) { composable() }
                 }
             }
         }

@@ -327,7 +327,7 @@ class PartitionedMeshTest {
                 partitionedMesh.computeCoverageIsGreaterThan(
                     externalParallelogram,
                     0f,
-                    SCALE_TRANSFORM
+                    SCALE_TRANSFORM,
                 )
             )
             .isFalse()

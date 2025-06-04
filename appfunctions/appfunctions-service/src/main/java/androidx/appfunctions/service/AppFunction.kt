@@ -73,5 +73,5 @@ public annotation class AppFunction(
      * unless explicitly enabled at runtime. When disabled, any attempt to call this function by
      * another application will be rejected.
      */
-    public val isEnabled: Boolean = true,
+    public val isEnabled: Boolean = true
 )

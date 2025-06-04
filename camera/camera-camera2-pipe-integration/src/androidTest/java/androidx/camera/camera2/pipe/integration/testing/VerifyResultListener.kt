@@ -59,7 +59,7 @@ class VerifyResultListener(capturesCount: Int) : Request.Listener {
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         if (!startReceiving) {
             return
@@ -82,7 +82,7 @@ class VerifyResultListener(capturesCount: Int) : Request.Listener {
     override fun onFailed(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        requestFailure: RequestFailure
+        requestFailure: RequestFailure,
     ) {
         if (!startReceiving) {
             return

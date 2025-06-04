@@ -413,7 +413,7 @@ private val UseChildSizeButNotPlace =
     object : LayoutNode.NoIntrinsicsMeasurePolicy("") {
         override fun MeasureScope.measure(
             measurables: List<Measurable>,
-            constraints: Constraints
+            constraints: Constraints,
         ): MeasureResult {
             val placeable = measurables.first().measure(constraints)
             return layout(placeable.width, placeable.height) {

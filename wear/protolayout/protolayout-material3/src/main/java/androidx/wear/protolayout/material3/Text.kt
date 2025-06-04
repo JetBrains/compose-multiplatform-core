@@ -81,7 +81,7 @@ public fun MaterialScope.text(
     maxLines: Int = defaultTextElementStyle.maxLines,
     @TextAlignment alignment: Int = defaultTextElementStyle.alignment,
     @TextOverflow overflow: Int = defaultTextElementStyle.overflow,
-    @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = emptyList()
+    @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = emptyList(),
 ): LayoutElement =
     basicText(
         text = text,
@@ -90,7 +90,7 @@ public fun MaterialScope.text(
                     typographyToken = typography,
                     deviceConfiguration = deviceConfiguration,
                     isScalable = scalable,
-                    settings = settings
+                    settings = settings,
                 )
                 .setColor(color.prop)
                 .setItalic(italic)

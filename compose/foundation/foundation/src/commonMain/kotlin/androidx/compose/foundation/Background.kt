@@ -57,7 +57,7 @@ fun Modifier.background(color: Color, shape: Shape = RectangleShape): Modifier {
                     value = color
                     properties["color"] = color
                     properties["shape"] = shape
-                }
+                },
         )
     )
 }
@@ -75,7 +75,7 @@ fun Modifier.background(color: Color, shape: Shape = RectangleShape): Modifier {
 fun Modifier.background(
     brush: Brush,
     shape: Shape = RectangleShape,
-    @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f
+    @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
 ) =
     this.then(
         BackgroundElement(
@@ -88,7 +88,7 @@ fun Modifier.background(
                     properties["alpha"] = alpha
                     properties["brush"] = brush
                     properties["shape"] = shape
-                }
+                },
         )
     )
 
@@ -97,7 +97,7 @@ private class BackgroundElement(
     private val brush: Brush? = null,
     private val alpha: Float,
     private val shape: Shape,
-    private val inspectorInfo: InspectorInfo.() -> Unit
+    private val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<BackgroundNode>() {
     override fun create(): BackgroundNode {
         return BackgroundNode(color, brush, alpha, shape)

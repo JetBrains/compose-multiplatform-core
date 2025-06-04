@@ -315,7 +315,7 @@ internal fun dynamicLightColorScheme34(context: Context) =
         onPrimaryContainer =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_primary_container_light
+                android.R.color.system_on_primary_container_light,
             ),
         inversePrimary = ColorResourceHelper.getColor(context, android.R.color.system_primary_dark),
         secondary = ColorResourceHelper.getColor(context, android.R.color.system_secondary_light),
@@ -326,7 +326,7 @@ internal fun dynamicLightColorScheme34(context: Context) =
         onSecondaryContainer =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_secondary_container_light
+                android.R.color.system_on_secondary_container_light,
             ),
         tertiary = ColorResourceHelper.getColor(context, android.R.color.system_tertiary_light),
         onTertiary =
@@ -336,7 +336,7 @@ internal fun dynamicLightColorScheme34(context: Context) =
         onTertiaryContainer =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_tertiary_container_light
+                android.R.color.system_on_tertiary_container_light,
             ),
         background = ColorResourceHelper.getColor(context, android.R.color.system_background_light),
         onBackground =
@@ -363,22 +363,22 @@ internal fun dynamicLightColorScheme34(context: Context) =
         surfaceContainerHigh =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_high_light
+                android.R.color.system_surface_container_high_light,
             ),
         surfaceContainerHighest =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_highest_light
+                android.R.color.system_surface_container_highest_light,
             ),
         surfaceContainerLow =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_low_light
+                android.R.color.system_surface_container_low_light,
             ),
         surfaceContainerLowest =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_lowest_light
+                android.R.color.system_surface_container_lowest_light,
             ),
         surfaceTint = ColorResourceHelper.getColor(context, android.R.color.system_primary_light),
         primaryFixed = ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed),
@@ -397,7 +397,7 @@ internal fun dynamicLightColorScheme34(context: Context) =
         onSecondaryFixedVariant =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_secondary_fixed_variant
+                android.R.color.system_on_secondary_fixed_variant,
             ),
         tertiaryFixed =
             ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),
@@ -477,7 +477,7 @@ internal fun dynamicDarkColorScheme34(context: Context) =
         onSecondaryContainer =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_secondary_container_dark
+                android.R.color.system_on_secondary_container_dark,
             ),
         tertiary = ColorResourceHelper.getColor(context, android.R.color.system_tertiary_dark),
         onTertiary = ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_dark),
@@ -486,7 +486,7 @@ internal fun dynamicDarkColorScheme34(context: Context) =
         onTertiaryContainer =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_tertiary_container_dark
+                android.R.color.system_on_tertiary_container_dark,
             ),
         background = ColorResourceHelper.getColor(context, android.R.color.system_background_dark),
         onBackground =
@@ -513,22 +513,22 @@ internal fun dynamicDarkColorScheme34(context: Context) =
         surfaceContainerHigh =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_high_dark
+                android.R.color.system_surface_container_high_dark,
             ),
         surfaceContainerHighest =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_highest_dark
+                android.R.color.system_surface_container_highest_dark,
             ),
         surfaceContainerLow =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_low_dark
+                android.R.color.system_surface_container_low_dark,
             ),
         surfaceContainerLowest =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_surface_container_lowest_dark
+                android.R.color.system_surface_container_lowest_dark,
             ),
         surfaceTint = ColorResourceHelper.getColor(context, android.R.color.system_primary_dark),
         primaryFixed = ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed),
@@ -547,7 +547,7 @@ internal fun dynamicDarkColorScheme34(context: Context) =
         onSecondaryFixedVariant =
             ColorResourceHelper.getColor(
                 context,
-                android.R.color.system_on_secondary_fixed_variant
+                android.R.color.system_on_secondary_fixed_variant,
             ),
         tertiaryFixed =
             ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),

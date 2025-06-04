@@ -58,5 +58,5 @@ actual fun DatePickerDialog(
     tonalElevation: Dp,
     colors: DatePickerColors,
     properties: DialogProperties,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ): Unit = implementedInJetBrainsFork()

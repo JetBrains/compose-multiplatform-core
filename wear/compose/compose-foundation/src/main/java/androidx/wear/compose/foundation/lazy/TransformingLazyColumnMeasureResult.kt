@@ -16,10 +16,14 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.collection.FloatList
+import androidx.collection.MutableFloatList
+import androidx.collection.mutableFloatSetOf
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 
 /** The result of the measure pass of the [TransformingLazyColumn]. */
@@ -54,4 +58,58 @@ internal class TransformingLazyColumnMeasureResult(
     /** see [TransformingLazyColumnLayoutInfo.viewportSize] */
     override val viewportSize: IntSize
         get() = IntSize(width = width, height = height)
+}
+
+internal fun TransformingLazyColumnMeasureResult.checkLayoutIsCorrect() {
+
+    with(
+        visibleItems.fastMapToFloatList {
+            it.transformedHeight.toFloat() / it.measuredHeight.toFloat()
+        }
+    ) {
+        check(hasMonotonicIncreaseAndDecrease()) {
+            "Incorrect layout: Measured items height rates are not correct $this"
+        }
+    }
+    with(
+        visibleItems.fastMapToFloatList {
+            it.scrollProgress.bottomOffsetFraction - it.scrollProgress.topOffsetFraction
+        }
+    ) {
+        check(!any { it <= 0f }) {
+            "Incorrect layout: Items could not have zero height or negative height $this"
+        }
+    }
+
+    with(visibleItems.fastMapToFloatList { it.scrollProgress.topOffsetFraction }) {
+        check(isDistinct() && isMonotonicallyIncreasing()) {
+            "Incorrect layout: scrollProgress top offset fraction should be increating $this"
+        }
+    }
+
+    with(visibleItems.fastMapToFloatList { it.scrollProgress.bottomOffsetFraction }) {
+        check(isDistinct() && isMonotonicallyIncreasing()) {
+            "Incorrect layout: scrollProgress bottom offset fraction should be increating $this"
+        }
+    }
+}
+
+private fun <T> List<T>.fastMapToFloatList(transform: (T) -> Float): FloatList =
+    MutableFloatList(size).also { list -> fastForEach { list.add(transform(it)) } }
+
+private fun FloatList.isDistinct(): Boolean =
+    size ==
+        fold(mutableFloatSetOf()) { acc, value ->
+                acc.add(value)
+                acc
+            }
+            .size
+
+private fun FloatList.isMonotonicallyIncreasing(): Boolean =
+    (1 until size).all { this[it] >= this[it - 1] }
+
+// Confirms that the values array consists of two monotonic functions.
+private fun FloatList.hasMonotonicIncreaseAndDecrease(): Boolean {
+    val firstDownIndex = (1 until size).firstOrNull { this[it] < this[it - 1] }
+    return firstDownIndex == null || (firstDownIndex + 1 until size).all { this[it] < this[it - 1] }
 }

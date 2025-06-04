@@ -66,14 +66,14 @@ fun TransformingLazyColumnAnimateItemSample() {
         TransformingLazyColumn(
             state = state,
             contentPadding = PaddingValues(5.dp),
-            modifier = Modifier.background(Color.Black).fillMaxSize()
+            modifier = Modifier.background(Color.Black).fillMaxSize(),
         ) {
             items(list.size, key = { list[it] }) {
                 Text(
                     "Item ${list[it]}",
                     Modifier.animateItem().clickable {
                         list = list.filter { elem -> elem != list[it] }
-                    }
+                    },
                 )
             }
         }
@@ -81,13 +81,13 @@ fun TransformingLazyColumnAnimateItemSample() {
             "+",
             Modifier.align(Alignment.CenterStart).padding(horizontal = 5.dp).clickable {
                 if (list.size < 25) list = list + "${next++}"
-            }
+            },
         )
         Text(
             "S",
             Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp).clickable {
                 list = list.shuffled()
-            }
+            },
         )
     }
 }
@@ -142,7 +142,7 @@ fun TransformingLazyColumnLettersSample() {
                                 drawCircle(rainbowColor(colorProgress))
                             }
                         }
-                        .padding(20.dp)
+                        .padding(20.dp),
             )
         }
     }
@@ -164,17 +164,17 @@ fun TransformingLazyColumnRectangularBoxesSample() {
                                     override fun createOutline(
                                         size: Size,
                                         layoutDirection: LayoutDirection,
-                                        density: Density
+                                        density: Density,
                                     ): Outline =
                                         RectangleShape.createOutline(
                                             size.copy(height = size.height / 2),
                                             layoutDirection,
-                                            density
+                                            density,
                                         )
                                 }
                         }
                         .background(Color.Gray)
-                        .padding(10.dp)
+                        .padding(10.dp),
             )
         }
     }
@@ -187,14 +187,14 @@ fun TransformingLazyColumnScrollToItemSample() {
     val state =
         rememberTransformingLazyColumnState(
             // Customize initial scroll position of the TransformingLazyColumn.
-            initialAnchorItemIndex = 10,
+            initialAnchorItemIndex = 10
         )
     val coroutineScope = rememberCoroutineScope()
 
     TransformingLazyColumn(
         modifier = Modifier.background(Color.Black),
         state = state,
-        contentPadding = PaddingValues(vertical = 20.dp)
+        contentPadding = PaddingValues(vertical = 20.dp),
     ) {
         items(count = 20) {
             Text(
@@ -207,7 +207,7 @@ fun TransformingLazyColumnScrollToItemSample() {
                             drawRect(if (isCentered) Color.Green else Color.DarkGray)
                         }
                         .padding(5.dp)
-                        .clickable { coroutineScope.launch { state.scrollToItem(it) } }
+                        .clickable { coroutineScope.launch { state.scrollToItem(it) } },
             )
         }
 
@@ -215,7 +215,7 @@ fun TransformingLazyColumnScrollToItemSample() {
             Text(
                 "Scroll to top",
                 modifier =
-                    Modifier.clickable { coroutineScope.launch { state.animateScrollToItem(0) } }
+                    Modifier.clickable { coroutineScope.launch { state.animateScrollToItem(0) } },
             )
         }
     }

@@ -126,7 +126,7 @@ public fun CircularProgressIndicator(
             colors,
             strokeWidth,
             gapSize,
-            enabled
+            enabled,
         )
     } else {
         AnimatedCircularProgressIndicatorImpl(
@@ -137,7 +137,7 @@ public fun CircularProgressIndicator(
             colors,
             strokeWidth,
             gapSize,
-            enabled
+            enabled,
         )
     }
 }
@@ -174,7 +174,7 @@ public fun CircularProgressIndicator(
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = CircularGlobalRotationDegreesTarget,
-            animationSpec = circularIndeterminateGlobalRotationAnimationSpec
+            animationSpec = circularIndeterminateGlobalRotationAnimationSpec,
         )
 
     // An additional rotation that moves by 360 degrees in 1250ms and then rest for 1250ms.
@@ -182,7 +182,7 @@ public fun CircularProgressIndicator(
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 720f,
-            animationSpec = circularIndeterminateRotationAnimationSpec
+            animationSpec = circularIndeterminateRotationAnimationSpec,
         )
 
     // Indicator progress animation that will be changing the progress up and down as the indicator
@@ -191,7 +191,7 @@ public fun CircularProgressIndicator(
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 0f,
-            animationSpec = circularIndeterminateProgressAnimationSpec
+            animationSpec = circularIndeterminateProgressAnimationSpec,
         )
 
     Canvas(
@@ -208,14 +208,14 @@ public fun CircularProgressIndicator(
                 sweep = 360f - sweep,
                 brush = colors.trackBrush,
                 strokeWidth = strokeWidth.toPx(),
-                gapSweep = min(sweep, gapSizeSweep)
+                gapSweep = min(sweep, gapSizeSweep),
             )
             drawIndicatorSegment(
                 startAngle = 0f,
                 sweep = sweep,
                 brush = colors.indicatorBrush,
                 strokeWidth = strokeWidth.toPx(),
-                gapSweep = gapSizeSweep
+                gapSweep = gapSizeSweep,
             )
         }
     }
@@ -381,7 +381,7 @@ private fun AnimatedCircularProgressIndicatorImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue
+                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }
@@ -436,7 +436,7 @@ private fun AnimatedCircularProgressIndicatorWithOverflowImpl(
                         async {
                             animatedProgress.animateTo(newProgress, actualProgressAnimationSpec)
                         },
-                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) }
+                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) },
                     )
                 }
             }
@@ -465,7 +465,7 @@ private fun AnimatedCircularProgressIndicatorWithOverflowImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue
+                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }

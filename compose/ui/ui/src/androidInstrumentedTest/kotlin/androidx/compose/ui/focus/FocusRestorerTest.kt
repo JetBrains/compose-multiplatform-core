@@ -174,7 +174,7 @@ class FocusRestorerTest {
                     key(row) {
                         LazyRow(
                             state = if (row == 0) row1State else rememberLazyListState(),
-                            modifier = Modifier.focusRestorer()
+                            modifier = Modifier.focusRestorer(),
                         ) {
                             items(count = 20) { column ->
                                 key(row, column) {
@@ -215,7 +215,7 @@ class FocusRestorerTest {
             coroutineScope = rememberCoroutineScope()
             LazyColumn(
                 modifier = Modifier.size(100.dp).focusRequester(parent).focusRestorer(),
-                state = lazyListState
+                state = lazyListState,
             ) {
                 items(100) { item -> Box(Modifier.size(10.dp).testTag("item $item").focusable()) }
             }
@@ -269,7 +269,7 @@ class FocusRestorerTest {
             coroutineScope = rememberCoroutineScope()
             LazyColumn(
                 modifier = Modifier.size(100.dp).focusRequester(parent).focusRestorer(),
-                state = lazyListState
+                state = lazyListState,
             ) {
                 items(100) { item ->
                     Box(
@@ -312,7 +312,7 @@ class FocusRestorerTest {
             coroutineScope = rememberCoroutineScope()
             LazyColumn(
                 modifier = Modifier.size(100.dp).focusRequester(parent).focusRestorer(),
-                state = lazyListState
+                state = lazyListState,
             ) {
                 items(100) { item ->
                     Box(

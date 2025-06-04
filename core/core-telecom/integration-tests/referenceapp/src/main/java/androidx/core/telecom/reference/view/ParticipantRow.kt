@@ -46,7 +46,7 @@ fun ParticipantRow(participant: ParticipantState) {
                     if (participant.isActive) "Active Participant" else "Participant",
                 tint =
                     if (participant.isActive) MaterialTheme.colorScheme.primary
-                    else LocalContentColor.current
+                    else LocalContentColor.current,
             )
         },
         trailingContent = {
@@ -62,7 +62,7 @@ fun ParticipantRow(participant: ParticipantState) {
                             else
                                 LocalContentColor.current.copy(
                                     alpha = if (participant.isSelf) 1f else 0.3f
-                                )
+                                ),
                     )
                 }
                 // Kick Button (only enable if NOT self)
@@ -72,11 +72,11 @@ fun ParticipantRow(participant: ParticipantState) {
                         contentDescription = "Kick Participant",
                         tint =
                             if (!participant.isSelf) Color.Red.copy(alpha = 0.8f)
-                            else LocalContentColor.current.copy(alpha = 0.3f)
+                            else LocalContentColor.current.copy(alpha = 0.3f),
                     )
                 }
             }
-        }
+        },
     )
 }
 

@@ -141,7 +141,7 @@ abstract class MeasurementManager {
         fun obtain(context: Context): MeasurementManager? {
             Log.d(
                 "MeasurementManager",
-                "AdServicesInfo.version=${AdServicesInfo.adServicesVersion()}"
+                "AdServicesInfo.version=${AdServicesInfo.adServicesVersion()}",
             )
             return if (AdServicesInfo.adServicesVersion() >= 5) {
                 MeasurementManagerApi33Ext5Impl(context)

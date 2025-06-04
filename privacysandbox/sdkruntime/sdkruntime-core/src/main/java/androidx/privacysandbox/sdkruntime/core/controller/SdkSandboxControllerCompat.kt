@@ -75,7 +75,7 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
                 sdkName,
                 params,
                 Runnable::run,
-                ContinuationLoadSdkCallback(continuation)
+                ContinuationLoadSdkCallback(continuation),
             )
         }
 
@@ -119,7 +119,7 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
      */
     fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat
+        listenerCompat: SdkSandboxClientImportanceListenerCompat,
     ) = controllerImpl.registerSdkSandboxClientImportanceListener(executor, listenerCompat)
 
     /**
@@ -174,7 +174,7 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
 
         fun registerSdkSandboxClientImportanceListener(
             executor: Executor,
-            listenerCompat: SdkSandboxClientImportanceListenerCompat
+            listenerCompat: SdkSandboxClientImportanceListenerCompat,
         )
 
         fun unregisterSdkSandboxClientImportanceListener(

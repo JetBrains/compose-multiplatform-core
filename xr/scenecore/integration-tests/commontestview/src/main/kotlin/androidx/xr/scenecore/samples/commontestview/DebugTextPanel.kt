@@ -18,11 +18,11 @@ package androidx.xr.scenecore.samples.commontestview
 
 import android.content.Context
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 
 /**
  * A debug panel that holds a panel entity with a view that displays a list of text lines.
@@ -36,7 +36,7 @@ class DebugTextPanel(
     session: Session,
     /** The parent entity that the Debug panel is attached to. */
     var parent: Entity,
-    pixelDimensions: PixelDimensions = PixelDimensions(550, 750),
+    pixelDimensions: IntSize2d = IntSize2d(550, 750),
     name: String = "DebugTextPanel",
     pose: Pose = Pose(Vector3(0f, -0.1f, 0.1f)),
 ) {

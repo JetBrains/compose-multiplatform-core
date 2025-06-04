@@ -42,7 +42,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-object Profile : NavKey() {
+object Profile : NavKey {
     val resourceId: Int = R.string.profile
 }
 
@@ -51,17 +51,17 @@ class ProfileViewModel : ViewModel() {
 }
 
 @Serializable
-object Scrollable : NavKey() {
+object Scrollable : NavKey {
     val resourceId: Int = R.string.scrollable
 }
 
 @Serializable
-object DialogBase : NavKey() {
+object DialogBase : NavKey {
     val resourceId: Int = R.string.dialog
 }
 
 @Serializable
-data class Dashboard(val userId: String? = "no value given") : NavKey() {
+data class Dashboard(val userId: String? = "no value given") : NavKey {
     companion object {
         val resourceId: Int = R.string.dashboard
     }
@@ -129,7 +129,7 @@ fun NavigateButton(text: String, listener: () -> Unit = {}) {
     Button(
         onClick = listener,
         colors = ButtonDefaults.buttonColors(containerColor = LightGray),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Text(text = "Navigate to $text")
     }
@@ -140,7 +140,7 @@ fun NavigateBackButton(onBack: () -> Unit) {
     Button(
         onClick = onBack,
         colors = ButtonDefaults.buttonColors(containerColor = LightGray),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Text(text = "Go to Previous screen")
     }
@@ -177,5 +177,5 @@ private val phrases =
         "Fool's Gold",
         "It's Not Brain Surgery",
         "Fight Fire With Fire",
-        "Go For Broke"
+        "Go For Broke",
     )

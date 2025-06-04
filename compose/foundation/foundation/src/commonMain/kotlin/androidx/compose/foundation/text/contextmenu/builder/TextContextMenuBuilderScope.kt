@@ -30,8 +30,7 @@ import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuC
  * function is not in the common source set, but is instead defined as an extension function in the
  * platform specific source sets.
  */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuBuilderScope internal constructor() {
+class TextContextMenuBuilderScope internal constructor() {
     private val components = mutableObjectListOf<TextContextMenuComponent>()
     private val filters = mutableObjectListOf<(TextContextMenuComponent) -> Boolean>()
 

@@ -1,9 +1,15 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowBounds():
-    Removed method androidx.constraintlayout.compose.DebugFlags.getShowBounds()
-RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowKeyPositions():
-    Removed method androidx.constraintlayout.compose.DebugFlags.getShowKeyPositions()
-RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowPaths():
-    Removed method androidx.constraintlayout.compose.DebugFlags.getShowPaths()
-RemovedMethod: androidx.constraintlayout.compose.GridFlag#isPlaceLayoutsOnSpansFirst():
-    Removed method androidx.constraintlayout.compose.GridFlag.isPlaceLayoutsOnSpansFirst()
+AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
+    Binary breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
+AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
+    Binary breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float)
+AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
+    Binary breaking change: Added method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
+AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
+    Binary breaking change: Added method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float)
+AddedAbstractMethod: androidx.constraintlayout.compose.MotionCarouselScope#items(int, kotlin.jvm.functions.Function3<? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.constraintlayout.compose.MotionCarouselScope.items(int,kotlin.jvm.functions.Function3<? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.constraintlayout.compose.MotionCarouselScope#itemsWithProperties(int, kotlin.jvm.functions.Function4<? super java.lang.Integer,? super androidx.compose.runtime.State<androidx.constraintlayout.compose.MotionLayoutScope.MotionProperties>,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.constraintlayout.compose.MotionCarouselScope.itemsWithProperties(int,kotlin.jvm.functions.Function4<? super java.lang.Integer,? super androidx.compose.runtime.State<androidx.constraintlayout.compose.MotionLayoutScope.MotionProperties>,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.constraintlayout.compose.VerticalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, float, float):
+    Binary breaking change: Added method androidx.constraintlayout.compose.VerticalAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,float,float)

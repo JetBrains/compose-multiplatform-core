@@ -88,7 +88,7 @@ class MultiProcessDataStoreSingleProcessFileTest :
                 storage =
                     FileStorage(
                         ByteWrapper.ByteWrapperSerializer(),
-                        { MultiProcessCoordinator(dataStoreScope.coroutineContext, it) }
+                        { MultiProcessCoordinator(dataStoreScope.coroutineContext, it) },
                     ) {
                         testFile.file
                     },
@@ -133,10 +133,10 @@ class MultiProcessDataStoreSingleProcessFileTest :
                         coordinatorProducer = {
                             MultiProcessCoordinator(testScope.coroutineContext, it)
                         },
-                        produceFile = { stressTestFile }
+                        produceFile = { stressTestFile },
                     ),
                 scope = testScope,
-                initTasksList = emptyList()
+                initTasksList = emptyList(),
             )
         val limit = 1_000
         stressTestStore.updateData { 0 }

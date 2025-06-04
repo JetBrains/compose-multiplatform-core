@@ -184,7 +184,7 @@ fun DisposableEffect(key1: Any?, effect: DisposableEffectScope.() -> DisposableE
 fun DisposableEffect(
     key1: Any?,
     key2: Any?,
-    effect: DisposableEffectScope.() -> DisposableEffectResult
+    effect: DisposableEffectScope.() -> DisposableEffectResult,
 ) {
     remember(key1, key2) { DisposableEffectImpl(effect) }
 }
@@ -222,7 +222,7 @@ fun DisposableEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
-    effect: DisposableEffectScope.() -> DisposableEffectResult
+    effect: DisposableEffectScope.() -> DisposableEffectResult,
 ) {
     remember(key1, key2, key3) { DisposableEffectImpl(effect) }
 }
@@ -258,14 +258,14 @@ fun DisposableEffect(
 @Suppress("ArrayReturn")
 fun DisposableEffect(
     vararg keys: Any?,
-    effect: DisposableEffectScope.() -> DisposableEffectResult
+    effect: DisposableEffectScope.() -> DisposableEffectResult,
 ) {
     remember(*keys) { DisposableEffectImpl(effect) }
 }
 
 internal class LaunchedEffectImpl(
     private val parentCoroutineContext: CoroutineContext,
-    private val task: suspend CoroutineScope.() -> Unit
+    private val task: suspend CoroutineScope.() -> Unit,
 ) : RememberObserver, CoroutineExceptionHandler {
     private val scope =
         CoroutineScope(
@@ -550,7 +550,7 @@ internal class RememberedCoroutineScope(
 @OptIn(InternalComposeApi::class)
 internal fun createCompositionCoroutineScope(
     coroutineContext: CoroutineContext,
-    composer: Composer
+    composer: Composer,
 ) =
     if (coroutineContext[Job] != null) {
         CoroutineScope(

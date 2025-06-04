@@ -55,7 +55,7 @@ internal constructor(
     @Suppress("unused") // used via build.gradle
     val linkerArgs: ListProperty<String>,
     @Suppress("unused") // used via build.gradle
-    val freeArgs: ListProperty<String>
+    val freeArgs: ListProperty<String>,
 ) : Named {
     override fun getName(): String = konanTarget.name
 
@@ -113,10 +113,7 @@ internal constructor(
                     listOf("darwin-x86/include", "darwin-x86/include/darwin")
                 }
                 Family.LINUX -> {
-                    listOf(
-                        "linux-x86/include",
-                        "linux-x86/include/linux",
-                    )
+                    listOf("linux-x86/include", "linux-x86/include/linux")
                 }
                 else -> error("unsupported family ($konanTarget) for JNI compilation")
             }

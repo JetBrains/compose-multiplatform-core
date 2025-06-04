@@ -24,11 +24,7 @@ class XFunSpecTest {
     @Test
     fun equals() {
         fun createFunSpec(name: String) =
-            XFunSpec.builder(
-                    name = name,
-                    visibility = VisibilityModifier.PUBLIC,
-                )
-                .build()
+            XFunSpec.builder(name = name, visibility = VisibilityModifier.PUBLIC).build()
 
         val fun1 = createFunSpec("a")
         val fun2 = createFunSpec("b")

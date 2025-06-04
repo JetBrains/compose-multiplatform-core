@@ -107,7 +107,7 @@ public fun <T : Activity> actionStartActivity(
  *   the activity intent, keyed by the parameter key name string.
  */
 public inline fun <reified T : Activity> actionStartActivity(
-    parameters: ActionParameters = actionParametersOf(),
+    parameters: ActionParameters = actionParametersOf()
 ): Action = actionStartActivity(T::class.java, parameters)
 
 @Suppress("MissingNullability")

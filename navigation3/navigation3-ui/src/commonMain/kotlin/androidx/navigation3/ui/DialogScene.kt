@@ -34,10 +34,7 @@ internal class DialogScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(entry)
 
     override val content: @Composable (() -> Unit) = {
-        Dialog(
-            onDismissRequest = { onBack(1) },
-            properties = dialogProperties,
-        ) {
+        Dialog(onDismissRequest = { onBack(1) }, properties = dialogProperties) {
             entry.content.invoke(entry.key)
         }
     }
@@ -64,7 +61,7 @@ public class DialogSceneStrategy<T : Any>() : SceneStrategy<T> {
                 overlaidEntries = entries.dropLast(1),
                 entry = lastEntry,
                 dialogProperties = properties,
-                onBack = onBack
+                onBack = onBack,
             )
         }
     }

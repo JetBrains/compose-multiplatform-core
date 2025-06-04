@@ -130,7 +130,7 @@ class ClickableTest {
     private val InstanceOf =
         Correspondence.from<Any, KClass<*>>(
             { obj, clazz -> clazz?.isInstance(obj) ?: false },
-            "is an instance of"
+            "is an instance of",
         )
 
     @Before
@@ -171,7 +171,7 @@ class ClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").clickable(enabled = false) {}
+                    modifier = Modifier.testTag("myClickable").clickable(enabled = false) {},
                 )
             }
         }
@@ -192,7 +192,7 @@ class ClickableTest {
                 BasicText(
                     "ClickableText",
                     modifier =
-                        Modifier.testTag("myClickable").clickable(enabled = enabled, role = role) {}
+                        Modifier.testTag("myClickable").clickable(enabled = enabled, role = role) {},
                 )
             }
         }
@@ -229,7 +229,7 @@ class ClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").clickable(onClick = onClick)
+                    modifier = Modifier.testTag("myClickable").clickable(onClick = onClick),
                 )
             }
         }
@@ -358,8 +358,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -406,8 +406,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -449,8 +449,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -493,9 +493,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -537,8 +537,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -593,8 +593,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -637,8 +637,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -676,9 +676,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -717,9 +717,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -767,8 +767,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -817,8 +817,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").clickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -871,8 +871,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").clickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -922,8 +922,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("myClickable").clickable(
                         interactionSource = interactionSource,
-                        indication = null
-                    ) {}
+                        indication = null,
+                    ) {},
             )
         }
 
@@ -979,8 +979,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1022,8 +1022,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1067,8 +1067,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1103,8 +1103,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1152,7 +1152,7 @@ class ClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .clickable(enabled = enabled.value, onClick = onClick)
+                            .clickable(enabled = enabled.value, onClick = onClick),
                 )
             }
         }
@@ -1213,7 +1213,7 @@ class ClickableTest {
     private fun Modifier.dynamicPointerInputModifierWithDetectTapGestures(
         enabled: Boolean,
         key: Any? = Unit,
-        onTap: () -> Unit = {}
+        onTap: () -> Unit = {},
     ) =
         if (enabled) {
             pointerInput(key) { detectTapGestures { onTap() } }
@@ -1473,7 +1473,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -1518,7 +1518,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -1583,12 +1583,12 @@ class ClickableTest {
                         onRelease = {
                             dynamicPointerInputReleaseCounter++
                             activeDynamicPointerInput2 = true
-                        }
+                        },
                     )
                     .dynamicPointerInputModifier(
                         enabled = activeDynamicPointerInput2,
                         onPress = { dynamicPointerInput2PressCounter++ },
-                        onRelease = { dynamicPointerInput2ReleaseCounter++ }
+                        onRelease = { dynamicPointerInput2ReleaseCounter++ },
                     )
                     .pointerInput(Unit) {
                         originalPointerInputLambdaExecutionCount++
@@ -1919,7 +1919,7 @@ class ClickableTest {
                         onRelease = {
                             dynamicPointerInputReleaseCounter++
                             activeDynamicClickable = true
-                        }
+                        },
                     )
                     .dynamicClickableModifier(activeDynamicClickable) { dynamicClickableCounter++ }
                     .pointerInput(Unit) {
@@ -2055,7 +2055,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2109,7 +2109,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2173,7 +2173,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput(Unit) {
@@ -2247,7 +2247,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2319,7 +2319,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
             )
         }
@@ -2406,7 +2406,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
             )
         }
@@ -2477,7 +2477,7 @@ class ClickableTest {
                         .dynamicPointerInputModifier(
                             enabled = activateDynamicPointerInput,
                             onPress = { dynamicPressCounter++ },
-                            onRelease = { dynamicReleaseCounter++ }
+                            onRelease = { dynamicReleaseCounter++ },
                         )
                 )
             }
@@ -2560,7 +2560,7 @@ class ClickableTest {
                             onRelease = {
                                 dynamicReleaseCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2624,7 +2624,7 @@ class ClickableTest {
                             onRelease = {
                                 dynamicReleaseCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2688,7 +2688,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2760,7 +2760,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2821,7 +2821,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2882,7 +2882,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2943,7 +2943,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -3013,7 +3013,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput(Unit) {
@@ -3115,7 +3115,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput("unique_key_5678") {
@@ -3237,7 +3237,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
             )
         }
@@ -3339,7 +3339,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
             )
         }
@@ -3441,7 +3441,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
             }
@@ -3541,7 +3541,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
             }
@@ -3618,7 +3618,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
                 Box(
@@ -3718,7 +3718,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
                 Box(
@@ -3817,8 +3817,8 @@ class ClickableTest {
                             enabled = enabled.value,
                             onClick = {},
                             interactionSource = interactionSource,
-                            indication = null
-                        )
+                            indication = null,
+                        ),
             )
         }
 
@@ -3883,7 +3883,7 @@ class ClickableTest {
                             Modifier.testTag("myClickable")
                                 .focusRequester(requester)
                                 .onFocusEvent { focusState = it }
-                                .clickable(enabled = enabled.value) {}
+                                .clickable(enabled = enabled.value) {},
                     )
                 }
             }
@@ -3965,7 +3965,7 @@ class ClickableTest {
                     "role",
                     "interactionSource",
                     "indicationNodeFactory",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -3978,7 +3978,7 @@ class ClickableTest {
                 Modifier.clickable(
                         onClick = onClick,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("clickable")
@@ -3990,7 +3990,7 @@ class ClickableTest {
                     "onClick",
                     "role",
                     "indicationNodeFactory",
-                    "interactionSource"
+                    "interactionSource",
                 )
         }
     }
@@ -4100,8 +4100,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -4127,7 +4127,7 @@ class ClickableTest {
                     Box(Modifier.padding(10.dp)) {
                         BasicText(
                             "ClickableText",
-                            modifier = Modifier.testTag("clickable").clickable {}
+                            modifier = Modifier.testTag("clickable").clickable {},
                         )
                     }
                 }
@@ -4147,7 +4147,7 @@ class ClickableTest {
                     Box(Modifier.padding(10.dp)) {
                         BasicText(
                             "ClickableText",
-                            modifier = Modifier.testTag("clickable").clickable {}
+                            modifier = Modifier.testTag("clickable").clickable {},
                         )
                     }
                 }
@@ -4171,7 +4171,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4200,7 +4200,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4244,7 +4244,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                                 interactionSource = null
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4356,7 +4356,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4414,7 +4414,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4478,7 +4478,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4545,7 +4545,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4597,8 +4597,8 @@ class ClickableTest {
                         "ClickableText",
                         modifier =
                             Modifier.testTag("clickable").clickable(
-                                interactionSource = interactionSource,
-                            ) {}
+                                interactionSource = interactionSource
+                            ) {},
                     )
                 }
             }
@@ -4653,7 +4653,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4708,7 +4708,7 @@ class ClickableTest {
                         BasicText(
                             "ClickableText",
                             modifier =
-                                Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                                Modifier.testTag("clickable").clickable(interactionSource = null) {},
                         )
                     }
                 }
@@ -4799,7 +4799,7 @@ class ClickableTest {
                             modifier =
                                 Modifier.testTag("clickable")
                                     .focusRequester(focusRequester)
-                                    .clickable(interactionSource = null) {}
+                                    .clickable(interactionSource = null) {},
                         )
                     }
                 }
@@ -4882,7 +4882,7 @@ class ClickableTest {
             CompositionLocalProvider(LocalIndication provides indication) {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    modifier = Modifier.testTag("clickable").clickable(interactionSource = null) {},
                 )
             }
         }
@@ -4974,7 +4974,7 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = null
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -5053,8 +5053,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5073,8 +5073,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5106,8 +5106,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5147,8 +5147,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5190,8 +5190,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5246,7 +5246,7 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
+                            indication = indication,
                         ) {}
                 ) {
                     Box(Modifier.focusRequester(focusRequester).focusable())
@@ -5303,8 +5303,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5363,8 +5363,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5428,8 +5428,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5494,8 +5494,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5546,8 +5546,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5600,8 +5600,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5656,8 +5656,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = null,
-                                indication = indication
-                            ) {}
+                                indication = indication,
+                            ) {},
                     )
                 }
             }
@@ -5746,8 +5746,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                                 interactionSource = null,
-                                indication = indication
-                            ) {}
+                                indication = indication,
+                            ) {},
                     )
                 }
             }
@@ -5831,8 +5831,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("clickable").clickable(
                         interactionSource = null,
-                        indication = indication
-                    ) {}
+                        indication = indication,
+                    ) {},
             )
         }
 
@@ -5922,8 +5922,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                         interactionSource = null,
-                        indication = indication
-                    ) {}
+                        indication = indication,
+                    ) {},
             )
         }
 
@@ -6033,12 +6033,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = indication2
+                                            indication = indication2,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6110,12 +6110,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = null
+                                            indication = null,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6188,12 +6188,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = indication1
+                                            indication = indication1,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6264,12 +6264,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = null
+                                            indication = null,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6310,7 +6310,7 @@ class ClickableTest {
             Modifier.clickable(
                 interactionSource = interactionSource,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6323,7 +6323,7 @@ class ClickableTest {
                 interactionSource = null,
                 indication = null,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6337,7 +6337,7 @@ class ClickableTest {
                 interactionSource = interactionSource,
                 indication = null,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6351,7 +6351,7 @@ class ClickableTest {
                 interactionSource = null,
                 indication = indication,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6379,7 +6379,7 @@ class ClickableTest {
                 interactionSource = interactionSource,
                 indication = indication,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6393,13 +6393,13 @@ class ClickableTest {
             Modifier.clickable(
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.clickable(
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -6437,7 +6437,7 @@ class ClickableTest {
         // Act.
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]"
+            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]",
         ) {
             rule.onNodeWithTag(tag).requestFocus()
         }
@@ -6470,13 +6470,13 @@ class ClickableTest {
         }
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]"
+            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]",
         ) {
             rule.onNodeWithTag(tag).requestFocus()
         }
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to assert the following: (Focused = 'false')"
+            message = "Failed to assert the following: (Focused = 'false')",
         ) {
             rule.onNodeWithTag(tag).assertIsNotFocused()
         }
@@ -6503,8 +6503,8 @@ class ClickableTest {
                             modifier =
                                 Modifier.testTag("clickable").clickable(
                                     role = if (moveContent) Role.Button else Role.Checkbox,
-                                    onClickLabel = moveContent.toString()
-                                ) {}
+                                    onClickLabel = moveContent.toString(),
+                                ) {},
                         )
                     }
                 }
@@ -6570,7 +6570,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertFalse(
                 isClicked,
-                "The Box is NOT expected to receive a Click while dragging using touch"
+                "The Box is NOT expected to receive a Click while dragging using touch",
             )
         }
 
@@ -6583,7 +6583,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(
                 isClicked,
-                "The Box is expected to receive a Click, there was no dragging using touch"
+                "The Box is expected to receive a Click, there was no dragging using touch",
             )
         }
     }
@@ -6640,7 +6640,7 @@ internal class TestIndication(val onCreate: (InteractionSource) -> Unit) : Indic
  */
 internal class TestIndicationNodeFactory(
     val onDetach: () -> Unit = {},
-    val onAttach: ((InteractionSource, CoroutineScope) -> Unit)
+    val onAttach: ((InteractionSource, CoroutineScope) -> Unit),
 ) : IndicationNodeFactory {
     override fun create(interactionSource: InteractionSource): DelegatableNode {
         return object : Modifier.Node() {

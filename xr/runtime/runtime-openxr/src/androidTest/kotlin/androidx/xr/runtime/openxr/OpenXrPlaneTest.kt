@@ -68,7 +68,7 @@ class OpenXrPlaneTest {
                 planeId,
                 Plane.Type.HORIZONTAL_UPWARD_FACING,
                 OpenXrTimeSource(),
-                xrResources
+                xrResources,
             )
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)

@@ -56,7 +56,7 @@ class StartupTracingInitializer : Initializer<Unit> {
                     "resultCode: ${enableTracingResponse.resultCode}, " +
                     "message: ${enableTracingResponse.message}, " +
                     "requiredVersion: ${enableTracingResponse.requiredVersion} " +
-                    "}"
+                    "}",
             )
         }
     }

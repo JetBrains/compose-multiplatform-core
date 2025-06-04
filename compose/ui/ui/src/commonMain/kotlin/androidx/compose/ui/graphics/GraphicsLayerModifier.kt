@@ -75,9 +75,9 @@ import androidx.compose.ui.unit.Constraints
             "Modifier.graphicsLayer(scaleX, scaleY, alpha, translationX, translationY, " +
                 "shadowElevation, rotationX, rotationY, rotationZ, cameraDistance, transformOrigin, " +
                 "shape, clip, null, DefaultShadowColor, DefaultShadowColor)",
-            "androidx.compose.ui.graphics"
+            "androidx.compose.ui.graphics",
         ),
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Stable
 fun Modifier.graphicsLayer(
@@ -93,7 +93,7 @@ fun Modifier.graphicsLayer(
     cameraDistance: Float = DefaultCameraDistance,
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     shape: Shape = RectangleShape,
-    clip: Boolean = false
+    clip: Boolean = false,
 ) =
     graphicsLayer(
         scaleX = scaleX,
@@ -111,7 +111,7 @@ fun Modifier.graphicsLayer(
         clip = clip,
         renderEffect = null,
         blendMode = BlendMode.SrcOver,
-        colorFilter = null
+        colorFilter = null,
     )
 
 /**
@@ -160,9 +160,9 @@ fun Modifier.graphicsLayer(
             "Modifier.graphicsLayer(scaleX, scaleY, alpha, translationX, translationY, " +
                 "shadowElevation, rotationX, rotationY, rotationZ, cameraDistance, transformOrigin, " +
                 "shape, clip, null, DefaultShadowColor, DefaultShadowColor)",
-            "androidx.compose.ui.graphics"
+            "androidx.compose.ui.graphics",
         ),
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Stable
 fun Modifier.graphicsLayer(
@@ -179,7 +179,7 @@ fun Modifier.graphicsLayer(
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     shape: Shape = RectangleShape,
     clip: Boolean = false,
-    renderEffect: RenderEffect? = null
+    renderEffect: RenderEffect? = null,
 ) =
     graphicsLayer(
         scaleX = scaleX,
@@ -200,7 +200,7 @@ fun Modifier.graphicsLayer(
         renderEffect = renderEffect,
         compositingStrategy = CompositingStrategy.Auto,
         blendMode = BlendMode.SrcOver,
-        colorFilter = null
+        colorFilter = null,
     )
 
 /**
@@ -253,9 +253,9 @@ fun Modifier.graphicsLayer(
                 "shadowElevation, rotationX, rotationY, rotationZ, cameraDistance, transformOrigin, " +
                 "shape, clip, renderEffect, ambientShadowColor, spotShadowColor, " +
                 "CompositingStrategy.Auto)",
-            "androidx.compose.ui.graphics"
+            "androidx.compose.ui.graphics",
         ),
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Stable
 fun Modifier.graphicsLayer(
@@ -295,7 +295,7 @@ fun Modifier.graphicsLayer(
         spotShadowColor,
         CompositingStrategy.Auto,
         BlendMode.SrcOver,
-        null
+        null,
     )
 
 /**
@@ -357,9 +357,9 @@ fun Modifier.graphicsLayer(
                 "shadowElevation, rotationX, rotationY, rotationZ, cameraDistance, transformOrigin, " +
                 "shape, clip, renderEffect, ambientShadowColor, spotShadowColor, " +
                 "compositingStrategy, BlendMode.SrcOver, null)",
-            "androidx.compose.ui.graphics"
+            "androidx.compose.ui.graphics",
         ),
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Stable
 fun Modifier.graphicsLayer(
@@ -379,7 +379,7 @@ fun Modifier.graphicsLayer(
     renderEffect: RenderEffect? = null,
     ambientShadowColor: Color = DefaultShadowColor,
     spotShadowColor: Color = DefaultShadowColor,
-    compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
+    compositingStrategy: CompositingStrategy = CompositingStrategy.Auto,
 ) =
     graphicsLayer(
         scaleX,
@@ -400,7 +400,7 @@ fun Modifier.graphicsLayer(
         spotShadowColor,
         compositingStrategy,
         BlendMode.SrcOver,
-        null
+        null,
     )
 
 /**
@@ -476,7 +476,7 @@ fun Modifier.graphicsLayer(
     spotShadowColor: Color = DefaultShadowColor,
     compositingStrategy: CompositingStrategy = CompositingStrategy.Auto,
     blendMode: BlendMode = BlendMode.SrcOver,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
 ) =
     this then
         GraphicsLayerElement(
@@ -498,7 +498,7 @@ fun Modifier.graphicsLayer(
             spotShadowColor,
             compositingStrategy,
             blendMode,
-            colorFilter
+            colorFilter,
         )
 
 private data class GraphicsLayerElement(
@@ -520,7 +520,7 @@ private data class GraphicsLayerElement(
     val spotShadowColor: Color,
     val compositingStrategy: CompositingStrategy,
     val blendMode: BlendMode,
-    val colorFilter: ColorFilter?
+    val colorFilter: ColorFilter?,
 ) : ModifierNodeElement<SimpleGraphicsLayerModifier>() {
     override fun create(): SimpleGraphicsLayerModifier {
         return SimpleGraphicsLayerModifier(
@@ -542,7 +542,7 @@ private data class GraphicsLayerElement(
             spotShadowColor = spotShadowColor,
             compositingStrategy = compositingStrategy,
             blendMode = blendMode,
-            colorFilter = colorFilter
+            colorFilter = colorFilter,
         )
     }
 
@@ -691,9 +691,8 @@ private class BlockGraphicsLayerElement(val block: GraphicsLayerScope.() -> Unit
     }
 }
 
-internal class BlockGraphicsLayerModifier(
-    var layerBlock: GraphicsLayerScope.() -> Unit,
-) : LayoutModifierNode, Modifier.Node() {
+internal class BlockGraphicsLayerModifier(var layerBlock: GraphicsLayerScope.() -> Unit) :
+    LayoutModifierNode, Modifier.Node() {
 
     /**
      * We can skip remeasuring as we only need to rerun the placement block. we request it manually
@@ -710,7 +709,7 @@ internal class BlockGraphicsLayerModifier(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height) {
@@ -740,7 +739,7 @@ private class SimpleGraphicsLayerModifier(
     var spotShadowColor: Color,
     var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto,
     var blendMode: BlendMode = BlendMode.SrcOver,
-    var colorFilter: ColorFilter? = null
+    var colorFilter: ColorFilter? = null,
 ) : LayoutModifierNode, Modifier.Node() {
 
     /**
@@ -780,7 +779,7 @@ private class SimpleGraphicsLayerModifier(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height) {

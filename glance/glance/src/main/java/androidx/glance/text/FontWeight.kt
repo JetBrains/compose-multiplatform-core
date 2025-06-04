@@ -21,7 +21,7 @@ package androidx.glance.text
 public value class FontWeight
 private constructor(
     /** numerical value for the weight (a number from 0 to 1000) */
-    public val value: Int,
+    public val value: Int
 ) {
     public companion object {
         public val Normal: FontWeight = FontWeight(400)

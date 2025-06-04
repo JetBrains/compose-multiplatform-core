@@ -42,7 +42,7 @@ class AutofixOnUnsafeCallWithImplicitVarArgsCastKotlin {
         adapter: BaseAdapter,
         vararg1: CharBuffer?,
         vararg2: CharBuffer?,
-        vararg3: CharBuffer?
+        vararg3: CharBuffer?,
     ) {
         adapter.setAutofillOptions(vararg1, vararg2, vararg3)
     }

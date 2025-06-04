@@ -43,7 +43,7 @@ public sealed class SwitchColors {
 
 internal data class SwitchColorsImpl(
     override val thumb: CheckableColorProvider,
-    override val track: CheckableColorProvider
+    override val track: CheckableColorProvider,
 ) : SwitchColors()
 
 /**
@@ -153,7 +153,7 @@ public object SwitchDefaults {
             checkedThumbColor = checkedThumbColor,
             uncheckedThumbColor = uncheckedThumbColor,
             checkedTrackColor = checkedTrackColor,
-            uncheckedTrackColor = uncheckedTrackColor
+            uncheckedTrackColor = uncheckedTrackColor,
         )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -175,7 +175,7 @@ public object SwitchDefaults {
                     source = "SwitchColors",
                     checked = checkedTrackColor,
                     unchecked = uncheckedTrackColor,
-                )
+                ),
         )
     }
 
@@ -189,7 +189,7 @@ public object SwitchDefaults {
         return if (GlanceTheme.colors == DynamicThemeColorProviders) {
             SwitchColorsImpl(
                 thumb = ResourceCheckableColorProvider(R.color.glance_default_switch_thumb),
-                track = ResourceCheckableColorProvider(R.color.glance_default_switch_track)
+                track = ResourceCheckableColorProvider(R.color.glance_default_switch_track),
             )
         } else {
             colors(
@@ -227,7 +227,7 @@ private fun SwitchElement(
             this.set(style) { this.style = it }
             this.set(colors) { this.colors = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 

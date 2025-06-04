@@ -62,9 +62,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private var cameraProvider: ProcessCameraProvider? = null
     private lateinit var cameraSelector: CameraSelector
@@ -152,7 +150,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillStart_textureView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FILL_START
+            PreviewView.ScaleType.FILL_START,
         )
     }
 
@@ -160,7 +158,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillCenter_textureView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FILL_CENTER
+            PreviewView.ScaleType.FILL_CENTER,
         )
     }
 
@@ -168,7 +166,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillEnd_textureView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FILL_END
+            PreviewView.ScaleType.FILL_END,
         )
     }
 
@@ -176,7 +174,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillStart_surfaceView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FILL_START
+            PreviewView.ScaleType.FILL_START,
         )
     }
 
@@ -184,7 +182,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillCenter_surfaceView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FILL_CENTER
+            PreviewView.ScaleType.FILL_CENTER,
         )
     }
 
@@ -192,13 +190,13 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapHasSameSizeAsPreviewView_fillEnd_surfaceView() {
         bitmapHasSameSizeAsPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FILL_END
+            PreviewView.ScaleType.FILL_END,
         )
     }
 
     private fun bitmapHasSameSizeAsPreviewView(
         mode: PreviewView.ImplementationMode,
-        scaleType: PreviewView.ScaleType
+        scaleType: PreviewView.ScaleType,
     ) {
         // Arrange
         val previewView = setUpPreviewView(mode, scaleType)
@@ -220,7 +218,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitStart_textureView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FIT_START
+            PreviewView.ScaleType.FIT_START,
         )
     }
 
@@ -228,7 +226,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitCenter_textureView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FIT_CENTER
+            PreviewView.ScaleType.FIT_CENTER,
         )
     }
 
@@ -236,7 +234,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitEnd_textureView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.COMPATIBLE,
-            PreviewView.ScaleType.FIT_END
+            PreviewView.ScaleType.FIT_END,
         )
     }
 
@@ -244,7 +242,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitStart_surfaceView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FIT_START
+            PreviewView.ScaleType.FIT_START,
         )
     }
 
@@ -252,7 +250,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitCenter_surfaceView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FIT_CENTER
+            PreviewView.ScaleType.FIT_CENTER,
         )
     }
 
@@ -260,13 +258,13 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
     fun bitmapSmallerInSizeThanPreviewView_fitEnd_surfaceView() {
         bitmapSmallerInSizeThanPreviewView(
             PreviewView.ImplementationMode.PERFORMANCE,
-            PreviewView.ScaleType.FIT_END
+            PreviewView.ScaleType.FIT_END,
         )
     }
 
     private fun bitmapSmallerInSizeThanPreviewView(
         mode: PreviewView.ImplementationMode,
-        scaleType: PreviewView.ScaleType
+        scaleType: PreviewView.ScaleType,
     ) {
         // Arrange
         val previewView = setUpPreviewView(mode, scaleType)
@@ -294,7 +292,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
 
     private fun setUpPreviewView(
         mode: PreviewView.ImplementationMode,
-        scaleType: PreviewView.ScaleType
+        scaleType: PreviewView.ScaleType,
     ): PreviewView {
         val previewViewAtomicReference = AtomicReference<PreviewView>()
         runOnMainThread {
@@ -363,7 +361,7 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 }

@@ -52,7 +52,7 @@ class OpenOnPhoneDialogScreenshotTest {
             testName = testName,
             screenshotRule = screenshotRule,
             advanceTimeBy = OpenOnPhoneDialogDefaults.DurationMillis / 2,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -62,7 +62,7 @@ class OpenOnPhoneDialogScreenshotTest {
             testName = testName,
             screenshotRule = screenshotRule,
             advanceTimeBy = OpenOnPhoneDialogDefaults.DurationMillis,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -81,7 +81,7 @@ class OpenOnPhoneDialogScreenshotTest {
                     visible = true,
                     modifier = Modifier.size(screenSize.size.dp).testTag(TEST_TAG),
                     onDismissRequest = {},
-                    curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) }
+                    curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) },
                 )
             }
         }

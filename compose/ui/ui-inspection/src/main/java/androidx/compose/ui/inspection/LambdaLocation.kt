@@ -26,14 +26,14 @@ data class LambdaLocation(
     val lambdaClassName: String,
     val fileName: String,
     val startLine: Int,
-    val endLine: Int
+    val endLine: Int,
 ) {
 
     constructor(
         clazz: Class<*>,
         fileName: String,
         startLine: Int,
-        endLine: Int
+        endLine: Int,
     ) : this(clazz.name, fileName, startLine, endLine)
 
     val packageName: String
@@ -54,7 +54,7 @@ data class LambdaLocation(
                 Log.w(
                     SPAM_LOG_TAG,
                     "Swallowing loadLibrary exception. Already loaded by a previous classloader?",
-                    e
+                    e,
                 )
             }
         }

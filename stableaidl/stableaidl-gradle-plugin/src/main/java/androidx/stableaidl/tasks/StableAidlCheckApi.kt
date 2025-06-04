@@ -126,7 +126,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
             aidlFrameworkProvider.orNull?.asFile,
             extraArgs,
             projectImportList,
-            dependencyImportDirs.get().map { it.asFile }
+            dependencyImportDirs.get().map { it.asFile },
         )
     }
 
@@ -154,7 +154,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
                 parameters.importFolders.asIterable(),
                 parameters.extraArgs.get(),
                 executor,
-                logger
+                logger,
             )
         }
     }
@@ -170,7 +170,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
             frameworkLocation: File?,
             extraArgs: List<String>,
             projectImportList: Collection<Directory>,
-            dependencyImportList: Collection<File>
+            dependencyImportList: Collection<File>,
         ) {
             workerExecutor.noIsolation().submit(StableAidlCheckApiRunnable::class.java) {
                 it.aidlExecutable.set(aidlExecutable)

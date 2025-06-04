@@ -35,14 +35,14 @@ internal class LocalController(
     private val sdkPackageName: String,
     private val applicationContext: Context,
     private val localSdkRegistry: SdkRegistry,
-    private val appOwnedSdkRegistry: AppOwnedSdkRegistry
+    private val appOwnedSdkRegistry: AppOwnedSdkRegistry,
 ) : SdkSandboxControllerCompat.SandboxControllerImpl {
 
     override fun loadSdk(
         sdkName: String,
         params: Bundle,
         executor: Executor,
-        callback: LoadSdkCallback
+        callback: LoadSdkCallback,
     ) {
         try {
             val result = localSdkRegistry.loadSdk(sdkName, params)
@@ -75,7 +75,7 @@ internal class LocalController(
 
     override fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat
+        listenerCompat: SdkSandboxClientImportanceListenerCompat,
     ) {
         LocalClientImportanceListenerRegistry.register(sdkPackageName, executor, listenerCompat)
     }

@@ -120,7 +120,7 @@ class SupportSQLiteDriverTest : BaseConformanceTest() {
                     override fun onUpgrade(
                         db: SupportSQLiteDatabase,
                         oldVersion: Int,
-                        newVersion: Int
+                        newVersion: Int,
                     ) {}
                 }
             )

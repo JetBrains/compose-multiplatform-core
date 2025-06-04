@@ -17,6 +17,7 @@
 package androidx.privacysandbox.databridge.client
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -31,13 +32,16 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.Type
+import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
+import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import java.lang.ClassCastException
 import kotlinx.coroutines.flow.first
 
 /**
  * This class provides APIs for the app process to access the data.
  *
- * TODO(b/416213801): Add information about how data would be shared with the SDK Runtime
+ * An interface will be added to [AppOwnedSdkSandboxInterfaceCompat] which will be used by the SDK
+ * Runtime to access and modify the data
  */
 public abstract class DataBridgeClient private constructor() {
 
@@ -100,11 +104,14 @@ public abstract class DataBridgeClient private constructor() {
     public abstract suspend fun removeValues(keys: Set<Key>)
 
     public companion object {
-        private var _instance: DataBridgeClient? = null
+        private var instance: DataBridgeClient? = null
         private val lock = Any()
 
+        private val dataBridgeName = "androidx.privacysandbox.databridge"
+
         /**
-         * Get an instance of [DataBridgeClient]
+         * Get an instance of [DataBridgeClient]. It also enables the SDK Runtime to access and
+         * modify data for requests from SDK Runtime enabled SDKs.
          *
          * @param context: Application Context. If anything other [Context] instance is passed, it
          *   will be converted to application context using [Context.getApplicationContext]
@@ -112,18 +119,36 @@ public abstract class DataBridgeClient private constructor() {
          */
         @JvmStatic
         public fun getInstance(context: Context): DataBridgeClient {
+            return getInstance(context, dataBridgeName)
+        }
+
+        @JvmStatic
+        @VisibleForTesting
+        internal fun getInstance(context: Context, fileName: String): DataBridgeClient {
             synchronized(lock) {
-                return _instance
-                    ?: DataBridgeClientImpl(context.applicationContext).also { _instance = it }
+                return instance
+                    ?: DataBridgeClientImpl(context.applicationContext, fileName).also {
+                        instance = it
+                    }
             }
+        }
+
+        @JvmStatic
+        @VisibleForTesting
+        internal fun resetInstanceForTesting() {
+            instance = null
         }
     }
 
-    private class DataBridgeClientImpl(val context: Context) : DataBridgeClient() {
+    private class DataBridgeClientImpl(val context: Context, fileName: String) :
+        DataBridgeClient() {
         // TODO(b/410523895): Investigate the filename of DataBridge's dataStore and the effects of
         // concurrent access.
-        val Context.dataStore: DataStore<Preferences> by
-            preferencesDataStore(name = "androidx.privacysandbox.databridge")
+        val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = fileName)
+
+        init {
+            registerAppOwnedSdkSandboxInterface(context, this)
+        }
 
         override suspend fun getValue(key: Key): Result<Any?> {
             return getValues(setOf(key))[key]!!
@@ -230,6 +255,25 @@ public abstract class DataBridgeClient private constructor() {
             }
 
             return value.map { it as String }.toSet()
+        }
+
+        private fun registerAppOwnedSdkSandboxInterface(
+            context: Context,
+            instance: DataBridgeClient,
+        ) {
+            val dataBridgeProxy = DataBridgeProxy(instance)
+
+            val sdkSandboxManagerCompat = SdkSandboxManagerCompat.from(context)
+
+            val appOwnedSdkSandboxInterfaceCompat =
+                AppOwnedSdkSandboxInterfaceCompat(
+                    name = dataBridgeName,
+                    version = 1,
+                    binder = dataBridgeProxy,
+                )
+            sdkSandboxManagerCompat.registerAppOwnedSdkSandboxInterface(
+                appOwnedSdkSandboxInterfaceCompat
+            )
         }
     }
 }

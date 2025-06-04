@@ -60,7 +60,7 @@ abstract class AppFunctionDataTypeMetadata {
                 TYPE_LONG,
                 TYPE_INT,
                 TYPE_STRING,
-                TYPE_PENDING_INTENT
+                TYPE_PENDING_INTENT,
             )
     }
 }
@@ -93,7 +93,7 @@ data class AppFunctionAllOfTypeMetadata(
             type = TYPE,
             allOf = allOfDocuments,
             isNullable = isNullable,
-            objectQualifiedName = qualifiedName
+            objectQualifiedName = qualifiedName,
         )
     }
 
@@ -113,7 +113,7 @@ data class AppFunctionObjectTypeMetadata(
             properties.map { (name, dataType) ->
                 AppFunctionNamedDataTypeMetadataDocument(
                     name = checkNotNull(name),
-                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
                 )
             }
         return AppFunctionDataTypeMetadataDocument(
@@ -132,7 +132,7 @@ data class AppFunctionObjectTypeMetadata(
 
 data class AppFunctionReferenceTypeMetadata(
     val referenceDataType: String,
-    val isNullable: Boolean
+    val isNullable: Boolean,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
@@ -149,7 +149,7 @@ data class AppFunctionReferenceTypeMetadata(
 
 data class AppFunctionPrimitiveTypeMetadata(
     @AppFunctionPrimitiveType val type: Int,
-    val isNullable: Boolean
+    val isNullable: Boolean,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(type = type, isNullable = isNullable)
@@ -193,7 +193,7 @@ data class AppFunctionDataTypeMetadataDocument(
                 val itemType = checkNotNull(itemType) { "Item type must be present for array type" }
                 AppFunctionArrayTypeMetadata(
                     itemType = itemType.toAppFunctionDataTypeMetadata(),
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_OBJECT -> {
@@ -208,7 +208,7 @@ data class AppFunctionDataTypeMetadataDocument(
                     properties = propertiesMap,
                     required = required,
                     qualifiedName = objectQualifiedName,
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_REFERENCE ->
@@ -217,13 +217,13 @@ data class AppFunctionDataTypeMetadataDocument(
                         checkNotNull(dataTypeReference) {
                             "Data type reference must be present for reference type"
                         },
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             AppFunctionDataTypeMetadata.TYPE_ALL_OF ->
                 AppFunctionAllOfTypeMetadata(
                     matchAll = allOf.map { it.toAppFunctionDataTypeMetadata() },
                     qualifiedName = objectQualifiedName,
-                    isNullable = isNullable
+                    isNullable = isNullable,
                 )
             in AppFunctionDataTypeMetadata.PRIMITIVE_TYPES ->
                 AppFunctionPrimitiveTypeMetadata(type = type, isNullable = isNullable)

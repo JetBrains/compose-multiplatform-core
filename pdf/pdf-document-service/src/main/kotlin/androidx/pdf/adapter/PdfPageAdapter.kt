@@ -58,7 +58,7 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
         left: Int,
         top: Int,
         scaledPageWidth: Int,
-        scaledPageHeight: Int
+        scaledPageHeight: Int,
     ) {
         val transformationMatrix =
             getTransformationMatrix(
@@ -67,7 +67,7 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
                 scaledPageWidth.toFloat(),
                 scaledPageHeight.toFloat(),
                 width,
-                height
+                height,
             )
         page.render(bitmap, null, transformationMatrix, getRenderParams())
     }

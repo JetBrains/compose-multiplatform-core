@@ -54,7 +54,7 @@ class BroadcastFrameClockTest {
     private suspend fun assertAwaiterCancelled(name: String, awaiter: Deferred<*>) {
         assertTrue(
             runCatching { awaiter.await() }.exceptionOrNull() is CancellationException,
-            "$name threw CancellationException"
+            "$name threw CancellationException",
         )
     }
 
@@ -71,7 +71,7 @@ class BroadcastFrameClockTest {
             assertTrue(
                 runCatching { clock.withFrameNanos { it } }.exceptionOrNull()
                     is CancellationException,
-                "late awaiter threw CancellationException"
+                "late awaiter threw CancellationException",
             )
         }
 

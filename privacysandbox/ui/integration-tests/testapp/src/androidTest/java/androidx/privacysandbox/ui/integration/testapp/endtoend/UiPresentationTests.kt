@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.privacysandbox.ui.integration.testapp
+package androidx.privacysandbox.ui.integration.testapp.endtoend
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -26,6 +26,12 @@ import androidx.privacysandbox.ui.integration.sdkproviderutils.IAutomatedTestCal
 import androidx.privacysandbox.ui.integration.sdkproviderutils.ILoadSdkCallback
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AUTOMATED_TEST_CALLBACK
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.FragmentOption
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.UiFrameworkOption
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.ZOrderOption
+import androidx.privacysandbox.ui.integration.testapp.MainActivity
+import androidx.privacysandbox.ui.integration.testapp.fragments.FragmentOptions
+import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.AbstractResizeHiddenFragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
@@ -47,9 +53,9 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class UiPresentationTests(
-    @FragmentOption val uiFrameworkOption: String,
-    @FragmentOption val mediationOption: String,
-    @FragmentOption val zOrdering: String
+    @UiFrameworkOption private val uiFrameworkOption: String,
+    @MediationOption private val mediationOption: String,
+    @ZOrderOption private val zOrdering: String,
 ) {
     private lateinit var scenario: ActivityScenario<MainActivity>
     private lateinit var sdkToClientCallbackBundle: Bundle
@@ -65,7 +71,7 @@ class UiPresentationTests(
             arrayOf(
                 FragmentOptions.MEDIATION_TYPE_NON_MEDIATED,
                 FragmentOptions.MEDIATION_TYPE_IN_RUNTIME,
-                FragmentOptions.MEDIATION_TYPE_IN_APP
+                FragmentOptions.MEDIATION_TYPE_IN_APP,
             )
         private val zOrderings =
             arrayOf(FragmentOptions.Z_ORDER_BELOW, FragmentOptions.Z_ORDER_ABOVE)
@@ -104,8 +110,8 @@ class UiPresentationTests(
     fun tearDown() {
         val sdkSandboxManager =
             SdkSandboxManagerCompat.from(ApplicationProvider.getApplicationContext())
-        sdkSandboxManager.unloadSdk(MainActivity.SDK_NAME)
-        sdkSandboxManager.unloadSdk(MainActivity.MEDIATEE_SDK_NAME)
+        sdkSandboxManager.unloadSdk(MainActivity.Companion.SDK_NAME)
+        sdkSandboxManager.unloadSdk(MainActivity.Companion.MEDIATEE_SDK_NAME)
         scenario.close()
     }
 
@@ -180,7 +186,7 @@ class UiPresentationTests(
     private fun launchTestAppAndWaitForLoadingSdks(
         @FragmentOption uiFrameworkOption: String,
         @FragmentOption mediationOption: String,
-        @FragmentOption zOrdering: String
+        @FragmentOption zOrdering: String,
     ) {
         val loadSdkCallback =
             object : ILoadSdkCallback.Stub() {

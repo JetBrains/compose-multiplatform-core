@@ -86,13 +86,12 @@ internal class AnchorRenderer(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
                         if (event.action.equals(InputEvent.ACTION_DOWN)) {
                             val up =
-                                session.scene.spatialUser.head?.getActivitySpacePose()?.up
-                                    ?: Vector3.Up
+                                session.scene.spatialUser.head?.activitySpacePose?.up ?: Vector3.Up
                             val perceptionRayPose =
                                 session.scene.activitySpace.transformPoseTo(
                                     Pose(
                                         event.origin,
-                                        Quaternion.fromLookTowards(event.direction, up)
+                                        Quaternion.fromLookTowards(event.direction, up),
                                     ),
                                     session.scene.perceptionSpace,
                                 )
@@ -122,7 +121,7 @@ internal class AnchorRenderer(
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor limit has been reached.",
-                                                    Toast.LENGTH_LONG
+                                                    Toast.LENGTH_LONG,
                                                 )
                                                 .show()
                                         }
@@ -134,7 +133,7 @@ internal class AnchorRenderer(
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor failed to create.",
-                                                    Toast.LENGTH_LONG
+                                                    Toast.LENGTH_LONG,
                                                 )
                                                 .show()
                                         }
@@ -153,15 +152,19 @@ internal class AnchorRenderer(
         val renderJob =
             coroutineScope.launch(updateJob) {
                 anchor.state.collect { state ->
-                    if (state.trackingState == TrackingState.TRACKING) {
-                        entity.setPose(
-                            session.scene.perceptionSpace.transformPoseTo(
-                                state.pose,
-                                session.scene.activitySpace
+                    when (state.trackingState) {
+                        TrackingState.TRACKING -> {
+                            entity.setHidden(false)
+                            entity.setAlpha(1.0f)
+                            entity.setPose(
+                                session.scene.perceptionSpace.transformPoseTo(
+                                    state.pose,
+                                    session.scene.activitySpace,
+                                )
                             )
-                        )
-                    } else if (state.trackingState == TrackingState.STOPPED) {
-                        entity.setHidden(true)
+                        }
+                        TrackingState.PAUSED -> entity.setAlpha(0.5f)
+                        TrackingState.STOPPED -> entity.setHidden(true)
                     }
                 }
             }

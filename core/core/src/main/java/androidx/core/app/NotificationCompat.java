@@ -10017,7 +10017,7 @@ public class NotificationCompat {
     /**
      * Returns whether this notification has requested to be a promoted ongoing notification.
      */
-    public static boolean hasRequestedPromotedOngoing(@NonNull Notification notification) {
+    public static boolean isRequestPromotedOngoing(@NonNull Notification notification) {
         return notification.extras.getBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, false);
     }
 

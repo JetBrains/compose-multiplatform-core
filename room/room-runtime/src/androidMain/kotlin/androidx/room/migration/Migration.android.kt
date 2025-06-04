@@ -39,7 +39,7 @@ import androidx.sqlite.driver.SupportSQLiteConnection
 public actual abstract class Migration
 actual constructor(
     @JvmField public actual val startVersion: Int,
-    @JvmField public actual val endVersion: Int
+    @JvmField public actual val endVersion: Int,
 ) {
     /**
      * Should run the necessary migrations.
@@ -107,13 +107,13 @@ actual constructor(
 public fun Migration(
     startVersion: Int,
     endVersion: Int,
-    migrate: (SupportSQLiteDatabase) -> Unit
+    migrate: (SupportSQLiteDatabase) -> Unit,
 ): Migration = MigrationImpl(startVersion, endVersion, migrate)
 
 private class MigrationImpl(
     startVersion: Int,
     endVersion: Int,
-    val migrateCallback: (SupportSQLiteDatabase) -> Unit
+    val migrateCallback: (SupportSQLiteDatabase) -> Unit,
 ) : Migration(startVersion, endVersion) {
     override fun migrate(db: SupportSQLiteDatabase) = migrateCallback(db)
 }

@@ -152,7 +152,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
 
     private fun getOrComputeLayout(
         nonMeasureInputs: NonMeasureInputs,
-        measureInputs: MeasureInputs
+        measureInputs: MeasureInputs,
     ): TextLayoutResult {
         val visualText = nonMeasureInputs.textFieldState.visualText
         val visualTextAnnotations =
@@ -211,7 +211,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                                 cachedResult.layoutInput.density,
                                 cachedResult.layoutInput.layoutDirection,
                                 cachedResult.layoutInput.fontFamilyResolver,
-                                cachedResult.layoutInput.constraints
+                                cachedResult.layoutInput.constraints,
                             )
                     )
                 }
@@ -272,7 +272,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                     defaultFontFamilyResolver = measureInputs.fontFamilyResolver,
                     defaultDensity = measureInputs.density,
                     defaultLayoutDirection = measureInputs.layoutDirection,
-                    cacheSize = 1
+                    cacheSize = 1,
                 )
                 .also { textMeasurer = it }
     }
@@ -281,7 +281,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         visualText: TextFieldCharSequence,
         annotations: List<PlacedAnnotation>?,
         nonMeasureInputs: NonMeasureInputs,
-        measureInputs: MeasureInputs
+        measureInputs: MeasureInputs,
     ): TextLayoutResult {
         // TODO(b/294403840) Don't use TextMeasurer – it is not designed for this use case,
         //  optimized for re-use which we don't take a great advantage of here, and does its own
@@ -304,7 +304,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             text =
                 AnnotatedString(
                     text = visualText.toString(),
-                    annotations = annotations ?: emptyList()
+                    annotations = annotations ?: emptyList(),
                 ),
             style = finalTextStyle,
             softWrap = nonMeasureInputs.softWrap,
@@ -328,7 +328,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord {
         // This is just a cache, so it's safe to always take the most recent record – worst case
         // we'll just re-compute the layout.

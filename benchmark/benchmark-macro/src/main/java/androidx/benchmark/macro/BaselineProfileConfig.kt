@@ -16,25 +16,23 @@
 
 package androidx.benchmark.macro
 
-import androidx.annotation.RestrictTo
-
 class BaselineProfileConfig
 internal constructor(
-    private val outputFilePrefix: String,
+    private val outputFilePrefix: String?,
     private val packageName: String,
     private val profileBlock: MacrobenchmarkScope.() -> Unit,
     private val maxIterations: Int = 15,
     private val stableIterations: Int = 3,
     private val includeInStartupProfile: Boolean = false,
     private val strictStability: Boolean = false,
-    private val filterPredicate: ((String) -> Boolean) = { true }
+    private val filterPredicate: ((String) -> Boolean) = { true },
 ) {
 
     /**
      * @return An optional file name prefix used when creating the output file with the contents of
      *   the human readable baseline profile. For example: `outputFilePrefix-baseline-prof.txt`
      */
-    fun getOutputFilePrefix(): String = outputFilePrefix
+    fun getOutputFilePrefix(): String? = outputFilePrefix
 
     /** @return The Package name of the app for which profiles are to be generated. */
     fun getPackageName(): String = packageName
@@ -68,17 +66,28 @@ internal constructor(
 
     /** Can be used to build a [androidx.benchmark.macro.BaselineProfileConfig] instance. */
     class Builder
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(
-        private val outputFilePrefix: String,
         private val packageName: String,
-        private val profileBlock: MacrobenchmarkScope.() -> Unit
+        private val profileBlock: MacrobenchmarkScope.() -> Unit,
     ) {
+        private var outputFilePrefix: String? = null
         private var maxIterations: Int = 15
         private var stableIterations: Int = 3
         private var includeInStartupProfile: Boolean = false
         private var strictStability: Boolean = false
         private var filterPredicate: ((String) -> Boolean) = { true }
+
+        /**
+         * Sets the optional file name prefix used when creating the output file with the contents
+         * of the human readable baseline profile. For example: `outputFilePrefix-baseline-prof.txt`
+         *
+         * @return The [androidx.benchmark.macro.BaselineProfileConfig.Builder] instance for
+         *   chaining.
+         */
+        fun setOutputFilePrefix(outputFilePrefix: String): Builder {
+            this.outputFilePrefix = outputFilePrefix
+            return this
+        }
 
         /**
          * Overrides the maximum number of iterations to run when collecting profiles.
@@ -153,7 +162,7 @@ internal constructor(
                 stableIterations = stableIterations,
                 includeInStartupProfile = includeInStartupProfile,
                 strictStability = strictStability,
-                filterPredicate = filterPredicate
+                filterPredicate = filterPredicate,
             )
         }
     }

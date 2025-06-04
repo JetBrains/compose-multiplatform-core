@@ -97,7 +97,7 @@ fun SimpleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -105,27 +105,27 @@ fun SimpleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -154,7 +154,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -165,20 +165,20 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             IconButton(onClick = { it.show() }) {
                                 Icon(
                                     imageVector = Icons.Filled.MoreVert,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
-                        }
+                        },
                     ) {
                         clickableItem(
                             onClick = {},
                             icon = {
                                 Icon(
                                     imageVector = Icons.Filled.Attachment,
-                                    contentDescription = null
+                                    contentDescription = null,
                                 )
                             },
-                            label = "Attachment"
+                            label = "Attachment",
                         )
 
                         clickableItem(
@@ -186,7 +186,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             icon = {
                                 Icon(imageVector = Icons.Filled.Edit, contentDescription = null)
                             },
-                            label = "Edit"
+                            label = "Edit",
                         )
 
                         clickableItem(
@@ -194,7 +194,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             icon = {
                                 Icon(imageVector = Icons.Outlined.Star, contentDescription = null)
                             },
-                            label = "Favorite"
+                            label = "Favorite",
                         )
 
                         clickableItem(
@@ -202,7 +202,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             icon = {
                                 Icon(imageVector = Icons.Filled.Snooze, contentDescription = null)
                             },
-                            label = "Alarm"
+                            label = "Alarm",
                         )
 
                         clickableItem(
@@ -210,30 +210,30 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             icon = {
                                 Icon(
                                     imageVector = Icons.Outlined.MarkEmailUnread,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             },
-                            label = "Email"
+                            label = "Email",
                         )
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -260,7 +260,7 @@ fun SimpleTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -268,28 +268,28 @@ fun SimpleTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -313,7 +313,7 @@ fun SimpleCenterAlignedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -321,27 +321,27 @@ fun SimpleCenterAlignedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -369,7 +369,7 @@ fun SimpleCenterAlignedTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -377,28 +377,28 @@ fun SimpleCenterAlignedTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -423,7 +423,7 @@ fun PinnedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -432,34 +432,34 @@ fun PinnedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -483,7 +483,7 @@ fun EnterAlwaysTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -491,28 +491,28 @@ fun EnterAlwaysTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -537,7 +537,7 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -545,28 +545,28 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -593,7 +593,7 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -601,28 +601,28 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -645,7 +645,7 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -653,28 +653,28 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -699,7 +699,7 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -707,28 +707,28 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -759,7 +759,7 @@ fun CustomTwoRowsTopAppBar() {
                             "Expanded Subtitle",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(bottom = 24.dp)
+                            modifier = Modifier.padding(bottom = 24.dp),
                         )
                     } else {
                         Text("Collapsed Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -771,11 +771,11 @@ fun CustomTwoRowsTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
@@ -788,7 +788,7 @@ fun CustomTwoRowsTopAppBar() {
                     Text(text = remember { LoremIpsum().values.first() })
                 }
             }
-        }
+        },
     )
 }
 
@@ -815,21 +815,18 @@ fun BottomAppBarWithFAB() {
                 Icon(Icons.Filled.Check, contentDescription = "Localized description")
             }
             IconButton(onClick = { /* doSomething() */ }) {
-                Icon(
-                    Icons.Filled.Edit,
-                    contentDescription = "Localized description",
-                )
+                Icon(Icons.Filled.Edit, contentDescription = "Localized description")
             }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* do something */ },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
             ) {
                 Icon(Icons.Filled.Add, "Localized description")
             }
-        }
+        },
     )
 }
 
@@ -863,7 +860,7 @@ fun ExitAlwaysBottomAppBar() {
                 modifier = Modifier.offset(y = 4.dp),
                 onClick = { /* do something */ },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
             ) {
                 Icon(Icons.Filled.Add, "Localized description")
             }
@@ -872,18 +869,18 @@ fun ExitAlwaysBottomAppBar() {
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -908,18 +905,18 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -929,24 +926,24 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -970,18 +967,18 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -991,24 +988,24 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -1033,18 +1030,18 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -1054,24 +1051,24 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -1095,18 +1092,18 @@ fun ExitAlwaysBottomAppBarFixed() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -1116,24 +1113,24 @@ fun ExitAlwaysBottomAppBarFixed() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -1159,18 +1156,18 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -1180,24 +1177,24 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -1224,7 +1221,7 @@ fun BottomAppBarWithOverflow() {
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
             }
@@ -1234,42 +1231,42 @@ fun BottomAppBarWithOverflow() {
                 icon = {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 },
-                label = "ArrowBack"
+                label = "ArrowBack",
             )
             clickableItem(
                 onClick = { /* doSomething() */ },
                 icon = {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 },
-                label = "ArrowForward"
+                label = "ArrowForward",
             )
             clickableItem(
                 onClick = { /* doSomething() */ },
                 icon = { Icon(Icons.Filled.Add, contentDescription = "Localized description") },
-                label = "Add"
+                label = "Add",
             )
             clickableItem(
                 onClick = { /* doSomething() */ },
                 icon = { Icon(Icons.Filled.Check, contentDescription = "Localized description") },
-                label = "Check"
+                label = "Check",
             )
             clickableItem(
                 onClick = { /* doSomething() */ },
                 icon = { Icon(Icons.Filled.Edit, contentDescription = "Localized description") },
-                label = "Edit"
+                label = "Edit",
             )
             clickableItem(
                 onClick = { /* doSomething() */ },
                 icon = {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 },
-                label = "Favorite"
+                label = "Favorite",
             )
         }
     }

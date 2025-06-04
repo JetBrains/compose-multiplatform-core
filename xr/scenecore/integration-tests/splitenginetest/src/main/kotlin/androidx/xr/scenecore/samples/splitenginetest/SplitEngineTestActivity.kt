@@ -195,7 +195,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                 } catch (e: Exception) {
                                     Log.e(
                                         "SplitEngineTestActivity",
-                                        "Failed to load BlueSkybox: " + e.message
+                                        "Failed to load BlueSkybox: " + e.message,
                                     )
                                 }
                             },
@@ -209,7 +209,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     onClick = {
                         setSkyboxAndGeometry(
                             blueSkybox.value,
-                            spatialEnvironmentPreference?.geometry
+                            spatialEnvironmentPreference?.geometry,
                         )
                     }
                 ) {
@@ -231,7 +231,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                 } catch (e: Exception) {
                                     Log.e(
                                         "SplitEngineTestActivity",
-                                        "Failed to load GroundGeometry: " + e.message
+                                        "Failed to load GroundGeometry: " + e.message,
                                     )
                                 }
                             },
@@ -245,7 +245,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     onClick = {
                         setSkyboxAndGeometry(
                             spatialEnvironmentPreference?.skybox,
-                            groundGeometry.value
+                            groundGeometry.value,
                         )
                     }
                 ) {
@@ -267,7 +267,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                 } catch (e: Exception) {
                                     Log.e(
                                         "SplitEngineTestActivity",
-                                        "Failed to load Glimmer Model: " + e.message
+                                        "Failed to load Glimmer Model: " + e.message,
                                     )
                                 }
                             },
@@ -288,7 +288,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                 } catch (e: Exception) {
                                     Log.e(
                                         "SplitEngineTestActivity",
-                                        "Failed to load Dragon Model: " + e.message
+                                        "Failed to load Dragon Model: " + e.message,
                                     )
                                 }
                             },
@@ -307,7 +307,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                     dragonModel.value!!,
                                     Pose(
                                         Vector3(2.0f, 0.0f, -1.0f),
-                                        Quaternion(0.0f, 0.0f, 0.0f, 1.0f)
+                                        Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                                     ),
                                 )
                         }
@@ -407,7 +407,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                         glimmerModel.value!!,
                                         Pose(
                                             Vector3(0.0f, 0.0f, 0.0f),
-                                            Quaternion(0.0f, 0.0f, 0.0f, 1.0f)
+                                            Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                                         ),
                                     )
                             }

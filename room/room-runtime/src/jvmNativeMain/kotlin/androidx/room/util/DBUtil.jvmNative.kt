@@ -34,7 +34,7 @@ public actual suspend fun <R> performSuspending(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> R
+    block: (SQLiteConnection) -> R,
 ): R =
     withContext(db.getCoroutineContext(inTransaction)) {
         db.internalPerform(isReadOnly, inTransaction) { connection ->
@@ -61,7 +61,7 @@ internal actual suspend fun RoomDatabase.getCoroutineContext(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public actual suspend fun <R> performInTransactionSuspending(
     db: RoomDatabase,
-    block: suspend () -> R
+    block: suspend () -> R,
 ): R =
     withContext(db.getCoroutineContext(inTransaction = true)) {
         db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }

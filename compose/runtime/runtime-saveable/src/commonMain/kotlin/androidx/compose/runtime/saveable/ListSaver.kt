@@ -29,7 +29,7 @@ package androidx.compose.runtime.saveable
  */
 fun <Original, Saveable> listSaver(
     save: SaverScope.(value: Original) -> List<Saveable>,
-    restore: (list: List<Saveable>) -> Original?
+    restore: (list: List<Saveable>) -> Original?,
 ): Saver<Original, Any> =
     @Suppress("UNCHECKED_CAST")
     Saver(
@@ -43,5 +43,5 @@ fun <Original, Saveable> listSaver(
             }
             if (list.isNotEmpty()) ArrayList(list) else null
         },
-        restore = restore as (Any) -> Original?
+        restore = restore as (Any) -> Original?,
     )

@@ -89,7 +89,7 @@ public fun <T : Any> encodeToSavedState(
 @OptIn(ExperimentalSerializationApi::class)
 internal class SavedStateEncoder(
     internal val savedState: SavedState,
-    private val configuration: SavedStateConfiguration
+    private val configuration: SavedStateConfiguration,
 ) : AbstractEncoder() {
 
     internal var key: String = ""
@@ -111,10 +111,7 @@ internal class SavedStateEncoder(
         return true
     }
 
-    private fun checkDiscriminatorCollisions(
-        savedState: SavedState,
-        elementName: String,
-    ) {
+    private fun checkDiscriminatorCollisions(savedState: SavedState, elementName: String) {
         if (configuration.classDiscriminatorMode == ClassDiscriminatorMode.ALL_OBJECTS) {
             val hasClassDiscriminator = savedState.read { contains(CLASS_DISCRIMINATOR_KEY) }
             val hasConflictingElementName = elementName == CLASS_DISCRIMINATOR_KEY
@@ -260,7 +257,7 @@ internal class SavedStateEncoder(
     @Suppress("UNCHECKED_CAST")
     private fun <T> encodeFormatSpecificTypes(
         serializer: SerializationStrategy<T>,
-        value: T
+        value: T,
     ): Boolean {
         val encoded = encodeFormatSpecificTypesOnPlatform(serializer, value)
         if (!encoded) {
@@ -287,5 +284,5 @@ internal class SavedStateEncoder(
  */
 internal expect fun <T> SavedStateEncoder.encodeFormatSpecificTypesOnPlatform(
     strategy: SerializationStrategy<T>,
-    value: T
+    value: T,
 ): Boolean

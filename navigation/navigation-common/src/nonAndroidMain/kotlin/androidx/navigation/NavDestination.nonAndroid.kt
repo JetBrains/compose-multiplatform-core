@@ -47,7 +47,7 @@ actual constructor(public actual val navigatorName: String) {
         private val isExactDeepLink: Boolean,
         private val matchingPathSegments: Int,
         private val hasMatchingAction: Boolean,
-        private val mimeTypeMatchLevel: Int
+        private val mimeTypeMatchLevel: Int,
     ) : Comparable<DeepLinkMatch> {
         public actual override fun compareTo(other: DeepLinkMatch): Int {
             // Prefer exact deep links

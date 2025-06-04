@@ -236,7 +236,7 @@ class HiltViewModelComposeTest {
                     secondFactory =
                         HiltViewModelFactory(
                             LocalContext.current,
-                            navBackStackEntry.defaultViewModelProviderFactory
+                            navBackStackEntry.defaultViewModelProviderFactory,
                         )
                 }
             }
@@ -283,7 +283,7 @@ class HiltViewModelComposeTest {
         val logger: MyLogger,
         // TODO(kuanyingchou) Remove this after https://github.com/google/dagger/issues/3601 is
         //  resolved.
-        @ApplicationContext val context: Context
+        @ApplicationContext val context: Context,
     ) : ViewModel()
 
     @HiltViewModel(assistedFactory = SimpleAssistedViewModel.Factory::class)
@@ -295,7 +295,7 @@ class HiltViewModelComposeTest {
         // TODO(kuanyingchou) Remove this after https://github.com/google/dagger/issues/3601 is
         //  resolved.
         @ApplicationContext val context: Context,
-        @Assisted val i: Int
+        @Assisted val i: Int,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
@@ -307,7 +307,7 @@ class HiltViewModelComposeTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View? {
             return ComposeView(requireContext()).apply {
                 setContent { composable(this@TestFragment) }

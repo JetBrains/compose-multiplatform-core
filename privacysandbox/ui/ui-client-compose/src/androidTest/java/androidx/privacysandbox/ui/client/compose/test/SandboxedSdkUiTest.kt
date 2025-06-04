@@ -92,7 +92,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = FailingTestSandboxedUiAdapter(),
                 modifier = Modifier,
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
         assertThat(eventListener.errorLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
@@ -203,13 +203,13 @@ class SandboxedSdkUiTest {
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationLeft() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT_MS
+            UI_INTENSIVE_TIMEOUT_MS,
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationNatural() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT_MS
+            UI_INTENSIVE_TIMEOUT_MS,
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
     }
@@ -232,7 +232,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.padding(all = padding),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -249,7 +249,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.padding(all = padding),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -271,7 +271,7 @@ class SandboxedSdkUiTest {
         assertThat(session.supportedSignalOptions)
             .containsExactly(
                 SandboxedUiAdapterSignalOptions.GEOMETRY,
-                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
             )
     }
 
@@ -320,7 +320,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.offset(offset),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -338,7 +338,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier,
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -366,7 +366,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier,
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -405,7 +405,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.fillMaxSize(),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -462,7 +462,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.offset(x = xOffset, y = yOffset),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -503,7 +503,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.offset(x = offset),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
         val session = testSandboxedUiAdapter.testSession
@@ -575,7 +575,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -599,7 +599,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -622,7 +622,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener
+                    sandboxedSdkViewEventListener = eventListener,
                 )
             }
         }
@@ -652,7 +652,7 @@ class SandboxedSdkUiTest {
                         sandboxedUiAdapter = testSandboxedUiAdapter,
                         modifier = Modifier.requiredSize(size),
                         providerUiOnTop = providerUiOnTop,
-                        sandboxedSdkViewEventListener = eventListener
+                        sandboxedSdkViewEventListener = eventListener,
                     )
                 }
             }
@@ -684,7 +684,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.requiredSize(size),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener
+                sandboxedSdkViewEventListener = eventListener,
             )
         }
     }

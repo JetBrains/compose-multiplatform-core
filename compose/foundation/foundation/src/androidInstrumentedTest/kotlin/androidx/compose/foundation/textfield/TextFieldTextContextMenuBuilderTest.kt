@@ -218,7 +218,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
                             SelectionAmount.NONE -> TextRange.Zero
                             SelectionAmount.PARTIAL -> TextRange(5, 9)
                             SelectionAmount.ALL -> TextRange(0, 14)
-                        }
+                        },
                 )
             )
 
@@ -231,7 +231,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
                 onValueChange = { value = it },
                 visualTransformation = visualTransformation,
                 readOnly = isReadOnly,
-                modifier = Modifier.testTag(textFieldTag)
+                modifier = Modifier.testTag(textFieldTag),
             )
         }
     }
@@ -368,7 +368,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
     private enum class SelectionAmount {
         NONE,
         PARTIAL,
-        ALL
+        ALL,
     }
 
     private fun runBtf2CorrectItemsTest(
@@ -387,7 +387,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
                         SelectionAmount.NONE -> TextRange.Zero
                         SelectionAmount.PARTIAL -> TextRange(5, 9)
                         SelectionAmount.ALL -> TextRange(0, 14)
-                    }
+                    },
             )
 
         runCorrectItemsTest(isEmptyClipboard, expectedKeys) {
@@ -397,7 +397,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
                 BasicTextField(
                     state = state,
                     readOnly = isReadOnly,
-                    modifier = Modifier.testTag(textFieldTag)
+                    modifier = Modifier.testTag(textFieldTag),
                 )
             }
         }
@@ -419,7 +419,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
             CompositionLocalProvider(
                 LocalClipboard provides clipboard,
                 LocalTextContextMenuDropdownProvider provides fakeProvider,
-                content = content
+                content = content,
             )
         }
 

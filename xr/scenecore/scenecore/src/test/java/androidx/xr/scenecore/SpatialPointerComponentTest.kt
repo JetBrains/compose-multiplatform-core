@@ -27,6 +27,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.runtime.testing.FakeSpatialPointerComponent
@@ -80,8 +81,7 @@ class SpatialPointerComponentTest {
 
     @Test
     fun addSpatialPointerComponent_addsRuntimeSpatialPointerComponent() {
-        val entity =
-            PanelEntity.create(session, TextView(activity), PixelDimensions(720, 480), "test")
+        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createSpatialPointerComponent()).thenReturn(mock())
         whenever(mockPanelEntity.addComponent(any())).thenReturn(true)
@@ -103,8 +103,7 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_returnsSetValue() {
-        val entity =
-            PanelEntity.create(session, TextView(activity), PixelDimensions(720, 480), "test")
+        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
         val fakeRtSpatialPointerComponent = FakeSpatialPointerComponent()
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createSpatialPointerComponent())
@@ -123,8 +122,7 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_addAndRemoveComponentSetsDefaultIcon() {
-        val entity =
-            PanelEntity.create(session, TextView(activity), PixelDimensions(720, 480), "test")
+        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
         val fakeRtSpatialPointerComponent = FakeSpatialPointerComponent()
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createSpatialPointerComponent())

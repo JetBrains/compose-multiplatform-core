@@ -41,7 +41,7 @@ public abstract class AggregatedAppFunctionInvoker : AppFunctionInvoker {
     final override suspend fun unsafeInvoke(
         appFunctionContext: AppFunctionContext,
         functionIdentifier: String,
-        parameters: Map<String, Any?>
+        parameters: Map<String, Any?>,
     ): Any? {
         for (invoker in invokers) {
             if (invoker.supportedFunctionIds.contains(functionIdentifier)) {

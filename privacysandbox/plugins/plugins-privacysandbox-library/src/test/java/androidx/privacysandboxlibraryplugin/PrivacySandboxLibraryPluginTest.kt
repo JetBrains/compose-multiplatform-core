@@ -61,7 +61,7 @@ class PrivacySandboxLibraryPluginTest {
                             jvmTarget=17
                         }
                     }
-            """
+            """,
         )
 
         val myServiceSource =

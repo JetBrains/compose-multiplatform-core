@@ -88,7 +88,7 @@ class EdgeButtonScreenshotTest {
                     object : GestureInclusion {
                         override fun ignoreGestureStart(
                             offset: Offset,
-                            layoutCoordinates: LayoutCoordinates
+                            layoutCoordinates: LayoutCoordinates,
                         ): Boolean {
                             return false
                         }
@@ -184,7 +184,7 @@ class EdgeButtonScreenshotTest {
         buttonSize: EdgeButtonSize,
         constrainedHeight: Dp? = null,
         enabled: Boolean = true,
-        text: String = "Text"
+        text: String = "Text",
     ) {
         Box(Modifier.fillMaxSize()) {
             EdgeButton(
@@ -194,7 +194,7 @@ class EdgeButtonScreenshotTest {
                 modifier =
                     Modifier.align(Alignment.BottomEnd)
                         .testTag(TEST_TAG)
-                        .then(constrainedHeight?.let { Modifier.height(it) } ?: Modifier)
+                        .then(constrainedHeight?.let { Modifier.height(it) } ?: Modifier),
             ) {
                 BasicText(text)
             }
@@ -202,16 +202,13 @@ class EdgeButtonScreenshotTest {
     }
 
     @Composable
-    private fun BasicEdgeButtonWithIcon(
-        buttonSize: EdgeButtonSize,
-        enabled: Boolean = true,
-    ) {
+    private fun BasicEdgeButtonWithIcon(buttonSize: EdgeButtonSize, enabled: Boolean = true) {
         Box(Modifier.fillMaxSize()) {
             EdgeButton(
                 onClick = { /* Do something */ },
                 enabled = enabled,
                 buttonSize = buttonSize,
-                modifier = Modifier.align(Alignment.BottomEnd).testTag(TEST_TAG)
+                modifier = Modifier.align(Alignment.BottomEnd).testTag(TEST_TAG),
             ) {
                 TestIcon(modifier = Modifier.size(EdgeButtonDefaults.iconSizeFor(buttonSize)))
             }
@@ -221,7 +218,7 @@ class EdgeButtonScreenshotTest {
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         performActions: () -> Unit = {},
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             ScreenConfiguration(SCREEN_SIZE_SMALL) {

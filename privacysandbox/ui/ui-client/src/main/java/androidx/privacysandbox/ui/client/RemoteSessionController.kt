@@ -29,7 +29,7 @@ import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
  */
 internal class RemoteSessionController(
     private val uiProviderVersion: Int,
-    private val remoteSessionController: IRemoteSessionController
+    private val remoteSessionController: IRemoteSessionController,
 ) : androidx.privacysandbox.ui.client.IRemoteSessionController {
     override fun close() {
         tryToCallRemoteObject(remoteSessionController) { close() }
@@ -64,7 +64,7 @@ internal class RemoteSessionController(
     override fun notifyMotionEvent(
         motionEvent: MotionEvent,
         eventTargetFrameTime: Long,
-        eventTransferCallback: IMotionEventTransferCallback?
+        eventTransferCallback: IMotionEventTransferCallback?,
     ) {
         tryToCallRemoteObject(remoteSessionController) {
             notifyMotionEvent(motionEvent, eventTargetFrameTime, eventTransferCallback)

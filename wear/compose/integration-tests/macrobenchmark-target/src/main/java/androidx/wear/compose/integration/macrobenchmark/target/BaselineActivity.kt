@@ -179,7 +179,7 @@ class BaselineActivity : ComponentActivity() {
                         modifier =
                             Modifier.background(MaterialTheme.colors.background).semantics {
                                 contentDescription = SWIPE_DISMISS
-                            }
+                            },
                     ) {
                         composable(START_INDEX) { StartIndex(navController, scrollState) }
                         composable(DIALOGS) { Dialogs(navController) }
@@ -209,7 +209,7 @@ class BaselineActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize(),
                                 startAngle = 300f,
                                 endAngle = 240f,
-                                progress = 0.3f
+                                progress = 0.3f,
                             )
                         }
                         composable(PROGRESS_INDICATOR_INDETERMINATE) {
@@ -242,7 +242,7 @@ fun StartIndex(navController: NavHostController, scrollState: ScrollState) {
                     .padding(vertical = 32.dp)
                     .semantics { contentDescription = CONTENT_DESCRIPTION },
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Widget(navController, BUTTONS, "B", BUTTONS)
@@ -257,7 +257,7 @@ fun StartIndex(navController: NavHostController, scrollState: ScrollState) {
                     navController,
                     HIERARCHICAL_FOCUS_COORDINATOR,
                     "HF",
-                    HIERARCHICAL_FOCUS_COORDINATOR
+                    HIERARCHICAL_FOCUS_COORDINATOR,
                 )
                 Widget(navController, PICKER, "PI", PICKER)
                 Widget(navController, PLACEHOLDERS, "PL", PLACEHOLDERS)
@@ -277,7 +277,7 @@ fun StartIndex(navController: NavHostController, scrollState: ScrollState) {
 fun Dialogs(navController: NavHostController) {
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ListHeader { Text("Dialogs") }
         CompactChip(
@@ -301,7 +301,7 @@ fun Buttons() {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         ListHeader { Text("Buttons") }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -322,7 +322,7 @@ fun Buttons() {
 fun Cards() {
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ListHeader { Text("Cards") }
         Card(onClick = {}) { Text("Card") }
@@ -337,14 +337,14 @@ fun Cards() {
 fun Chips() {
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Chip(
                 modifier = Modifier.height(32.dp),
                 onClick = {},
                 colors = ChipDefaults.primaryChipColors(),
-                label = { Text("C") }
+                label = { Text("C") },
             )
             OutlinedChip(modifier = Modifier.height(32.dp), onClick = {}, label = { Text("OC") })
         }
@@ -361,9 +361,9 @@ fun Chips() {
                 toggleControl = {
                     Icon(
                         imageVector = ToggleChipDefaults.radioIcon(checked = radioState),
-                        contentDescription = null
+                        contentDescription = null,
                     )
-                }
+                },
             )
             var switchState by remember { mutableStateOf(false) }
             ToggleChip(
@@ -373,9 +373,9 @@ fun Chips() {
                 toggleControl = {
                     Icon(
                         imageVector = ToggleChipDefaults.switchIcon(checked = switchState),
-                        contentDescription = null
+                        contentDescription = null,
                     )
-                }
+                },
             )
             var checkboxState by remember { mutableStateOf(false) }
             ToggleChip(
@@ -385,9 +385,9 @@ fun Chips() {
                 toggleControl = {
                     Icon(
                         imageVector = ToggleChipDefaults.checkboxIcon(checked = checkboxState),
-                        contentDescription = null
+                        contentDescription = null,
                     )
-                }
+                },
             )
         }
         Row(horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -425,9 +425,9 @@ fun Chips() {
                 toggleControl = {
                     Icon(
                         imageVector = ToggleChipDefaults.radioIcon(checked = true),
-                        contentDescription = null
+                        contentDescription = null,
                     )
-                }
+                },
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -436,7 +436,7 @@ fun Chips() {
                 selected = selectedState,
                 onClick = { selectedState = !selectedState },
                 label = { Text("S") },
-                modifier = Modifier.semantics { contentDescription = SELECTABLE_CHIP }
+                modifier = Modifier.semantics { contentDescription = SELECTABLE_CHIP },
             )
         }
     }
@@ -456,7 +456,7 @@ fun Expandables() {
             CompactChip(
                 label = { Text("Show more") },
                 onClick = { expandableItemsState.expanded = true },
-                modifier = Modifier.semantics { contentDescription = EXPAND_ITEMS }
+                modifier = Modifier.semantics { contentDescription = EXPAND_ITEMS },
             )
         }
         expandableItem(expandableTextState) { expanded ->
@@ -465,14 +465,14 @@ fun Expandables() {
                     "that will span across multiple lines and " +
                     "we don't want to always show all of it " +
                     "so we have an expand button",
-                maxLines = if (expanded) 10 else 1
+                maxLines = if (expanded) 10 else 1,
             )
         }
         expandableButton(expandableTextState) {
             CompactChip(
                 label = { Text("Show more") },
                 onClick = { expandableTextState.expanded = true },
-                modifier = Modifier.semantics { contentDescription = EXPAND_TEXT }
+                modifier = Modifier.semantics { contentDescription = EXPAND_TEXT },
             )
         }
     }
@@ -500,7 +500,7 @@ fun FocusCoordinator() {
                                 } else {
                                     Modifier
                                 }
-                            )
+                            ),
                 )
             }
         }
@@ -515,7 +515,7 @@ fun Picker() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.size(30.dp))
         Text(text = if (pickerGroupState.selectedIndex == 0) "Hours" else "Minutes")
@@ -524,15 +524,15 @@ fun Picker() {
             PickerGroupItem(
                 pickerState = pickerStateHour,
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             ),
             PickerGroupItem(
                 pickerState = pickerStateMinute,
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             ),
             pickerGroupState = pickerGroupState,
-            autoCenter = false
+            autoCenter = false,
         )
     }
 }
@@ -552,22 +552,20 @@ fun Placeholders() {
                 text = labelText,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().placeholder(chipPlaceholderState)
+                modifier = Modifier.fillMaxWidth().placeholder(chipPlaceholderState),
             )
         },
         icon = {
-            Box(
-                modifier = Modifier.size(ChipDefaults.IconSize).placeholder(chipPlaceholderState),
-            ) {
+            Box(modifier = Modifier.size(ChipDefaults.IconSize).placeholder(chipPlaceholderState)) {
                 iconContent()
             }
         },
         colors =
             PlaceholderDefaults.placeholderChipColors(
                 originalChipColors = ChipDefaults.primaryChipColors(),
-                placeholderState = chipPlaceholderState
+                placeholderState = chipPlaceholderState,
             ),
-        modifier = Modifier.fillMaxWidth().placeholderShimmer(chipPlaceholderState)
+        modifier = Modifier.fillMaxWidth().placeholderShimmer(chipPlaceholderState),
     )
     LaunchedEffect(Unit) {
         delay(50)
@@ -584,7 +582,7 @@ fun Placeholders() {
 fun ProgressIndicators(navController: NavHostController) {
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ListHeader { Text("Progress Indicators") }
         // Test both circular progress indicator with gap and spinning indicator.
@@ -608,7 +606,7 @@ fun ProgressIndicators(navController: NavHostController) {
 fun Slider() {
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ListHeader { Text("Sliders") }
         var value by remember { mutableFloatStateOf(4.5f) }
@@ -619,7 +617,7 @@ fun Slider() {
             decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
             valueRange = 3f..6f,
             steps = 5,
-            segmented = false
+            segmented = false,
         )
     }
 }
@@ -633,7 +631,7 @@ fun Stepper() {
         increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
         decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
         valueRange = 1f..4f,
-        steps = 7
+        steps = 7,
     ) {
         Text("Value: $value")
     }
@@ -648,7 +646,7 @@ fun SwipeToRevealScreen() {
 
     Column(
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         SwipeToRevealCard(
             revealState = revealCardState,
@@ -658,13 +656,13 @@ fun SwipeToRevealScreen() {
                     revealState = revealCardState,
                     icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
                     label = { Text("Delete") },
-                    onClick = {}
+                    onClick = {},
                 )
             },
             secondaryAction = {
                 SwipeToRevealSecondaryAction(
                     revealState = revealCardState,
-                    onClick = { /* Add the click handler here */ }
+                    onClick = { /* Add the click handler here */ },
                 ) {
                     Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
                 }
@@ -673,17 +671,17 @@ fun SwipeToRevealScreen() {
                 SwipeToRevealUndoAction(
                     revealState = revealCardState,
                     label = { Text("Undo") },
-                    onClick = {}
+                    onClick = {},
                 )
             },
             undoSecondaryAction = {
                 SwipeToRevealUndoAction(
                     revealState = revealCardState,
                     label = { Text("Undo") },
-                    onClick = {}
+                    onClick = {},
                 )
             },
-            onFullSwipe = {}
+            onFullSwipe = {},
         ) {
             AppCard(
                 onClick = {},
@@ -692,7 +690,7 @@ fun SwipeToRevealScreen() {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
                         contentDescription = "airplane",
-                        modifier = Modifier.size(CardDefaults.AppImageSize)
+                        modifier = Modifier.size(CardDefaults.AppImageSize),
                     )
                 },
                 title = { Text("App Card") },
@@ -702,9 +700,9 @@ fun SwipeToRevealScreen() {
                         customActions =
                             listOf(
                                 CustomAccessibilityAction("Delete") { true },
-                                CustomAccessibilityAction("More Options") { true }
+                                CustomAccessibilityAction("More Options") { true },
                             )
-                    }
+                    },
             ) {
                 Text("Basic card with Swipe to Reveal actions")
             }
@@ -716,14 +714,14 @@ fun SwipeToRevealScreen() {
                     revealState = revealChipState,
                     icon = { Icon(SwipeToRevealDefaults.Delete, "Clear") },
                     label = { Text("Clear") },
-                    onClick = {}
+                    onClick = {},
                 )
             },
             undoPrimaryAction = {
                 SwipeToRevealUndoAction(
                     revealState = revealChipState,
                     onClick = { /* Add undo action here */ },
-                    label = { Text(text = "Undo") }
+                    label = { Text(text = "Undo") },
                 )
             },
             secondaryAction = {
@@ -731,13 +729,13 @@ fun SwipeToRevealScreen() {
                     Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
                 }
             },
-            onFullSwipe = {}
+            onFullSwipe = {},
         ) {
             Chip(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { /* the click action associated with chip */ },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Swipe Me") }
+                label = { Text(text = "Swipe Me") },
             )
         }
     }
@@ -750,7 +748,7 @@ fun CurvedTexts() {
         basicCurvedText(
             "Basic",
             CurvedTextStyle(fontSize = 16.sp, color = Color.White, background = background),
-            modifier = CurvedModifier.padding(2.dp)
+            modifier = CurvedModifier.padding(2.dp),
         )
     }
     CurvedLayout(anchor = 310f) { curvedText(text = "Curved") }
@@ -760,7 +758,7 @@ fun CurvedTexts() {
 fun Widget(navController: NavHostController, destination: String, text: String, desc: String) {
     CompactButton(
         onClick = { navController.navigate(destination) },
-        modifier = Modifier.semantics { contentDescription = desc }
+        modifier = Modifier.semantics { contentDescription = desc },
     ) {
         Text(text)
     }

@@ -80,7 +80,7 @@ public fun getColumnIndex(stmt: SQLiteStatement, name: String): Int {
 public fun wrapMappedColumns(
     statement: SQLiteStatement,
     columnNames: Array<String>,
-    mapping: IntArray
+    mapping: IntArray,
 ): SQLiteStatement {
     return MappedColumnsSQLiteStatementWrapper(statement, columnNames, mapping)
 }
@@ -88,7 +88,7 @@ public fun wrapMappedColumns(
 internal class MappedColumnsSQLiteStatementWrapper(
     private val delegate: SQLiteStatement,
     private val columnNames: Array<String>,
-    private val mapping: IntArray
+    private val mapping: IntArray,
 ) : SQLiteStatement by delegate {
 
     init {

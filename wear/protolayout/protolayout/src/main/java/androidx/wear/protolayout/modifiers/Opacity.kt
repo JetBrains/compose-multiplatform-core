@@ -35,7 +35,7 @@ import androidx.wear.protolayout.expression.RequiresSchemaVersion
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.opacity(
     @FloatRange(from = 0.0, to = 1.0) staticValue: Float,
-    dynamicValue: DynamicFloat? = null
+    dynamicValue: DynamicFloat? = null,
 ): LayoutModifier = this then BaseOpacityElement(staticValue, dynamicValue)
 
 @RequiresSchemaVersion(major = 1, minor = 400)

@@ -79,7 +79,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = false,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 
@@ -98,7 +98,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = true,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 
@@ -116,7 +116,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = true,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 
@@ -137,7 +137,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = true,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 
@@ -166,7 +166,7 @@ class NestedScrollInteropViewHolderTest {
                 NestedScrollInteropWithView(
                     modifier = Modifier.nestedScroll(connection),
                     enabled = true,
-                    recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                    recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
                 )
             }
         }
@@ -209,21 +209,21 @@ class NestedScrollInteropViewHolderTest {
                                         iv.layoutParams =
                                             LinearLayout.LayoutParams(
                                                 with(densiy) { 400.dp.roundToPx() },
-                                                with(densiy) { 100.dp.roundToPx() }
+                                                with(densiy) { 100.dp.roundToPx() },
                                             )
                                         val params = iv.layoutParams
                                         (params as LinearLayout.LayoutParams).setMargins(
                                             20,
                                             20,
                                             20,
-                                            20
+                                            20,
                                         )
                                         iv.layoutParams = params
                                     }
                                 }
                             }
                         }
-                    }
+                    },
                 )
 
                 repeat(10) {
@@ -256,7 +256,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = true,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 
@@ -277,7 +277,7 @@ class NestedScrollInteropViewHolderTest {
             NestedScrollInteropWithView(
                 modifier = Modifier.nestedScroll(connection),
                 enabled = true,
-                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker
+                recyclerViewConsumptionTracker = recyclerViewConsumptionTracker,
             )
         }
 

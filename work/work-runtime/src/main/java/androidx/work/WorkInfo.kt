@@ -109,7 +109,7 @@ constructor(
      * returns `ListenableWorker.Result.retry()`. In this situation this property will return
      * [STOP_REASON_NOT_STOPPED].
      */
-    @StopReason @get:RequiresApi(31) val stopReason: Int = STOP_REASON_NOT_STOPPED
+    @StopReason @get:RequiresApi(31) val stopReason: Int = STOP_REASON_NOT_STOPPED,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -209,7 +209,7 @@ constructor(
          * The duration in millis in which this work repeats from the end of the `repeatInterval`,
          * as configured in [PeriodicWorkRequest.Builder].
          */
-        val flexIntervalMillis: Long
+        val flexIntervalMillis: Long,
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -373,6 +373,6 @@ constructor(
     WorkInfo.STOP_REASON_APP_STANDBY,
     WorkInfo.STOP_REASON_USER,
     WorkInfo.STOP_REASON_SYSTEM_PROCESSING,
-    WorkInfo.STOP_REASON_ESTIMATED_APP_LAUNCH_TIME_CHANGED
+    WorkInfo.STOP_REASON_ESTIMATED_APP_LAUNCH_TIME_CHANGED,
 )
 internal annotation class StopReason

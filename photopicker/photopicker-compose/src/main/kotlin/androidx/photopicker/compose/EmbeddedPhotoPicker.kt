@@ -107,7 +107,7 @@ public fun EmbeddedPhotoPicker(
         // update will run immediately after the factory, and when any observed state changes.
         // In this case, openedSession won't exist after the factory, so this will get run again
         // once we receive the session from the provider so that the surfacePackage can be attached.
-        update = { view -> openedSession?.surfacePackage?.let { view.setChildSurfacePackage(it) } }
+        update = { view -> openedSession?.surfacePackage?.let { view.setChildSurfacePackage(it) } },
     )
 
     // Either use the (provided) provider or create one that binds to the applicationContext

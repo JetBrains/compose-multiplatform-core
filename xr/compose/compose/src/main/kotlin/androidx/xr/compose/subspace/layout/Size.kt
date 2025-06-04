@@ -244,21 +244,21 @@ private class FillElement(
             FillElement(
                 direction = Direction.X,
                 fraction = fraction,
-                inspectorName = "fillMaxWidth"
+                inspectorName = "fillMaxWidth",
             )
 
         public fun height(fraction: Float) =
             FillElement(
                 direction = Direction.Y,
                 fraction = fraction,
-                inspectorName = "fillMaxHeight"
+                inspectorName = "fillMaxHeight",
             )
 
         public fun depth(fraction: Float) =
             FillElement(
                 direction = Direction.Z,
                 fraction = fraction,
-                inspectorName = "fillMaxDepth"
+                inspectorName = "fillMaxDepth",
             )
 
         public fun size(fraction: Float) =
@@ -273,7 +273,7 @@ private class FillElement(
 private class FillNode(public var direction: Direction, public var fraction: Float) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
     override fun MeasureScope.measure(
-        measurable: Measurable,
+        measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): MeasureResult {
         val minWidth: Int
@@ -457,7 +457,7 @@ private class SizeNode(
         }
 
     override fun MeasureScope.measure(
-        measurable: Measurable,
+        measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): MeasureResult {
         val wrappedConstraints =

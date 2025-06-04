@@ -80,7 +80,7 @@ class DialerActivityViewModel : ViewModel() {
             Log.d(
                 TAG,
                 "Processing intent: action=$action, callId=$callId," +
-                    " isAnswerAction=$isAnswerAction, isViewCallAction=$isViewCallAction"
+                    " isAnswerAction=$isAnswerAction, isViewCallAction=$isViewCallAction",
             )
 
             // --- Emit events based on intent ---

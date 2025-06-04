@@ -88,7 +88,7 @@ public class SessionManagerImpl(
     private val inputDataFactory: InputDataFactory = { session ->
         workDataOf(keyParam to session.key)
     },
-    private val workManagerProxy: WorkManagerProxy = WorkManagerProxy.Default
+    private val workManagerProxy: WorkManagerProxy = WorkManagerProxy.Default,
 ) : SessionManager {
     private companion object {
         const val TAG = "GlanceSessionManager"
@@ -118,7 +118,7 @@ public class SessionManagerImpl(
                     context,
                     session.key,
                     ExistingWorkPolicy.REPLACE,
-                    workRequest
+                    workRequest,
                 )
                 enqueueDelayedWorker(context)
             }
@@ -153,7 +153,7 @@ public class SessionManagerImpl(
             OneTimeWorkRequest.Builder(workerClass)
                 .setInitialDelay(10 * 365, TimeUnit.DAYS)
                 .setConstraints(Constraints.Builder().setRequiresCharging(true).build())
-                .build()
+                .build(),
         )
     }
 }
@@ -179,7 +179,7 @@ public interface WorkManagerProxy {
 
                 override suspend fun workerIsRunningOrEnqueued(
                     context: Context,
-                    uniqueWorkName: String
+                    uniqueWorkName: String,
                 ): Boolean =
                     WorkManager.getInstance(context)
                         .getWorkInfosForUniqueWork(uniqueWorkName)
@@ -194,7 +194,7 @@ public interface WorkManagerProxy {
         context: Context,
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        workRequest: OneTimeWorkRequest
+        workRequest: OneTimeWorkRequest,
     )
 
     public suspend fun workerIsRunningOrEnqueued(context: Context, uniqueWorkName: String): Boolean

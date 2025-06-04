@@ -46,7 +46,7 @@ abstract class AbstractLintDetectorTest(
      */
     fun check(
         vararg projects: ProjectDescription,
-        testModes: List<TestMode> = listOf(TestMode.DEFAULT, TestMode.PARTIAL)
+        testModes: List<TestMode> = listOf(TestMode.DEFAULT, TestMode.PARTIAL),
     ): TestLintResult {
         // If we have stubs, push those into a virtual project and pass them through the call to
         // projects(), since attempting to call files() would overwrite the call to projects().

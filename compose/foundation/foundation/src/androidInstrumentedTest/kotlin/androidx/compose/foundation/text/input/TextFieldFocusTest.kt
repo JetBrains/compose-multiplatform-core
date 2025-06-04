@@ -98,7 +98,7 @@ internal class TextFieldFocusTest {
                 modifier =
                     Modifier.focusRequester(data.focusRequester)
                         .onFocusChanged { data.focused = it.isFocused }
-                        .requiredWidth(10.dp)
+                        .requiredWidth(10.dp),
             )
         }
     }
@@ -114,7 +114,7 @@ internal class TextFieldFocusTest {
                 listOf(
                     FocusTestData(FocusRequester()),
                     FocusTestData(FocusRequester()),
-                    FocusTestData(FocusRequester())
+                    FocusTestData(FocusRequester()),
                 )
 
             TextFieldApp(testDataList)
@@ -156,7 +156,7 @@ internal class TextFieldFocusTest {
             BasicTextField(
                 state = rememberTextFieldState(),
                 modifier = Modifier.testTag(tag),
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             Box(modifier = Modifier.size(10.dp).focusable())
         }
@@ -192,7 +192,7 @@ internal class TextFieldFocusTest {
                 state = rememberTextFieldState(),
                 modifier = Modifier.testTag(tag),
                 interactionSource = interactionSource,
-                enabled = enabled
+                enabled = enabled,
             )
         }
 
@@ -229,7 +229,7 @@ internal class TextFieldFocusTest {
             BasicTextField(
                 state = rememberTextFieldState(),
                 modifier = Modifier.testTag(tag),
-                interactionSource = interactionSourceState.value
+                interactionSource = interactionSourceState.value,
             )
         }
 
@@ -274,7 +274,7 @@ internal class TextFieldFocusTest {
                 state = rememberTextFieldState(),
                 modifier = Modifier.testTag(tag),
                 enabled = enabled,
-                interactionSource = interactionSourceState.value
+                interactionSource = interactionSourceState.value,
             )
         }
 
@@ -307,7 +307,7 @@ internal class TextFieldFocusTest {
                 modifier =
                     Modifier.testTag(tag)
                         .onFocusChanged { focused = it.isFocused }
-                        .requiredWidth(10.dp)
+                        .requiredWidth(10.dp),
             )
         }
         // bring enabled text field into focus
@@ -356,7 +356,7 @@ internal class TextFieldFocusTest {
                     // Need to explicitly install the interceptor in the dialog as well.
                     inputMethodInterceptor.Content(it)
                 }
-            }
+            },
         )
     }
 
@@ -377,13 +377,13 @@ internal class TextFieldFocusTest {
                     // Need to explicitly install the interceptor in the dialog as well.
                     inputMethodInterceptor.Content(it)
                 }
-            }
+            },
         )
     }
 
     private fun textInputStarted_whenFocusRequestedImmediately_fromEffect(
         runEffect: @Composable (body: () -> Unit) -> Unit,
-        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() }
+        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() },
     ) {
         val focusRequester = FocusRequester()
         val state = TextFieldState()
@@ -600,7 +600,7 @@ internal class TextFieldFocusTest {
                 keyPressOnKeyboardInputDevice(
                     rule,
                     NativeKeyEvent.KEYCODE_TAB,
-                    metaState = KeyEvent.META_SHIFT_ON
+                    metaState = KeyEvent.META_SHIFT_ON,
                 )
             )
             .isTrue()
@@ -627,7 +627,7 @@ internal class TextFieldFocusTest {
                 0,
                 0,
                 invalidDeviceId,
-                0
+                0,
             )
         assertThat(keyEventDown.device).isNull()
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventDown))
@@ -641,15 +641,13 @@ internal class TextFieldFocusTest {
                 0,
                 0,
                 invalidDeviceId,
-                0
+                0,
             )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventUp))
         rule.waitForIdle()
     }
 
-    private fun setupAndEnableBasicTextField(
-        singleLine: Boolean = false,
-    ) {
+    private fun setupAndEnableBasicTextField(singleLine: Boolean = false) {
         setupContent(singleLine)
 
         rule.onNodeWithTag("test-text-field-1").assertIsFocused()
@@ -671,9 +669,7 @@ internal class TextFieldFocusTest {
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_C)
     }
 
-    private fun setupContent(
-        singleLine: Boolean = false,
-    ) {
+    private fun setupContent(singleLine: Boolean = false) {
         rule.setContent {
             CompositionLocalProvider(
                 LocalSoftwareKeyboardController provides testKeyboardController
@@ -706,7 +702,7 @@ internal class TextFieldFocusTest {
                     .padding(10.dp)
                     .onFocusChanged { isFocused = it.hasFocus }
                     .focusable()
-                    .border(2.dp, if (isFocused) Color.Green else Color.Cyan)
+                    .border(2.dp, if (isFocused) Color.Green else Color.Cyan),
         )
     }
 
@@ -731,7 +727,7 @@ internal class TextFieldFocusTest {
                     .testTag("test-text-field-$id")
                     .padding(10.dp)
                     .onFocusChanged { isFocused = it.isFocused || it.hasFocus }
-                    .border(2.dp, if (isFocused) Color.Red else Color.Transparent)
+                    .border(2.dp, if (isFocused) Color.Red else Color.Transparent),
         )
 
         LaunchedEffect(requestFocus, focusRequester) {
@@ -743,7 +739,7 @@ internal class TextFieldFocusTest {
     private fun keyPressOnDpadInputDevice(
         rule: ComposeContentTestRule,
         keyCode: Int,
-        count: Int = 1
+        count: Int = 1,
     ) = keyPressOnPhysicalDevice(rule, keyCode, InputDevice.SOURCE_DPAD, count)
 
     /** Triggers a key press on the root node from a non-virtual keyboard device (if supported). */
@@ -777,7 +773,7 @@ internal class TextFieldFocusTest {
                 deviceId,
                 0,
                 0,
-                source
+                source,
             )
         val keyEventUp =
             KeyEvent(
@@ -790,7 +786,7 @@ internal class TextFieldFocusTest {
                 deviceId,
                 0,
                 0,
-                source
+                source,
             )
 
         repeat(count) {

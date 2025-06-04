@@ -19,7 +19,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -65,13 +64,13 @@ class SurfaceScreenshotTest() {
                         border =
                             BorderStroke(
                                 5.dp,
-                                Brush.linearGradient(0f to Color.Blue, 1f to Color.Green)
-                            )
+                                Brush.linearGradient(0f to Color.Blue, 1f to Color.Green),
+                            ),
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
-                BasicText("!", style = GlimmerTheme.typography.bodySmall.copy(color = Color.White))
+                Text("!")
             }
         }
         rule.assertRootAgainstGolden("surface_custom", screenshotRule)

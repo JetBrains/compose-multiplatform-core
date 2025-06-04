@@ -97,7 +97,7 @@ public fun Button(
     style: TextStyle? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     maxLines: Int = Int.MAX_VALUE,
-    key: String? = null
+    key: String? = null,
 ): Unit = ButtonElement(text, action(key, onClick), modifier, enabled, style, colors, maxLines)
 
 @Composable
@@ -124,7 +124,7 @@ internal fun ButtonElement(
             this.set(colors) { this.colors = it }
             this.set(enabled) { this.enabled = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 
@@ -150,7 +150,7 @@ public class EmittableButton : EmittableWithText() {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun EmittableButton.toEmittableText() =
+public fun EmittableButton.toEmittableText(): EmittableText =
     EmittableText().also {
         it.modifier = modifier
         it.text = text
@@ -162,7 +162,7 @@ public fun EmittableButton.toEmittableText() =
 public class ButtonColors
 internal constructor(
     public val backgroundColor: ColorProvider,
-    public val contentColor: ColorProvider
+    public val contentColor: ColorProvider,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -195,6 +195,6 @@ public object ButtonDefaults {
      */
     public fun buttonColors(
         backgroundColor: ColorProvider = GlanceTheme.colors.primary,
-        contentColor: ColorProvider = GlanceTheme.colors.onPrimary
+        contentColor: ColorProvider = GlanceTheme.colors.onPrimary,
     ): ButtonColors = ButtonColors(backgroundColor = backgroundColor, contentColor = contentColor)
 }

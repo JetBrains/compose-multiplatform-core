@@ -61,20 +61,20 @@ class SessionManagerImplTest {
                 context: Context,
                 uniqueWorkName: String,
                 existingWorkPolicy: ExistingWorkPolicy,
-                workRequest: OneTimeWorkRequest
+                workRequest: OneTimeWorkRequest,
             ) {
                 enqueueCalls.add(uniqueWorkName to workRequest)
                 WorkManagerProxy.Default.enqueueUniqueWork(
                     context,
                     uniqueWorkName,
                     existingWorkPolicy,
-                    workRequest
+                    workRequest,
                 )
             }
 
             override suspend fun workerIsRunningOrEnqueued(
                 context: Context,
-                uniqueWorkName: String
+                uniqueWorkName: String,
             ): Boolean {
                 isRunningCalls.add(uniqueWorkName)
                 return WorkManagerProxy.Default.workerIsRunningOrEnqueued(context, uniqueWorkName)
@@ -246,7 +246,7 @@ class SessionManagerImplTest {
 
                 override suspend fun processEmittableTree(
                     context: Context,
-                    root: EmittableWithChildren
+                    root: EmittableWithChildren,
                 ): Boolean {
                     TODO("Not yet implemented")
                 }

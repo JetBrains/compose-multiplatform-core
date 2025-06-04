@@ -31,6 +31,7 @@ import com.android.extensions.xr.node.Node;
 import java.io.Closeable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A parentless system-controlled JXRCore Entity that defines its own coordinate space.
@@ -39,11 +40,14 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSpaceEntity {
 
+    // Transform for this space's origin in OpenXR reference space.
+    protected final AtomicReference<Matrix4> mOpenXrReferenceSpaceTransform =
+            new AtomicReference<>(Matrix4.Identity);
     protected Pose mOpenXrReferenceSpacePose;
     protected Vector3 mWorldSpaceScale = new Vector3(1f, 1f, 1f);
     // Visible for testing.
     Closeable mNodeTransformCloseable;
-    private OnSpaceUpdatedListener mSpaceUpdatedListener;
+    private Runnable mSpaceUpdatedListener;
     private Executor mSpaceUpdatedExecutor;
 
     SystemSpaceEntityImpl(
@@ -62,14 +66,14 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     /** Called when the underlying space has changed. */
     public void onSpaceUpdated() {
         if (mSpaceUpdatedListener != null) {
-            mSpaceUpdatedExecutor.execute(() -> mSpaceUpdatedListener.onSpaceUpdated());
+            mSpaceUpdatedExecutor.execute(() -> mSpaceUpdatedListener.run());
         }
     }
 
     /** Registers the SDK layer / application's listener for space updates. */
     @Override
     public void setOnSpaceUpdatedListener(
-            @Nullable OnSpaceUpdatedListener listener, @Nullable Executor executor) {
+            @Nullable Runnable listener, @Nullable Executor executor) {
         mSpaceUpdatedListener = listener;
         mSpaceUpdatedExecutor = executor == null ? mExecutor : executor;
     }
@@ -93,6 +97,7 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      *     XrExtensions#getOpenXrActivitySpaceType()} method.
      */
     protected void setOpenXrReferenceSpacePose(Matrix4 openXrReferenceSpaceTransform) {
+        mOpenXrReferenceSpaceTransform.set(openXrReferenceSpaceTransform);
         // TODO: b/353511649 - Make SystemSpaceEntityImpl thread safe.
         mOpenXrReferenceSpacePose = Matrix4Ext.getUnscaled(openXrReferenceSpaceTransform).getPose();
 
@@ -100,8 +105,7 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
         // Retrieve the scale from the matrix. The scale can be retrieved from the matrix by getting
         // the magnitude of one of the rows of the matrix. Note that we are assuming uniform scale.
         // SpaceFlinger might apply a scale to the task node, for example if the user caused the
-        // main
-        // panel to scale in Homespace mode.
+        // main panel to scale in Homespace mode.
         float data00 = openXrReferenceSpaceTransform.getData()[0];
         float data01 = openXrReferenceSpaceTransform.getData()[1];
         float data02 = openXrReferenceSpaceTransform.getData()[2];

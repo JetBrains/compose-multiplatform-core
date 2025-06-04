@@ -61,7 +61,7 @@ class SandboxedSdkViewUiInfo(
      * the [SessionObserverFactory] associated with the UI container's [SandboxedUiAdapter].
      * Otherwise, this will return an empty list irrespective of any obstructions on the container.
      */
-    val obstructedGeometry: List<Rect>
+    val obstructedGeometry: List<Rect>,
 ) {
     companion object {
         private const val UI_CONTAINER_WIDTH_KEY = "uiContainerWidth"
@@ -83,7 +83,7 @@ class SandboxedSdkViewUiInfo(
                 BundleCompat.getParcelableArrayList<Rect>(
                         bundle,
                         OBSTRUCTED_GEOMETRY_KEY,
-                        Rect::class.java
+                        Rect::class.java,
                     )
                     ?.toList() ?: listOf()
             return SandboxedSdkViewUiInfo(
@@ -91,7 +91,7 @@ class SandboxedSdkViewUiInfo(
                 uiContainerHeight,
                 onScreenGeometry,
                 uiContainerOpacityHint,
-                obstructedGeometry
+                obstructedGeometry,
             )
         }
 
@@ -104,7 +104,7 @@ class SandboxedSdkViewUiInfo(
             bundle.putFloat(UI_CONTAINER_OPACITY_KEY, sandboxedSdkViewUiInfo.uiContainerOpacityHint)
             bundle.putParcelableArrayList(
                 OBSTRUCTED_GEOMETRY_KEY,
-                ArrayList<Rect>(sandboxedSdkViewUiInfo.obstructedGeometry)
+                ArrayList<Rect>(sandboxedSdkViewUiInfo.obstructedGeometry),
             )
             return bundle
         }

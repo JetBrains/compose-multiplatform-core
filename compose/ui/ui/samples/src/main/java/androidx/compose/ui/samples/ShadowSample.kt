@@ -21,12 +21,28 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.shadow.DropShadow
+import androidx.compose.ui.graphics.shadow.InnerShadow
 import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
 fun ShadowSample() {
     Box(Modifier.shadow(12.dp, RectangleShape).size(100.dp, 100.dp))
+}
+
+@Sampled
+@Composable
+fun DropShadowSample() {
+    Box(Modifier.size(100.dp, 100.dp).dropShadow(RectangleShape, DropShadow(12.dp)))
+}
+
+@Sampled
+@Composable
+fun InnerShadowSample() {
+    Box(Modifier.size(100.dp, 100.dp).innerShadow(RectangleShape, InnerShadow(12.dp)))
 }

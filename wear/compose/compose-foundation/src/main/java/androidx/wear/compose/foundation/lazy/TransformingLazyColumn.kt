@@ -92,7 +92,7 @@ public fun TransformingLazyColumn(
     userScrollEnabled: Boolean = true,
     rotaryScrollableBehavior: RotaryScrollableBehavior? = RotaryScrollableDefaults.behavior(state),
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: TransformingLazyColumnScope.() -> Unit
+    content: TransformingLazyColumnScope.() -> Unit,
 ) {
     val graphicsContext = LocalGraphicsContext.current
     val layoutDirection = LocalLayoutDirection.current
@@ -125,7 +125,7 @@ public fun TransformingLazyColumn(
                         intervalContent = intervalContent,
                         state = state,
                         keyIndexMap = map,
-                        reduceMotionEnabled
+                        reduceMotionEnabled,
                     )
                 }
             }
@@ -144,7 +144,7 @@ public fun TransformingLazyColumn(
         ScrollableDefaults.reverseDirection(
             LocalLayoutDirection.current,
             Orientation.Vertical,
-            reverseScrolling = false
+            reverseScrolling = false,
         )
 
     val semanticState = remember(state) { TransformingLazyColumnSemanticState(state) }
@@ -163,7 +163,7 @@ public fun TransformingLazyColumn(
                             .rotaryScrollable(
                                 behavior = rotaryScrollableBehavior,
                                 focusRequester = focusRequester,
-                                overscrollEffect = overscrollEffect
+                                overscrollEffect = overscrollEffect,
                             )
                     else Modifier
                 )
@@ -204,7 +204,7 @@ internal class TransformingLazyColumnItemProvider(
                 TransformingLazyColumnItemScopeImpl(
                     index,
                     state = state,
-                    reduceMotionEnabled = reduceMotionEnabled
+                    reduceMotionEnabled = reduceMotionEnabled,
                 )
             }
         intervalContent.withInterval(index) { localIndex, content ->
@@ -235,7 +235,7 @@ internal class TransformingLazyColumnItemProvider(
 
 internal class NearestRangeKeyIndexMap(
     nearestRange: IntRange,
-    intervalContent: LazyLayoutIntervalContent<*>
+    intervalContent: LazyLayoutIntervalContent<*>,
 ) : LazyLayoutKeyIndexMap {
     private val map: ObjectIntMap<Any>
     private val keys: Array<Any?>
@@ -257,10 +257,7 @@ internal class NearestRangeKeyIndexMap(
             keysStartIndex = first
             map =
                 MutableObjectIntMap<Any>(size).also { map ->
-                    list.forEach(
-                        fromIndex = first,
-                        toIndex = last,
-                    ) {
+                    list.forEach(fromIndex = first, toIndex = last) {
                         val keyFactory = it.value.key
                         val start = maxOf(first, it.startIndex)
                         val end = minOf(last, it.startIndex + it.size - 1)

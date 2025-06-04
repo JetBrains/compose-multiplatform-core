@@ -31,7 +31,7 @@ import androidx.credentials.internal.RequestValidationHelper
 class CreateDigitalCredentialResponse(val responseJson: String) :
     CreateCredentialResponse(
         type = DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
-        data = toBundle(responseJson)
+        data = toBundle(responseJson),
     ) {
     init {
         require(RequestValidationHelper.isValidJSON(responseJson)) {

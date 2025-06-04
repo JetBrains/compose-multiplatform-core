@@ -71,7 +71,7 @@ fun SandboxedUiAdapter.toCoreLibInfo(@Suppress("ContextFirst") context: Context)
     val bundle = Bundle()
     bundle.putInt(
         ProtocolConstants.uiProviderVersionKey,
-        SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel
+        SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
     )
     val binderAdapter =
         if (this is DelegatingSandboxedUiAdapter) {
@@ -106,7 +106,7 @@ private class BinderDelegatingAdapter(private var adapter: DelegatingSandboxedUi
                                     )
                                 }
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -126,7 +126,7 @@ private class BinderDelegatingAdapter(private var adapter: DelegatingSandboxedUi
 
 private class BinderAdapterDelegate(
     private val sandboxContext: Context,
-    private val adapter: SandboxedUiAdapter
+    private val adapter: SandboxedUiAdapter,
 ) : LocalUiAdapter, ISandboxedUiAdapter.Stub() {
 
     companion object {
@@ -143,7 +143,7 @@ private class BinderAdapterDelegate(
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SessionClient
+        client: SessionClient,
     ) {
         MainThreadExecutor.execute {
             val displayManager =
@@ -157,7 +157,7 @@ private class BinderAdapterDelegate(
                 initialHeight,
                 isZOrderOnTop,
                 clientExecutor,
-                LocalSessionClient(clientVersion, client)
+                LocalSessionClient(clientVersion, client),
             )
         }
     }
@@ -170,7 +170,7 @@ private class BinderAdapterDelegate(
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
-        remoteSessionClient: IRemoteSessionClient
+        remoteSessionClient: IRemoteSessionClient,
     ) {
         val remoteSessionClientWithVersionCheck =
             RemoteSessionClient(clientVersion, remoteSessionClient)
@@ -197,13 +197,13 @@ private class BinderAdapterDelegate(
                                 display,
                                 constants,
                                 isZOrderOnTop,
-                                remoteSessionClientWithVersionCheck
+                                remoteSessionClientWithVersionCheck,
                             )
                         },
                         clientInit = { it.initialize(initialWidth, initialHeight) },
                         errorHandler = {
                             remoteSessionClientWithVersionCheck.onRemoteSessionError(it.message)
-                        }
+                        },
                     )
 
                 openSessionInternal(
@@ -213,7 +213,7 @@ private class BinderAdapterDelegate(
                     initialHeight,
                     isZOrderOnTop,
                     MainThreadExecutor,
-                    deferredClient
+                    deferredClient,
                 )
 
                 deferredClient.preloadClient()
@@ -230,7 +230,7 @@ private class BinderAdapterDelegate(
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SandboxedUiAdapter.SessionClient
+        client: SandboxedUiAdapter.SessionClient,
     ) {
         adapter.openSession(
             context,
@@ -239,7 +239,7 @@ private class BinderAdapterDelegate(
             initialHeight,
             isZOrderOnTop,
             clientExecutor,
-            SessionClientForObservers(client)
+            SessionClientForObservers(client),
         )
     }
 
@@ -261,7 +261,7 @@ private class BinderAdapterDelegate(
         private val providerViewWrapper: ProviderViewWrapper,
         private val surfaceControlViewHost: SurfaceControlViewHost,
         private val isZOrderOnTop: Boolean,
-        private val remoteSessionClient: androidx.privacysandbox.ui.provider.IRemoteSessionClient
+        private val remoteSessionClient: androidx.privacysandbox.ui.provider.IRemoteSessionClient,
     ) : SandboxedUiAdapter.SessionClient {
 
         /**
@@ -301,7 +301,7 @@ private class BinderAdapterDelegate(
                             sendRemoteSessionOpened(session)
                         }
                     },
-                    FRAME_TIMEOUT_MILLIS
+                    FRAME_TIMEOUT_MILLIS,
                 )
         }
 
@@ -320,7 +320,7 @@ private class BinderAdapterDelegate(
                     surfacePackage,
                     remoteSessionController,
                     isZOrderOnTop,
-                    session.signalOptions.toList()
+                    session.signalOptions.toList(),
                 )
             }
         }
@@ -368,12 +368,12 @@ private class BinderAdapterDelegate(
             override fun notifyMotionEvent(
                 motionEvent: MotionEvent,
                 eventTargetFrameTime: Long,
-                eventTransferCallback: IMotionEventTransferCallback?
+                eventTransferCallback: IMotionEventTransferCallback?,
             ) {
                 providerViewWrapper.scheduleMotionEventProcessing(
                     motionEvent,
                     eventTargetFrameTime,
-                    eventTransferCallback
+                    eventTransferCallback,
                 )
             }
 
@@ -414,7 +414,7 @@ private class BinderAdapterDelegate(
     private class SessionForObservers(
         val session: SandboxedUiAdapter.Session,
         val sessionObservers: List<SessionObserver>,
-        override val signalOptions: Set<String>
+        override val signalOptions: Set<String>,
     ) : SandboxedUiAdapter.Session by session {
 
         override val view: View
@@ -451,7 +451,7 @@ private class BinderAdapterDelegate(
             display: Display,
             sessionData: SessionData,
             isZOrderOnTop: Boolean,
-            remoteSessionClient: androidx.privacysandbox.ui.provider.IRemoteSessionClient
+            remoteSessionClient: androidx.privacysandbox.ui.provider.IRemoteSessionClient,
         ): SessionClientProxy {
             val surfaceControlViewHost =
                 checkNotNull(createSurfaceControlViewHost(displayContext, display, sessionData)) {
@@ -461,14 +461,14 @@ private class BinderAdapterDelegate(
                 ProviderViewWrapper(displayContext),
                 surfaceControlViewHost,
                 isZOrderOnTop,
-                remoteSessionClient
+                remoteSessionClient,
             )
         }
 
         fun createSurfaceControlViewHost(
             displayContext: Context,
             display: Display,
-            sessionData: SessionData
+            sessionData: SessionData,
         ): SurfaceControlViewHost? {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                 Api35PlusImpl.createSurfaceControlViewHost(displayContext, display, sessionData)
@@ -482,7 +482,7 @@ private class BinderAdapterDelegate(
             fun createSurfaceControlViewHost(
                 context: Context,
                 display: Display,
-                sessionData: SessionData
+                sessionData: SessionData,
             ): SurfaceControlViewHost {
                 return SurfaceControlViewHost(context, display, sessionData.inputTransferToken)
             }
@@ -495,7 +495,7 @@ private class BinderAdapterDelegate(
             fun createSurfaceControlViewHost(
                 context: Context,
                 display: Display,
-                sessionData: SessionData
+                sessionData: SessionData,
             ): SurfaceControlViewHost {
                 return SurfaceControlViewHost(context, display, sessionData.windowInputToken)
             }

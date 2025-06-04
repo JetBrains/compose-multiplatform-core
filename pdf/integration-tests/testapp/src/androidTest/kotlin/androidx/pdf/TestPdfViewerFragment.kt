@@ -68,7 +68,7 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val view = super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
 
@@ -185,7 +185,7 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
                     view.paddingLeft,
                     systemBarsInsets.top,
                     view.paddingRight,
-                    systemBarsInsets.bottom
+                    systemBarsInsets.bottom,
                 )
                 insets
             }

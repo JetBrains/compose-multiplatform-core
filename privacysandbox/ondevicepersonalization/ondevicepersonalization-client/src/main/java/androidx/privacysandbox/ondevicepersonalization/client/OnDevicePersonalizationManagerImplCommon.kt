@@ -48,12 +48,10 @@ open class OnDevicePersonalizationManagerImplCommon(
                     executeInIsolatedServiceRequest.service,
                     executeInIsolatedServiceRequest.appParams,
                     Runnable::run,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
-        return ExecuteInIsolatedServiceResponse(
-            surfacePackageToken = result.surfacePackageToken,
-        )
+        return ExecuteInIsolatedServiceResponse(surfacePackageToken = result.surfacePackageToken)
     }
 
     @DoNotInline
@@ -62,7 +60,7 @@ open class OnDevicePersonalizationManagerImplCommon(
         surfaceViewHostToken: IBinder,
         displayId: Int,
         width: Int,
-        height: Int
+        height: Int,
     ): SurfaceControlViewHost.SurfacePackage =
         suspendCancellableCoroutine<SurfaceControlViewHost.SurfacePackage> { continuation ->
             mOdpManager.requestSurfacePackage(
@@ -72,7 +70,7 @@ open class OnDevicePersonalizationManagerImplCommon(
                 width,
                 height,
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
 }

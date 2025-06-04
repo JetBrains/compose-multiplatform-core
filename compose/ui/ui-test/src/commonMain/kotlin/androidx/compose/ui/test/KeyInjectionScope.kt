@@ -144,7 +144,7 @@ internal class KeyInjectionScopeImpl(private val baseScope: MultiModalInjectionS
  */
 fun KeyInjectionScope.pressKey(
     key: Key,
-    pressDurationMillis: Long = DefaultKeyPressDurationMillis
+    pressDurationMillis: Long = DefaultKeyPressDurationMillis,
 ) {
     keyDown(key)
     advanceEventTime(pressDurationMillis)

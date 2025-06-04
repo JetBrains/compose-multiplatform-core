@@ -92,7 +92,7 @@ public fun PickerGroup(
     propagateMinConstraints: Boolean = false,
     touchExplorationStateProvider: TouchExplorationStateProvider =
         DefaultTouchExplorationStateProvider(),
-    separator: (@Composable (Int) -> Unit)? = null
+    separator: (@Composable (Int) -> Unit)? = null,
 ) {
     val touchExplorationServicesEnabled by touchExplorationStateProvider.touchExplorationState()
 
@@ -110,7 +110,7 @@ public fun PickerGroup(
                     Modifier
                 }
             ),
-        propagateMinConstraints = propagateMinConstraints
+        propagateMinConstraints = propagateMinConstraints,
     ) {
         pickers.forEachIndexed { index, pickerData ->
             val pickerSelected = index == pickerGroupState.selectedIndex
@@ -162,7 +162,7 @@ public fun PickerGroup(
                             option(optionIndex, pickerSelected)
                         }
                     }
-                }
+                },
             )
 
             if (index < pickers.size - 1) {
@@ -188,10 +188,7 @@ public fun rememberPickerGroupState(initiallySelectedIndex: Int = 0): PickerGrou
  *
  * @param initiallySelectedIndex the picker index that will be initially selected
  */
-public class PickerGroupState
-constructor(
-    initiallySelectedIndex: Int = 0,
-) {
+public class PickerGroupState constructor(initiallySelectedIndex: Int = 0) {
 
     /** The current selected [Picker] index. */
     public var selectedIndex: Int by mutableIntStateOf(initiallySelectedIndex)
@@ -200,7 +197,7 @@ constructor(
         public val Saver: Saver<PickerGroupState, Any> =
             listSaver<PickerGroupState, Any?>(
                 save = { listOf(it.selectedIndex) },
-                restore = { saved -> PickerGroupState(initiallySelectedIndex = saved[0] as Int) }
+                restore = { saved -> PickerGroupState(initiallySelectedIndex = saved[0] as Int) },
             )
     }
 }
@@ -231,7 +228,7 @@ public class PickerGroupItem(
     public val focusRequester: FocusRequester? = null,
     public val onSelected: () -> Unit = {},
     public val readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
-    public val option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit
+    public val option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit,
 )
 
 /*
@@ -244,7 +241,7 @@ public class PickerGroupItem(
 private fun AutoCenteringRow(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(modifier = modifier, content = content) { measurables, parentConstraints ->
         // Reset the min width and height of the constraints used to measure child composables
@@ -279,7 +276,7 @@ private fun Modifier.scrollablePicker(pickerState: PickerState) = composed {
         state = pickerState,
         orientation = Orientation.Vertical,
         flingBehavior = PickerDefaults.flingBehavior(state = pickerState),
-        reverseDirection = true
+        reverseDirection = true,
     )
 }
 

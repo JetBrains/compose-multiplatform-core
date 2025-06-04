@@ -80,12 +80,12 @@ class AppFunctionMetadataTest {
                 AppFunctionParameterMetadata(
                     name = "prop1",
                     isRequired = false,
-                    dataType = primitiveTypeInt
+                    dataType = primitiveTypeInt,
                 ),
                 AppFunctionParameterMetadata(
                     name = "prop2",
                     isRequired = true,
-                    dataType = primitiveTypeLong
+                    dataType = primitiveTypeLong,
                 ),
             )
         val response =
@@ -96,10 +96,7 @@ class AppFunctionMetadataTest {
         val primitiveType2 = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, true)
         val components =
             AppFunctionComponentsMetadata(
-                mapOf(
-                    "dataType1" to primitiveType1,
-                    "dataType2" to primitiveType2,
-                )
+                mapOf("dataType1" to primitiveType1, "dataType2" to primitiveType2)
             )
         val appFunctionMetadata =
             CompileTimeAppFunctionMetadata(
@@ -108,7 +105,7 @@ class AppFunctionMetadataTest {
                 schema = schemaMetadata,
                 parameters = parameters,
                 response = response,
-                components = components
+                components = components,
             )
 
         val actualAppFunctionMetadataDocument = appFunctionMetadata.toAppFunctionMetadataDocument()

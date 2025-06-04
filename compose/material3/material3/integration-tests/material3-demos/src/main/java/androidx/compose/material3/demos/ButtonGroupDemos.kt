@@ -72,7 +72,7 @@ fun ButtonGroupDemos() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {
             ButtonGroup(
@@ -85,15 +85,15 @@ fun ButtonGroupDemos() {
                             } else {
                                 menuState.show()
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                modifier = Modifier.padding(horizontal = 8.dp)
+                modifier = Modifier.padding(horizontal = 8.dp),
             ) {
                 customItem(
                     buttonGroupContent = {
@@ -102,17 +102,17 @@ fun ButtonGroupDemos() {
                             checked = checked[0],
                             onCheckedChange = { checked[0] = it },
                             shapes = IconButtonDefaults.toggleableShapes(),
-                            modifier = Modifier.animateWidth(interactionSources[0])
+                            modifier = Modifier.animateWidth(interactionSources[0]),
                         ) {
                             if (checked[0]) {
                                 Icon(
                                     Icons.Filled.Bluetooth,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Bluetooth,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -133,21 +133,21 @@ fun ButtonGroupDemos() {
                                 if (checked[0]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.Bluetooth,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[0] = !checked[0]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -158,17 +158,17 @@ fun ButtonGroupDemos() {
                             shapes = IconButtonDefaults.toggleableShapes(),
                             modifier =
                                 Modifier.width(IconButtonDefaults.smallContainerSize(Wide).width)
-                                    .animateWidth(interactionSources[1])
+                                    .animateWidth(interactionSources[1]),
                         ) {
                             if (checked[1]) {
                                 Icon(
                                     Icons.Filled.Alarm,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Alarm,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -189,21 +189,21 @@ fun ButtonGroupDemos() {
                                 if (checked[0]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.Alarm,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[1] = !checked[1]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -211,17 +211,17 @@ fun ButtonGroupDemos() {
                             checked = checked[2],
                             onCheckedChange = { checked[2] = it },
                             modifier = Modifier.width(125.dp).animateWidth(interactionSources[2]),
-                            interactionSource = interactionSources[2]
+                            interactionSource = interactionSources[2],
                         ) {
                             if (checked[2]) {
                                 Icon(
                                     Icons.Filled.DoNotDisturbOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.DoNotDisturbOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                             Spacer(
@@ -249,21 +249,21 @@ fun ButtonGroupDemos() {
                                 if (checked[2]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.DoNotDisturbOn,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[2] = !checked[2]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -273,17 +273,17 @@ fun ButtonGroupDemos() {
                             interactionSource = interactionSources[3],
                             modifier =
                                 Modifier.width(IconButtonDefaults.smallContainerSize(Narrow).width)
-                                    .animateWidth(interactionSources[3])
+                                    .animateWidth(interactionSources[3]),
                         ) {
                             if (checked[3]) {
                                 Icon(
                                     Icons.Filled.FlashlightOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.FlashlightOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -304,21 +304,21 @@ fun ButtonGroupDemos() {
                                 if (checked[3]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.FlashlightOn,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[3] = !checked[3]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -328,21 +328,21 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[4] = it },
                             interactionSource = interactionSources[4],
-                            modifier = Modifier.animateWidth(interactionSources[4])
+                            modifier = Modifier.animateWidth(interactionSources[4]),
                         ) {
                             if (checked[4]) {
                                 Icon(
                                     Icons.Filled.Wifi,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Wifi,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -363,21 +363,21 @@ fun ButtonGroupDemos() {
                                 if (checked[4]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.Wifi,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[4] = !checked[4]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -387,21 +387,21 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[5] = it },
                             interactionSource = interactionSources[5],
-                            modifier = Modifier.animateWidth(interactionSources[5])
+                            modifier = Modifier.animateWidth(interactionSources[5]),
                         ) {
                             if (checked[5]) {
                                 Icon(
                                     Icons.Filled.Wallet,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Wallet,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -422,21 +422,21 @@ fun ButtonGroupDemos() {
                                 if (checked[5]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.Wallet,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[5] = !checked[5]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -446,21 +446,21 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[6] = it },
                             interactionSource = interactionSources[6],
-                            modifier = Modifier.animateWidth(interactionSources[6])
+                            modifier = Modifier.animateWidth(interactionSources[6]),
                         ) {
                             if (checked[6]) {
                                 Icon(
                                     Icons.Filled.Calculate,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Calculate,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
@@ -482,21 +482,21 @@ fun ButtonGroupDemos() {
                                 if (checked[6]) {
                                     Icon(
                                         Icons.Filled.Check,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
                                         Icons.Filled.Calculate,
-                                        contentDescription = "Localized description"
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[6] = !checked[6]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
             }
         }

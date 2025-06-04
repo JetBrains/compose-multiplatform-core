@@ -74,7 +74,7 @@ class QualityAddedEncoderProfilesProviderTest {
         override fun getExtraEncoderProfiles(
             cameraInfo: CameraInfoInternal,
             encoderProfilesProvider: EncoderProfilesProvider,
-            videoEncoderInfoFinder: VideoEncoderInfo.Finder
+            videoEncoderInfoFinder: VideoEncoderInfo.Finder,
         ) = qualityToEncoderProfiles
     }
 }

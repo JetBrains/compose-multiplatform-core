@@ -17,5 +17,5 @@
 package androidx.compose.ui.test
 
 internal actual fun platformEncodeDecode(
-    savedState: Map<String, List<Any?>>,
+    savedState: Map<String, List<Any?>>
 ): Map<String, List<Any?>> = implementedInJetBrainsFork()

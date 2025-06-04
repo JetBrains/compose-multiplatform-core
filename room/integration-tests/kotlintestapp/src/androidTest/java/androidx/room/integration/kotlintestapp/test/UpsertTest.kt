@@ -59,7 +59,7 @@ class UpsertTest : TestDatabaseTest() {
 
         booksDao.upsertBookPublisher(
             TestUtil.PUBLISHER.copy(name = "changed name"),
-            TestUtil.BOOK_1.copy(title = "changed title")
+            TestUtil.BOOK_1.copy(title = "changed title"),
         )
         assertThat(booksDao.getPublisher(TestUtil.PUBLISHER.publisherId).name)
             .isEqualTo("changed name")
@@ -312,7 +312,7 @@ class UpsertTest : TestDatabaseTest() {
                 listOf(
                     TestUtil.BOOK_1.copy(title = "changed title"),
                     TestUtil.BOOK_2,
-                    TestUtil.BOOK_3
+                    TestUtil.BOOK_3,
                 )
             )
     }
@@ -342,7 +342,7 @@ class UpsertTest : TestDatabaseTest() {
                 listOf(
                     TestUtil.BOOK_1.copy(title = "changed title"),
                     TestUtil.BOOK_2,
-                    TestUtil.BOOK_3
+                    TestUtil.BOOK_3,
                 )
             )
     }
@@ -378,7 +378,7 @@ class UpsertTest : TestDatabaseTest() {
 
     private fun <T> upsertReturnTypeBasic(
         upsertMethod: (book: Book) -> T,
-        insertedAlready: Boolean = false
+        insertedAlready: Boolean = false,
     ): T {
         if (insertedAlready) {
             return upsertMethod(TestUtil.BOOK_1.copy(title = "changed title"))

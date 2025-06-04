@@ -71,7 +71,7 @@ class LiveEditApiTests : BaseComposeTest() {
 
         assertTrue(
             "show's lambda should have been invoked",
-            setContentLambdaInvoked > setContentLambdaStart
+            setContentLambdaInvoked > setContentLambdaStart,
         )
     }
 
@@ -90,7 +90,7 @@ class LiveEditApiTests : BaseComposeTest() {
         assertTrue("SomeFunction should have been invoked", someFunctionInvoked > someFunctionStart)
         assertTrue(
             "NestedContent should have been invoked",
-            nestedContentInvoked > nestedContentStart
+            nestedContentInvoked > nestedContentStart,
         )
     }
 
@@ -108,7 +108,7 @@ class LiveEditApiTests : BaseComposeTest() {
 
         assertTrue(
             "NonRestartable should have been invoked",
-            nonRestartableInvoked > nonRestartableStart
+            nonRestartableInvoked > nonRestartableStart,
         )
     }
 
@@ -125,7 +125,7 @@ class LiveEditApiTests : BaseComposeTest() {
 
             assertTrue(
                 "ReadOnly should have been invoked, iteration $it",
-                readOnlyInvoked > readOnlyStart
+                readOnlyInvoked > readOnlyStart,
             )
         }
     }

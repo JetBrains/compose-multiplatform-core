@@ -110,7 +110,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -119,7 +119,7 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.FLASH_MODE,
-                    CaptureRequest.FLASH_MODE_SINGLE
+                    CaptureRequest.FLASH_MODE_SINGLE,
                 )
                 .build()
 
@@ -133,7 +133,7 @@ class UseCaseCameraRequestControlTest {
         requestControl
             .setConfigAsync(
                 type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig
+                config = camera2CameraControlConfig,
             )
             .await()
 
@@ -174,7 +174,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -183,14 +183,14 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                    CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                 )
                 .build()
 
         // Act
         requestControl.setConfigAsync(
             type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-            config = camera2CameraControlConfig
+            config = camera2CameraControlConfig,
         )
         requestControl.setParametersAsync(
             values = mapOf(CaptureRequest.CONTROL_AE_MODE to CaptureRequest.CONTROL_AE_MODE_OFF)
@@ -228,10 +228,10 @@ class UseCaseCameraRequestControlTest {
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
                         CaptureRequest.CONTROL_AE_MODE,
-                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                     )
                     .build(),
-            tags = mapOf(testCamera2InteropTagKey to testCamera2InteropTagValue)
+            tags = mapOf(testCamera2InteropTagKey to testCamera2InteropTagValue),
         )
         requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
 
@@ -253,7 +253,7 @@ class UseCaseCameraRequestControlTest {
 
                 override fun onCaptureCompleted(
                     captureConfigId: Int,
-                    cameraCaptureResult: CameraCaptureResult
+                    cameraCaptureResult: CameraCaptureResult,
                 ) {
                     latch.countDown()
                 }
@@ -272,10 +272,10 @@ class UseCaseCameraRequestControlTest {
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
                         CaptureRequest.CONTROL_AE_MODE,
-                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                     )
                     .build(),
-            listeners = setOf(testRequestListener)
+            listeners = setOf(testRequestListener),
         )
         requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
 
@@ -319,7 +319,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -328,7 +328,7 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.FLASH_MODE,
-                    CaptureRequest.FLASH_MODE_SINGLE
+                    CaptureRequest.FLASH_MODE_SINGLE,
                 )
                 .build()
 
@@ -342,7 +342,7 @@ class UseCaseCameraRequestControlTest {
         requestControl
             .setConfigAsync(
                 type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig
+                config = camera2CameraControlConfig,
             )
             .await()
 
@@ -384,7 +384,7 @@ class UseCaseCameraRequestControlTest {
                 setOf(
                     CameraCallbackMap.createFor(
                         sessionConfig.repeatingCameraCaptureCallbacks,
-                        useCaseThreads.backgroundExecutor
+                        useCaseThreads.backgroundExecutor,
                     )
                 ),
             template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
@@ -392,7 +392,7 @@ class UseCaseCameraRequestControlTest {
                 fakeUseCaseGraphConfig.getStreamIdsFromSurfaces(
                     sessionConfig.repeatingCaptureConfig.surfaces
                 ),
-            sessionConfig = sessionConfig
+            sessionConfig = sessionConfig,
         )
 }
 
@@ -402,7 +402,7 @@ private class TestRequestListener : Request.Listener {
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         latch.countDown()
     }

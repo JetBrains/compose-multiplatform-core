@@ -80,7 +80,7 @@ internal class CameraGraphImplTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val metadata =
         FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
+            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
         )
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val imageReader1 = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 4)
@@ -95,10 +95,7 @@ internal class CameraGraphImplTest {
 
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
-        CameraGraph.Config(
-            camera = metadata.camera,
-            streams = listOf(stream1Config, stream2Config),
-        )
+        CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
     private val threads = FakeThreads.fromTestScope(testScope)
     private val cameraPipeLifetime = CameraPipeLifetime()
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
@@ -139,7 +136,7 @@ internal class CameraGraphImplTest {
             audioRestriction,
             graphId,
             CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope),
-            sessionLock
+            sessionLock,
         )
     private val stream1: CameraStream =
         checkNotNull(cameraGraph.streams[stream1Config]) {

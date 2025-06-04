@@ -49,20 +49,20 @@ internal object SandboxControllerInjector {
     fun inject(
         sdkClassLoader: ClassLoader,
         sdkVersion: Int,
-        controller: SdkSandboxControllerCompat.SandboxControllerImpl
+        controller: SdkSandboxControllerCompat.SandboxControllerImpl,
     ) {
         val controllerClass =
             Class.forName(
                 "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat",
                 /* initialize = */ false,
-                sdkClassLoader
+                sdkClassLoader,
             )
 
         val controllerImplClass =
             Class.forName(
                 "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat\$SandboxControllerImpl",
                 /* initialize = */ false,
-                sdkClassLoader
+                sdkClassLoader,
             )
 
         val injectMethod = controllerClass.getMethod("injectLocalImpl", controllerImplClass)
@@ -70,7 +70,7 @@ internal object SandboxControllerInjector {
             Proxy.newProxyInstance(
                 sdkClassLoader,
                 arrayOf(controllerImplClass),
-                buildInvocationHandler(controller, sdkClassLoader, sdkVersion)
+                buildInvocationHandler(controller, sdkClassLoader, sdkVersion),
             )
 
         injectMethod.invoke(null, proxy)
@@ -85,7 +85,7 @@ internal object SandboxControllerInjector {
     private fun buildInvocationHandler(
         controller: SdkSandboxControllerCompat.SandboxControllerImpl,
         sdkClassLoader: ClassLoader,
-        sdkVersion: Int
+        sdkVersion: Int,
     ): InvocationHandler {
         val handlerBuilder = HandlerBuilder()
 
@@ -103,11 +103,11 @@ internal object SandboxControllerInjector {
         val activityMethodsHandler = ActivityMethodsHandler(controller, sdkHandlerWrapper)
         handlerBuilder.addHandlerFor(
             "registerSdkSandboxActivityHandler",
-            activityMethodsHandler.registerMethodHandler
+            activityMethodsHandler.registerMethodHandler,
         )
         handlerBuilder.addHandlerFor(
             "unregisterSdkSandboxActivityHandler",
-            activityMethodsHandler.unregisterMethodHandler
+            activityMethodsHandler.unregisterMethodHandler,
         )
 
         val loadSdkCallbackWrapper = LoadSdkCallbackWrapper.createFor(sdkClassLoader)
@@ -116,7 +116,7 @@ internal object SandboxControllerInjector {
                 sdkName = args!![0] as String,
                 params = args[1] as Bundle,
                 executor = args[2] as Executor,
-                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!)
+                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!),
             )
         }
 
@@ -132,11 +132,11 @@ internal object SandboxControllerInjector {
                 ClientImportanceListenerMethodsHandler(controller, sdkListenerWrapper)
             handlerBuilder.addHandlerFor(
                 "registerSdkSandboxClientImportanceListener",
-                clientImportanceListenerMethodsHandler.registerMethodHandler
+                clientImportanceListenerMethodsHandler.registerMethodHandler,
             )
             handlerBuilder.addHandlerFor(
                 "unregisterSdkSandboxClientImportanceListener",
-                clientImportanceListenerMethodsHandler.unregisterMethodHandler
+                clientImportanceListenerMethodsHandler.unregisterMethodHandler,
             )
         }
 
@@ -182,7 +182,7 @@ internal object SandboxControllerInjector {
 
     private class ActivityMethodsHandler(
         private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
-        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper
+        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper,
     ) {
         val registerMethodHandler = MethodHandler { args ->
             registerSdkSandboxActivityHandler(sdkSideHandler = args!![0]!!)
@@ -224,12 +224,12 @@ internal object SandboxControllerInjector {
 
     private class ClientImportanceListenerMethodsHandler(
         private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
-        private val clientImportanceListenerWrapper: ClientImportanceListenerWrapper
+        private val clientImportanceListenerWrapper: ClientImportanceListenerWrapper,
     ) {
         val registerMethodHandler = MethodHandler { args ->
             registerSdkSandboxClientImportanceListener(
                 sdkSideExecutor = args!![0]!!,
-                sdkSideListener = args[1]!!
+                sdkSideListener = args[1]!!,
             )
         }
         val unregisterMethodHandler = MethodHandler { args ->
@@ -240,12 +240,12 @@ internal object SandboxControllerInjector {
 
         private fun registerSdkSandboxClientImportanceListener(
             sdkSideExecutor: Any,
-            sdkSideListener: Any
+            sdkSideListener: Any,
         ): Any {
             val listenerToRegister = wrapSdkClientImportanceListener(sdkSideListener)
             return controller.registerSdkSandboxClientImportanceListener(
                 sdkSideExecutor as Executor,
-                listenerToRegister
+                listenerToRegister,
             )
         }
 

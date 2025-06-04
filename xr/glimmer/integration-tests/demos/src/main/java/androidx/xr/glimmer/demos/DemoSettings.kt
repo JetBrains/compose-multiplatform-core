@@ -20,16 +20,44 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.xr.glimmer.Text
+
+@Composable
+internal fun DemoSettings() {
+    LazyColumn(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            val overlayOnBackground = OverlayOnBackgroundSetting.asState().value
+            val context = LocalContext.current
+            ListItem(
+                modifier = Modifier.padding(16.dp),
+                onClick = { OverlayOnBackgroundSetting.set(context, !overlayOnBackground) },
+            ) {
+                Text("${if (overlayOnBackground) "Disable" else "Enable"} overlay on background")
+            }
+        }
+    }
+}
 
 internal object OverlayOnBackgroundSetting {
     fun set(context: Context, enabled: Boolean) {

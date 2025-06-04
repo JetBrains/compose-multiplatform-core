@@ -27,7 +27,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginRight="12dp"
         android:background="@drawable/shape_textbox"
         android:orientation="horizontal">
 
@@ -91,7 +90,6 @@
         android:id="@+id/closeButton"
         android:layout_width="@dimen/find_in_file_button_size"
         android:layout_height="@dimen/find_in_file_button_size"
-        android:layout_marginEnd="10dp"
         android:background="@drawable/shape_oval"
         android:contentDescription="@string/close_button_description"
         android:cropToPadding="true"

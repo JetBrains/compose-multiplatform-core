@@ -23,15 +23,9 @@ import androidx.annotation.MainThread
  * in-app callbacks via composition.
  */
 public class NavigationEventDispatcher(
-    private val fallbackOnBackPressed: (() -> Unit)?,
-    private val onHasEnabledCallbacksChanged: ((Boolean) -> Unit)?,
+    internal val fallbackOnBackPressed: (() -> Unit)? = null,
+    internal val onHasEnabledCallbacksChanged: ((Boolean) -> Unit)? = null,
 ) {
-    /**
-     * Dispatcher that can be used to register [NavigationEventCallback] instances for handling the
-     * in-app callbacks via composition.
-     */
-    public constructor(fallbackOnBackPressed: (() -> Unit)?) : this(fallbackOnBackPressed, null)
-
     internal val inProgressCallbacks: MutableList<NavigationEventCallback> = mutableListOf()
     /** Callbacks that should be processed with higher priority, before [normalCallbacks]. */
     internal val overlayCallbacks = ArrayDeque<NavigationEventCallback>()
@@ -72,7 +66,7 @@ public class NavigationEventDispatcher(
     }
 
     /**
-     * Returns `true` if there is at least one [NavigationEventDispatcher.isEnabled] callback
+     * Returns `true` if there is at least one [NavigationEventCallback.isEnabled] callback
      * registered with this dispatcher.
      *
      * @return True if there is at least one enabled callback.
@@ -92,7 +86,7 @@ public class NavigationEventDispatcher(
     @MainThread
     public fun addCallback(
         callback: NavigationEventCallback,
-        priority: NavigationEventPriority = NavigationEventPriority.Default
+        priority: NavigationEventPriority = NavigationEventPriority.Default,
     ) {
         when (priority) {
             NavigationEventPriority.Overlay -> overlayCallbacks.addFirst(callback)
@@ -165,14 +159,16 @@ public class NavigationEventDispatcher(
         val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
         inProgressCallbacks.clear() // Clear in-progress, as 'completed' is a terminal event.
 
-        for (callback in callbacks) {
-            callback.onEventCompleted()
+        if (callbacks.isEmpty()) {
+            fallbackOnBackPressed?.invoke()
+        } else {
+            for (callback in callbacks) {
+                callback.onEventCompleted()
 
-            // If callback does not allow the event to pass through to other callbacks, stop.
-            if (!callback.isPassThrough) return
+                // If callback does not allow the event to pass through to other callbacks, stop.
+                if (!callback.isPassThrough) break
+            }
         }
-
-        fallbackOnBackPressed?.invoke()
     }
 
     /**

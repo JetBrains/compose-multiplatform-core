@@ -100,7 +100,7 @@ class SpatialAudioTrackTest {
         whenever(
                 mockRtAudioTrackExtensions.setPointSourceParams(
                     eq(track),
-                    any<RtPointSourceParams>()
+                    any<RtPointSourceParams>(),
                 )
             )
             .thenThrow(IllegalStateException("test"))
@@ -120,7 +120,7 @@ class SpatialAudioTrackTest {
         whenever(
                 mockRtAudioTrackExtensions.setPointSourceParams(
                     eq(builder),
-                    any<RtPointSourceParams>()
+                    any<RtPointSourceParams>(),
                 )
             )
             .thenReturn(builder)

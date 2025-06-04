@@ -36,7 +36,7 @@ object KotlinBoxedPrimitiveFunctionDelegateBinder {
         functionName: String,
         returnType: XType,
         parameters: List<Pair<XTypeName, String>>,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.applyTo(CodeLanguage.JAVA) {
             val params = mutableListOf<Any>()

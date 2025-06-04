@@ -67,7 +67,7 @@ abstract class CheckApiCompatibilityTask @Inject constructor(workerExecutor: Wor
             referenceApiLocation.publicApiFile,
             referenceApiLocation.restrictedApiFile,
             baselineApiLocation.publicApiFile,
-            baselineApiLocation.restrictedApiFile
+            baselineApiLocation.restrictedApiFile,
         )
     }
 

@@ -204,12 +204,12 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun createNativeCompilation(
         archiveName: String,
         outputKind: LinkerOutputKind = LinkerOutputKind.DYNAMIC_LIBRARY,
-        configure: Action<MultiTargetNativeCompilation>
+        configure: Action<MultiTargetNativeCompilation>,
     ): MultiTargetNativeCompilation {
         return clang.createNativeCompilation(
             archiveName = archiveName,
             configure = configure,
-            outputKind = outputKind
+            outputKind = outputKind,
         )
     }
 
@@ -229,14 +229,14 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun createCinterop(
         nativeTarget: KotlinNativeTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        cinteropName: String = nativeCompilation.archiveName
+        cinteropName: String = nativeCompilation.archiveName,
     ) {
         createCinterop(
             kotlinNativeCompilation =
                 nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
                     as KotlinNativeCompilation,
             nativeCompilation = nativeCompilation,
-            cinteropName = cinteropName
+            cinteropName = cinteropName,
         )
     }
 
@@ -256,11 +256,11 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun createCinterop(
         kotlinNativeCompilation: KotlinNativeCompilation,
         nativeCompilation: MultiTargetNativeCompilation,
-        cinteropName: String = nativeCompilation.archiveName
+        cinteropName: String = nativeCompilation.archiveName,
     ) {
         nativeCompilation.configureCinterop(
             kotlinNativeCompilation = kotlinNativeCompilation,
-            cinteropName = cinteropName
+            cinteropName = cinteropName,
         )
     }
 
@@ -276,7 +276,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      */
     fun createCinteropFromArchiveConfiguration(
         kotlinNativeCompilation: KotlinNativeCompilation,
-        configuration: Configuration
+        configuration: Configuration,
     ) {
         configureCinterop(project, kotlinNativeCompilation, configuration)
     }
@@ -296,7 +296,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             androidTarget = androidTarget,
             nativeCompilation = nativeCompilation,
             forTest = forTest,
-            provideSourceDirectories = { assets }
+            provideSourceDirectories = { assets },
         )
 
     /**
@@ -309,13 +309,13 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun addNativeLibrariesToJniLibs(
         androidTarget: KotlinAndroidTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        forTest: Boolean = false
+        forTest: Boolean = false,
     ) =
         nativeLibraryBundler.addNativeLibrariesToAndroidVariantSources(
             androidTarget = androidTarget,
             nativeCompilation = nativeCompilation,
             forTest = forTest,
-            provideSourceDirectories = { jniLibs }
+            provideSourceDirectories = { jniLibs },
         )
 
     /**
@@ -325,12 +325,12 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      */
     fun addNativeLibrariesToTestResources(
         jvmTarget: KotlinJvmTarget,
-        nativeCompilation: MultiTargetNativeCompilation
+        nativeCompilation: MultiTargetNativeCompilation,
     ) =
         addNativeLibrariesToResources(
             jvmTarget = jvmTarget,
             nativeCompilation = nativeCompilation,
-            compilationName = KotlinCompilation.TEST_COMPILATION_NAME
+            compilationName = KotlinCompilation.TEST_COMPILATION_NAME,
         )
 
     /** @see NativeLibraryBundler.addNativeLibrariesToResources */
@@ -338,12 +338,12 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun addNativeLibrariesToResources(
         jvmTarget: KotlinJvmTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME
+        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME,
     ) =
         nativeLibraryBundler.addNativeLibrariesToResources(
             jvmTarget = jvmTarget,
             nativeCompilation = nativeCompilation,
-            compilationName = compilationName
+            compilationName = compilationName,
         )
 
     /**
@@ -372,7 +372,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @JvmOverloads
     fun jvmStubs(
         runTests: Boolean = false,
-        block: Action<KotlinJvmTarget>? = null
+        block: Action<KotlinJvmTarget>? = null,
     ): KotlinJvmTarget? {
         supportedPlatforms.add(PlatformIdentifier.JVM_STUBS)
         return if (project.enableJvm()) {
@@ -411,7 +411,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             androidNativeX86(block),
             androidNativeX64(block),
             androidNativeArm64(block),
-            androidNativeArm32(block)
+            androidNativeArm32(block),
         )
     }
 
@@ -557,7 +557,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             watchosArm32(block),
             watchosArm64(block),
             watchosDeviceArm64(block),
-            watchosSimulatorArm64(block)
+            watchosSimulatorArm64(block),
         )
     }
 
@@ -649,10 +649,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun linux(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
-        return listOfNotNull(
-            linuxArm64(block),
-            linuxX64(block),
-        )
+        return listOfNotNull(linuxArm64(block), linuxX64(block))
     }
 
     @JvmOverloads
@@ -768,7 +765,7 @@ private fun Project.configureDefaultIncrementalSyncTask() {
             "wasmJsTestTestDevelopmentExecutableCompileSync" to
                 "js/packages/wasm-js-test/dev/kotlin",
             "wasmJsTestTestProductionExecutableCompileSync" to
-                "js/packages/wasm-js-test/prod/kotlin"
+                "js/packages/wasm-js-test/prod/kotlin",
         )
 
     tasks.withType(DefaultIncrementalSyncTask::class.java).configureEach { task ->
@@ -827,7 +824,7 @@ private fun Project.configureKotlinJsTests() {
             task.doFirst {
                 task.environment(
                     "CHROME_BIN",
-                    (unzipChromeBuildServiceProvider.get() as UnzipChromeBuildService).chromePath
+                    (unzipChromeBuildServiceProvider.get() as UnzipChromeBuildService).chromePath,
                 )
             }
         }

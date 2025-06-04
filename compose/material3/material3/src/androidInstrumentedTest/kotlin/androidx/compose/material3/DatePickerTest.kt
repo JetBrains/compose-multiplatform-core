@@ -86,7 +86,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayedMonthMillis = monthInUtcMillis
+                    initialDisplayedMonthMillis = monthInUtcMillis,
                 )
             DatePicker(state = datePickerState)
         }
@@ -141,7 +141,7 @@ class DatePickerTest {
                         object : SelectableDates {
                             // All dates are invalid for the sake of this test.
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = datePickerState)
         }
@@ -175,7 +175,7 @@ class DatePickerTest {
                         object : SelectableDates {
                             // All years are invalid for the sake of this test.
                             override fun isSelectableYear(year: Int): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = datePickerState)
         }
@@ -209,12 +209,12 @@ class DatePickerTest {
                 datePickerState =
                     rememberDatePickerState(
                         initialDisplayedMonthMillis = monthInUtcMillis,
-                        selectableDates = selectableDates
+                        selectableDates = selectableDates,
                     )
                 DatePicker(state = datePickerState)
                 Button(
                     onClick = { selectableDates = allDisabled },
-                    modifier = Modifier.testTag("disableSelection")
+                    modifier = Modifier.testTag("disableSelection"),
                 ) {
                     Text("Disable selection")
                 }
@@ -278,7 +278,7 @@ class DatePickerTest {
                     rememberDatePickerState(
                         initialDisplayedMonthMillis = monthInUtcMillis,
                         // Limit the years selection to 2018-2023
-                        yearRange = IntRange(2018, 2023)
+                        yearRange = IntRange(2018, 2023),
                     )
             )
         }
@@ -345,7 +345,7 @@ class DatePickerTest {
                     rememberDatePickerState(
                         initialDisplayedMonthMillis = monthInUtcMillis,
                         // Limit the years to just 2018
-                        yearRange = IntRange(2018, 2018)
+                        yearRange = IntRange(2018, 2018),
                     )
             )
         }
@@ -358,7 +358,7 @@ class DatePickerTest {
             rule.onNodeWithContentDescription(
                 label = "previous",
                 substring = true,
-                ignoreCase = true
+                ignoreCase = true,
             )
         previousMonthButton.assertIsNotEnabled()
 
@@ -403,8 +403,8 @@ class DatePickerTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = day,
-                        yearRange = IntRange(2016, 2019)
-                    )
+                        yearRange = IntRange(2016, 2019),
+                    ),
             )
         }
 
@@ -420,7 +420,7 @@ class DatePickerTest {
         val datePickerState =
             DatePickerState(
                 locale = Locale.getDefault(),
-                initialSelectedDateMillis = 1649721600000L // 04/12/2022
+                initialSelectedDateMillis = 1649721600000L, // 04/12/2022
             )
         with(datePickerState) {
             assertThat(selectedDateMillis).isEqualTo(1649721600000L)
@@ -495,7 +495,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = 1649721600000L,
-                    initialDisplayedMonthMillis = null
+                    initialDisplayedMonthMillis = null,
                 )
         }
 
@@ -523,7 +523,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = null,
-                    initialDisplayedMonthMillis = null
+                    initialDisplayedMonthMillis = null,
                 )
         }
 
@@ -716,12 +716,12 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = dateInUtcMillis,
-                    initialDisplayedMonthMillis = monthInUtcMillis
+                    initialDisplayedMonthMillis = monthInUtcMillis,
                 )
             datePickerStateWithJavaTimeApi =
                 rememberDatePickerState(
                     initialSelectedDate = LocalDate.of(2022, 4, 12),
-                    initialDisplayedMonth = YearMonth.of(2020, 1)
+                    initialDisplayedMonth = YearMonth.of(2020, 1),
                 )
         }
 
@@ -755,13 +755,13 @@ class DatePickerTest {
             DatePickerState(
                 locale = Locale.getDefault(),
                 initialSelectedDateMillis = dateInUtcMillis,
-                initialDisplayedMonthMillis = monthInUtcMillis
+                initialDisplayedMonthMillis = monthInUtcMillis,
             )
         val datePickerStateWithJavaTimeApi =
             DatePickerState(
                 Locale.getDefault(),
                 initialSelectedDate = LocalDate.of(2022, 4, 12),
-                initialDisplayedMonth = YearMonth.of(2020, 1)
+                initialDisplayedMonth = YearMonth.of(2020, 1),
             )
 
         // Assert that we get the same results for both states.
@@ -827,7 +827,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = initialDateMillis,
-                    yearRange = IntRange(2000, 2050)
+                    yearRange = IntRange(2000, 2050),
                 )
         }
 
@@ -847,7 +847,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialDisplayedMonthMillis = monthInUtcMillis,
-                    yearRange = IntRange(2000, 2050)
+                    yearRange = IntRange(2000, 2050),
                 )
             DatePicker(state = datePickerState)
         }
@@ -875,7 +875,7 @@ class DatePickerTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = selectedDateInUtcMillis,
-                        initialDisplayedMonthMillis = monthInUtcMillis
+                        initialDisplayedMonthMillis = monthInUtcMillis,
                     )
             )
         }
@@ -885,7 +885,7 @@ class DatePickerTest {
                 selectedDateInUtcMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
 
         rule
@@ -915,7 +915,7 @@ class DatePickerTest {
             datePickerState =
                 rememberDatePickerState(
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayedMonthMillis = monthInUtcMillis
+                    initialDisplayedMonthMillis = monthInUtcMillis,
                 )
             // Wrap in a MaterialTheme that has a typography that was set with custom colors.
             // The date picker is using BodyLarge for days. See
@@ -935,8 +935,8 @@ class DatePickerTest {
                         MaterialTheme.colorScheme.defaultDatePickerColors.copy(
                             dayContentColor = Color.Blue,
                             selectedDayContentColor = Color.Red,
-                            headlineContentColor = Color.Yellow
-                        )
+                            headlineContentColor = Color.Yellow,
+                        ),
                 )
             }
         }

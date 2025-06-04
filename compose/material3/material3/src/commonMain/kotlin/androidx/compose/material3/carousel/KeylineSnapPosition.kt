@@ -67,7 +67,7 @@ internal fun KeylineSnapPosition(pageSize: CarouselPageSize): SnapPosition =
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int {
             return getSnapPositionOffset(pageSize.strategy, itemIndex, itemCount)
         }

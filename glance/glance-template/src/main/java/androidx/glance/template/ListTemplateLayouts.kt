@@ -97,7 +97,7 @@ private fun WidgetLayoutExpanded(data: ListTemplateData) {
                     TextAndImageBlockTemplate(
                         item.textBlock,
                         itemImageBlock,
-                        GlanceModifier.defaultWeight()
+                        GlanceModifier.defaultWeight(),
                     )
                     Spacer(modifier = GlanceModifier.width(16.dp))
                     ActionBlockTemplate(item.actionBlock)

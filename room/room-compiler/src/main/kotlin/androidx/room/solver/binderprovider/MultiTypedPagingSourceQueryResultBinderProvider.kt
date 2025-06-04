@@ -57,7 +57,7 @@ class MultiTypedPagingSourceQueryResultBinderProvider(
     override fun provide(
         declared: XType,
         query: ParsedQuery,
-        extras: TypeAdapterExtras
+        extras: TypeAdapterExtras,
     ): QueryResultBinder {
         if (query.tables.isEmpty()) {
             context.logger.e(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
@@ -78,19 +78,19 @@ class MultiTypedPagingSourceQueryResultBinderProvider(
                     continuationParamName = convertExecutableElement.parameters.last().name,
                     owner =
                         context.processingEnv.getDeclaredType(roomPagingSourceTypeElement, typeArg),
-                    returnTypeName = LIST.parametrizedBy(typeArg.asTypeName())
+                    returnTypeName = LIST.parametrizedBy(typeArg.asTypeName()),
                 )
             Paging3PagingSourceQueryResultBinder(
                 listAdapter = listAdapter,
                 tableNames = tableNames,
                 className = roomPagingClassName,
-                convertRowsOverrideInfo = convertRowsOverrideInfo
+                convertRowsOverrideInfo = convertRowsOverrideInfo,
             )
         } else {
             MultiTypedPagingSourceQueryResultBinder(
                 listAdapter = listAdapter,
                 tableNames = tableNames,
-                className = roomPagingClassName
+                className = roomPagingClassName,
             )
         }
     }
@@ -131,5 +131,5 @@ class ConvertRowsOverrideInfo(
     val continuationParamName: String,
     val function: XMethodElement,
     val owner: XType,
-    val returnTypeName: XTypeName
+    val returnTypeName: XTypeName,
 )

@@ -32,7 +32,7 @@ import androidx.sqlite.SQLiteException
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public class EntityUpsertAdapter<T>(
     private val entityInsertAdapter: EntityInsertAdapter<T>,
-    private val updateAdapter: EntityDeleteOrUpdateAdapter<T>
+    private val updateAdapter: EntityDeleteOrUpdateAdapter<T>,
 ) {
 
     /**
@@ -106,7 +106,7 @@ public class EntityUpsertAdapter<T>(
      */
     public fun upsertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): LongArray {
         if (entities == null) return longArrayOf()
         return LongArray(entities.size) { index ->
@@ -122,7 +122,7 @@ public class EntityUpsertAdapter<T>(
 
     public fun upsertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): LongArray {
         if (entities == null) return longArrayOf()
         return LongArray(entities.size) { index ->
@@ -138,7 +138,7 @@ public class EntityUpsertAdapter<T>(
 
     public fun upsertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {
@@ -156,7 +156,7 @@ public class EntityUpsertAdapter<T>(
 
     public fun upsertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {
@@ -174,7 +174,7 @@ public class EntityUpsertAdapter<T>(
 
     public fun upsertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Array<out T?>?
+        entities: Array<out T?>?,
     ): Array<out Long> {
         if (entities == null) return emptyArray()
         return Array(entities.size) { index ->
@@ -190,7 +190,7 @@ public class EntityUpsertAdapter<T>(
 
     public fun upsertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Collection<T?>?
+        entities: Collection<T?>?,
     ): Array<out Long> {
         if (entities == null) return emptyArray()
         return Array(entities.size) { index ->

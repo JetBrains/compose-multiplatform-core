@@ -96,7 +96,7 @@ val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView")
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun ProvideAndroidCompositionLocals(
     owner: AndroidComposeView,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = owner
     val context = view.context
@@ -177,7 +177,7 @@ private fun obtainResourceIdCache(context: Context): ResourceIdCache {
 @Composable
 private fun obtainImageVectorCache(
     context: Context,
-    configuration: Configuration?
+    configuration: Configuration?,
 ): ImageVectorCache {
     val imageVectorCache = remember { ImageVectorCache() }
     val currentConfiguration: Configuration = remember {

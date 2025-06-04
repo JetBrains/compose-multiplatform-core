@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.internal
 
-import androidx.collection.MutableIntList
 import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
 import androidx.collection.mutableScatterMapOf
@@ -70,18 +69,9 @@ internal class RememberEventDispatcher() : RememberManager {
     private var pausedPlaceholders:
         MutableScatterMap<RecomposeScopeImpl, PausedCompositionRemembers>? =
         null
-    private val pending = mutableListOf<Any>()
-    private val priorities = MutableIntList()
-    private val afters = MutableIntList()
     private var nestedRemembersLists: Stack<MutableVector<RememberObserverHolder>>? = null
-    private val toAdd: MutableList<Any> = mutableListOf()
-    private val toAddAfter: MutableIntList = MutableIntList()
-    private val toAddPriority: MutableIntList = MutableIntList()
 
-    fun prepare(
-        abandoning: MutableSet<RememberObserver>,
-        traceContext: CompositionErrorContext?,
-    ) {
+    fun prepare(abandoning: MutableSet<RememberObserver>, traceContext: CompositionErrorContext?) {
         clear()
         this.abandoning = abandoning
         this.traceContext = traceContext
@@ -90,7 +80,7 @@ internal class RememberEventDispatcher() : RememberManager {
     inline fun use(
         abandoning: MutableSet<RememberObserver>,
         traceContext: CompositionErrorContext?,
-        block: RememberEventDispatcher.() -> Unit
+        block: RememberEventDispatcher.() -> Unit,
     ) {
         try {
             prepare(abandoning, traceContext)
@@ -110,9 +100,6 @@ internal class RememberEventDispatcher() : RememberManager {
         this.sideEffects.clear()
         this.releasing = null
         this.pausedPlaceholders = null
-        this.pending.clear()
-        this.priorities.clear()
-        this.afters.clear()
         this.nestedRemembersLists = null
     }
 
@@ -121,12 +108,7 @@ internal class RememberEventDispatcher() : RememberManager {
         rememberSet.add(instance)
     }
 
-    override fun forgetting(
-        instance: RememberObserverHolder,
-        endRelativeOrder: Int,
-        priority: Int,
-        endRelativeAfter: Int
-    ) {
+    override fun forgetting(instance: RememberObserverHolder) {
         if (instance in rememberSet) {
             rememberSet.remove(instance)
             val removed = currentRememberingList.remove(instance) || remembering.remove(instance)
@@ -152,33 +134,23 @@ internal class RememberEventDispatcher() : RememberManager {
             val abandoning = abandoning ?: return
             abandoning.add(instance.wrapped)
         }
-        recordLeaving(instance, endRelativeOrder, priority, endRelativeAfter)
+        recordLeaving(instance)
     }
 
     override fun sideEffect(effect: () -> Unit) {
         sideEffects += effect
     }
 
-    override fun deactivating(
-        instance: ComposeNodeLifecycleCallback,
-        endRelativeOrder: Int,
-        priority: Int,
-        endRelativeAfter: Int
-    ) {
-        recordLeaving(instance, endRelativeOrder, priority, endRelativeAfter)
+    override fun deactivating(instance: ComposeNodeLifecycleCallback) {
+        recordLeaving(instance)
     }
 
-    override fun releasing(
-        instance: ComposeNodeLifecycleCallback,
-        endRelativeOrder: Int,
-        priority: Int,
-        endRelativeAfter: Int
-    ) {
+    override fun releasing(instance: ComposeNodeLifecycleCallback) {
         val releasing =
             releasing ?: mutableScatterSetOf<ComposeNodeLifecycleCallback>().also { releasing = it }
 
         releasing += instance
-        recordLeaving(instance, endRelativeOrder, priority, endRelativeAfter)
+        recordLeaving(instance)
     }
 
     override fun rememberPausingScope(scope: RecomposeScopeImpl) {
@@ -216,8 +188,6 @@ internal class RememberEventDispatcher() : RememberManager {
 
     fun dispatchRememberObservers() {
         val abandoning = abandoning ?: return
-        // Add any pending out-of-order forgotten objects
-        processPendingLeaving(Int.MIN_VALUE)
 
         // Send forgets and node callbacks
         if (leaving.isNotEmpty()) {
@@ -291,85 +261,8 @@ internal class RememberEventDispatcher() : RememberManager {
         }
     }
 
-    private fun recordLeaving(
-        instance: Any,
-        endRelativeOrder: Int,
-        priority: Int,
-        endRelativeAfter: Int
-    ) {
-        processPendingLeaving(endRelativeOrder)
-        if (endRelativeAfter in 0 until endRelativeOrder) {
-            pending.add(instance)
-            priorities.add(priority)
-            afters.add(endRelativeAfter)
-        } else {
-            leaving.add(instance)
-        }
-    }
-
-    private fun processPendingLeaving(endRelativeOrder: Int) {
-        if (pending.isNotEmpty()) {
-            var index = 0
-            val toAdd = toAdd
-            val toAddAfter = toAddAfter
-            val toAddPriority = toAddPriority
-            try {
-                while (index < afters.size) {
-                    if (endRelativeOrder <= afters[index]) {
-                        val instance = pending.removeAt(index)
-                        val endRelativeAfter = afters.removeAt(index)
-                        val priority = priorities.removeAt(index)
-                        toAdd.add(instance)
-                        toAddAfter.add(endRelativeAfter)
-                        toAddPriority.add(priority)
-                    } else {
-                        index++
-                    }
-                }
-                if (toAdd.isNotEmpty()) {
-                    // Sort the list into [after, -priority] order where it is ordered by after
-                    // in ascending order as the primary key and priority in descending order as
-                    // secondary key.
-
-                    // For example if remember occurs after a child group it must be added after
-                    // all the remembers of the child. This is reported with an after which is the
-                    // slot index of the child's last slot. As this slot might be at the same
-                    // location as where its parents ends this would be ambiguous which should
-                    // first if both the two groups request a slot to be after the same slot.
-                    // Priority is used to break the tie here which is the group index of the group
-                    // which is leaving. Groups that are lower must be added before the parent's
-                    // remember when they have the same after.
-
-                    // The sort must be stable as as consecutive remembers in the same group after
-                    // the same child will have the same after and priority.
-
-                    // A selection sort is used here because it is stable and the groups are
-                    // typically very short so this quickly exit list of one and not loop for
-                    // for sizes of 2. As the information is split between three lists, to
-                    // reduce allocations, [MutableList.sort] cannot be used as it doesn't have
-                    // an option to supply a custom swap.
-                    for (i in 0 until toAdd.size - 1) {
-                        for (j in i + 1 until toAdd.size) {
-                            val iAfter = toAddAfter[i]
-                            val jAfter = toAddAfter[j]
-                            if (
-                                iAfter < jAfter ||
-                                    (jAfter == iAfter && toAddPriority[i] < toAddPriority[j])
-                            ) {
-                                toAdd.swap(i, j)
-                                toAddPriority.swap(i, j)
-                                toAddAfter.swap(i, j)
-                            }
-                        }
-                    }
-                    leaving.addAll(toAdd)
-                }
-            } finally {
-                toAdd.clear()
-                toAddAfter.clear()
-                toAddPriority.clear()
-            }
-        }
+    private fun recordLeaving(instance: Any) {
+        leaving.add(instance)
     }
 
     private inline fun <T> withComposeStackTrace(instance: Any, block: () -> T): T =
@@ -378,16 +271,4 @@ internal class RememberEventDispatcher() : RememberManager {
         } catch (e: Throwable) {
             throw e.also { traceContext?.apply { e.attachComposeStackTrace(instance) } }
         }
-}
-
-private fun <T> MutableList<T>.swap(a: Int, b: Int) {
-    val item = this[a]
-    this[a] = this[b]
-    this[b] = item
-}
-
-private fun MutableIntList.swap(a: Int, b: Int) {
-    val item = this[a]
-    this[a] = this[b]
-    this[b] = item
 }

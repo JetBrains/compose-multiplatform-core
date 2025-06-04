@@ -53,7 +53,7 @@ constructor(
         id = id,
         credentials = credentials,
         matcher = matcher,
-        intentAction = intentAction
+        intentAction = intentAction,
     ) {
     public companion object {
         /**

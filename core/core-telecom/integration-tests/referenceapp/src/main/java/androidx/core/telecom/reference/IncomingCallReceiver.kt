@@ -24,6 +24,7 @@ import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallAttributesCompat.Companion.DIRECTION_INCOMING
 import androidx.core.telecom.reference.Constants.ACTION_NEW_INCOMING_CALL
+import androidx.core.telecom.reference.Constants.EXTRA_IS_VIDEO
 import androidx.core.telecom.reference.Constants.EXTRA_REMOTE_USER_NAME
 import androidx.core.telecom.reference.Constants.EXTRA_SIMULATED_NUMBER
 import androidx.core.telecom.reference.view.loadPhoneNumberPrefix
@@ -35,7 +36,8 @@ import androidx.core.telecom.reference.view.loadPhoneNumberPrefix
  * Example broadcast to start a new incoming call:
  * ```
  * adb shell am broadcast -a androidx.core.telecom.reference.NEW_INCOMING_CALL
- *      --es simulated_number "123" --es name "John Smith" androidx.core.telecom.reference
+ *      --es simulated_number "123" --es name "John Smith" --ez isVideo true
+ *      androidx.core.telecom.reference
  * ```
  */
 class IncomingCallReceiver : BroadcastReceiver() {
@@ -57,6 +59,7 @@ class IncomingCallReceiver : BroadcastReceiver() {
     private fun handleIncomingCall(context: Context, intent: Intent) {
         val incomingNumber = intent.getStringExtra(EXTRA_SIMULATED_NUMBER)
         val remoteName = intent.getStringExtra(EXTRA_REMOTE_USER_NAME)
+        val isVideo = intent.getBooleanExtra(EXTRA_IS_VIDEO, false)
 
         if (incomingNumber == null || remoteName == null) {
             Log.e(TAG, "Incoming call intent missing required extras (number or name)")
@@ -64,7 +67,7 @@ class IncomingCallReceiver : BroadcastReceiver() {
         }
 
         val notificationId = getNextNotificationId()
-        val attributes = getCallAttributes(context, incomingNumber, remoteName)
+        val attributes = getCallAttributes(context, incomingNumber, remoteName, isVideo)
 
         val callRepository = (context.applicationContext as? VoipApplication)?.callRepository
         // add the call to Core-Telecom in parallel to creating the call-style notification
@@ -75,24 +78,20 @@ class IncomingCallReceiver : BroadcastReceiver() {
         callNotificationManager = CallNotificationManager(context)
 
         Log.d(TAG, "Generated notification ID [$notificationId] for incoming call.")
-        postNotification(
-            callNotificationManager,
-            notificationId,
-            getCallAttributes(context, incomingNumber, remoteName)
-        )
+        postNotification(callNotificationManager, notificationId, attributes)
     }
 
     private fun postNotification(
         callNotificationManager: CallNotificationManager,
         notificationId: Int,
-        attributes: CallAttributesCompat
+        attributes: CallAttributesCompat,
     ) {
         val n = callNotificationManager.buildIncomingCallNotification(notificationId, attributes)
         if (n != null) {
             Log.d(
                 TAG,
                 "Posting incoming call notification ID=[$notificationId]," +
-                    " Number=[${attributes.address}], Name=[${attributes.displayName}]"
+                    " Number=[${attributes.address}], Name=[${attributes.displayName}]",
             )
             callNotificationManager.immediatelyPostNotification(notificationId, notification = n)
         } else {
@@ -100,8 +99,20 @@ class IncomingCallReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun getCallAttributes(c: Context, num: String?, name: String?): CallAttributesCompat {
+    private fun getCallAttributes(
+        c: Context,
+        num: String?,
+        name: String?,
+        isVideo: Boolean,
+    ): CallAttributesCompat {
         val address = Uri.parse(loadPhoneNumberPrefix(c) + num)
-        return CallAttributesCompat(name.toString(), address, DIRECTION_INCOMING)
+        return CallAttributesCompat(
+            name.toString(),
+            address,
+            DIRECTION_INCOMING,
+            callType =
+                if (isVideo) CallAttributesCompat.Companion.CALL_TYPE_VIDEO_CALL
+                else CallAttributesCompat.Companion.CALL_TYPE_AUDIO_CALL,
+        )
     }
 }

@@ -21,10 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentCompositeKeyHash
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class LambdaAction(
-    public val key: String,
-    public val block: () -> Unit,
-) : Action {
+public class LambdaAction(public val key: String, public val block: () -> Unit) : Action {
     override fun toString(): String = "LambdaAction($key, ${block.hashCode()})"
 }
 
@@ -40,10 +37,7 @@ public class LambdaAction(
  * @param block the function to be run when this action is triggered.
  */
 @Composable
-public fun action(
-    key: String? = null,
-    block: () -> Unit,
-): Action {
+public fun action(key: String? = null, block: () -> Unit): Action {
     // TODO: After upgrading Compose Runtime, replace the usage of currentCompositeKeyHash with
     //  `currentCompositeKeyHashCode.toString(16)`
     val finalKey =

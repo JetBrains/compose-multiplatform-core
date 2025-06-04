@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.benchmark.Arguments
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Outputs
+import androidx.benchmark.macro.BaselineProfileConfig
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import java.io.File
@@ -60,7 +61,7 @@ class BaselineProfileRuleTest {
             assertFailsWith<AssertionError> {
                 baselineRule.collect(
                     packageName = "fake.package.not.installed",
-                    profileBlock = { fail("not expected") }
+                    profileBlock = { fail("not expected") },
                 )
             }
         println(error.message)
@@ -72,7 +73,7 @@ class BaselineProfileRuleTest {
         // skip if device doesn't support profile capture
         assumeTrue(
             DeviceInfo.supportsBaselineProfileCaptureError,
-            DeviceInfo.supportsBaselineProfileCaptureError == null
+            DeviceInfo.supportsBaselineProfileCaptureError == null,
         )
 
         // Collects the baseline profile
@@ -84,12 +85,12 @@ class BaselineProfileRuleTest {
                 profileBlock = {
                     startActivityAndWait(Intent(ACTION))
                     device.waitForIdle()
-                }
+                },
             )
 
         assertTrue(
             /* message = */ "Baseline profiles should exist",
-            /* condition = */ result.baselineProfiles.isNotEmpty()
+            /* condition = */ result.baselineProfiles.isNotEmpty(),
         )
 
         // Asserts the output of the baseline profile. Note that this name is automatically
@@ -110,7 +111,7 @@ class BaselineProfileRuleTest {
         // skip if device doesn't support profile capture
         assumeTrue(
             DeviceInfo.supportsBaselineProfileCaptureError,
-            DeviceInfo.supportsBaselineProfileCaptureError == null
+            DeviceInfo.supportsBaselineProfileCaptureError == null,
         )
 
         // Collects the baseline profile
@@ -125,12 +126,12 @@ class BaselineProfileRuleTest {
                 profileBlock = {
                     startActivityAndWait(Intent(ACTION))
                     device.waitForIdle()
-                }
+                },
             )
 
         assertTrue(
             /* message = */ "Startup profiles should exist",
-            /* condition = */ result.startupProfiles.isNotEmpty()
+            /* condition = */ result.startupProfiles.isNotEmpty(),
         )
 
         File(Outputs.outputDirectory, "BaselineProfileRuleTest_startupProfile-startup-prof.txt")
@@ -147,17 +148,16 @@ class BaselineProfileRuleTest {
         // skip if device doesn't support profile capture
         assumeTrue(
             DeviceInfo.supportsBaselineProfileCaptureError,
-            DeviceInfo.supportsBaselineProfileCaptureError == null
+            DeviceInfo.supportsBaselineProfileCaptureError == null,
         )
 
         val config =
-            baselineRule
-                .configBuilder(
+            BaselineProfileConfig.Builder(
                     packageName = Arguments.getTargetPackageNameOrThrow(),
                     profileBlock = {
                         startActivityAndWait(Intent(ACTION))
                         device.waitForIdle()
-                    }
+                    },
                 )
                 .setFilterPredicate { it.contains(PROFILE_LINE_EMPTY_ACTIVITY) }
                 .setMaxIterations(1)
@@ -168,7 +168,7 @@ class BaselineProfileRuleTest {
 
         assertTrue(
             /* message = */ "Baseline profiles should exist",
-            /* condition = */ result.baselineProfiles.isNotEmpty()
+            /* condition = */ result.baselineProfiles.isNotEmpty(),
         )
 
         // Asserts the output of the baseline profile. Note that this name is automatically
@@ -187,16 +187,13 @@ class BaselineProfileRuleTest {
     @Test
     fun captureRulesRemoteProcess() {
         val result =
-            baselineRule.collectWithResults(
-                TrivialServiceHandle.TARGET,
-                maxIterations = 1,
-            ) {
+            baselineRule.collectWithResults(TrivialServiceHandle.TARGET, maxIterations = 1) {
                 trivialServiceHandle.connect(TrivialServiceHandle.Action.TEST_ACTION1)
             }
 
         assertTrue(
             /* message = */ "Baseline profiles should exist",
-            /* condition = */ result.baselineProfiles.isNotEmpty()
+            /* condition = */ result.baselineProfiles.isNotEmpty(),
         )
 
         // Asserts the output of the baseline profile. Note that this name is automatically
@@ -205,7 +202,7 @@ class BaselineProfileRuleTest {
         // reflected here in order for the test to succeed.
         File(
                 Outputs.outputDirectory,
-                "BaselineProfileRuleTest_captureRulesRemoteProcess-baseline-prof.txt"
+                "BaselineProfileRuleTest_captureRulesRemoteProcess-baseline-prof.txt",
             )
             .readLines()
             .assertInOrder(
@@ -228,7 +225,7 @@ class BaselineProfileRuleTest {
 
     private fun List<String>.assertInOrder(
         @Suppress("SameParameterValue") vararg toFind: String,
-        predicate: (String, String) -> (Boolean) = { line, nextToFind -> line.endsWith(nextToFind) }
+        predicate: (String, String) -> (Boolean) = { line, nextToFind -> line.endsWith(nextToFind) },
     ) {
         val remaining = toFind.filter { it.isNotBlank() }.toMutableList()
         for (line in this) {

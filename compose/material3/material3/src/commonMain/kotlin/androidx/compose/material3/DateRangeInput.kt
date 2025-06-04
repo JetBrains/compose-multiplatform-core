@@ -42,7 +42,7 @@ internal fun DateRangeInputContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    focusRequester: FocusRequester?
+    focusRequester: FocusRequester?,
 ) {
     // Obtain the DateInputFormat for the default Locale.
     val dateInputFormat =
@@ -61,7 +61,7 @@ internal fun DateRangeInputContent(
                 errorDatePattern = errorDatePattern,
                 errorDateOutOfYearRange = errorDateOutOfYearRange,
                 errorInvalidNotAllowed = errorInvalidNotAllowed,
-                errorInvalidRangeInput = errorInvalidRange
+                errorInvalidRangeInput = errorInvalidRange,
             )
         }
     // Apply both start and end dates for proper validation.
@@ -71,7 +71,7 @@ internal fun DateRangeInputContent(
     }
     Row(
         modifier = Modifier.padding(paddingValues = InputTextFieldPadding),
-        horizontalArrangement = Arrangement.spacedBy(TextFieldSpacing)
+        horizontalArrangement = Arrangement.spacedBy(TextFieldSpacing),
     ) {
         val pattern = dateInputFormat.patternWithDelimiters.uppercase()
         val startRangeText = getString(string = Strings.DateRangePickerStartHeadline)
@@ -82,7 +82,7 @@ internal fun DateRangeInputContent(
                 Text(
                     startRangeText,
                     modifier =
-                        Modifier.semantics { contentDescription = "$startRangeText, $pattern" }
+                        Modifier.semantics { contentDescription = "$startRangeText, $pattern" },
                 )
             },
             placeholder = { Text(pattern, modifier = Modifier.clearAndSetSemantics {}) },
@@ -96,7 +96,7 @@ internal fun DateRangeInputContent(
             dateInputFormat = dateInputFormat,
             locale = calendarModel.locale,
             colors = colors,
-            focusRequester = focusRequester
+            focusRequester = focusRequester,
         )
         val endRangeText = getString(string = Strings.DateRangePickerEndHeadline)
         DateInputTextField(
@@ -105,7 +105,7 @@ internal fun DateRangeInputContent(
             label = {
                 Text(
                     endRangeText,
-                    modifier = Modifier.semantics { contentDescription = "$endRangeText, $pattern" }
+                    modifier = Modifier.semantics { contentDescription = "$endRangeText, $pattern" },
                 )
             },
             placeholder = { Text(pattern, modifier = Modifier.clearAndSetSemantics {}) },
@@ -121,7 +121,7 @@ internal fun DateRangeInputContent(
             colors = colors,
             // Setting null to the second field, as only one input field should request focus by
             // default and a possible non-null requester was passed to the first field.
-            focusRequester = null
+            focusRequester = null,
         )
     }
 }

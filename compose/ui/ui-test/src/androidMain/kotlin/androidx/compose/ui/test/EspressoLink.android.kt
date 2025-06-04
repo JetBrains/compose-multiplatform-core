@@ -135,7 +135,7 @@ private fun rethrowWithMoreInfo(e: Throwable, wasGlobalTimeout: Boolean) {
                 diagnosticInfo +
                 "All registered idling resources: " +
                 listOfIdlingResources.joinToString(", "),
-            e
+            e,
         )
     }
     // No extra info, re-throw the original exception

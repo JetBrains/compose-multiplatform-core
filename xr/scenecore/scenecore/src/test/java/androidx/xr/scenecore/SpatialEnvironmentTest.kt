@@ -227,7 +227,7 @@ class SpatialEnvironmentTest {
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
                 ExrImage(rtImageMock),
-                GltfModel(rtModelMock)
+                GltfModel(rtModelMock),
             )
 
         whenever(mockRtEnvironment!!.setSpatialEnvironmentPreference(any()))

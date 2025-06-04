@@ -312,7 +312,7 @@ class TransformingLazyColumnTest {
                     .testTag(lazyListTag)
                     .graphicsLayer()
                     .background(Color.Blue),
-                state = state
+                state = state,
             ) {
                 items(2) {
                     val size = if (it == 0) 5.dp else 100.dp
@@ -429,7 +429,7 @@ class TransformingLazyColumnTest {
     private fun testTransformingLazyColumnRotary(
         userScrollEnabled: Boolean,
         scrollTarget: Int,
-        itemsToScroll: Int = 2
+        itemsToScroll: Int = 2,
     ) {
         lateinit var state: TransformingLazyColumnState
         val itemSizePx = 50
@@ -440,7 +440,7 @@ class TransformingLazyColumnTest {
             TransformingLazyColumn(
                 state = state,
                 modifier = Modifier.testTag(lazyListTag).size(itemSizeDp * 2),
-                userScrollEnabled = userScrollEnabled
+                userScrollEnabled = userScrollEnabled,
             ) {
                 items(100) {
                     BasicText(text = "item $it", modifier = Modifier.requiredSize(itemSizeDp))

@@ -61,7 +61,7 @@ public object SceneManager : AutoCloseable {
     }
 
     internal fun onSceneCreated(scene: SpatialComposeScene) {
-        if (isRunning) {
+        if (isRunning && scene !in registeredScenes) {
             registeredScenes.add(scene)
         }
     }

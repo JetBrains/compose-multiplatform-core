@@ -31,6 +31,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.core.util.Pair;
 import androidx.xr.runtime.internal.ActivityPanelEntity;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Anchor;
@@ -62,6 +63,7 @@ import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpatialCapabilities;
 import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SurfaceEntity;
@@ -137,6 +139,11 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     private final Map<Consumer<SpatialCapabilities>, Executor>
             mSpatialCapabilitiesChangedListeners = new ConcurrentHashMap<>();
 
+    @Nullable private Pair<Executor, Consumer<SpatialVisibility>> mSpatialVisibilityHandler = null;
+    private final Map<Consumer<PixelDimensions>, Executor> mPerceivedResolutionChangedListeners =
+            new ConcurrentHashMap<>();
+    @VisibleForTesting boolean mIsExtensionVisibilityStateCallbackRegistered = false;
+
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
     private final AtomicReference<SpatialState> mSpatialState = new AtomicReference<>(null);
@@ -150,6 +157,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     private ImpSplitEngineRenderer mSplitEngineRenderer;
     private boolean mFrameLoopStarted;
     private boolean mIsDisposed;
+    private SpatialModeChangeListener mSpatialModeChangeListener;
 
     private JxrPlatformAdapterAxr(
             Activity activity,
@@ -480,6 +488,12 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             mEnvironment.firePassthroughOpacityChangedEvent();
         }
 
+        // Get the scene parent transform and update the activity space.
+        if (newSpatialState.getSceneParentTransform() != null) {
+            mActivitySpace.handleOriginUpdate(
+                    RuntimeUtils.getMatrix(newSpatialState.getSceneParentTransform()));
+        }
+
         if (spatialCapabilitiesChanged) {
             SpatialCapabilities spatialCapabilities =
                     RuntimeUtils.convertSpatialCapabilities(
@@ -492,16 +506,6 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         if (hasBoundsChanged) {
             mActivitySpace.onBoundsChanged(newSpatialState.getBounds());
-        }
-
-        // Get the scene parent transform and update the activity space.
-        Log.i(
-                TAG,
-                "newSpatialState.getSceneParentTransform: "
-                        + newSpatialState.getSceneParentTransform());
-        if (newSpatialState.getSceneParentTransform() != null) {
-            mActivitySpace.handleOriginUpdate(
-                    RuntimeUtils.getMatrix(newSpatialState.getSceneParentTransform()));
         }
     }
 
@@ -563,30 +567,80 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     @Override
     public void setSpatialVisibilityChangedListener(
             @NonNull Executor callbackExecutor, @NonNull Consumer<SpatialVisibility> listener) {
-        try {
-            mExtensions.setVisibilityStateCallback(
-                    mActivity,
-                    callbackExecutor,
-                    (spatialVisibilityEvent) ->
-                            listener.accept(
-                                    RuntimeUtils.convertSpatialVisibility(spatialVisibilityEvent)));
-        } catch (RuntimeException e) {
-            Log.e(
-                    TAG,
-                    "Could not set Scene Spatial Visibility callbacks due to error: "
-                            + e.getMessage());
-        }
+        mSpatialVisibilityHandler = new Pair<>(callbackExecutor, listener);
+        updateExtensionsVisibilityCallback();
     }
 
     @Override
     public void clearSpatialVisibilityChangedListener() {
-        try {
-            mExtensions.clearVisibilityStateCallback(mActivity);
-        } catch (RuntimeException e) {
-            Log.e(
-                    TAG,
-                    "Could not clear Scene Spatial Visibility callbacks due to error: "
-                            + e.getMessage());
+        mSpatialVisibilityHandler = null;
+        updateExtensionsVisibilityCallback();
+    }
+
+    @Override
+    public void addPerceivedResolutionChangedListener(
+            @NonNull Executor callbackExecutor, @NonNull Consumer<PixelDimensions> listener) {
+        mPerceivedResolutionChangedListeners.put(listener, callbackExecutor);
+        updateExtensionsVisibilityCallback();
+    }
+
+    @Override
+    public void removePerceivedResolutionChangedListener(
+            @NonNull Consumer<PixelDimensions> listener) {
+        mPerceivedResolutionChangedListeners.remove(listener);
+        updateExtensionsVisibilityCallback();
+    }
+
+    private synchronized void updateExtensionsVisibilityCallback() {
+        boolean shouldHaveCallback =
+                mSpatialVisibilityHandler != null
+                        || !mPerceivedResolutionChangedListeners.isEmpty();
+
+        if (shouldHaveCallback && !mIsExtensionVisibilityStateCallbackRegistered) {
+            // Register the combined callback
+            try {
+                mExtensions.setVisibilityStateCallback(
+                        mActivity,
+                        mExecutor, // Executor for the combined callback itself
+                        (com.android.extensions.xr.space.VisibilityState visibilityStateEvent) -> {
+                            // Dispatch to SpatialVisibility listener
+                            if (mSpatialVisibilityHandler != null) {
+                                SpatialVisibility jxrSpatialVisibility =
+                                        RuntimeUtils.convertSpatialVisibility(
+                                                visibilityStateEvent.getVisibility());
+                                mSpatialVisibilityHandler.first.execute(
+                                        () ->
+                                                mSpatialVisibilityHandler.second.accept(
+                                                        jxrSpatialVisibility));
+                            }
+
+                            // Dispatch to PerceivedResolution listeners
+                            if (!mPerceivedResolutionChangedListeners.isEmpty()) {
+                                PixelDimensions jxrPerceivedResolution =
+                                        RuntimeUtils.convertPerceivedResolution(
+                                                visibilityStateEvent.getPerceivedResolution());
+                                mPerceivedResolutionChangedListeners.forEach(
+                                        (listener, executor) ->
+                                                executor.execute(
+                                                        () ->
+                                                                listener.accept(
+                                                                        jxrPerceivedResolution)));
+                            }
+                        });
+                mIsExtensionVisibilityStateCallbackRegistered = true;
+                Log.d(TAG, "Registered combined visibility callback with XrExtensions.");
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Could not set combined VisibilityStateCallback: " + e.getMessage());
+            }
+        } else if (!shouldHaveCallback && mIsExtensionVisibilityStateCallbackRegistered) {
+            // Clear the combined callback
+            try {
+                mExtensions.clearVisibilityStateCallback(mActivity);
+                mIsExtensionVisibilityStateCallbackRegistered = false;
+                Log.d(TAG, "Cleared combined visibility callback from XrExtensions.");
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Could not clear VisibilityStateCallback: " + e.getMessage());
+            }
         }
     }
 
@@ -1346,6 +1400,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         mEnvironment.dispose();
         mExtensions.clearSpatialStateCallback(mActivity);
         clearSpatialVisibilityChangedListener();
+        mPerceivedResolutionChangedListeners.clear();
+        // This will trigger clearing the callback from XrExtensions if it was registered
+        updateExtensionsVisibilityCallback();
+
         // TODO: b/376934871 - Check async results.
         mExtensions.detachSpatialScene(mActivity, Runnable::run, (result) -> {});
         mActivity = null;
@@ -1574,5 +1632,18 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         size);
         subspaceNodeEntity.setParent(mActivitySpace);
         return subspaceNodeEntity;
+    }
+
+    @Override
+    public void setSpatialModeChangeListener(
+            @NonNull SpatialModeChangeListener SpatialModeChangeListener) {
+        mSpatialModeChangeListener = SpatialModeChangeListener;
+        mActivitySpace.setSpatialModeChangeListener(SpatialModeChangeListener);
+    }
+
+    @Override
+    @NonNull
+    public SpatialModeChangeListener getSpatialModeChangeListener() {
+        return mSpatialModeChangeListener;
     }
 }

@@ -60,7 +60,7 @@ private class ScrollPdfViewByPixels(val dx: Int = 0, val dy: Int = 0) : ViewActi
     override fun getConstraints(): Matcher<View> =
         Matchers.allOf(
             ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE),
-            ViewMatchers.isAssignableFrom(PdfView::class.java)
+            ViewMatchers.isAssignableFrom(PdfView::class.java),
         )
 
     override fun getDescription() = "Scroll PdfView by $dx, $dy"
@@ -76,9 +76,7 @@ private class SmoothScrollY(private val totalPixels: Int, private val numSteps: 
     private val stepSize = totalPixels / numSteps
 
     override fun getConstraints(): Matcher<View> =
-        Matchers.allOf(
-            ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE),
-        )
+        Matchers.allOf(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE))
 
     override fun getDescription() = "Scroll View by $totalPixels in $numSteps"
 
@@ -98,7 +96,7 @@ private class ZoomPdfView(val newZoom: Float, val numSteps: Int = 1) : ViewActio
     override fun getConstraints(): Matcher<View> =
         Matchers.allOf(
             ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE),
-            ViewMatchers.isAssignableFrom(PdfView::class.java)
+            ViewMatchers.isAssignableFrom(PdfView::class.java),
         )
 
     override fun getDescription() = "Zoom PdfView to $newZoom"
@@ -135,7 +133,7 @@ private class ScrollPdfViewToPage : ViewAction {
     override fun getConstraints(): Matcher<View> =
         Matchers.allOf(
             ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE),
-            ViewMatchers.isAssignableFrom(PdfView::class.java)
+            ViewMatchers.isAssignableFrom(PdfView::class.java),
         )
 
     override fun getDescription(): String {
@@ -181,6 +179,6 @@ internal fun performSingleTapOnCoords(x: Float, y: Float): ViewAction {
         },
         Press.FINGER,
         InputDevice.SOURCE_TOUCHSCREEN,
-        MotionEvent.BUTTON_PRIMARY
+        MotionEvent.BUTTON_PRIMARY,
     )
 }

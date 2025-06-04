@@ -163,7 +163,7 @@ open class ComponentActivity() :
                 requestCode: Int,
                 contract: ActivityResultContract<I, O>,
                 input: I,
-                options: ActivityOptionsCompat?
+                options: ActivityOptionsCompat?,
             ) {
                 val activity = this@ComponentActivity
 
@@ -209,7 +209,7 @@ open class ComponentActivity() :
                             request.flagsMask,
                             request.flagsValues,
                             0,
-                            optionsBundle
+                            optionsBundle,
                         )
                     } catch (e: SendIntentException) {
                         Handler(Looper.getMainLooper()).post {
@@ -218,7 +218,7 @@ open class ComponentActivity() :
                                 RESULT_CANCELED,
                                 Intent()
                                     .setAction(ACTION_INTENT_SENDER_REQUEST)
-                                    .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e)
+                                    .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e),
                             )
                         }
                     }
@@ -228,7 +228,7 @@ open class ComponentActivity() :
                         activity,
                         intent,
                         requestCode,
-                        optionsBundle
+                        optionsBundle,
                     )
                 }
             }
@@ -488,7 +488,7 @@ open class ComponentActivity() :
     override fun addMenuProvider(
         provider: MenuProvider,
         owner: LifecycleOwner,
-        state: Lifecycle.State
+        state: Lifecycle.State,
     ) {
         menuHostHelper.addMenuProvider(provider, owner, state)
     }
@@ -709,7 +709,7 @@ open class ComponentActivity() :
         fillInIntent: Intent?,
         flagsMask: Int,
         flagsValues: Int,
-        extraFlags: Int
+        extraFlags: Int,
     ) {
         super.startIntentSenderForResult(
             intent,
@@ -717,7 +717,7 @@ open class ComponentActivity() :
             fillInIntent,
             flagsMask,
             flagsValues,
-            extraFlags
+            extraFlags,
         )
     }
 
@@ -741,7 +741,7 @@ open class ComponentActivity() :
         flagsMask: Int,
         flagsValues: Int,
         extraFlags: Int,
-        options: Bundle?
+        options: Bundle?,
     ) {
         super.startIntentSenderForResult(
             intent,
@@ -750,7 +750,7 @@ open class ComponentActivity() :
             flagsMask,
             flagsValues,
             extraFlags,
-            options
+            options,
         )
     }
 
@@ -789,7 +789,7 @@ open class ComponentActivity() :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         if (
             !activityResultRegistry.dispatchResult(
@@ -797,7 +797,7 @@ open class ComponentActivity() :
                 RESULT_OK,
                 Intent()
                     .putExtra(EXTRA_PERMISSIONS, permissions)
-                    .putExtra(EXTRA_PERMISSION_GRANT_RESULTS, grantResults)
+                    .putExtra(EXTRA_PERMISSION_GRANT_RESULTS, grantResults),
             )
         ) {
             if (Build.VERSION.SDK_INT >= 23) {
@@ -809,19 +809,19 @@ open class ComponentActivity() :
     final override fun <I, O> registerForActivityResult(
         contract: ActivityResultContract<I, O>,
         registry: ActivityResultRegistry,
-        callback: ActivityResultCallback<O>
+        callback: ActivityResultCallback<O>,
     ): ActivityResultLauncher<I> {
         return registry.register(
             "activity_rq#" + nextLocalRequestCode.getAndIncrement(),
             this,
             contract,
-            callback
+            callback,
         )
     }
 
     final override fun <I, O> registerForActivityResult(
         contract: ActivityResultContract<I, O>,
-        callback: ActivityResultCallback<O>
+        callback: ActivityResultCallback<O>,
     ): ActivityResultLauncher<I> {
         return registerForActivityResult(contract, activityResultRegistry, callback)
     }
@@ -970,7 +970,7 @@ open class ComponentActivity() :
     @CallSuper
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
-        newConfig: Configuration
+        newConfig: Configuration,
     ) {
         dispatchingOnPictureInPictureModeChanged = true
         try {
@@ -1030,7 +1030,7 @@ open class ComponentActivity() :
                 Build.VERSION.SDK_INT == 19 &&
                     ContextCompat.checkSelfPermission(
                         this,
-                        Manifest.permission.UPDATE_DEVICE_STATS
+                        Manifest.permission.UPDATE_DEVICE_STATS,
                     ) == PackageManager.PERMISSION_GRANTED
             ) {
                 // On API 19, the Activity.reportFullyDrawn() method requires the

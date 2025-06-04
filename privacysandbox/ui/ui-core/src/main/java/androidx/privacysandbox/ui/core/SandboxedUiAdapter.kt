@@ -42,7 +42,7 @@ interface SandboxedUiAdapter {
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SessionClient
+        client: SessionClient,
     )
 
     /** A single session with the provider of remote content. */

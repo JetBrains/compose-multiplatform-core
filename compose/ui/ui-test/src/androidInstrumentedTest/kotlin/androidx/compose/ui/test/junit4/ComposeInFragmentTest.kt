@@ -143,7 +143,7 @@ class ComposeInFragmentTest {
                 // Display dialog fragment where we want to test the events
                 mainFragment.dialogFragment.showNow(
                     mainFragment.childFragmentManager,
-                    "compose_dialog_fragment"
+                    "compose_dialog_fragment",
                 )
 
                 // Find dialog fragment's screen location
@@ -210,10 +210,10 @@ class ComposeInFragmentTest {
                         arrayOf(
                             PointerProperties(bottomBoxEventId).also {
                                 it.toolType = TOOL_TYPE_FINGER
-                            },
+                            }
                         ),
                     pointerCoords = arrayOf(PointerCoords(bottomBoxGlobalX, bottomBoxGlobalY)),
-                    dispatchTarget = fragmentView
+                    dispatchTarget = fragmentView,
                 )
 
             uiAutomation.injectInputEvent(motionEvent, true)
@@ -239,16 +239,14 @@ class ComposeInFragmentTest {
                             PointerProperties(bottomBoxEventId).also {
                                 it.toolType = TOOL_TYPE_FINGER
                             },
-                            PointerProperties(topBoxEventId).also {
-                                it.toolType = TOOL_TYPE_FINGER
-                            },
+                            PointerProperties(topBoxEventId).also { it.toolType = TOOL_TYPE_FINGER },
                         ),
                     pointerCoords =
                         arrayOf(
                             PointerCoords(bottomBoxGlobalX, bottomBoxGlobalY),
-                            PointerCoords(topBoxGlobalX, topBoxGlobalY)
+                            PointerCoords(topBoxGlobalX, topBoxGlobalY),
                         ),
-                    dispatchTarget = fragmentView
+                    dispatchTarget = fragmentView,
                 )
 
             uiAutomation.injectInputEvent(motionEvent, true)
@@ -272,16 +270,14 @@ class ComposeInFragmentTest {
                             PointerProperties(bottomBoxEventId).also {
                                 it.toolType = TOOL_TYPE_FINGER
                             },
-                            PointerProperties(topBoxEventId).also {
-                                it.toolType = TOOL_TYPE_FINGER
-                            },
+                            PointerProperties(topBoxEventId).also { it.toolType = TOOL_TYPE_FINGER },
                         ),
                     pointerCoords =
                         arrayOf(
                             PointerCoords(bottomBoxGlobalX, bottomBoxGlobalY),
-                            PointerCoords(topBoxGlobalX, topBoxGlobalY)
+                            PointerCoords(topBoxGlobalX, topBoxGlobalY),
                         ),
-                    dispatchTarget = fragmentView
+                    dispatchTarget = fragmentView,
                 )
 
             uiAutomation.injectInputEvent(motionEvent, true)
@@ -301,7 +297,7 @@ class ComposeInFragmentTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View = ComposeView(requireContext()).apply { setContent { ComposeScreen() } }
 
         @Composable
@@ -349,7 +345,7 @@ class ComposeInFragmentTest {
                                     }
                                 }
                             }
-                            .onGloballyPositioned { topButtonLayoutCoordinates = it },
+                            .onGloballyPositioned { topButtonLayoutCoordinates = it }
                 )
                 Box(
                     modifier =
@@ -372,7 +368,7 @@ class ComposeInFragmentTest {
                                     }
                                 }
                             }
-                            .onGloballyPositioned { collapseButtonLayoutCoordinates = it },
+                            .onGloballyPositioned { collapseButtonLayoutCoordinates = it }
                 )
             }
         }
@@ -382,7 +378,7 @@ class ComposeInFragmentTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View? {
             return container?.let {
                 ComposeView(container.context).apply {
@@ -399,7 +395,7 @@ class ComposeInFragmentTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View? {
             return container?.let {
                 ComposeView(container.context).apply {
@@ -428,7 +424,7 @@ internal fun TestMotionEvent(
     actionIndex: Int,
     pointerProperties: Array<MotionEvent.PointerProperties>,
     pointerCoords: Array<MotionEvent.PointerCoords>,
-    dispatchTarget: View
+    dispatchTarget: View,
 ): MotionEvent {
 
     val locationOnScreen = IntArray(2) { 0 }
@@ -454,7 +450,7 @@ internal fun TestMotionEvent(
                 0,
                 0,
                 0x2,
-                0
+                0,
             )
             .apply {
                 offsetLocation(-locationOnScreen[0].toFloat(), -locationOnScreen[1].toFloat())

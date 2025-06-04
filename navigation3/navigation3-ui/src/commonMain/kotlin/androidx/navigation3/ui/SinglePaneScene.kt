@@ -39,7 +39,7 @@ public class SinglePaneSceneStrategy<T : Any> : SceneStrategy<T> {
         SinglePaneScene(
             key = entries.last().key,
             entry = entries.last(),
-            previousEntries = entries.dropLast(1)
+            previousEntries = entries.dropLast(1),
         )
 }
 

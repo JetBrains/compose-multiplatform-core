@@ -27,11 +27,11 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalResources
 
 internal fun Modifier.addTextContextMenuComponentsWithResources(
-    builder: TextContextMenuBuilderScope.(Resources) -> Unit,
+    builder: TextContextMenuBuilderScope.(Resources) -> Unit
 ): Modifier = this then AddTextContextMenuDataComponentsWithResourcesElement(builder)
 
 private class AddTextContextMenuDataComponentsWithResourcesElement(
-    private val builder: TextContextMenuBuilderScope.(Resources) -> Unit,
+    private val builder: TextContextMenuBuilderScope.(Resources) -> Unit
 ) : ModifierNodeElement<AddTextContextMenuDataComponentsWithResourcesNode>() {
     override fun create(): AddTextContextMenuDataComponentsWithResourcesNode =
         AddTextContextMenuDataComponentsWithResourcesNode(builder)
@@ -58,7 +58,7 @@ private class AddTextContextMenuDataComponentsWithResourcesElement(
 }
 
 private class AddTextContextMenuDataComponentsWithResourcesNode(
-    var builder: TextContextMenuBuilderScope.(Resources) -> Unit,
+    var builder: TextContextMenuBuilderScope.(Resources) -> Unit
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode {
     init {
         delegate(AddTextContextMenuDataComponentsNode { builder(currentValueOf(LocalResources)) })

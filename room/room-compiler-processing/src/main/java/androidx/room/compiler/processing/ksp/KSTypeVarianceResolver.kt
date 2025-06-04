@@ -139,7 +139,7 @@ internal class KSTypeVarianceResolver(private val resolver: Resolver) {
                                         it.replace(originalArg.type!!, originalArg.variance)
                                     }
                                 ),
-                                continuationArg.variance
+                                continuationArg.variance,
                             )
                         )
                         add(newType.arguments.last())
@@ -311,7 +311,7 @@ internal class KSTypeVarianceResolver(private val resolver: Resolver) {
         val resolvedType =
             type.getJavaWildcardWithTypeVariablesForInnerType(
                 scope = scope,
-                typeParamStack = typeParamStack + typeParam
+                typeParamStack = typeParamStack + typeParam,
             )
         val resolvedVariance =
             if (
@@ -511,7 +511,7 @@ private class KSTypeArgumentWrapper(
         copy(
             newType = newType,
             variance = newVariance,
-            annotations = annotations + newType.annotations
+            annotations = annotations + newType.annotations,
         )
 
     fun copy(

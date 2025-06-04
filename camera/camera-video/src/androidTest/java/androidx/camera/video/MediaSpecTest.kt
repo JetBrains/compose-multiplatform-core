@@ -36,7 +36,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val mediaSpec = MediaSpec.builder().build()
 
@@ -52,7 +52,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val testFrameRate = 30
         val mediaSpec =
@@ -66,7 +66,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val mediaSpec =
             MediaSpec.builder()
@@ -81,7 +81,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val mediaSpec = MediaSpec.builder().setAudioSpec(AudioSpec.NO_AUDIO).build()
 

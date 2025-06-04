@@ -36,7 +36,7 @@ internal actual fun CompositionLocalConsumerModifierNode.getString(string: Strin
 
 internal actual fun CompositionLocalConsumerModifierNode.getString(
     string: Strings,
-    vararg formatArgs: Any
+    vararg formatArgs: Any,
 ): String = implementedInJetBrainsFork()
 
 @JvmInline

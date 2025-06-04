@@ -61,7 +61,7 @@ private enum class ScrollableType2 {
     EditTextsInScrollView,
     EditTextsInScrollableColumn,
     EditTextsInLazyColumn,
-    TextFieldsInScrollView
+    TextFieldsInScrollView,
 }
 
 @Preview(showBackground = true)
@@ -73,42 +73,42 @@ fun BasicTextFieldInScrollableDemo() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == ScrollableColumn,
-                onClick = { scrollableType = ScrollableColumn }
+                onClick = { scrollableType = ScrollableColumn },
             )
             Text("Scrollable column w/ TextField")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == ScrollableType2.EditTextsInScrollableColumn,
-                onClick = { scrollableType = ScrollableType2.EditTextsInScrollableColumn }
+                onClick = { scrollableType = ScrollableType2.EditTextsInScrollableColumn },
             )
             Text("Scrollable column w/ EditText")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == LazyColumn,
-                onClick = { scrollableType = LazyColumn }
+                onClick = { scrollableType = LazyColumn },
             )
             Text("LazyColumn w/ TextField")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == ScrollableType2.EditTextsInLazyColumn,
-                onClick = { scrollableType = ScrollableType2.EditTextsInLazyColumn }
+                onClick = { scrollableType = ScrollableType2.EditTextsInLazyColumn },
             )
             Text("LazyColumn w/ EditText")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == EditTextsInScrollView,
-                onClick = { scrollableType = EditTextsInScrollView }
+                onClick = { scrollableType = EditTextsInScrollView },
             )
             Text("ScrollView w/ EditText")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = scrollableType == ScrollableType2.TextFieldsInScrollView,
-                onClick = { scrollableType = ScrollableType2.TextFieldsInScrollView }
+                onClick = { scrollableType = ScrollableType2.TextFieldsInScrollView },
             )
             Text("ScrollView w/ TextField")
         }
@@ -191,7 +191,7 @@ private fun DemoTextField(index: Int) {
         BasicTextField(
             state = state,
             textStyle = LocalTextStyle.current,
-            modifier = demoTextFieldModifiers
+            modifier = demoTextFieldModifiers,
         )
     }
 }
@@ -201,7 +201,7 @@ private class DemoEditText(context: Context) : EditText(context) {
         layoutParams =
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams.WRAP_CONTENT,
             )
     }
 }
@@ -215,8 +215,8 @@ private class EditTextsInScrollableView(context: Context) : ScrollView(context) 
             column,
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ),
         )
 
         repeat(30) {
@@ -225,9 +225,9 @@ private class EditTextsInScrollableView(context: Context) : ScrollView(context) 
                 text,
                 LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
                     )
-                    .also { it.setMargins(20) }
+                    .also { it.setMargins(20) },
             )
         }
     }
@@ -242,8 +242,8 @@ private class TextFieldInScrollableView(context: Context) : ScrollView(context) 
             column,
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ),
         )
 
         repeat(30) {
@@ -252,9 +252,9 @@ private class TextFieldInScrollableView(context: Context) : ScrollView(context) 
                 textField,
                 LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
                     )
-                    .also { it.setMargins(20) }
+                    .also { it.setMargins(20) },
             )
         }
     }

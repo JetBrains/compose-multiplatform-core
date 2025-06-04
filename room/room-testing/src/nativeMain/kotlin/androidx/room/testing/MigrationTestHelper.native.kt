@@ -97,7 +97,7 @@ public actual class MigrationTestHelper(
     databaseFactory: () -> RoomDatabase = {
         findDatabaseConstructorAndInitDatabaseImpl(databaseClass)
     },
-    private val autoMigrationSpecs: List<AutoMigrationSpec> = emptyList()
+    private val autoMigrationSpecs: List<AutoMigrationSpec> = emptyList(),
 ) {
     private val databaseInstance = databaseClass.cast(databaseFactory.invoke())
     private val managedConnections = mutableListOf<SQLiteConnection>()
@@ -116,7 +116,7 @@ public actual class MigrationTestHelper(
         val connection =
             createDatabaseCommon(
                 schema = schemaBundle.database,
-                configurationFactory = ::createDatabaseConfiguration
+                configurationFactory = ::createDatabaseConfiguration,
             )
         managedConnections.add(connection)
         return connection
@@ -150,7 +150,7 @@ public actual class MigrationTestHelper(
                 migrations = migrations,
                 autoMigrationSpecs = autoMigrationSpecs,
                 validateUnknownTables = false,
-                configurationFactory = ::createDatabaseConfiguration
+                configurationFactory = ::createDatabaseConfiguration,
             )
         managedConnections.add(connection)
         return connection
@@ -166,9 +166,7 @@ public actual class MigrationTestHelper(
         return FileSystem.SYSTEM.read(schemaPath) { SchemaBundle.deserialize(this) }
     }
 
-    private fun createDatabaseConfiguration(
-        container: RoomDatabase.MigrationContainer,
-    ) =
+    private fun createDatabaseConfiguration(container: RoomDatabase.MigrationContainer) =
         DatabaseConfiguration(
             name = fileName,
             migrationContainer = container,
@@ -181,6 +179,6 @@ public actual class MigrationTestHelper(
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = driver,
-            queryCoroutineContext = null
+            queryCoroutineContext = null,
         )
 }

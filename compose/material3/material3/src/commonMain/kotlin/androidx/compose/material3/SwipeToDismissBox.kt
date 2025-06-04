@@ -27,9 +27,10 @@ import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material3.SwipeToDismissBoxState.Companion.Saver
+import androidx.compose.material3.internal.ConfirmValueChangeDeprecated
 import androidx.compose.material3.internal.draggableAnchorsV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,36 +49,72 @@ enum class SwipeToDismissBoxValue {
     EndToStart,
 
     /** Cannot currently be dismissed. */
-    Settled
+    Settled,
 }
 
-/**
- * State of the [SwipeToDismissBox] composable.
- *
- * @param initialValue The initial value of the state.
- * @param density The density that this state can use to convert values to and from dp.
- * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
- * @param positionalThreshold The positional threshold to be used when calculating the target state
- *   while a swipe is in progress and when settling after the swipe ends. This is the distance from
- *   the start of a transition. It will be, depending on the direction of the interaction, added or
- *   subtracted from/to the origin offset. It should always be a positive value.
- */
-class SwipeToDismissBoxState(
-    initialValue: SwipeToDismissBoxValue,
-    internal val density: Density,
-    confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = { true },
-    positionalThreshold: (totalDistance: Float) -> Float
-) {
+/** State of the [SwipeToDismissBox] composable. */
+class SwipeToDismissBoxState {
+    /**
+     * State of the [SwipeToDismissBox] composable.
+     *
+     * @param initialValue The initial value of the state.
+     * @param positionalThreshold The positional threshold to be used when calculating the target
+     *   state while a swipe is in progress and when settling after the swipe ends. This is the
+     *   distance from the start of a transition. It will be, depending on the direction of the
+     *   interaction, added or subtracted from/to the origin offset. It should always be a positive
+     *   value.
+     */
+    constructor(
+        initialValue: SwipeToDismissBoxValue,
+        positionalThreshold: (totalDistance: Float) -> Float,
+    ) {
+        this.anchoredDraggableState = AnchoredDraggableState(initialValue)
+        this.positionalThreshold = positionalThreshold
+    }
+
+    /**
+     * State of the [SwipeToDismissBox] composable.
+     *
+     * @param initialValue The initial value of the state.
+     * @param density The density that this state can use to convert values to and from dp.
+     * @param confirmValueChange Optional callback invoked to confirm or veto a pending state
+     *   change.
+     * @param positionalThreshold The positional threshold to be used when calculating the target
+     *   state while a swipe is in progress and when settling after the swipe ends. This is the
+     *   distance from the start of a transition. It will be, depending on the direction of the
+     *   interaction, added or subtracted from/to the origin offset. It should always be a positive
+     *   value.
+     */
+    @Deprecated(
+        message = ConfirmValueChangeDeprecated,
+        level = DeprecationLevel.WARNING,
+        replaceWith =
+            ReplaceWith("SwipeToDismissBoxState(initialValue, density, positionalThreshold)"),
+    )
     @Suppress("Deprecation")
-    internal val anchoredDraggableState =
-        AnchoredDraggableState(
-            initialValue = initialValue,
-            confirmValueChange = confirmValueChange,
-            velocityThreshold = { with(density) { DismissVelocityThreshold.toPx() } },
-            positionalThreshold = positionalThreshold,
-            snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
-            decayAnimationSpec = AnchoredDraggableDefaults.DecayAnimationSpec,
-        )
+    constructor(
+        initialValue: SwipeToDismissBoxValue,
+        density: Density,
+        confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = { true },
+        positionalThreshold: (totalDistance: Float) -> Float,
+    ) {
+        this.anchoredDraggableState =
+            AnchoredDraggableState(
+                initialValue = initialValue,
+                confirmValueChange = confirmValueChange,
+                velocityThreshold = { with(density) { DismissVelocityThreshold.toPx() } },
+                positionalThreshold = positionalThreshold,
+                snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
+                decayAnimationSpec = AnchoredDraggableDefaults.DecayAnimationSpec,
+            )
+    }
+
+    internal val anchoredDraggableState: AnchoredDraggableState<SwipeToDismissBoxValue>
+
+    internal lateinit var positionalThreshold: (Float) -> Float
+
+    internal val useFlingBehavior: Boolean
+        get() = ::positionalThreshold.isInitialized
 
     internal val offset: Float
         get() = anchoredDraggableState.offset
@@ -100,6 +137,14 @@ class SwipeToDismissBoxState(
      */
     val targetValue: SwipeToDismissBoxValue
         get() = anchoredDraggableState.targetValue
+
+    /**
+     * The value the [SwipeToDismissBoxState] is currently settled at. When progressing through
+     * multiple anchors, e.g. A -> B -> C, settledValue will stay the same until settled at an
+     * anchor, while currentValue will update to the closest anchor.
+     */
+    val settledValue: SwipeToDismissBoxValue
+        get() = anchoredDraggableState.settledValue
 
     /**
      * The fraction of the progress going from currentValue to targetValue, within [0f..1f] bounds.
@@ -154,18 +199,53 @@ class SwipeToDismissBoxState(
 
     companion object {
 
-        /** The default [Saver] implementation for [SwipeToDismissBoxState]. */
+        /** [Saver] implementation for [SwipeToDismissBoxState]. */
+        @Suppress("Deprecation")
+        @Deprecated(
+            message = ConfirmValueChangeDeprecated,
+            level = DeprecationLevel.WARNING,
+            replaceWith = ReplaceWith("Saver(positionalThreshold, density)"),
+        )
         fun Saver(
             confirmValueChange: (SwipeToDismissBoxValue) -> Boolean,
             positionalThreshold: (totalDistance: Float) -> Float,
-            density: Density
+            density: Density,
         ) =
             Saver<SwipeToDismissBoxState, SwipeToDismissBoxValue>(
                 save = { it.currentValue },
                 restore = {
                     SwipeToDismissBoxState(it, density, confirmValueChange, positionalThreshold)
-                }
+                },
             )
+
+        /** The default [Saver] implementation for [SwipeToDismissBoxState]. */
+        fun Saver(positionalThreshold: (totalDistance: Float) -> Float) =
+            Saver<SwipeToDismissBoxState, SwipeToDismissBoxValue>(
+                save = { it.currentValue },
+                restore = { SwipeToDismissBoxState(it, positionalThreshold) },
+            )
+    }
+}
+
+/**
+ * Create and [remember] a [SwipeToDismissBoxState].
+ *
+ * @param initialValue The initial value of the state.
+ * @param positionalThreshold The positional threshold to be used when calculating the target state
+ *   while a swipe is in progress and when settling after the swipe ends. This is the distance from
+ *   the start of a transition. It will be, depending on the direction of the interaction, added or
+ *   subtracted from/to the origin offset. It should always be a positive value.
+ */
+@Composable
+fun rememberSwipeToDismissBoxState(
+    initialValue: SwipeToDismissBoxValue = SwipeToDismissBoxValue.Settled,
+    positionalThreshold: (totalDistance: Float) -> Float =
+        SwipeToDismissBoxDefaults.positionalThreshold,
+): SwipeToDismissBoxState {
+    return rememberSaveable(
+        saver = SwipeToDismissBoxState.Saver(positionalThreshold = positionalThreshold)
+    ) {
+        SwipeToDismissBoxState(initialValue, positionalThreshold)
     }
 }
 
@@ -180,6 +260,12 @@ class SwipeToDismissBoxState(
  *   subtracted from/to the origin offset. It should always be a positive value.
  */
 @Composable
+@Suppress("Deprecation")
+@Deprecated(
+    message = ConfirmValueChangeDeprecated,
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith("rememberSwipeToDismissBoxState(initialValue, positionalThreshold)"),
+)
 fun rememberSwipeToDismissBoxState(
     initialValue: SwipeToDismissBoxValue = SwipeToDismissBoxValue.Settled,
     confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = { true },
@@ -189,10 +275,10 @@ fun rememberSwipeToDismissBoxState(
     val density = LocalDensity.current
     return rememberSaveable(
         saver =
-            Saver(
+            SwipeToDismissBoxState.Saver(
                 confirmValueChange = confirmValueChange,
                 density = density,
-                positionalThreshold = positionalThreshold
+                positionalThreshold = positionalThreshold,
             )
     ) {
         SwipeToDismissBoxState(initialValue, density, confirmValueChange, positionalThreshold)
@@ -211,6 +297,8 @@ fun rememberSwipeToDismissBoxState(
  * @param enableDismissFromStartToEnd Whether SwipeToDismissBox can be dismissed from start to end.
  * @param enableDismissFromEndToStart Whether SwipeToDismissBox can be dismissed from end to start.
  * @param gesturesEnabled Whether swipe-to-dismiss can be interacted by gestures.
+ * @param onDismiss Optional callback to be called when [content] is dismissed. onDismissed provides
+ *   the current dismissed direction.
  * @param content The content that can be dismissed.
  */
 @Composable
@@ -221,6 +309,7 @@ fun SwipeToDismissBox(
     enableDismissFromStartToEnd: Boolean = true,
     enableDismissFromEndToStart: Boolean = true,
     gesturesEnabled: Boolean = true,
+    onDismiss: suspend (SwipeToDismissBoxValue) -> Unit = {},
     content: @Composable RowScope.() -> Unit,
 ) {
     Box(
@@ -229,8 +318,15 @@ fun SwipeToDismissBox(
                 state = state.anchoredDraggableState,
                 orientation = Orientation.Horizontal,
                 enabled = gesturesEnabled && state.currentValue == SwipeToDismissBoxValue.Settled,
+                flingBehavior =
+                    if (state.useFlingBehavior)
+                        AnchoredDraggableDefaults.flingBehavior(
+                            state = state.anchoredDraggableState,
+                            positionalThreshold = state.positionalThreshold,
+                        )
+                    else null,
             ),
-        propagateMinConstraints = true
+        propagateMinConstraints = true,
     ) {
         Row(content = backgroundContent, modifier = Modifier.matchParentSize())
         Row(
@@ -239,8 +335,8 @@ fun SwipeToDismissBox(
                 Modifier.draggableAnchorsV2(state.anchoredDraggableState, Orientation.Horizontal) {
                     size,
                     _ ->
-                    val width = size.width.toFloat()
                     DraggableAnchors {
+                        val width = size.width.toFloat()
                         SwipeToDismissBoxValue.Settled at 0f
                         if (enableDismissFromStartToEnd) {
                             SwipeToDismissBoxValue.StartToEnd at width
@@ -249,8 +345,14 @@ fun SwipeToDismissBox(
                             SwipeToDismissBoxValue.EndToStart at -width
                         }
                     } to state.targetValue
-                }
+                },
         )
+    }
+    LaunchedEffect(state.settledValue, onDismiss) {
+        // Only call when state is settled in a dismissed direction.
+        if (state.settledValue != SwipeToDismissBoxValue.Settled) {
+            onDismiss(state.dismissDirection)
+        }
     }
 }
 
@@ -260,5 +362,32 @@ object SwipeToDismissBoxDefaults {
     val positionalThreshold: (totalDistance: Float) -> Float
         @Composable get() = with(LocalDensity.current) { { 56.dp.toPx() } }
 }
+
+@Composable
+@Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message =
+        "Maintained for binary compatibility. Use updated signature with onDismissed " +
+            "parameter.",
+)
+fun SwipeToDismissBox(
+    state: SwipeToDismissBoxState,
+    backgroundContent: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    enableDismissFromStartToEnd: Boolean = true,
+    enableDismissFromEndToStart: Boolean = true,
+    gesturesEnabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) =
+    SwipeToDismissBox(
+        state = state,
+        backgroundContent = backgroundContent,
+        modifier = modifier,
+        enableDismissFromStartToEnd = enableDismissFromStartToEnd,
+        enableDismissFromEndToStart = enableDismissFromEndToStart,
+        gesturesEnabled = gesturesEnabled,
+        onDismiss = {},
+        content = content,
+    )
 
 private val DismissVelocityThreshold = 125.dp

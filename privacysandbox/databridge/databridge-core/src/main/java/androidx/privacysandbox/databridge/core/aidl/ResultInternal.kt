@@ -29,7 +29,7 @@ public data class ResultInternal(
     val keyName: String,
     val exceptionName: String?,
     val exceptionMessage: String?,
-    val valueInternal: ValueInternal?
+    val valueInternal: ValueInternal?,
 ) : Parcelable {
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(keyName)
@@ -51,7 +51,7 @@ public data class ResultInternal(
             val valueInternal =
                 parcel.readParcelable(
                     ValueInternal::class.java.classLoader,
-                    ValueInternal::class.java
+                    ValueInternal::class.java,
                 )
             return ResultInternal(keyName, exceptionName, exceptionString, valueInternal)
         }

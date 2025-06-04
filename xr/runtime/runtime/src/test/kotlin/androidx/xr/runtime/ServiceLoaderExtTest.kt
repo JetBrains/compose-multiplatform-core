@@ -41,7 +41,7 @@ class ServiceLoaderExtTest {
         assertThat(
                 loadProviders(
                         RuntimeFactory::class.java,
-                        listOf(FakeRuntimeFactory::class.java.name)
+                        listOf(FakeRuntimeFactory::class.java.name),
                     )
                     .single()
             )
@@ -83,7 +83,7 @@ class ServiceLoaderExtTest {
         ShadowBuild.setFingerprint("a_real_device")
 
         assertThat(getDeviceFeatures(ApplicationProvider.getApplicationContext()))
-            .containsExactly(Feature.FullStack)
+            .containsExactly(Feature.FULLSTACK)
     }
 
     @Test
@@ -93,7 +93,7 @@ class ServiceLoaderExtTest {
         shadowOf(context.packageManager)
             .setSystemFeature(FEATURE_XR_API_OPENXR, /* supported= */ true)
 
-        assertThat(getDeviceFeatures(context)).contains(Feature.OpenXr)
+        assertThat(getDeviceFeatures(context)).contains(Feature.OPEN_XR)
     }
 
     @Test
@@ -103,24 +103,24 @@ class ServiceLoaderExtTest {
         shadowOf(context.packageManager)
             .setSystemFeature(FEATURE_XR_API_SPATIAL, /* supported= */ true)
 
-        assertThat(getDeviceFeatures(context)).contains(Feature.Spatial)
+        assertThat(getDeviceFeatures(context)).contains(Feature.SPATIAL)
     }
 
     @Test
     fun selectProvider_selectsSupportedProvider() {
         val supportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK)
             }
         val unsupportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack, Feature.OpenXr)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
             }
 
         assertThat(
                 selectProvider(
                     listOf(unsupportedProvider, supportedProvider),
-                    setOf(Feature.FullStack)
+                    setOf(Feature.FULLSTACK),
                 )
             )
             .isEqualTo(supportedProvider)
@@ -130,7 +130,7 @@ class ServiceLoaderExtTest {
     fun selectProvider_noSupportedProvider_returnsNull() {
         val unsupportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack, Feature.OpenXr)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
             }
 
         assertThat(selectProvider(listOf(unsupportedProvider), emptySet())).isNull()

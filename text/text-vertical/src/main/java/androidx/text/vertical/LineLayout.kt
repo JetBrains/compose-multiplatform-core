@@ -35,7 +35,7 @@ internal fun createLineLayout(
     start: Int,
     end: Int,
     paint: TextPaint,
-    @OrientationMode textOrientation: Int
+    @OrientationMode textOrientation: Int,
 ) =
     LineLayout(
         mutableListOf<LayoutRun>().apply {
@@ -50,9 +50,7 @@ internal fun createLineLayout(
  *
  * @param runs The list of [LayoutRun]s composing this layout.
  */
-internal class LineLayout(
-    val runs: List<LayoutRun>,
-) {
+internal class LineLayout(val runs: List<LayoutRun>) {
     val start: Int
         get() = runs.first().start
 
@@ -101,7 +99,7 @@ internal class LineLayout(
                 Triple(
                     min(acc.first, run.leftSideOffset), // leftSide
                     max(acc.second, run.rightSideOffset), // rightSide
-                    acc.third + run.height // height
+                    acc.third + run.height, // height
                 )
             }
         leftSide = l

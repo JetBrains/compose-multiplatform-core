@@ -18,25 +18,17 @@ package androidx.xr.scenecore.samples.anchortest
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.PlaneSemantic
-import androidx.xr.scenecore.PlaneType
-import androidx.xr.scenecore.scene
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.time.TimeSource
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.xr.scenecore.PlaneOrientation
+import androidx.xr.scenecore.PlaneSemanticType
 
 class AnchorTestActivity : AppCompatActivity() {
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -63,29 +55,13 @@ class AnchorTestActivity : AppCompatActivity() {
         val anchoredTransformWidgetEntity =
             GltfModelEntity.create(session, transformWidgetModel, Pose.Identity)
         val anchor =
-            AnchorEntity.create(session, Dimensions(0.1f, 0.1f), PlaneType.ANY, PlaneSemantic.ANY)
+            AnchorEntity.create(
+                session,
+                FloatSize3d(0.1f, 0.1f),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
+            )
         anchor.addChild(anchoredTransformWidgetEntity)
         anchoredTransformWidgetEntity.setPose(Pose.Identity)
-
-        // Create another that is not anchored to see it move with the scene
-        val unused = GltfModelEntity.create(session, transformWidgetModel, Pose.Identity)
-
-        lifecycleScope.launch {
-            val pi = 3.14159F
-            val timeSource = TimeSource.Monotonic
-            val startTime = timeSource.markNow()
-            val rotateTimeMs = 10000F
-
-            while (true) {
-                delay(16L)
-                val angle =
-                    (2 * pi) * ((timeSource.markNow() - startTime).inWholeMilliseconds) /
-                        rotateTimeMs
-
-                val pos = Vector3(sin(angle), cos(angle), 0F)
-                // Moving the activity space should not move the anchor.
-                session.scene.activitySpace.setPose(Pose(pos))
-            }
-        }
     }
 }

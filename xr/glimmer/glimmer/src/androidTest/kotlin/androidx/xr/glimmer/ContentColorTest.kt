@@ -19,7 +19,6 @@ package androidx.xr.glimmer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -38,7 +37,13 @@ class ContentColorTest {
     fun defaultContentColor() {
         var color: Color = Color.Unspecified
         rule.setContent {
-            Box(Modifier.modifierLocalConsumer { color = ModifierLocalContentColor.current })
+            Box(
+                Modifier.then(
+                    DelegatableNodeProviderElement {
+                        color = it?.currentContentColor() ?: Color.Unspecified
+                    }
+                )
+            )
         }
 
         rule.runOnIdle { assertThat(color).isEqualTo(Color.White) }

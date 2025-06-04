@@ -54,23 +54,12 @@ public fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack {
 /** A List of objects that extend the [NavKey] marker class. */
 public typealias NavBackStack = SnapshotStateList<NavKey>
 
-/**
- * Provides a [SnapshotStateList] that is automatically remembered in the Compose hierarchy across
- * process death and config changes.
- */
-@Composable
-public fun <T : Any> rememberMutableStateListOf(vararg elements: T): SnapshotStateList<T> {
-    return rememberSaveable(saver = snapshotStateListSaver(serializableListSaver())) {
-        elements.toList().toMutableStateList()
-    }
-}
-
 internal fun <T : Any> serializableListSaver(
     serializer: KSerializer<T> = UnsafePolymorphicSerializer()
 ) =
     listSaver<List<T>, SavedState>(
         save = { list -> list.map { encodeToSavedState(serializer, it) } },
-        restore = { list -> list.map { decodeFromSavedState(serializer, it) } }
+        restore = { list -> list.map { decodeFromSavedState(serializer, it) } },
     )
 
 @Suppress("UNCHECKED_CAST")
@@ -85,7 +74,7 @@ internal fun <T> snapshotStateListSaver(
                 // that autoSaver() can handle)
                 save(state.toList().toMutableList())
             },
-            restore = { state -> restore(state)?.toMutableStateList() }
+            restore = { state -> restore(state)?.toMutableStateList() },
         )
     }
 

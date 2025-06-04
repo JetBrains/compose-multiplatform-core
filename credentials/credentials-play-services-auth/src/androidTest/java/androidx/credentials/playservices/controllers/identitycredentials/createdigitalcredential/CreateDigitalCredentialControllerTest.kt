@@ -54,7 +54,7 @@ class CreateDigitalCredentialControllerTest {
                 .isEqualTo(DEFAULT_REQUEST_JSON)
             val candidateQueryData = convertedRequest.candidateQueryData
             assertThat(candidateQueryData.getBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED)).isFalse()
-            assertThat(convertedRequest.origin).isNull()
+            assertThat(convertedRequest.origin).isEqualTo(DEFAULT_ORIGIN)
             assertThat(convertedRequest.requestJson).isEqualTo(DEFAULT_REQUEST_JSON)
             assertThat(convertedRequest.resultReceiver).isNotNull()
         }
@@ -75,7 +75,8 @@ class CreateDigitalCredentialControllerTest {
 
     companion object {
         const val DEFAULT_REQUEST_JSON = "{testRequestKey: testResponseValue}"
-        val DEFAULT_REQUEST = CreateDigitalCredentialRequest(DEFAULT_REQUEST_JSON)
+        const val DEFAULT_ORIGIN = "origin"
+        val DEFAULT_REQUEST = CreateDigitalCredentialRequest(DEFAULT_REQUEST_JSON, DEFAULT_ORIGIN)
 
         const val DEFAULT_RESPONSE_JSON = "{testResponseKey: testResponseValue}"
         val DEFAULT_RESPONSE_BUNDLE =
@@ -86,7 +87,7 @@ class CreateDigitalCredentialControllerTest {
         val DEFAULT_RESPONSE =
             CreateCredentialResponse(
                 DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
-                DEFAULT_RESPONSE_BUNDLE
+                DEFAULT_RESPONSE_BUNDLE,
             )
     }
 }

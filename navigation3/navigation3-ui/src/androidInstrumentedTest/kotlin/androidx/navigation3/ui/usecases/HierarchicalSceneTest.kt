@@ -50,7 +50,7 @@ import org.junit.runner.RunWith
 
 private class HierarchicalScene<T : Any>(
     private val navEntries: List<NavEntry<T>?>,
-    override val previousEntries: List<NavEntry<T>>
+    override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
     override val key: T = navEntries.filterNotNull().first().key
     override val entries: List<NavEntry<T>> = navEntries.filterNotNull()
@@ -68,9 +68,7 @@ private class HierarchicalScene<T : Any>(
     }
 }
 
-private class HierarchicalSceneStrategy<T : Any>(
-    private val columns: Int,
-) : SceneStrategy<T> {
+private class HierarchicalSceneStrategy<T : Any>(private val columns: Int) : SceneStrategy<T> {
     @Composable
     override fun calculateScene(
         entries: List<NavEntry<T>>,
@@ -85,7 +83,7 @@ private class HierarchicalSceneStrategy<T : Any>(
                         entries.dropLast(1)
                     } else {
                         emptyList()
-                    }
+                    },
             )
         }
     }

@@ -27,16 +27,14 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  * version should be made before invoking functions on Session.
  */
 @SuppressLint("BanUncheckedReflection") // using reflection on library classes
-internal class SessionProxy(
-    private val uiProviderVersion: Int,
-    private val origSession: Any,
-) : SandboxedUiAdapter.Session {
+internal class SessionProxy(private val uiProviderVersion: Int, private val origSession: Any) :
+    SandboxedUiAdapter.Session {
 
     private val targetClass =
         Class.forName(
                 "androidx.privacysandbox.ui.core.SandboxedUiAdapter\$Session",
                 /* initialize = */ false,
-                origSession.javaClass.classLoader
+                origSession.javaClass.classLoader,
             )
             .also { it.cast(origSession) }
 
@@ -66,7 +64,7 @@ internal class SessionProxy(
             parentView.paddingLeft,
             parentView.paddingTop,
             parentView.paddingLeft + width,
-            parentView.paddingTop + height
+            parentView.paddingTop + height,
         )
         notifyResizedMethod.invoke(origSession, width, height)
     }

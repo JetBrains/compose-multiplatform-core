@@ -317,6 +317,12 @@ public final class Preview extends UseCase {
             cameraEdge.close();
             mCameraEdge = null;
         }
+        if (mCurrentSurfaceRequest != null) {
+            // clear the transformationInfoListener to avoid memory leak
+            // SurfaceRequest reference might be held in the Camera2 framework on some devices.
+            // Its TransformationInfo listener could hold the context or activity reference forever.
+            mCurrentSurfaceRequest.clearTransformationInfoListener();
+        }
         mCurrentSurfaceRequest = null;
     }
 

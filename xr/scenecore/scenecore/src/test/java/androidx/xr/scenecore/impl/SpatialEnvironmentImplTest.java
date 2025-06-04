@@ -34,8 +34,6 @@ import androidx.xr.runtime.internal.SpatialEnvironment.SetPassthroughOpacityPref
 import androidx.xr.runtime.internal.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult;
 import androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.testing.FakeImpressApi;
-import androidx.xr.scenecore.testing.FakeImpressApi.MaterialData;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
@@ -50,6 +48,8 @@ import com.android.extensions.xr.space.SpatialState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl.MaterialData;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +77,7 @@ public final class SpatialEnvironmentImplTest {
     private static final int SUBSPACE_ID = 5;
     private static final int INVALID_SPLIT_ENGINE_ID = -1;
     private static final long WATER_MATERIAL_ID = 1;
-    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private ActivityController<Activity> mActivityController;
     private Activity mActivity;
     private XrExtensions mXrExtensions = null;

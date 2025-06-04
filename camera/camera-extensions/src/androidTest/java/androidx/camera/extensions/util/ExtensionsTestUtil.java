@@ -58,6 +58,7 @@ import androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.NightAdvancedExtenderImpl;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
+import androidx.camera.extensions.internal.Camera2ExtensionsInfo;
 import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.VendorExtender;
@@ -335,7 +336,8 @@ public class ExtensionsTestUtil {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 CameraManager cameraManager = applicationContext.getSystemService(
                         CameraManager.class);
-                return new Camera2ExtensionsVendorExtender(mode, cameraManager);
+                return new Camera2ExtensionsVendorExtender(mode,
+                        new Camera2ExtensionsInfo(cameraManager));
             } else {
                 return new VendorExtender() {
                 };

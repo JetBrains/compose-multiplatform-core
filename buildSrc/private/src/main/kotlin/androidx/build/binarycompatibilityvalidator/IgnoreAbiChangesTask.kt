@@ -94,7 +94,7 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
         val shouldFreeze =
             shouldFreezeApis(
                 Version(parameters.referenceVersion.get()),
-                Version(parameters.projectVersion.get())
+                Version(parameters.projectVersion.get()),
             )
         val ignoredErrors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
@@ -102,7 +102,7 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
                     previousDump,
                     null,
                     validate = false,
-                    shouldFreeze = shouldFreeze
+                    shouldFreeze = shouldFreeze,
                 )
                 .map { it.toString() }
                 .toSet()

@@ -49,9 +49,9 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.GltfModel
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SpatialCapabilities
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
@@ -77,7 +77,7 @@ class EnvironmentTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val mActivity = this
 
-        session.scene.mainPanelEntity.setSizeInPixels(PixelDimensions(width = 1500, height = 2000))
+        session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(width = 1500, height = 2000))
 
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         session.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener { newOpacity ->
@@ -94,7 +94,7 @@ class EnvironmentTestActivity : ComponentActivity() {
             onPassthroughOpacityChangedCount++
             Log.i(
                 TAG,
-                "PassthroughOpacity changed to: $it, count: $onPassthroughOpacityChangedCount"
+                "PassthroughOpacity changed to: $it, count: $onPassthroughOpacityChangedCount",
             )
         }
 
@@ -330,7 +330,7 @@ class EnvironmentTestActivity : ComponentActivity() {
                     spatialEnvironmentPreference =
                         SpatialEnvironmentPreference(
                             spatialEnvironmentPreference?.skybox,
-                            groundGeo
+                            groundGeo,
                         )
                     lastApiCall = "setGeometryDeprecated"
                     session.scene.spatialEnvironment.setGeometry(groundGeo)
@@ -355,7 +355,7 @@ class EnvironmentTestActivity : ComponentActivity() {
                     spatialEnvironmentPreference =
                         SpatialEnvironmentPreference(
                             blueSkybox,
-                            spatialEnvironmentPreference?.geometry
+                            spatialEnvironmentPreference?.geometry,
                         )
                     lastApiCall = "setSkyboxDeprecated"
                     session.scene.spatialEnvironment.setSkybox(blueSkybox)

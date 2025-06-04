@@ -47,6 +47,6 @@ internal interface IRemoteSessionController {
     fun notifyMotionEvent(
         motionEvent: MotionEvent,
         eventTargetFrameTime: Long,
-        eventTransferCallback: IMotionEventTransferCallback?
+        eventTransferCallback: IMotionEventTransferCallback?,
     )
 }

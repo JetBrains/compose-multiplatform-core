@@ -159,7 +159,7 @@ class TextFieldBufferTest {
         val state =
             TextFieldBuffer(
                 initialValue = TextFieldCharSequence("hello", TextRange(2)),
-                originalValue = expectedValue
+                originalValue = expectedValue,
             )
         state.revertAllChanges()
         assertThat(state.toTextFieldCharSequence()).isEqualTo(expectedValue)
@@ -617,7 +617,7 @@ class TextFieldBufferTest {
     private fun testSelectionAdjustment(
         initial: String,
         transform: TextFieldBuffer.() -> Unit,
-        expected: String
+        expected: String,
     ) {
         val state = TextFieldBuffer(initial.parseAsTextEditState())
         state.transform()
@@ -653,7 +653,7 @@ class TextFieldBufferTest {
                     firstMark == -1 -> TextRange.Zero
                     secondMark == -1 -> TextRange(firstMark)
                     else -> TextRange(firstMark, secondMark)
-                }
+                },
         )
     }
 
@@ -670,7 +670,7 @@ class TextFieldBufferTest {
     private fun assertCommonPrefixAndSuffix(
         a: CharSequence,
         b: CharSequence,
-        expectedRanges: Pair<TextRange, TextRange>?
+        expectedRanges: Pair<TextRange, TextRange>?,
     ) {
         var result: Pair<TextRange, TextRange>? = null
         findCommonPrefixAndSuffix(a, b) { aStart, aEnd, bStart, bEnd ->

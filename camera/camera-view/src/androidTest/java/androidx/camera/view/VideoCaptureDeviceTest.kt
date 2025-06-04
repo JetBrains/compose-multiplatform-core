@@ -168,7 +168,7 @@ class VideoCaptureDeviceTest(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule(order = 3)
@@ -240,7 +240,7 @@ class VideoCaptureDeviceTest(
         if (Build.VERSION.SDK_INT == 28) return // b/264902324
         assumeTrue(
             "Ignore the test since the MediaStore.Video has compatibility issues.",
-            DeviceQuirks.get(MediaStoreVideoCannotWrite::class.java) == null
+            DeviceQuirks.get(MediaStoreVideoCannotWrite::class.java) == null,
         )
 
         // Arrange.
@@ -518,7 +518,7 @@ class VideoCaptureDeviceTest(
                         cameraController.startRecording(
                             outputOptions2,
                             audioEnabled,
-                            CameraXExecutors.directExecutor()
+                            CameraXExecutors.directExecutor(),
                         ) {}
                 }
                 activeRecording.stop()
@@ -574,7 +574,7 @@ class VideoCaptureDeviceTest(
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, videoFileName)
         return MediaStoreOutputOptions.Builder(
                 resolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             )
             .setContentValues(contentValues)
             .build()
@@ -593,7 +593,7 @@ class VideoCaptureDeviceTest(
     private fun recordVideoWithInterruptAction(
         outputOptions: OutputOptions,
         audioConfig: AudioConfig,
-        runInterruptAction: () -> Unit
+        runInterruptAction: () -> Unit,
     ) {
         // Arrange.
         latchForVideoSaved = CountDownLatch(VIDEO_SAVED_COUNT_DOWN)
@@ -635,7 +635,7 @@ class VideoCaptureDeviceTest(
                     outputOptions,
                     audioConfig,
                     CameraXExecutors.directExecutor(),
-                    videoRecordEventListener
+                    videoRecordEventListener,
                 )
         } else if (outputOptions is FileDescriptorOutputOptions) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -644,7 +644,7 @@ class VideoCaptureDeviceTest(
                         outputOptions,
                         audioConfig,
                         CameraXExecutors.directExecutor(),
-                        videoRecordEventListener
+                        videoRecordEventListener,
                     )
             } else {
                 throw UnsupportedOperationException(
@@ -657,7 +657,7 @@ class VideoCaptureDeviceTest(
                     outputOptions,
                     audioConfig,
                     CameraXExecutors.directExecutor(),
-                    videoRecordEventListener
+                    videoRecordEventListener,
                 )
         } else {
             throw IllegalArgumentException("Unsupported OutputOptions type.")
@@ -697,7 +697,7 @@ class VideoCaptureDeviceTest(
         // Skip test for b/253211491
         Assume.assumeFalse(
             "Skip tests for Cuttlefish API 30 eglCreateWindowSurface issue",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
     }
 }

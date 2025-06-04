@@ -67,7 +67,8 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
                 }
                 MutableStateFlow(regular[key])
             }
-        @Suppress("UNCHECKED_CAST") return flow.asStateFlow() as StateFlow<T>
+        @Suppress("UNCHECKED_CAST")
+        return flow.asStateFlow() as StateFlow<T>
     }
 
     @MainThread
@@ -83,7 +84,8 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
                 }
                 MutableStateFlow(regular[key])
             }
-        @Suppress("UNCHECKED_CAST") return flow as MutableStateFlow<T>
+        @Suppress("UNCHECKED_CAST")
+        return flow as MutableStateFlow<T>
     }
 
     @MainThread fun keys(): Set<String> = regular.keys + providers.keys
@@ -112,6 +114,7 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
     fun <T> remove(key: String): T? {
         @Suppress("UNCHECKED_CAST") val latestValue = regular.remove(key) as T?
         flows.remove(key)
+        mutableFlows.remove(key)
         return latestValue
     }
 

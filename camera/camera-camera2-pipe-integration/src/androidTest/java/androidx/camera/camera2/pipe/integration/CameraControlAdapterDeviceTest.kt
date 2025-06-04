@@ -212,7 +212,7 @@ class CameraControlAdapterDeviceTest {
                 { requestMeta: RequestMetadata, _ ->
                     requestMeta.isAeMode(CONTROL_AE_MODE_ON_AUTO_FLASH)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
         Truth.assertThat(cameraControl.flashMode).isEqualTo(ImageCapture.FLASH_MODE_AUTO)
     }
@@ -226,7 +226,7 @@ class CameraControlAdapterDeviceTest {
         waitForResult(captureCount = 60)
             .verify(
                 { requestMeta: RequestMetadata, _ -> requestMeta.isAeMode(CONTROL_AE_MODE_ON) },
-                TIMEOUT
+                TIMEOUT,
             )
         Truth.assertThat(cameraControl.flashMode).isEqualTo(ImageCapture.FLASH_MODE_OFF)
     }
@@ -242,7 +242,7 @@ class CameraControlAdapterDeviceTest {
                 { requestMeta: RequestMetadata, _ ->
                     requestMeta.isAeMode(CONTROL_AE_MODE_ON_ALWAYS_FLASH)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
         Truth.assertThat(cameraControl.flashMode).isEqualTo(ImageCapture.FLASH_MODE_ON)
     }
@@ -259,7 +259,7 @@ class CameraControlAdapterDeviceTest {
                     frameInfo.requestMetadata[FLASH_MODE] == FLASH_MODE_TORCH &&
                         requestMeta.isAeMode(CONTROL_AE_MODE_ON)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -276,7 +276,7 @@ class CameraControlAdapterDeviceTest {
                     frameInfo.requestMetadata[FLASH_MODE] != FLASH_MODE_TORCH &&
                         requestMeta.isAeMode(CONTROL_AE_MODE_ON_AUTO_FLASH)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -293,7 +293,7 @@ class CameraControlAdapterDeviceTest {
                     requestMeta.isAeMode(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY) &&
                         frameInfo.requestMetadata[FLASH_MODE] == FLASH_MODE_OFF
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -310,7 +310,7 @@ class CameraControlAdapterDeviceTest {
                 { requestMeta: RequestMetadata, _ ->
                     requestMeta.isAeMode(CONTROL_AE_MODE_ON_AUTO_FLASH)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -358,7 +358,7 @@ class CameraControlAdapterDeviceTest {
 
                     afRegionMatched && aeRegionMatched && awbRegionMatched
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -385,7 +385,7 @@ class CameraControlAdapterDeviceTest {
                         requestMeta
                             .getOrDefault(
                                 CONTROL_AF_REGIONS,
-                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT,
                             )
                             .contentEquals(CameraGraph.Constants3A.METERING_REGIONS_DEFAULT)
 
@@ -393,7 +393,7 @@ class CameraControlAdapterDeviceTest {
                         requestMeta
                             .getOrDefault(
                                 CONTROL_AE_REGIONS,
-                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT,
                             )
                             .contentEquals(CameraGraph.Constants3A.METERING_REGIONS_DEFAULT)
 
@@ -401,13 +401,13 @@ class CameraControlAdapterDeviceTest {
                         requestMeta
                             .getOrDefault(
                                 CONTROL_AWB_REGIONS,
-                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+                                CameraGraph.Constants3A.METERING_REGIONS_DEFAULT,
                             )
                             .contentEquals(CameraGraph.Constants3A.METERING_REGIONS_DEFAULT)
 
                     isDefaultAfRegion && isDefaultAeRegion && isDefaultAwbRegion
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -426,7 +426,7 @@ class CameraControlAdapterDeviceTest {
                 { requestMeta: RequestMetadata, _ ->
                     requestMeta.isAfMode(CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -445,7 +445,7 @@ class CameraControlAdapterDeviceTest {
                 { requestMeta: RequestMetadata, _ ->
                     requestMeta.isAfMode(CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -488,7 +488,7 @@ class CameraControlAdapterDeviceTest {
                     assumeThat(
                         "EV Request doesn't set to CaptureRequest, ignore the test",
                         captureRequest.request[CONTROL_AE_EXPOSURE_COMPENSATION],
-                        equalTo(1)
+                        equalTo(1),
                     )
 
                     // Ensure the Camera2Interop working before testing
@@ -496,7 +496,7 @@ class CameraControlAdapterDeviceTest {
                         assumeThat(
                             "Camera2Interop Request doesn't set to CaptureRequest, ignore the test",
                             captureRequest.request[CONTROL_EFFECT_MODE],
-                            equalTo(testEffectMode)
+                            equalTo(testEffectMode),
                         )
                     }
 
@@ -505,18 +505,18 @@ class CameraControlAdapterDeviceTest {
                         assumeThat(
                             "Zoom Request doesn't set to CaptureRequest, ignore the test",
                             captureRequest.request[CONTROL_ZOOM_RATIO],
-                            notNullValue()
+                            notNullValue(),
                         )
                     } else {
                         assumeThat(
                             "Zoom Request doesn't set to CaptureRequest, ignore the test",
                             captureRequest.request[SCALER_CROP_REGION],
-                            notNullValue()
+                            notNullValue(),
                         )
                     }
                     return@verify true
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -546,7 +546,7 @@ class CameraControlAdapterDeviceTest {
 
                     checkEV && checkEffectMode && checkZoom
                 },
-                TIMEOUT
+                TIMEOUT,
             )
     }
 
@@ -556,12 +556,7 @@ class CameraControlAdapterDeviceTest {
         }
 
     private fun bindUseCase(vararg useCases: UseCase) {
-        camera =
-            CameraUtil.createCameraAndAttachUseCase(
-                context,
-                cameraSelector,
-                *useCases,
-            )
+        camera = CameraUtil.createCameraAndAttachUseCase(context, cameraSelector, *useCases)
         cameraControl = camera.cameraControl.toCameraControlAdapter()
     }
 
@@ -621,7 +616,7 @@ class CameraControlAdapterDeviceTest {
             object : SurfaceTextureProvider.SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size
+                    resolution: Size,
                 ) {
                     // No-op
                 }

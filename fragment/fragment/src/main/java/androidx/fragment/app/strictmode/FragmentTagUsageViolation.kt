@@ -25,9 +25,9 @@ internal constructor(
     /**
      * Gets the parent container that the [Fragment] causing the Violation would have been added to.
      */
-    val parentContainer: ViewGroup?
+    val parentContainer: ViewGroup?,
 ) :
     Violation(
         fragment,
-        "Attempting to use <fragment> tag to add fragment $fragment to container $parentContainer"
+        "Attempting to use <fragment> tag to add fragment $fragment to container $parentContainer",
     )

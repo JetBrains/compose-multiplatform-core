@@ -152,7 +152,7 @@ class CreatePublicKeyCredentialControllerTest {
                 requestJson =
                     CreatePublicKeyCredentialControllerTestUtils
                         .MAIN_CREATE_JSON_ALL_REQUIRED_AND_OPTIONAL_FIELDS_PRESENT,
-                isConditional = true
+                isConditional = true,
             )
         val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
 
@@ -166,7 +166,7 @@ class CreatePublicKeyCredentialControllerTest {
             Truth.assertThat(convertedRequest.type).isEqualTo(request.type)
             TestUtils.Companion.equals(
                 convertedRequest.candidateQueryData,
-                request.candidateQueryData
+                request.candidateQueryData,
             )
             TestUtils.Companion.equals(convertedRequest.credentialData, request.credentialData)
             val jetpackRequestFromConvertedRequest =
@@ -174,7 +174,7 @@ class CreatePublicKeyCredentialControllerTest {
                     convertedRequest.type,
                     convertedRequest.candidateQueryData,
                     convertedRequest.credentialData,
-                    false
+                    false,
                 )
             Truth.assertThat(jetpackRequestFromConvertedRequest is CreatePublicKeyCredentialRequest)
             val createPublicKeyReq =

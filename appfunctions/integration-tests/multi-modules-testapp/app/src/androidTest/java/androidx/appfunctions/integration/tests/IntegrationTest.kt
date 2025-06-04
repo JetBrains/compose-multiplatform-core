@@ -84,7 +84,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFunctions#add",
-                        AppFunctionData.Builder("").setLong("num1", 1).setLong("num2", 2).build()
+                        AppFunctionData.Builder("").setLong("num1", 1).setLong("num2", 2).build(),
                     )
             )
 
@@ -125,7 +125,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFunctions#voidFunction",
-                        AppFunctionData.Builder("").build()
+                        AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -142,7 +142,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory",
-                        AppFunctionData.Builder("").build()
+                        AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -168,7 +168,7 @@ class IntegrationTest {
                         AppFunctionData.Builder("")
                             .setString("str1", "log")
                             .setString("str2", "cat")
-                            .build()
+                            .build(),
                     )
             )
 
@@ -189,7 +189,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFunctions#notExist",
-                        AppFunctionData.Builder("").build()
+                        AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -206,7 +206,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFunctions#doThrow",
-                        AppFunctionData.Builder("").build()
+                        AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -233,12 +233,12 @@ class IntegrationTest {
                                         content = listOf("1", "2"),
                                         owner = Owner("test"),
                                         attachments =
-                                            listOf(Attachment("Uri1", Attachment("nested")))
+                                            listOf(Attachment("Uri1", Attachment("nested"))),
                                     ),
-                                    CreateNoteParams::class.java
-                                )
+                                    CreateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -248,7 +248,7 @@ class IntegrationTest {
                 title = "Test Title",
                 content = listOf("1", "2"),
                 owner = Owner("test"),
-                attachments = listOf(Attachment("Uri1", Attachment("nested")))
+                attachments = listOf(Attachment("Uri1", Attachment("nested"))),
             )
         assertThat(
                 successResponse.returnValue
@@ -275,12 +275,12 @@ class IntegrationTest {
                                         content = listOf("1", "2"),
                                         owner = Owner("test"),
                                         attachments =
-                                            listOf(Attachment("Uri1", Attachment("nested")))
+                                            listOf(Attachment("Uri1", Attachment("nested"))),
                                     ),
-                                    CreateNoteParams::class.java
-                                )
+                                    CreateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -290,7 +290,7 @@ class IntegrationTest {
                 title = "Test Title",
                 content = listOf("1", "2"),
                 owner = Owner("test"),
-                attachments = listOf(Attachment("Uri1", Attachment("nested")))
+                attachments = listOf(Attachment("Uri1", Attachment("nested"))),
             )
         assertThat(
                 successResponse.returnValue
@@ -317,12 +317,12 @@ class IntegrationTest {
                                         content = listOf("1", "2"),
                                         owner = Owner("test"),
                                         attachments =
-                                            listOf(Attachment("Uri1", Attachment("nested")))
+                                            listOf(Attachment("Uri1", Attachment("nested"))),
                                     ),
-                                    CreateNoteParams::class.java
-                                )
+                                    CreateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -364,10 +364,10 @@ class IntegrationTest {
                                     "dateTime",
                                     AppFunctionData.serialize(
                                         localDateTimeClass,
-                                        DateTime::class.java
-                                    )
+                                        DateTime::class.java,
+                                    ),
                                 )
-                                .build()
+                                .build(),
                     )
             )
 
@@ -388,9 +388,9 @@ class IntegrationTest {
                             AppFunctionData.Builder("")
                                 .setAppFunctionData(
                                     "androidUri",
-                                    AppFunctionData.serialize(androidUri, Uri::class.java)
+                                    AppFunctionData.serialize(androidUri, Uri::class.java),
                                 )
-                                .build()
+                                .build(),
                     )
             )
 
@@ -406,7 +406,7 @@ class IntegrationTest {
                         targetPackageName = context.packageName,
                         functionIdentifier =
                             "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate",
-                        functionParameters = AppFunctionData.Builder("").build()
+                        functionParameters = AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -429,7 +429,7 @@ class IntegrationTest {
                         targetPackageName = context.packageName,
                         functionIdentifier =
                             "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri",
-                        functionParameters = AppFunctionData.Builder("").build()
+                        functionParameters = AppFunctionData.Builder("").build(),
                     )
             )
 
@@ -446,6 +446,8 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNote_success() = doBlocking {
+        val attachment = Attachment(uri = "uri", nested = null)
+        val dateTime = LocalDateTime.of(1, 1, 1, 1, 1)
         val response =
             appFunctionManager.executeAppFunction(
                 request =
@@ -460,12 +462,14 @@ class IntegrationTest {
                                         title = SetField("NewTitle1"),
                                         nullableTitle = SetField("NewTitle2"),
                                         content = SetField(listOf("NewContent1")),
-                                        nullableContent = SetField(listOf("NewContent2"))
+                                        nullableContent = SetField(listOf("NewContent2")),
+                                        attachments = SetField(listOf(attachment)),
+                                        modifiedTime = SetField(dateTime),
                                     ),
-                                    UpdateNoteParams::class.java
-                                )
+                                    UpdateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -475,7 +479,8 @@ class IntegrationTest {
                 title = "NewTitle1_NewTitle2",
                 content = listOf("NewContent1", "NewContent2"),
                 owner = Owner("test"),
-                attachments = listOf()
+                attachments = listOf(attachment),
+                modifiedTime = dateTime,
             )
         assertThat(
                 successResponse.returnValue
@@ -501,12 +506,12 @@ class IntegrationTest {
                                         title = SetField("NewTitle1"),
                                         nullableTitle = SetField(null),
                                         content = SetField(listOf("NewContent1")),
-                                        nullableContent = SetField(null)
+                                        nullableContent = SetField(null),
                                     ),
-                                    UpdateNoteParams::class.java
-                                )
+                                    UpdateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -516,7 +521,7 @@ class IntegrationTest {
                 title = "NewTitle1_DefaultTitle",
                 content = listOf("NewContent1", "DefaultContent"),
                 owner = Owner("test"),
-                attachments = listOf()
+                attachments = listOf(),
             )
         assertThat(
                 successResponse.returnValue
@@ -539,10 +544,10 @@ class IntegrationTest {
                                 "updateNoteParams",
                                 AppFunctionData.serialize(
                                     UpdateNoteParams(),
-                                    UpdateNoteParams::class.java
-                                )
+                                    UpdateNoteParams::class.java,
+                                ),
                             )
-                            .build()
+                            .build(),
                     )
             )
 
@@ -552,7 +557,7 @@ class IntegrationTest {
                 title = "DefaultTitle_DefaultTitle",
                 content = listOf("DefaultContent", "DefaultContent"),
                 owner = Owner("test"),
-                attachments = listOf()
+                attachments = listOf(),
             )
         assertThat(
                 successResponse.returnValue
@@ -583,7 +588,7 @@ class IntegrationTest {
                 functionParameters =
                     AppFunctionData.Builder(
                             createNoteMetadata.parameters,
-                            createNoteMetadata.components
+                            createNoteMetadata.components,
                         )
                         .setAppFunctionData(
                             "parameters",
@@ -591,14 +596,14 @@ class IntegrationTest {
                                     requireTargetObjectTypeMetadata(
                                         "parameters",
                                         createNoteMetadata.parameters,
-                                        createNoteMetadata.components
+                                        createNoteMetadata.components,
                                     ),
-                                    createNoteMetadata.components
+                                    createNoteMetadata.components,
                                 )
                                 .setString("title", "Test Title")
-                                .build()
+                                .build(),
                         )
-                        .build()
+                        .build(),
             )
 
         val response = appFunctionManager.executeAppFunction(request)
@@ -632,18 +637,15 @@ class IntegrationTest {
                     requireTargetObjectTypeMetadata(
                         "parameters",
                         createNoteMetadata.parameters,
-                        createNoteMetadata.components
+                        createNoteMetadata.components,
                     ),
-                    createNoteMetadata.components
+                    createNoteMetadata.components,
                 )
                 .setString("title", "Test Title")
                 .build()
         assertThrows(IllegalArgumentException::class.java) {
             AppFunctionData.Builder(createNoteMetadata.parameters, createNoteMetadata.components)
-                .setAppFunctionData(
-                    "wrongParameters",
-                    innerData,
-                )
+                .setAppFunctionData("wrongParameters", innerData)
         }
     }
 
@@ -667,9 +669,9 @@ class IntegrationTest {
                     requireTargetObjectTypeMetadata(
                         "parameters",
                         createNoteMetadata.parameters,
-                        createNoteMetadata.components
+                        createNoteMetadata.components,
                     ),
-                    createNoteMetadata.components
+                    createNoteMetadata.components,
                 )
                 .setString("wrongTitle", "Test Title")
                 .build()
@@ -686,7 +688,7 @@ class IntegrationTest {
     private fun requireTargetObjectTypeMetadata(
         parameterName: String,
         parameters: List<AppFunctionParameterMetadata>,
-        components: AppFunctionComponentsMetadata
+        components: AppFunctionComponentsMetadata,
     ): AppFunctionObjectTypeMetadata {
         val targetParameterMetadata =
             parameters.find { it.name == parameterName }

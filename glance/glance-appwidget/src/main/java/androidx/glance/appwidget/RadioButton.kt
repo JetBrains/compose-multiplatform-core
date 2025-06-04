@@ -132,7 +132,7 @@ public fun RadioButton(
         text,
         style,
         colors,
-        maxLines
+        maxLines,
     )
 
 /**
@@ -177,7 +177,7 @@ public fun RadioButton(
         text,
         style,
         colors,
-        maxLines
+        maxLines,
     )
 
 /** Contains the default values used by [RadioButton]. */
@@ -199,7 +199,7 @@ public object RadioButtonDefaults {
                 createCheckableColorProvider(
                     source = "RadioButtonColors",
                     checked = checkedColor,
-                    unchecked = uncheckedColor
+                    unchecked = uncheckedColor,
                 )
         )
     }
@@ -215,7 +215,7 @@ public object RadioButtonDefaults {
     public fun colors(checkedColor: Color, uncheckedColor: Color): RadioButtonColors =
         colors(
             checkedColor = FixedColorProvider(checkedColor),
-            uncheckedColor = FixedColorProvider(uncheckedColor)
+            uncheckedColor = FixedColorProvider(uncheckedColor),
         )
 
     /**
@@ -234,7 +234,7 @@ public object RadioButtonDefaults {
                 createCheckableColorProvider(
                     source = "CheckBoxColors",
                     checked = GlanceTheme.colors.primary,
-                    unchecked = GlanceTheme.colors.onSurfaceVariant
+                    unchecked = GlanceTheme.colors.onSurfaceVariant,
                 )
             }
 
@@ -264,7 +264,7 @@ private fun RadioButtonElement(
             this.set(style) { this.style = it }
             this.set(colors) { this.colors = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 

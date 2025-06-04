@@ -87,7 +87,7 @@ class FormWidgetInfoTest {
                 widgetRect,
                 textValue,
                 accessibilityLabel,
-                listItems = listItems
+                listItems = listItems,
             )
         assertEquals(widgetType, widgetInfo.widgetType)
         assertEquals(widgetIndex, widgetInfo.widgetIndex)
@@ -138,13 +138,7 @@ class FormWidgetInfoTest {
         val accessibilityLabel = "TextField Label"
 
         val originalWidgetInfo =
-            FormWidgetInfo(
-                widgetType,
-                widgetIndex,
-                widgetRect,
-                textValue,
-                accessibilityLabel,
-            )
+            FormWidgetInfo(widgetType, widgetIndex, widgetRect, textValue, accessibilityLabel)
 
         val parcel = Parcel.obtain()
         originalWidgetInfo.writeToParcel(parcel, 0)
@@ -172,7 +166,7 @@ class FormWidgetInfoTest {
                 widgetRect,
                 textValue,
                 accessibilityLabel,
-                listItems = listItems
+                listItems = listItems,
             )
 
         val parcel = Parcel.obtain()
@@ -193,7 +187,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertEquals(widgetInfo, widgetInfo)
     }
@@ -206,7 +200,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -214,7 +208,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertEquals(widgetInfo1, widgetInfo2)
     }
@@ -227,7 +221,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -235,7 +229,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -248,7 +242,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -256,7 +250,7 @@ class FormWidgetInfoTest {
                 1,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -269,7 +263,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -277,7 +271,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(10, 10, 110, 60),
                 "Text",
-                "Label"
+                "Label",
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -291,7 +285,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                readOnly = false
+                readOnly = false,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -300,7 +294,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                readOnly = true
+                readOnly = true,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -313,7 +307,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text1",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -321,7 +315,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text2",
-                "Label"
+                "Label",
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -334,7 +328,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label1"
+                "Label1",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -342,7 +336,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label2"
+                "Label2",
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -356,7 +350,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                editableText = false
+                editableText = false,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -365,7 +359,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                editableText = true
+                editableText = true,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -379,7 +373,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                multiSelect = false
+                multiSelect = false,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -388,7 +382,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                multiSelect = true
+                multiSelect = true,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -402,7 +396,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                multiLineText = false
+                multiLineText = false,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -411,7 +405,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                multiLineText = true
+                multiLineText = true,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -425,7 +419,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                maxLength = 10
+                maxLength = 10,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -434,7 +428,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                maxLength = 20
+                maxLength = 20,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -448,7 +442,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                fontSize = 12.0f
+                fontSize = 12.0f,
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -457,7 +451,7 @@ class FormWidgetInfoTest {
                 Rect(0, 0, 100, 50),
                 "Text",
                 "Label",
-                fontSize = 14.0f
+                fontSize = 14.0f,
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -472,7 +466,7 @@ class FormWidgetInfoTest {
                 "Text",
                 "Label",
                 fontSize = 10.5f,
-                listItems = listOf(ListItem("Option 1", true))
+                listItems = listOf(ListItem("Option 1", true)),
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -482,7 +476,7 @@ class FormWidgetInfoTest {
                 "Text",
                 "Label",
                 fontSize = 10.5f,
-                listItems = listOf(ListItem("Option 2", false))
+                listItems = listOf(ListItem("Option 2", false)),
             )
         assertNotEquals(widgetInfo1, widgetInfo2)
     }
@@ -495,7 +489,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val other = "Not a FormWidgetInfo"
         assertNotEquals(widgetInfo, other)
@@ -509,7 +503,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertNotEquals(widgetInfo, null)
     }
@@ -522,7 +516,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -530,7 +524,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertEquals(widgetInfo1.hashCode(), widgetInfo2.hashCode())
     }
@@ -543,7 +537,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         val widgetInfo2 =
             FormWidgetInfo(
@@ -552,7 +546,7 @@ class FormWidgetInfoTest {
                 Rect(10, 10, 110, 60),
                 "Other Text",
                 "Other Label",
-                readOnly = true
+                readOnly = true,
             )
         assertNotEquals(widgetInfo1.hashCode(), widgetInfo2.hashCode())
     }
@@ -565,7 +559,7 @@ class FormWidgetInfoTest {
                 0,
                 Rect(0, 0, 100, 50),
                 "Text",
-                "Label"
+                "Label",
             )
         assertEquals(0, widgetInfo.describeContents())
     }
@@ -585,7 +579,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            editableText = true
+            editableText = true,
         )
     }
 
@@ -597,7 +591,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            multiSelect = true
+            multiSelect = true,
         )
     }
 
@@ -609,7 +603,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            multiLineText = true
+            multiLineText = true,
         )
     }
 
@@ -621,7 +615,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            maxLength = 10
+            maxLength = 10,
         )
     }
 
@@ -633,7 +627,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            fontSize = 10f
+            fontSize = 10f,
         )
     }
 
@@ -645,7 +639,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            listItems = listOf(ListItem("Option 1", true))
+            listItems = listOf(ListItem("Option 1", true)),
         )
     }
 
@@ -657,7 +651,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            maxLength = 0
+            maxLength = 0,
         )
     }
 
@@ -669,7 +663,7 @@ class FormWidgetInfoTest {
             Rect(0, 0, 100, 50),
             "Text",
             "Label",
-            fontSize = 0f
+            fontSize = 0f,
         )
     }
 }

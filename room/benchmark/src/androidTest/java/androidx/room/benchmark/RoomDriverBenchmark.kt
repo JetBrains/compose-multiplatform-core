@@ -182,7 +182,7 @@ class RoomDriverBenchmark(private val useDriver: UseDriver) {
         enum class UseDriver {
             ANDROID,
             BUNDLED,
-            NONE
+            NONE,
         }
 
         const val SMALL_AMOUNT = 25

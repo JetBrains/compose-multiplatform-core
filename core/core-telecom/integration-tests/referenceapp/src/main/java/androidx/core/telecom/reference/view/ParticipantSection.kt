@@ -59,7 +59,7 @@ fun ParticipantSection(
                 Icon(
                     Icons.Filled.Remove,
                     contentDescription = "Remove",
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(4.dp))
                 Text("Remove Last")
@@ -72,7 +72,7 @@ fun ParticipantSection(
                 Text(
                     "No participants",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp)
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
                 )
             } else {
                 participants.forEach { participant -> ParticipantRow(participant = participant) }

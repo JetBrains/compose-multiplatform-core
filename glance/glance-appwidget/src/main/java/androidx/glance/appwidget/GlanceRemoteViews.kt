@@ -75,7 +75,7 @@ public class GlanceRemoteViews {
         size: DpSize,
         state: Any? = null,
         appWidgetOptions: Bundle = Bundle(),
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ): RemoteViewsCompositionResult =
         withContext(BroadcastFrameClock()) {
             val layoutConfiguration = initializeLayoutConfiguration(context)
@@ -108,7 +108,7 @@ public class GlanceRemoteViews {
                     root,
                     layoutConfiguration,
                     layoutConfiguration.addLayout(root),
-                    size
+                    size,
                 )
             )
         }
@@ -120,7 +120,7 @@ public class GlanceRemoteViews {
                     layoutConfiguration
                         ?: LayoutConfiguration.create(
                             context,
-                            AppWidgetManager.INVALID_APPWIDGET_ID
+                            AppWidgetManager.INVALID_APPWIDGET_ID,
                         )
                 layoutConfiguration!!
             }

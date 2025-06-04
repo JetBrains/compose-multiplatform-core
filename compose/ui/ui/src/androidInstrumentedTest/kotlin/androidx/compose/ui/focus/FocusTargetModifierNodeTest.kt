@@ -270,11 +270,11 @@ class FocusTargetModifierNodeTest {
         rule.setFocusableContent {
             FocusTargetModifierNodeBox(
                 parentFocusTargetModifierNode,
-                Modifier.focusRequester(parentFocusRequester)
+                Modifier.focusRequester(parentFocusRequester),
             ) {
                 FocusTargetModifierNodeBox(
                     childFocusTargetModifierNode,
-                    Modifier.focusRequester(childFocusRequester)
+                    Modifier.focusRequester(childFocusRequester),
                 ) {}
             }
         }
@@ -370,7 +370,7 @@ class FocusTargetModifierNodeTest {
 private fun FocusTargetModifierNodeBox(
     focusTargetModifierNode: FocusTargetModifierNode,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit = {}
+    content: @Composable BoxScope.() -> Unit = {},
 ) {
     val node = remember {
         object : DelegatingNode() {

@@ -23,6 +23,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import androidx.pdf.PdfDocument
 import androidx.pdf.content.PdfPageTextContent
+import androidx.pdf.models.FormWidgetInfo
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,7 +50,7 @@ class PageTest {
     private val pageContent =
         PdfDocument.PdfPageContent(
             listOf(PdfPageTextContent(listOf(RectF(10f, 10f, 50f, 20f)), "SampleText")),
-            emptyList() // No images in this test case
+            emptyList(), // No images in this test case
         )
 
     private val pdfDocument =
@@ -59,6 +60,7 @@ class PageTest {
                     FakeBitmapSource(invocation.getArgument(0))
                 }
             onBlocking { getPageContent(pageNumber = 0) } doReturn pageContent
+            onBlocking { getFormWidgetInfos(any()) } doReturn UPDATED_PAGE_WIDGET_INFOS
         }
 
     private val canvasSpy = spy(Canvas())
@@ -83,7 +85,24 @@ class PageTest {
             invalidationTracker,
             onPageTextReady,
             errorFlow,
-            isAccessibilityEnabled = true
+            isAccessibilityEnabled = true,
+            formWidgetInfos =
+                listOf(
+                    FormWidgetInfo(
+                        widgetIndex = 0,
+                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+                        widgetRect = Rect(10, 10, 20, 20),
+                        textValue = "true",
+                        accessibilityLabel = "radio",
+                    ),
+                    FormWidgetInfo(
+                        widgetIndex = 0,
+                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+                        widgetRect = Rect(10, 10, 20, 20),
+                        textValue = "false",
+                        accessibilityLabel = "radio",
+                    ),
+                ),
         )
     }
 
@@ -125,7 +144,7 @@ class PageTest {
                 },
                 isNull(),
                 eq(locationInView),
-                eq(BMP_PAINT)
+                eq(BMP_PAINT),
             )
     }
 
@@ -140,7 +159,7 @@ class PageTest {
                 leftEdgeInView,
                 topEdgeInView,
                 leftEdgeInView + PAGE_SIZE.x,
-                topEdgeInView + PAGE_SIZE.y
+                topEdgeInView + PAGE_SIZE.y,
             )
         val highlight = Highlight(PdfRect(pageNum = 0, RectF(10F, 0F, 30F, 20F)), Color.YELLOW)
 
@@ -201,8 +220,34 @@ class PageTest {
         assertThat(page.pageText).isNull()
         assertThat(pageTextReadyCounter).isEqualTo(0)
     }
+
+    @Test
+    fun maybeUpdateFormWidgetInfos_updatesFormWidgetInfos() {
+        page.maybeUpdateFormWidgetInfos()
+        testDispatcher.scheduler.runCurrent()
+        assertThat(page.formWidgetInfos).isNotNull()
+        assertThat(page.formWidgetInfos?.size).isEqualTo(2)
+        assertThat(page.formWidgetInfos).isEqualTo(UPDATED_PAGE_WIDGET_INFOS)
+    }
 }
 
 val PAGE_SIZE = Point(100, 150)
 val FULL_PAGE_RECT = Rect(0, 0, PAGE_SIZE.x, PAGE_SIZE.y)
 val MAX_BITMAP_SIZE = Point(500, 500)
+val UPDATED_PAGE_WIDGET_INFOS =
+    listOf(
+        FormWidgetInfo(
+            widgetIndex = 0,
+            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+            widgetRect = Rect(10, 10, 20, 20),
+            textValue = "false",
+            accessibilityLabel = "radio",
+        ),
+        FormWidgetInfo(
+            widgetIndex = 0,
+            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+            widgetRect = Rect(10, 10, 20, 20),
+            textValue = "true",
+            accessibilityLabel = "radio",
+        ),
+    )

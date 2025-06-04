@@ -75,7 +75,7 @@ import androidx.core.telecom.reference.viewModel.DialerViewModel
 fun DialerScreen(
     dialerViewModel: DialerViewModel,
     onNavigateToSettings: () -> Unit = {},
-    onStartCall: () -> Unit = {}
+    onStartCall: () -> Unit = {},
 ) {
     val uiStateState = dialerViewModel.uiState.collectAsState()
     val uiState = uiStateState.value
@@ -83,12 +83,12 @@ fun DialerScreen(
     // Main layout column
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Top row containing the Settings icon button
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
         ) {
             IconButton(onClick = onNavigateToSettings) {
                 Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
@@ -101,7 +101,7 @@ fun DialerScreen(
             onValueChange = { dialerViewModel.updateDisplayName(it) },
             label = { Text("Display Name") },
             textStyle = TextStyle(color = Color.Black),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         )
 
         // Input field for Phone Number
@@ -111,19 +111,19 @@ fun DialerScreen(
             label = { Text("Phone Number") },
             textStyle = TextStyle(color = Color.Black),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
         )
 
         // Row for the Video Call switch
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("Video Call")
             Switch(
                 checked = uiState.isVideoCall,
-                onCheckedChange = { dialerViewModel.updateIsVideoCall(it) }
+                onCheckedChange = { dialerViewModel.updateIsVideoCall(it) },
             )
         }
 
@@ -131,12 +131,12 @@ fun DialerScreen(
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("Supports Hold")
             Switch(
                 checked = uiState.canHold,
-                onCheckedChange = { dialerViewModel.updateCanHold(it) }
+                onCheckedChange = { dialerViewModel.updateCanHold(it) },
             )
         }
 
@@ -147,7 +147,7 @@ fun DialerScreen(
                 onStartCall()
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.phoneNumber.isNotBlank()
+            enabled = uiState.phoneNumber.isNotBlank(),
         ) {
             Icon(Icons.Filled.Call, contentDescription = "Call")
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
@@ -161,7 +161,7 @@ fun DialerScreen(
             Text(
                 "Select Audio Output:",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp).align(Alignment.Start)
+                modifier = Modifier.padding(bottom = 8.dp).align(Alignment.Start),
             )
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).padding(bottom = 8.dp)
@@ -170,7 +170,7 @@ fun DialerScreen(
                     EndpointItem(
                         endpoint = endpoint,
                         isSelected = endpoint == uiState.selectedEndpoint,
-                        onSelect = { dialerViewModel.selectEndpoint(endpoint) }
+                        onSelect = { dialerViewModel.selectEndpoint(endpoint) },
                     )
                     HorizontalDivider()
                 }
@@ -190,7 +190,7 @@ fun DialerScreenPreview() {
         DialerScreen(
             dialerViewModel = DialerViewModel(previewContext, CallRepository()),
             onNavigateToSettings = { println("Preview: Settings icon clicked!") },
-            onStartCall = { println("Preview: Call button clicked!") }
+            onStartCall = { println("Preview: Call button clicked!") },
         )
     }
 }
@@ -203,25 +203,25 @@ fun EndpointItem(endpoint: CallEndpointCompat, isSelected: Boolean, onSelect: ()
                 .clickable(onClick = onSelect)
                 .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
             Text(
                 text = endpoint.name.toString(),
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             )
             Text(
                 text = endpointTypeToString(endpoint.type),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (isSelected) {
             Icon(
                 imageVector = Icons.Filled.Check,
                 contentDescription = "Selected",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }

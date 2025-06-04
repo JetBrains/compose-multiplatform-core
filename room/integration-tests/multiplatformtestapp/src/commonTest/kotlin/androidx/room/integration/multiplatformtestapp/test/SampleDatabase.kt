@@ -48,7 +48,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SampleEntity(
     @PrimaryKey @SerialName("key") val pk: Long,
-    @ColumnInfo(defaultValue = "0") val data: Long = 0
+    @ColumnInfo(defaultValue = "0") val data: Long = 0,
 )
 
 @Entity
@@ -86,7 +86,7 @@ data class SampleEntity2Byte(@PrimaryKey val pk2: ByteArray) {
 @Entity
 data class SampleEntity2(
     @PrimaryKey val pk2: Long,
-    @ColumnInfo(defaultValue = "0") val data2: Long
+    @ColumnInfo(defaultValue = "0") val data2: Long,
 )
 
 @Entity(
@@ -95,35 +95,32 @@ data class SampleEntity2(
 )
 data class SampleEntity3(
     @PrimaryKey val pk3: Long,
-    @ColumnInfo(defaultValue = "0") val data3: Long
+    @ColumnInfo(defaultValue = "0") val data3: Long,
 )
 
 @Entity
 data class SampleEntityCopy(
     @PrimaryKey val pk: Long,
-    @ColumnInfo(defaultValue = "0") val dataCopy: Long
+    @ColumnInfo(defaultValue = "0") val dataCopy: Long,
 )
 
 @Entity
 data class StringSampleEntity1(
     @PrimaryKey val stringPk1: String,
-    @ColumnInfo(defaultValue = "0") val data1: String
+    @ColumnInfo(defaultValue = "0") val data1: String,
 )
 
 @Entity
 data class StringSampleEntity2(
     @PrimaryKey val stringPk2: String,
-    @ColumnInfo(defaultValue = "0") val data2: String
+    @ColumnInfo(defaultValue = "0") val data2: String,
 )
 
 @Entity(
     primaryKeys = ["sample1Key", "sample2Key"],
-    indices = [Index("sample1Key"), Index("sample2Key")]
+    indices = [Index("sample1Key"), Index("sample2Key")],
 )
-data class Sample1Sample2XRef(
-    val sample1Key: String,
-    val sample2Key: String,
-)
+data class Sample1Sample2XRef(val sample1Key: String, val sample2Key: String)
 
 @Dao
 interface SampleDao {
@@ -253,7 +250,7 @@ interface SampleDao {
     data class SampleRelation(
         val pk3: Long,
         @ColumnInfo(defaultValue = "0") val data3: Long,
-        @Relation(parentColumn = "pk3", entityColumn = "pk3") val relationEntity: SampleEntity3
+        @Relation(parentColumn = "pk3", entityColumn = "pk3") val relationEntity: SampleEntity3,
     )
 
     @Query("SELECT * FROM SampleEntity")
@@ -264,17 +261,17 @@ interface SampleDao {
 
     data class Sample1And2(
         @Embedded val sample1: SampleEntity,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2
+        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2,
     )
 
     data class Sample1And2Byte(
         @Embedded val sample1: SampleEntity1Byte,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2Byte
+        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2Byte,
     )
 
     data class Sample1AndMany(
         @Embedded val sample1: SampleEntity,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2s: List<SampleEntity2>
+        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2s: List<SampleEntity2>,
     )
 
     data class SampleManyAndMany(
@@ -286,10 +283,10 @@ interface SampleDao {
                 Junction(
                     value = Sample1Sample2XRef::class,
                     parentColumn = "sample1Key",
-                    entityColumn = "sample2Key"
-                )
+                    entityColumn = "sample2Key",
+                ),
         )
-        val sample2s: List<StringSampleEntity2>
+        val sample2s: List<StringSampleEntity2>,
     )
 }
 
@@ -304,10 +301,10 @@ interface SampleDao {
             SampleEntityCopy::class,
             StringSampleEntity1::class,
             StringSampleEntity2::class,
-            Sample1Sample2XRef::class
+            Sample1Sample2XRef::class,
         ],
     version = 1,
-    exportSchema = false
+    exportSchema = false,
 )
 @ConstructedBy(SampleDatabaseConstructor::class)
 abstract class SampleDatabase : RoomDatabase() {

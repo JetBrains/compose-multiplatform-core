@@ -33,7 +33,7 @@ class Relation(
     // Used for joining on a many-to-many relation
     val junction: Junction?,
     // the projection for the query
-    val projection: List<String>
+    val projection: List<String>,
 ) {
     val dataClassTypeName by lazy { dataClassType.asTypeName() }
 

@@ -258,7 +258,7 @@ class Camera1AutofocusCallback
 internal constructor(
     internal val activity: MainActivity,
     internal val params: CameraParams,
-    internal val testConfig: TestConfig
+    internal val testConfig: TestConfig,
 ) : Camera.AutoFocusCallback {
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407496822
@@ -277,7 +277,7 @@ class Camera1PictureCallback
 internal constructor(
     internal val activity: MainActivity,
     internal val params: CameraParams,
-    internal val testConfig: TestConfig
+    internal val testConfig: TestConfig,
 ) : Camera.PictureCallback {
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407496822

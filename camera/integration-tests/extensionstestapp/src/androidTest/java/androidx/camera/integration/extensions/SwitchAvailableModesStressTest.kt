@@ -65,7 +65,7 @@ import org.junit.runners.Parameterized
 class SwitchAvailableModesStressTest(
     private val configName: String,
     private val cameraXConfig: CameraXConfig,
-    private val cameraId: String
+    private val cameraId: String,
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -100,7 +100,7 @@ class SwitchAvailableModesStressTest(
                     arrayOf(
                         CAMERA_PIPE_IMPLEMENTATION_OPTION,
                         CameraPipeConfig.defaultConfig(),
-                        cameraId
+                        cameraId,
                     ),
                 )
             }

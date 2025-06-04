@@ -62,7 +62,7 @@ class GltfManager(private val session: Session) {
                 ) {
                     Text(
                         text = (if (modelIsHidden) "Show Model" else "Hide Model"),
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
                     )
                 }
             }

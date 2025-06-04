@@ -39,7 +39,7 @@ class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
                         .toStaticCompileTimeMetadata(),
                 "MediaPrint2" to
                     AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA2_PRINT
-                        .toStaticCompileTimeMetadata()
+                        .toStaticCompileTimeMetadata(),
             )
 
     private fun AppFunctionMetadata.toStaticCompileTimeMetadata(): CompileTimeAppFunctionMetadata {
@@ -49,7 +49,7 @@ class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
             schema = this.schema,
             parameters = this.parameters,
             response = this.response,
-            components = this.components
+            components = this.components,
         )
     }
 }

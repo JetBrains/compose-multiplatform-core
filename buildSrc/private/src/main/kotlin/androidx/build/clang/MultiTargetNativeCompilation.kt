@@ -50,7 +50,7 @@ class MultiTargetNativeCompilation(
     private val nativeTargets =
         project.objects.domainObjectContainer(
             NativeTargetCompilation::class.java,
-            Factory(project = project, archiveName = archiveName, outputKind = outputKind)
+            Factory(project = project, archiveName = archiveName, outputKind = outputKind),
         )
 
     /** Returns true if native code targeting [konanTarget] can be compiled on this host machine. */
@@ -139,7 +139,7 @@ class MultiTargetNativeCompilation(
     @JvmOverloads
     fun configureTargets(
         konanTargets: List<KonanTarget>,
-        action: Action<NativeTargetCompilation>? = null
+        action: Action<NativeTargetCompilation>? = null,
     ) = konanTargets.map { configureTarget(it, action) }
 
     /**
@@ -186,13 +186,13 @@ class MultiTargetNativeCompilation(
                 includes = includes,
                 linkedObjects = linkedObjects,
                 linkerArgs = linkerArgs,
-                freeArgs = freeArgs
+                freeArgs = freeArgs,
             )
         }
 
         private fun createArchiveTask(
             serializableKonanTarget: SerializableKonanTarget,
-            compileTask: TaskProvider<ClangCompileTask>
+            compileTask: TaskProvider<ClangCompileTask>,
         ): TaskProvider<ClangArchiveTask> {
             val archiveTaskName =
                 taskPrefix.appendCapitalized("archive", serializableKonanTarget.name)
@@ -204,7 +204,7 @@ class MultiTargetNativeCompilation(
                                 konanTarget.family.staticPrefix,
                                 archiveName,
                                 ".",
-                                konanTarget.family.staticSuffix
+                                konanTarget.family.staticSuffix,
                             )
                             .joinToString("")
                     task.usesService(KonanBuildService.obtain(project))
@@ -223,7 +223,7 @@ class MultiTargetNativeCompilation(
             serializableKonanTarget: SerializableKonanTarget,
             includes: ConfigurableFileCollection?,
             sources: ConfigurableFileCollection?,
-            freeArgs: ListProperty<String>
+            freeArgs: ListProperty<String>,
         ): TaskProvider<ClangCompileTask> {
             val compileTaskName =
                 taskPrefix.appendCapitalized("compile", serializableKonanTarget.name)
@@ -248,7 +248,7 @@ class MultiTargetNativeCompilation(
             serializableKonanTarget: SerializableKonanTarget,
             compileTask: TaskProvider<ClangCompileTask>,
             linkedObjects: ConfigurableFileCollection,
-            linkerArgs: ListProperty<String>
+            linkerArgs: ListProperty<String>,
         ): TaskProvider<ClangLinkerTask> {
             val archiveTaskName =
                 taskPrefix.appendCapitalized("runLinker", serializableKonanTarget.name)
@@ -264,7 +264,7 @@ class MultiTargetNativeCompilation(
                                     konanTarget.family.dynamicPrefix,
                                     archiveName,
                                     ".",
-                                    konanTarget.family.dynamicSuffix
+                                    konanTarget.family.dynamicSuffix,
                                 )
                                 .joinToString("")
                         }

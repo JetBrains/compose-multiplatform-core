@@ -40,7 +40,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 class AppOwnedSdkSandboxInterfaceCompat(
     private val name: String,
     private val version: Long,
-    private val binder: IBinder
+    private val binder: IBinder,
 ) {
 
     /**

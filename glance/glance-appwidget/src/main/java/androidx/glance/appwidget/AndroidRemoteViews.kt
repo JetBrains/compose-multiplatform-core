@@ -61,7 +61,7 @@ public fun AndroidRemoteViews(
             this.set(containerViewId) { this.containerViewId = it }
             this.set(modifier) { this.modifier = it }
         },
-        content = content
+        content = content,
     )
 }
 

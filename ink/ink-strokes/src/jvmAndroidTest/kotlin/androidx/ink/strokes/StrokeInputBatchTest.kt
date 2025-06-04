@@ -550,7 +550,7 @@ internal class StrokeInputBatchTest {
                 1L,
                 InputToolType.STYLUS,
                 pressure = 0.5f,
-                tiltRadians = 0.5f
+                tiltRadians = 0.5f,
             )
         assertThat(builder.addOrThrow(noOrientationInput)).isEqualTo(builder)
 

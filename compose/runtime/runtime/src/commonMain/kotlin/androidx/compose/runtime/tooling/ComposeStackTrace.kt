@@ -23,13 +23,12 @@ import androidx.compose.runtime.snapshots.fastForEach
  * suppressed exceptions when [androidx.compose.runtime.Composer.setDiagnosticStackTraceEnabled]
  * flag is set to true.
  */
-internal expect class DiagnosticComposeException(
-    trace: List<ComposeStackTraceFrame>,
-) : RuntimeException
+internal expect class DiagnosticComposeException(trace: List<ComposeStackTraceFrame>) :
+    RuntimeException
 
 internal data class ComposeStackTraceFrame(
     val sourceInfo: ParsedSourceInformation,
-    val groupOffset: Int?
+    val groupOffset: Int?,
 )
 
 internal class ParsedSourceInformation(
@@ -38,7 +37,7 @@ internal class ParsedSourceInformation(
     val fileName: String?,
     val packageHash: String?,
     val lineNumbers: IntArray,
-    val dataString: String
+    val dataString: String,
 )
 
 internal fun Throwable.tryAttachComposeStackTrace(

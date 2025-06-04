@@ -36,7 +36,7 @@ class IndirectTouchEvent(
     val eventTimeMillis: Long,
 
     /** The reason the [IndirectTouchEvent] was sent. */
-    val type: IndirectTouchEventType
+    val type: IndirectTouchEventType,
 )
 
 /** Indicates the reason that the [IndirectTouchEvent] was sent. */

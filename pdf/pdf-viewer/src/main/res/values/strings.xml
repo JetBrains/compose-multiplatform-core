@@ -167,4 +167,7 @@
 
     <!-- Content description of the fast scroller thumb -->
     <string name="fast_scroller_thumb">Scroll Bar</string>
+
+    <!-- Text for confirm button in dialog boxes(Confirms the selected elements) -->
+    <string name="confirm_selection">Confirm</string>
 </resources>

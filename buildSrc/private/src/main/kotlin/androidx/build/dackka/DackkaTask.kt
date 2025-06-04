@@ -146,7 +146,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
     @get:Input
     @set:Option(
         option = "version-metadata",
-        description = "Include added-in/deprecated-in API version metadata"
+        description = "Include added-in/deprecated-in API version metadata",
     )
     var includeVersionMetadata: Boolean = true
 
@@ -158,7 +158,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                     packageListUrl =
                         "file://${
                             projectListsDirectory.get().asFile.absolutePath
-                        }/$name/package-list"
+                        }/$name/package-list",
                 )
             }
         val gson = GsonBuilder().create()
@@ -197,7 +197,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                                 samplesDeprecatedDir,
                                                 samplesJvmDir,
                                                 samplesKmpDir,
-                                                frameworkSamplesDir.get().asFile
+                                                frameworkSamplesDir.get().asFile,
                                             )
                                     } else {
                                         objects.fileCollection()
@@ -212,7 +212,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                     analysisPlatform != DokkaAnalysisPlatform.ANDROID,
                                 noStdlibLink = false,
                                 // Dackka source link configuration doesn't use the Dokka version
-                                sourceLinks = emptyList()
+                                sourceLinks = emptyList(),
                             )
                         }
                 } ?: emptyList()
@@ -229,7 +229,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                             samplesDeprecatedDir,
                             samplesJvmDir,
                             samplesKmpDir,
-                            frameworkSamplesDir.get().asFile
+                            frameworkSamplesDir.get().asFile,
                         ),
                 includes = objects.fileCollection().from(includesFiles(jvmSourcesDir.get().asFile)),
                 classpath = dependenciesClasspath,
@@ -239,7 +239,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 noAndroidSdkLink = false,
                 noStdlibLink = false,
                 // Dackka source link configuration doesn't use the Dokka version
-                sourceLinks = emptyList()
+                sourceLinks = emptyList(),
             )
         ) + multiplatformSourceSets
     }
@@ -289,9 +289,9 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                         "validNullabilityAnnotations" to
                                             nullabilityAnnotations.get(),
                                     )
-                                )
+                                ),
                         )
-                    )
+                    ),
             )
 
         val json = gson.toJson(jsonMap)
@@ -385,11 +385,7 @@ interface DackkaParams : WorkParameters {
     val classpath: SetProperty<File>
 }
 
-fun runDackkaWithArgs(
-    classpath: FileCollection,
-    argsFile: File,
-    workerExecutor: WorkerExecutor,
-) {
+fun runDackkaWithArgs(classpath: FileCollection, argsFile: File, workerExecutor: WorkerExecutor) {
     val workQueue = workerExecutor.noIsolation()
     workQueue.submit(DackkaWorkAction::class.java) { parameters ->
         parameters.args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))

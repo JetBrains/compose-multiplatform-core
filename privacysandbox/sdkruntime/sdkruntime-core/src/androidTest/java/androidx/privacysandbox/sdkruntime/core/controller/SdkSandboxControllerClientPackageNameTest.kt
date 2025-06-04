@@ -38,7 +38,7 @@ class SdkSandboxControllerClientPackageNameTest {
     fun getClientPackageName_withoutApiAvailable_parseSdkDataDirPath() {
         Assume.assumeFalse(
             "Requires GetClientPackageName API not available",
-            isClientPackageNameAvailable()
+            isClientPackageNameAvailable(),
         )
 
         val expectedResult = "test.client.parsed.package.name"
@@ -57,7 +57,7 @@ class SdkSandboxControllerClientPackageNameTest {
     fun getClientPackageName_withApiAvailable_returnsResultFromPlatformApi() {
         Assume.assumeTrue(
             "Requires GetClientPackageName API available",
-            isClientPackageNameAvailable()
+            isClientPackageNameAvailable(),
         )
 
         val expectedResult = "test.client.package.name"

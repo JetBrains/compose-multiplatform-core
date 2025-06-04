@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit
             SystemIdInfo::class,
             WorkName::class,
             WorkProgress::class,
-            Preference::class
+            Preference::class,
         ],
     autoMigrations =
         [
@@ -80,7 +80,7 @@ import java.util.concurrent.TimeUnit
             AutoMigration(from = 22, to = 23),
             AutoMigration(from = 23, to = 24),
         ],
-    version = 24
+    version = 24,
 )
 @TypeConverters(value = [Data::class, WorkTypeConverters::class])
 abstract class WorkDatabase : RoomDatabase() {
@@ -124,7 +124,7 @@ abstract class WorkDatabase : RoomDatabase() {
             context: Context,
             queryExecutor: Executor,
             clock: Clock,
-            useTestDatabase: Boolean
+            useTestDatabase: Boolean,
         ): WorkDatabase {
             val builder =
                 if (useTestDatabase) {
@@ -143,7 +143,6 @@ abstract class WorkDatabase : RoomDatabase() {
                             FrameworkSQLiteOpenHelperFactory().create(configBuilder.build())
                         }
                 }
-            @Suppress("DEPRECATION") // b/310884421 for fallbackToDestructiveMigration()
             return builder
                 .setQueryExecutor(queryExecutor)
                 .addCallback(CleanupCallback(clock))
@@ -162,7 +161,7 @@ abstract class WorkDatabase : RoomDatabase() {
                 .addMigrations(Migration_15_16)
                 .addMigrations(Migration_16_17)
                 .addMigrations(RescheduleMigration(context, VERSION_21, VERSION_22))
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
         }
     }

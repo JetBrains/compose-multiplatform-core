@@ -54,7 +54,7 @@ class CredentialProviderEventsServiceTest {
             Intent().apply {
                 putExtra(
                     CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY,
-                    DummyCredentialEventsProvider::class.java.name
+                    DummyCredentialEventsProvider::class.java.name,
                 )
             }
         val binder = service.onBind(intent)
@@ -64,6 +64,10 @@ class CredentialProviderEventsServiceTest {
     // Dummy implementation of CredentialEventsProvider for testing
     class DummyCredentialEventsProvider : CredentialEventsProvider {
         override fun getStubImplementation(service: CredentialProviderEventsService): IBinder? {
+            return Binder()
+        }
+
+        override fun getStubImplementation(service: DeviceSetupService): IBinder? {
             return Binder()
         }
     }

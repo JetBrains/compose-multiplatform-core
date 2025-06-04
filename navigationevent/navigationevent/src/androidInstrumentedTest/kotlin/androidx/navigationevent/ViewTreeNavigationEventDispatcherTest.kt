@@ -127,12 +127,12 @@ class ViewTreeNavigationEventDispatcherTest {
         Assert.assertEquals(
             "disjoint parent sees owner",
             rootFakeOwner,
-            parent.findViewTreeNavigationEventDispatcherOwner()
+            parent.findViewTreeNavigationEventDispatcherOwner(),
         )
         Assert.assertEquals(
             "disjoint child sees owner",
             rootFakeOwner,
-            child.findViewTreeNavigationEventDispatcherOwner()
+            child.findViewTreeNavigationEventDispatcherOwner(),
         )
     }
 
@@ -156,7 +156,7 @@ class ViewTreeNavigationEventDispatcherTest {
         Assert.assertEquals(
             "child sees owner",
             parentFakeOwner,
-            child.findViewTreeNavigationEventDispatcherOwner()
+            child.findViewTreeNavigationEventDispatcherOwner(),
         )
     }
 

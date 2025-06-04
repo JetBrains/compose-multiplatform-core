@@ -46,7 +46,7 @@ internal fun createLayoutRun(
     start: Int,
     end: Int,
     paint: TextPaint,
-    orientation: ResolvedOrientation
+    orientation: ResolvedOrientation,
 ): LayoutRun =
     when (orientation) {
         ResolvedOrientation.Rotate -> RotateLayoutRun(text, start, end, paint)
@@ -58,11 +58,7 @@ internal fun createLayoutRun(
  * Represents a segment of text laid out with specific orientation and styling. This is an internal
  * class used for managing text layout variations.
  */
-internal sealed class LayoutRun(
-    val text: CharSequence,
-    val start: Int,
-    val end: Int,
-) {
+internal sealed class LayoutRun(val text: CharSequence, val start: Int, val end: Int) {
     /**
      * Distance from left most position from the baseline in pixels.
      *
@@ -126,7 +122,7 @@ internal sealed class LayoutRun(
         top: Float,
         width: Float,
         height: Float,
-        bgColor: Int
+        bgColor: Int,
     ) {
         if (bgColor == 0) {
             return
@@ -316,7 +312,7 @@ internal class RotateLayoutRun(text: CharSequence, start: Int, end: Int, paint: 
                 false, // RTL // TODO: support RTL
                 rEnd, // offset,
                 out,
-                rStart - start
+                rStart - start,
             )
         }
     }
@@ -330,12 +326,8 @@ internal class RotateLayoutRun(text: CharSequence, start: Int, end: Int, paint: 
  * @param end The ending exclusive index of the text.
  * @param paint The paint used for text rendering.
  */
-internal class UprightLayoutRun(
-    text: CharSequence,
-    start: Int,
-    end: Int,
-    paint: TextPaint,
-) : LayoutRun(text, start, end) {
+internal class UprightLayoutRun(text: CharSequence, start: Int, end: Int, paint: TextPaint) :
+    LayoutRun(text, start, end) {
 
     override val height: Float
     override val leftSideOffset: Float
@@ -367,7 +359,7 @@ internal class UprightLayoutRun(
                         y,
                         originX + rightSideOffset,
                         y + height,
-                        bgWorkPaint
+                        bgWorkPaint,
                     )
                 }
             }
@@ -388,7 +380,7 @@ internal class UprightLayoutRun(
                 false, // RTL
                 rEnd, // offset,
                 out,
-                rStart - start
+                rStart - start,
             ) // out array and its index
         }
     }
@@ -408,7 +400,7 @@ private inline fun CharSequence.forStyleRuns(
     end: Int,
     basePaint: TextPaint,
     isVertical: Boolean,
-    crossinline block: (Int, Int, Paint, Int) -> Unit
+    crossinline block: (Int, Int, Paint, Int) -> Unit,
 ) {
     // Easy case: if the text is a non-styled text, just call back entire text with applying
     // vertical flag.
@@ -443,7 +435,7 @@ private inline fun CharSequence.forStyleRuns(
 private inline fun applyVerticalFlag(
     paint: Paint,
     isVertical: Boolean,
-    crossinline block: (Paint) -> Unit
+    crossinline block: (Paint) -> Unit,
 ) {
     val originalFlags = paint.flags
     paint.flags =
@@ -478,7 +470,7 @@ private inline fun tempPaint(crossinline block: (TextPaint) -> Unit) {
 private inline fun <T : Paint, R> withTempScaleX(
     textPaint: T,
     scaleX: Float,
-    crossinline block: () -> R
+    crossinline block: () -> R,
 ): R {
     val originalScaleX = textPaint.textScaleX
     textPaint.textScaleX = scaleX

@@ -59,7 +59,7 @@ constructor(
     override fun registerLayoutChangeCallback(
         @UiContext context: Context,
         executor: Executor,
-        callback: Consumer<WindowLayoutInfo>
+        callback: Consumer<WindowLayoutInfo>,
     ) {
         val activity = context as? Activity
         activity?.let {
@@ -168,7 +168,7 @@ constructor(
     internal class WindowLayoutChangeCallbackWrapper(
         val activity: Activity,
         private val executor: Executor,
-        val callback: Consumer<WindowLayoutInfo>
+        val callback: Consumer<WindowLayoutInfo>,
     ) {
         var lastInfo: WindowLayoutInfo? = null
 

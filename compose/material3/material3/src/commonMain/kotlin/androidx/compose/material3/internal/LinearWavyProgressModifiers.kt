@@ -91,7 +91,7 @@ internal fun Modifier.linearWavyProgressIndicator(
             gapSize = gapSize,
             stopSize = stopSize,
             wavelength = wavelength,
-            waveSpeed = waveSpeed
+            waveSpeed = waveSpeed,
         )
     )
 
@@ -138,7 +138,7 @@ internal fun Modifier.linearWavyProgressIndicator(
             gapSize = gapSize,
             wavelength = wavelength,
             waveSpeed = waveSpeed,
-            amplitude = amplitude
+            amplitude = amplitude,
         )
     )
 
@@ -316,7 +316,7 @@ private abstract class BaseLinearWavyProgressNode(
                             infiniteRepeatable(
                                 animation = tween(durationMillis, easing = LinearEasing),
                                 repeatMode = RepeatMode.Restart,
-                            )
+                            ),
                     ) {
                         waveOffset.floatValue = value % 1f
                     }
@@ -351,7 +351,7 @@ private abstract class BaseLinearWavyProgressNode(
                                 IncreasingAmplitudeAnimationSpec
                             } else {
                                 DecreasingAmplitudeAnimationSpec
-                            }
+                            },
                     )
                 }
         }
@@ -383,7 +383,7 @@ private class DeterminateLinearWavyProgressElement(
     override val gapSize: Dp,
     val stopSize: Dp,
     override val wavelength: Dp,
-    override val waveSpeed: Dp
+    override val waveSpeed: Dp,
 ) :
     BaseLinearWavyProgressElement<DeterminateLinearWavyProgressNode>(
         color,
@@ -392,7 +392,7 @@ private class DeterminateLinearWavyProgressElement(
         trackStroke,
         gapSize,
         wavelength,
-        waveSpeed
+        waveSpeed,
     ) {
 
     override fun create(): DeterminateLinearWavyProgressNode =
@@ -406,7 +406,7 @@ private class DeterminateLinearWavyProgressElement(
             trackStrokeParameter = trackStroke,
             gapSizeParameter = gapSize,
             wavelengthParameter = wavelength,
-            waveSpeedParameter = waveSpeed
+            waveSpeedParameter = waveSpeed,
         )
 
     override fun update(node: DeterminateLinearWavyProgressNode) {
@@ -466,7 +466,7 @@ private class DeterminateLinearWavyProgressNode(
         trackStrokeParameter,
         gapSizeParameter,
         wavelengthParameter,
-        waveSpeedParameter
+        waveSpeedParameter,
     ) {
 
     var stopSize: Dp = stopSizeParameter
@@ -516,7 +516,7 @@ private class DeterminateLinearWavyProgressNode(
                         waveOffset = if (currentAmplitude > 0f) waveOffset.floatValue else 0f,
                         gapSize = gapSize.toPx(),
                         stroke = stroke,
-                        trackStroke = trackStroke
+                        trackStroke = trackStroke,
                     )
 
                     // Draw
@@ -526,7 +526,7 @@ private class DeterminateLinearWavyProgressNode(
                             drawPath(
                                 path = trackPathToDraw,
                                 color = trackColor,
-                                style = trackStroke
+                                style = trackStroke,
                             )
 
                             // Draw the progress
@@ -544,7 +544,7 @@ private class DeterminateLinearWavyProgressNode(
                                 maxStopIndicatorSize = stopSize,
                                 horizontalInsets = currentStrokeCapWidth,
                                 trackStroke = trackStroke,
-                                color = color
+                                color = color,
                             )
                         }
                     }
@@ -565,7 +565,7 @@ private class IndeterminateLinearWavyProgressElement(
     override val gapSize: Dp,
     override val wavelength: Dp,
     override val waveSpeed: Dp,
-    val amplitude: Float
+    val amplitude: Float,
 ) :
     BaseLinearWavyProgressElement<IndeterminateLinearWavyProgressNode>(
         color,
@@ -574,7 +574,7 @@ private class IndeterminateLinearWavyProgressElement(
         trackStroke,
         gapSize,
         wavelength,
-        waveSpeed
+        waveSpeed,
     ) {
 
     override fun create(): IndeterminateLinearWavyProgressNode =
@@ -591,7 +591,7 @@ private class IndeterminateLinearWavyProgressElement(
             trackStrokeParameter = trackStroke,
             gapSizeParameter = gapSize,
             wavelengthParameter = wavelength,
-            waveSpeedParameter = waveSpeed
+            waveSpeedParameter = waveSpeed,
         )
 
     override fun update(node: IndeterminateLinearWavyProgressNode) {
@@ -638,7 +638,7 @@ private class IndeterminateLinearWavyProgressNode(
     trackStrokeParameter: Stroke,
     gapSizeParameter: Dp,
     wavelengthParameter: Dp,
-    waveSpeedParameter: Dp
+    waveSpeedParameter: Dp,
 ) :
     BaseLinearWavyProgressNode(
         colorParameter,
@@ -647,7 +647,7 @@ private class IndeterminateLinearWavyProgressNode(
         trackStrokeParameter,
         gapSizeParameter,
         wavelengthParameter,
-        waveSpeedParameter
+        waveSpeedParameter,
     ) {
 
     var amplitude: Float = amplitudeParameter.fastCoerceIn(0f, 1f)
@@ -697,7 +697,7 @@ private class IndeterminateLinearWavyProgressNode(
                         waveOffset = if (currentAmplitude > 0f) waveOffset.floatValue else 0f,
                         gapSize = gapSize.toPx(),
                         stroke = stroke,
-                        trackStroke = trackStroke
+                        trackStroke = trackStroke,
                     )
 
                     // Draw
@@ -707,7 +707,7 @@ private class IndeterminateLinearWavyProgressNode(
                             drawPath(
                                 path = trackPathToDraw,
                                 color = trackColor,
-                                style = trackStroke
+                                style = trackStroke,
                             )
 
                             // Draw progress
@@ -734,7 +734,7 @@ private fun DrawScope.drawStopIndicator(
     maxStopIndicatorSize: Dp,
     horizontalInsets: Float,
     trackStroke: Stroke,
-    color: Color
+    color: Color,
 ) {
     var stopIndicatorSize = min(trackStroke.width, maxStopIndicatorSize.toPx())
     // This will add an additional offset to the indicator's position in case the height of the
@@ -761,8 +761,8 @@ private fun DrawScope.drawStopIndicator(
                 center =
                     Offset(
                         x = indicatorX + stopIndicatorSize / 2f,
-                        y = progressIndicatorSize.height / 2f
-                    )
+                        y = progressIndicatorSize.height / 2f,
+                    ),
             )
         } else {
             drawRect(
@@ -770,9 +770,9 @@ private fun DrawScope.drawStopIndicator(
                 topLeft =
                     Offset(
                         x = indicatorX,
-                        y = (progressIndicatorSize.height - stopIndicatorSize) / 2f
+                        y = (progressIndicatorSize.height - stopIndicatorSize) / 2f,
                     ),
-                size = Size(width = stopIndicatorSize, height = stopIndicatorSize)
+                size = Size(width = stopIndicatorSize, height = stopIndicatorSize),
             )
         }
     }
@@ -848,7 +848,7 @@ private class LinearProgressDrawingCache {
         @FloatRange(from = 0.0, to = 1.0) waveOffset: Float,
         @FloatRange(from = 0.0) gapSize: Float,
         stroke: Stroke,
-        trackStroke: Stroke
+        trackStroke: Stroke,
     ) {
         if (currentProgressFractions == null) {
             // Just create FloatArray to match the size of the given progressFractions array.
@@ -862,7 +862,7 @@ private class LinearProgressDrawingCache {
             forceUpdate = pathsUpdates,
             progressFractions = progressFractions,
             amplitude = amplitude,
-            waveOffset = waveOffset
+            waveOffset = waveOffset,
         )
     }
 
@@ -892,7 +892,7 @@ private class LinearProgressDrawingCache {
         @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
         @FloatRange(from = 0.0) gapSize: Float,
         stroke: Stroke,
-        trackStroke: Stroke
+        trackStroke: Stroke,
     ): Boolean {
         if (
             currentSize == size &&
@@ -1003,7 +1003,7 @@ private class LinearProgressDrawingCache {
         forceUpdate: Boolean,
         progressFractions: FloatArray,
         @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
-        @FloatRange(from = 0.0, to = 1.0) waveOffset: Float
+        @FloatRange(from = 0.0, to = 1.0) waveOffset: Float,
     ) {
         require(currentSize != Size.Unspecified) {
             "updateDrawPaths was called before updateFullPaths"
@@ -1059,7 +1059,7 @@ private class LinearProgressDrawingCache {
                     } else {
                         min(
                             barHead - currentStrokeCapWidth,
-                            currentIndicatorTrackGapSize /*+ currentStrokeCapWidth * 2*/
+                            currentIndicatorTrackGapSize, /*+ currentStrokeCapWidth * 2*/
                         )
                     }
                 activeIndicatorVisible = barHead >= currentStrokeCapWidth
@@ -1083,7 +1083,7 @@ private class LinearProgressDrawingCache {
                 pathMeasure.getSegment(
                     startDistance = (adjustedBarTail + waveShift) * progressPathScale,
                     stopDistance = (adjustedBarHead + waveShift) * progressPathScale,
-                    destination = progressPathsToDraw!![i]
+                    destination = progressPathsToDraw!![i],
                 )
 
                 // Translate and scale the draw path by the wave shift and the amplitude.
@@ -1091,7 +1091,7 @@ private class LinearProgressDrawingCache {
                     Matrix().apply {
                         translate(
                             x = if (waveShift > 0f) -waveShift else 0f,
-                            y = (1f - amplitude) * halfHeight
+                            y = (1f - amplitude) * halfHeight,
                         )
                         // The progressPathToDraw is a segment of the full progress path, which is
                         // always in the maximum possible amplitude. This scaling will flatten the
@@ -1116,7 +1116,7 @@ private class LinearProgressDrawingCache {
             if (nextEndTrackOffset > adjustedBarHead + adaptiveTrackSpacing) {
                 trackPathToDraw.lineTo(
                     x = max(currentStrokeCapWidth, adjustedBarHead + adaptiveTrackSpacing),
-                    y = halfHeight
+                    y = halfHeight,
                 )
             }
 

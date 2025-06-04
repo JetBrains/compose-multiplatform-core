@@ -29,7 +29,7 @@ public class IndexBundle(
     @SerialName("unique") public val isUnique: Boolean,
     @SerialName("columnNames") public val columnNames: List<String>? = null,
     @SerialName("orders") public val orders: List<String>? = null,
-    @SerialName("createSql") public val createSql: String
+    @SerialName("createSql") public val createSql: String,
 ) : SchemaEquality<IndexBundle> {
     public companion object {
         // should match Index.kt

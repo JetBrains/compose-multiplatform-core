@@ -78,7 +78,7 @@ class EmbeddedPhotoPickerStateImplTest {
             EmbeddedPhotoPicker(
                 state =
                     rememberEmbeddedPhotoPickerState(
-                        onUriPermissionGranted = { grantedUris.addAll(it) },
+                        onUriPermissionGranted = { grantedUris.addAll(it) }
                     ),
                 provider = testProvider,
             )

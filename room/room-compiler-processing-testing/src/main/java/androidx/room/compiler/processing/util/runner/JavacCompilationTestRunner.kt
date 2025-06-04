@@ -56,7 +56,7 @@ internal class JavacCompilationTestRunner(
                             package xprocessing.generated;
                             public class SyntheticSource {}
                             """
-                                .trimIndent()
+                                .trimIndent(),
                     )
                 )
             }
@@ -105,7 +105,7 @@ internal class JavacCompilationTestRunner(
             processor = syntheticJavacProcessor,
             diagnostics = diagnostics.groupBy { it.kind },
             generatedSources = generatedSources.values.toList(),
-            generatedResources = generatedResources
+            generatedResources = generatedResources,
         )
     }
 }

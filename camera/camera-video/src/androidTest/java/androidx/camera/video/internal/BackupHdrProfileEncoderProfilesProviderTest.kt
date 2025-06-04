@@ -61,13 +61,11 @@ import org.junit.runners.Parameterized
 class BackupHdrProfileEncoderProfilesProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
-    private val quality: Int
+    private val quality: Int,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -108,7 +106,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
                                     Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
                                     else -> Camera2Config.defaultConfig()
                                 },
-                                quality
+                                quality,
                             )
                         )
                     }
@@ -133,7 +131,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()

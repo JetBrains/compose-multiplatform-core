@@ -39,7 +39,7 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 class SellerConfiguration
 public constructor(
     val maximumPayloadSizeBytes: Int,
-    val perBuyerConfigurations: Set<PerBuyerConfiguration>
+    val perBuyerConfigurations: Set<PerBuyerConfiguration>,
 ) {
     /** Overrides the toString method. */
     override fun toString(): String {

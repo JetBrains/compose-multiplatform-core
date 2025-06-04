@@ -19,6 +19,7 @@ package androidx.car.app.model;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
+import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.ActionsConstraints;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -33,6 +34,7 @@ import java.util.Objects;
 
 /** A template that contains sections of items like rows, grid items, etc. */
 @KeepFields
+@RequiresCarApi(8)
 @CarProtocol
 @ExperimentalCarApi
 public final class SectionedItemTemplate implements Template {

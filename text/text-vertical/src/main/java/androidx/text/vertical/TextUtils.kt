@@ -30,7 +30,7 @@ internal inline fun <reified T> forEachSpan(
     text: CharSequence,
     start: Int,
     end: Int,
-    crossinline consumer: (Int, Int, Array<T>) -> Unit
+    crossinline consumer: (Int, Int, Array<T>) -> Unit,
 ) {
     if (text !is Spanned) {
         consumer(start, end, arrayOf())
@@ -58,7 +58,7 @@ internal inline fun fotEachCodePoints(
     text: CharSequence,
     start: Int,
     end: Int,
-    crossinline consumer: (Int, Int) -> Unit
+    crossinline consumer: (Int, Int) -> Unit,
 ) {
     var i = start
     while (i < end) {
@@ -83,7 +83,7 @@ internal inline fun fotEachCodePoints(
 internal inline fun CharSequence.forEachParagraph(
     start: Int,
     end: Int,
-    crossinline block: (Int, Int) -> Unit
+    crossinline block: (Int, Int) -> Unit,
 ) {
     var paraStart = start
     while (paraStart < end) {

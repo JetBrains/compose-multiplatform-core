@@ -25,9 +25,9 @@ internal constructor(
      * Indicates what the `isVisibleToUser` field for the [Fragment] causing the Violation was being
      * set to.
      */
-    val isVisibleToUser: Boolean
+    val isVisibleToUser: Boolean,
 ) :
     Violation(
         fragment,
-        "Attempting to set user visible hint to $isVisibleToUser for fragment $fragment"
+        "Attempting to set user visible hint to $isVisibleToUser for fragment $fragment",
     )

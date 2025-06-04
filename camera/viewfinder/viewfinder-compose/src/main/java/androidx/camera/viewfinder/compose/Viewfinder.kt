@@ -95,7 +95,7 @@ fun Viewfinder(
     coordinateTransformer: MutableCoordinateTransformer? = null,
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Crop,
-    onInit: ViewfinderInitScope.() -> Unit
+    onInit: ViewfinderInitScope.() -> Unit,
 ) {
     Box(modifier = modifier.clipToBounds().fillMaxSize()) {
         key(surfaceRequest) {
@@ -107,7 +107,7 @@ fun Viewfinder(
                     surfaceRequest.implementationMode ?: ImplementationMode.EXTERNAL,
                 coordinateTransformer = coordinateTransformer,
                 alignment = alignment,
-                contentScale = contentScale
+                contentScale = contentScale,
             ) {
                 val viewfinderInitScope =
                     ViewfinderInitScopeImpl(viewfinderSurfaceRequest = surfaceRequest)
@@ -142,7 +142,7 @@ private fun TransformedSurface(
     coordinateTransformer: MutableCoordinateTransformer?,
     alignment: Alignment,
     contentScale: ContentScale,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    onInit: AndroidExternalSurfaceScope.() -> Unit,
 ) {
     val layoutDirection = LocalConfiguration.current.layoutDirection
     val surfaceModifier =
@@ -166,7 +166,7 @@ private fun TransformedSurface(
                             transformationInfo = transformationInfo,
                             layoutDirection = layoutDirection,
                             contentScale = contentScale.toInternalContentScale(),
-                            alignment = alignment.toInternalAlignment()
+                            alignment = alignment.toInternalAlignment(),
                         )
 
                     coordinateTransformer?.transformMatrix =
@@ -209,7 +209,7 @@ private fun TransformedSurface(
                     Transformations.getTextureViewCorrectionMatrix(
                         displayRotationDegrees = displayRotationDegrees,
                         width = surfaceWidth,
-                        height = surfaceHeight
+                        height = surfaceHeight,
                     )
                 )
             }
@@ -217,7 +217,7 @@ private fun TransformedSurface(
             AndroidEmbeddedExternalSurface(
                 modifier = surfaceModifier,
                 transform = correctionMatrix,
-                onInit = onInit
+                onInit = onInit,
             )
         }
     }
@@ -229,12 +229,12 @@ private fun Alignment.toInternalAlignment(): androidx.camera.viewfinder.core.imp
             val composeSize =
                 androidx.compose.ui.unit.IntSize(
                     size.width.fastRoundToInt(),
-                    size.height.fastRoundToInt()
+                    size.height.fastRoundToInt(),
                 )
             val composeSpace =
                 androidx.compose.ui.unit.IntSize(
                     space.width.fastRoundToInt(),
-                    space.height.fastRoundToInt()
+                    space.height.fastRoundToInt(),
                 )
             val composeLayoutDirection =
                 when (layoutDirection) {

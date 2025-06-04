@@ -80,7 +80,7 @@ class ComposeLayoutInspectorFactory :
     InspectorFactory<ComposeLayoutInspector>(LAYOUT_INSPECTION_ID) {
     override fun createInspector(
         connection: Connection,
-        environment: InspectorEnvironment
+        environment: InspectorEnvironment,
     ): ComposeLayoutInspector {
         return ComposeLayoutInspector(connection, environment)
     }
@@ -89,7 +89,7 @@ class ComposeLayoutInspectorFactory :
 class ComposeLayoutInspector(
     connection: Connection,
     // Keep this instance for easy access through reflection:
-    private val environment: InspectorEnvironment
+    private val environment: InspectorEnvironment,
 ) : Inspector(connection) {
 
     /** Cache data which allows us to reuse previously queried inspector nodes */
@@ -118,7 +118,7 @@ class ComposeLayoutInspector(
     internal class CacheTree(
         val viewParent: View,
         val nodes: List<InspectorNode>,
-        val viewsToSkip: LongList
+        val viewsToSkip: LongList,
     )
 
     private val rootsDetector = RootsDetector(environment)
@@ -194,7 +194,7 @@ class ComposeLayoutInspector(
 
     private fun handleGetComposablesCommand(
         getComposablesCommand: GetComposablesCommand,
-        callback: CommandCallback
+        callback: CommandCallback,
     ) {
         val data =
             getComposableNodes(
@@ -202,7 +202,7 @@ class ComposeLayoutInspector(
                 getComposablesCommand.skipSystemComposables,
                 getComposablesCommand.extractAllParameters || !delayParameterExtractions,
                 getComposablesCommand.generation,
-                getComposablesCommand.generation == 0
+                getComposablesCommand.generation == 0,
             )
 
         val location = IntArray(2)
@@ -228,7 +228,7 @@ class ComposeLayoutInspector(
 
     private fun handleGetParametersCommand(
         getParametersCommand: GetParametersCommand,
-        callback: CommandCallback
+        callback: CommandCallback,
     ) {
         val foundComposable =
             if (
@@ -242,7 +242,7 @@ class ComposeLayoutInspector(
                         getParametersCommand.rootViewId,
                         getParametersCommand.skipSystemComposables,
                         true,
-                        getParametersCommand.generation
+                        getParametersCommand.generation,
                     )
                     ?.lookup
                     ?.get(getParametersCommand.composableId)
@@ -267,7 +267,7 @@ class ComposeLayoutInspector(
                                     getParametersCommand.maxInitialIterableSize.orElse(
                                         MAX_ITERABLE_SIZE
                                     ),
-                                    stringTable
+                                    stringTable,
                                 )
                             addAllStrings(stringTable.toStringEntries())
                         }
@@ -280,14 +280,14 @@ class ComposeLayoutInspector(
 
     private fun handleGetAllParametersCommand(
         getAllParametersCommand: GetAllParametersCommand,
-        callback: CommandCallback
+        callback: CommandCallback,
     ) {
         val allComposables =
             getComposableNodes(
                     getAllParametersCommand.rootViewId,
                     getAllParametersCommand.skipSystemComposables,
                     true,
-                    getAllParametersCommand.generation
+                    getAllParametersCommand.generation,
                 )
                 ?.lookup ?: longObjectMapOf()
 
@@ -302,7 +302,7 @@ class ComposeLayoutInspector(
                         getAllParametersCommand.rootViewId,
                         getAllParametersCommand.maxRecursions.orElse(MAX_RECURSIONS),
                         getAllParametersCommand.maxInitialIterableSize.orElse(MAX_ITERABLE_SIZE),
-                        stringTable
+                        stringTable,
                     )
                 )
             }
@@ -320,7 +320,7 @@ class ComposeLayoutInspector(
 
     private fun handleGetParameterDetailsCommand(
         getParameterDetailsCommand: GetParameterDetailsCommand,
-        callback: CommandCallback
+        callback: CommandCallback,
     ) {
         val indices = mutableIntListOf()
         getParameterDetailsCommand.reference.compositeIndexList.forEach { indices.add(it) }
@@ -330,7 +330,7 @@ class ComposeLayoutInspector(
                 getParameterDetailsCommand.reference.anchorHash,
                 getParameterDetailsCommand.reference.kind.convert(),
                 getParameterDetailsCommand.reference.parameterIndex,
-                indices
+                indices,
             )
         val foundComposable =
             if (
@@ -344,7 +344,7 @@ class ComposeLayoutInspector(
                         getParameterDetailsCommand.rootViewId,
                         getParameterDetailsCommand.skipSystemComposables,
                         true,
-                        getParameterDetailsCommand.generation
+                        getParameterDetailsCommand.generation,
                     )
                     ?.lookup
                     ?.get(reference.nodeId)
@@ -385,11 +385,11 @@ class ComposeLayoutInspector(
 
     private fun handleUpdateSettingsCommand(
         updateSettingsCommand: UpdateSettingsCommand,
-        callback: CommandCallback
+        callback: CommandCallback,
     ) {
         recompositionHandler.changeCollectionMode(
             updateSettingsCommand.includeRecomposeCounts,
-            updateSettingsCommand.keepRecomposeCounts
+            updateSettingsCommand.keepRecomposeCounts,
         )
         delayParameterExtractions = updateSettingsCommand.delayParameterExtractions
         reduceChildNesting = updateSettingsCommand.reduceChildNesting
@@ -413,7 +413,7 @@ class ComposeLayoutInspector(
         skipSystemComposables: Boolean,
         includeAllParameters: Boolean,
         generation: Int,
-        forceRegeneration: Boolean = false
+        forceRegeneration: Boolean = false,
     ): CacheData? {
         if (
             !forceRegeneration &&
@@ -450,8 +450,8 @@ class ComposeLayoutInspector(
                                         nodesByComposeView[it.composeView.uniqueDrawingId]
                                             ?: emptyList()
                                     CacheTree(it.viewParent, nodes, it.viewsToSkip)
-                                }
-                            )
+                                },
+                            ),
                         )
                     }
                     data
@@ -487,7 +487,7 @@ class ComposeLayoutInspector(
     private fun getAndroidComposeViews(
         rootViewId: Long,
         skipSystemComposables: Boolean,
-        generation: Int
+        generation: Int,
     ): List<AndroidComposeViewWrapper> {
         ThreadUtils.assertOnMainThread()
 

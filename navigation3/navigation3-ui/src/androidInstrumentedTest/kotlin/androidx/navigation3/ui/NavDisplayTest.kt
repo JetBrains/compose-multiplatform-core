@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -279,7 +280,7 @@ class NavDisplayTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
-                entryDecorators = listOf(rememberSavedStateNavEntryDecorator())
+                entryDecorators = listOf(rememberSavedStateNavEntryDecorator()),
             ) {
                 when (it) {
                     first ->
@@ -340,7 +341,7 @@ class NavDisplayTest {
                         entry(second) { Text(second) }
                         entry(third) { Text(third) }
                         entry(forth) { Text(forth) }
-                    }
+                    },
             )
         }
 
@@ -362,33 +363,50 @@ class NavDisplayTest {
     }
 
     @Test
-    fun swappingBackStackClearsState() {
+    fun swappingBackStackUsesDifferentHoistedStates() {
         lateinit var numberOnScreen1: MutableState<Int>
-        lateinit var backStack1: NavBackStack
-        lateinit var backStack2: NavBackStack
-        lateinit var state: MutableState<Int>
+        lateinit var numberOnScreen2: MutableState<Int>
+
+        lateinit var backStackState: MutableState<Int>
+        lateinit var decoratorState: MutableState<Int>
 
         composeTestRule.setContent {
-            backStack1 = rememberNavBackStack(First)
-            backStack2 = rememberNavBackStack(Second)
-            state = remember { mutableStateOf(1) }
+            val backStack1 = rememberNavBackStack(First)
+            val backStack2 = rememberNavBackStack(Second)
+            val decorator1 =
+                listOf(rememberSceneSetupNavEntryDecorator(), rememberSavedStateNavEntryDecorator())
+            val decorator2 =
+                listOf(rememberSceneSetupNavEntryDecorator(), rememberSavedStateNavEntryDecorator())
+            backStackState = remember { mutableStateOf(1) }
+            decoratorState = remember { mutableStateOf(1) }
 
             val backStack =
-                when (state.value) {
+                when (backStackState.value) {
                     1 -> backStack1
                     else -> backStack2
                 }
+            val decorators =
+                when (decoratorState.value) {
+                    1 -> decorator1
+                    else -> decorator2
+                }
             NavDisplay(
                 backStack = backStack,
+                entryDecorators = decorators,
                 onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
                 entryProvider =
                     entryProvider {
                         entry(First) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
+                            Text(first)
                         }
-                        entry(Second) { Text(second) }
-                    }
+                        entry(Second) {
+                            numberOnScreen2 = rememberSaveable { mutableStateOf(0) }
+                            Text("numberOnScreen2: ${numberOnScreen2.value}")
+                            Text(second)
+                        }
+                    },
             )
         }
 
@@ -398,21 +416,34 @@ class NavDisplayTest {
             numberOnScreen1.value++
         }
 
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText("numberOnScreen1: 2").assertIsDisplayed()
 
-        composeTestRule.runOnIdle { state.value = 2 }
-        composeTestRule.waitForIdle()
-        assertThat(composeTestRule.onNodeWithText(second).isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { state.value = 1 }
+        backStackState.value = 2
+        decoratorState.value = 2
 
         composeTestRule.runOnIdle {
-            assertWithMessage("We should have new state after backstack change")
-                .that(numberOnScreen1.value)
-                .isEqualTo(0)
+            assertWithMessage("Initial number should be 0").that(numberOnScreen2.value).isEqualTo(0)
+            numberOnScreen2.value++
+            numberOnScreen2.value++
+            numberOnScreen2.value++
         }
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+        composeTestRule.onNodeWithText("numberOnScreen2: 3").assertIsDisplayed()
 
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 0").isDisplayed()).isTrue()
+        backStackState.value = 1
+        decoratorState.value = 1
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText("numberOnScreen1: 2").assertIsDisplayed()
+
+        backStackState.value = 2
+        decoratorState.value = 2
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+        composeTestRule.onNodeWithText("numberOnScreen2: 3").assertIsDisplayed()
     }
 
     @Test
@@ -812,6 +843,6 @@ private const val second = "second"
 private const val third = "third"
 private const val forth = "forth"
 
-@Serializable object First : NavKey()
+@Serializable object First : NavKey
 
-@Serializable object Second : NavKey()
+@Serializable object Second : NavKey

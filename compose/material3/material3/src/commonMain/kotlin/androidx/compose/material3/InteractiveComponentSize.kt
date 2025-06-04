@@ -97,7 +97,7 @@ internal class MinimumInteractiveModifierNode :
     @Suppress("PrimitiveInCollection")
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = currentValueOf(LocalMinimumInteractiveComponentSize).coerceAtLeast(0.dp)
         val placeable = measurable.measure(constraints)
@@ -125,7 +125,7 @@ internal class MinimumInteractiveModifierNode :
         return layout(
             width = width,
             height = height,
-            alignmentLines = alignmentLinesCache ?: emptyMap()
+            alignmentLines = alignmentLinesCache ?: emptyMap(),
         ) {
             val centerX = ((width - placeable.width) / 2f).roundToInt()
             val centerY = ((height - placeable.height) / 2f).roundToInt()
@@ -178,7 +178,7 @@ internal val MinimumInteractiveLeftAlignmentLine = VerticalAlignmentLine(::min)
 @Deprecated(
     message = "Use LocalMinimumInteractiveComponentSize with 0.dp to turn off enforcement instead.",
     replaceWith = ReplaceWith("LocalMinimumInteractiveComponentSize"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf {

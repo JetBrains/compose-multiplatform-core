@@ -47,7 +47,7 @@ class AggregatedAppFunctionInventoryTest {
         assertThat(aggregatedInventory.functionIdToMetadataMap.keys)
             .containsExactly(
                 "androix.appfunctions.internal#test1",
-                "androix.appfunctions.internal#test2"
+                "androix.appfunctions.internal#test2",
             )
     }
 
@@ -61,9 +61,7 @@ class AggregatedAppFunctionInventoryTest {
 
         assertThat(aggregatedInventory.functionIdToMetadataMap).hasSize(1)
         assertThat(aggregatedInventory.functionIdToMetadataMap.keys)
-            .containsExactly(
-                "androix.appfunctions.internal#test1",
-            )
+            .containsExactly("androix.appfunctions.internal#test1")
     }
 
     private class Inventory1 : AppFunctionInventory {
@@ -80,10 +78,10 @@ class AggregatedAppFunctionInventoryTest {
                                 valueType =
                                     AppFunctionPrimitiveTypeMetadata(
                                         type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                        isNullable = false
-                                    ),
+                                        isNullable = false,
+                                    )
                             ),
-                        components = AppFunctionComponentsMetadata()
+                        components = AppFunctionComponentsMetadata(),
                     )
             )
     }
@@ -102,10 +100,10 @@ class AggregatedAppFunctionInventoryTest {
                                 valueType =
                                     AppFunctionPrimitiveTypeMetadata(
                                         type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                        isNullable = false
-                                    ),
+                                        isNullable = false,
+                                    )
                             ),
-                        components = AppFunctionComponentsMetadata()
+                        components = AppFunctionComponentsMetadata(),
                     )
             )
     }

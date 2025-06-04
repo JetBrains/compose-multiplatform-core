@@ -23,6 +23,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -49,6 +50,7 @@ import androidx.xr.runtime.math.Pose
  *   on the left and right edges of the SurfaceEntity canvas.
  * @property featherRadiusY a [Float] which controls the canvas-relative radius of the edge fadeout
  *   on the top and bottom edges of the SurfaceEntity canvas.
+ * @property contentColorMetadata The [ContentColorMetadata] of the content (nullable).
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SurfaceEntity
@@ -60,13 +62,13 @@ private constructor(
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
     public abstract class CanvasShape private constructor() {
-        public open val dimensions: Dimensions = Dimensions(0.0f, 0.0f, 0.0f)
+        public open val dimensions: FloatSize3d = FloatSize3d(0.0f, 0.0f, 0.0f)
 
         // A Quad-shaped canvas. Width and height are represented in the local spatial coordinate
         // system of the entity. (0,0,0) is the center of the canvas.
         public class Quad(public val width: Float, public val height: Float) : CanvasShape() {
-            override val dimensions: Dimensions
-                get() = Dimensions(width, height, 0.0f)
+            override val dimensions: FloatSize3d
+                get() = FloatSize3d(width, height, 0.0f)
         }
 
         // An inwards-facing sphere-shaped canvas, centered at (0,0,0) in the local coordinate
@@ -77,8 +79,8 @@ private constructor(
         // space,
         // and UV's are applied from positive X to negative X in an equirectangular projection.
         public class Vr360Sphere(public val radius: Float) : CanvasShape() {
-            override val dimensions: Dimensions
-                get() = Dimensions(radius * 2, radius * 2, radius * 2)
+            override val dimensions: FloatSize3d
+                get() = FloatSize3d(radius * 2, radius * 2, radius * 2)
         }
 
         // An inwards-facing hemisphere-shaped canvas, where (0,0,0) is the center of the base of
@@ -89,8 +91,8 @@ private constructor(
         // space,
         // and UV's are applied from positive X to negative X in an equirectangular projection.
         public class Vr180Hemisphere(public val radius: Float) : CanvasShape() {
-            override val dimensions: Dimensions
-                get() = Dimensions(radius * 2, radius * 2, radius)
+            override val dimensions: FloatSize3d
+                get() = FloatSize3d(radius * 2, radius * 2, radius)
         }
     }
 
@@ -145,6 +147,127 @@ private constructor(
         public const val MULTIVIEW_RIGHT_PRIMARY: Int = 5
     }
 
+    /**
+     * Color information for the content drawn on a surface.
+     *
+     * @param colorSpace The color space of the content.
+     * @param colorTransfer The transfer function of the content.
+     * @param colorRange The color range of the content.
+     * @param maxCLL The maximum content light level of the content (in nits).
+     */
+    public class ContentColorMetadata(
+        @ColorSpaceValue public val colorSpace: Int = ColorSpace.BT709,
+        @ColorTransferValue public val colorTransfer: Int = ColorTransfer.SRGB,
+        @ColorRangeValue public val colorRange: Int = ColorRange.FULL,
+        public val maxCLL: Int = Companion.maxCLLUnknown,
+    ) {
+
+        /**
+         * Specifies the color space of the media asset drawn on the surface.
+         *
+         * These values are a superset of androidx.media3.common.C.ColorSpace.
+         */
+        @IntDef(
+            ColorSpace.BT709,
+            ColorSpace.BT601_PAL,
+            ColorSpace.BT2020,
+            ColorSpace.BT601_525,
+            ColorSpace.DISPLAY_P3,
+            ColorSpace.DCI_P3,
+            ColorSpace.ADOBE_RGB,
+        )
+        @Retention(AnnotationRetention.SOURCE)
+        internal annotation class ColorSpaceValue
+
+        public object ColorSpace {
+            public const val BT709: Int = 1
+            public const val BT601_PAL: Int = 2
+            public const val BT2020: Int = 6
+            public const val BT601_525: Int = 0xf0
+            public const val DISPLAY_P3: Int = 0xf1
+            public const val DCI_P3: Int = 0xf2
+            public const val ADOBE_RGB: Int = 0xf3
+        }
+
+        /**
+         * Specifies the color transfer function of the media asset drawn on the surface.
+         *
+         * Enum members cover the transfer functions available in android::ADataSpace Enum values
+         * match values from androidx.media3.common.C.ColorTransfer.
+         */
+        @IntDef(
+            ColorTransfer.LINEAR,
+            ColorTransfer.SRGB,
+            ColorTransfer.SDR, // SMPTE170M
+            ColorTransfer.GAMMA_2_2,
+            ColorTransfer.ST2084,
+            ColorTransfer.HLG,
+        )
+        @Retention(AnnotationRetention.SOURCE)
+        internal annotation class ColorTransferValue
+
+        public object ColorTransfer {
+            public const val LINEAR: Int = 1
+            public const val SRGB: Int = 2
+            public const val SDR: Int = 3
+            public const val GAMMA_2_2: Int = 10
+            public const val ST2084: Int = 6
+            public const val HLG: Int = 7
+        }
+
+        /**
+         * Specifies the color range of the media asset drawn on the surface.
+         *
+         * Enum values match values from androidx.media3.common.C.ColorRange.
+         */
+        @IntDef(ColorRange.FULL, ColorRange.LIMITED)
+        @Retention(AnnotationRetention.SOURCE)
+        internal annotation class ColorRangeValue
+
+        public object ColorRange {
+            public const val FULL: Int = 1
+            public const val LIMITED: Int = 2
+        }
+
+        public companion object {
+            // Represents an unknown maximum content light level.
+            public const val maxCLLUnknown: Int = 0
+
+            internal fun getRtColorSpace(colorSpace: Int): Int {
+                return when (colorSpace) {
+                    ColorSpace.BT709 -> RtSurfaceEntity.ColorSpace.BT709
+                    ColorSpace.BT601_PAL -> RtSurfaceEntity.ColorSpace.BT601_PAL
+                    ColorSpace.BT2020 -> RtSurfaceEntity.ColorSpace.BT2020
+                    ColorSpace.BT601_525 -> RtSurfaceEntity.ColorSpace.BT601_525
+                    ColorSpace.DISPLAY_P3 -> RtSurfaceEntity.ColorSpace.DISPLAY_P3
+                    ColorSpace.DCI_P3 -> RtSurfaceEntity.ColorSpace.DCI_P3
+                    ColorSpace.ADOBE_RGB -> RtSurfaceEntity.ColorSpace.ADOBE_RGB
+                    else -> RtSurfaceEntity.ColorSpace.BT709
+                }
+            }
+
+            internal fun getRtColorTransfer(colorTransfer: Int): Int {
+                return when (colorTransfer) {
+                    ColorTransfer.LINEAR -> RtSurfaceEntity.ColorTransfer.LINEAR
+                    ColorTransfer.SRGB -> RtSurfaceEntity.ColorTransfer.SRGB
+                    ColorTransfer.SDR -> RtSurfaceEntity.ColorTransfer.SDR
+                    ColorTransfer.GAMMA_2_2 -> RtSurfaceEntity.ColorTransfer.GAMMA_2_2
+                    ColorTransfer.ST2084 -> RtSurfaceEntity.ColorTransfer.ST2084
+                    ColorTransfer.HLG -> RtSurfaceEntity.ColorTransfer.HLG
+                    else -> RtSurfaceEntity.ColorTransfer.SRGB
+                }
+            }
+
+            internal fun getRtColorRange(colorRange: Int): Int {
+                return when (colorRange) {
+                    ColorRange.FULL -> RtSurfaceEntity.ColorRange.FULL
+                    ColorRange.LIMITED -> RtSurfaceEntity.ColorRange.LIMITED
+                    else -> RtSurfaceEntity.ColorRange.FULL
+                }
+            }
+        }
+    }
+
     public companion object {
         private fun getRtStereoMode(stereoMode: Int): Int {
             return when (stereoMode) {
@@ -176,6 +299,7 @@ private constructor(
          * @param canvasShape The [CanvasShape] which describes the spatialized shape of the canvas.
          * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
          *   enabled for the surface.
+         * @param contentColorMetadata The [ContentColorMetadata] of the content (nullable).
          * @return a SurfaceEntity instance
          */
         internal fun create(
@@ -185,6 +309,7 @@ private constructor(
             pose: Pose = Pose.Identity,
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
             contentSecurityLevel: Int = ContentSecurityLevel.NONE,
+            contentColorMetadata: ContentColorMetadata? = null,
         ): SurfaceEntity {
             val rtCanvasShape =
                 when (canvasShape) {
@@ -196,17 +321,20 @@ private constructor(
                         RtSurfaceEntity.CanvasShape.Vr180Hemisphere(canvasShape.radius)
                     else -> throw IllegalArgumentException("Unsupported canvas shape: $canvasShape")
                 }
-            return SurfaceEntity(
-                adapter.createSurfaceEntity(
-                    getRtStereoMode(stereoMode),
-                    pose,
-                    rtCanvasShape,
-                    getRtContentSecurityLevel(contentSecurityLevel),
-                    adapter.activitySpaceRootImpl,
-                ),
-                entityManager,
-                canvasShape,
-            )
+            val surfaceEntity =
+                SurfaceEntity(
+                    adapter.createSurfaceEntity(
+                        getRtStereoMode(stereoMode),
+                        pose,
+                        rtCanvasShape,
+                        getRtContentSecurityLevel(contentSecurityLevel),
+                        adapter.activitySpaceRootImpl,
+                    ),
+                    entityManager,
+                    canvasShape,
+                )
+            surfaceEntity.contentColorMetadata = contentColorMetadata
+            return surfaceEntity
         }
 
         /**
@@ -221,6 +349,7 @@ private constructor(
          * @param canvasShape The [CanvasShape] which describes the spatialized shape of the canvas.
          * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
          *   enabled for the surface.
+         * @param contentColorMetadata The [ContentColorMetadata] of the content (nullable).
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -232,6 +361,7 @@ private constructor(
             pose: Pose = Pose.Identity,
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
             contentSecurityLevel: Int = ContentSecurityLevel.NONE,
+            contentColorMetadata: ContentColorMetadata? = null,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session.platformAdapter,
@@ -240,6 +370,7 @@ private constructor(
                 pose,
                 canvasShape,
                 contentSecurityLevel,
+                contentColorMetadata,
             )
     }
 
@@ -264,8 +395,8 @@ private constructor(
      * field cannot be directly set - to update the dimensions of the canvas, update the value of
      * [canvasShape].
      */
-    public val dimensions: Dimensions
-        get() = rtEntity.dimensions.toDimensions()
+    public val dimensions: FloatSize3d
+        get() = rtEntity.dimensions.toFloatSize3d()
 
     /**
      * The shape of the canvas that backs the Entity.
@@ -346,6 +477,42 @@ private constructor(
         }
 
     /**
+     * Manages the explicit [ContentColorMetadata] for the surface's content.
+     *
+     * Describes how the application wants the system renderer to color convert Surface content to
+     * the Display. When this is null, the system will make a best guess at the appropriate
+     * conversion.
+     *
+     * The setter must be called from the main thread.
+     */
+    public var contentColorMetadata: ContentColorMetadata?
+        get() {
+            return if (!rtEntity.contentColorMetadataSet) {
+                null
+            } else {
+                ContentColorMetadata(
+                    colorSpace = rtEntity.colorSpace,
+                    colorTransfer = rtEntity.colorTransfer,
+                    colorRange = rtEntity.colorRange,
+                    maxCLL = rtEntity.maxCLL,
+                )
+            }
+        }
+        @MainThread
+        set(value) {
+            if (value == null) {
+                rtEntity.resetContentColorMetadata()
+            } else {
+                rtEntity.setContentColorMetadata(
+                    ContentColorMetadata.getRtColorSpace(value.colorSpace),
+                    ContentColorMetadata.getRtColorTransfer(value.colorTransfer),
+                    ContentColorMetadata.getRtColorRange(value.colorRange),
+                    value.maxCLL,
+                )
+            }
+        }
+
+    /**
      * Returns a surface into which the application can render stereo image content.
      *
      * This method must be called from the main thread.
@@ -354,5 +521,29 @@ private constructor(
     @MainThread
     public fun getSurface(): Surface {
         return rtEntity.surface
+    }
+
+    /**
+     * Gets the perceived resolution of the entity in the camera view.
+     *
+     * This API is only intended for use in Full Space Mode and will return
+     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode.
+     *
+     * The entity's own rotation and the camera's viewing direction are disregarded; this value
+     * represents the dimensions of the entity on the camera view if its largest surface was facing
+     * the camera without changing the distance of the entity to the camera.
+     *
+     * @return A [PerceivedResolutionResult] which encapsulates the outcome:
+     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
+     *       is successful.
+     *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
+     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
+     *       the calculation is invalid or unavailable.
+     *
+     * @throws IllegalStateException if HEAD_TRACKING permission is not configured.
+     * @see PerceivedResolutionResult
+     */
+    public fun getPerceivedResolution(): PerceivedResolutionResult {
+        return rtEntity.getPerceivedResolution().toPerceivedResolutionResult()
     }
 }

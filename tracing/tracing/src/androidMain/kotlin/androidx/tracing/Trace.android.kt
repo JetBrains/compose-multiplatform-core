@@ -99,10 +99,7 @@ actual object Trace {
                     val setAppTracingAllowed =
                         Trace::class
                             .java
-                            .getMethod(
-                                "setAppTracingAllowed",
-                                Boolean::class.javaPrimitiveType,
-                            )
+                            .getMethod("setAppTracingAllowed", Boolean::class.javaPrimitiveType)
                     setAppTracingAllowed.invoke(null, true)
                 }
             } catch (exception: Exception) {
@@ -358,7 +355,7 @@ public inline fun <T> trace(lazyLabel: () -> String, block: () -> T): T {
 public suspend inline fun <T> traceAsync(
     methodName: String,
     cookie: Int,
-    crossinline block: suspend () -> T
+    crossinline block: suspend () -> T,
 ): T {
     androidx.tracing.Trace.beginAsyncSection(methodName, cookie)
     try {
@@ -382,7 +379,7 @@ public suspend inline fun <T> traceAsync(
 public inline fun <T> traceAsync(
     lazyMethodName: () -> String,
     lazyCookie: () -> Int,
-    block: () -> T
+    block: () -> T,
 ): T {
     var methodName: String? = null
     var cookie = 0

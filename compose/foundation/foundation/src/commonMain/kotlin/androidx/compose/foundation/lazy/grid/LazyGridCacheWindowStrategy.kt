@@ -49,7 +49,7 @@ internal class LazyGridCacheWindowPrefetchStrategy(cacheWindow: LazyLayoutCacheW
     /** Adapts the LazyGridPrefetchScope and LazyGridLayoutInfo to a single scope. */
     private inline fun LazyGridPrefetchScope.applyWindowScope(
         layoutInfo: LazyGridLayoutInfo,
-        block: CacheWindowScope.() -> Unit
+        block: CacheWindowScope.() -> Unit,
     ) {
         cacheWindowScope.layoutInfo = layoutInfo
         cacheWindowScope.prefetchScope = this
@@ -109,7 +109,7 @@ private class LazyGridCacheWindowScope() : CacheWindowScope {
 
     override fun schedulePrefetch(
         lineIndex: Int,
-        onItemPrefetched: (Int, Int) -> Unit
+        onItemPrefetched: (Int, Int) -> Unit,
     ): List<PrefetchHandle> {
         return prefetchScope.scheduleLinePrefetch(lineIndex) {
             var tallestElement = Int.MIN_VALUE

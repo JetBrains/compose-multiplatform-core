@@ -650,51 +650,45 @@ public class AppSearchImplTest {
                 ALWAYS_OPTIMIZE);
 
         SchemaProto existingSchema = mAppSearchImpl.getSchemaProtoLocked();
-        // Insert some schemas in 2 databases. We need to use the SchemaProto and call Icing's
+        // Insert some schemas in 2 databases. We need to use the full SchemaProto and call Icing's
         // set schema API directly as AppSearch will use database-scoped schema operation since
         // we initialized with a custom icing instance (which AppSearch understands as having VM
         // enabled). This will fail as the Icing instance has not enabled schema database.
-        SchemaProto fullSchema = SchemaProto.newBuilder(existingSchema)
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database1/Type1")
-                        .setDescription("")
-                        .setVersion(0))
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database1/Type2")
-                        .setDescription("")
-                        .setVersion(0))
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database2/Type3")
-                        .setDescription("")
-                        .setVersion(0))
-                .build();
-        SetSchemaRequestProto requestProto = SetSchemaRequestProto.newBuilder()
-                .setSchema(fullSchema)
-                .setIgnoreErrorsAndDeleteDocuments(false)
-                .build();
+        SchemaProto expectedProto =
+                SchemaProto.newBuilder()
+                        .addTypes(
+                                SchemaTypeConfigProto.newBuilder()
+                                        .setSchemaType("package$database1/Type1")
+                                        .setDescription("")
+                                        .setVersion(0))
+                        .addTypes(
+                                SchemaTypeConfigProto.newBuilder()
+                                        .setSchemaType("package$database1/Type2")
+                                        .setDescription("")
+                                        .setVersion(0))
+                        .addTypes(
+                                SchemaTypeConfigProto.newBuilder()
+                                        .setSchemaType("package$database2/Type3")
+                                        .setDescription("")
+                                        .setVersion(0))
+                        .build();
+        SchemaProto fullSchema =
+                SchemaProto.newBuilder(existingSchema)
+                        .addAllTypes(expectedProto.getTypesList())
+                        .build();
+        SetSchemaRequestProto requestProto =
+                SetSchemaRequestProto.newBuilder()
+                        .setSchema(fullSchema)
+                        .setIgnoreErrorsAndDeleteDocuments(false)
+                        .build();
         assertThat(icingSearchEngine.setSchemaWithRequestProto(requestProto).getStatus().getCode())
                 .isEqualTo(StatusProto.Code.OK);
 
-        // Create expected schemaType proto. These protos should not contain the database field.
-        SchemaProto expectedProto = SchemaProto.newBuilder()
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database1/Type1")
-                        .setDescription("")
-                        .setVersion(0))
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database1/Type2")
-                        .setDescription("")
-                        .setVersion(0))
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database2/Type3")
-                        .setDescription("")
-                        .setVersion(0))
-                .build();
-        List<SchemaTypeConfigProto> expectedTypes = new ArrayList<>();
-        expectedTypes.addAll(existingSchema.getTypesList());
-        expectedTypes.addAll(expectedProto.getTypesList());
+        // We need to get the full schema here since Icing doesn't have schema database enabled,
+        // which also disables the getSchemaForPrefix API. The schema should be exactly the same
+        // as what we've just set, without the database fields being populated.
         assertThat(mAppSearchImpl.getSchemaProtoLocked().getTypesList())
-                .containsExactlyElementsIn(expectedTypes);
+                .containsExactlyElementsIn(fullSchema.getTypesList());
 
         // Reinitialize Icing and AppSearch, this time with schema database enabled.
         InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
@@ -716,12 +710,33 @@ public class AppSearchImplTest {
         assertThat(initStats.getNativeIndexRestorationCause())
                 .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
 
-        // GetSchema. The old schema should have the database field populated after the migration
-        expectedTypes = new ArrayList<>();
-        expectedTypes.addAll(getSchemaProtoWithDatabase(existingSchema).getTypesList());
-        expectedTypes.addAll(getSchemaProtoWithDatabase(expectedProto).getTypesList());
-        assertThat(mAppSearchImpl.getSchemaProtoLocked().getTypesList())
-                .containsExactlyElementsIn(expectedTypes);
+        // GetSchema for db1 and db2. The old schema should have the database field populated
+        // after the migration
+        SchemaProto expectedDb1Proto = SchemaProto.newBuilder()
+                .addTypes(SchemaTypeConfigProto.newBuilder()
+                        .setSchemaType("package$database1/Type1")
+                        .setDatabase("package$database1/")
+                        .setDescription("")
+                        .setVersion(0))
+                .addTypes(SchemaTypeConfigProto.newBuilder()
+                        .setSchemaType("package$database1/Type2")
+                        .setDatabase("package$database1/")
+                        .setDescription("")
+                        .setVersion(0))
+                .build();
+        SchemaProto expectedDb2Proto = SchemaProto.newBuilder()
+                .addTypes(SchemaTypeConfigProto.newBuilder()
+                        .setSchemaType("package$database2/Type3")
+                        .setDatabase("package$database2/")
+                        .setDescription("")
+                        .setVersion(0))
+                .build();
+        assertThat(
+                mAppSearchImpl.getSchemaProtoForPrefixLocked("package$database1/").getTypesList())
+                .containsExactlyElementsIn(expectedDb1Proto.getTypesList());
+        assertThat(
+                mAppSearchImpl.getSchemaProtoForPrefixLocked("package$database2/").getTypesList())
+                .containsExactlyElementsIn(expectedDb2Proto.getTypesList());
 
         // SetSchema for database 1 again. We can use the AppSearch API this time since we've
         // enabled database-scoped schema operation for Icing too. Check that the old db1 schema
@@ -738,24 +753,20 @@ public class AppSearchImplTest {
                 /*setSchemaStatsBuilder=*/ null);
         assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
 
-        // Create expected schemaType proto. These protos should contain the database field.
-        expectedProto = SchemaProto.newBuilder()
+        // expectedDb1Proto has changed. The proto should contain the database field.
+        expectedDb1Proto = SchemaProto.newBuilder()
                 .addTypes(SchemaTypeConfigProto.newBuilder()
                         .setSchemaType("package$database1/Type4")
                         .setDatabase("package$database1/")
                         .setDescription("")
                         .setVersion(0))
-                .addTypes(SchemaTypeConfigProto.newBuilder()
-                        .setSchemaType("package$database2/Type3")
-                        .setDatabase("package$database2/")
-                        .setDescription("")
-                        .setVersion(0))
                 .build();
-        expectedTypes = new ArrayList<>();
-        expectedTypes.addAll(getSchemaProtoWithDatabase(existingSchema).getTypesList());
-        expectedTypes.addAll(expectedProto.getTypesList());
-        assertThat(mAppSearchImpl.getSchemaProtoLocked().getTypesList())
-                .containsExactlyElementsIn(expectedTypes);
+        assertThat(
+                mAppSearchImpl.getSchemaProtoForPrefixLocked("package$database1/").getTypesList())
+                .containsExactlyElementsIn(expectedDb1Proto.getTypesList());
+        assertThat(
+                mAppSearchImpl.getSchemaProtoForPrefixLocked("package$database2/").getTypesList())
+                .containsExactlyElementsIn(expectedDb2Proto.getTypesList());
     }
 
     @Test

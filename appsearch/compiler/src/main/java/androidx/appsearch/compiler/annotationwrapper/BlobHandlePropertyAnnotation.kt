@@ -49,7 +49,7 @@ data class BlobHandlePropertyAnnotation(
         @Throws(ProcessingException::class)
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): BlobHandlePropertyAnnotation {
             val name = annotationParams["name"] as? String
             return BlobHandlePropertyAnnotation(

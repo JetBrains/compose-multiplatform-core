@@ -25,7 +25,7 @@ import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCo
 internal class LocalControllerFactory(
     private val applicationContext: Context,
     private val localSdkRegistry: SdkRegistry,
-    private val appOwnedSdkRegistry: AppOwnedSdkRegistry
+    private val appOwnedSdkRegistry: AppOwnedSdkRegistry,
 ) : SdkLoader.ControllerFactory {
     override fun createControllerFor(
         sdkConfig: LocalSdkConfig
@@ -34,7 +34,7 @@ internal class LocalControllerFactory(
             sdkConfig.packageName,
             applicationContext,
             localSdkRegistry,
-            appOwnedSdkRegistry
+            appOwnedSdkRegistry,
         )
     }
 }

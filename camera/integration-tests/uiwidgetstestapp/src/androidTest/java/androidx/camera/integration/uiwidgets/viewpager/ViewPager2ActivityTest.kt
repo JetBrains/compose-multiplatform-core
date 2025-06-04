@@ -67,7 +67,7 @@ import org.junit.runners.Parameterized
 class ViewPager2ActivityTest(
     private val lensFacing: Int,
     private val implementationMode: Int,
-    private val cameraXConfig: String
+    private val cameraXConfig: String,
 ) {
 
     companion object {
@@ -79,7 +79,7 @@ class ViewPager2ActivityTest(
             arrayOf(
                 CameraSelector.LENS_FACING_BACK,
                 CameraSelector.LENS_FACING_FRONT,
-                CameraSelector.LENS_FACING_EXTERNAL
+                CameraSelector.LENS_FACING_EXTERNAL,
             )
 
         @JvmStatic private val implementationModeList = arrayOf(COMPATIBLE_MODE, PERFORMANCE_MODE)
@@ -88,7 +88,7 @@ class ViewPager2ActivityTest(
         private val cameraXConfigList =
             arrayOf(
                 CameraFragment.CAMERA2_IMPLEMENTATION_OPTION,
-                CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION
+                CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION,
             )
 
         @JvmStatic
@@ -110,7 +110,7 @@ class ViewPager2ActivityTest(
     @get:Rule
     val cameraPipeConfigTestRule =
         CameraPipeConfigTestRule(
-            active = cameraXConfig == CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION,
+            active = cameraXConfig == CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION
         )
 
     @get:Rule
@@ -123,7 +123,7 @@ class ViewPager2ActivityTest(
                 } else {
                     CameraPipeConfig.defaultConfig()
                 }
-            )
+            ),
         )
 
     private lateinit var device: UiDevice
@@ -265,7 +265,7 @@ class ViewPager2ActivityTest(
 
     private fun assertStreamState(
         scenario: ActivityScenario<ViewPager2Activity>,
-        expectStreamState: PreviewView.StreamState
+        expectStreamState: PreviewView.StreamState,
     ) =
         runBlocking<Unit> {
             lateinit var result: Deferred<Boolean>

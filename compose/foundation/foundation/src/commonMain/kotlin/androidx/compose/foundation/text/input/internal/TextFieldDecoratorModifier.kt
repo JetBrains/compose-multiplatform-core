@@ -130,7 +130,7 @@ internal data class TextFieldDecoratorModifier(
     private val singleLine: Boolean,
     private val interactionSource: MutableInteractionSource,
     private val isPassword: Boolean,
-    private val stylusHandwritingTrigger: MutableSharedFlow<Unit>?
+    private val stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
 ) : ModifierNodeElement<TextFieldDecoratorModifierNode>() {
     override fun create(): TextFieldDecoratorModifierNode =
         TextFieldDecoratorModifierNode(
@@ -145,7 +145,7 @@ internal data class TextFieldDecoratorModifier(
             singleLine = singleLine,
             interactionSource = interactionSource,
             isPassword = isPassword,
-            stylusHandwritingTrigger = stylusHandwritingTrigger
+            stylusHandwritingTrigger = stylusHandwritingTrigger,
         )
 
     override fun update(node: TextFieldDecoratorModifierNode) {
@@ -161,7 +161,7 @@ internal data class TextFieldDecoratorModifier(
             singleLine = singleLine,
             interactionSource = interactionSource,
             isPassword = isPassword,
-            stylusHandwritingTrigger = stylusHandwritingTrigger
+            stylusHandwritingTrigger = stylusHandwritingTrigger,
         )
     }
 
@@ -184,7 +184,7 @@ internal class TextFieldDecoratorModifierNode(
     var singleLine: Boolean,
     var interactionSource: MutableInteractionSource,
     var isPassword: Boolean,
-    var stylusHandwritingTrigger: MutableSharedFlow<Unit>?
+    var stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
 ) :
     DelegatingNode(),
     DrawModifierNode,
@@ -223,7 +223,7 @@ internal class TextFieldDecoratorModifierNode(
                 // updateWindowFocus eventually makes a call to `onFocusChange`, so we don't need to
                 // trigger it from here.
                 updateWindowFocus()
-            }
+            },
         )
 
     private val pointerInputNode =
@@ -245,7 +245,7 @@ internal class TextFieldDecoratorModifierNode(
                                         startInputSession(fromTap = true)
                                     }
                                 },
-                                interactionSource = interactionSource
+                                interactionSource = interactionSource,
                             )
                         }
                         launch(start = CoroutineStart.UNDISPATCHED) {
@@ -317,7 +317,7 @@ internal class TextFieldDecoratorModifierNode(
                             TransferableContent(
                                 clipEntry,
                                 clipMetadata,
-                                TransferableContent.Source.DragAndDrop
+                                TransferableContent.Source.DragAndDrop,
                             )
 
                         val remaining =
@@ -337,7 +337,7 @@ internal class TextFieldDecoratorModifierNode(
                     // `receiveContent` itself would.
                     getReceiveContentConfiguration()?.receiveContentListener?.onDragExit()
                 },
-                onEnded = { emitDragExitEvent() }
+                onEnded = { emitDragExitEvent() },
             )
         )
 
@@ -430,7 +430,7 @@ internal class TextFieldDecoratorModifierNode(
         singleLine: Boolean,
         interactionSource: MutableInteractionSource,
         isPassword: Boolean,
-        stylusHandwritingTrigger: MutableSharedFlow<Unit>?
+        stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
     ) {
         // Find the diff: current previous and new values before updating current.
         val previousEditable = this.enabled && !this.readOnly
@@ -702,7 +702,7 @@ internal class TextFieldDecoratorModifierNode(
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         pointerInputNode.onPointerEvent(pointerEvent, pass, bounds)
     }
@@ -717,7 +717,7 @@ internal class TextFieldDecoratorModifierNode(
             textFieldState = textFieldState,
             textFieldSelectionState = textFieldSelectionState,
             focusManager = currentValueOf(LocalFocusManager),
-            keyboardController = requireKeyboardController()
+            keyboardController = requireKeyboardController(),
         )
     }
 
@@ -779,7 +779,7 @@ internal class TextFieldDecoratorModifierNode(
                             )
                         },
                         stylusHandwritingTrigger = stylusHandwritingTrigger,
-                        viewConfiguration = currentValueOf(LocalViewConfiguration)
+                        viewConfiguration = currentValueOf(LocalViewConfiguration),
                     )
                 }
             }
@@ -845,5 +845,5 @@ internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     onImeAction: ((ImeAction) -> Unit)?,
     updateSelectionState: (() -> Unit)? = null,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>? = null,
-    viewConfiguration: ViewConfiguration? = null
+    viewConfiguration: ViewConfiguration? = null,
 ): Nothing

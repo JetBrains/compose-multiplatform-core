@@ -58,7 +58,7 @@ internal interface PersistentCompositionLocalMap :
 
     fun putValue(
         key: CompositionLocal<Any?>,
-        value: ValueHolder<Any?>
+        value: ValueHolder<Any?>,
     ): PersistentCompositionLocalMap
 
     override val <T> CompositionLocal<T>.currentValue: T

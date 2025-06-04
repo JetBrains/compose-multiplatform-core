@@ -204,7 +204,7 @@ fun ModalBottomSheet(
                 tonalElevation,
                 dragHandle,
                 contentWindowInsets,
-                content
+                content,
             )
         }
     }
@@ -215,7 +215,7 @@ fun ModalBottomSheet(
 
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Maintained for Binary compatibility. Use overload with sheetGesturesEnabled param."
+    message = "Maintained for Binary compatibility. Use overload with sheetGesturesEnabled param.",
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -268,7 +268,7 @@ internal fun BoxScope.ModalBottomSheetContent(
     tonalElevation: Dp = BottomSheetDefaults.Elevation,
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     contentWindowInsets: @Composable () -> WindowInsets = { BottomSheetDefaults.windowInsets },
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val bottomSheetPaneTitle = getString(string = Strings.BottomSheetPaneTitle)
 
@@ -285,7 +285,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                                 ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
                                     sheetState = sheetState,
                                     orientation = Orientation.Vertical,
-                                    onFling = settleToDismiss
+                                    onFling = settleToDismiss,
                                 )
                             }
                         )
@@ -328,7 +328,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                     orientation = Orientation.Vertical,
                     enabled = sheetGesturesEnabled && sheetState.isVisible,
                     startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
-                    onDragStopped = { settleToDismiss(it) }
+                    onDragStopped = { settleToDismiss(it) },
                 )
                 .semantics {
                     paneTitle = bottomSheetPaneTitle
@@ -423,7 +423,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                                         }
                                     }
                                 }
-                            },
+                            }
                 ) {
                     dragHandle()
                 }
@@ -459,9 +459,7 @@ private fun GraphicsLayerScope.calculatePredictiveBackScaleY(progress: Float): F
  */
 @Immutable
 @ExperimentalMaterial3Api
-expect class ModalBottomSheetProperties(
-    shouldDismissOnBackPress: Boolean = true,
-) {
+expect class ModalBottomSheetProperties(shouldDismissOnBackPress: Boolean = true) {
     val shouldDismissOnBackPress: Boolean
 }
 
@@ -501,7 +499,7 @@ private fun Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean) 
         val alpha by
             animateFloatAsState(
                 targetValue = if (visible) 1f else 0f,
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             )
         val closeSheet = getString(Strings.CloseSheet)
         val dismissSheet =
@@ -531,7 +529,7 @@ internal expect fun ModalBottomSheetDialog(
     contentColor: Color,
     properties: ModalBottomSheetProperties,
     predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 private val PredictiveBackMaxScaleXDistance = 48.dp

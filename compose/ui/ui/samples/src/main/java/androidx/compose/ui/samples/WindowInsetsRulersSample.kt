@@ -72,7 +72,7 @@ fun WindowInsetsRulersSample() {
                 val placeable = measurables[2].measure(constraints) // content
                 layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
-        }
+        },
     )
 }
 
@@ -98,12 +98,12 @@ fun InsetsRulersAlphaSample() {
                 measurables[2].measure(Constraints.fixed(width, height - bottom)).place(0, bottom)
                 measurables[1].measure(Constraints.fixed(width, bottom - top)).placeWithLayer(
                     0,
-                    top
+                    top,
                 ) {
                     alpha = InsetsRulers.NavigationBars.alpha(this@layout)
                 }
             }
-        }
+        },
     )
 }
 
@@ -113,7 +113,7 @@ fun AnimatableInsetsRulersSample() {
     class LandOnImeModifierNode : Modifier.Node(), LayoutModifierNode {
         override fun MeasureScope.measure(
             measurable: Measurable,
-            constraints: Constraints
+            constraints: Constraints,
         ): MeasureResult {
             return if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
                 val width = constraints.maxWidth
@@ -179,7 +179,7 @@ fun AnimatableInsetsRulersSample() {
         TextField(
             "Hello World",
             onValueChange = {},
-            Modifier.safeDrawingPadding().align(Alignment.BottomEnd)
+            Modifier.safeDrawingPadding().align(Alignment.BottomEnd),
         )
     }
 }

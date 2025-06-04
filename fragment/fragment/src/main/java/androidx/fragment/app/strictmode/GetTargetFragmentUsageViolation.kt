@@ -21,5 +21,5 @@ import androidx.fragment.app.Fragment
 class GetTargetFragmentUsageViolation internal constructor(fragment: Fragment) :
     TargetFragmentUsageViolation(
         fragment,
-        "Attempting to get target fragment from fragment $fragment"
+        "Attempting to get target fragment from fragment $fragment",
     )

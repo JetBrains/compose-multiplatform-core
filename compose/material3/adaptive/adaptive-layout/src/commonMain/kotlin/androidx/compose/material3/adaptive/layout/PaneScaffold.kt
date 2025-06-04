@@ -130,7 +130,7 @@ sealed interface PaneScaffoldScope {
         state: PaneExpansionState,
         minTouchTargetSize: Dp,
         interactionSource: MutableInteractionSource,
-        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)? = null
+        semanticsProperties: (SemanticsPropertyReceiver.() -> Unit)? = null,
     ): Modifier
 
     /**
@@ -202,9 +202,8 @@ internal abstract class PaneScaffoldScopeImpl(
     }
 }
 
-private class PreferredWidthElement(
-    private val width: Dp,
-) : ModifierNodeElement<PreferredWidthNode>() {
+private class PreferredWidthElement(private val width: Dp) :
+    ModifierNodeElement<PreferredWidthNode>() {
     private val inspectorInfo = debugInspectorInfo {
         name = "preferredWidth"
         value = width
@@ -240,9 +239,8 @@ private class PreferredWidthNode(var width: Dp) : ParentDataModifierNode, Modifi
         }
 }
 
-private class PreferredHeightElement(
-    private val height: Dp,
-) : ModifierNodeElement<PreferredHeightNode>() {
+private class PreferredHeightElement(private val height: Dp) :
+    ModifierNodeElement<PreferredHeightNode>() {
     private val inspectorInfo = debugInspectorInfo {
         name = "preferredHeight"
         value = height
@@ -314,9 +312,8 @@ private class AnimatedPaneNode : ParentDataModifierNode, Modifier.Node() {
         }
 }
 
-private class DragToResizeElement(
-    val state: DragToResizeState,
-) : ModifierNodeElement<DragToResizeNode>() {
+private class DragToResizeElement(val state: DragToResizeState) :
+    ModifierNodeElement<DragToResizeNode>() {
     override fun create(): DragToResizeNode = DragToResizeNode(state)
 
     override fun update(node: DragToResizeNode) {
@@ -342,9 +339,8 @@ private class DragToResizeElement(
     }
 }
 
-private class DragToResizeNode(
-    var state: DragToResizeState,
-) : ParentDataModifierNode, Modifier.Node() {
+private class DragToResizeNode(var state: DragToResizeState) :
+    ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
         ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
             it.dragToResizeState = state

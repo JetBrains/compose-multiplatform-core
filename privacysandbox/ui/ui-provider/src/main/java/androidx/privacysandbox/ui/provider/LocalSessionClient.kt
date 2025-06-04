@@ -24,7 +24,7 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  */
 internal class LocalSessionClient(
     private val clientVersion: Int,
-    private val client: SandboxedUiAdapter.SessionClient
+    private val client: SandboxedUiAdapter.SessionClient,
 ) : SandboxedUiAdapter.SessionClient {
 
     override fun onSessionOpened(session: SandboxedUiAdapter.Session) {

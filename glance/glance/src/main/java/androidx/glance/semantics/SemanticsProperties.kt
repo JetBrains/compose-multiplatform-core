@@ -31,7 +31,7 @@ public object SemanticsProperties {
             name = "ContentDescription",
             mergePolicy = { parentValue, childValue ->
                 parentValue?.toMutableList()?.also { it.addAll(childValue) } ?: childValue
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.testTag */
@@ -41,7 +41,7 @@ public object SemanticsProperties {
             mergePolicy = { parentValue, _ ->
                 // No merge
                 parentValue
-            }
+            },
         )
 }
 
@@ -54,7 +54,7 @@ public class SemanticsPropertyKey<T>(
     public val name: String,
     internal val mergePolicy: (T?, T) -> T? = { parentValue, childValue ->
         parentValue ?: childValue
-    }
+    },
 ) {
     public fun merge(parentValue: T?, childValue: T): T? {
         return mergePolicy(parentValue, childValue)

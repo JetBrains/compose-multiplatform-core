@@ -3,11 +3,13 @@ package androidx.glance.wear.tiles {
 
   public final class AndroidLayoutElementKt {
     method @androidx.compose.runtime.Composable public static void AndroidLayoutElement(androidx.wear.tiles.LayoutElementBuilders.LayoutElement layoutElement);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void AndroidLayoutElement(androidx.wear.tiles.LayoutElementBuilders.LayoutElement, androidx.compose.runtime.Composer?, int);
   }
 
   public final class BorderKt {
     method public static androidx.glance.GlanceModifier border(androidx.glance.GlanceModifier, float width, androidx.glance.unit.ColorProvider color);
     method public static androidx.glance.GlanceModifier border(androidx.glance.GlanceModifier, @DimenRes int width, androidx.glance.unit.ColorProvider color);
+    method @BytecodeOnly public static androidx.glance.GlanceModifier border-lG28NQ4(androidx.glance.GlanceModifier, float, androidx.glance.unit.ColorProvider);
   }
 
   public final class CompositionLocalsKt {
@@ -22,6 +24,7 @@ package androidx.glance.wear.tiles {
     ctor public GlanceTileService();
     ctor public GlanceTileService(optional androidx.wear.tiles.LayoutElementBuilders.LayoutElement? errorUiLayout);
     method @androidx.compose.runtime.Composable @androidx.glance.GlanceComposable public abstract void Content();
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.glance.GlanceComposable public abstract void Content(androidx.compose.runtime.Composer?, int);
     method public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? getStateDefinition();
     method public final suspend <T> Object? getTileState(kotlin.coroutines.Continuation<? super T>);
     method public androidx.glance.wear.tiles.TimelineMode getTimelineMode();
@@ -35,6 +38,7 @@ package androidx.glance.wear.tiles {
 
   public final class GlanceWearTilesKt {
     method @SuppressCompatibility @androidx.glance.wear.tiles.ExperimentalGlanceWearTilesApi public static suspend Object? compose(android.content.Context context, long size, optional Object? state, kotlin.jvm.functions.Function0<kotlin.Unit> content, kotlin.coroutines.Continuation<? super androidx.glance.wear.tiles.WearTilesCompositionResult>);
+    method @BytecodeOnly @SuppressCompatibility @androidx.glance.wear.tiles.ExperimentalGlanceWearTilesApi public static Object? compose-eVKgIn8(android.content.Context, long, Object?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.coroutines.Continuation<? super androidx.glance.wear.tiles.WearTilesCompositionResult!>);
   }
 
   public final class TimeInterval {
@@ -88,13 +92,18 @@ package androidx.glance.wear.tiles.action {
 package androidx.glance.wear.tiles.curved {
 
   @kotlin.jvm.JvmInline public final value class AnchorType {
+    method @BytecodeOnly public static androidx.glance.wear.tiles.curved.AnchorType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.wear.tiles.curved.AnchorType.Companion Companion;
   }
 
   public static final class AnchorType.Companion {
     method public int getCenter();
+    method @BytecodeOnly public int getCenter-TqGwu_4();
     method public int getEnd();
+    method @BytecodeOnly public int getEnd-TqGwu_4();
     method public int getStart();
+    method @BytecodeOnly public int getStart-TqGwu_4();
     property public int Center;
     property public int End;
     property public int Start;
@@ -113,10 +122,12 @@ package androidx.glance.wear.tiles.curved {
 
   public final class CurvedRowKt {
     method @androidx.compose.runtime.Composable public static void CurvedRow(optional androidx.glance.GlanceModifier modifier, optional float anchorDegrees, optional int anchorType, optional int radialAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.wear.tiles.curved.CurvedScope,kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void CurvedRow-zQo951E(androidx.glance.GlanceModifier?, float, int, int, kotlin.jvm.functions.Function1<? super androidx.glance.wear.tiles.curved.CurvedScope!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   @androidx.glance.wear.tiles.curved.CurvedScopeMarker @kotlin.jvm.JvmDefaultWithCompatibility public interface CurvedScope {
     method public void curvedComposable(optional boolean rotateContent, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @BytecodeOnly public void curvedComposable(boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public void curvedLine(androidx.glance.unit.ColorProvider color, optional androidx.glance.wear.tiles.curved.GlanceCurvedModifier curvedModifier);
     method public void curvedSpacer(optional androidx.glance.wear.tiles.curved.GlanceCurvedModifier curvedModifier);
     method public void curvedText(String text, optional androidx.glance.wear.tiles.curved.GlanceCurvedModifier curvedModifier, optional androidx.glance.wear.tiles.curved.CurvedTextStyle? style);
@@ -130,8 +141,11 @@ package androidx.glance.wear.tiles.curved {
     ctor public CurvedTextStyle(optional androidx.glance.unit.ColorProvider? color, optional androidx.compose.ui.unit.TextUnit? fontSize, optional androidx.glance.text.FontWeight? fontWeight, optional androidx.glance.text.FontStyle? fontStyle);
     method public androidx.glance.unit.ColorProvider? getColor();
     method public androidx.compose.ui.unit.TextUnit? getFontSize();
+    method @BytecodeOnly public androidx.compose.ui.unit.TextUnit? getFontSize-U3a4LBI();
     method public androidx.glance.text.FontStyle? getFontStyle();
+    method @BytecodeOnly public androidx.glance.text.FontStyle? getFontStyle-xuO1esU();
     method public androidx.glance.text.FontWeight? getFontWeight();
+    method @BytecodeOnly public androidx.glance.text.FontWeight? getFontWeight-pJbD0qI();
     property public androidx.glance.unit.ColorProvider? color;
     property public androidx.compose.ui.unit.TextUnit? fontSize;
     property public androidx.glance.text.FontStyle? fontStyle;
@@ -166,16 +180,22 @@ package androidx.glance.wear.tiles.curved {
     method public static androidx.glance.wear.tiles.curved.GlanceCurvedModifier semantics(androidx.glance.wear.tiles.curved.GlanceCurvedModifier, kotlin.jvm.functions.Function1<? super androidx.glance.semantics.SemanticsPropertyReceiver,kotlin.Unit> properties);
     method public static androidx.glance.wear.tiles.curved.GlanceCurvedModifier sweepAngleDegrees(androidx.glance.wear.tiles.curved.GlanceCurvedModifier, float degrees);
     method public static androidx.glance.wear.tiles.curved.GlanceCurvedModifier thickness(androidx.glance.wear.tiles.curved.GlanceCurvedModifier, float thickness);
+    method @BytecodeOnly public static androidx.glance.wear.tiles.curved.GlanceCurvedModifier thickness-3ABfNKs(androidx.glance.wear.tiles.curved.GlanceCurvedModifier, float);
   }
 
   @kotlin.jvm.JvmInline public final value class RadialAlignment {
+    method @BytecodeOnly public static androidx.glance.wear.tiles.curved.RadialAlignment! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.wear.tiles.curved.RadialAlignment.Companion Companion;
   }
 
   public static final class RadialAlignment.Companion {
     method public int getCenter();
+    method @BytecodeOnly public int getCenter-pFUpIe8();
     method public int getInner();
+    method @BytecodeOnly public int getInner-pFUpIe8();
     method public int getOuter();
+    method @BytecodeOnly public int getOuter-pFUpIe8();
     property public int Center;
     property public int Inner;
     property public int Outer;
@@ -196,6 +216,7 @@ package androidx.glance.wear.tiles.template {
 
   public final class SingleEntityTemplateLayoutsKt {
     method @androidx.compose.runtime.Composable public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData data);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData, androidx.compose.runtime.Composer?, int);
   }
 
 }

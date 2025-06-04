@@ -17,10 +17,20 @@
 package androidx.pdf.view
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 
 /** Bare bones test helper [Activity] for [PdfView] integration tests */
 class PdfViewTestActivity : Activity() {
+
+    override fun attachBaseContext(newBase: Context?) {
+        onAttachCallback?.let {
+            val wrappedContext = it.invoke(newBase!!)
+            return super.attachBaseContext(wrappedContext)
+        }
+        super.attachBaseContext(newBase)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         onCreateCallback(this)
@@ -36,5 +46,8 @@ class PdfViewTestActivity : Activity() {
 
     companion object {
         var onCreateCallback: ((PdfViewTestActivity) -> Unit) = {}
+
+        // TODO(b/419791000): Modify logic to avoid static callbacks
+        var onAttachCallback: ((Context) -> Context)? = null
     }
 }

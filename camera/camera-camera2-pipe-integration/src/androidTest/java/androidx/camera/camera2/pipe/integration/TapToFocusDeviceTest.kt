@@ -76,14 +76,14 @@ class TapToFocusDeviceTest {
 
         assumeTrue(
             "Flash unit not available with a valid camera and lens facing back",
-            CameraUtil.hasFlashUnitWithLensFacing(CameraSelector.LENS_FACING_BACK)
+            CameraUtil.hasFlashUnitWithLensFacing(CameraSelector.LENS_FACING_BACK),
         )
 
         assumeTrue(
             "CONTROL_AE_MODE_ON not available on device",
             CameraUtil.getCameraCharacteristics(CameraSelector.LENS_FACING_BACK)
                 ?.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
-                ?.contains(CONTROL_AE_MODE_ON) ?: false
+                ?.contains(CONTROL_AE_MODE_ON) ?: false,
         )
 
         context = ApplicationProvider.getApplicationContext()
@@ -144,7 +144,7 @@ class TapToFocusDeviceTest {
                                         assumeThat(
                                             "No AE mode in the CONTROL_AF_TRIGGER_START request",
                                             captureRequest[CONTROL_AE_MODE],
-                                            CoreMatchers.notNullValue()
+                                            CoreMatchers.notNullValue(),
                                         )
 
                                         Truth.assertWithMessage(
@@ -157,11 +157,11 @@ class TapToFocusDeviceTest {
                                     }
                                     return@verify false
                                 },
-                                5000
+                                5000,
                             )
                         }
                         .exceptionOrNull()
-                )
+                ),
         )
     }
 

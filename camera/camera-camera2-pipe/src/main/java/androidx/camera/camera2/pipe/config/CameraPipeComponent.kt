@@ -57,14 +57,7 @@ import javax.inject.Singleton
 @Qualifier internal annotation class CameraPipeContext
 
 @Singleton
-@Component(
-    modules =
-        [
-            CameraPipeModule::class,
-            CameraPipeConfigModule::class,
-            Camera2Module::class,
-        ]
-)
+@Component(modules = [CameraPipeModule::class, CameraPipeConfigModule::class, Camera2Module::class])
 internal interface CameraPipeComponent {
     fun cameraPipeLifetime(): CameraPipeLifetime
 
@@ -83,11 +76,7 @@ internal interface CameraPipeComponent {
 
 @Module(
     includes = [ThreadConfigModule::class],
-    subcomponents =
-        [
-            CameraGraphComponent::class,
-            FrameGraphComponent::class,
-        ]
+    subcomponents = [CameraGraphComponent::class, FrameGraphComponent::class],
 )
 internal class CameraPipeConfigModule(private val config: CameraPipe.Config) {
     @Provides fun provideCameraPipeConfig(): CameraPipe.Config = config
@@ -135,7 +124,7 @@ internal abstract class CameraPipeModule {
         fun provideCameraContext(
             @CameraPipeContext cameraPipeContext: Context,
             threads: Threads,
-            cameraBackends: CameraBackends
+            cameraBackends: CameraBackends,
         ): CameraContext =
             object : CameraContext {
                 override val appContext: Context = cameraPipeContext
@@ -189,7 +178,7 @@ internal abstract class CameraPipeModule {
         @Provides
         fun configureImageSources(
             imageReaderImageSources: ImageReaderImageSources,
-            cameraPipeConfig: CameraPipe.Config
+            cameraPipeConfig: CameraPipe.Config,
         ): ImageSources {
             if (cameraPipeConfig.imageSources != null) {
                 return cameraPipeConfig.imageSources

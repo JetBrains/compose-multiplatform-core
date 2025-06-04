@@ -17,6 +17,7 @@
 package androidx.binarycompatibilityvalidator
 
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
 import kotlinx.validation.ExperimentalBCVApi
 import kotlinx.validation.api.klib.KlibDump
@@ -46,7 +47,7 @@ class BinaryCompatibilityCheckerTest {
 
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             mapOf("linuxX64" to libraryAbi),
-            parsedLibraryAbis
+            parsedLibraryAbis,
         )
     }
 
@@ -59,7 +60,7 @@ class BinaryCompatibilityCheckerTest {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     KlibDumpParser(currentDump).parse(),
                     KlibDumpParser(previousDump).parse(),
-                    shouldFreeze = false
+                    shouldFreeze = false,
                 )
             }
         assertThat(e.message).contains("[ios]: Target was removed")
@@ -74,7 +75,7 @@ class BinaryCompatibilityCheckerTest {
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             KlibDumpParser(currentDump).parse(),
             KlibDumpParser(previousDump).parse(),
-            shouldFreeze = false
+            shouldFreeze = false,
         )
     }
 
@@ -89,7 +90,7 @@ class BinaryCompatibilityCheckerTest {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     KlibDumpParser(currentDump).parse(),
                     KlibDumpParser(previousDump).parse(),
-                    shouldFreeze = true
+                    shouldFreeze = true,
                 )
             }
         assertThat(e.message).contains("[ios]: Target was added")
@@ -173,7 +174,7 @@ class BinaryCompatibilityCheckerTest {
         val expectedErrorMessages =
             listOf(
                 "hasDefaultArg changed from true to false for parameter 0: kotlin/Int of my.lib/foo",
-                "hasDefaultArg changed from true to false for parameter 1: kotlin/Int of my.lib/foo"
+                "hasDefaultArg changed from true to false for parameter 1: kotlin/Int of my.lib/foo",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -276,11 +277,7 @@ class BinaryCompatibilityCheckerTest {
             constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
         }
         """
-        val expectedErrorMessages =
-            listOf(
-                "Removed typeArgument kotlin/Int from my.lib/MySubClass",
-                "Added typeArgument kotlin/String to my.lib/MySubClass",
-            )
+        val expectedErrorMessages = listOf("Removed superType my.lib/MyClass<kotlin/Int>")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -339,7 +336,7 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from false to true for parameter 0: kotlin/Function0 of my.lib/myFun"
+                "isNoinline changed from false to true for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -570,7 +567,9 @@ class BinaryCompatibilityCheckerTest {
         }
         """
         val expectedErrorMessages =
-            listOf("Return type nullability did not match for my.lib/MyClass.myFun")
+            listOf(
+                "Return type changed from kotlin/String? to kotlin/String for my.lib/MyClass.myFun"
+            )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -606,7 +605,7 @@ class BinaryCompatibilityCheckerTest {
         val expectedErrorMessages =
             listOf(
                 "kind changed from VAR to VAL for my.lib/myVal",
-                "removed setter from my.lib/myVal"
+                "removed setter from my.lib/myVal",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -657,7 +656,7 @@ class BinaryCompatibilityCheckerTest {
         val expectedErrors =
             listOf(
                 "kind changed from VAR to VAL for (kotlin/Int).my.lib/bar",
-                "kind changed from VAR to VAL for my.lib/bar"
+                "kind changed from VAR to VAL for my.lib/bar",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
     }
@@ -685,7 +684,7 @@ class BinaryCompatibilityCheckerTest {
         val expectedErrors =
             listOf(
                 "kind changed from VAR to VAL for context(kotlin/Int) (kotlin/Int).my.lib/bar",
-                "kind changed from VAR to VAL for context(kotlin/String) my.lib/bar"
+                "kind changed from VAR to VAL for context(kotlin/String) my.lib/bar",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
     }
@@ -702,10 +701,8 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from true to false for parameter 0: kotlin/Function0" +
-                    " of my.lib/myFun",
-                "isCrossinline changed from false to true for parameter 0: kotlin/Function0 of " +
-                    "my.lib/myFun"
+                "isNoinline changed from true to false for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
+                "isCrossinline changed from false to true for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -738,7 +735,45 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "upper bounds changed from my.lib/Foo to my.lib/Bar type param A on my.lib/MyClass"
+                "upper bounds changed from my.lib/Foo to my.lib/Bar for type param A on my.lib/MyClass"
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun changeOrderOfBounds() {
+        val beforeText =
+            """
+        abstract interface my.lib/A // my.lib/A|null[0]
+        abstract interface my.lib/B // my.lib/B|null[0]
+        final fun <#A: my.lib/A & my.lib/B> my.lib/foo(#A) // my.lib/foo|foo(0:0){0§<my.lib.A&my.lib.B>}[0]
+        """
+        val afterText =
+            """
+        abstract interface my.lib/A // my.lib/A|null[0]
+        abstract interface my.lib/B // my.lib/B|null[0]
+        final fun <#A: my.lib/B & my.lib/A> my.lib/foo(#A) // my.lib/foo|foo(0:0){0§<my.lib.B&my.lib.A>}[0]
+        """
+        val expectedErrorMessages =
+            listOf(
+                "upper bounds changed from my.lib/A,my.lib/B to my.lib/B,my.lib/A for type param A on my.lib/foo"
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun changeNullabilityOfAnyUpperBound() {
+        val beforeText =
+            """
+        final fun <#A: kotlin/Any?> my.lib/foo(): kotlin/Int // my.lib/foo|foo(){0§<kotlin.Any?>}[0]
+        """
+        val afterText =
+            """
+        final fun <#A: kotlin/Any> my.lib/foo(): kotlin/Int // my.lib/foo|foo(){0§<kotlin.Any>}[0]
+        """
+        val expectedErrorMessages =
+            listOf(
+                "upper bounds changed from kotlin/Any? to kotlin/Any for type param A on my.lib/foo"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -779,9 +814,7 @@ class BinaryCompatibilityCheckerTest {
         }
         """
         val expectedErrorMessages =
-            listOf(
-                "kind changed from CLASS to ENUM_CLASS for my.lib/MyClass",
-            )
+            listOf("kind changed from CLASS to ENUM_CLASS for my.lib/MyClass")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -940,10 +973,8 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from false to true for parameter 0: kotlin/Function0" +
-                    " of my.lib/myFun",
-                "isCrossinline changed from true to false for parameter 0: kotlin/Function0 of " +
-                    "my.lib/myFun"
+                "isNoinline changed from false to true for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
+                "isCrossinline changed from true to false for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -978,7 +1009,7 @@ class BinaryCompatibilityCheckerTest {
         testBeforeAndAfterIsIncompatible(
             beforeText,
             afterText,
-            listOf("Removed declaration my.lib/myFun() from androidx:library")
+            listOf("Removed declaration my.lib/myFun() from androidx:library"),
         )
     }
 
@@ -1276,7 +1307,7 @@ class BinaryCompatibilityCheckerTest {
         testBeforeAndAfterIsIncompatible(
             beforeText,
             afterText,
-            listOf("Added declaration myFun() to my.lib/MyClass")
+            listOf("Added declaration myFun() to my.lib/MyClass"),
         )
     }
 
@@ -1314,7 +1345,7 @@ class BinaryCompatibilityCheckerTest {
         testBeforeAndAfterIsIncompatible(
             beforeText,
             afterText,
-            listOf("isFunction changed from true to false for my.lib/MyInterface")
+            listOf("isFunction changed from true to false for my.lib/MyInterface"),
         )
     }
 
@@ -1336,7 +1367,7 @@ class BinaryCompatibilityCheckerTest {
         testBeforeAndAfterIsIncompatible(
             beforeText,
             afterText,
-            listOf("isValue changed from false to true for my.lib/MyClass")
+            listOf("isValue changed from false to true for my.lib/MyClass"),
         )
     }
 
@@ -1368,6 +1399,26 @@ class BinaryCompatibilityCheckerTest {
         final inline fun <#A: kotlin/Any?> my.lib/myFun(#A): #A // my.lib/myFun|myFun(0:0){0§<kotlin.Any?>}[0]
         """
         testBeforeAndAfterIsCompatible(beforeText, afterText)
+    }
+
+    @Test
+    fun typeParamTagChange() {
+        val beforeText =
+            """
+        final fun <#A: kotlin/Int, #B: kotlin/String> my.lib/foo(): kotlin/Int // my.lib/foo|foo(){0§<kotlin.Int>;1§<kotlin.String>}[0]    
+        """
+                .trimIndent()
+        val afterText =
+            """
+        final fun <#A: kotlin/String, #B: kotlin/Int> my.lib/foo(): kotlin/Int // my.lib/foo|foo(){0§<kotlin.String>;1§<kotlin.Int>}[0]    
+        """
+                .trimIndent()
+        val expectedErrors =
+            listOf(
+                "upper bounds changed from kotlin/Int to kotlin/String for type param A on my.lib/foo",
+                "upper bounds changed from kotlin/String to kotlin/Int for type param B on my.lib/foo",
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
     }
 
     @Test
@@ -1479,6 +1530,35 @@ class BinaryCompatibilityCheckerTest {
         testBeforeAndAfterIsCompatible(beforeText, afterText)
     }
 
+    @Ignore // b/409298472
+    @Test
+    fun changedOrdinalOfEnumEntries() {
+        val beforeText =
+            """
+        final enum class my.lib/Foo : kotlin/Enum<my.lib/Foo> { // my.lib/Foo|null[0]
+            enum entry BAR // my.lib/Foo.BAR|null[0]
+            enum entry BAZ // my.lib/Foo.BAZ|null[0]
+            final fun valueOf(kotlin/String): my.lib/Foo // my.lib/Foo.valueOf|valueOf#static(kotlin.String){}[0]
+            final fun values(): kotlin/Array<my.lib/Foo> // my.lib/Foo.values|values#static(){}[0]
+            final val entries // my.lib/Foo.entries|#static{}entries[0]
+                final fun <get-entries>(): kotlin.enums/EnumEntries<my.lib/Foo> // my.lib/Foo.entries.<get-entries>|<get-entries>#static(){}[0]
+        }
+        """
+        val afterText =
+            """
+        final enum class my.lib/Foo : kotlin/Enum<my.lib/Foo> { // my.lib/Foo|null[0]
+            enum entry BAR // my.lib/Foo.BAR|null[0]
+            enum entry BAZ // my.lib/Foo.BAZ|null[0]
+            final fun valueOf(kotlin/String): my.lib/Foo // my.lib/Foo.valueOf|valueOf#static(kotlin.String){}[0]
+            final fun values(): kotlin/Array<my.lib/Foo> // my.lib/Foo.values|values#static(){}[0]
+            final val entries // my.lib/Foo.entries|#static{}entries[0]
+                final fun <get-entries>(): kotlin.enums/EnumEntries<my.lib/Foo> // my.lib/Foo.entries.<get-entries>|<get-entries>#static(){}[0]
+        }
+        """
+        val expectedErrors = listOf("asbv")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
+    }
+
     @Test
     fun removedTargets() {
         val beforeText = createDumpText("", listOf("iosX64", "linuxX64"))
@@ -1503,7 +1583,7 @@ class BinaryCompatibilityCheckerTest {
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             afterLibs,
             beforeLibs,
-            setOf("[iosX64]: Target was removed")
+            setOf("[iosX64]: Target was removed"),
         )
     }
 
@@ -1516,7 +1596,7 @@ class BinaryCompatibilityCheckerTest {
             constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
         }
         """,
-                listOf("myTarget")
+                listOf("myTarget"),
             )
         val afterText = createDumpText("", listOf("myTarget"))
 
@@ -1525,7 +1605,7 @@ class BinaryCompatibilityCheckerTest {
                 KlibDumpParser(afterText).parse(),
                 KlibDumpParser(beforeText).parse(),
                 baselines = emptySet(),
-                validate = false
+                validate = false,
             )
         assertThat(errors)
             .isEqualTo(
@@ -1533,7 +1613,7 @@ class BinaryCompatibilityCheckerTest {
                     CompatibilityError(
                         "Removed declaration my.lib/MyClass from androidx:library",
                         "myTarget",
-                        CompatibilityErrorSeverity.ERROR
+                        CompatibilityErrorSeverity.ERROR,
                     )
                 )
             )
@@ -1551,7 +1631,7 @@ class BinaryCompatibilityCheckerTest {
         val baselines =
             setOf(
                 "[iosX64]: Removed declaration my.lib/MyClass from androidx:library",
-                "[linuxX64]: Removed declaration my.lib/MyClass from androidx:library"
+                "[linuxX64]: Removed declaration my.lib/MyClass from androidx:library",
             )
         testBeforeAndAfterIsCompatible(beforeText, afterText, baselines)
     }
@@ -1590,7 +1670,7 @@ class BinaryCompatibilityCheckerTest {
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             afterLibs,
             beforeLibs,
-            validBaselineFile
+            validBaselineFile,
         )
     }
 
@@ -1601,7 +1681,7 @@ class BinaryCompatibilityCheckerTest {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     emptyMap(),
                     emptyMap(),
-                    invalidBaselineFormatFile
+                    invalidBaselineFormatFile,
                 )
             }
         assertThat(e.message).contains("Unrecognized baseline format: '2.0'")
@@ -1614,7 +1694,7 @@ class BinaryCompatibilityCheckerTest {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     emptyMap(),
                     emptyMap(),
-                    invalidBaselineFile
+                    invalidBaselineFile,
                 )
             }
         assertThat(e.message)
@@ -1627,7 +1707,7 @@ class BinaryCompatibilityCheckerTest {
         before: String,
         after: String,
         baselines: Set<String> = emptySet(),
-        shouldFreeze: Boolean = false
+        shouldFreeze: Boolean = false,
     ) {
         runBeforeAndAfter(before, after, baselines, shouldFreeze)
     }
@@ -1637,7 +1717,7 @@ class BinaryCompatibilityCheckerTest {
         after: String,
         expectedErrors: List<String>,
         baselines: Set<String> = emptySet(),
-        shouldFreeze: Boolean = false
+        shouldFreeze: Boolean = false,
     ) {
         val e =
             assertFailsWith<ValidationException> {
@@ -1650,7 +1730,7 @@ class BinaryCompatibilityCheckerTest {
         before: String,
         after: String,
         baselines: Set<String> = emptySet(),
-        shouldFreeze: Boolean = false
+        shouldFreeze: Boolean = false,
     ) {
         val beforeText = createDumpText(before)
         val afterText = createDumpText(after)
@@ -1661,13 +1741,13 @@ class BinaryCompatibilityCheckerTest {
             afterLibs,
             beforeLibs,
             baselines,
-            shouldFreeze = shouldFreeze
+            shouldFreeze = shouldFreeze,
         )
     }
 
     private fun createDumpText(
         content: String,
-        targets: List<String> = listOf("iosX64", "linuxX64")
+        targets: List<String> = listOf("iosX64", "linuxX64"),
     ) =
         """
         // KLib ABI Dump

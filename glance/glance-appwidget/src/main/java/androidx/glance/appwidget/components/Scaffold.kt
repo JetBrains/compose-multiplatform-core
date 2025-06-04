@@ -62,7 +62,7 @@ public fun Scaffold(
         titleBar?.invoke()
         Box(
             modifier = GlanceModifier.padding(horizontal = horizontalPadding).defaultWeight(),
-            content = content
+            content = content,
         )
     }
 }

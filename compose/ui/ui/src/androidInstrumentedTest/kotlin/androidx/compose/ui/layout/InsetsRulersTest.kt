@@ -186,7 +186,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
         type: Int,
         low: Insets,
         high: Insets,
-        target: Insets
+        target: Insets,
     ) {
         val view = composeView.parent as View
         rule.runOnIdle {
@@ -199,7 +199,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     private fun progressAnimation(
         animation: WindowInsetsAnimationCompat,
-        insets: WindowInsetsCompat
+        insets: WindowInsetsCompat,
     ) {
         val view = composeView.parent as View
         rule.runOnIdle {
@@ -309,11 +309,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
     @Test
     fun displayRulers() {
         Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
-        val gestureRulerList =
-            listOf(
-                DisplayCutout,
-                Waterfall,
-            )
+        val gestureRulerList = listOf(DisplayCutout, Waterfall)
         val rulerState = mutableStateOf<RectRulers>(CaptionBar)
         setSimpleRulerContent(rulerState)
 
@@ -359,7 +355,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     IntRect(0, 0, 1, contentHeight),
                     IntRect(0, 0, contentWidth, 2),
                     IntRect(contentWidth - 3, 0, contentWidth, contentHeight),
-                    IntRect(0, contentHeight - 5, contentWidth, contentHeight)
+                    IntRect(0, contentHeight - 5, contentWidth, contentHeight),
                 )
         }
     }
@@ -374,7 +370,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         Type.systemGestures(),
                         Type.mandatorySystemGestures(),
                         Type.tappableElement(),
-                        WaterfallType
+                        WaterfallType,
                     ),
                 SafeDrawing to
                     listOf(
@@ -384,7 +380,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         Type.statusBars(),
                         Type.tappableElement(),
                         Type.displayCutout(),
-                        WaterfallType
+                        WaterfallType,
                     ),
                 SafeContent to
                     listOf(
@@ -396,8 +392,8 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         Type.navigationBars(),
                         Type.statusBars(),
                         Type.displayCutout(),
-                        WaterfallType
-                    )
+                        WaterfallType,
+                    ),
             )
 
         val rulerState = mutableStateOf<RectRulers>(SafeGestures)
@@ -432,13 +428,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
         setSimpleRulerContent(rulerState)
 
         val animatableRulersList =
-            listOf(
-                CaptionBar,
-                Ime,
-                NavigationBars,
-                StatusBars,
-                TappableElement,
-            )
+            listOf(CaptionBar, Ime, NavigationBars, StatusBars, TappableElement)
         animatableRulersList.forEach { animatableRulers ->
             rulerState.value = animatableRulers
             rule.waitForIdle()
@@ -461,14 +451,14 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
             animation.alpha = 0.75f
             progressAnimation(
                 animation,
-                createInsets(type to lerp(sourceInsets, targetInsets, 0.25f))
+                createInsets(type to lerp(sourceInsets, targetInsets, 0.25f)),
             )
             rule.runOnIdle { assertAnimating(animatableRulers, sourceInsets, 0.25f) }
             animation.fraction = 0.75f
             animation.alpha = 0.25f
             progressAnimation(
                 animation,
-                createInsets(type to lerp(sourceInsets, targetInsets, 0.75f))
+                createInsets(type to lerp(sourceInsets, targetInsets, 0.75f)),
             )
             rule.runOnIdle { assertAnimating(animatableRulers, sourceInsets, 0.75f) }
 
@@ -497,7 +487,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
     private fun assertAnimating(
         animatableRulers: AnimatableInsetsRulers,
         source: Insets,
-        expectedFraction: Float
+        expectedFraction: Float,
     ) {
         val target = Insets.of(0, 0, 0, 0)
         val insets = lerp(source, target, expectedFraction)
@@ -506,7 +496,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 insets.left,
                 insets.top,
                 contentWidth - insets.right,
-                contentHeight - insets.bottom
+                contentHeight - insets.bottom,
             )
         val rulerName = animatableRulers.toString()
         assertWithMessage(rulerName).that(insetsRect).isEqualTo(expectedRect)
@@ -517,7 +507,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 source.left,
                 source.top,
                 contentWidth - source.right,
-                contentHeight - source.bottom
+                contentHeight - source.bottom,
             )
         assertWithMessage(rulerName).that(sourceRect).isEqualTo(expectedSourceRect)
         val expectedTargetRect =
@@ -525,7 +515,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 target.left,
                 target.top,
                 contentWidth - target.right,
-                contentHeight - target.bottom
+                contentHeight - target.bottom,
             )
         assertWithMessage(rulerName).that(targetRect).isEqualTo(expectedTargetRect)
         assertWithMessage(rulerName).that(isAnimating).isTrue()
@@ -546,7 +536,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
         animatableRulers: BasicAnimatableInsetsRulers,
         animatingRulers: AnimatableInsetsRulers,
         source: Insets,
-        expectedFraction: Float
+        expectedFraction: Float,
     ) {
         val target = Insets.of(0, 0, 0, 0)
         val insets = lerp(source, target, expectedFraction)
@@ -555,7 +545,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 insets.left,
                 insets.top,
                 contentWidth - insets.right,
-                contentHeight - insets.bottom
+                contentHeight - insets.bottom,
             )
         val rulerName = animatableRulers.toString()
         val modRulerName = animatingRulers.toString()
@@ -567,7 +557,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 source.left,
                 source.top,
                 contentWidth - source.right,
-                contentHeight - source.bottom
+                contentHeight - source.bottom,
             )
         assertWithMessage(message).that(sourceRect).isEqualTo(expectedSourceRect)
         val expectedTargetRect =
@@ -575,7 +565,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 target.left,
                 target.top,
                 contentWidth - target.right,
-                contentHeight - target.bottom
+                contentHeight - target.bottom,
             )
         assertWithMessage(message).that(targetRect).isEqualTo(expectedTargetRect)
         assertWithMessage(message).that(isAnimating).isTrue()
@@ -598,7 +588,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     listOf(
                         Type.systemGestures(),
                         Type.mandatorySystemGestures(),
-                        Type.tappableElement()
+                        Type.tappableElement(),
                     ),
                 SafeDrawing to
                     listOf(
@@ -606,7 +596,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         Type.ime(),
                         Type.navigationBars(),
                         Type.statusBars(),
-                        Type.tappableElement()
+                        Type.tappableElement(),
                     ),
                 SafeContent to
                     listOf(
@@ -616,8 +606,8 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         Type.captionBar(),
                         Type.ime(),
                         Type.navigationBars(),
-                        Type.statusBars()
-                    )
+                        Type.statusBars(),
+                    ),
             )
 
         val rulerState = mutableStateOf<RectRulers>(SafeGestures)
@@ -654,7 +644,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     animation.alpha = 0.75f
                     progressAnimation(
                         animation,
-                        createInsets(type to lerp(sourceInsets, targetInsets, 0.25f))
+                        createInsets(type to lerp(sourceInsets, targetInsets, 0.25f)),
                     )
                     rule.runOnIdle {
                         if (shouldBeAnimating) {
@@ -668,7 +658,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     animation.alpha = 0.25f
                     progressAnimation(
                         animation,
-                        createInsets(type to lerp(sourceInsets, targetInsets, 0.75f))
+                        createInsets(type to lerp(sourceInsets, targetInsets, 0.75f)),
                     )
                     rule.runOnIdle {
                         if (shouldBeAnimating) {
@@ -716,8 +706,8 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     properties =
                         DialogProperties(
                             usePlatformDefaultWidth = false,
-                            decorFitsSystemWindows = false
-                        )
+                            decorFitsSystemWindows = false,
+                        ),
                 ) {
                     dialogComposeView = LocalView.current as AndroidComposeView
                     with(LocalDensity.current) {
@@ -773,8 +763,8 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     properties =
                         DialogProperties(
                             usePlatformDefaultWidth = false,
-                            decorFitsSystemWindows = false
-                        )
+                            decorFitsSystemWindows = false,
+                        ),
                 ) {
                     dialogComposeView = LocalView.current as AndroidComposeView
                     Box(Modifier.fillMaxSize().rulerToRect(SafeContent) { dialogInsetsRect = it })
@@ -813,7 +803,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                 }
                 builder.setVisible(
                     type,
-                    insets.left != 0 || insets.top != 0 || insets.right != 0 || insets.bottom != 0
+                    insets.left != 0 || insets.top != 0 || insets.right != 0 || insets.bottom != 0,
                 )
             }
         }
@@ -833,7 +823,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         contentWidth - displayCutoutInsets.right,
                         0,
                         contentWidth,
-                        contentHeight
+                        contentHeight,
                     )
             val bottom =
                 if (displayCutoutInsets.bottom == 0) null
@@ -842,7 +832,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                         0,
                         contentHeight - displayCutoutInsets.bottom,
                         contentWidth,
-                        contentHeight
+                        contentHeight,
                     )
             val cutout =
                 DisplayCutoutCompat(
@@ -851,7 +841,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
                     top,
                     right,
                     bottom,
-                    Insets.of(0, 0, 0, 0)
+                    Insets.of(0, 0, 0, 0),
                 )
             builder.setDisplayCutout(cutout)
         } else {
@@ -920,7 +910,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     private fun Modifier.rulerToRect(
         ruler: RectRulers,
-        block: PlacementScope.(IntRect?) -> Unit
+        block: PlacementScope.(IntRect?) -> Unit,
     ): Modifier = layout { m, c ->
         val p = m.measure(c)
         layout(p.width, p.height) {
@@ -931,7 +921,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     private fun Modifier.rulerToRectDelegatableNode(
         ruler: RectRulers,
-        block: PlacementScope.(DelegatableNode, IntRect?) -> Unit
+        block: PlacementScope.(DelegatableNode, IntRect?) -> Unit,
     ): Modifier = layoutWithDelegatableNode { m, c, d ->
         val p = m.measure(c)
         layout(p.width, p.height) {
@@ -980,7 +970,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
         override fun MeasureScope.measure(
             measurable: Measurable,
-            constraints: Constraints
+            constraints: Constraints,
         ): MeasureResult {
             return measurePolicy.invoke(this, measurable, constraints, this@MyLayoutModifierNode)
         }

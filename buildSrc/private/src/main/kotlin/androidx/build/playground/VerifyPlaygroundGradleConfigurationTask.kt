@@ -140,10 +140,7 @@ abstract class VerifyPlaygroundGradleConfigurationTask : DefaultTask() {
         // androidx-main. Generally, should only be used for conflicting properties which have
         // different values in different built targets on AOSP, but still should be declared in
         // playground.
-        private val exceptedProperties =
-            mapOf(
-                "androidx.writeVersionedApiFiles" to "true",
-            )
+        private val exceptedProperties = mapOf("androidx.writeVersionedApiFiles" to "true")
 
         private val ignoredProperties =
             setOf(
@@ -175,7 +172,7 @@ abstract class VerifyPlaygroundGradleConfigurationTask : DefaultTask() {
             return if (project.projectDir.resolve("playground-common").exists()) {
                 project.tasks.register(
                     TASK_NAME,
-                    VerifyPlaygroundGradleConfigurationTask::class.java
+                    VerifyPlaygroundGradleConfigurationTask::class.java,
                 ) {
                     it.androidxProperties.set(
                         project.layout.projectDirectory.file("gradle.properties")

@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun NavigationEventHandler(
     enabled: () -> Boolean = { true },
-    onBack: suspend (progress: Flow<NavigationEvent>) -> Unit
+    onBack: suspend (progress: Flow<NavigationEvent>) -> Unit,
 ) {
     // ensure we don't re-register callbacks when onBack changes
     val currentOnBack by rememberUpdatedState(onBack)
@@ -74,7 +74,7 @@ private class OnBackInstance(
     scope: CoroutineScope,
     var isPredictiveBack: Boolean,
     onBack: suspend (progress: Flow<NavigationEvent>) -> Unit,
-    callback: NavigationEventCallback
+    callback: NavigationEventCallback,
 ) {
     val channel =
         Channel<NavigationEvent>(capacity = BUFFERED, onBufferOverflow = BufferOverflow.SUSPEND)

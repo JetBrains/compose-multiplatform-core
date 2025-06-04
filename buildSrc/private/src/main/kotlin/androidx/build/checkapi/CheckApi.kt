@@ -28,7 +28,7 @@ import org.gradle.api.Project
 
 enum class ApiType {
     CLASSAPI,
-    RESOURCEAPI
+    RESOURCEAPI,
 }
 
 /**
@@ -41,7 +41,7 @@ fun Project.getRequiredCompatibilityApiFile(): File? {
     return getRequiredCompatibilityApiFileFromDir(
         project.getApiFileDirectory(),
         project.version(),
-        ApiType.CLASSAPI
+        ApiType.CLASSAPI,
     )
 }
 
@@ -85,7 +85,7 @@ fun isValidArtifactVersion(version: Version): Boolean {
 fun getRequiredCompatibilityApiFileFromDir(
     apiDir: File,
     apiVersion: Version,
-    apiType: ApiType
+    apiType: ApiType,
 ): File? {
     var highestPath: Path? = null
     var highestVersion: Version? = null

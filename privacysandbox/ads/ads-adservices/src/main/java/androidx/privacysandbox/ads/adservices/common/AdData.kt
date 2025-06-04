@@ -42,7 +42,7 @@ public constructor(
     val metadata: String,
     val adCounterKeys: Set<Int> = setOf(),
     val adFilters: AdFilters? = null,
-    val adRenderId: String? = null
+    val adRenderId: String? = null,
 ) {
     /**
      * Represents data specific to an ad that is necessary for ad selection and rendering.
@@ -57,7 +57,7 @@ public constructor(
         renderUri: Uri,
         metadata: String,
         adCounterKeys: Set<Int> = setOf(),
-        adFilters: AdFilters? = null
+        adFilters: AdFilters? = null,
     ) : this(renderUri, metadata, adCounterKeys, adFilters, null)
 
     /**
@@ -66,10 +66,7 @@ public constructor(
      * @param renderUri a URI pointing to the ad's rendering assets
      * @param metadata buyer ad metadata represented as a JSON string
      */
-    constructor(
-        renderUri: Uri,
-        metadata: String,
-    ) : this(renderUri, metadata, setOf(), null)
+    constructor(renderUri: Uri, metadata: String) : this(renderUri, metadata, setOf(), null)
 
     /** Checks whether two [AdData] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -137,7 +134,7 @@ public constructor(
                 adData.adRenderId?.let {
                     Log.w(
                         "AdData",
-                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10"
+                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10",
                     )
                 }
                 return android.adservices.common.AdData.Builder()
@@ -159,20 +156,20 @@ public constructor(
                     Log.w(
                         "AdData",
                         "adCounterKeys is ignored. Min version to use adCounterKeys is " +
-                            "API 33 ext 8 or API 31/32 ext 9"
+                            "API 33 ext 8 or API 31/32 ext 9",
                     )
                 }
                 adData.adFilters?.let {
                     Log.w(
                         "AdData",
                         "adFilters is ignored. Min version to use adFilters is " +
-                            "API 33 ext 8 or API 31/32 ext 9"
+                            "API 33 ext 8 or API 31/32 ext 9",
                     )
                 }
                 adData.adRenderId?.let {
                     Log.w(
                         "AdData",
-                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10"
+                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10",
                     )
                 }
                 return android.adservices.common.AdData.Builder()

@@ -52,14 +52,14 @@ class PokedexScrollBenchmark(val compilationMode: CompilationMode) {
                 // Set gesture margin to avoid triggering gesture navigation
                 content.setGestureMargin(device.displayWidth / 5)
             },
-            measureBlock = { scrollActions(device.findObject(By.res("PokedexList"))) }
+            measureBlock = { scrollActions(device.findObject(By.res("PokedexList"))) },
         )
 
     @OptIn(ExperimentalMetricApi::class)
     private fun benchmarkScroll(
         action: String,
         setupBlock: MacrobenchmarkScope.() -> Unit,
-        measureBlock: MacrobenchmarkScope.() -> Unit
+        measureBlock: MacrobenchmarkScope.() -> Unit,
     ) =
         benchmarkRule.measureRepeated(
             packageName = POKEDEX_TARGET_PACKAGE_NAME,

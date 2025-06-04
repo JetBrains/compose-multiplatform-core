@@ -44,7 +44,7 @@ public fun <T : Any> DecoratedNavEntryProvider(
     entryProvider: (key: T) -> NavEntry<out T>,
     entryDecorators: List<@JvmSuppressWildcards NavEntryDecorator<*>> =
         listOf(rememberSavedStateNavEntryDecorator()),
-    content: @Composable (List<NavEntry<T>>) -> Unit
+    content: @Composable (List<NavEntry<T>>) -> Unit,
 ) {
     // Kotlin does not know these things are compatible so we need this explicit cast
     // to ensure our lambda below takes the correct type
@@ -160,8 +160,6 @@ internal fun PrepareBackStack(
 ) {
     val localInfo = remember { NavEntryDecoratorLocalInfo() }
 
-    DisposableEffect(key1 = backStack) { onDispose { localInfo.keyIds.clear() } }
-
     backStack.forEachIndexed { index, key ->
         val id = getIdForEntry(key, index)
         localInfo.keyIds.getOrPut(key) { LinkedHashSet() }.add(id)
@@ -207,12 +205,6 @@ private class NavEntryDecoratorLocalInfo {
     @Suppress("PrimitiveInCollection") // The order of the element matters
     val idsInComposition: LinkedHashSet<Int> = LinkedHashSet<Int>()
     val popCallbacks: LinkedHashMap<Int, (key: Any) -> Unit> = LinkedHashMap()
-
-    fun populatePopMap(decorators: List<NavEntryDecorator<*>>) {
-        decorators.reversed().forEach { decorator ->
-            popCallbacks.getOrPut(decorator.hashCode(), decorator::onPop)
-        }
-    }
 }
 
 private val LocalNavEntryDecoratorLocalInfo =

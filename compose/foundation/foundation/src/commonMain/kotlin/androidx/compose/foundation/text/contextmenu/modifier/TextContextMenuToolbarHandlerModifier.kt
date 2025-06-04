@@ -218,7 +218,7 @@ internal class TextContextMenuToolbarHandlerNode(
 internal fun translateRootToDestination(
     rootContentBounds: Rect,
     localCoordinates: LayoutCoordinates,
-    destinationCoordinates: LayoutCoordinates
+    destinationCoordinates: LayoutCoordinates,
 ): Rect {
     if (!localCoordinates.isAttached || !destinationCoordinates.isAttached) return Rect.Zero
     val rootContentPosition = rootContentBounds.topLeft
@@ -226,7 +226,7 @@ internal fun translateRootToDestination(
     val destinationContentPosition =
         destinationCoordinates.localPositionOf(
             sourceCoordinates = rootCoordinates,
-            relativeToSource = rootContentPosition
+            relativeToSource = rootContentPosition,
         )
     return Rect(destinationContentPosition, rootContentBounds.size)
 }

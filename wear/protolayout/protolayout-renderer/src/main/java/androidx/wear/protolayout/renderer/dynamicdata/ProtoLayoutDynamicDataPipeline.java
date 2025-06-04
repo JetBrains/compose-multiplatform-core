@@ -32,7 +32,6 @@ import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.animation.AnimationSet;
 
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
@@ -43,7 +42,6 @@ import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.PlatformDataKey;
 import androidx.wear.protolayout.expression.PlatformEventSources;
-import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.expression.pipeline.BoundDynamicType;
 import androidx.wear.protolayout.expression.pipeline.DynamicTypeAnimator;
 import androidx.wear.protolayout.expression.pipeline.DynamicTypeBindingRequest;
@@ -111,8 +109,9 @@ public class ProtoLayoutDynamicDataPipeline {
     private final @NonNull PlatformTimeUpdateNotifierImpl mTimeNotifier;
     private final @NonNull DynamicTypePlatformDataProvider<Boolean, DynamicBuilders.DynamicBool>
             mVisibilityStatusDataProvider;
-    private final @NonNull DynamicTypePlatformDataProvider<Boolean, DynamicBuilders.DynamicBool>
-            mLayoutUpdatePendingDataProvider;
+    private final @NonNull
+            DynamicTypePlatformDataProvider<Integer, PlatformEventSources.DynamicLayoutUpdateStatus>
+            mLayoutUpdateStatusDataProvider;
 
     /** Creates a {@link ProtoLayoutDynamicDataPipeline} without animation support. */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -147,7 +146,6 @@ public class ProtoLayoutDynamicDataPipeline {
     }
 
     /** Creates a {@link ProtoLayoutDynamicDataPipeline}. */
-    @OptIn(markerClass = ProtoLayoutExperimental.class)
     private ProtoLayoutDynamicDataPipeline(
             @NonNull Map<PlatformDataProvider, Set<PlatformDataKey<?>>> platformDataProviders,
             @NonNull StateStore stateStore,
@@ -178,12 +176,13 @@ public class ProtoLayoutDynamicDataPipeline {
                 ImmutableSet.of(PlatformEventSources.Keys.LAYOUT_VISIBILITY));
 
         // Add an additional provider for platform layout update state.
-        mLayoutUpdatePendingDataProvider =
-                DynamicTypePlatformDataProvider.forDynamicBool(
-                        PlatformEventSources.Keys.LAYOUT_UPDATE_PENDING, /* initialValue= */ false);
+        mLayoutUpdateStatusDataProvider =
+                DynamicTypePlatformDataProvider.forDynamicLayoutUpdateStatus(
+                        PlatformEventSources.Keys.LAYOUT_UPDATE_STATUS,
+                        /* initialValue= */ PlatformEventSources.LAYOUT_UPDATE_IDLE);
         evaluatorConfigBuilder.addPlatformDataProvider(
-                mLayoutUpdatePendingDataProvider,
-                ImmutableSet.of(PlatformEventSources.Keys.LAYOUT_UPDATE_PENDING));
+                mLayoutUpdateStatusDataProvider,
+                ImmutableSet.of(PlatformEventSources.Keys.LAYOUT_UPDATE_STATUS));
 
         // Time data.
         this.mTimeNotifier = new PlatformTimeUpdateNotifierImpl();
@@ -244,7 +243,7 @@ public class ProtoLayoutDynamicDataPipeline {
     public void setUpdatesEnabled(boolean canUpdate) {
         mTimeNotifier.setUpdatesEnabled(canUpdate);
         mVisibilityStatusDataProvider.setUpdatesEnabled(canUpdate);
-        mLayoutUpdatePendingDataProvider.setUpdatesEnabled(canUpdate);
+        mLayoutUpdateStatusDataProvider.setUpdatesEnabled(canUpdate);
     }
 
     /** Closes existing gateways. */
@@ -1093,13 +1092,16 @@ public class ProtoLayoutDynamicDataPipeline {
     }
 
     /**
-     * Sets whether a new layout is pending. This is used to update the platform data binding to
-     * indicate that a new layout is pending.
+     * Sets the layout's update status.
+     *
+     * <p>This is used to update {@link PlatformEventSources#layoutUpdateStatus()} platform data
+     * binding.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @UiThread
-    public void setLayoutUpdatePending(boolean isLayoutUpdatePending) {
-        this.mLayoutUpdatePendingDataProvider.setValue(isLayoutUpdatePending);
+    public void setLayoutUpdateStatus(
+            @PlatformEventSources.LayoutUpdateStatus int layoutUpdateStatus) {
+        this.mLayoutUpdateStatusDataProvider.setValue(layoutUpdateStatus);
     }
 
     /**

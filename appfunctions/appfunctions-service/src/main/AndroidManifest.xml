@@ -13,14 +13,38 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
-        <!--TODO(b/395589225): Provide platform implementation service based on API level-->
+        <service
+            android:name=".PlatformAppFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true"
+            android:enabled="@bool/enablePlatformAppFunctionService"
+            tools:targetApi="36">
+            <!-- XML file property for Legacy AppSearch Indexer.-->
+            <property
+                android:name="android.app.appfunctions"
+                android:value="app_functions.xml" />
+            <!--            TODO: b/410550886 - Enable dynamic indexer-->
+            <!-- XSD & XML file properties for Dynamic AppSearch Indexer.-->
+            <!--            <property-->
+            <!--                android:name="android.app.appfunctions.schema"-->
+            <!--                android:value="app_functions_schema.xsd" />-->
+            <!--            <property-->
+            <!--                android:name="android.app.appfunctions.v2"-->
+            <!--                android:value="app_functions_v2.xml" />-->
+            <!--TODO: Renable this after resolve test conflict -->
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
         <service
             android:name=".ExtensionAppFunctionService"
             android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:enabled="@bool/enableExtensionAppFunctionService">
             <!-- XML file property for Legacy AppSearch Indexer.-->
             <property
                 android:name="android.app.appfunctions"

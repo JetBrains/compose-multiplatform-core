@@ -71,14 +71,12 @@ import org.junit.runners.Parameterized
 class CameraDisconnectTest(
     private val lensFacing: Int,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -88,7 +86,7 @@ class CameraDisconnectTest(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule val labTestRule = LabTestRule()
@@ -101,23 +99,23 @@ class CameraDisconnectTest(
                 arrayOf(
                     CameraSelector.LENS_FACING_BACK,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     CameraSelector.LENS_FACING_FRONT,
                     Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
+                    Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
                     CameraSelector.LENS_FACING_BACK,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
+                    CameraPipeConfig.defaultConfig(),
                 ),
                 arrayOf(
                     CameraSelector.LENS_FACING_FRONT,
                     CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
+                    CameraPipeConfig.defaultConfig(),
+                ),
             )
     }
 
@@ -199,7 +197,7 @@ class CameraDisconnectTest(
                 CoreAppTestUtil.launchActivity(
                         InstrumentationRegistry.getInstrumentation(),
                         Camera2TestActivity::class.java,
-                        intent
+                        intent,
                     )
                     ?.apply {
                         // Wait for preview to become active to make sure the 2nd activity can
@@ -287,7 +285,7 @@ class CameraDisconnectTest(
                     synchronized(cameraLock) { cameraDevice = null }
                 }
             },
-            backgroundCameraHandler
+            backgroundCameraHandler,
         )
 
         assertThat(cameraOpenCountDownLatch.await(1000, TimeUnit.MILLISECONDS)).isTrue()

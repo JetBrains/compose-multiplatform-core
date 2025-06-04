@@ -44,7 +44,7 @@ class ImageSourceTest {
             streamId = streamId,
             outputId = outputId,
             size = fakeImageSize,
-            capacity = 10
+            capacity = 10,
         )
     private val imageSource = ImageReaderImageSource(fakeImageReader, fakeImageReader.capacity - 2)
 
@@ -211,7 +211,7 @@ class ImageSourceTest {
             streamId: StreamId,
             outputId: OutputId,
             outputTimestamp: Long,
-            image: ImageWrapper?
+            image: ImageWrapper?,
         ) {
             onImageEvents.add(OnImage(streamId, outputId, outputTimestamp, image))
         }

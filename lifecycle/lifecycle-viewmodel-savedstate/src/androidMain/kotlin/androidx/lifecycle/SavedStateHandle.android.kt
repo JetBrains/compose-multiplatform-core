@@ -110,7 +110,7 @@ public actual class SavedStateHandle {
     private fun <T> getLiveDataInternal(
         key: String,
         hasInitialValue: Boolean,
-        initialValue: T
+        initialValue: T,
     ): MutableLiveData<T> {
         require(key !in impl.mutableFlows) { createMutuallyExclusiveErrorMessage(key) }
 
@@ -126,7 +126,8 @@ public actual class SavedStateHandle {
                     else -> SavingStateLiveData(handle = this, key)
                 }
             }
-        @Suppress("UNCHECKED_CAST") return liveData as MutableLiveData<T>
+        @Suppress("UNCHECKED_CAST")
+        return liveData as MutableLiveData<T>
     }
 
     @MainThread

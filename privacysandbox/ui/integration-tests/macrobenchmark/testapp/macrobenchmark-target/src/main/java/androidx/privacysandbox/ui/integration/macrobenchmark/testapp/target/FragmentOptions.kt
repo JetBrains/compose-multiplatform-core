@@ -30,7 +30,7 @@ data class FragmentOptions(
     @AdType val adType: Int,
     @ZOrderOption val isZOrderOnTop: Boolean,
     @ViewabilityOption val drawViewability: Boolean,
-    @UiFrameworkOption val uiFramework: Int
+    @UiFrameworkOption val uiFramework: Int,
 ) {
 
     private var fragment: BaseFragment = deriveFragment()
@@ -126,7 +126,7 @@ data class FragmentOptions(
                 adType,
                 zOrder,
                 drawViewability,
-                uiFramework
+                uiFramework,
             )
         }
     }

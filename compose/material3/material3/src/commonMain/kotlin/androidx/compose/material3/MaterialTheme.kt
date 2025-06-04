@@ -55,14 +55,14 @@ fun MaterialTheme(
     colorScheme: ColorScheme = MaterialTheme.colorScheme,
     shapes: Shapes = MaterialTheme.shapes,
     typography: Typography = MaterialTheme.typography,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) =
     MaterialTheme(
         colorScheme = colorScheme,
         motionScheme = MaterialTheme.motionScheme,
         shapes = shapes,
         typography = typography,
-        content = content
+        content = content,
     )
 
 /**
@@ -93,7 +93,7 @@ fun MaterialTheme(
     motionScheme: MotionScheme = MaterialTheme.motionScheme,
     shapes: Shapes = MaterialTheme.shapes,
     typography: Typography = MaterialTheme.typography,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val rippleIndication = ripple()
     val selectionColors = rememberTextSelectionColors(colorScheme)
@@ -192,7 +192,7 @@ fun MaterialExpressiveTheme(
     motionScheme: MotionScheme? = null,
     shapes: Shapes? = null,
     typography: Typography? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (LocalUsingExpressiveTheme.current) {
         MaterialTheme(
@@ -200,7 +200,7 @@ fun MaterialExpressiveTheme(
             motionScheme = motionScheme ?: MaterialTheme.motionScheme,
             typography = typography ?: MaterialTheme.typography,
             shapes = shapes ?: MaterialTheme.shapes,
-            content = content
+            content = content,
         )
     } else {
         CompositionLocalProvider(LocalUsingExpressiveTheme provides true) {
@@ -210,7 +210,7 @@ fun MaterialExpressiveTheme(
                 shapes = shapes ?: Shapes(),
                 // TODO: replace with calls to Expressive typography default
                 typography = typography ?: Typography(),
-                content = content
+                content = content,
             )
         }
     }

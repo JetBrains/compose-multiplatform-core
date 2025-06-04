@@ -318,7 +318,7 @@ private fun SemanticsNodeInteraction.scrollToMatchingDescendantOrReturnScrollabl
 @Deprecated(
     message = "Replaced by performTouchInput",
     replaceWith =
-        ReplaceWith("performTouchInput(block)", "import androidx.compose.ui.test.performGesture")
+        ReplaceWith("performTouchInput(block)", "import androidx.compose.ui.test.performGesture"),
 )
 @Suppress("DEPRECATION")
 fun SemanticsNodeInteraction.performGesture(
@@ -538,13 +538,13 @@ fun SemanticsNodeInteraction.requestFocus(): SemanticsNodeInteraction =
 
 @Deprecated(
     message = "Replaced with same function, but with SemanticsNodeInteraction as return type",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("unused")
 @JvmName("performSemanticsAction")
 fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsActionUnit(
     key: SemanticsPropertyKey<AccessibilityAction<T>>,
-    invocation: (T) -> Unit
+    invocation: (T) -> Unit,
 ) {
     performSemanticsAction(key, invocation)
 }
@@ -566,7 +566,7 @@ fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsActionUnit(
  */
 fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsAction(
     key: SemanticsPropertyKey<AccessibilityAction<T>>,
-    invocation: (T) -> Unit
+    invocation: (T) -> Unit,
 ): SemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to perform ${key.name} action.")
     requireSemantics(node, key) { "Failed to perform action ${key.name}" }
@@ -578,7 +578,7 @@ fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsAction(
 
 @Deprecated(
     message = "Replaced with same function, but with SemanticsNodeInteraction as return type",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("unused")
 @JvmName("performSemanticsAction")
@@ -661,7 +661,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabel(
 @ExperimentalTestApi
 fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
     predicateDescription: String? = null,
-    labelPredicate: (label: String) -> Boolean
+    labelPredicate: (label: String) -> Boolean,
 ): SemanticsNodeInteraction {
     val node = fetchSemanticsNode()
     val actions = node.config[CustomActions]
@@ -671,7 +671,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
             buildGeneralErrorMessage(
                 "No custom accessibility actions matched [$predicateDescription].",
                 selector,
-                node
+                node,
             )
         )
     } else if (matchingActions.size > 1) {
@@ -680,7 +680,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
                 "Expected exactly one custom accessibility action to match" +
                     " [$predicateDescription], but found ${matchingActions.size}.",
                 selector,
-                node
+                node,
             )
         )
     }
@@ -775,7 +775,7 @@ private val SemanticsNode.isRtl: Boolean
 private fun SemanticsNodeInteraction.requireSemantics(
     node: SemanticsNode,
     vararg properties: SemanticsPropertyKey<*>,
-    errorMessage: () -> String
+    errorMessage: () -> String,
 ) {
     val missingProperties = properties.filter { it !in node.config }
     if (missingProperties.isNotEmpty()) {

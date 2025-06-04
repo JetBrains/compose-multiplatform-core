@@ -118,6 +118,6 @@ public abstract class CredentialProviderEventsService() : Service() {
     public open fun onCreateCredentialRequest(
         request: ProviderCreateCredentialRequest,
         cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiverCompat<CreateCredentialResponse, CreateCredentialException>
+        callback: OutcomeReceiverCompat<CreateCredentialResponse, CreateCredentialException>,
     ) {}
 }

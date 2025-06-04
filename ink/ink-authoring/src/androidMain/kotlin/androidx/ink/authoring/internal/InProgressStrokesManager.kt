@@ -827,7 +827,7 @@ internal class InProgressStrokesManager(
                 finishStrokeInternal(
                     input = null,
                     strokeId = id,
-                    endTimeMs = getNanoTime() / 1_000_000
+                    endTimeMs = getNanoTime() / 1_000_000,
                 )
             }
         }
@@ -1123,7 +1123,7 @@ internal class InProgressStrokesManager(
                 renderThreadState.generatedStrokes[strokeId] =
                     FinishedStroke(
                         stroke = inProgressStroke.toImmutable(),
-                        copiedStrokeToViewTransform
+                        copiedStrokeToViewTransform,
                     )
             }
         }
@@ -1353,11 +1353,11 @@ internal class InProgressStrokesManager(
             // stroke. Instead, just draw every stroke, without any clipping to modified regions.
             renderThreadState.scratchRect.setXBounds(
                 Float.NEGATIVE_INFINITY,
-                Float.POSITIVE_INFINITY
+                Float.POSITIVE_INFINITY,
             )
             renderThreadState.scratchRect.setYBounds(
                 Float.NEGATIVE_INFINITY,
-                Float.POSITIVE_INFINITY
+                Float.POSITIVE_INFINITY,
             )
             drawAllStrokesInModifiedRegion(renderThreadState.scratchRect)
         }
@@ -1436,7 +1436,7 @@ internal class InProgressStrokesManager(
             renderThreadState.canceledStrokes.contains(strokeId) ||
                 strokeIsTextureAnimatedAndNeedsFullRedraw(
                     strokeId,
-                    strokeState.textureAnimationProgress
+                    strokeState.textureAnimationProgress,
                 )
         ) {
             // Redraw the entire space occupied by the stroke. This is necessary for each canceled
@@ -1460,7 +1460,7 @@ internal class InProgressStrokesManager(
     @WorkerThread
     private fun drawStrokeState(
         strokeId: InProgressStrokeId,
-        strokeState: RenderThreadStrokeState
+        strokeState: RenderThreadStrokeState,
     ) {
         val textureAnimationProgress = strokeState.textureAnimationProgress
         fillStrokeToViewTransform(strokeState)
@@ -1576,7 +1576,7 @@ internal class InProgressStrokesManager(
     /** Represents the data passed to [cancelStroke]. */
     private data class CancelAction(
         val strokeId: InProgressStrokeId,
-        val latencyData: LatencyData
+        val latencyData: LatencyData,
     ) : InputAction
 
     /** Represents an update to [motionEventToViewTransform]. */

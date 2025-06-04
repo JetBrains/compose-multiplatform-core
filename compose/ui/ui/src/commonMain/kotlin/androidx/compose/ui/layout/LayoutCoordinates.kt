@@ -125,7 +125,7 @@ interface LayoutCoordinates {
     fun localPositionOf(
         sourceCoordinates: LayoutCoordinates,
         relativeToSource: Offset = Offset.Zero,
-        includeMotionFrameOfReference: Boolean = true
+        includeMotionFrameOfReference: Boolean = true,
     ): Offset {
         throw UnsupportedOperationException(
             "localPositionOf is not implemented on this LayoutCoordinates"

@@ -75,7 +75,7 @@ internal class CameraPipeLifetime @Inject constructor() {
 
     private fun shutdownTasksWithType(
         shutdownTasks: List<ShutdownTask>,
-        shutdownType: ShutdownType
+        shutdownType: ShutdownType,
     ) {
         val tasks = shutdownTasks.filter { it.type == shutdownType }
         Log.debug { "Shutting down $shutdownType tasks (${tasks.size} total)" }

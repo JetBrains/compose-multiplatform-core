@@ -1,4 +1,10 @@
 // Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.runtime.PausedComposition#isApplied():
+    Binary breaking change: Added method androidx.compose.runtime.PausedComposition.isApplied()
+AddedAbstractMethod: androidx.compose.runtime.PausedComposition#isCancelled():
+    Binary breaking change: Added method androidx.compose.runtime.PausedComposition.isCancelled()
+
+
 BecameUnchecked: androidx.compose.runtime.Composer#getApplyCoroutineContext():
     Removed method androidx.compose.runtime.Composer.getApplyCoroutineContext() from compatibility checked API surface
 BecameUnchecked: androidx.compose.runtime.Composer#getCompoundKeyHash():
@@ -14,8 +20,8 @@ BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt#isLiveLiteralsE
 
 
 RemovedClass: androidx.compose.runtime.Immutable:
-    Removed class androidx.compose.runtime.Immutable
+    Binary breaking change: Removed class androidx.compose.runtime.Immutable
 RemovedClass: androidx.compose.runtime.Stable:
-    Removed class androidx.compose.runtime.Stable
+    Binary breaking change: Removed class androidx.compose.runtime.Stable
 RemovedClass: androidx.compose.runtime.StableMarker:
-    Removed class androidx.compose.runtime.StableMarker
+    Binary breaking change: Removed class androidx.compose.runtime.StableMarker

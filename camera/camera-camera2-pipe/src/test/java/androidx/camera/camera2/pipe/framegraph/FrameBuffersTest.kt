@@ -66,7 +66,7 @@ class FrameBuffersTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val metadata =
         FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
+            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
         )
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val cameraSurfaceManager = CameraSurfaceManager()
@@ -78,10 +78,7 @@ class FrameBuffersTest {
 
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
-        CameraGraph.Config(
-            camera = metadata.camera,
-            streams = listOf(stream1Config, stream2Config),
-        )
+        CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
     private val threads = FakeThreads.fromTestScope(testScope)
     private val cameraPipeLifetime = CameraPipeLifetime()
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
@@ -124,7 +121,7 @@ class FrameBuffersTest {
             audioRestriction,
             graphId,
             cameraGraphParameters,
-            sessionLock
+            sessionLock,
         )
     private val frameBuffers = FrameBuffers(cameraGraph, testScope)
     private val streamId1: StreamId = StreamId(1)

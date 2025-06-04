@@ -49,7 +49,7 @@ public class MultiInstanceInvalidationService : Service() {
             // Assigns a client ID to the client.
             override fun registerCallback(
                 callback: IMultiInstanceInvalidationCallback,
-                name: String?
+                name: String?,
             ): Int {
                 if (name == null) {
                     return 0
@@ -72,7 +72,7 @@ public class MultiInstanceInvalidationService : Service() {
             // .onCallbackDied() can take care of removal.
             override fun unregisterCallback(
                 callback: IMultiInstanceInvalidationCallback,
-                clientId: Int
+                clientId: Int,
             ) {
                 synchronized(callbackList) {
                     callbackList.unregister(callback)

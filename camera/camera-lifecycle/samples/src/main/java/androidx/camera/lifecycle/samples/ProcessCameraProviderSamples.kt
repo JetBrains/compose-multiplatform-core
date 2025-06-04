@@ -39,7 +39,7 @@ fun bindConcurrentCameraSample(
     cameraProvider: ProcessCameraProvider,
     lifecycleOwner: LifecycleOwner,
     frontPreviewView: PreviewView,
-    backPreviewView: PreviewView
+    backPreviewView: PreviewView,
 ) {
     var cameraSelectorPrimary: CameraSelector? = null
     var cameraSelectorSecondary: CameraSelector? = null
@@ -61,7 +61,7 @@ fun bindConcurrentCameraSample(
         SingleCameraConfig(
             cameraSelectorPrimary,
             UseCaseGroup.Builder().addUseCase(previewFront).build(),
-            lifecycleOwner
+            lifecycleOwner,
         )
     val previewBack = Preview.Builder().build()
     previewBack.surfaceProvider = backPreviewView.getSurfaceProvider()
@@ -69,7 +69,7 @@ fun bindConcurrentCameraSample(
         SingleCameraConfig(
             cameraSelectorSecondary,
             UseCaseGroup.Builder().addUseCase(previewBack).build(),
-            lifecycleOwner
+            lifecycleOwner,
         )
     cameraProvider.bindToLifecycle(listOf(primary, secondary))
 }

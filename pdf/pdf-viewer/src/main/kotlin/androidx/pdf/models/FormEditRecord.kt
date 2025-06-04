@@ -45,7 +45,7 @@ private constructor(
     @EditType public val type: Int,
     public val clickPoint: Point? = null,
     public val selectedIndices: IntArray? = null,
-    public val text: String? = null
+    public val text: String? = null,
 ) : Parcelable {
     init {
         require(pageNumber >= 0) { "pageNumber should be greater than or equal to 0" }
@@ -56,21 +56,21 @@ private constructor(
     public constructor(
         @IntRange(from = 0) pageNumber: Int,
         @IntRange(from = 0) widgetIndex: Int,
-        selectedIndices: IntArray
+        selectedIndices: IntArray,
     ) : this(pageNumber, widgetIndex, EDIT_TYPE_SET_INDICES, selectedIndices = selectedIndices)
 
     /** Construct a FormEditRecord of type [EDIT_TYPE_SET_TEXT] */
     public constructor(
         @IntRange(from = 0) pageNumber: Int,
         @IntRange(from = 0) widgetIndex: Int,
-        text: String
+        text: String,
     ) : this(pageNumber, widgetIndex, EDIT_TYPE_SET_TEXT, text = text)
 
     /** Construct a FormEditRecord of type [EDIT_TYPE_CLICK] */
     public constructor(
         @IntRange(from = 0) pageNumber: Int,
         @IntRange(from = 0) widgetIndex: Int,
-        clickPoint: Point
+        clickPoint: Point,
     ) : this(pageNumber, widgetIndex, EDIT_TYPE_CLICK, clickPoint = clickPoint)
 
     private constructor(
@@ -82,7 +82,7 @@ private constructor(
         clickPoint =
             ParcelCompat.readParcelable(parcel, Point::class.java.classLoader, Point::class.java),
         selectedIndices = parcel.createIntArray(),
-        text = parcel.readString()
+        text = parcel.readString(),
     )
 
     override fun describeContents(): Int = 0
@@ -115,7 +115,7 @@ private constructor(
             type,
             clickPoint,
             selectedIndices.contentHashCode(),
-            text
+            text,
         )
     }
 

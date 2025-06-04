@@ -89,12 +89,12 @@ class SessionProcessorManagerTest {
             createFakeTestUseCase(
                 "ImageCapture",
                 CameraDevice.TEMPLATE_STILL_CAPTURE,
-                ImageCapture::class.java
+                ImageCapture::class.java,
             )
 
         sessionProcessorManager.initialize(
             useCaseManager,
-            listOf(fakePreviewUseCase, fakeImageCaptureUseCase)
+            listOf(fakePreviewUseCase, fakeImageCaptureUseCase),
         ) { useCaseManagerConfig ->
             assertNotNull(useCaseManagerConfig)
         }
@@ -112,18 +112,18 @@ class SessionProcessorManagerTest {
             createFakeTestUseCase(
                 "Preview",
                 CameraDevice.TEMPLATE_PREVIEW,
-                StreamSharing::class.java
+                StreamSharing::class.java,
             )
         val fakeImageCaptureUseCase =
             createFakeTestUseCase(
                 "ImageCapture",
                 CameraDevice.TEMPLATE_STILL_CAPTURE,
-                ImageCapture::class.java
+                ImageCapture::class.java,
             )
 
         sessionProcessorManager.initialize(
             useCaseManager,
-            listOf(fakeStreamSharingUseCase, fakeImageCaptureUseCase)
+            listOf(fakeStreamSharingUseCase, fakeImageCaptureUseCase),
         ) { useCaseManagerConfig ->
             assertNotNull(useCaseManagerConfig)
         }
@@ -145,12 +145,12 @@ class SessionProcessorManagerTest {
             createFakeTestUseCase(
                 "ImageCapture",
                 CameraDevice.TEMPLATE_STILL_CAPTURE,
-                ImageCapture::class.java
+                ImageCapture::class.java,
             )
 
         sessionProcessorManager.initialize(
             useCaseManager,
-            listOf(fakePreviewUseCase, fakeImageCaptureUseCase)
+            listOf(fakePreviewUseCase, fakeImageCaptureUseCase),
         ) { useCaseManagerConfig ->
             assertNotNull(useCaseManagerConfig)
         }
@@ -172,7 +172,7 @@ class SessionProcessorManagerTest {
                 .build()
         sessionProcessorManager.submitCaptureConfigs(
             listOf(captureConfig),
-            listOf(object : CaptureCallback {})
+            listOf(object : CaptureCallback {}),
         )
 
         val parameters = fakeSessionProcessor.lastParameters as? CaptureRequestOptions
@@ -196,14 +196,14 @@ class SessionProcessorManagerTest {
             createFakeTestUseCase(
                 "ImageCapture",
                 CameraDevice.TEMPLATE_STILL_CAPTURE,
-                ImageCapture::class.java
+                ImageCapture::class.java,
             )
 
         sessionProcessorManager.prepareClose()
         sessionProcessorManager.close()
         sessionProcessorManager.initialize(
             useCaseManager,
-            listOf(fakePreviewUseCase, fakeImageCaptureUseCase)
+            listOf(fakePreviewUseCase, fakeImageCaptureUseCase),
         ) { useCaseManagerConfig ->
             assertNull(useCaseManagerConfig)
         }

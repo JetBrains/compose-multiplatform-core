@@ -93,7 +93,7 @@ public actual class MigrationTestHelper(
     private val driver: SQLiteDriver,
     private val databaseClass: KClass<out RoomDatabase>,
     databaseFactory: () -> RoomDatabase = { findAndInstantiateDatabaseImpl(databaseClass.java) },
-    private val autoMigrationSpecs: List<AutoMigrationSpec> = emptyList()
+    private val autoMigrationSpecs: List<AutoMigrationSpec> = emptyList(),
 ) : TestWatcher() {
 
     private val databaseInstance = databaseClass.cast(databaseFactory.invoke())
@@ -113,7 +113,7 @@ public actual class MigrationTestHelper(
         val connection =
             createDatabaseCommon(
                 schema = schemaBundle.database,
-                configurationFactory = ::createDatabaseConfiguration
+                configurationFactory = ::createDatabaseConfiguration,
             )
         managedConnections.add(connection)
         return connection
@@ -147,7 +147,7 @@ public actual class MigrationTestHelper(
                 migrations = migrations,
                 autoMigrationSpecs = autoMigrationSpecs,
                 validateUnknownTables = false,
-                configurationFactory = ::createDatabaseConfiguration
+                configurationFactory = ::createDatabaseConfiguration,
             )
         managedConnections.add(connection)
         return connection
@@ -164,9 +164,7 @@ public actual class MigrationTestHelper(
         return schemaPath.inputStream().use { SchemaBundle.deserialize(it) }
     }
 
-    private fun createDatabaseConfiguration(
-        container: RoomDatabase.MigrationContainer,
-    ) =
+    private fun createDatabaseConfiguration(container: RoomDatabase.MigrationContainer) =
         DatabaseConfiguration(
             name = databasePath.toString(),
             migrationContainer = container,
@@ -179,6 +177,6 @@ public actual class MigrationTestHelper(
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = driver,
-            queryCoroutineContext = null
+            queryCoroutineContext = null,
         )
 }

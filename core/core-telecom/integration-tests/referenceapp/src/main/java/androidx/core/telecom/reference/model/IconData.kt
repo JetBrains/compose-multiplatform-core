@@ -19,8 +19,4 @@ package androidx.core.telecom.reference.model
 import android.graphics.Bitmap
 import android.net.Uri
 
-data class IconData(
-    var uri: Uri,
-    val bitmap: Bitmap?,
-    val fileName: String,
-)
+data class IconData(var uri: Uri, val bitmap: Bitmap?, val fileName: String)

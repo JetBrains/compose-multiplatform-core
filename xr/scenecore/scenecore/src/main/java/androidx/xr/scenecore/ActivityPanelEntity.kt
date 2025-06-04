@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -77,7 +78,7 @@ private constructor(
         internal fun create(
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
-            windowBoundsPx: PixelDimensions,
+            windowBoundsPx: IntSize2d,
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
@@ -114,7 +115,7 @@ private constructor(
             ActivityPanelEntity.create(
                 session.platformAdapter,
                 session.scene.entityManager,
-                PixelDimensions(windowBoundsPx.width(), windowBoundsPx.height()),
+                IntSize2d(windowBoundsPx.width(), windowBoundsPx.height()),
                 name,
                 session.activity,
                 pose,

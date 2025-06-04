@@ -86,7 +86,7 @@ public fun Column(
     modifier: GlanceModifier = GlanceModifier,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableColumn,
@@ -95,6 +95,6 @@ public fun Column(
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
             this.set(verticalAlignment) { this.verticalAlignment = it }
         },
-        content = { ColumnScopeImplInstance.content() }
+        content = { ColumnScopeImplInstance.content() },
     )
 }

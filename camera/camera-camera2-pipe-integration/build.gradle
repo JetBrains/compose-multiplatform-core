@@ -37,7 +37,6 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:camera-core"))
     api(libs.guavaListenableFuture)
-    api(libs.javaxInject)
     api(libs.kotlinCoroutinesCore)
     api("androidx.lifecycle:lifecycle-livedata-core:2.1.0")
 

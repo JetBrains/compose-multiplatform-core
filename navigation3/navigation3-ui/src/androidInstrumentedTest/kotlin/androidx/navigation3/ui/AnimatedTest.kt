@@ -126,12 +126,7 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
                         NavEntry(
                             second,
@@ -139,7 +134,7 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(customDuration)) togetherWith
                                         fadeOut(tween(customDuration))
-                                }
+                                },
                         ) {
                             Text(second)
                         }
@@ -181,12 +176,7 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
                         NavEntry(
                             second,
@@ -194,7 +184,7 @@ class AnimatedTest {
                                 NavDisplay.popTransitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(second)
                         }
@@ -229,18 +219,8 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
@@ -248,7 +228,7 @@ class AnimatedTest {
                                 NavDisplay.popTransitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(third)
                         }
@@ -287,18 +267,8 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
@@ -306,7 +276,7 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(third)
                         }
@@ -344,18 +314,8 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
@@ -363,7 +323,7 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(third)
                         }
@@ -398,18 +358,8 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
@@ -417,7 +367,7 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(third)
                         }
@@ -452,34 +402,19 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second, third, fourth) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
                             NavDisplay.transitionSpec {
                                 fadeIn(tween(testDuration)) togetherWith
                                     fadeOut(tween(testDuration))
-                            }
+                            },
                         ) {
                             Text(third)
                         }
-                    fourth ->
-                        NavEntry(
-                            fourth,
-                        ) {
-                            Text(fourth)
-                        }
+                    fourth -> NavEntry(fourth) { Text(fourth) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -515,24 +450,9 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
-                    third ->
-                        NavEntry(
-                            third,
-                        ) {
-                            Text(third)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
+                    third -> NavEntry(third) { Text(third) }
                     fourth ->
                         NavEntry(
                             fourth,
@@ -540,7 +460,7 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(fourth)
                         }
@@ -578,18 +498,8 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, third, fourth) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
                     third ->
                         NavEntry(
                             third,
@@ -597,16 +507,11 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(third)
                         }
-                    fourth ->
-                        NavEntry(
-                            fourth,
-                        ) {
-                            Text(fourth)
-                        }
+                    fourth -> NavEntry(fourth) { Text(fourth) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -641,31 +546,16 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            Text(second)
-                        }
-                    third ->
-                        NavEntry(
-                            third,
-                        ) {
-                            Text(third)
-                        }
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
+                    third -> NavEntry(third) { Text(third) }
                     fourth ->
                         NavEntry(
                             fourth,
                             NavDisplay.transitionSpec {
                                 fadeIn(tween(testDuration)) togetherWith
                                     fadeOut(tween(testDuration))
-                            }
+                            },
                         ) {
                             Text(fourth)
                         }
@@ -704,19 +594,14 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
                         NavEntry(
                             second,
                             NavDisplay.transitionSpec {
                                 fadeIn(tween(testDuration)) togetherWith
                                     fadeOut(tween(testDuration))
-                            }
+                            },
                         ) {
                             Text(second)
                         }
@@ -752,16 +637,9 @@ class AnimatedTest {
             backstack = remember { mutableStateListOf(first, second) }
             NavDisplay(backstack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
-                        NavEntry(
-                            second,
-                        ) {
+                        NavEntry(second) {
                             Box(Modifier.fillMaxSize().background(Color.Red)) { Text(second) }
                         }
                     else -> error("Invalid key passed")
@@ -799,16 +677,9 @@ class AnimatedTest {
             backstack = remember { mutableStateListOf(first, second) }
             NavDisplay(backstack, entryDecorators = listOf(provider)) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
-                        NavEntry(
-                            second,
-                        ) {
+                        NavEntry(second) {
                             secondEntryIsWrapped = LocalHasProvidedToEntry.current
                             Box(Modifier.fillMaxSize().background(Color.Red)) { Text(second) }
                         }
@@ -839,12 +710,7 @@ class AnimatedTest {
             backStack = remember { mutableStateListOf(first, second, third) }
             NavDisplay(backStack) {
                 when (it) {
-                    first ->
-                        NavEntry(
-                            first,
-                        ) {
-                            Text(first)
-                        }
+                    first -> NavEntry(first) { Text(first) }
                     second ->
                         NavEntry(
                             second,
@@ -852,16 +718,11 @@ class AnimatedTest {
                                 NavDisplay.transitionSpec {
                                     fadeIn(tween(testDuration)) togetherWith
                                         fadeOut(tween(testDuration))
-                                }
+                                },
                         ) {
                             Text(second)
                         }
-                    third ->
-                        NavEntry(
-                            third,
-                        ) {
-                            Text(third)
-                        }
+                    third -> NavEntry(third) { Text(third) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -910,8 +771,8 @@ class AnimatedTest {
                                             sharedStates.add(it)
                                         },
                                         animatedVisibilityScope =
-                                            LocalNavAnimatedContentScope.current
-                                    )
+                                            LocalNavAnimatedContentScope.current,
+                                    ),
                                 )
                             }
                         second ->
@@ -923,8 +784,8 @@ class AnimatedTest {
                                             sharedStates.add(it)
                                         },
                                         animatedVisibilityScope =
-                                            LocalNavAnimatedContentScope.current
-                                    )
+                                            LocalNavAnimatedContentScope.current,
+                                    ),
                                 )
                             }
                         else -> error("Invalid key passed")
@@ -963,16 +824,12 @@ class AnimatedTest {
             NavDisplay(backStack) {
                 when (it) {
                     first ->
-                        NavEntry(
-                            first,
-                        ) {
+                        NavEntry(first) {
                             firstLifecycle = LocalLifecycleOwner.current.lifecycle
                             Text(first)
                         }
                     second ->
-                        NavEntry(
-                            second,
-                        ) {
+                        NavEntry(second) {
                             secondLifecycle = LocalLifecycleOwner.current.lifecycle
                             Text(second)
                         }

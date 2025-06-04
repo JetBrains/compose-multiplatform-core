@@ -19,7 +19,9 @@ package androidx.privacysandbox.ui.integration.macrobenchmark.testapp.target
 import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
+import android.os.Trace
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -116,7 +118,7 @@ abstract class BaseFragment : Fragment() {
         @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
-        drawViewabilityLayer: Boolean
+        drawViewabilityLayer: Boolean,
     ) {}
 
     fun loadAd(
@@ -125,7 +127,7 @@ abstract class BaseFragment : Fragment() {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         drawViewabilityLayer: Boolean,
-        waitInsideOnDraw: Boolean = false
+        waitInsideOnDraw: Boolean = false,
     ) {
         CoroutineScope(Dispatchers.Main).launch {
             val sdkBundle =
@@ -134,7 +136,7 @@ abstract class BaseFragment : Fragment() {
                     adType,
                     mediationOption,
                     waitInsideOnDraw,
-                    drawViewabilityLayer
+                    drawViewabilityLayer,
                 )
             adHolder.populateAd(sdkBundle, adFormat)
         }
@@ -146,7 +148,7 @@ abstract class BaseFragment : Fragment() {
         @MediationOption mediationOption: Int,
         sandboxedSdkView: SandboxedSdkView,
         drawViewabilityLayer: Boolean,
-        waitInsideOnDraw: Boolean = false
+        waitInsideOnDraw: Boolean = false,
     ) {
         CoroutineScope(Dispatchers.Main).launch {
             val sdkBundle =
@@ -155,7 +157,7 @@ abstract class BaseFragment : Fragment() {
                     adType,
                     mediationOption,
                     waitInsideOnDraw,
-                    drawViewabilityLayer
+                    drawViewabilityLayer,
                 )
             sandboxedSdkView.setAdapter(SandboxedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
             sandboxedSdkView.orderProviderUiAboveClientUi(providerUiOnTop)
@@ -169,7 +171,15 @@ abstract class BaseFragment : Fragment() {
 
     private inner class TestEventListener(val view: SandboxedSdkView) :
         SandboxedSdkViewEventListener {
-        override fun onUiDisplayed() {}
+        override fun onUiDisplayed() {
+            // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
+            // TODO(b/418155054): Create helper function in SdkSandboxCrossProcessLatencyMetric.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Trace.beginAsyncSection("onUiDisplayed", 0)
+                // To avoid misusing API, end the section. See b/412962485.
+                Trace.endAsyncSection("onUiDisplayed", 0)
+            }
+        }
 
         override fun onUiError(error: Throwable) {
             val parent = view.parent as ViewGroup

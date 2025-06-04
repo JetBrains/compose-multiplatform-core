@@ -141,37 +141,37 @@ interface MotionScheme {
         private val defaultSpatialSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringDefaultSpatialDamping,
-                stiffness = StandardMotionTokens.SpringDefaultSpatialStiffness
+                stiffness = StandardMotionTokens.SpringDefaultSpatialStiffness,
             )
 
         private val fastSpatialSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringFastSpatialDamping,
-                stiffness = StandardMotionTokens.SpringFastSpatialStiffness
+                stiffness = StandardMotionTokens.SpringFastSpatialStiffness,
             )
 
         private val slowSpatialSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringSlowSpatialDamping,
-                stiffness = StandardMotionTokens.SpringSlowSpatialStiffness
+                stiffness = StandardMotionTokens.SpringSlowSpatialStiffness,
             )
 
         private val defaultEffectsSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringDefaultEffectsDamping,
-                stiffness = StandardMotionTokens.SpringDefaultEffectsStiffness
+                stiffness = StandardMotionTokens.SpringDefaultEffectsStiffness,
             )
 
         private val fastEffectsSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringFastEffectsDamping,
-                stiffness = StandardMotionTokens.SpringFastEffectsStiffness
+                stiffness = StandardMotionTokens.SpringFastEffectsStiffness,
             )
 
         private val slowEffectsSpec =
             spring<Any>(
                 dampingRatio = StandardMotionTokens.SpringSlowEffectsDamping,
-                stiffness = StandardMotionTokens.SpringSlowEffectsStiffness
+                stiffness = StandardMotionTokens.SpringSlowEffectsStiffness,
             )
 
         override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> {
@@ -206,37 +206,37 @@ interface MotionScheme {
         private val defaultSpatialSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringDefaultSpatialDamping,
-                stiffness = ExpressiveMotionTokens.SpringDefaultSpatialStiffness
+                stiffness = ExpressiveMotionTokens.SpringDefaultSpatialStiffness,
             )
 
         private val fastSpatialSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringFastSpatialDamping,
-                stiffness = ExpressiveMotionTokens.SpringFastSpatialStiffness
+                stiffness = ExpressiveMotionTokens.SpringFastSpatialStiffness,
             )
 
         private val slowSpatialSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringSlowSpatialDamping,
-                stiffness = ExpressiveMotionTokens.SpringSlowSpatialStiffness
+                stiffness = ExpressiveMotionTokens.SpringSlowSpatialStiffness,
             )
 
         private val defaultEffectsSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringDefaultEffectsDamping,
-                stiffness = ExpressiveMotionTokens.SpringDefaultEffectsStiffness
+                stiffness = ExpressiveMotionTokens.SpringDefaultEffectsStiffness,
             )
 
         private val fastEffectsSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringFastEffectsDamping,
-                stiffness = ExpressiveMotionTokens.SpringFastEffectsStiffness
+                stiffness = ExpressiveMotionTokens.SpringFastEffectsStiffness,
             )
 
         private val slowEffectsSpec =
             spring<Any>(
                 dampingRatio = ExpressiveMotionTokens.SpringSlowEffectsDamping,
-                stiffness = ExpressiveMotionTokens.SpringSlowEffectsStiffness
+                stiffness = ExpressiveMotionTokens.SpringSlowEffectsStiffness,
             )
 
         override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> {

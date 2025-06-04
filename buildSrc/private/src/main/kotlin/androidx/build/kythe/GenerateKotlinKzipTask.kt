@@ -125,7 +125,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                             file
                                 .createJarFromDirectory(
                                     kytheClassJarsDir.get().asFile,
-                                    checkoutRoot
+                                    checkoutRoot,
                                 )
                                 .relativeTo(checkoutRoot)
                         }
@@ -146,7 +146,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                     kotlinTarget.get().apiVersion.version,
                     "-language-version",
                     kotlinTarget.get().apiVersion.version,
-                    "-opt-in=kotlin.contracts.ExperimentalContracts"
+                    "-opt-in=kotlin.contracts.ExperimentalContracts",
                 )
             )
         }
@@ -172,7 +172,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                     "-vnames",
                     vnamesJson.get().asFile.relativeTo(checkoutRoot).path,
                     "-args",
-                    (args + multiplatformArg + filteredKotlincFreeCompilerArgs).joinToString(" ")
+                    (args + multiplatformArg + filteredKotlincFreeCompilerArgs).joinToString(" "),
                 )
             )
             sourceFiles.forEach { addAll(listOf("-srcs", it.path)) }
@@ -206,7 +206,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                         kotlincExtractorBin.set(
                             File(
                                 project.getPrebuiltsRoot(),
-                                "build-tools/${osName()}/bin/kotlinc_extractor"
+                                "build-tools/${osName()}/bin/kotlinc_extractor",
                             )
                         )
                         sourcePaths.setFrom(compilationInputs.sourcePaths)
@@ -224,7 +224,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                         kzipOutputFile.set(
                             File(
                                 project.layout.buildDirectory.get().asFile,
-                                "kzips/${project.group}-${project.name}.kotlin.kzip"
+                                "kzips/${project.group}-${project.name}.kotlin.kzip",
                             )
                         )
                         kytheClassJarsDir.set(project.layout.buildDirectory.dir("kythe-class-jars"))

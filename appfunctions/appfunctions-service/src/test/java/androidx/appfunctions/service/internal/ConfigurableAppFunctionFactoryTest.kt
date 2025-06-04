@@ -102,14 +102,10 @@ class ConfigurableAppFunctionFactoryTest {
         override val appFunctionConfiguration: AppFunctionConfiguration
             get() =
                 AppFunctionConfiguration.Builder()
-                    .addEnclosingClassFactory(
-                        NoArgWithFactoryEnclosingClass::class.java,
-                    ) {
+                    .addEnclosingClassFactory(NoArgWithFactoryEnclosingClass::class.java) {
                         NoArgWithFactoryEnclosingClass()
                     }
-                    .addEnclosingClassFactory(
-                        RequiredArgsEnclosingClass::class.java,
-                    ) {
+                    .addEnclosingClassFactory(RequiredArgsEnclosingClass::class.java) {
                         RequiredArgsEnclosingClass(0)
                     }
                     .build()

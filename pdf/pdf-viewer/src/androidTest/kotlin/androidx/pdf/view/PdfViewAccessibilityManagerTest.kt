@@ -56,7 +56,7 @@ class PdfViewAccessibilityManagerTest {
                             this.pdfDocument = pdfDocument
                             id = PDF_VIEW_ID
                         },
-                        ViewGroup.LayoutParams(100, 1000)
+                        ViewGroup.LayoutParams(100, 1000),
                     )
                 }
             activity.setContentView(container)
@@ -104,7 +104,7 @@ class PdfViewAccessibilityManagerTest {
                 Triple(110f, 25f, -1), // Outside valid page bounds
                 Triple(-10f, -10f, -1), // Outside viewport
                 Triple(50f, 40f, 10), // Goto Link
-                Triple(50f, 70f, 11) // External Link
+                Triple(50f, 70f, 11), // External Link
             )
 
         testCases.forEach { (x, y, expectedPage) ->
@@ -153,7 +153,7 @@ class PdfViewAccessibilityManagerTest {
             listOf(
                 1 to "Page 2: Sample text for page 2",
                 10 to "Go to page 5",
-                11 to "Link: www.example.com"
+                11 to "Link: www.example.com",
             )
         testCases.forEach { (virtualViewId, expectedDescription) ->
             val node = mock(AccessibilityNodeInfoCompat::class.java)
@@ -180,7 +180,7 @@ class PdfViewAccessibilityManagerTest {
             listOf(
                 0 to RectF(0f, topPageMargin, 100f, 200f + topPageMargin),
                 10 to RectF(25f, 30f + topPageMargin, 75f, 50f + topPageMargin),
-                11 to RectF(25f, 60f + topPageMargin, 75f, 80f + topPageMargin)
+                11 to RectF(25f, 60f + topPageMargin, 75f, 80f + topPageMargin),
             )
 
         testCases.forEach { (virtualViewId, boundsInParent) ->
@@ -192,7 +192,7 @@ class PdfViewAccessibilityManagerTest {
             verify(node).let {
                 pdfViewAccessibilityManager.setBoundsInScreenFromBoundsInParent(
                     node,
-                    expectedBounds
+                    expectedBounds,
                 )
             }
         }

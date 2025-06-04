@@ -36,7 +36,7 @@ import kotlin.collections.removeLast as removeLastKt
 internal class UndoManager<T>(
     initialUndoStack: List<T> = emptyList(),
     initialRedoStack: List<T> = emptyList(),
-    private val capacity: Int = 100
+    private val capacity: Int = 100,
 ) {
     init {
         requirePrecondition(capacity >= 0) { "Capacity must be a positive integer" }

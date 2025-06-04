@@ -38,7 +38,7 @@ import java.util.Objects
 @SuppressLint("ProtoLayoutMinSchema") // 1.2 schema only used when dynamicValue is non-null
 fun LayoutModifier.contentDescription(
     staticValue: String,
-    @RequiresSchemaVersion(major = 1, minor = 200) dynamicValue: DynamicString? = null
+    @RequiresSchemaVersion(major = 1, minor = 200) dynamicValue: DynamicString? = null,
 ): LayoutModifier =
     this then
         BaseSemanticElement(

@@ -52,17 +52,14 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractRequiredSingleParameters_exist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "long",
                 isRequired = true,
                 dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_LONG,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = isNullable),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -72,17 +69,14 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractRequiredSingleParameters_notExist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "fakeDouble",
                 isRequired = true,
                 dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_DOUBLE,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = isNullable),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -92,17 +86,14 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractNotRequiredSingleParameters_exist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "boolean",
                 isRequired = false,
                 dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_BOOLEAN,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_BOOLEAN, isNullable = isNullable),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -112,17 +103,14 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractNotRequiredSingleParameters_notExist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "fakeString",
                 isRequired = false,
                 dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_STRING,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = isNullable),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -140,10 +128,7 @@ class AppFunctionDataParameterExtractorTest {
                 name = "boolean",
                 isRequired = isRequired,
                 dataType =
-                    AppFunctionPrimitiveTypeMetadata(
-                        type = TYPE_STRING,
-                        isNullable = isNullable,
-                    )
+                    AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = isNullable),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -153,7 +138,7 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractRequiredCollectionParameters_exist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
@@ -163,11 +148,8 @@ class AppFunctionDataParameterExtractorTest {
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
                         itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_LONG,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                    ),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -178,7 +160,7 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractRequiredCollectionParameters_notExist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
@@ -188,11 +170,8 @@ class AppFunctionDataParameterExtractorTest {
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
                         itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false),
+                    ),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -202,7 +181,7 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractNotRequiredCollectionParameters_exist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
@@ -215,8 +194,8 @@ class AppFunctionDataParameterExtractorTest {
                             AppFunctionPrimitiveTypeMetadata(
                                 type = TYPE_BOOLEAN,
                                 isNullable = false,
-                            )
-                    )
+                            ),
+                    ),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -227,7 +206,7 @@ class AppFunctionDataParameterExtractorTest {
 
     @Test
     fun testAppFunctionData_extractNotRequiredCollectionParameters_notExist(
-        @TestParameter isNullable: Boolean,
+        @TestParameter isNullable: Boolean
     ) {
         val parameterMetadata =
             AppFunctionParameterMetadata(
@@ -237,11 +216,8 @@ class AppFunctionDataParameterExtractorTest {
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
                         itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                    ),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -262,11 +238,8 @@ class AppFunctionDataParameterExtractorTest {
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
                         itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                    ),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {

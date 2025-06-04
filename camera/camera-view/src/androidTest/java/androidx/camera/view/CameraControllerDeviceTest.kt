@@ -58,7 +58,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class CameraControllerDeviceTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     companion object {
@@ -69,15 +69,13 @@ class CameraControllerDeviceTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCamera =
@@ -248,7 +246,7 @@ class CameraControllerDeviceTest(
         return ImageCapture.OutputFileOptions.Builder(
             instrumentation.context.contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            ContentValues()
+            ContentValues(),
         )
     }
 
@@ -284,7 +282,7 @@ class CameraControllerDeviceTest(
             cameraProvider.bindToLifecycle(
                 FakeLifecycleOwner(),
                 defaultCameraSelector,
-                imageCapture
+                imageCapture,
             )
         }
 
@@ -317,7 +315,7 @@ class CameraControllerDeviceTest(
 
     private fun testCameraSelectorWontUnbindUseCases(
         firstCamera: CameraSelector,
-        secondCamera: CameraSelector
+        secondCamera: CameraSelector,
     ) {
         // Arrange.
         assumeTrue(CameraUtil.hasCameraWithLensFacing(firstCamera.lensFacing!!))
@@ -355,7 +353,7 @@ class CameraControllerDeviceTest(
                     oldLeft: Int,
                     oldTop: Int,
                     oldRight: Int,
-                    oldBottom: Int
+                    oldBottom: Int,
                 ) {
                     if (v.width > 0 && v.height > 0) {
                         countDownLatch.countDown()

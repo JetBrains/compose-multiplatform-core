@@ -30,7 +30,7 @@ class InternalApiUsageDetectorTest :
                 InternalApiUsageDetector.INTERNAL_GRADLE_ISSUE,
                 InternalApiUsageDetector.INTERNAL_AGP_ISSUE,
                 InternalApiUsageDetector.INTERNAL_KGP_ISSUE,
-            )
+            ),
     ) {
     @Test
     fun `Test usage of internal Gradle API`() {
@@ -371,7 +371,7 @@ class InternalApiUsageDetectorTest :
         check(
                 qualifiedInput,
                 importInput,
-                skipTestModes = arrayOf(TestMode.SUPPRESSIBLE, TestMode.IMPORT_ALIAS)
+                skipTestModes = arrayOf(TestMode.SUPPRESSIBLE, TestMode.IMPORT_ALIAS),
             )
             .expect(
                 """

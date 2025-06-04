@@ -54,7 +54,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
         PublicKeyCredentialCreationOptions,
         PublicKeyCredential,
         CreateCredentialResponse,
-        CreateCredentialException
+        CreateCredentialException,
     >(context) {
 
     /** The callback object state, used in the protected handleResponse method. */
@@ -81,14 +81,14 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
                             createCredentialExceptionTypeToException,
                         executor = executor,
                         callback = callback,
-                        cancellationSignal
+                        cancellationSignal,
                     )
                 )
                     return
                 handleResponse(
                     resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
                     resultCode,
-                    resultData.getParcelable(RESULT_DATA_TAG)
+                    resultData.getParcelable(RESULT_DATA_TAG),
                 )
             }
         }
@@ -97,7 +97,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
         request: CreatePublicKeyCredentialRequest,
         callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -132,7 +132,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
                 generateHiddenActivityIntent(
                     resultReceiver,
                     hiddenIntent,
-                    CREATE_PUBLIC_KEY_CREDENTIAL_TAG
+                    CREATE_PUBLIC_KEY_CREDENTIAL_TAG,
                 )
                 hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result)
                 try {
@@ -164,7 +164,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
         }
         return createCredentialExceptionTypeToException(
             errName,
-            "During create public key credential, fido registration " + "failure: ${e.message}"
+            "During create public key credential, fido registration " + "failure: ${e.message}",
         )
     }
 
@@ -173,7 +173,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
             Log.w(
                 TAG,
                 "Returned request code " +
-                    "$CONTROLLER_REQUEST_CODE does not match what was given $uniqueRequestCode"
+                    "$CONTROLLER_REQUEST_CODE does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -182,7 +182,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                cancellationSignal,
             )
         )
             return
@@ -196,7 +196,7 @@ internal class CredentialProviderCreatePublicKeyCredentialController(private val
                     CreatePublicKeyCredentialDomException(
                         UnknownError(),
                         "Upon handling create public key credential response, fido module giving" +
-                            " null bytes indicating internal error"
+                            " null bytes indicating internal error",
                     )
                 )
             }

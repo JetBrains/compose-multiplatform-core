@@ -107,7 +107,7 @@ interface MutableFloatState : FloatState, MutableState<Float> {
 inline operator fun MutableFloatState.setValue(
     thisObj: Any?,
     property: KProperty<*>,
-    value: Float
+    value: Float,
 ) {
     this.floatValue = value
 }
@@ -163,7 +163,7 @@ internal open class SnapshotMutableFloatStateImpl(value: Float) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val currentRecord = current as FloatStateStateRecord
         val appliedRecord = applied as FloatStateStateRecord

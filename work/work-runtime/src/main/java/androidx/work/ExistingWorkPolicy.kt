@@ -51,5 +51,5 @@ enum class ExistingWorkPolicy {
      * **Note:** If there are failed or cancelled prerequisites, these prerequisites are *dropped*
      * and the newly-specified work is the start of a new sequence.
      */
-    APPEND_OR_REPLACE
+    APPEND_OR_REPLACE,
 }

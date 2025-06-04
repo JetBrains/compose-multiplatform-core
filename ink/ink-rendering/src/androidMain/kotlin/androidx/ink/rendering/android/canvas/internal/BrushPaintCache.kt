@@ -294,7 +294,7 @@ internal class BrushPaintCache(
                         ComposeShader(
                             shader,
                             acc,
-                            textureLayers[i - 1].blendMode.toPorterDuffMode()
+                            textureLayers[i - 1].blendMode.toPorterDuffMode(),
                         )
                 }
             }

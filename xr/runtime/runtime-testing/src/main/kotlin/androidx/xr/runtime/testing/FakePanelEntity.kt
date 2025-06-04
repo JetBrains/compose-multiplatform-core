@@ -19,6 +19,7 @@ package androidx.xr.runtime.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.PanelEntity
+import androidx.xr.runtime.internal.PerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions
 import androidx.xr.runtime.math.Vector3
 
@@ -33,4 +34,8 @@ public open class FakePanelEntity : PanelEntity, FakeEntity() {
     override val pixelDensity: Vector3 = Vector3()
 
     override var size: Dimensions = Dimensions(0.0f, 0.0f, 0.0f)
+
+    override fun getPerceivedResolution(): PerceivedResolutionResult {
+        return PerceivedResolutionResult.Success(PixelDimensions(0, 0))
+    }
 }

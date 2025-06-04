@@ -400,10 +400,10 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
 
         Notification notification = builder.build();
         // default is false.
-        assertThat(NotificationCompat.hasRequestedPromotedOngoing(notification)).isFalse();
+        assertThat(NotificationCompat.isRequestPromotedOngoing(notification)).isFalse();
         // set to true.
         notification = builder.setRequestPromotedOngoing(true).build();
-        assertThat(NotificationCompat.hasRequestedPromotedOngoing(notification)).isTrue();
+        assertThat(NotificationCompat.isRequestPromotedOngoing(notification)).isTrue();
     }
 
     @Test

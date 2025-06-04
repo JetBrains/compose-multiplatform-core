@@ -33,7 +33,7 @@ internal class ObjectUnavailableException(e: Throwable) : Exception(e)
 internal inline fun <T> catchAndReportCameraExceptions(
     cameraId: CameraId,
     cameraErrorListener: CameraErrorListener,
-    crossinline block: () -> T
+    crossinline block: () -> T,
 ): T? {
     // Camera2 has, at different points in time, thrown a large number of checked and/or
     // unchecked exceptions under different circumstances that are not listed in the
@@ -74,7 +74,7 @@ internal inline fun <T> catchAndReportCameraExceptions(
                 cameraErrorListener.onCameraError(
                     cameraId,
                     CameraError.ERROR_GRAPH_CONFIG,
-                    willAttemptRetry = false
+                    willAttemptRetry = false,
                 )
                 return null
             }

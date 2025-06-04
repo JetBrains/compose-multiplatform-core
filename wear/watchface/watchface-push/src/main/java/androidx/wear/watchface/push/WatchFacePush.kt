@@ -102,7 +102,7 @@ public interface WatchFacePushManager {
     @Throws(AddWatchFaceException::class)
     public suspend fun addWatchFace(
         apkFd: ParcelFileDescriptor,
-        validationToken: String
+        validationToken: String,
     ): WatchFaceDetails
 
     /**
@@ -128,7 +128,7 @@ public interface WatchFacePushManager {
     public suspend fun updateWatchFace(
         slotId: String,
         apkFd: ParcelFileDescriptor,
-        validationToken: String
+        validationToken: String,
     ): WatchFaceDetails
 
     /**
@@ -169,7 +169,7 @@ public interface WatchFacePushManager {
      */
     public class ListWatchFacesResponse(
         public val installedWatchFaceDetails: List<WatchFaceDetails>,
-        public val remainingSlotCount: Int
+        public val remainingSlotCount: Int,
     )
 
     /**
@@ -189,7 +189,7 @@ public interface WatchFacePushManager {
         public val slotId: String,
         public val versionCode: Long,
         public val packageName: String,
-        private val getMetaDataFunc: (String) -> List<String>
+        private val getMetaDataFunc: (String) -> List<String>,
     ) {
 
         /**
@@ -211,7 +211,7 @@ public interface WatchFacePushManager {
      */
     public class AddWatchFaceException(
         public val errorCode: @ErrorCode Int,
-        private val rootCause: Throwable
+        private val rootCause: Throwable,
     ) : Exception(rootCause) {
 
         public companion object {
@@ -303,7 +303,7 @@ public interface WatchFacePushManager {
                 ERROR_INVALID_PACKAGE_NAME,
                 ERROR_MALFORMED_WATCHFACE_APK,
                 ERROR_SLOT_LIMIT_REACHED,
-                ERROR_INVALID_VALIDATION_TOKEN
+                ERROR_INVALID_VALIDATION_TOKEN,
             )
             @Retention(AnnotationRetention.SOURCE)
             @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
@@ -426,7 +426,7 @@ public interface WatchFacePushManager {
                 ERROR_INVALID_PACKAGE_NAME,
                 ERROR_MALFORMED_WATCHFACE_APK,
                 ERROR_INVALID_SLOT_ID,
-                ERROR_INVALID_VALIDATION_TOKEN
+                ERROR_INVALID_VALIDATION_TOKEN,
             )
             @Retention(AnnotationRetention.SOURCE)
             @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
@@ -502,10 +502,7 @@ public interface WatchFacePushManager {
              * - [ERROR_UNKNOWN]
              * - [ERROR_INVALID_SLOT_ID]
              */
-            @IntDef(
-                ERROR_UNKNOWN,
-                ERROR_INVALID_SLOT_ID,
-            )
+            @IntDef(ERROR_UNKNOWN, ERROR_INVALID_SLOT_ID)
             @Retention(AnnotationRetention.SOURCE)
             @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
             internal annotation class ErrorCode
@@ -661,10 +658,7 @@ public interface WatchFacePushManager {
              * - [ERROR_UNKNOWN]
              * - [ERROR_INVALID_PACKAGE_NAME]
              */
-            @IntDef(
-                ERROR_UNKNOWN,
-                ERROR_INVALID_PACKAGE_NAME,
-            )
+            @IntDef(ERROR_UNKNOWN, ERROR_INVALID_PACKAGE_NAME)
             @Retention(AnnotationRetention.SOURCE)
             @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
             internal annotation class ErrorCode
@@ -690,7 +684,7 @@ public interface WatchFacePushManager {
      */
     public class ListWatchFacesException(
         public val errorCode: @ErrorCode Int,
-        private val rootCause: Throwable
+        private val rootCause: Throwable,
     ) : Exception(rootCause) {
 
         public companion object {
@@ -719,9 +713,7 @@ public interface WatchFacePushManager {
              * Possible values are:
              * - [ERROR_UNKNOWN]
              */
-            @IntDef(
-                ERROR_UNKNOWN,
-            )
+            @IntDef(ERROR_UNKNOWN)
             @Retention(AnnotationRetention.SOURCE)
             @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
             internal annotation class ErrorCode
@@ -750,7 +742,7 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
         com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager =
         Sdk.getWearManager(
             context,
-            com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager::class.java
+            com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager::class.java,
         )
 
     override suspend fun listWatchFaces(): WatchFacePushManager.ListWatchFacesResponse {
@@ -767,22 +759,22 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                                     WatchFacePushManager.WatchFaceDetails(
                                         w.slotId,
                                         w.versionCode,
-                                        w.packageName
+                                        w.packageName,
                                     ) { key ->
                                         w.getMetaDataValues(key)
                                     }
                                 },
-                            remainingSlotCount = result?.availableSlotCount ?: 0
+                            remainingSlotCount = result?.availableSlotCount ?: 0,
                         )
                     },
                     { e ->
                         WatchFacePushManager.ListWatchFacesException(
                             WatchFacePushManager.ListWatchFacesException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
@@ -800,17 +792,17 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.RemoveWatchFaceException(
                             WatchFacePushManager.RemoveWatchFaceException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
 
     override suspend fun addWatchFace(
         apkFd: ParcelFileDescriptor,
-        validationToken: String
+        validationToken: String,
     ): WatchFacePushManager.WatchFaceDetails {
         val currentExecutor = executor()
         return suspendCancellableCoroutine { cont ->
@@ -824,7 +816,7 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.WatchFaceDetails(
                             result.slotId,
                             result.versionCode,
-                            result.packageName
+                            result.packageName,
                         ) { key ->
                             result.getMetaDataValues(key)
                         }
@@ -833,10 +825,10 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.AddWatchFaceException(
                             WatchFacePushManager.AddWatchFaceException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
@@ -844,7 +836,7 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
     override suspend fun updateWatchFace(
         slotId: String,
         apkFd: ParcelFileDescriptor,
-        validationToken: String
+        validationToken: String,
     ): WatchFacePushManager.WatchFaceDetails {
         val currentExecutor = executor()
         return suspendCancellableCoroutine { cont ->
@@ -859,7 +851,7 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.WatchFaceDetails(
                             result.slotId,
                             result.versionCode,
-                            result.packageName
+                            result.packageName,
                         ) { key ->
                             result.getMetaDataValues(key)
                         }
@@ -868,10 +860,10 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.UpdateWatchFaceException(
                             WatchFacePushManager.UpdateWatchFaceException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
@@ -889,10 +881,10 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.IsWatchFaceActiveException(
                             WatchFacePushManager.IsWatchFaceActiveException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
@@ -918,10 +910,10 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
                         WatchFacePushManager.SetWatchFaceAsActiveException(
                             WatchFacePushManager.SetWatchFaceAsActiveException
                                 .errorCodeFromWearSdkException(e),
-                            e
+                            e,
                         )
-                    }
-                )
+                    },
+                ),
             )
         }
     }
@@ -944,7 +936,7 @@ internal class WatchFacePushManagerImpl(private var context: Context) : WatchFac
     private fun <I, O, E : Throwable, EO : Throwable> outcomeReceiver(
         cont: CancellableContinuation<O>,
         transform: (I) -> O,
-        transformException: (E) -> EO
+        transformException: (E) -> EO,
     ): OutcomeReceiver<I, E> {
         return object : OutcomeReceiver<I, E> {
             override fun onResult(result: I) {

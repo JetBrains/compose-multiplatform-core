@@ -85,7 +85,7 @@ public open class ActionCallbackBroadcastReceiver : BroadcastReceiver() {
         internal fun createIntent(
             translationContext: TranslationContext,
             callbackClass: Class<out ActionCallback>,
-            parameters: ActionParameters
+            parameters: ActionParameters,
         ) =
             Intent()
                 .setComponent(translationContext.glanceComponents.actionCallbackBroadcastReceiver)

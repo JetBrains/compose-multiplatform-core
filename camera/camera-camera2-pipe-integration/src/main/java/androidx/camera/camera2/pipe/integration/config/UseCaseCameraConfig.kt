@@ -43,11 +43,7 @@ import javax.inject.Scope
 
 /** Dependency bindings for building a [UseCaseCamera] */
 @Module(
-    includes =
-        [
-            UseCaseCameraImpl.Bindings::class,
-            UseCaseCameraRequestControlImpl.Bindings::class,
-        ]
+    includes = [UseCaseCameraImpl.Bindings::class, UseCaseCameraRequestControlImpl.Bindings::class]
 )
 public abstract class UseCaseCameraModule {
     // Used for dagger provider methods that are static.
@@ -57,7 +53,7 @@ public abstract class UseCaseCameraModule {
         @Provides
         public fun provideCapturePipeline(
             capturePipelineImpl: CapturePipelineImpl,
-            capturePipelineTorchCorrection: CapturePipelineTorchCorrection
+            capturePipelineTorchCorrection: CapturePipelineTorchCorrection,
         ): CapturePipeline {
             if (CapturePipelineTorchCorrection.isEnabled) {
                 return capturePipelineTorchCorrection
@@ -104,7 +100,7 @@ public class UseCaseCameraConfig(
     @Provides
     public fun provideUseCaseGraphConfig(
         useCaseSurfaceManager: UseCaseSurfaceManager,
-        cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository
+        cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository,
     ): UseCaseGraphConfig {
         sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
             cameraInteropStateCallbackRepository.updateCallbacks(sessionConfig)
@@ -125,11 +121,7 @@ public class UseCaseCameraConfig(
             Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
                 useCaseSurfaceManager
-                    .setupAsync(
-                        cameraGraph,
-                        sessionConfigAdapter,
-                        surfaceToStreamMap,
-                    )
+                    .setupAsync(cameraGraph, sessionConfigAdapter, surfaceToStreamMap)
                     .invokeOnCompletion { throwable ->
                         // Only show logs for error cases, ignore CancellationException since the
                         // task could be cancelled by UseCaseSurfaceManager#stopAsync().

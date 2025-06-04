@@ -157,7 +157,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
          */
         public enum class CompletionBehavior {
             AT_LEAST,
-            EXACT
+            EXACT,
         }
     }
 
@@ -265,7 +265,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
          * - Bug(s): b/344752133, b/153714651
          * - Device(s): CameraX users
          */
-        val enableRestartDelays: Boolean = false
+        val enableRestartDelays: Boolean = false,
     ) {
 
         @JvmInline
@@ -422,7 +422,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
             awbMode: AwbMode? = null,
             aeRegions: List<MeteringRectangle>? = null,
             afRegions: List<MeteringRectangle>? = null,
-            awbRegions: List<MeteringRectangle>? = null
+            awbRegions: List<MeteringRectangle>? = null,
         ): Deferred<Result3A>
 
         /**
@@ -436,7 +436,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
             awbMode: AwbMode? = null,
             aeRegions: List<MeteringRectangle>? = null,
             afRegions: List<MeteringRectangle>? = null,
-            awbRegions: List<MeteringRectangle>? = null
+            awbRegions: List<MeteringRectangle>? = null,
         ): Deferred<Result3A>
 
         /**
@@ -512,7 +512,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
             lockedCondition: ((FrameMetadata) -> Boolean)? = null,
             frameLimit: Int = DEFAULT_FRAME_LIMIT,
             convergedTimeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
-            lockedTimeLimitNs: Long = DEFAULT_TIME_LIMIT_NS
+            lockedTimeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
         ): Deferred<Result3A>
 
         /**
@@ -542,7 +542,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
             awb: Boolean? = null,
             unlockedCondition: ((FrameMetadata) -> Boolean)? = null,
             frameLimit: Int = DEFAULT_FRAME_LIMIT,
-            timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS
+            timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
         ): Deferred<Result3A>
 
         /**
@@ -741,7 +741,7 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public fun <T> useSessionIn(
         scope: CoroutineScope,
-        action: suspend CoroutineScope.(TSession) -> T
+        action: suspend CoroutineScope.(TSession) -> T,
     ): Deferred<T>
 }
 
@@ -782,7 +782,7 @@ public abstract class GraphState internal constructor(private val name: String) 
      */
     public class GraphStateError(
         public val cameraError: CameraError,
-        public val willAttemptRetry: Boolean
+        public val willAttemptRetry: Boolean,
     ) : GraphState("GRAPH_ERROR") {
         override fun toString(): String =
             super.toString() + "(cameraError=$cameraError, willAttemptRetry=$willAttemptRetry)"

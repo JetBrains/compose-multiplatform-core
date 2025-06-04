@@ -61,9 +61,12 @@ internal constructor(
     }
 
     override fun update(xrTime: Long) {
-        val planeState: PlaneState =
-            nativeGetPlaneState(planeId, xrTime)
-                ?: throw IllegalStateException("Could latest plane state. Is the plane ID valid?")
+        val planeState = nativeGetPlaneState(planeId, xrTime)
+        if (planeState == null) {
+            trackingState = TrackingState.PAUSED
+            return
+        }
+
         label = planeState.label
         trackingState = planeState.trackingState
         centerPose = planeState.centerPose

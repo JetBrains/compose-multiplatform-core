@@ -50,7 +50,7 @@ class RegistryManagerTest {
                             "id",
                             ByteArray(4),
                             ByteArray(8),
-                            "intentAction"
+                            "intentAction",
                         ) {}
                 )
             }
@@ -67,8 +67,8 @@ class RegistryManagerTest {
                             ClearCredentialRegistryRequest.PerTypeConfig(
                                 deleteAll = false,
                                 type = PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
-                                registryIds = listOf("registry-id1", "registry-id2")
-                            )
+                                registryIds = listOf("registry-id1", "registry-id2"),
+                            ),
                     )
                 )
             }

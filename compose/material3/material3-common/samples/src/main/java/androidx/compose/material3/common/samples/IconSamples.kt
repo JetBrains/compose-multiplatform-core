@@ -31,6 +31,6 @@ fun IconSample() {
     Icon(
         Icons.Outlined.Lock,
         contentDescription = "Localized description",
-        tint = TonalPaletteDefaults.BaselineTonalPalette.primary100
+        tint = TonalPaletteDefaults.BaselineTonalPalette.primary100,
     )
 }

@@ -31,7 +31,7 @@ class AutofixUnsafeMethodWithQualifiedClassKotlin {
     @RequiresApi(19)
     fun unsafeReferenceWithQualifiedClasses(
         builder: PrintAttributes.Builder,
-        mediaSize: PrintAttributes.MediaSize
+        mediaSize: PrintAttributes.MediaSize,
     ): PrintAttributes.Builder {
         return builder.setMediaSize(mediaSize)
     }

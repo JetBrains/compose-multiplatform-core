@@ -52,7 +52,7 @@ class KSTypeExtTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
 
@@ -109,7 +109,7 @@ class KSTypeExtTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
 
@@ -156,12 +156,12 @@ class KSTypeExtTest {
                 val mutableMapOfDontExist : MutableMap<String, DoesNotExist> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(subjectSrc),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             val subject = invocation.kspResolver.requireClass("Foo")
             val doesNotExist = JClassName.get("", "DoesNotExist")
@@ -178,7 +178,7 @@ class KSTypeExtTest {
                     ParameterizedTypeName.get(
                         Map::class.className(),
                         String::class.className(),
-                        doesNotExist
+                        doesNotExist,
                     )
                 )
             invocation.assertCompilationResult { compilationDidFail() }

@@ -117,7 +117,7 @@ class AppFunctionCompilerTest {
         val report =
             compilationTestHelper.compileAll(
                 sourceFileNames = listOf("ParcelablePrimitiveFunctions.KT"),
-                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true")
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
 
         compilationTestHelper.assertSuccessWithSourceContent(
@@ -139,7 +139,7 @@ class AppFunctionCompilerTest {
             compilationTestHelper.compileAll(
                 sourceFileNames =
                     listOf("FunctionWithSerializableProxyInput.KT", "SerializableWithProxyType.KT"),
-                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true")
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
 
         compilationTestHelper.assertSuccessWithSourceContent(
@@ -231,7 +231,7 @@ class AppFunctionCompilerTest {
                 sourceFileNames =
                     listOf(
                         "NestedDerivedSerializableInputFunctions.KT",
-                        "NestedDerivedSerializable.KT"
+                        "NestedDerivedSerializable.KT",
                     ),
                 processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
@@ -240,8 +240,7 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedSourceFileName =
                 "${'$'}NestedDerivedSerializableInputFunctions_AppFunctionInventory.kt",
-            goldenFileName =
-                "${'$'}NestedDerivedSerializableInputFunctions_AppFunctionInventory.KT",
+            goldenFileName = "${'$'}NestedDerivedSerializableInputFunctions_AppFunctionInventory.KT",
         )
         compilationTestHelper.assertSuccessWithResourceContent(
             report = report,
@@ -280,7 +279,7 @@ class AppFunctionCompilerTest {
                 sourceFileNames =
                     listOf(
                         "NestedDerivedSerializableOutputFunctions.KT",
-                        "NestedDerivedSerializable.KT"
+                        "NestedDerivedSerializable.KT",
                     ),
                 processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
@@ -471,7 +470,7 @@ class AppFunctionCompilerTest {
         compilationTestHelper.assertErrorWithMessage(
             report = report,
             expectedErrorMessage =
-                "AppFunctionSerializable properties must be one of the following types:\n"
+                "AppFunctionSerializable properties must be one of the following types:\n",
         )
     }
 
@@ -485,7 +484,7 @@ class AppFunctionCompilerTest {
         compilationTestHelper.assertErrorWithMessage(
             report = report,
             expectedErrorMessage =
-                "AppFunctionSerializable properties must be one of the following types:\n"
+                "AppFunctionSerializable properties must be one of the following types:\n",
         )
     }
 
@@ -499,7 +498,7 @@ class AppFunctionCompilerTest {
         compilationTestHelper.assertErrorWithMessage(
             report = report,
             expectedErrorMessage =
-                "AppFunctionSerializable properties must be one of the following types:\n"
+                "AppFunctionSerializable properties must be one of the following types:\n",
         )
     }
 
@@ -828,13 +827,13 @@ class AppFunctionCompilerTest {
         val report =
             compilationTestHelper.compileAll(
                 sourceFileNames = listOf("NoteSchemaDefinitions.KT"),
-                processorOptions = mapOf("appfunctions:generateMetadataFromSchema" to "true")
+                processorOptions = mapOf("appfunctions:generateMetadataFromSchema" to "true"),
             )
 
         compilationTestHelper.assertSuccessWithSourceContent(
             report = report,
             expectGeneratedSourceFileName = "${'$'}SchemaAppFunctionInventory_Impl.kt",
-            goldenFileName = "${'$'}SchemaAppFunctionInventory_Impl.KT"
+            goldenFileName = "${'$'}SchemaAppFunctionInventory_Impl.KT",
         )
     }
 
@@ -843,7 +842,7 @@ class AppFunctionCompilerTest {
         val report =
             compilationTestHelper.compileAll(
                 sourceFileNames = listOf("FunctionWithEmptySerializable.KT"),
-                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true")
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
 
         compilationTestHelper.assertSuccessWithSourceContent(

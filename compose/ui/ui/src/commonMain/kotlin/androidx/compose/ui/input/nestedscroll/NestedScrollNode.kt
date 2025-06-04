@@ -35,7 +35,7 @@ import kotlinx.coroutines.isActive
  */
 fun nestedScrollModifierNode(
     connection: NestedScrollConnection,
-    dispatcher: NestedScrollDispatcher?
+    dispatcher: NestedScrollDispatcher?,
 ): DelegatableNode {
     return NestedScrollNode(connection, dispatcher)
 }
@@ -43,7 +43,7 @@ fun nestedScrollModifierNode(
 /** NestedScroll using ModifierLocal as implementation. */
 internal class NestedScrollNode(
     var connection: NestedScrollConnection,
-    dispatcher: NestedScrollDispatcher?
+    dispatcher: NestedScrollDispatcher?,
 ) : TraversableNode, NestedScrollConnection, Modifier.Node() {
 
     // Resolved dispatcher for re-use in case of null dispatcher is passed.
@@ -99,14 +99,14 @@ internal class NestedScrollNode(
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         val selfConsumed = connection.onPostScroll(consumed, available, source)
         val parentConsumed =
             parentConnection?.onPostScroll(
                 consumed + selfConsumed,
                 available - selfConsumed,
-                source
+                source,
             ) ?: Offset.Zero
         return selfConsumed + parentConsumed
     }
@@ -183,7 +183,7 @@ internal class NestedScrollNode(
 
     internal fun updateNode(
         connection: NestedScrollConnection,
-        dispatcher: NestedScrollDispatcher?
+        dispatcher: NestedScrollDispatcher?,
     ) {
         this.connection = connection
         updateDispatcher(dispatcher)

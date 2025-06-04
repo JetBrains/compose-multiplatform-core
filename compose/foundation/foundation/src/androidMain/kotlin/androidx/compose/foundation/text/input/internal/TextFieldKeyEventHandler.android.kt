@@ -48,7 +48,7 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
         textFieldState: TransformedTextFieldState,
         textFieldSelectionState: TextFieldSelectionState,
         focusManager: FocusManager,
-        keyboardController: SoftwareKeyboardController
+        keyboardController: SoftwareKeyboardController,
     ): Boolean {
         // do not proceed if common code has consumed the event
         if (
@@ -57,7 +57,7 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
                 textFieldState = textFieldState,
                 textFieldSelectionState = textFieldSelectionState,
                 focusManager = focusManager,
-                keyboardController = keyboardController
+                keyboardController = keyboardController,
             )
         )
             return true
@@ -99,7 +99,7 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
         clipboardKeyCommandsHandler: ClipboardKeyCommandsHandler,
         editable: Boolean,
         singleLine: Boolean,
-        onSubmit: () -> Boolean
+        onSubmit: () -> Boolean,
     ): Boolean {
         if (
             event.type == KeyDown &&

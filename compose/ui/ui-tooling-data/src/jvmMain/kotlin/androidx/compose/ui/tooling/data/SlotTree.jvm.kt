@@ -76,7 +76,7 @@ data class ParameterInformation(
     val static: Boolean,
     val compared: Boolean,
     val inlineClass: String?,
-    val stable: Boolean
+    val stable: Boolean,
 )
 
 /** Source location of the call that produced the call group. */
@@ -114,7 +114,7 @@ data class SourceLocation(
      * which file is referenced by [sourceFile]. This number is -1 if there was no package hash
      * information generated such as when the file does not contain a package declaration.
      */
-    val packageHash: Int
+    val packageHash: Int,
 )
 
 /** A group that represents the invocation of a component */
@@ -128,7 +128,7 @@ class CallGroup(
     override val parameters: List<ParameterInformation>,
     data: Collection<Any?>,
     children: Collection<Group>,
-    isInline: Boolean
+    isInline: Boolean,
 ) : Group(key, name, location, identity, box, data, children, isInline)
 
 /** A group that represents an emitted node */
@@ -141,7 +141,7 @@ class NodeGroup(
     box: IntRect,
     data: Collection<Any?>,
     override val modifierInfo: List<ModifierInfo>,
-    children: Collection<Group>
+    children: Collection<Group>,
 ) : Group(key, null, null, null, box, data, children, false)
 
 @UiToolingDataApi
@@ -154,7 +154,7 @@ private object EmptyGroup :
         box = emptyBox,
         data = emptyList(),
         children = emptyList(),
-        isInline = false
+        isInline = false,
     )
 
 /** A key that has being joined together to form one key. */
@@ -194,7 +194,7 @@ private class SourceInformationContext(
     val repeatOffset: Int,
     val parameters: List<Parameter>?,
     val isCall: Boolean,
-    val isInline: Boolean
+    val isInline: Boolean,
 ) {
     private var nextLocation = 0
 
@@ -209,7 +209,7 @@ private class SourceInformationContext(
                 location.offset ?: -1,
                 location.length ?: -1,
                 sourceFile,
-                packageHash
+                packageHash,
             )
         }
         return null
@@ -228,7 +228,7 @@ private class SourceInformationContext(
                 location.offset ?: -1,
                 location.length ?: -1,
                 sourceFile ?: parentContext?.sourceFile,
-                (if (sourceFile == null) parentContext?.packageHash else packageHash) ?: -1
+                (if (sourceFile == null) parentContext?.packageHash else packageHash) ?: -1,
             )
         }
         return null
@@ -365,7 +365,7 @@ private fun parseParameters(parameters: String): List<Parameter> {
 @UiToolingDataApi
 private fun sourceInformationContextOf(
     information: String,
-    parent: SourceInformationContext? = null
+    parent: SourceInformationContext? = null,
 ): SourceInformationContext? {
     var currentResult = tokenizer.find(information)
 
@@ -405,6 +405,8 @@ private fun sourceInformationContextOf(
             if (lineNumber != null && offset != null && length != null)
                 return SourceLocationInfo(lineNumber, offset, length)
         } catch (_: ParseError) {
+            return null
+        } catch (_: NumberFormatException) {
             return null
         }
         return null
@@ -455,6 +457,8 @@ private fun sourceInformationContextOf(
                     packageHash =
                         try {
                             hashText.parseToInt(36)
+                        } catch (_: ParseError) {
+                            -1
                         } catch (_: NumberFormatException) {
                             -1
                         }
@@ -474,7 +478,7 @@ private fun sourceInformationContextOf(
         repeatOffset = repeatOffset,
         parameters = parameters,
         isCall = isCall,
-        isInline = isInline
+        isInline = isInline,
     )
 }
 
@@ -529,7 +533,7 @@ private fun CompositionGroup.getGroup(parentContext: SourceInformationContext?):
             extractParameterInfo(data, context),
             data,
             children,
-            context?.isInline == true
+            context?.isInline == true,
         )
 }
 
@@ -550,7 +554,7 @@ private fun boundsOfLayoutNode(node: LayoutInfo): IntRect {
 @UiToolingDataApi
 private class CompositionCallStack<T>(
     private val factory: (CompositionGroup, SourceContext, List<T>) -> T?,
-    private val contexts: MutableMap<String, Any?>
+    private val contexts: MutableMap<String, Any?>,
 ) : SourceContext {
     private val stack = ArrayDeque<CompositionGroup>()
     private var currentCallIndex = 0
@@ -686,7 +690,7 @@ interface SourceContext {
 @UiToolingDataApi
 fun <T> CompositionData.mapTree(
     factory: (CompositionGroup, SourceContext, List<T>) -> T?,
-    cache: ContextCache = ContextCache()
+    cache: ContextCache = ContextCache(),
 ): T? {
     val group = compositionGroups.firstOrNull() ?: return null
     val callStack = CompositionCallStack(factory, cache.contexts)
@@ -722,7 +726,7 @@ internal fun IntRect.union(other: IntRect): IntRect {
         left = min(left, other.left),
         top = min(top, other.top),
         bottom = max(bottom, other.bottom),
-        right = max(right, other.right)
+        right = max(right, other.right),
     )
 }
 
@@ -744,7 +748,7 @@ private const val recomposeScopeNameSuffix = ".RecomposeScopeImpl"
 @UiToolingDataApi
 private fun extractParameterInfo(
     data: List<Any?>,
-    context: SourceInformationContext?
+    context: SourceInformationContext?,
 ): List<ParameterInformation> {
     val recomposeScope =
         data.firstOrNull { it != null && it.javaClass.name.endsWith(recomposeScopeNameSuffix) }
@@ -775,7 +779,7 @@ private fun extractParameterInfo(
 private fun extractFromIndyLambdaFields(
     fields: List<Field>,
     block: Any,
-    metadata: List<Parameter>
+    metadata: List<Parameter>,
 ): List<ParameterInformation> {
     val sortedFields =
         fields.sortedBy { it.name.substringAfter("f$").toIntOrNull() ?: Int.MAX_VALUE }
@@ -793,7 +797,7 @@ private fun extractFromIndyLambdaFields(
 private fun extractFromLegacyFields(
     fields: List<Field>,
     block: Any,
-    metadata: List<Parameter>
+    metadata: List<Parameter>,
 ): List<ParameterInformation> {
     val blockClass = block.javaClass
     val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
@@ -816,7 +820,7 @@ private fun buildParameterInfo(
     index: Int,
     defaults: Int,
     changed: Int,
-    metadata: Parameter?
+    metadata: Parameter?,
 ): ParameterInformation {
     field.isAccessible = true
     val value = field.get(block)
@@ -836,7 +840,7 @@ private fun buildParameterInfo(
         static = static,
         compared = compared && !fromDefault,
         inlineClass = metadata?.inlineClass,
-        stable = stable
+        stable = stable,
     )
 }
 

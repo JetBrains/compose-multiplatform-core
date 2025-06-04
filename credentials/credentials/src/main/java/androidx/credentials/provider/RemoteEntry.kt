@@ -115,13 +115,13 @@ class RemoteEntry(val pendingIntent: PendingIntent) {
                 Slice.Builder(sliceBuilder)
                     .addHints(Collections.singletonList(SLICE_HINT_PENDING_INTENT))
                     .build(),
-                /*subType=*/ null
+                /*subType=*/ null,
             )
             if (remoteEntry.isAutoSelect) {
                 sliceBuilder.addInt(
                     /*true=*/ 1,
                     /*subType=*/ null,
-                    listOf(SLICE_HINT_IS_AUTO_SELECT)
+                    listOf(SLICE_HINT_IS_AUTO_SELECT),
                 )
             }
 

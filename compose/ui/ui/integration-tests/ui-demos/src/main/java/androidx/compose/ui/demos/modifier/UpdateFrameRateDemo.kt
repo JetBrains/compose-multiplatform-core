@@ -70,19 +70,19 @@ fun UpdateFrameRateDemo() {
     val animatedBox1Color by
         animateColorAsState(
             targetValue = box1Color,
-            animationSpec = tween(5000) // 5 seconds animation
+            animationSpec = tween(5000), // 5 seconds animation
         )
 
     val animatedBox2Color by
         animateColorAsState(
             targetValue = box2Color,
-            animationSpec = tween(5000) // 5 seconds animation
+            animationSpec = tween(5000), // 5 seconds animation
         )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
@@ -91,7 +91,7 @@ fun UpdateFrameRateDemo() {
                     box1FrameRate = if (box1FrameRate == 120f) 60f else 120f
                     box1Color = if (box1Color == Color.Blue) Color.Red else Color.Blue
                 },
-                modifier = Modifier.testTag("button1")
+                modifier = Modifier.testTag("button1"),
             ) {
                 Text("Box 1")
             }
@@ -101,7 +101,7 @@ fun UpdateFrameRateDemo() {
                     isBox2frameRateEnabled = if (isBox2frameRateEnabled) false else true
                     box2Color = if (box2Color == Color.Blue) Color.Red else Color.Blue
                 },
-                modifier = Modifier.testTag("button2")
+                modifier = Modifier.testTag("button2"),
             ) {
                 Text("Box 2")
             }
@@ -135,7 +135,7 @@ fun UpdateFrameRateDemo() {
             Text(
                 "frame rate: ${if (isBox2frameRateEnabled) 120f else 60f}",
                 fontSize = 30.sp,
-                color = Color.White
+                color = Color.White,
             )
         }
     }

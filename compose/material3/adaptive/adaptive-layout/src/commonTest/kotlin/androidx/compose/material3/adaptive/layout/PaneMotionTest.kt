@@ -66,11 +66,11 @@ class PaneMotionTest {
         EnterFromRight.assertTransitions(mockEnterFromRightTransition, ExitTransition.None)
         EnterFromLeftDelayed.assertTransitions(
             mockEnterFromLeftDelayedTransition,
-            ExitTransition.None
+            ExitTransition.None,
         )
         EnterFromRightDelayed.assertTransitions(
             mockEnterFromRightDelayedTransition,
-            ExitTransition.None
+            ExitTransition.None,
         )
         ExitToLeft.assertTransitions(EnterTransition.None, mockExitToLeftTransition)
         ExitToRight.assertTransitions(EnterTransition.None, mockExitToRightTransition)
@@ -80,7 +80,7 @@ class PaneMotionTest {
 
     private fun PaneMotion.assertTransitions(
         expectedEnterTransition: EnterTransition,
-        expectedExitTransition: ExitTransition
+        expectedExitTransition: ExitTransition,
     ) {
         mockPaneScaffoldMotionDataProvider.updateMotions(this, NoMotion, NoMotion)
         // Can't compare equality directly because of lambda. Check string representation instead
@@ -105,7 +105,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromRight,
             EnterFromRight,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromLeftOffset).isEqualTo(0)
     }
@@ -115,7 +115,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             EnterFromLeft,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromLeftOffset)
             .isEqualTo(-mockPaneScaffoldMotionDataProvider[2].targetLeft)
@@ -126,7 +126,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             AnimateBounds,
-            AnimateBounds
+            AnimateBounds,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromLeftOffset)
             .isEqualTo(-mockPaneScaffoldMotionDataProvider[1].targetLeft)
@@ -144,7 +144,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             EnterFromLeftDelayed,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromLeftOffset)
             .isEqualTo(-mockPaneScaffoldMotionDataProvider[2].targetLeft)
@@ -155,7 +155,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             EnterFromLeft,
-            EnterFromLeft
+            EnterFromLeft,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromRightOffset).isEqualTo(0)
     }
@@ -165,7 +165,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             EnterFromRight,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromRightOffset)
             .isEqualTo(
@@ -179,7 +179,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             AnimateBounds,
             AnimateBounds,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromRightOffset)
             .isEqualTo(
@@ -203,7 +203,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromLeft,
             EnterFromRightDelayed,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideInFromRightOffset)
             .isEqualTo(
@@ -217,7 +217,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromRight,
             EnterFromRight,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideOutToLeftOffset).isEqualTo(0)
     }
@@ -248,7 +248,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             EnterFromRight,
             EnterFromRight,
-            EnterFromRight
+            EnterFromRight,
         )
         assertThat(mockPaneScaffoldMotionDataProvider.slideOutToRightOffset).isEqualTo(0)
     }
@@ -288,7 +288,7 @@ class PaneMotionTest {
         mockPaneScaffoldMotionDataProvider.updateMotions(
             ExitToLeft,
             EnterFromRight,
-            EnterWithExpand
+            EnterWithExpand,
         )
         assertThat(
                 mockPaneScaffoldMotionDataProvider.getHiddenPaneCurrentLeft(
@@ -330,7 +330,7 @@ private val MockThreePaneOrder =
     ThreePaneScaffoldHorizontalOrder(
         ThreePaneScaffoldRole.Primary,
         ThreePaneScaffoldRole.Secondary,
-        ThreePaneScaffoldRole.Tertiary
+        ThreePaneScaffoldRole.Tertiary,
     )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -459,11 +459,11 @@ private val mockPaneScaffoldMotionDataProvider =
 private fun ThreePaneScaffoldMotionDataProvider.updateMotions(
     primaryPaneMotion: PaneMotion,
     secondaryPaneMotion: PaneMotion,
-    tertiaryPaneMotion: PaneMotion
+    tertiaryPaneMotion: PaneMotion,
 ) {
     update(
         ThreePaneMotion(primaryPaneMotion, secondaryPaneMotion, tertiaryPaneMotion),
-        MockThreePaneOrder
+        MockThreePaneOrder,
     )
 }
 

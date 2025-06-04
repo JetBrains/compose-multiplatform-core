@@ -93,7 +93,6 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * [unbindAll].
      */
     @ExperimentalSessionConfig
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun isBound(sessionConfig: SessionConfig): Boolean {
         return lifecycleCameraProvider.isBound(sessionConfig)
     }
@@ -133,7 +132,6 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * @throws UnsupportedOperationException If called in concurrent mode.
      */
     @ExperimentalSessionConfig
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun unbind(sessionConfig: SessionConfig) {
         return lifecycleCameraProvider.unbind(sessionConfig)
     }
@@ -208,7 +206,7 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        vararg useCases: UseCase?
+        vararg useCases: UseCase?,
     ): Camera {
         return lifecycleCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, *useCases)
     }
@@ -229,7 +227,7 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        useCaseGroup: UseCaseGroup
+        useCaseGroup: UseCaseGroup,
     ): Camera {
         return lifecycleCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
     }
@@ -283,16 +281,15 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
      */
     @ExperimentalSessionConfig
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        sessionConfig: SessionConfig
+        sessionConfig: SessionConfig,
     ): Camera {
         return lifecycleCameraProvider.bindToLifecycle(
             lifecycleOwner,
             cameraSelector,
-            sessionConfig
+            sessionConfig,
         )
     }
 
@@ -451,7 +448,7 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
             return Futures.transform(
                 sAppInstance.initAsync(context),
                 { sAppInstance },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
 

@@ -32,7 +32,7 @@ import androidx.annotation.RestrictTo
 public class Key
 internal constructor(
     public val name: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val type: Type
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val type: Type,
 ) {
 
     public companion object {
@@ -126,5 +126,5 @@ public enum class Type {
     BOOLEAN,
     STRING,
     STRING_SET,
-    BYTE_ARRAY
+    BYTE_ARRAY,
 }

@@ -88,7 +88,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
                 session.platformAdapter,
                 session.scene.entityManager,
                 model,
-                pose
+                pose,
             )
     }
 

@@ -45,14 +45,14 @@ suspend fun configureAndCreateInstances(
     executor1: Executor,
     executor2: Executor,
     useCase1: UseCase,
-    useCase2: UseCase
+    useCase2: UseCase,
 ) {
     val cameraProvider1 =
         LifecycleCameraProvider.createInstance(
             context1,
             CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
                 .setCameraExecutor(executor1)
-                .build()
+                .build(),
         )
     cameraProvider1.bindToLifecycle(lifecycleOwner1, CameraSelector.DEFAULT_FRONT_CAMERA, useCase1)
 
@@ -63,7 +63,7 @@ suspend fun configureAndCreateInstances(
             context2,
             CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
                 .setCameraExecutor(executor2)
-                .build()
+                .build(),
         )
     cameraProvider2.bindToLifecycle(lifecycleOwner2, CameraSelector.DEFAULT_BACK_CAMERA, useCase2)
 }
@@ -75,7 +75,7 @@ fun bindSessionConfigToLifecycle(
     lifecycleOwner: LifecycleOwner,
     previewView: PreviewView,
     effect1: CameraEffect,
-    effect2: CameraEffect
+    effect2: CameraEffect,
 ) {
     val preview =
         Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
@@ -84,13 +84,13 @@ fun bindSessionConfigToLifecycle(
         SessionConfig(
             useCases = listOf(preview, imageCapture),
             viewPort = previewView.getViewPort(preview.getTargetRotation()),
-            effects = listOf(effect1)
+            effects = listOf(effect1),
         )
     // Starts the camera with the given effect and viewPort when the lifecycleOwner is started.
     cameraProvider.bindToLifecycle(
         lifecycleOwner,
         CameraSelector.DEFAULT_BACK_CAMERA,
-        sessionConfig
+        sessionConfig,
     )
 
     // To apply a different effect, unbind the previous SessionConfig and bind the new SessionConfig
@@ -99,13 +99,13 @@ fun bindSessionConfigToLifecycle(
         SessionConfig(
             useCases = listOf(preview, imageCapture),
             viewPort = previewView.getViewPort(preview.getTargetRotation()),
-            effects = listOf(effect2)
+            effects = listOf(effect2),
         )
     // Make sures to unbind the previous sessionConfig before binding the new one
     cameraProvider.unbind(sessionConfig)
     cameraProvider.bindToLifecycle(
         lifecycleOwner,
         CameraSelector.DEFAULT_BACK_CAMERA,
-        sessionConfigNewEffect
+        sessionConfigNewEffect,
     )
 }

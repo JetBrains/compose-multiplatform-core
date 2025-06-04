@@ -42,7 +42,7 @@ abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.N
         database =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
                 .apply {
                     if (useDriver == UseDriver.ANDROID) {
@@ -76,6 +76,6 @@ abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.N
     enum class UseDriver {
         ANDROID,
         BUNDLED,
-        NONE
+        NONE,
     }
 }

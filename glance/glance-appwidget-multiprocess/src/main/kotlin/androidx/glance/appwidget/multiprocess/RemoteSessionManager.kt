@@ -68,7 +68,7 @@ internal class RemoteAppWidgetSession(
         lambdaReceiver,
         sizeMode,
         shouldPublish,
-        initialGlanceState
+        initialGlanceState,
     ),
     RemoteSession
 
@@ -84,7 +84,7 @@ internal object RemoteSessionManager :
                 RemoteListenableWorker.ARGUMENT_CLASS_NAME to className,
                 RemoteListenableWorker.ARGUMENT_PACKAGE_NAME to packageName,
             )
-        }
+        },
     )
 
 private object RemoteWorkManagerProxy : WorkManagerProxy {
@@ -101,7 +101,7 @@ private object RemoteWorkManagerProxy : WorkManagerProxy {
 
     override suspend fun workerIsRunningOrEnqueued(
         context: Context,
-        uniqueWorkName: String
+        uniqueWorkName: String,
     ): Boolean =
         RemoteWorkManager.getInstance(context)
             .getWorkInfos(WorkQuery.Builder.fromUniqueWorkNames(listOf(uniqueWorkName)).build())
@@ -112,7 +112,7 @@ private object RemoteWorkManagerProxy : WorkManagerProxy {
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class RemoteSessionWorker(
     private val context: Context,
-    private val parameters: WorkerParameters
+    private val parameters: WorkerParameters,
 ) : RemoteCoroutineWorker(context, parameters) {
     override suspend fun doRemoteWork(): Result =
         SessionWorker(context, parameters, RemoteSessionManager).doWork()

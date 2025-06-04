@@ -16,15 +16,13 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.Plane as RuntimePlane
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
-/** Test-only implementation of [Plane] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** Test-only implementation of [RuntimePlane] */
 public class FakeRuntimePlane(
     override val type: RuntimePlane.Type = RuntimePlane.Type.HORIZONTAL_UPWARD_FACING,
     override val label: RuntimePlane.Label = RuntimePlane.Label.FLOOR,
@@ -33,6 +31,7 @@ public class FakeRuntimePlane(
     override var extents: Vector2 = Vector2.Zero,
     override var vertices: List<Vector2> = emptyList(),
     override var subsumedBy: RuntimePlane? = null,
+    /** The anchors that are attached to this plane. */
     public val anchors: MutableCollection<RuntimeAnchor> = mutableListOf(),
 ) : RuntimePlane, AnchorHolder {
 

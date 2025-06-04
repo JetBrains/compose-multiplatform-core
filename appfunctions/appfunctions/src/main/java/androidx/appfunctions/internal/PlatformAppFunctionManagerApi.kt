@@ -60,14 +60,14 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                     override fun onError(error: Exception) {
                         cont.resumeWithException(error)
                     }
-                }
+                },
             )
         }
     }
 
     override suspend fun setAppFunctionEnabled(
         functionId: String,
-        @AppFunctionManagerCompat.EnabledState newEnabledState: Int
+        @AppFunctionManagerCompat.EnabledState newEnabledState: Int,
     ) {
         val platformExtensionEnabledState = convertToPlatformEnabledState(newEnabledState)
         return suspendCancellableCoroutine { cont ->
@@ -83,7 +83,7 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                     override fun onError(error: Exception) {
                         cont.resumeWithException(error)
                     }
-                }
+                },
             )
         }
     }
@@ -101,7 +101,7 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                 object :
                     OutcomeReceiver<
                         android.app.appfunctions.ExecuteAppFunctionResponse,
-                        android.app.appfunctions.AppFunctionException
+                        android.app.appfunctions.AppFunctionException,
                     > {
                     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
                     override fun onResult(
@@ -117,7 +117,7 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                             )
                         )
                     }
-                }
+                },
             )
         }
     }

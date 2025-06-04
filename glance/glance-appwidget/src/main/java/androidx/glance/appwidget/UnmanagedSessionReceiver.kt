@@ -52,7 +52,7 @@ public open class UnmanagedSessionReceiver : BroadcastReceiver() {
                 ?: Log.e(
                     GlanceAppWidgetTag,
                     "A lambda created by an unmanaged glance session cannot be serviced" +
-                        "because that session is no longer running."
+                        "because that session is no longer running.",
                 )
         }
     }
@@ -63,7 +63,7 @@ public open class UnmanagedSessionReceiver : BroadcastReceiver() {
 
         private class Registration(
             val session: AppWidgetSession,
-            val coroutine: CancellableContinuation<Nothing>
+            val coroutine: CancellableContinuation<Nothing>,
         )
 
         /**

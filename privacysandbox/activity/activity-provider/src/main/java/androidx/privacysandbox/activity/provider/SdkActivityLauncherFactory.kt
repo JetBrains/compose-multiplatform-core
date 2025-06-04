@@ -64,7 +64,7 @@ object SdkActivityLauncherFactory {
                         override fun onLaunchError(message: String?) {
                             it.resumeWithException(RuntimeException(message))
                         }
-                    }
+                    },
                 )
             }
     }

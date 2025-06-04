@@ -43,7 +43,7 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 @OptIn(
     ExperimentalMaterial3ComponentOverrideApi::class,
     ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class,
 )
 @Composable
 public fun EnableXrComponentOverrides(

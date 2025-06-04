@@ -17,7 +17,6 @@
 package androidx.camera.core.impl;
 
 import android.content.Context;
-import android.util.Pair;
 import android.util.Size;
 
 import androidx.camera.core.InitializationException;
@@ -83,20 +82,26 @@ public interface CameraDeviceSurfaceManager {
      * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
      * @param hasVideoCapture                    whether the use cases has video capture.
      * @param allowFeatureCombinationResolutions whether to allow feature combination resolutions.
-     * @return map of suggested stream specifications for given use cases
+     * @param findMaxSupportedFrameRate          if {@code true}, the maximum supported frame
+     *                                           rate will be calculated and returned in
+     *                              {@link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}.
+     *                                           If {@code false}, the value of
+     *                                @link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}
+     *                                           is undetermined.
+     * @return a {@link SurfaceStreamSpecQueryResult}.
      * @throws IllegalStateException    if not initialized
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
      *                                  there isn't a supported combination of surfaces
      *                                  available, or if the {@code cameraId}
      *                                  is not a valid id.
      */
-    @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
-            getSuggestedStreamSpecs(
+    @NonNull SurfaceStreamSpecQueryResult getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
             boolean hasVideoCapture,
-            boolean allowFeatureCombinationResolutions);
+            boolean allowFeatureCombinationResolutions,
+            boolean findMaxSupportedFrameRate);
 }

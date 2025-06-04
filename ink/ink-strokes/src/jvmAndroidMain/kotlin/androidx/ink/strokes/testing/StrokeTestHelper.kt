@@ -44,7 +44,7 @@ public fun buildStrokeInputBatchFromPoints(
                     x = points[i],
                     y = points[i + 1],
                     elapsedTimeMillis = time++,
-                    toolType = toolType
+                    toolType = toolType,
                 )
             }
         )

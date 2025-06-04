@@ -49,7 +49,7 @@ class AppFunctionManagerCompatUnitTest {
                 context,
                 fakeTranslateSelector,
                 fakeAppFunctionReader,
-                fakeAppFunctionApi
+                fakeAppFunctionApi,
             )
     }
 
@@ -75,7 +75,7 @@ class AppFunctionManagerCompatUnitTest {
         fakeAppFunctionReader.addAppFunctionMetadata(
             functionId,
             packageName,
-            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1)
+            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)
         fakeAppFunctionApi.executeAppFunctionResponse =
@@ -99,7 +99,7 @@ class AppFunctionManagerCompatUnitTest {
         fakeAppFunctionReader.addAppFunctionMetadata(
             functionId,
             packageName,
-            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2)
+            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2),
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)
         fakeAppFunctionApi.executeAppFunctionResponse =

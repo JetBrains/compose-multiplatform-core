@@ -59,9 +59,7 @@ internal val LayoutElement.contentDescription: StringProp?
 internal val LayoutElement.tag: ByteArray?
     get() = modifiers?.metadata?.tagData
 
-internal fun LayoutElement.getText(
-    injectedData: DynamicDataMap? = null,
-): String? {
+internal fun LayoutElement.getText(injectedData: DynamicDataMap? = null): String? {
     val dynamicValue = (this as? Text)?.text?.dynamicValue
     val staticValue = (this as? Text)?.text?.value
     // Falls back to  use the static text when the dynamic data evaluation fails due to lack of

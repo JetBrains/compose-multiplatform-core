@@ -28,7 +28,7 @@ import androidx.compose.runtime.Updater
 @Composable
 public inline fun <T : Emittable> GlanceNode(
     noinline factory: () -> T,
-    update: @DisallowComposableCalls Updater<T>.() -> Unit
+    update: @DisallowComposableCalls Updater<T>.() -> Unit,
 ) {
     ComposeNode<T, Applier>(factory, update)
 }

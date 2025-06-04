@@ -39,7 +39,7 @@ public class NavigationEvent(
     /** Indicates which edge the swipe starts from. */
     public val swipeEdge: @SwipeEdge Int,
     /** Frame time of the navigation event. */
-    public val frameTimeMillis: Long = 0
+    public val frameTimeMillis: Long = 0,
 ) {
 
     /**  */

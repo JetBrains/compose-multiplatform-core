@@ -53,7 +53,7 @@ private const val NoActiveChild = "ActiveParent must have a focusedChild"
 internal fun FocusTargetNode.twoDimensionalFocusSearch(
     direction: FocusDirection,
     previouslyFocusedRect: Rect?,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean? {
     when (focusState) {
         Inactive ->
@@ -78,7 +78,7 @@ internal fun FocusTargetNode.twoDimensionalFocusSearch(
                         focusedChild.twoDimensionalFocusSearch(
                             direction,
                             previouslyFocusedRect,
-                            onFound
+                            onFound,
                         )
                     if (found != false) return found
 
@@ -86,7 +86,7 @@ internal fun FocusTargetNode.twoDimensionalFocusSearch(
                     return generateAndSearchChildren(
                         previouslyFocusedRect ?: focusedChild.activeNode().focusRect(),
                         direction,
-                        onFound
+                        onFound,
                     )
                 }
                 // Search for the next eligible sibling.
@@ -95,7 +95,7 @@ internal fun FocusTargetNode.twoDimensionalFocusSearch(
                     return generateAndSearchChildren(
                         previouslyFocusedRect ?: focusedChild.focusRect(),
                         direction,
-                        onFound
+                        onFound,
                     )
                 Inactive -> error(NoActiveChild)
             }
@@ -121,7 +121,7 @@ internal fun FocusTargetNode.twoDimensionalFocusSearch(
  */
 internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
 
     val focusableChildren = MutableVector<FocusTargetNode>()
@@ -162,7 +162,7 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
 private fun FocusTargetNode.generateAndSearchChildren(
     focusedItem: Rect,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
     // Search among the currently available children.
     if (searchChildren(focusedItem, direction, onFound)) {
@@ -194,7 +194,7 @@ private fun FocusTargetNode.generateAndSearchChildren(
 private fun FocusTargetNode.searchChildren(
     focusedItem: Rect,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean
+    onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
     val children =
         MutableVector<FocusTargetNode>().apply {
@@ -246,7 +246,7 @@ private fun DelegatableNode.collectAccessibleChildren(
 @Suppress("ModifierFactoryExtensionFunction", "ModifierFactoryReturnType")
 private fun MutableVector<FocusTargetNode>.findBestCandidate(
     focusRect: Rect,
-    direction: FocusDirection
+    direction: FocusDirection,
 ): FocusTargetNode? {
     // Pick an impossible rectangle as the initial best candidate Rect.
     var bestCandidate =
@@ -278,7 +278,7 @@ internal fun isBetterCandidate(
     proposedCandidate: Rect,
     currentCandidate: Rect,
     focusedRect: Rect,
-    direction: FocusDirection
+    direction: FocusDirection,
 ): Boolean {
 
     // Is this Rect a candidate for the next focus given the direction? This checks whether the

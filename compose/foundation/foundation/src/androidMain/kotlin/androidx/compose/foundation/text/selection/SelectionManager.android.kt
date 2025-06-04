@@ -66,15 +66,15 @@ internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modi
                             }
                     },
                     useTextDefault = true,
-                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
-            }
+            },
         )
     }
 }
 
 internal fun SelectionManager.contextMenuBuilder(
-    state: ContextMenuState,
+    state: ContextMenuState
 ): ContextMenuScope.() -> Unit = {
     fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
         TextItem(state, label, enabled, operation)
@@ -87,13 +87,13 @@ internal fun SelectionManager.contextMenuBuilder(
 }
 
 internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
-    selectionManager: SelectionManager,
+    selectionManager: SelectionManager
 ): Modifier = addTextContextMenuComponentsWithResources { resources ->
     fun TextContextMenuBuilderScope.selectionContainerItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         textItem(resources, item, enabled) {
             onClick()

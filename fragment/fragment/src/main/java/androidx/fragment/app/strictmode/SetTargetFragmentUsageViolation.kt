@@ -24,10 +24,10 @@ internal constructor(
     /** Gets the target [Fragment] that was being set in the call causing the Violation. */
     val targetFragment: Fragment,
     /** Gets the request code that was passed in the call causing the Violation. */
-    val requestCode: Int
+    val requestCode: Int,
 ) :
     TargetFragmentUsageViolation(
         fragment,
         "Attempting to set target fragment $targetFragment with request code " +
-            "$requestCode for fragment $fragment"
+            "$requestCode for fragment $fragment",
     )

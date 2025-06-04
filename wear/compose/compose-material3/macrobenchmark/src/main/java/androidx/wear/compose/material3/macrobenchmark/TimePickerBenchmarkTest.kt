@@ -32,7 +32,7 @@ class TimePickerBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = TimePickerBenchmark,
-        actionSuffix = "TIME_PICKER_ACTIVITY"
+        actionSuffix = "TIME_PICKER_ACTIVITY",
     )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -42,5 +42,5 @@ class TimePickerScrollMinutesBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = TimePickerScrollMinutesBenchmark,
-        actionSuffix = "TIME_PICKER_SCROLL_MINUTES_ACTIVITY"
+        actionSuffix = "TIME_PICKER_SCROLL_MINUTES_ACTIVITY",
     )

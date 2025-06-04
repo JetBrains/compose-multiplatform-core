@@ -37,8 +37,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
  * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]
  */
-// TODO(grantapher-cm-api-publicize) Make interface public
-internal interface TextContextMenuProvider {
+interface TextContextMenuProvider {
     /**
      * Shows the text context menu.
      *
@@ -51,17 +50,13 @@ internal interface TextContextMenuProvider {
 }
 
 /** Provide a [TextContextMenuProvider] to be used for the text context menu dropdown. */
-// TODO(grantapher-cm-api-publicize) Make val public
-internal val LocalTextContextMenuDropdownProvider:
-    ProvidableCompositionLocal<TextContextMenuProvider?> =
+val LocalTextContextMenuDropdownProvider: ProvidableCompositionLocal<TextContextMenuProvider?> =
     compositionLocalOf {
         null
     }
 
 /** Provide a [TextContextMenuProvider] to be used for the text context menu toolbar. */
-// TODO(grantapher-cm-api-publicize) Make val public
-internal val LocalTextContextMenuToolbarProvider:
-    ProvidableCompositionLocal<TextContextMenuProvider?> =
+val LocalTextContextMenuToolbarProvider: ProvidableCompositionLocal<TextContextMenuProvider?> =
     compositionLocalOf {
         null
     }
@@ -71,8 +66,7 @@ internal val LocalTextContextMenuToolbarProvider:
  *
  * All functions on this interface are expected to be snapshot-aware.
  */
-// TODO(grantapher-cm-api-publicize) Make interface public
-internal interface TextContextMenuDataProvider {
+interface TextContextMenuDataProvider {
     /**
      * Provides the position to place the context menu around. The position should be relative to
      * the provided [destinationCoordinates].

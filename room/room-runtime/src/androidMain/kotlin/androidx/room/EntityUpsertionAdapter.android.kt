@@ -46,7 +46,7 @@ private const val ErrorMsg = "unique"
 @Deprecated("No longer used by generated code.", ReplaceWith("EntityUpsertAdapter"))
 public class EntityUpsertionAdapter<T>(
     @Suppress("DEPRECATION") private val insertionAdapter: EntityInsertionAdapter<T>,
-    @Suppress("DEPRECATION") private val updateAdapter: EntityDeletionOrUpdateAdapter<T>
+    @Suppress("DEPRECATION") private val updateAdapter: EntityDeletionOrUpdateAdapter<T>,
 ) {
     /**
      * Inserts the entity into the database. If a constraint exception is thrown i.e. a primary key

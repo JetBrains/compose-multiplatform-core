@@ -34,6 +34,8 @@ import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -103,7 +105,10 @@ class MovableComponentTest {
             .thenReturn(mockAnchorPlacement)
 
         val anchorPlacement =
-            AnchorPlacement.createForPlanes(setOf(PlaneType.HORIZONTAL), setOf(PlaneSemantic.WALL))
+            AnchorPlacement.createForPlanes(
+                setOf(PlaneOrientation.HORIZONTAL),
+                setOf(PlaneSemanticType.WALL),
+            )
 
         val movableComponent =
             MovableComponent.create(
@@ -176,7 +181,7 @@ class MovableComponentTest {
         val movableComponent = MovableComponent.create(session)
         assertThat(entity.addComponent(movableComponent)).isTrue()
 
-        val testSize = Dimensions(2f, 2f, 0f)
+        val testSize = FloatSize3d(2f, 2f, 0f)
         movableComponent.size = testSize
 
         assertThat(movableComponent.size).isEqualTo(testSize)
@@ -382,7 +387,7 @@ class MovableComponentTest {
             )
             .thenReturn(mockRtPanelEntity)
         whenever(mockRtPanelEntity.addComponent(any())).thenReturn(true)
-        val panelEntity = PanelEntity.create(session, view, PixelDimensions(720, 480), "test")
+        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
         assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
         verify(mockRuntime).createMovableComponent(any(), any(), any(), any())

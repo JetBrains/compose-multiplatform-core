@@ -245,7 +245,7 @@ public class StreamUseCaseTest {
                 /*isUltraHdrOn=*/ false,
                 /*isHighSpeedOn=*/ false,
                 /*requiresFeatureComboQuery=*/ false,
-                /*targetFpsRange=*/ null);
+                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -259,7 +259,7 @@ public class StreamUseCaseTest {
                 /*isUltraHdrOn=*/ false,
                 /*isHighSpeedOn=*/ false,
                 /*requiresFeatureComboQuery=*/ false,
-                /*targetFpsRange=*/ null);
+                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -524,7 +524,7 @@ public class StreamUseCaseTest {
                         DynamicRange.SDR,
                         captureTypes,
                         /*implementationOptions=*/null,
-                        /*targetFrameRate=*/null,
+                        FRAME_RATE_RANGE_UNSPECIFIED,
                         FRAME_RATE_RANGE_UNSPECIFIED));
 
         assertTrue(StreamUseCaseUtil.areCaptureTypesEligible(surfaceConfigAttachedSurfaceInfoMap,
@@ -555,7 +555,7 @@ public class StreamUseCaseTest {
                         DynamicRange.SDR,
                         captureTypes,
                         /*implementationOptions=*/null,
-                        /*targetFrameRate=*/null,
+                        FRAME_RATE_RANGE_UNSPECIFIED,
                         FRAME_RATE_RANGE_UNSPECIFIED));
 
         assertFalse(StreamUseCaseUtil.areCaptureTypesEligible(surfaceConfigAttachedSurfaceInfoMap,
@@ -674,7 +674,7 @@ public class StreamUseCaseTest {
                 DynamicRange.SDR,
                 captureTypes,
                 StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
-                /*targetFrameRate=*/null,
+                FRAME_RATE_RANGE_UNSPECIFIED,
                 FRAME_RATE_RANGE_UNSPECIFIED);
     }
 

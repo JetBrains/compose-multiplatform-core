@@ -26,7 +26,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.uiautomator.internal.TimeoutClock
 import androidx.test.uiautomator.internal.displayManager
-import androidx.test.uiautomator.internal.findViews
+import androidx.test.uiautomator.internal.findElements
 import androidx.test.uiautomator.internal.keyCharacterMap
 import androidx.test.uiautomator.internal.notNull
 import androidx.test.uiautomator.internal.takeViewNodeTree
@@ -74,7 +74,7 @@ public fun UiDevice.waitForRootInActiveWindow(
 
         // If this was a timeout, throw exception
         if (clock.isTimeoutOrSleep()) {
-            throw IllegalStateException("Cannot acquire root view in active window.")
+            throw IllegalStateException("Cannot acquire root element in active window.")
         }
 
         // Otherwise try again to retrieve node and window
@@ -96,10 +96,10 @@ public fun UiDevice.waitForRootInActiveWindow(
  *   considered stable.
  * @param stablePollIntervalMs specifies how often the ui should be checked for changes.
  * @param requireStableScreenshot specifies if also the bitmap of the node should not change over
- *   the specified [stableIntervalMs]. Note that this won't work with views that change constantly,
- *   like a video player.
- * @return a [StableResult] containing the latest acquired view hierarchy and screenshot, and a flag
- *   indicating if the node was stable before timeout.
+ *   the specified [stableIntervalMs]. Note that this won't work with elements that change
+ *   constantly, like a video player.
+ * @return a [StableResult] containing the latest acquired element hierarchy and screenshot, and a
+ *   flag indicating if the node was stable before timeout.
  */
 @JvmOverloads
 public fun UiDevice.waitForStableInActiveWindow(
@@ -115,7 +115,7 @@ public fun UiDevice.waitForStableInActiveWindow(
         bitmapProvider = {
             if (requireStableScreenshot) waitForRootInActiveWindow().takeScreenshot() else null
         },
-        rootViewNodeProvider = {
+        rootElementNodeProvider = {
             val node = waitForRootInActiveWindow()
             val displayRect =
                 Rect().apply {
@@ -125,7 +125,7 @@ public fun UiDevice.waitForStableInActiveWindow(
                     @Suppress("DEPRECATION") displayManager.getDisplay(displayId).getRectSize(this)
                 }
             takeViewNodeTree(root = node, displayRect = displayRect)
-        }
+        },
     )
 
 /**
@@ -164,32 +164,32 @@ public fun UiDevice.pressDelete(count: Int) {
 public fun UiDevice.waitForAppToBeVisible(
     appPackageName: String,
     timeoutMs: Long = 10000L,
-): Boolean = onViewOrNull(timeoutMs = timeoutMs) { packageName == appPackageName } != null
+): Boolean = onElementOrNull(timeoutMs = timeoutMs) { packageName == appPackageName } != null
 
 /**
  * Performs a DFS on the accessibility tree starting from the root node in the active window and
  * returns the first node matching the given [block]. The node is returned as an [UiObject2] that
- * allows interacting with it. If the requested node doesn't exist, a [ViewNotFoundException] is
+ * allows interacting with it. If the requested node doesn't exist, a [ElementNotFoundException] is
  * thrown. Internally it works searching periodically every [pollIntervalMs].
  *
  * Example:
  * ```kotlin
- * uiDevice.onView { textAsString == "Search" }.click()
+ * uiDevice.onElement { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiDevice.onView(
+public fun UiDevice.onElement(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2 =
-    onViewOrNull(timeoutMs = timeoutMs, pollIntervalMs = pollIntervalMs, block = block)
-        .notNull(ViewNotFoundException())
+    onElementOrNull(timeoutMs = timeoutMs, pollIntervalMs = pollIntervalMs, block = block)
+        .notNull(ElementNotFoundException())
 
 /**
  * Performs a DFS on the accessibility tree starting from the root node in the active window and
@@ -199,26 +199,26 @@ public fun UiDevice.onView(
  *
  * Example:
  * ```kotlin
- * uiDevice.onView { textAsString == "Search" }.click()
+ * uiDevice.onElement { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition or null.
  */
 @JvmOverloads
-public fun UiDevice.onViewOrNull(
+public fun UiDevice.onElementOrNull(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2? =
-    findViews(
+    findElements(
             shouldStop = { it.size == 1 },
             block = block,
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
-            rootNodeBlock = { windowRoots }
+            rootNodeBlock = { windowRoots },
         )
         .firstOrNull()
         ?.toUiObject2()
@@ -231,28 +231,28 @@ public fun UiDevice.onViewOrNull(
  *
  * Example:
  * ```kotlin
- * node.onViews { className == Button::class.java.name }
+ * node.onElements { className == Button::class.java.name }
  * ```
  *
  * If multiple nodes are expected but they appear at different times, it's recommended to call
  * [androidx.test.uiautomator.waitForStable] before, to ensure any operation is complete.
  *
- * @param timeoutMs a timeout to find the view that satisfies the given condition.
+ * @param timeoutMs a timeout to find the element that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a list of [UiObject2] from nodes that matches the given [block] condition.
  */
 @JvmOverloads
-public fun UiDevice.onViews(
+public fun UiDevice.onElements(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): List<UiObject2> =
-    findViews(
+    findElements(
             shouldStop = { false },
             block = block,
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
-            rootNodeBlock = { windowRoots }
+            rootNodeBlock = { windowRoots },
         )
         .mapNotNull { it.toUiObject2() }

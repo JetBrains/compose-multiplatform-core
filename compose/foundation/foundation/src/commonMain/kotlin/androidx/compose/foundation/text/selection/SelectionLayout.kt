@@ -236,7 +236,7 @@ private class MultiSelectionLayout(
                     selection,
                     firstInfo,
                     minAnchor.offset,
-                    firstInfo.textLength
+                    firstInfo.textLength,
                 )
 
                 forEachMiddleInfo { info ->
@@ -251,7 +251,7 @@ private class MultiSelectionLayout(
         selection: Selection,
         info: SelectableInfo,
         minOffset: Int,
-        maxOffset: Int
+        maxOffset: Int,
     ) {
         val subSelection =
             if (selection.handlesCrossed) {
@@ -301,7 +301,7 @@ private class MultiSelectionLayout(
                     CrossStatus.COLLAPSED -> true
                     CrossStatus.NOT_CROSSED -> isStartSlot
                     CrossStatus.CROSSED -> !isStartSlot
-                }
+                },
         )
 
     private fun slotToIndex(slot: Int, isMinimumSlot: Boolean): Int {
@@ -430,15 +430,15 @@ internal fun getTextFieldSelectionLayout(
                         Selection.AnchorInfo(
                             layoutResult.getTextDirectionForOffset(previousSelectionRange.start),
                             previousSelectionRange.start,
-                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID
+                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID,
                         ),
                     end =
                         Selection.AnchorInfo(
                             layoutResult.getTextDirectionForOffset(previousSelectionRange.end),
                             previousSelectionRange.end,
-                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID
+                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID,
                         ),
-                    handlesCrossed = previousSelectionRange.reversed
+                    handlesCrossed = previousSelectionRange.reversed,
                 ),
         info =
             SelectableInfo(
@@ -447,7 +447,7 @@ internal fun getTextFieldSelectionLayout(
                 rawStartHandleOffset = rawStartHandleOffset,
                 rawEndHandleOffset = rawEndHandleOffset,
                 textLayoutResult = layoutResult,
-                rawPreviousHandleOffset = rawPreviousHandleOffset
+                rawPreviousHandleOffset = rawPreviousHandleOffset,
             ),
     )
 
@@ -460,7 +460,7 @@ internal enum class CrossStatus {
     NOT_CROSSED,
 
     /** The start is the same as the end. */
-    COLLAPSED
+    COLLAPSED,
 }
 
 /** Slot has not been assigned yet */
@@ -483,7 +483,7 @@ internal class SelectionLayoutBuilder(
     val containerCoordinates: LayoutCoordinates,
     val isStartHandle: Boolean,
     val previousSelection: Selection?,
-    val selectableIdOrderingComparator: Comparator<Long>
+    val selectableIdOrderingComparator: Comparator<Long>,
 ) {
     private val selectableIdToInfoListIndex: MutableLongIntMap = mutableLongIntMapOf()
     private val infoList: MutableList<SelectableInfo> = mutableListOf()
@@ -607,7 +607,7 @@ internal enum class Direction {
     ON,
 
     /** The cursor/press is after the selectable */
-    AFTER
+    AFTER,
 }
 
 /**
@@ -676,7 +676,7 @@ internal class SelectableInfo(
         Selection.AnchorInfo(
             direction = textLayoutResult.getTextDirectionForOffset(offset),
             offset = offset,
-            selectableId = selectableId
+            selectableId = selectableId,
         )
 
     /**
@@ -687,7 +687,7 @@ internal class SelectableInfo(
         Selection(
             start = anchorForOffset(start),
             end = anchorForOffset(end),
-            handlesCrossed = start > end
+            handlesCrossed = start > end,
         )
 
     override fun toString(): String =

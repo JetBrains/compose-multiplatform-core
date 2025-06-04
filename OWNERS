@@ -7,22 +7,20 @@ clarabayarri@google.com
 danysantiago@google.com
 fsladkey@google.com
 ilake@google.com
-ivychen@google.com
 jellefresen@google.com
 juliamcclellan@google.com
 lpf@google.com
 mount@google.com
 natnaelbelay@google.com
 omarismail@google.com
-owengray@google.com
 radhanakade@google.com
 seanmcq@google.com
 tiem@google.com
-yboyar@google.com
+sindhujasubr@google.com
 
 # docs
 per-file docs-tip-of-tree/build.gradle = set noparent
-per-file docs-tip-of-tree/build.gradle = owengray@google.com, asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, natnaelbelay@google.com
+per-file docs-tip-of-tree/build.gradle = asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, natnaelbelay@google.com, tiem@google.com
 
 # settings.gradle
 per-file *settings.gradle = set noparent

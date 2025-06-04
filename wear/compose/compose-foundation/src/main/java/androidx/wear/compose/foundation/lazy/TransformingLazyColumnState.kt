@@ -59,7 +59,7 @@ import kotlinx.coroutines.launch
 @Composable
 public fun rememberTransformingLazyColumnState(
     initialAnchorItemIndex: Int = 0,
-    initialAnchorItemScrollOffset: Int = 0
+    initialAnchorItemScrollOffset: Int = 0,
 ): TransformingLazyColumnState =
     rememberSaveable(saver = TransformingLazyColumnState.Saver) {
         TransformingLazyColumnState(
@@ -90,7 +90,7 @@ internal fun rememberTransformingLazyColumnState(
         TransformingLazyColumnState(
             initialAnchorItemIndex = initialAnchorItemIndex,
             initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-            prefetchStrategy = prefetchStrategy
+            prefetchStrategy = prefetchStrategy,
         )
     }
 
@@ -122,14 +122,14 @@ internal constructor(
     ) : this(
         initialAnchorItemIndex = initialAnchorItemIndex,
         initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-        prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy()
+        prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy(),
     )
 
     public constructor() :
         this(
             initialAnchorItemIndex = 0,
             initialAnchorItemScrollOffset = 0,
-            prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy()
+            prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy(),
         )
 
     override val isScrollInProgress: Boolean
@@ -147,7 +147,7 @@ internal constructor(
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         awaitLayoutModifier.waitForFirstLayout()
         scrollableState.scroll(scrollPriority, block)
@@ -214,7 +214,7 @@ internal constructor(
     internal var nearestRange: IntRange by
         mutableStateOf(
             calculateNearestItemsRange(initialAnchorItemIndex),
-            structuralEqualityPolicy()
+            structuralEqualityPolicy(),
         )
         private set
 
@@ -257,7 +257,7 @@ internal constructor(
 
     private fun notifyPrefetchOnScroll(
         delta: Float,
-        measureResult: TransformingLazyColumnMeasureResult
+        measureResult: TransformingLazyColumnMeasureResult,
     ) {
         if (prefetchingEnabled) {
             with(prefetchStrategy) { prefetchScope.onScroll(delta, measureResult) }
@@ -313,18 +313,13 @@ internal constructor(
         /** The default [Saver] implementation for [TransformingLazyColumnState]. */
         internal val Saver =
             listSaver<TransformingLazyColumnState, Int>(
-                save = {
-                    listOf(
-                        it.anchorItemIndex,
-                        it.anchorItemScrollOffset,
-                    )
-                },
+                save = { listOf(it.anchorItemIndex, it.anchorItemScrollOffset) },
                 restore = {
                     TransformingLazyColumnState(
                         initialAnchorItemIndex = it[0],
-                        initialAnchorItemScrollOffset = it[1]
+                        initialAnchorItemScrollOffset = it[1],
                     )
-                }
+                },
             )
     }
 
@@ -348,7 +343,7 @@ internal constructor(
      */
     public suspend fun scrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         scroll { snapToItemIndexInternal(index, scrollOffset) }
     }
@@ -374,7 +369,7 @@ internal constructor(
      */
     public fun requestScrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         // Cancel any scroll in progress.
         if (isScrollInProgress) {
@@ -399,7 +394,7 @@ internal constructor(
      */
     public suspend fun animateScrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         scroll {
             TransformingLazyColumnScrollScope(this@TransformingLazyColumnState, this)
@@ -410,7 +405,7 @@ internal constructor(
     internal fun snapToItemIndexInternal(
         index: Int,
         scrollOffset: Int,
-        forceRemeasure: Boolean = true
+        forceRemeasure: Boolean = true,
     ) {
         anchorItemIndex = index
         anchorItemScrollOffset = scrollOffset
@@ -429,12 +424,11 @@ internal constructor(
         scrollToBeConsumed += distance
         if (abs(scrollToBeConsumed) > 0.5f) {
             val preScrollToBeConsumed = scrollToBeConsumed
-            animator.releaseAnimations()
             remeasurement?.forceRemeasure()
 
             notifyPrefetchOnScroll(
                 preScrollToBeConsumed - scrollToBeConsumed,
-                layoutInfoState.value
+                layoutInfoState.value,
             )
         }
 
@@ -479,7 +473,7 @@ private val EmptyTransformingLazyColumnMeasureResult =
                 override val alignmentLines: Map<AlignmentLine, Int> = emptyMap()
 
                 override fun placeChildren() {}
-            }
+            },
     )
 
 /** A modifier that allows to delay some interactions (e.g. scroll) until layout is ready. */

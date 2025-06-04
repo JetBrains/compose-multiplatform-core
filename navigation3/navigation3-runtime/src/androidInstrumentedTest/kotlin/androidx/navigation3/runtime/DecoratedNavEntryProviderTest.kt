@@ -41,7 +41,7 @@ class DecoratedNavEntryProviderTest {
             DecoratedNavEntryProvider(
                 backStack = listOf("something"),
                 entryDecorators = listOf(decorator),
-                entryProvider = { NavEntry("something") {} }
+                entryProvider = { NavEntry("something") {} },
             ) { records ->
                 records.last().content.invoke("something")
             }
@@ -60,7 +60,7 @@ class DecoratedNavEntryProviderTest {
             DecoratedNavEntryProvider(
                 backStack = listOf("something"),
                 entryDecorators = listOf(decorator, decorator),
-                entryProvider = { NavEntry("something") {} }
+                entryProvider = { NavEntry("something") {} },
             ) { records ->
                 records.last().content.invoke("something")
             }
@@ -90,7 +90,7 @@ class DecoratedNavEntryProviderTest {
             DecoratedNavEntryProvider(
                 backStack = listOf("something"),
                 entryDecorators = listOf(outerDecorator, innerDecorator),
-                entryProvider = { NavEntry("something") {} }
+                entryProvider = { NavEntry("something") {} },
             ) { entries ->
                 entries.lastOrNull()?.content?.invoke("something")
             }
@@ -123,7 +123,7 @@ class DecoratedNavEntryProviderTest {
                         3 -> NavEntry(3) {}
                         else -> error("Invalid Key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -170,7 +170,7 @@ class DecoratedNavEntryProviderTest {
                         2 -> NavEntry(2) {}
                         else -> error("Invalid Key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -205,7 +205,7 @@ class DecoratedNavEntryProviderTest {
                         "third" -> NavEntry("third") { entriesRendered.add(it) }
                         else -> error("Invalid Key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -251,7 +251,7 @@ class DecoratedNavEntryProviderTest {
                         2 -> NavEntry(2) {}
                         else -> error("Invalid Key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -300,7 +300,7 @@ class DecoratedNavEntryProviderTest {
                         2 -> NavEntry(2) {}
                         else -> error("Invalid Key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -341,7 +341,7 @@ class DecoratedNavEntryProviderTest {
             DecoratedNavEntryProvider(
                 backStack = listOf("something"),
                 entryDecorators = decorators,
-                entryProvider = { NavEntry("something") {} }
+                entryProvider = { NavEntry("something") {} },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -376,7 +376,7 @@ class DecoratedNavEntryProviderTest {
             DecoratedNavEntryProvider(
                 backStack = listOf("something"),
                 entryDecorators = decorators,
-                entryProvider = { NavEntry("something") {} }
+                entryProvider = { NavEntry("something") {} },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }
@@ -410,7 +410,7 @@ class DecoratedNavEntryProviderTest {
                         "second" -> NavEntry("second") {}
                         else -> error("Unknown key")
                     }
-                }
+                },
             ) { entries ->
                 entries.lastOrNull()?.let { it.content.invoke(it.key) }
             }

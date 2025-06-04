@@ -74,7 +74,7 @@ internal constructor(
     @get:VisibleForTesting
     @get:RestrictTo(LIBRARY_GROUP)
     public val genericDocument: GenericDocument,
-    internal val extras: Bundle
+    internal val extras: Bundle,
 ) {
 
     // TODO: Remove this constructor
@@ -104,7 +104,9 @@ internal constructor(
         if (spec != null && !spec.containsMetadata(key)) {
             throw IllegalArgumentException("There is no metadata associated with $key")
         }
-        return genericDocument.getProperty(key) != null || extras.containsKey(key)
+        return key == LEGACY_ID_FIELD_KEY ||
+            genericDocument.getProperty(key) != null ||
+            extras.containsKey(key)
     }
 
     /**
@@ -152,11 +154,7 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(
-            key,
-            Boolean::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, Boolean::class.java, isCollection = false)
         return booleanValue
     }
 
@@ -205,11 +203,7 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(
-            key,
-            Float::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, Float::class.java, isCollection = false)
         if (doubleValue != null && !isDoubleWithinFloatRange(doubleValue)) {
             // This should never happen because the setters forbid such value to exist in the
             // first place.
@@ -265,11 +259,7 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(
-            key,
-            Double::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, Double::class.java, isCollection = false)
         return doubleValue
     }
 
@@ -318,11 +308,7 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(
-            key,
-            Int::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, Int::class.java, isCollection = false)
         if (longValue != null && !isLongWithinLongRange(longValue)) {
             // This should never happen because the setters forbid such value to exist in the
             // first place.
@@ -378,11 +364,7 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(
-            key,
-            Long::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, Long::class.java, isCollection = false)
         return longValue
     }
 
@@ -420,11 +402,7 @@ internal constructor(
                 else -> array[0]
             }
 
-        spec?.validateReadRequest(
-            key,
-            String::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, String::class.java, isCollection = false)
         return stringValue
     }
 
@@ -436,9 +414,7 @@ internal constructor(
      * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
      *   according to the metadata specification.
      */
-    public fun getAppFunctionData(
-        key: String,
-    ): AppFunctionData? {
+    public fun getAppFunctionData(key: String): AppFunctionData? {
         val array = unsafeGetProperty(key, Array<GenericDocument>::class.java)
         val dataValue =
             if (array == null || array.isEmpty()) {
@@ -447,14 +423,10 @@ internal constructor(
                 AppFunctionData(
                     spec?.getPropertyObjectSpec(key),
                     array[0],
-                    extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY
+                    extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY,
                 )
             }
-        spec?.validateReadRequest(
-            key,
-            AppFunctionData::class.java,
-            isCollection = false,
-        )
+        spec?.validateReadRequest(key, AppFunctionData::class.java, isCollection = false)
         return dataValue
     }
 
@@ -498,11 +470,7 @@ internal constructor(
      */
     public fun getBooleanArray(key: String): BooleanArray? {
         val booleanArrayValue = unsafeGetProperty(key, BooleanArray::class.java)
-        spec?.validateReadRequest(
-            key,
-            Boolean::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Boolean::class.java, isCollection = true)
         return booleanArrayValue
     }
 
@@ -516,11 +484,7 @@ internal constructor(
      */
     public fun getFloatArray(key: String): FloatArray? {
         val doubleArrayValue = unsafeGetProperty(key, DoubleArray::class.java)
-        spec?.validateReadRequest(
-            key,
-            Float::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Float::class.java, isCollection = true)
         return doubleArrayValue
             ?.map { doubleValue ->
                 if (!isDoubleWithinFloatRange(doubleValue)) {
@@ -545,11 +509,7 @@ internal constructor(
      */
     public fun getDoubleArray(key: String): DoubleArray? {
         val doubleArrayValue = unsafeGetProperty(key, DoubleArray::class.java)
-        spec?.validateReadRequest(
-            key,
-            Double::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Double::class.java, isCollection = true)
         return doubleArrayValue
     }
 
@@ -563,11 +523,7 @@ internal constructor(
      */
     public fun getIntArray(key: String): IntArray? {
         val longArrayValue = unsafeGetProperty(key, LongArray::class.java)
-        spec?.validateReadRequest(
-            key,
-            Int::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Int::class.java, isCollection = true)
         return longArrayValue
             ?.map { longValue ->
                 if (!isLongWithinLongRange(longValue)) {
@@ -592,11 +548,7 @@ internal constructor(
      */
     public fun getLongArray(key: String): LongArray? {
         val longArrayValue = unsafeGetProperty(key, LongArray::class.java)
-        spec?.validateReadRequest(
-            key,
-            Long::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Long::class.java, isCollection = true)
         return longArrayValue
     }
 
@@ -610,11 +562,7 @@ internal constructor(
      */
     public fun getByteArray(key: String): ByteArray? {
         val byteArrayValue = unsafeGetProperty(key, Array<ByteArray>::class.java)
-        spec?.validateReadRequest(
-            key,
-            Byte::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, Byte::class.java, isCollection = true)
         return if (byteArrayValue == null || byteArrayValue.isEmpty()) {
             null
         } else {
@@ -633,11 +581,7 @@ internal constructor(
     @Suppress("NullableCollection")
     public fun getStringList(key: String): List<String>? {
         val stringArrayValue = unsafeGetProperty(key, Array<String>::class.java)
-        spec?.validateReadRequest(
-            key,
-            String::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, String::class.java, isCollection = true)
         return stringArrayValue?.asList()
     }
 
@@ -650,9 +594,7 @@ internal constructor(
      *   according to the metadata specification.
      */
     @Suppress("NullableCollection")
-    public fun getAppFunctionDataList(
-        key: String,
-    ): List<AppFunctionData>? {
+    public fun getAppFunctionDataList(key: String): List<AppFunctionData>? {
         val propertySpec = spec?.getPropertyObjectSpec(key)
         val dataArrayValue =
             unsafeGetProperty(key, Array<GenericDocument>::class.java)?.mapIndexed { index, element
@@ -660,14 +602,10 @@ internal constructor(
                 AppFunctionData(
                     propertySpec,
                     element,
-                    extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY
+                    extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY,
                 )
             }
-        spec?.validateReadRequest(
-            key,
-            AppFunctionData::class.java,
-            isCollection = true,
-        )
+        spec?.validateReadRequest(key, AppFunctionData::class.java, isCollection = true)
         return dataArrayValue
     }
 
@@ -683,63 +621,6 @@ internal constructor(
     public fun getPendingIntentList(key: String): List<PendingIntent>? {
         spec?.validateReadRequest(key, PendingIntent::class.java, isCollection = true)
         return extras.getParcelableArrayList(extrasKey(key), PendingIntent::class.java)
-    }
-
-    /**
-     * Retrieves a generic value of type [T] associated with the specified [key].
-     *
-     * @param T The type of the associated value.
-     * @param key The key to retrieve the value for.
-     * @param valueClass The class of the type [T].
-     * @return The value associated with the [key]. Or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
-     */
-    @RestrictTo(LIBRARY_GROUP)
-    public fun <T> getGenericField(key: String, valueClass: Class<T>): T {
-        @Suppress("UNCHECKED_CAST")
-        return when (valueClass) {
-            Int::class.java -> getIntOrNull(key) as T
-            Long::class.java -> getLongOrNull(key) as T
-            Float::class.java -> getFloatOrNull(key) as T
-            Double::class.java -> getDoubleOrNull(key) as T
-            Boolean::class.java -> getBooleanOrNull(key) as T
-            String::class.java -> getString(key) as T
-            PendingIntent::class.java -> getPendingIntent(key) as T
-            IntArray::class.java -> getIntArray(key) as T
-            LongArray::class.java -> getLongArray(key) as T
-            FloatArray::class.java -> getFloatArray(key) as T
-            DoubleArray::class.java -> getDoubleArray(key) as T
-            BooleanArray::class.java -> getBooleanArray(key) as T
-            ByteArray::class.java -> getByteArray(key) as T
-            // TODO(b/408385427): Handle deserialization in generic factory
-            else -> getAppFunctionData(key)?.deserialize(valueClass as Class<Any>) as T
-        }
-    }
-
-    /**
-     * Retrieves a [List] of generic value of type [T] associated with the specified [key].
-     *
-     * @param I The [T]'s item type.
-     * @param T The type of the associated value.
-     * @param key The key to retrieve the value for.
-     * @param itemValueClass The class of the type [T].
-     * @return The list value associated with the [key]. Or null if the associated value is not
-     *   found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
-     */
-    @RestrictTo(LIBRARY_GROUP)
-    public fun <I, T : List<I>?> getGenericListField(key: String, itemValueClass: Class<I>): T {
-        @Suppress("UNCHECKED_CAST")
-        return when (itemValueClass) {
-            String::class.java -> getStringList(key) as T
-            PendingIntent::class.java -> getPendingIntentList(key) as T
-            // TODO(b/408385427): Handle deserialization in generic factory
-            else ->
-                getAppFunctionDataList(key)?.map { it.deserialize(itemValueClass as Class<Any>) }
-                    as T
-        }
     }
 
     override fun toString(): String {
@@ -780,7 +661,7 @@ internal constructor(
             Log.d(
                 APP_FUNCTIONS_TAG,
                 "Something went wrong while deserialize $this to $serializableClass",
-                e
+                e,
             )
             throw IllegalArgumentException(
                 "Unable to deserialize $serializableClass. Is the class annotated with @AppFunctionSerializable?"
@@ -906,7 +787,7 @@ internal constructor(
                 GenericDocument.Builder<GenericDocument.Builder<*>>(
                     "",
                     "",
-                    spec.objectQualifiedName
+                    spec.objectQualifiedName,
                 )
         }
 
@@ -1064,7 +945,7 @@ internal constructor(
             spec?.validateWriteRequest(key, Float::class.java, isCollection = true)
             genericDocumentBuilder.setPropertyDouble(
                 key,
-                *(value.asList().map { it.toDouble() }.toDoubleArray())
+                *(value.asList().map { it.toDouble() }.toDoubleArray()),
             )
             return this
         }
@@ -1095,7 +976,7 @@ internal constructor(
             spec?.validateWriteRequest(key, Int::class.java, isCollection = true)
             genericDocumentBuilder.setPropertyLong(
                 key,
-                *(value.asList().map { it.toLong() }.toLongArray())
+                *(value.asList().map { it.toLong() }.toLongArray()),
             )
             return this
         }
@@ -1179,78 +1060,6 @@ internal constructor(
             return this
         }
 
-        /**
-         * Sets a generic type [value] of class [valueClass] for the given [key].
-         *
-         * @param T The type [value].
-         * @param key The key to set the generic type [value] for.
-         * @param value The generic type value to set.
-         * @param valueClass The class of type [T].
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
-         */
-        @RestrictTo(LIBRARY_GROUP)
-        public fun <T : Any?> setGenericField(
-            key: String,
-            value: T,
-            valueClass: Class<T>
-        ): Builder {
-            if (value == null) {
-                return this
-            }
-            @Suppress("UNCHECKED_CAST")
-            return when (valueClass) {
-                Int::class.java -> setInt(key, value as Int)
-                Long::class.java -> setLong(key, value as Long)
-                Float::class.java -> setFloat(key, value as Float)
-                Double::class.java -> setDouble(key, value as Double)
-                Boolean::class.java -> setBoolean(key, value as Boolean)
-                String::class.java -> setString(key, value as String)
-                PendingIntent::class.java -> setPendingIntent(key, value as PendingIntent)
-                IntArray::class.java -> setIntArray(key, value as IntArray)
-                LongArray::class.java -> setLongArray(key, value as LongArray)
-                FloatArray::class.java -> setFloatArray(key, value as FloatArray)
-                DoubleArray::class.java -> setDoubleArray(key, value as DoubleArray)
-                BooleanArray::class.java -> setBooleanArray(key, value as BooleanArray)
-                ByteArray::class.java -> setByteArray(key, value as ByteArray)
-                // TODO(b/408385427): Handle serialization in generic factory
-                else -> setAppFunctionData(key, serialize(value, valueClass as Class<Any>))
-            }
-        }
-
-        /**
-         * Sets a list generic type [value] of class [itemValueClass] for the given [key].
-         *
-         * @param I The [value]'s item type.
-         * @param T The type [value].
-         * @param key The key to set the generic type [value] for.
-         * @param value The generic type value to set.
-         * @param itemValueClass The [value]'s item class.
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
-         */
-        @RestrictTo(LIBRARY_GROUP)
-        public fun <I, T : List<*>?> setGenericListField(
-            key: String,
-            value: T,
-            itemValueClass: Class<I>
-        ): Builder {
-            if (value == null) {
-                return this
-            }
-            @Suppress("UNCHECKED_CAST")
-            return when (itemValueClass) {
-                String::class.java -> setStringList(key, value as List<String>)
-                PendingIntent::class.java -> setPendingIntentList(key, value as List<PendingIntent>)
-                // TODO(b/408385427): Handle serialization in generic factory
-                else ->
-                    setAppFunctionDataList(
-                        key,
-                        value.map { serialize(it as Any, itemValueClass as Class<Any>) }
-                    )
-            }
-        }
-
         /** Builds [AppFunctionData] */
         public fun build(): AppFunctionData {
             // TODO(b/399823985): validate required fields.
@@ -1301,7 +1110,7 @@ internal constructor(
                 Log.d(
                     APP_FUNCTIONS_TAG,
                     "Unable to create AppFunctionSerializableFactory for $serializableClass",
-                    e
+                    e,
                 )
                 throw IllegalArgumentException(
                     "Unable to create AppFunctionSerializableFactory for $serializableClass"
@@ -1332,7 +1141,7 @@ internal constructor(
         @JvmStatic
         public fun <T : Any> serialize(
             serializable: T,
-            serializableClass: Class<T>
+            serializableClass: Class<T>,
         ): AppFunctionData {
             return try {
                 val factory = getSerializableFactory(serializableClass)
@@ -1341,7 +1150,7 @@ internal constructor(
                 Log.d(
                     APP_FUNCTIONS_TAG,
                     "Something went wrong while serialize $serializable of class $serializableClass",
-                    e
+                    e,
                 )
                 throw IllegalArgumentException(
                     "Unable to serialize $serializableClass. Is the class annotated with @AppFunctionSerializable?"

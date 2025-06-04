@@ -51,7 +51,7 @@ public constructor(
     // experimental to Java clients. There are public accessors for these properties below.
     @property:ExperimentalFeatures.Ext12OptIn private val coordinatorOriginUri: Uri? = null,
     @property:ExperimentalFeatures.Ext14OptIn
-    private val sellerConfiguration: SellerConfiguration? = null
+    private val sellerConfiguration: SellerConfiguration? = null,
 ) {
     /** Checks whether two [GetAdSelectionDataRequest] objects contain the same information. */
     override fun equals(other: Any?): Boolean {

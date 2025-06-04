@@ -33,7 +33,7 @@ buildscript {
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:8.11.0-alpha05")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:8.11.0-alpha10")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -441,7 +441,10 @@ includeProject(":benchmark:integration-tests:startup-benchmark", [BuildType.MAIN
 includeProject(":binarycompatibilityvalidator:binarycompatibilityvalidator", [BuildType.MAIN])
 includeProject(":biometric:biometric", [BuildType.MAIN])
 includeProject(":biometric:biometric-samples", "biometric/biometric/samples", [BuildType.MAIN])
+includeProject(":biometric:biometric-compose", [BuildType.COMPOSE])
+includeProject(":biometric:biometric-compose:biometric-compose-samples", "biometric/biometric-compose/samples", [BuildType.COMPOSE])
 includeProject(":biometric:integration-tests:testapp", [BuildType.MAIN])
+includeProject(":biometric:integration-tests:testapp-compose", [BuildType.MAIN])
 includeProject(":browser:browser", [BuildType.MAIN])
 includeProject(":buildSrc-tests", [BuildType.MAIN, BuildType.TOOLS])
 // these projects intentionally fail to compile unless androidx.useMaxDepVersions is enabled
@@ -980,6 +983,7 @@ includeProject(":privacysandbox:ui:integration-tests:macrobenchmark:testapp:sdkp
 includeProject(":privacysandbox:ui:integration-tests:macrobenchmark:testapp:macrobenchmark-target", [BuildType.MAIN])
 includeProject(":privacysandbox:ui:integration-tests:macrobenchmark:testapp:testsdkprovider", [BuildType.MAIN])
 includeProject(":privacysandbox:ui:integration-tests:macrobenchmark:testapp:testsdkproviderwrapper", [BuildType.MAIN])
+includeProject(":privacysandbox:ui:integration-tests:macrobenchmark:tests", [BuildType.MAIN])
 includeProject(":privacysandbox:ui:ui-client", [BuildType.MAIN])
 includeProject(":privacysandbox:ui:ui-client-compose", [BuildType.COMPOSE])
 includeProject(":privacysandbox:ui:ui-core", [BuildType.MAIN])
@@ -1212,6 +1216,7 @@ includeProject(":work:work-rxjava3", [BuildType.MAIN])
 includeProject(":work:work-testing", [BuildType.MAIN])
 includeProject(":xr:arcore:arcore", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:whitebox", [BuildType.XR])
+includeProject(":xr:arcore:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:assets", [BuildType.XR])
 includeProject(":xr:compose:compose", [BuildType.XR])
 includeProject(":xr:compose:compose-testing", [BuildType.XR])
@@ -1241,6 +1246,7 @@ includeProject(":xr:compose:integration-tests:subspacecomposableapp", [BuildType
 includeProject(":xr:compose:material3:material3", [BuildType.XR])
 includeProject(":xr:compose:material3:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:glimmer:glimmer", [BuildType.COMPOSE])
+includeProject(":xr:glimmer:benchmark", [BuildType.COMPOSE])
 includeProject(":xr:glimmer:glimmer:glimmer-samples", "xr/glimmer/glimmer/samples", [BuildType.COMPOSE])
 includeProject(":xr:glimmer:integration-tests:demos", [BuildType.COMPOSE])
 includeProject(":xr:runtime:runtime", [BuildType.XR])
@@ -1269,6 +1275,7 @@ includeProject(":xr:scenecore:integration-tests:transformationtests", [BuildType
 includeProject(":xr:scenecore:integration-tests:videoplayertest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:videoplayerdrmtest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:visibilitytest", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:testapp", [BuildType.XR])
 
 /////////////////////////////
 //

@@ -69,7 +69,7 @@ class Media3EffectDeviceTest {
                 context = context,
                 targets = CameraEffect.PREVIEW,
                 executor = mainThreadExecutor(),
-                errorListener = { throw it }
+                errorListener = { throw it },
             )
         var exception: Exception? = null
 
@@ -95,7 +95,7 @@ class Media3EffectDeviceTest {
                 context = context,
                 targets = CameraEffect.PREVIEW,
                 executor = mainThreadExecutor(),
-                errorListener = { throw it }
+                errorListener = { throw it },
             )
         val surfaceRequest = SurfaceRequest(Size(10, 10), FakeCamera()) {}
 
@@ -122,7 +122,7 @@ class Media3EffectDeviceTest {
                 context = context,
                 targets = CameraEffect.PREVIEW,
                 executor = mainThreadExecutor(),
-                errorListener = { throw it }
+                errorListener = { throw it },
             )
         verifyPreviewWithMedia3Effect(media3Effect)
     }
@@ -134,7 +134,7 @@ class Media3EffectDeviceTest {
                 context = context,
                 targets = CameraEffect.PREVIEW,
                 executor = mainThreadExecutor(),
-                errorListener = { throw it }
+                errorListener = { throw it },
             )
         withContext(Dispatchers.Main) { media3Effect.setEffects(listOf(Contrast(0.5f))) }
         verifyPreviewWithMedia3Effect(media3Effect)
@@ -147,7 +147,7 @@ class Media3EffectDeviceTest {
                 context = context,
                 targets = CameraEffect.PREVIEW,
                 executor = mainThreadExecutor(),
-                errorListener = { throw it }
+                errorListener = { throw it },
             )
 
         // Set Effect first time
@@ -166,7 +166,7 @@ class Media3EffectDeviceTest {
 
     suspend fun verifyPreviewWithMedia3Effect(
         media3Effect: Media3Effect,
-        onFrameAvailable: (() -> Unit)? = null
+        onFrameAvailable: (() -> Unit)? = null,
     ) {
         // Arrange.
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
@@ -184,7 +184,7 @@ class Media3EffectDeviceTest {
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                UseCaseGroup.Builder().addUseCase(preview).addEffect(media3Effect).build()
+                UseCaseGroup.Builder().addUseCase(preview).addEffect(media3Effect).build(),
             )
         }
 

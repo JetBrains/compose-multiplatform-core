@@ -25,7 +25,10 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(project(":annotation:annotation"))
+
+    // Pin to latest stable release of annotation.
+    implementation("androidx.annotation:annotation:1.9.1")
+
     implementation(libs.testCore)
 }
 

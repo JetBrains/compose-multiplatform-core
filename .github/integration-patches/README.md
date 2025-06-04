@@ -23,7 +23,7 @@ If a patch file cannot be applied, follow these steps to fix it:
 4. Run `git diff --staged > <patch-file-path>`
 5. Run `git reset HEAD`, `git add <patch-file-path>`, and `git checkout .` (this will drop all
    pending changes except the patch file).
-6. Check that the patch file is fixed with `./gradlew validateIntegrationPatches`
+6. Check that the patch file is fixed with `./gradlew :validateIntegrationPatches`
 7. Commit the patch file changes.
 
 ## Patch file names

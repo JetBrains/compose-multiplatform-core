@@ -25,7 +25,7 @@ import androidx.appfunctions.AppFunctionSerializableInterface
 @AppFunctionSchemaDefinition(name = "createNote", version = 2, category = "myNotes")
 public interface CreateNoteAppFunction<
     Parameters : CreateNoteAppFunction.Parameters,
-    Response : CreateNoteAppFunction.Response
+    Response : CreateNoteAppFunction.Response,
 > {
     /**
      * Creates an [AppFunctionNote] with the given parameters.

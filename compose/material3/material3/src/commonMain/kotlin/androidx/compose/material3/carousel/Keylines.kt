@@ -139,7 +139,7 @@ internal fun multiBrowseKeylineList(
         itemSpacing = itemSpacing,
         rightAnchorSize = anchorSize,
         leftAnchorSize = anchorSize,
-        arrangement = arrangement
+        arrangement = arrangement,
     )
 }
 
@@ -148,7 +148,7 @@ internal fun createLeftAlignedKeylineList(
     itemSpacing: Float,
     leftAnchorSize: Float,
     rightAnchorSize: Float,
-    arrangement: Arrangement
+    arrangement: Arrangement,
 ): KeylineList {
     return keylineListOf(carouselMainAxisSize, itemSpacing, CarouselAlignment.Start) {
         add(leftAnchorSize, isAnchor = true)
@@ -198,7 +198,7 @@ internal fun uncontainedKeylineList(
         calculateMediumChildSize(
             minimumMediumSize = defaultAnchorSize,
             largeItemSize = largeItemSize,
-            remainingSpace = remainingSpace
+            remainingSpace = remainingSpace,
         )
     val arrangement = Arrangement(0, 0F, 0, mediumItemSize, mediumCount, largeItemSize, largeCount)
 
@@ -211,7 +211,7 @@ internal fun uncontainedKeylineList(
         itemSpacing = itemSpacing,
         leftAnchorSize = leftAnchorSize,
         rightAnchorSize = defaultAnchorSize,
-        arrangement = arrangement
+        arrangement = arrangement,
     )
 }
 
@@ -224,7 +224,7 @@ internal fun uncontainedKeylineList(
 private fun calculateMediumChildSize(
     minimumMediumSize: Float,
     largeItemSize: Float,
-    remainingSpace: Float
+    remainingSpace: Float,
 ): Float {
     // With the remaining space, we want to add a 'medium' size item that gets sufficiently
     // cut off. Ideally, it is large enough such that a third of the item is cut off, meaning

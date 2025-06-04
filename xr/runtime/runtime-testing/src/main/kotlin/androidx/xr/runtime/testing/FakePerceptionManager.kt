@@ -29,14 +29,17 @@ import androidx.xr.runtime.math.Ray
 import java.util.UUID
 
 /** Test-only implementation of [PerceptionManager] used to validate state transitions. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakePerceptionManager : PerceptionManager, AnchorHolder {
 
+    /** List of anchors created by this [FakePerceptionManager]. */
     public val anchors: MutableList<Anchor> = mutableListOf<Anchor>()
     override val trackables: MutableList<Trackable> = mutableListOf<Trackable>()
 
     override val leftHand: Hand? = FakeRuntimeHand()
     override val rightHand: Hand? = FakeRuntimeHand()
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val arDevice: FakeRuntimeArDevice = FakeRuntimeArDevice()
 
     override val earth: Earth = FakeRuntimeEarth()
 

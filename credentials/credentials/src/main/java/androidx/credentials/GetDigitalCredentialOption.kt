@@ -111,7 +111,7 @@ internal constructor(
                     typePriorityHint =
                         requestData.getInt(
                             BUNDLE_KEY_TYPE_PRIORITY_VALUE,
-                            PRIORITY_PASSKEY_OR_SIMILAR
+                            PRIORITY_PASSKEY_OR_SIMILAR,
                         ),
                 )
             } catch (e: Exception) {

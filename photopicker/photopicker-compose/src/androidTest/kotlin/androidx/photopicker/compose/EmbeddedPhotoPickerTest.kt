@@ -46,10 +46,7 @@ class EmbeddedPhotoPickerTest {
 
         composeTestRule.setContent {
             state = rememberEmbeddedPhotoPickerState()
-            EmbeddedPhotoPicker(
-                state = state,
-                provider = testProvider,
-            )
+            EmbeddedPhotoPicker(state = state, provider = testProvider)
         }
 
         composeTestRule.waitUntil(5_000L, { state.surfaceHostToken != null })
@@ -64,10 +61,7 @@ class EmbeddedPhotoPickerTest {
 
         composeTestRule.setContent {
             state = rememberEmbeddedPhotoPickerState() as EmbeddedPhotoPickerStateImpl
-            EmbeddedPhotoPicker(
-                state = state,
-                provider = testProvider,
-            )
+            EmbeddedPhotoPicker(state = state, provider = testProvider)
         }
 
         composeTestRule.waitUntil(5_000L, { state.surfaceSize != IntSize.Zero })
@@ -80,10 +74,7 @@ class EmbeddedPhotoPickerTest {
         val testProvider = TestEmbeddedPhotoPickerProvider.get()
 
         composeTestRule.setContent {
-            EmbeddedPhotoPicker(
-                state = rememberEmbeddedPhotoPickerState(),
-                provider = testProvider,
-            )
+            EmbeddedPhotoPicker(state = rememberEmbeddedPhotoPickerState(), provider = testProvider)
         }
 
         composeTestRule.waitUntil(5_000L, { testProvider.sessions.isNotEmpty() })

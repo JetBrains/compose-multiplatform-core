@@ -146,7 +146,7 @@ public fun MaterialScope.primaryLayout(
     bottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     labelForBottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     onClick: Clickable? = null,
-    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN
+    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN,
 ): LayoutElement =
     primaryLayoutWithOverrideIcon(
         overrideIcon = false,
@@ -155,7 +155,7 @@ public fun MaterialScope.primaryLayout(
         bottomSlot = bottomSlot,
         labelForBottomSlot = labelForBottomSlot,
         onClick = onClick,
-        margins = margins
+        margins = margins,
     )
 
 /**
@@ -172,7 +172,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
     bottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     labelForBottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     onClick: Clickable? = null,
-    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN
+    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN,
 ): LayoutElement {
     val screenWidth = deviceConfiguration.screenWidthDp
     val screenHeight = deviceConfiguration.screenHeightDp
@@ -183,7 +183,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
                     TextElementStyle(
                         typography = Typography.TITLE_SMALL,
                         color = theme.colorScheme.onSurface,
-                        importantForAccessibility = true
+                        importantForAccessibility = true,
                     )
             ) {
                 labelForBottomSlot()
@@ -229,7 +229,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
                     TextElementStyle(
                         typography = Typography.TITLE_MEDIUM,
                         color = theme.colorScheme.onBackground,
-                        importantForAccessibility = true
+                        importantForAccessibility = true,
                     )
             ) {
                 it()
@@ -242,7 +242,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
                 LayoutSlotsPresence(
                     isTitleSlotPresent = titleSlot != null,
                     isBottomSlotPresent = bottomSlot != null,
-                    isBottomSlotEdgeButton = bottomSlotValue?.isSlotEdgeButton() == true
+                    isBottomSlotEdgeButton = bottomSlotValue?.isSlotEdgeButton() == true,
                 )
         ) {
             when (margins) {
@@ -272,7 +272,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
             mainSlot()
                 .getMainContentBox(
                     sideMargins = marginsValues,
-                    maxSideMarginFallbackDp = maxSideMargin()
+                    maxSideMarginFallbackDp = maxSideMargin(),
                 )
         )
     }
@@ -282,7 +282,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
         getFooterContent(
             bottomSlot = bottomSlotValue,
             labelSlot = labelSlot,
-            bottomMarginForNoContentDp = marginsValues.bottom?.value ?: maxBottomMargin()
+            bottomMarginForNoContentDp = marginsValues.bottom?.value ?: maxBottomMargin(),
         )
     )
 
@@ -365,7 +365,7 @@ private fun LayoutElement.getMainContentBox(
 private fun MaterialScope.getFooterContent(
     bottomSlot: LayoutElement?,
     labelSlot: LayoutElement?,
-    bottomMarginForNoContentDp: Float
+    bottomMarginForNoContentDp: Float,
 ): LayoutElement {
     val footer = Box.Builder().setWidth(wrap()).setHeight(wrap())
 
@@ -455,7 +455,7 @@ private fun MaterialScope.getMarginForHeader(isTitleSlotPresent: Boolean) =
                 HEADER_MARGIN_BOTTOM_DP
             },
         start = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp,
-        end = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp
+        end = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp,
     )
 
 /** Contains the default values used by Material layout. */

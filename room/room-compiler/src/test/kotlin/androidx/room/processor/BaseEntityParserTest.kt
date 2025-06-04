@@ -44,7 +44,7 @@ abstract class BaseEntityParserTest {
         baseClass: String = "",
         sources: List<Source> = emptyList(),
         classpathFiles: List<File> = emptyList(),
-        handler: (Entity, XTestInvocation) -> Unit
+        handler: (Entity, XTestInvocation) -> Unit,
     ) {
         val attributesReplacement: String
         if (attributes.isEmpty()) {
@@ -69,11 +69,11 @@ abstract class BaseEntityParserTest {
                         code =
                             ENTITY_PREFIX.format(attributesReplacement, baseClassReplacement) +
                                 input +
-                                ENTITY_SUFFIX
+                                ENTITY_SUFFIX,
                     ),
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
             kotlincArguments = listOf("-jvm-target=11"),
-            classpath = classpathFiles
+            classpath = classpathFiles,
         ) { invocation ->
             val entity =
                 invocation.roundEnv

@@ -69,7 +69,7 @@ class CanvasStrokeRendererTest {
                         "Solid",
                         finishedInProgressStroke(
                             brush(color = TestColors.AVOCADO_GREEN),
-                            INPUTS_ZIGZAG
+                            INPUTS_ZIGZAG,
                         ),
                     ),
                     Pair(
@@ -182,7 +182,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             brush(
                                 BrushFamily(BrushTip(particleGapDistanceScale = 2f)),
-                                TestColors.RED
+                                TestColors.RED,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -346,7 +346,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             texturedBrush(
                                 textureSize = 5f,
-                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES
+                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -833,7 +833,7 @@ class CanvasStrokeRendererTest {
         fun textureRotationStroke(
             offsetX: Float,
             offsetY: Float,
-            rotation: Float
+            rotation: Float,
         ): InProgressStroke =
             finishedInProgressStroke(
                 texturedBrush(

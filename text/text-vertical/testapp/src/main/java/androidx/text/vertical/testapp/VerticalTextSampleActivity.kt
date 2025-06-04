@@ -76,7 +76,7 @@ class VerticalTextSampleActivity : ComponentActivity() {
                             Tab(
                                 selected = selectedTabIndex == index,
                                 onClick = { selectedTabIndex = index },
-                                text = { Text(title) }
+                                text = { Text(title) },
                             )
                         }
                     }
@@ -128,11 +128,7 @@ fun ZoomableVerticalText(content: @Composable (TextPaint) -> Unit) {
 }
 
 @Composable
-fun VerticalText(
-    text: Spanned,
-    paint: TextPaint,
-    modifier: Modifier = Modifier,
-) {
+fun VerticalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier) {
     var vTextLayout by remember { mutableStateOf<VerticalTextLayout?>(null) }
     Layout(
         modifier =
@@ -149,7 +145,7 @@ fun VerticalText(
                     start = 0,
                     end = text.length,
                     paint = paint,
-                    height = constraints.maxHeight.toFloat()
+                    height = constraints.maxHeight.toFloat(),
                 )
                 .build()
         layout(constraints.maxWidth, constraints.maxHeight) {}
@@ -181,7 +177,7 @@ fun LongText(paint: TextPaint, modifier: Modifier = Modifier) {
             text("\n")
         },
         paint,
-        modifier
+        modifier,
     )
 }
 
@@ -237,6 +233,6 @@ fun ComplexText(paint: TextPaint, modifier: Modifier = Modifier) {
             text("年もよろしくお願いいたします。")
         },
         paint,
-        modifier
+        modifier,
     )
 }

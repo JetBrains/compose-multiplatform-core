@@ -46,7 +46,7 @@ object SwipeToRevealBenchmark : MacrobenchmarkScreen {
                         onClick = { /* This block is called when the primary action is executed. */
                         },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                        text = { Text("Delete") }
+                        text = { Text("Delete") },
                     )
                 },
                 onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
@@ -57,7 +57,7 @@ object SwipeToRevealBenchmark : MacrobenchmarkScreen {
                     SecondaryActionButton(
                         onClick = { /* This block is called when the secondary action is executed. */
                         },
-                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
+                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
                     )
                 },
                 undoPrimaryAction = {
@@ -82,10 +82,10 @@ object SwipeToRevealBenchmark : MacrobenchmarkScreen {
                                     CustomAccessibilityAction("Options") {
                                         /* Add the secondary click handler here */
                                         true
-                                    }
+                                    },
                                 )
                         },
-                    onClick = {}
+                    onClick = {},
                 ) {
                     Text("This Button has two actions", modifier = Modifier.fillMaxSize())
                 }

@@ -191,10 +191,10 @@ fun TimePickerSwitchableSample() {
                                     TimePickerDisplayMode.Picker
                                 }
                         },
-                        displayMode = displayMode
+                        displayMode = displayMode,
                     )
                 }
-            }
+            },
         ) {
             if (
                 displayMode == TimePickerDisplayMode.Picker &&

@@ -97,7 +97,7 @@ class ScaffoldTest {
         rule
             .setMaterialContentForSizeAssertions(
                 parentMaxWidth = 100.dp,
-                parentMaxHeight = 100.dp
+                parentMaxHeight = 100.dp,
             ) {
                 Scaffold { Text("Scaffold body") }
             }
@@ -140,7 +140,7 @@ class ScaffoldTest {
                 modifier =
                     Modifier.onGloballyPositioned { positioned: LayoutCoordinates ->
                         scaffoldSize = positioned.size
-                    }
+                    },
             ) {
                 Box(
                     Modifier.fillMaxSize().background(Color.Blue).onGloballyPositioned {
@@ -178,7 +178,7 @@ class ScaffoldTest {
                 modifier =
                     Modifier.onGloballyPositioned { positioned: LayoutCoordinates ->
                         scaffoldSize = positioned.size
-                    }
+                    },
             ) {
                 Box(
                     Modifier.fillMaxSize().background(color = Color.Blue).onGloballyPositioned {
@@ -222,7 +222,7 @@ class ScaffoldTest {
                                 bottomBarSize = positioned.size
                             }
                     )
-                }
+                },
             ) {
                 innerPadding = it
                 Text("body")
@@ -278,19 +278,19 @@ class ScaffoldTest {
             Box(Modifier.requiredSize(10.dp, 40.dp)) {
                 Scaffold(
                     contentWindowInsets = WindowInsets(top = 5.dp, bottom = 3.dp),
-                    topBar = { Box(Modifier.requiredSize(10.dp)) }
+                    topBar = { Box(Modifier.requiredSize(10.dp)) },
                 ) { paddingValues ->
                     // top is like top app bar + rounding error
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateTopPadding(),
                         expected = 10.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     // bottom is like the insets
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateBottomPadding(),
                         expected = 3.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -303,20 +303,19 @@ class ScaffoldTest {
     fun scaffold_respectsProvidedInsets() {
         rule.setContent {
             Box(Modifier.requiredSize(10.dp, 40.dp)) {
-                Scaffold(
-                    contentWindowInsets = WindowInsets(top = 15.dp, bottom = 10.dp),
-                ) { paddingValues ->
+                Scaffold(contentWindowInsets = WindowInsets(top = 15.dp, bottom = 10.dp)) {
+                    paddingValues ->
                     // topPadding is equal to provided top window inset
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateTopPadding(),
                         expected = 15.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     // bottomPadding is equal to provided bottom window inset
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateBottomPadding(),
                         expected = 10.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -339,12 +338,12 @@ class ScaffoldTest {
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateTopPadding(),
                         expected = 5.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateBottomPadding(),
                         expected = 5.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -359,19 +358,19 @@ class ScaffoldTest {
             Box(Modifier.requiredSize(10.dp, 40.dp)) {
                 Scaffold(
                     contentWindowInsets = WindowInsets(top = 5.dp, bottom = 3.dp),
-                    topBar = { Box(Modifier.requiredHeight(0.dp).fillMaxWidth()) }
+                    topBar = { Box(Modifier.requiredHeight(0.dp).fillMaxWidth()) },
                 ) { paddingValues ->
                     // top is like the collapsed top app bar (i.e. 0dp) + rounding error
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateTopPadding(),
                         expected = 0.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     // bottom is like the insets
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateBottomPadding(),
                         expected = 3.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -386,19 +385,19 @@ class ScaffoldTest {
             Box(Modifier.requiredSize(10.dp, 40.dp)) {
                 Scaffold(
                     contentWindowInsets = WindowInsets(top = 5.dp, bottom = 3.dp),
-                    bottomBar = { Box(Modifier.requiredSize(10.dp)) }
+                    bottomBar = { Box(Modifier.requiredSize(10.dp)) },
                 ) { paddingValues ->
                     // bottom is like bottom app bar + rounding error
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateBottomPadding(),
                         expected = 10.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     // top is like the insets
                     assertDpIsWithinThreshold(
                         actual = paddingValues.calculateTopPadding(),
                         expected = 5.dp,
-                        threshold = roundingError
+                        threshold = roundingError,
                     )
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -425,9 +424,9 @@ class ScaffoldTest {
                                 Modifier.onGloballyPositioned {
                                     snackbarSize = it.size
                                     snackbarPosition = it.positionInRoot()
-                                }
+                                },
                         )
-                    }
+                    },
                 ) {
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -497,7 +496,7 @@ class ScaffoldTest {
                                 Modifier.onGloballyPositioned {
                                     fabSize = it.size
                                     fabPosition = it.positionInRoot()
-                                }
+                                },
                         ) {
                             Text("Fab")
                         }
@@ -648,7 +647,7 @@ class ScaffoldTest {
                                 Modifier.onGloballyPositioned {
                                     fabSize = it.size
                                     fabPosition = it.positionInRoot()
-                                }
+                                },
                         ) {
                             Text("Fab")
                         }
@@ -685,7 +684,7 @@ class ScaffoldTest {
                                 Modifier.onGloballyPositioned {
                                     fabSize = it.size
                                     fabPosition = it.positionInRoot()
-                                }
+                                },
                         ) {
                             Text("Fab")
                         }
@@ -722,7 +721,7 @@ class ScaffoldTest {
                                 Modifier.onGloballyPositioned {
                                     fabSize = it.size
                                     fabPosition = it.positionInRoot()
-                                }
+                                },
                         ) {
                             Text("Fab")
                         }
@@ -833,7 +832,7 @@ private class TopBarHeightChangingScaffoldTestCase : LayeredComposeTestCase(), T
         Scaffold(
             topBar = {
                 TopAppBar(title = { Text("Title") }, modifier = Modifier.padding(paddingValues))
-            },
+            }
         ) { contentPadding ->
             tracker.compositions++
             Box(Modifier.padding(contentPadding).fillMaxSize())

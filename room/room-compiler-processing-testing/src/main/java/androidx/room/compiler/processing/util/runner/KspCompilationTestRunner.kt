@@ -47,7 +47,7 @@ internal class KspCompilationTestRunner(
                     return SyntheticKspProcessor(
                             symbolProcessorEnvironment = environment,
                             handlers = params.handlers,
-                            config = params.config
+                            config = params.config,
                         )
                         .also { processor = it }
                 }
@@ -85,7 +85,7 @@ internal class KspCompilationTestRunner(
         return KotlinCompilationResult(
             testRunner = this,
             processor = processorProvider.processor,
-            delegate = result
+            delegate = result,
         )
     }
 }

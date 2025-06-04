@@ -172,7 +172,7 @@ class CapturePipelineTest {
                 lockedCondition: ((FrameMetadata) -> Boolean)?,
                 frameLimit: Int,
                 convergedTimeLimitNs: Long,
-                lockedTimeLimitNs: Long
+                lockedTimeLimitNs: Long,
             ): Deferred<Result3A> {
                 lock3ASemaphore.release()
                 return CompletableDeferred(Result3A(Result3A.Status.OK))
@@ -184,7 +184,7 @@ class CapturePipelineTest {
                 awb: Boolean?,
                 unlockedCondition: ((FrameMetadata) -> Boolean)?,
                 frameLimit: Int,
-                timeLimitNs: Long
+                timeLimitNs: Long,
             ): Deferred<Result3A> {
                 unlock3ASemaphore.release()
                 return CompletableDeferred(Result3A(Result3A.Status.OK))
@@ -193,7 +193,7 @@ class CapturePipelineTest {
             override suspend fun lock3AForCapture(
                 lockedCondition: ((FrameMetadata) -> Boolean)?,
                 frameLimit: Int,
-                timeLimitNs: Long
+                timeLimitNs: Long,
             ): Deferred<Result3A> {
                 lock3AForCaptureSemaphore.release()
                 return CompletableDeferred(Result3A(Result3A.Status.OK))
@@ -203,7 +203,7 @@ class CapturePipelineTest {
                 triggerAf: Boolean,
                 waitForAwb: Boolean,
                 frameLimit: Int,
-                timeLimitNs: Long
+                timeLimitNs: Long,
             ): Deferred<Result3A> {
                 virtualTimeAtLock3AForCapture = testScope.currentTime
                 triggerAfAtLock3AForCapture = triggerAf
@@ -239,9 +239,7 @@ class CapturePipelineTest {
         )
     private val fakeCameraProperties =
         FakeCameraProperties(
-            FakeCameraMetadata(
-                mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true),
-            )
+            FakeCameraMetadata(mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true))
         )
     private val fakeUseCaseGraphConfig =
         UseCaseGraphConfig(
@@ -265,7 +263,7 @@ class CapturePipelineTest {
 
             override fun isZslSurface(
                 surface: DeferrableSurface,
-                sessionConfig: SessionConfig
+                sessionConfig: SessionConfig,
             ): Boolean {
                 return false
             }
@@ -316,25 +314,18 @@ class CapturePipelineTest {
     @Before
     fun setUp() {
         state3AControl =
-            State3AControl(
-                    fakeCameraProperties,
-                    NoOpAutoFlashAEModeDisabler,
-                )
-                .apply { requestControl = fakeRequestControl }
+            State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                requestControl = fakeRequestControl
+            }
 
         torchControl =
-            TorchControl(
-                    fakeCameraProperties,
-                    state3AControl,
-                    fakeUseCaseThreads,
-                )
-                .also {
-                    it.requestControl = fakeRequestControl
+            TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads).also {
+                it.requestControl = fakeRequestControl
 
-                    // Ensure the control is updated after the UseCaseCamera been set.
-                    assertThat(fakeRequestControl.setTorchSemaphore.tryAcquire(testScope)).isTrue()
-                    fakeRequestControl.torchUpdateEventList.clear()
-                }
+                // Ensure the control is updated after the UseCaseCamera been set.
+                assertThat(fakeRequestControl.setTorchSemaphore.tryAcquire(testScope)).isTrue()
+                fakeRequestControl.torchUpdateEventList.clear()
+            }
 
         flashControl =
             FlashControl(
@@ -417,7 +408,7 @@ class CapturePipelineTest {
         comboRequestListener.simulateRepeatingResult(
             resultParameters =
                 mapOf(
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
+                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED
                 )
         )
         val requestList = mutableListOf<Request>()
@@ -965,7 +956,7 @@ class CapturePipelineTest {
                     it.onFailed(
                         requestMetadata = requestMetadata,
                         frameNumber = frameNumber,
-                        requestFailure = FakeRequestFailure(requestMetadata, frameNumber)
+                        requestFailure = FakeRequestFailure(requestMetadata, frameNumber),
                     )
                 }
             }
@@ -1048,7 +1039,7 @@ class CapturePipelineTest {
                                     .apply {
                                         setCaptureRequestOption(
                                             CONTROL_AE_MODE,
-                                            CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                                            CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                                         )
                                     }
                                     .build()
@@ -1094,7 +1085,7 @@ class CapturePipelineTest {
                                     .apply {
                                         setCaptureRequestOption(
                                             CONTROL_AE_MODE,
-                                            CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                                            CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                                         )
                                     }
                                     .build()
@@ -1222,7 +1213,7 @@ class CapturePipelineTest {
     @Test
     fun screenFlashClearInvokedInMainThread_whenScreenFlashPostCaptureCalled() = runTest {
         capturePipeline.invokeScreenFlashPostCaptureTasks(
-            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
         )
 
         assertThat(screenFlash.lastClearThreadLooper).isEqualTo(Looper.getMainLooper())
@@ -1233,7 +1224,7 @@ class CapturePipelineTest {
     @Test
     fun unlock3aTriggered_whenPostCaptureCalled() = runTest {
         capturePipeline.invokeScreenFlashPostCaptureTasks(
-            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
         )
 
         assertThat(fakeCameraGraphSession.unlock3APostCaptureSemaphore.tryAcquire(this)).isTrue()
@@ -1242,7 +1233,7 @@ class CapturePipelineTest {
     @Test
     fun doesNotCancelAf_whenPostCaptureCalledWithMinimizeLatency() = runTest {
         capturePipeline.invokeScreenFlashPostCaptureTasks(
-            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
         )
 
         assumeTrue(fakeCameraGraphSession.unlock3APostCaptureSemaphore.tryAcquire(this))
@@ -1252,7 +1243,7 @@ class CapturePipelineTest {
     @Test
     fun cancelsAf_whenPostCaptureCalledWithMaximumQuality() = runTest {
         capturePipeline.invokeScreenFlashPostCaptureTasks(
-            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
+            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
         )
 
         assumeTrue(fakeCameraGraphSession.unlock3APostCaptureSemaphore.tryAcquire(this))
@@ -1311,9 +1302,7 @@ class CapturePipelineTest {
         assertThat(screenFlash.awaitClear(3000)).isTrue()
     }
 
-    private fun createCapturePipeline(
-        useTorchAsFlash: UseTorchAsFlash = NotUseTorchAsFlash,
-    ) =
+    private fun createCapturePipeline(useTorchAsFlash: UseTorchAsFlash = NotUseTorchAsFlash) =
         CapturePipelineImpl(
             configAdapter = fakeCaptureConfigAdapter,
             cameraProperties = fakeCameraProperties,

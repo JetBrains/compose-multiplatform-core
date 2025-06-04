@@ -48,7 +48,7 @@ class ScheduleCustomAudienceUpdateRequestTest {
                 updateUri,
                 minDelayDuration,
                 partialCustomAudienceList,
-                shouldReplacePendingUpdates
+                shouldReplacePendingUpdates,
             )
         val result =
             "ScheduleCustomAudienceUpdateRequest: updateUri=$updateUri, " +
@@ -64,14 +64,14 @@ class ScheduleCustomAudienceUpdateRequestTest {
                 updateUri,
                 minDelayDuration,
                 partialCustomAudienceList,
-                shouldReplacePendingUpdates
+                shouldReplacePendingUpdates,
             )
         val request2 =
             ScheduleCustomAudienceUpdateRequest(
                 updateUri,
                 minDelayDuration,
                 partialCustomAudienceList,
-                shouldReplacePendingUpdates
+                shouldReplacePendingUpdates,
             )
         Truth.assertThat(request1 == request2).isTrue()
     }
@@ -84,7 +84,7 @@ class ScheduleCustomAudienceUpdateRequestTest {
         /* API is not available */
         Assume.assumeTrue(
             "minSdkVersion = API 31 ext 14",
-            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14
+            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14,
         )
 
         val scheduleCustomAudienceUpdateRequest =
@@ -92,7 +92,7 @@ class ScheduleCustomAudienceUpdateRequestTest {
                 updateUri,
                 minDelayDuration,
                 partialCustomAudienceList,
-                shouldReplacePendingUpdates
+                shouldReplacePendingUpdates,
             )
         val result = scheduleCustomAudienceUpdateRequest.convertToAdServices()
         val expected =

@@ -26,7 +26,7 @@ public inline fun <T : Any> entryProvider(
     noinline fallback: (unknownScreen: T) -> NavEntry<T> = {
         throw IllegalStateException("Unknown screen $it")
     },
-    builder: EntryProviderBuilder<T>.() -> Unit
+    builder: EntryProviderBuilder<T>.() -> Unit,
 ): (T) -> NavEntry<T> = EntryProviderBuilder<T>(fallback).apply(builder).build()
 
 /** DSL for constructing a new [NavEntry] */

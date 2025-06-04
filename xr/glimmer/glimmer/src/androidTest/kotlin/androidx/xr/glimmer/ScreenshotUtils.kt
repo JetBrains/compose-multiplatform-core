@@ -37,7 +37,7 @@ internal fun ComposeContentTestRule.setGlimmerThemeContent(content: @Composable 
 
 internal fun ComposeContentTestRule.assertRootAgainstGolden(
     goldenName: String,
-    screenshotRule: AndroidXScreenshotTestRule
+    screenshotRule: AndroidXScreenshotTestRule,
 ) {
     onRoot().captureToImage().assertAgainstGolden(screenshotRule, goldenName, MSSIMMatcher(0.995))
 }

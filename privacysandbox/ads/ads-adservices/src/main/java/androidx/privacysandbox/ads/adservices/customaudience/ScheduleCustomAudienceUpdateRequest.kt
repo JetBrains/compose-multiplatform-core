@@ -47,7 +47,7 @@ constructor(
     val updateUri: Uri,
     val minDelay: Duration,
     val partialCustomAudienceList: List<PartialCustomAudience>,
-    @get:JvmName("shouldReplacePendingUpdates") val shouldReplacePendingUpdates: Boolean = false
+    @get:JvmName("shouldReplacePendingUpdates") val shouldReplacePendingUpdates: Boolean = false,
 ) {
     /**
      * Checks whether two ScheduleCustomAudienceUpdateRequest objects contain the same information.
@@ -85,7 +85,7 @@ constructor(
         return android.adservices.customaudience.ScheduleCustomAudienceUpdateRequest.Builder(
                 updateUri,
                 minDelay,
-                partialCustomAudienceList.map { it.convertToAdServices() }
+                partialCustomAudienceList.map { it.convertToAdServices() },
             )
             .setShouldReplacePendingUpdates(shouldReplacePendingUpdates)
             .build()

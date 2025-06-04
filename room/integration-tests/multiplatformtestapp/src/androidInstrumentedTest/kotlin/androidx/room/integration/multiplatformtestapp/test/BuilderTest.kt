@@ -36,7 +36,7 @@ class BuilderTest : BaseBuilderTest() {
         return Room.databaseBuilder<SampleDatabase>(
                 context = instrumentation.targetContext,
                 name = file.path,
-                factory = SampleDatabaseConstructor::initialize
+                factory = SampleDatabaseConstructor::initialize,
             )
             .setDriver(BundledSQLiteDriver())
     }

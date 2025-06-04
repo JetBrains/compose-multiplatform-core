@@ -83,11 +83,11 @@ fun HomeScreen(navController: NavController) {
                 // Registration Button
                 Button(
                     onClick = { navController.navigate("register") },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Go to Register"
+                        contentDescription = "Go to Register",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Go to registration screen.")
@@ -96,11 +96,11 @@ fun HomeScreen(navController: NavController) {
                 // Scrolling registration button 1
                 Button(
                     onClick = { navController.navigate("scrolling-then-register") },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Go to scrolling"
+                        contentDescription = "Go to scrolling",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Go to scrolling registration screen 1.")
@@ -109,11 +109,11 @@ fun HomeScreen(navController: NavController) {
                 // Scrolling registration button 2
                 Button(
                     onClick = { navController.navigate("register-then-scrolling") },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Go to scrolling"
+                        contentDescription = "Go to scrolling",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Go to scrolling registration screen 2.")
@@ -135,11 +135,11 @@ fun HomeScreen(navController: NavController) {
                 // Login Button
                 Button(
                     onClick = { navController.navigate("login") },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Go to login"
+                        contentDescription = "Go to login",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Go to the login screen.")
@@ -158,11 +158,11 @@ fun SubmittedScreen(navController: NavController) {
                 // Back Button
                 Button(
                     onClick = { navController.navigate("home") },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back to Home"
+                        contentDescription = "Back to Home",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Back to Home")
@@ -207,7 +207,7 @@ fun ScrollingRegisterScreen(navController: NavController) {
         navController,
         null,
         "home",
-        content = { ScrollingRegisterScreenContent() }
+        content = { ScrollingRegisterScreenContent() },
     )
 }
 
@@ -219,7 +219,7 @@ fun RegisterThenScrollScreen(navController: NavController) {
         navController,
         null,
         "home",
-        content = { RegisterThenScrollScreenContent() }
+        content = { RegisterThenScrollScreenContent() },
     )
 }
 
@@ -334,7 +334,7 @@ fun NavigationDemoTextField(
     modifier: Modifier = Modifier,
     state: TextFieldState = remember { TextFieldState() },
     contentType: ContentType,
-    textStyle: TextStyle = LocalTextStyle.current.copy(color = Color.White)
+    textStyle: TextStyle = LocalTextStyle.current.copy(color = Color.White),
 ) {
     BasicTextField(
         state = state,
@@ -342,7 +342,7 @@ fun NavigationDemoTextField(
             modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
                 this.contentType = contentType
             },
-        textStyle = textStyle
+        textStyle = textStyle,
     )
 }
 
@@ -352,7 +352,7 @@ fun TwoButtonNavigationScaffold(
     navController: NavController,
     forwardRoute: String? = null,
     backwardRoute: String,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Scaffold(
         content = { padding ->
@@ -360,11 +360,11 @@ fun TwoButtonNavigationScaffold(
                 // Navigation Button backwards
                 Button(
                     onClick = { navController.navigate(backwardRoute) },
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Go to $backwardRoute"
+                        contentDescription = "Go to $backwardRoute",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Go to $backwardRoute.")
@@ -374,11 +374,11 @@ fun TwoButtonNavigationScaffold(
                     // Navigation Button forwards
                     Button(
                         onClick = { navController.navigate(forwardRoute) },
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier.align(Alignment.Start),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Go to $forwardRoute"
+                            contentDescription = "Go to $forwardRoute",
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Go to $forwardRoute screen")

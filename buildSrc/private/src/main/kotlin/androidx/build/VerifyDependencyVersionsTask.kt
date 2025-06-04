@@ -120,7 +120,7 @@ data class AndroidXDependency(
     val group: String,
     val name: String,
     val version: String,
-    val configurationName: String
+    val configurationName: String,
 ) : java.io.Serializable {
     companion object {
         private const val serialVersionUID = 344435634564L
@@ -146,7 +146,7 @@ internal fun Project.createVerifyDependencyVersionsTask():
                                     dependency.group!!,
                                     dependency.name,
                                     dependency.version!!,
-                                    configuration.name
+                                    configuration.name,
                                 )
                             )
                         }
@@ -186,7 +186,16 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     if (name.startsWith("androidUnitTest")) return false
     if (name.startsWith("debug")) return false
     if (name.startsWith("androidDebug")) return false
-    if (name.startsWith("release")) return false
+    if (name.startsWith("releaseAndroidTest")) return false
+    if (name.startsWith("releaseAnnotationProcessor")) return false
+    // releaseApi, and releaseImplementation are for declaring dependencies
+    // for the release variant. They extend the releaseCompileClasspath and
+    // releaseRuntimeClasspath (both resolvable configurations) respectively.
+    if (name.startsWith("releaseApi")) return false
+    if (name.startsWith("releaseImplementation")) return false
+    if (name.startsWith("releaseTest")) return false
+    if (name.startsWith("releaseUnitTest")) return false
+
     if (name.startsWith("test")) return false
     if (name.startsWith("jvmTest")) return false
     if (name.startsWith("_agp_internal")) return false

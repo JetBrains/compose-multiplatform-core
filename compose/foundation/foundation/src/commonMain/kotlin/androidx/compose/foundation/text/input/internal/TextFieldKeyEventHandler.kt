@@ -67,7 +67,7 @@ internal abstract class TextFieldKeyEventHandler {
         textFieldState: TransformedTextFieldState,
         textFieldSelectionState: TextFieldSelectionState,
         focusManager: FocusManager,
-        keyboardController: SoftwareKeyboardController
+        keyboardController: SoftwareKeyboardController,
     ): Boolean {
         val selection = textFieldState.visualText.selection
         return if (!selection.collapsed && event.cancelsTextSelection()) {
@@ -142,7 +142,7 @@ internal abstract class TextFieldKeyEventHandler {
                     textFieldState.replaceSelectedText(
                         newText = text,
                         clearComposition = true,
-                        restartImeIfContentChanges = !event.isFromSoftKeyboard
+                        restartImeIfContentChanges = !event.isFromSoftKeyboard,
                     )
                     preparedSelectionState.resetCachedX()
                     true
@@ -189,7 +189,7 @@ internal abstract class TextFieldKeyEventHandler {
                         textFieldState.replaceSelectedText(
                             newText = "\n",
                             clearComposition = true,
-                            restartImeIfContentChanges = !event.isFromSoftKeyboard
+                            restartImeIfContentChanges = !event.isFromSoftKeyboard,
                         )
                     } else {
                         consumed = onSubmit()
@@ -200,7 +200,7 @@ internal abstract class TextFieldKeyEventHandler {
                         textFieldState.replaceSelectedText(
                             newText = "\t",
                             clearComposition = true,
-                            restartImeIfContentChanges = !event.isFromSoftKeyboard
+                            restartImeIfContentChanges = !event.isFromSoftKeyboard,
                         )
                     } else {
                         consumed = false // let propagate to focus system
@@ -242,7 +242,7 @@ internal abstract class TextFieldKeyEventHandler {
         state: TransformedTextFieldState,
         textLayoutState: TextLayoutState,
         isFromSoftKeyboard: Boolean,
-        block: TextFieldPreparedSelection.() -> Unit
+        block: TextFieldPreparedSelection.() -> Unit,
     ) {
         val layoutResult = textLayoutState.layoutResult
         val visibleTextLayoutHeight = textLayoutState.getVisibleTextLayoutHeight()
@@ -252,7 +252,7 @@ internal abstract class TextFieldKeyEventHandler {
                 textLayoutResult = layoutResult,
                 isFromSoftKeyboard = isFromSoftKeyboard,
                 visibleTextLayoutHeight = visibleTextLayoutHeight,
-                textPreparedSelectionState = preparedSelectionState
+                textPreparedSelectionState = preparedSelectionState,
             )
         preparedSelection.block()
         if (preparedSelection.selection != preparedSelection.initialValue.selection) {

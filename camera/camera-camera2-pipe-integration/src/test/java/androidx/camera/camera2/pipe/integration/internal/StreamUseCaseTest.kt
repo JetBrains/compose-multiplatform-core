@@ -67,7 +67,7 @@ class StreamUseCaseTest() {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
             "camera2.cameraCaptureSession.streamUseCase",
-            Long::class.javaPrimitiveType!!
+            Long::class.javaPrimitiveType!!,
         )
 
     private var mMockSurface1: DeferrableSurface =
@@ -101,7 +101,7 @@ class StreamUseCaseTest() {
         val optionsBundle = MutableOptionsBundle.create()
         optionsBundle.insertOption(
             StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION,
-            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
         )
         val sessionConfig =
             SessionConfig.Builder()
@@ -114,14 +114,14 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val sessionConfigs = mutableListOf(sessionConfig)
         val useCaseConfigs = mutableListOf(useCaseConfig)
         StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(
             sessionConfigs,
             useCaseConfigs,
-            streamUseCaseMap
+            streamUseCaseMap,
         )
         TestCase.assertTrue(
             streamUseCaseMap[mMockSurface1] ==
@@ -135,7 +135,7 @@ class StreamUseCaseTest() {
         val optionsBundle = MutableOptionsBundle.create()
         optionsBundle.insertOption(
             StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION,
-            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
         )
         val imageCaptureSessionConfig =
             SessionConfig.Builder()
@@ -150,7 +150,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.IMAGE_CAPTURE,
-                imageFormat = ImageFormat.YUV_420_888
+                imageFormat = ImageFormat.YUV_420_888,
             )
         val meteringRepeatingConfig =
             getFakeUseCaseConfigWithOptions(
@@ -158,7 +158,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.METERING_REPEATING,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val sessionConfigs =
             mutableListOf(imageCaptureSessionConfig, meteringRepeatingSessionConfig)
@@ -166,7 +166,7 @@ class StreamUseCaseTest() {
         StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(
             sessionConfigs,
             useCaseConfigs,
-            streamUseCaseMap
+            streamUseCaseMap,
         )
         TestCase.assertTrue(
             streamUseCaseMap[mMockSurface1] ==
@@ -184,7 +184,7 @@ class StreamUseCaseTest() {
         val previewOptionsBundle = MutableOptionsBundle.create()
         previewOptionsBundle.insertOption(
             StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION,
-            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
         )
         val previewSessionConfig =
             SessionConfig.Builder()
@@ -194,7 +194,7 @@ class StreamUseCaseTest() {
         val videoCaptureOptionsBundle = MutableOptionsBundle.create()
         videoCaptureOptionsBundle.insertOption(
             StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION,
-            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+            CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
         )
         // VideoCapture doesn't contain a surface
         val videoCaptureSessionConfig =
@@ -207,7 +207,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val videoCaptureConfig =
             getFakeUseCaseConfigWithOptions(
@@ -215,14 +215,14 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.VIDEO_CAPTURE,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val sessionConfigs = mutableListOf(previewSessionConfig, videoCaptureSessionConfig)
         val useCaseConfigs = mutableListOf(previewConfig, videoCaptureConfig)
         StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(
             sessionConfigs,
             useCaseConfigs,
-            streamUseCaseMap
+            streamUseCaseMap,
         )
         assertThat(streamUseCaseMap.size).isEqualTo(1)
         assertThat(streamUseCaseMap[mMockSurface1])
@@ -238,7 +238,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = false,
                     isZslCaptureMode = false,
                     captureType = CaptureType.PREVIEW,
-                    imageFormat = ImageFormat.PRIVATE
+                    imageFormat = ImageFormat.PRIVATE,
                 )
             )
         TestCase.assertTrue(
@@ -266,7 +266,7 @@ class StreamUseCaseTest() {
                 SupportedSurfaceCombination.FeatureSettings(
                     CameraMode.CONCURRENT_CAMERA,
                     DynamicRange.BIT_DEPTH_8_BIT,
-                    requiresFeatureComboQuery = false
+                    requiresFeatureComboQuery = false,
                 )
             )
         )
@@ -279,7 +279,7 @@ class StreamUseCaseTest() {
                 SupportedSurfaceCombination.FeatureSettings(
                     CameraMode.DEFAULT,
                     DynamicRange.BIT_DEPTH_10_BIT,
-                    requiresFeatureComboQuery = false
+                    requiresFeatureComboQuery = false,
                 )
             )
         )
@@ -293,7 +293,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = true,
                 captureType = CaptureType.IMAGE_CAPTURE,
-                imageFormat = ImageFormat.JPEG
+                imageFormat = ImageFormat.JPEG,
             )
         val useCaseConfigList = mutableListOf(useCaseConfig)
         TestCase.assertTrue(StreamUseCaseUtil.containsZslUseCase(listOf(), useCaseConfigList))
@@ -307,7 +307,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = true,
                 isZslCaptureMode = true,
                 captureType = CaptureType.IMAGE_CAPTURE,
-                imageFormat = ImageFormat.JPEG
+                imageFormat = ImageFormat.JPEG,
             )
         val useCaseConfigList = mutableListOf(useCaseConfig)
         TestCase.assertFalse(StreamUseCaseUtil.containsZslUseCase(listOf(), useCaseConfigList))
@@ -322,7 +322,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = false,
                     isZslCaptureMode = true,
                     captureType = CaptureType.IMAGE_CAPTURE,
-                    imageFormat = ImageFormat.JPEG
+                    imageFormat = ImageFormat.JPEG,
                 )
             )
         TestCase.assertTrue(StreamUseCaseUtil.containsZslUseCase(attachedSurfaces, listOf()))
@@ -337,7 +337,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = true,
                     isZslCaptureMode = true,
                     captureType = CaptureType.IMAGE_CAPTURE,
-                    imageFormat = ImageFormat.JPEG
+                    imageFormat = ImageFormat.JPEG,
                 )
             )
         TestCase.assertFalse(StreamUseCaseUtil.containsZslUseCase(attachedSurfaces, listOf()))
@@ -352,7 +352,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         suggestedStreamSpecMap[useCaseConfig] =
             getFakeStreamSpecFromFakeUseCaseConfig(useCaseConfig)
@@ -360,7 +360,7 @@ class StreamUseCaseTest() {
             getCameraMetadata(false),
             ArrayList<AttachedSurfaceInfo>(),
             suggestedStreamSpecMap,
-            mutableMapOf()
+            mutableMapOf(),
         )
         TestCase.assertTrue(
             suggestedStreamSpecMap[useCaseConfig]!!
@@ -379,7 +379,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = false,
                     isZslCaptureMode = false,
                     captureType = CaptureType.PREVIEW,
-                    imageFormat = ImageFormat.PRIVATE
+                    imageFormat = ImageFormat.PRIVATE,
                 )
             )
         val attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec> = HashMap()
@@ -387,7 +387,7 @@ class StreamUseCaseTest() {
             getCameraMetadata(false),
             attachedSurfaces,
             mutableMapOf(),
-            attachedSurfaceStreamSpecMap
+            attachedSurfaceStreamSpecMap,
         )
         TestCase.assertTrue(
             attachedSurfaceStreamSpecMap[attachedSurfaces[0]]!!
@@ -406,7 +406,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         suggestedStreamSpecMap[useCaseConfig] =
             getFakeStreamSpecFromFakeUseCaseConfig(useCaseConfig)
@@ -417,7 +417,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = false,
                     isZslCaptureMode = false,
                     captureType = CaptureType.PREVIEW,
-                    imageFormat = ImageFormat.PRIVATE
+                    imageFormat = ImageFormat.PRIVATE,
                 )
             )
         val attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec> =
@@ -426,7 +426,7 @@ class StreamUseCaseTest() {
             getCameraMetadata(false),
             attachedSurfaces,
             suggestedStreamSpecMap,
-            attachedSurfaceStreamSpecMap
+            attachedSurfaceStreamSpecMap,
         )
         TestCase.assertTrue(
             suggestedStreamSpecMap[useCaseConfig]!!
@@ -451,7 +451,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         suggestedStreamSpecMap[useCaseConfig] =
             getFakeStreamSpecFromFakeUseCaseConfig(useCaseConfig)
@@ -462,7 +462,7 @@ class StreamUseCaseTest() {
                     isZslDisabled = false,
                     isZslCaptureMode = false,
                     captureType = CaptureType.PREVIEW,
-                    imageFormat = ImageFormat.PRIVATE
+                    imageFormat = ImageFormat.PRIVATE,
                 )
             )
         val attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec> = HashMap()
@@ -470,7 +470,7 @@ class StreamUseCaseTest() {
             getCameraMetadata(false),
             attachedSurfaces,
             suggestedStreamSpecMap,
-            attachedSurfaceStreamSpecMap
+            attachedSurfaceStreamSpecMap,
         )
     }
 
@@ -481,13 +481,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 )
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
                 getCameraMetadata(false),
-                surfaceConfigList
+                surfaceConfigList,
             )
         )
     }
@@ -499,13 +499,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 )
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
                 getCameraMetadata(true),
-                surfaceConfigList
+                surfaceConfigList,
             )
         )
     }
@@ -517,13 +517,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
-                )
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> = HashMap()
         surfaceConfigAttachedSurfaceInfoMap[0] =
@@ -532,7 +532,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = HashMap()
         surfaceConfigUseCaseConfigMap[1] =
@@ -541,13 +541,13 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.VIDEO_CAPTURE,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areCaptureTypesEligible(
                 surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap,
-                surfaceConfigsWithStreamUseCase
+                surfaceConfigsWithStreamUseCase,
             )
         )
     }
@@ -559,13 +559,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
-                )
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> = HashMap()
         surfaceConfigAttachedSurfaceInfoMap[0] =
@@ -574,7 +574,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = HashMap()
         surfaceConfigUseCaseConfigMap[1] =
@@ -583,13 +583,13 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areCaptureTypesEligible(
                 surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap,
-                surfaceConfigsWithStreamUseCase
+                surfaceConfigsWithStreamUseCase,
             )
         )
     }
@@ -601,13 +601,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
-                )
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo> = HashMap()
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = HashMap()
@@ -617,12 +617,12 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.VIDEO_CAPTURE,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         StreamUseCaseUtil.areCaptureTypesEligible(
             surfaceConfigAttachedSurfaceInfoMap,
             surfaceConfigUseCaseConfigMap,
-            surfaceConfigsWithStreamUseCase
+            surfaceConfigsWithStreamUseCase,
         )
     }
 
@@ -633,7 +633,7 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong()
+                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
                 )
             )
         val useCaseConfigFactory: UseCaseConfigFactory = FakeUseCaseConfigFactory()
@@ -641,7 +641,7 @@ class StreamUseCaseTest() {
             mutableSetOf(
                 FakeUseCase(FakeUseCaseConfig.Builder().useCaseConfig, CaptureType.PREVIEW),
                 FakeUseCase(FakeUseCaseConfig.Builder().useCaseConfig, CaptureType.IMAGE_CAPTURE),
-                FakeUseCase(FakeUseCaseConfig.Builder().useCaseConfig, CaptureType.VIDEO_CAPTURE)
+                FakeUseCase(FakeUseCaseConfig.Builder().useCaseConfig, CaptureType.VIDEO_CAPTURE),
             )
         val streamSharing =
             StreamSharing(
@@ -650,7 +650,7 @@ class StreamUseCaseTest() {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 children,
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         val surfaceConfigAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo> = mutableMapOf()
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = mutableMapOf()
@@ -660,7 +660,7 @@ class StreamUseCaseTest() {
             StreamUseCaseUtil.areCaptureTypesEligible(
                 surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap,
-                surfaceConfigsWithStreamUseCase
+                surfaceConfigsWithStreamUseCase,
             )
         )
     }
@@ -672,7 +672,7 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
                 )
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
@@ -685,21 +685,21 @@ class StreamUseCaseTest() {
             AttachedSurfaceInfo.create(
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
+                    SurfaceConfig.ConfigSize.PREVIEW,
                 ),
                 ImageFormat.PRIVATE,
                 SizeUtil.RESOLUTION_720P,
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                /*targetFrameRate=*/ null,
-                FRAME_RATE_RANGE_UNSPECIFIED
+                FRAME_RATE_RANGE_UNSPECIFIED,
+                FRAME_RATE_RANGE_UNSPECIFIED,
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areCaptureTypesEligible(
                 surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap,
-                surfaceConfigsWithStreamUseCase
+                surfaceConfigsWithStreamUseCase,
             )
         )
     }
@@ -711,7 +711,7 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
                 )
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
@@ -723,21 +723,21 @@ class StreamUseCaseTest() {
             AttachedSurfaceInfo.create(
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
+                    SurfaceConfig.ConfigSize.PREVIEW,
                 ),
                 ImageFormat.PRIVATE,
                 SizeUtil.RESOLUTION_720P,
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                /*targetFrameRate=*/ null,
-                FRAME_RATE_RANGE_UNSPECIFIED
+                FRAME_RATE_RANGE_UNSPECIFIED,
+                FRAME_RATE_RANGE_UNSPECIFIED,
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areCaptureTypesEligible(
                 surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap,
-                surfaceConfigsWithStreamUseCase
+                surfaceConfigsWithStreamUseCase,
             )
         )
     }
@@ -749,13 +749,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
-                )
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
             mutableMapOf()
@@ -765,7 +765,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.PREVIEW,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         surfaceConfigAttachedSurfaceInfoMap[0] = attachedSurfaceInfo
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = mutableMapOf()
@@ -775,7 +775,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.VIDEO_CAPTURE,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         surfaceConfigUseCaseConfigMap[1] = useCaseConfig
         val attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec> =
@@ -788,7 +788,7 @@ class StreamUseCaseTest() {
             attachedSurfaceStreamSpecMap,
             surfaceConfigAttachedSurfaceInfoMap,
             surfaceConfigUseCaseConfigMap,
-            surfaceConfigsWithStreamUseCase
+            surfaceConfigsWithStreamUseCase,
         )
         TestCase.assertTrue(
             (attachedSurfaceStreamSpecMap[attachedSurfaceInfo]!!
@@ -811,13 +811,13 @@ class StreamUseCaseTest() {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
-                )
+                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo> = HashMap()
         val surfaceConfigUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>> = HashMap()
@@ -827,7 +827,7 @@ class StreamUseCaseTest() {
                 isZslDisabled = false,
                 isZslCaptureMode = false,
                 captureType = CaptureType.VIDEO_CAPTURE,
-                imageFormat = ImageFormat.PRIVATE
+                imageFormat = ImageFormat.PRIVATE,
             )
         surfaceConfigUseCaseConfigMap[1] = useCaseConfig
         val attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec> = HashMap()
@@ -839,7 +839,7 @@ class StreamUseCaseTest() {
             attachedSurfaceStreamSpecMap,
             surfaceConfigAttachedSurfaceInfoMap,
             surfaceConfigUseCaseConfigMap,
-            surfaceConfigsWithStreamUseCase
+            surfaceConfigsWithStreamUseCase,
         )
     }
 
@@ -848,7 +848,7 @@ class StreamUseCaseTest() {
         isZslDisabled: Boolean,
         isZslCaptureMode: Boolean,
         captureType: CaptureType,
-        imageFormat: Int
+        imageFormat: Int,
     ): UseCaseConfig<*> {
         val fakeUseCaseConfigBuilder = FakeUseCaseConfig.Builder(captureType)
         val fakeConfig = fakeUseCaseConfigBuilder.mutableConfig
@@ -859,7 +859,7 @@ class StreamUseCaseTest() {
         fakeConfig.insertOption(
             ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE,
             if (isZslCaptureMode) ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-            else TEST_OPTION_IMAGE_CAPTURE_MODE_VALUE
+            else TEST_OPTION_IMAGE_CAPTURE_MODE_VALUE,
         )
         fakeConfig.insertOption(ImageCaptureConfig.OPTION_INPUT_FORMAT, imageFormat)
         return fakeUseCaseConfigBuilder.useCaseConfig
@@ -870,7 +870,7 @@ class StreamUseCaseTest() {
         isZslDisabled: Boolean,
         isZslCaptureMode: Boolean,
         captureType: CaptureType,
-        imageFormat: Int
+        imageFormat: Int,
     ): AttachedSurfaceInfo {
         val useCaseConfig =
             getFakeUseCaseConfigWithOptions(
@@ -878,7 +878,7 @@ class StreamUseCaseTest() {
                 isZslDisabled,
                 isZslCaptureMode,
                 captureType,
-                imageFormat
+                imageFormat,
             )
         val captureTypes: MutableList<CaptureType> = ArrayList()
         captureTypes.add(useCaseConfig.captureType)
@@ -889,8 +889,8 @@ class StreamUseCaseTest() {
             DynamicRange.SDR,
             captureTypes,
             StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
-            /* targetFrameRate= */ null,
-            FRAME_RATE_RANGE_UNSPECIFIED
+            FRAME_RATE_RANGE_UNSPECIFIED,
+            FRAME_RATE_RANGE_UNSPECIFIED,
         )
     }
 
@@ -917,13 +917,13 @@ class StreamUseCaseTest() {
                     SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
                     CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
                     CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_CALL.toLong(),
-                    CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                    CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
                 )
             characteristicsMap[CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES] = uc
         }
         return FakeCameraMetadata(
             cameraId = CameraId.fromCamera2Id(CAMERA_ID_0),
-            characteristics = characteristicsMap
+            characteristics = characteristicsMap,
         )
     }
 

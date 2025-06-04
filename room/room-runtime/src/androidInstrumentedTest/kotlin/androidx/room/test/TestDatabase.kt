@@ -53,5 +53,5 @@ fun createDefaultConfiguration(instrumentation: Instrumentation) =
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = true,
         sqliteDriver = null,
-        queryCoroutineContext = Dispatchers.IO
+        queryCoroutineContext = Dispatchers.IO,
     )

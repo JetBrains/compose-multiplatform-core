@@ -72,7 +72,7 @@ fun InCallScreen(inCallViewModel: InCallViewModel) {
                 onDismissRequest = { showErrorDialog = false },
                 title = { Text("Call Error") },
                 text = { Text(it.hasCallException?.message ?: "An unknown error occurred.") },
-                confirmButton = { Button(onClick = { showErrorDialog = false }) { Text("OK") } }
+                confirmButton = { Button(onClick = { showErrorDialog = false }) { Text("OK") } },
             )
         }
     }
@@ -87,7 +87,7 @@ fun InCallScreen(inCallViewModel: InCallViewModel) {
         onAddParticipantClick = inCallViewModel::addParticipant,
         onRemoveParticipantClick = inCallViewModel::removeParticipant,
         onChangeCallIconClick = inCallViewModel::changeCallIcon,
-        onLocalCallSilenceClick = inCallViewModel::toggleLocalCallSilence
+        onLocalCallSilenceClick = inCallViewModel::toggleLocalCallSilence,
     )
 }
 
@@ -119,8 +119,8 @@ val sampleCallActive =
             CallAttributesCompat(
                 "Alice Wonderland",
                 Uri.parse("123"),
-                CallAttributesCompat.DIRECTION_INCOMING
-            )
+                CallAttributesCompat.DIRECTION_INCOMING,
+            ),
     )
 
 val sampleCallMuted =
@@ -139,8 +139,8 @@ val sampleCallMuted =
             CallAttributesCompat(
                 "Bob The Builder",
                 Uri.parse("456"),
-                CallAttributesCompat.DIRECTION_OUTGOING
-            )
+                CallAttributesCompat.DIRECTION_OUTGOING,
+            ),
     )
 
 val sampleCallInactive =
@@ -159,8 +159,8 @@ val sampleCallInactive =
             CallAttributesCompat(
                 "Charlie Chaplin",
                 Uri.parse("789"),
-                CallAttributesCompat.DIRECTION_OUTGOING
-            )
+                CallAttributesCompat.DIRECTION_OUTGOING,
+            ),
     )
 
 val sampleCallDialing =
@@ -179,8 +179,8 @@ val sampleCallDialing =
             CallAttributesCompat(
                 "Diana Prince",
                 Uri.parse("345"),
-                CallAttributesCompat.DIRECTION_OUTGOING
-            )
+                CallAttributesCompat.DIRECTION_OUTGOING,
+            ),
     )
 
 val sampleSelf = ParticipantState("p_self", "Me", false, false, true)
@@ -198,7 +198,7 @@ val sampleCallActiveWithParticipants =
                     "android.resource://androidx.core.telecom.reference/drawable/ic_launcher_foreground"
                 ),
                 null,
-                ""
+                "",
             ),
-        isCallIconExtensionEnabled = true
+        isCallIconExtensionEnabled = true,
     )

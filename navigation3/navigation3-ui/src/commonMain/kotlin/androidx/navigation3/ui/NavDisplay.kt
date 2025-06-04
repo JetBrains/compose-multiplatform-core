@@ -89,12 +89,10 @@ public object NavDisplay {
                 fadeIn(
                     spring(
                         dampingRatio = 1.0f, // reflects material3 motionScheme.defaultEffectsSpec()
-                        stiffness = 1600.0f // reflects material3 motionScheme.defaultEffectsSpec()
+                        stiffness = 1600.0f, // reflects material3 motionScheme.defaultEffectsSpec()
                     )
                 ),
-                scaleOut(
-                    targetScale = 0.7f,
-                ),
+                scaleOut(targetScale = 0.7f),
             )
         }
 
@@ -128,6 +126,7 @@ public object NavDisplay {
  *   entries to pop from the end of the backstack, as calculated by the [sceneStrategy].
  * @param entryDecorators list of [NavEntryDecorator] to add information to the entry content
  * @param sceneStrategy the [SceneStrategy] to determine which scene to render a list of entries.
+ * @param sizeTransform the [SizeTransform] for the [AnimatedContent].
  * @param transitionSpec Default [ContentTransform] when navigating to [NavEntry]s.
  * @param popTransitionSpec Default [ContentTransform] when popping [NavEntry]s.
  * @param predictivePopTransitionSpec Default [ContentTransform] when popping with predictive back
@@ -154,13 +153,13 @@ public fun <T : Any> NavDisplay(
     transitionSpec: AnimatedContentTransitionScope<*>.() -> ContentTransform = {
         ContentTransform(
             fadeIn(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
-            fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND))
+            fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
         )
     },
     popTransitionSpec: AnimatedContentTransitionScope<*>.() -> ContentTransform = {
         ContentTransform(
             fadeIn(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
-            fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND))
+            fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
         )
     },
     predictivePopTransitionSpec: AnimatedContentTransitionScope<*>.() -> ContentTransform =
@@ -176,7 +175,7 @@ public fun <T : Any> NavDisplay(
     DecoratedNavEntryProvider(
         backStack = backStack,
         entryDecorators = entryDecorators + transitionAwareLifecycleNavEntryDecorator,
-        entryProvider = entryProvider
+        entryProvider = entryProvider,
     ) { entries ->
         val allScenes =
             mutableListOf(sceneStrategy.calculateSceneWithSinglePaneFallback(entries, onBack))
@@ -270,11 +269,7 @@ public fun <T : Any> NavDisplay(
 
         // Consider this a pop if the current entries match the previous entries we have recorded
         // from the current state of the transition
-        val isPop =
-            isPop(
-                transitionCurrentStateEntries.map { it.key },
-                entries.map { it.key },
-            )
+        val isPop = isPop(transitionCurrentStateEntries.map { it.key }, entries.map { it.key })
 
         val zIndices = remember { mutableObjectFloatMapOf<Pair<KClass<*>, Any>>() }
         val initialKey = transition.currentState
@@ -320,7 +315,7 @@ public fun <T : Any> NavDisplay(
                     animate(
                         transitionState.fraction,
                         0f,
-                        animationSpec = tween((transitionState.fraction * totalDuration).toInt())
+                        animationSpec = tween((transitionState.fraction * totalDuration).toInt()),
                     ) { value, _ ->
                         this@LaunchedEffect.launch {
                             if (value > 0) {
@@ -363,7 +358,7 @@ public fun <T : Any> NavDisplay(
                     initialContentExit = contentTransform(this).initialContentExit,
                     // z-index increases during navigate and decreases during pop.
                     targetContentZIndex = targetZIndex,
-                    sizeTransform = sizeTransform
+                    sizeTransform = sizeTransform,
                 )
             },
         ) { targetSceneKey ->

@@ -51,7 +51,7 @@ class PdfComposeFragment() : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val view = FragmentComposeBinding.inflate(inflater, container, /* attachToParent= */ false)
         view.openPdf.setOnClickListener { _ -> filePicker.launch(MIME_TYPE_PDF) }
@@ -65,7 +65,7 @@ class PdfComposeFragment() : Fragment() {
                     PdfViewer(
                         state = pdfViewerState,
                         pdfDocument =
-                            viewModel.loadedDocumentStateFlow.collectAsStateWithLifecycle().value
+                            viewModel.loadedDocumentStateFlow.collectAsStateWithLifecycle().value,
                     )
                 }
             }

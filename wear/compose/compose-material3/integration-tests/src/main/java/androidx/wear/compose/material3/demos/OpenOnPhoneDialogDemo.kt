@@ -50,7 +50,7 @@ fun OpenOnPhoneDialogWithCustomText() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { visible = true },
-            label = { Text("Open on phone") }
+            label = { Text("Open on phone") },
         )
     }
 
@@ -59,7 +59,7 @@ fun OpenOnPhoneDialogWithCustomText() {
         visible = visible,
         onDismissRequest = { visible = false },
         curvedText = { openOnPhoneDialogCurvedText(text = "Custom text", style = curvedTextStyle) },
-        properties = DialogProperties(windowTitle = " ")
+        properties = DialogProperties(windowTitle = " "),
     )
 }
 
@@ -71,7 +71,7 @@ fun OpenOnPhoneDialogWithCustomColors() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { visible = true },
-            label = { Text("Open on phone") }
+            label = { Text("Open on phone") },
         )
     }
 
@@ -85,11 +85,11 @@ fun OpenOnPhoneDialogWithCustomColors() {
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 progressIndicatorColor = MaterialTheme.colorScheme.tertiary,
                 progressTrackColor = MaterialTheme.colorScheme.onTertiary,
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         curvedText = {
             openOnPhoneDialogCurvedText(text = "Custom colors", style = curvedTextStyle)
         },
-        properties = DialogProperties(windowTitle = " ")
+        properties = DialogProperties(windowTitle = " "),
     )
 }

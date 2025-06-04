@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class PrimaryKeyBundle(
     @SerialName("autoGenerate") public val isAutoGenerate: Boolean,
-    @SerialName("columnNames") public val columnNames: List<String>
+    @SerialName("columnNames") public val columnNames: List<String>,
 ) : SchemaEquality<PrimaryKeyBundle> {
 
     override fun isSchemaEqual(other: PrimaryKeyBundle): Boolean {

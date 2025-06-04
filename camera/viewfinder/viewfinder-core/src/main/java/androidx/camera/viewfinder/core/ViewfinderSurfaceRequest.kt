@@ -22,14 +22,14 @@ package androidx.camera.viewfinder.core
  * This request contains requirements for the surface resolution and viewfinder input and output
  * information.
  *
- * @constructor Creates a new surface request with given resolution, and optional implementation
- *   mode request ID.
  * @property width The requested surface width.
  * @property height The requested surface height.
  * @property implementationMode The [ImplementationMode] to apply to the viewfinder. Defaults to
  *   `null`, which will use the viewfinder's default implementation mode.
  * @property requestId An optional request ID to allow requests to be differentiated via [equals].
  *   Defaults to `null`.
+ * @constructor Creates a new surface request with given resolution, and optional implementation
+ *   mode request ID.
  */
 class ViewfinderSurfaceRequest
 @JvmOverloads
@@ -37,7 +37,7 @@ constructor(
     val width: Int,
     val height: Int,
     val implementationMode: ImplementationMode? = null,
-    val requestId: String? = null
+    val requestId: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -78,7 +78,7 @@ constructor(
         width: Int = this.width,
         height: Int = this.height,
         implementationMode: ImplementationMode? = this.implementationMode,
-        requestId: String? = this.requestId
+        requestId: String? = this.requestId,
     ): ViewfinderSurfaceRequest =
         ViewfinderSurfaceRequest(width, height, implementationMode, requestId)
 }

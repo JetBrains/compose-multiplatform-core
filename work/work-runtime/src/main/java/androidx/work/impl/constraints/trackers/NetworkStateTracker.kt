@@ -54,7 +54,7 @@ import androidx.work.impl.utils.unregisterNetworkCallbackCompat
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 fun NetworkStateTracker(
     context: Context,
-    taskExecutor: TaskExecutor
+    taskExecutor: TaskExecutor,
 ): ConstraintTracker<NetworkState> {
     // Based on requiring ConnectivityManager#registerDefaultNetworkCallback - added in API 24.
     return if (Build.VERSION.SDK_INT >= 24) {
@@ -101,7 +101,7 @@ internal val ConnectivityManager.activeNetworkState: NetworkState
                 isConnected = false,
                 isValidated = false,
                 isMetered = false,
-                isNotRoaming = true
+                isNotRoaming = true,
             )
         }
     }
@@ -150,7 +150,7 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
         object : NetworkCallback() {
             override fun onCapabilitiesChanged(
                 network: Network,
-                capabilities: NetworkCapabilities
+                capabilities: NetworkCapabilities,
             ) {
                 // The Network parameter is unreliable when a VPN app is running - use active
                 // network.

@@ -17,7 +17,7 @@
 package androidx.appfunctions.compiler.core.metadata
 
 data class AppFunctionComponentsMetadata(
-    val dataTypes: Map<String, AppFunctionDataTypeMetadata> = emptyMap(),
+    val dataTypes: Map<String, AppFunctionDataTypeMetadata> = emptyMap()
 ) {
     fun toAppFunctionComponentsMetadataDocument(): AppFunctionComponentsMetadataDocument {
         return AppFunctionComponentsMetadataDocument(
@@ -25,7 +25,7 @@ data class AppFunctionComponentsMetadata(
                 dataTypes.map { (name, dataType) ->
                     AppFunctionNamedDataTypeMetadataDocument(
                         name = name,
-                        dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+                        dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
                     )
                 }
         )

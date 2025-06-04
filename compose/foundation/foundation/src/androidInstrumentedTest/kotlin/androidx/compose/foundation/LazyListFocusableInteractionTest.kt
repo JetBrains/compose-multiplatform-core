@@ -83,17 +83,11 @@ import org.junit.runners.Parameterized
  */
 @MediumTest
 @RunWith(Parameterized::class)
-class LazyListFocusableInteractionTest(
-    private val orientation: Orientation,
-) {
+class LazyListFocusableInteractionTest(private val orientation: Orientation) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters() =
-            arrayOf(
-                arrayOf(Vertical),
-                arrayOf(Horizontal),
-            )
+        fun initParameters() = arrayOf(arrayOf(Vertical), arrayOf(Horizontal))
     }
 
     @get:Rule val rule = createComposeRule()

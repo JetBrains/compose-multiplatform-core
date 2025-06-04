@@ -77,17 +77,13 @@ public class SessionWorker(
     private val sessionManager: SessionManager = GlanceSessionManager,
     private val timeouts: TimeoutOptions = TimeoutOptions(),
     @Deprecated("Deprecated by super class, replacement in progress, see b/245353737")
-    override val coroutineContext: CoroutineDispatcher = Dispatchers.Main
+    override val coroutineContext: CoroutineDispatcher = Dispatchers.Main,
 ) : CoroutineWorker(appContext, params) {
     // This constructor is required by WorkManager's default WorkerFactory.
     public constructor(
         appContext: Context,
-        params: WorkerParameters
-    ) : this(
-        appContext,
-        params,
-        GlanceSessionManager,
-    )
+        params: WorkerParameters,
+    ) : this(appContext, params, GlanceSessionManager)
 
     public companion object {
         internal const val TAG = "GlanceSessionWorker"
@@ -108,7 +104,7 @@ public class SessionWorker(
                 onIdle = {
                     startTimer(timeouts.idleTimeout)
                     if (DEBUG) Log.d(TAG, "Received idle event, session timeout $timeLeft")
-                }
+                },
             ) {
                 val session =
                     sessionManager.runWithLock { getSession(key) }
@@ -121,7 +117,7 @@ public class SessionWorker(
                             // persistable.
                             Log.w(
                                 TAG,
-                                "SessionWorker attempted restart but Session is not available for $key"
+                                "SessionWorker attempted restart but Session is not available for $key",
                             )
                             return@observeIdleEvents Result.success()
                         }
@@ -131,7 +127,7 @@ public class SessionWorker(
                         applicationContext,
                         session,
                         timeouts,
-                        effectJobFactory = { Job().also { effectJob = it } }
+                        effectJobFactory = { Job().also { effectJob = it } },
                     )
                 } finally {
                     // Get session manager lock to close session to prevent a race where an observer
@@ -215,7 +211,7 @@ private suspend fun TimerScope.runSession(
                             val processed =
                                 session.processEmittableTree(
                                     context,
-                                    root.copy() as EmittableWithChildren
+                                    root.copy() as EmittableWithChildren,
                                 )
                             // If the UI has been processed for the first time, set uiReady to true
                             // and start the timeout.

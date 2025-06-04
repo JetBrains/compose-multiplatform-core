@@ -40,7 +40,7 @@ internal fun DetailPane(navigator: ThreePaneScaffoldNavigator<Destination>) {
     val destination = navigator.currentDestination?.contentKey ?: return
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
-        topBar = { MediumTopAppBar(title = { Text("XR Compose Adaptive: ${destination.label}") }) },
+        topBar = { MediumTopAppBar(title = { Text("XR Compose Adaptive: ${destination.label}") }) }
     ) { innerPadding ->
         Surface(Modifier.fillMaxSize().padding(innerPadding)) {
             when (destination) {

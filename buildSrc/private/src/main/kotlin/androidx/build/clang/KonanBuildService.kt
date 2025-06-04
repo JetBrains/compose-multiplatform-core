@@ -68,7 +68,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
         }
         KonanPrebuiltsSetup.createKonanDistribution(
             prebuiltsDirectory = parameters.prebuilts.orNull?.asFile,
-            konanHome = parameters.konanHome.get().asFile
+            konanHome = parameters.konanHome.get().asFile,
         )
     }
 
@@ -152,7 +152,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                         kind = parameters.linkerOutputKind.get(),
                         outputDsymBundle = "unused",
                         mimallocEnabled = false,
-                        sanitizer = null
+                        sanitizer = null,
                     )
                     .finalLinkCommands()
             }
@@ -248,7 +248,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
         fun obtain(project: Project): Provider<KonanBuildService> {
             return project.gradle.sharedServices.registerIfAbsent(
                 KEY,
-                KonanBuildService::class.java
+                KonanBuildService::class.java,
             ) {
                 check(project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
                     "KonanBuildService can only be used in projects that applied the KMP plugin"

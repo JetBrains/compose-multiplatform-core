@@ -57,7 +57,7 @@ interface Saver<Original, Saveable : Any> {
  */
 fun <Original, Saveable : Any> Saver(
     save: SaverScope.(value: Original) -> Saveable?,
-    restore: (value: Saveable) -> Original?
+    restore: (value: Saveable) -> Original?,
 ): Saver<Original, Saveable> {
     return object : Saver<Original, Saveable> {
         override fun SaverScope.save(value: Original) = save.invoke(this, value)

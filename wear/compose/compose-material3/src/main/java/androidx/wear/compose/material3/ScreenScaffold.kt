@@ -143,7 +143,7 @@ public fun ScreenScaffold(
         timeText = timeText,
         scrollIndicator = scrollIndicator,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -201,7 +201,7 @@ public fun ScreenScaffold(
         scrollInfoProvider = ScrollInfoProvider(scrollState),
         scrollIndicator = scrollIndicator,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -280,7 +280,7 @@ public fun ScreenScaffold(
         scrollIndicator = scrollIndicator,
         edgeButtonSpacing = edgeButtonSpacing,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -342,7 +342,7 @@ public fun ScreenScaffold(
         timeText = timeText,
         scrollIndicator = scrollIndicator,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -417,7 +417,7 @@ public fun ScreenScaffold(
         scrollIndicator = scrollIndicator,
         edgeButtonSpacing = edgeButtonSpacing,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -475,7 +475,7 @@ public fun ScreenScaffold(
         timeText = timeText,
         scrollIndicator = scrollIndicator,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -535,7 +535,7 @@ public fun ScreenScaffold(
         timeText = timeText,
         scrollIndicator = scrollIndicator,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 
 /**
@@ -635,7 +635,7 @@ public fun ScreenScaffold(
                     contentPadding,
                     with(localDensity) {
                         (intrinsicButtonHeight?.toDp() ?: 0.dp) + effectiveEdgeButtonSpacing
-                    }
+                    },
                 )
             )
             Box(
@@ -661,7 +661,7 @@ public fun ScreenScaffold(
                 scrollInfoProvider,
                 lastItemOffsetCorrection,
                 edgeButtonAnimatedHeight,
-                edgeButtonHeightAnimationThresholdPx
+                edgeButtonHeightAnimationThresholdPx,
             ) {
                 snapshotFlow {
                         Pair(scrollInfoProvider.isScrollInProgress, currentEdgeButtonTargetHeight)
@@ -682,7 +682,7 @@ public fun ScreenScaffold(
                                 launch {
                                     edgeButtonAnimatedHeight.animateTo(
                                         targetValue = edgeButtonTargetHeight,
-                                        animationSpec = DEFAULT_EDGE_BUTTON_ANIMATION_SPEC
+                                        animationSpec = DEFAULT_EDGE_BUTTON_ANIMATION_SPEC,
                                     )
                                 }
                             } else {
@@ -696,7 +696,7 @@ public fun ScreenScaffold(
                         }
                     }
             }
-        }
+        },
     )
 }
 
@@ -797,7 +797,7 @@ public object ScreenScaffoldDefaults {
         get() =
             PaddingValues(
                 horizontal = PaddingDefaults.horizontalContentPadding(),
-                vertical = PaddingDefaults.verticalContentPadding()
+                vertical = PaddingDefaults.verticalContentPadding(),
             )
 }
 
@@ -805,13 +805,13 @@ public object ScreenScaffoldDefaults {
 // recompositions when the height changes.
 internal fun Modifier.dynamicHeight(
     onIntrinsicHeightMeasured: (Float) -> Unit,
-    heightState: () -> Float
+    heightState: () -> Float,
 ) = this.then(DynamicHeightElement(onIntrinsicHeightMeasured, heightState))
 
 @Composable
 private fun WrapWithOverscrollFactoryIfRequired(
     overscrollEffect: OverscrollEffect?,
-    content: @Composable (() -> Unit)
+    content: @Composable (() -> Unit),
 ) {
     val screenHeight = screenHeightPx()
 
@@ -825,7 +825,7 @@ private fun WrapWithOverscrollFactoryIfRequired(
     if (overscrollFactory != null) {
         CompositionLocalProvider(
             LocalOverscrollFactory provides overscrollFactory,
-            content = content
+            content = content,
         )
     } else content()
 }
@@ -833,7 +833,7 @@ private fun WrapWithOverscrollFactoryIfRequired(
 // Following classes 'inspired' by 'WrapContentElement' / 'WrapContentNode'
 private class DynamicHeightElement(
     val onIntrinsicHeightMeasured: (Float) -> Unit,
-    val heightState: () -> Float
+    val heightState: () -> Float,
 ) : ModifierNodeElement<DynamicHeightNode>() {
     override fun create(): DynamicHeightNode =
         DynamicHeightNode(onIntrinsicHeightMeasured, heightState)
@@ -857,14 +857,14 @@ private class DynamicHeightElement(
 
 private class DynamicHeightNode(
     var onIntrinsicHeightMeasured: (Float) -> Unit,
-    var heightState: () -> Float
+    var heightState: () -> Float,
 ) : LayoutModifierNode, Modifier.Node() {
 
     var lastMeasureHeight: Int? = null
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Similar to .fillMaxWidth().height(heightState.value) but we observe the state in the
         // measurement pass, not on Composition.
@@ -883,7 +883,7 @@ private class DynamicHeightNode(
             val position =
                 IntOffset(
                     x = (wrapperWidth - placeable.width) / 2,
-                    y = wrapperHeight - placeable.height
+                    y = wrapperHeight - placeable.height,
                 )
             placeable.place(position)
         }
@@ -901,7 +901,7 @@ private class ReplacePaddingValues(paddingValues: PaddingValues, val bottomPaddi
  */
 internal class OffsetOverscrollEffect(
     private val innerOverscrollEffect: OverscrollEffect,
-    private val viewportHeight: Int
+    private val viewportHeight: Int,
 ) : OverscrollEffect {
 
     /**
@@ -919,7 +919,7 @@ internal class OffsetOverscrollEffect(
     override fun applyToScroll(
         delta: Offset,
         source: NestedScrollSource,
-        performScroll: (Offset) -> Offset
+        performScroll: (Offset) -> Offset,
     ): Offset =
         innerOverscrollEffect.applyToScroll(delta, source) {
             val consumed = performScroll(it)
@@ -932,7 +932,7 @@ internal class OffsetOverscrollEffect(
 
     override suspend fun applyToFling(
         velocity: Velocity,
-        performFling: suspend (Velocity) -> Velocity
+        performFling: suspend (Velocity) -> Velocity,
     ) {
         innerOverscrollEffect.applyToFling(velocity) {
             val consumed = performFling(it)
@@ -965,7 +965,7 @@ internal class OffsetOverscrollEffect(
 private class OffsetOverscrollFactory(
     private val overscrollFactory: OverscrollFactory,
     private val overscrollEffect: OverscrollEffect,
-    viewportHeight: Int
+    viewportHeight: Int,
 ) : OverscrollFactory {
     val withOverscrollProxy = OffsetOverscrollEffect(overscrollEffect, viewportHeight)
 

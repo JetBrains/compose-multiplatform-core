@@ -116,7 +116,7 @@ private fun Project.createTestConfigurationGenerationTask(
 private fun Project.registerCopyTestApksTask(
     variantName: String,
     artifacts: Artifacts,
-    variant: Variant?
+    variant: Variant?,
 ): TaskProvider<CopyTestApksTask> {
     return tasks.register("${COPY_TEST_APKS_TASK}$variantName", CopyTestApksTask::class.java) { task
         ->
@@ -193,7 +193,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     fun outputAppApkFile(
         variant: Variant,
         appProjectPath: String,
-        instrumentationProjectPath: String?
+        instrumentationProjectPath: String?,
     ): Provider<RegularFile> {
         var filename = appProjectPath.asFilenamePrefix()
         if (instrumentationProjectPath != null) {
@@ -211,7 +211,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                 addAppApksToPrivacySandboxTestConfigsGeneration(
                     testVariantName = "${variant.name}AndroidTest",
                     variant,
-                    variant.outputProviders
+                    variant.outputProviders,
                 )
             } else {
                 // TODO(b/347956800): Migrate to ApkOutputProviders after testing on PrivacySandbox
@@ -223,7 +223,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
 
                         // The target project is the same being evaluated
                         task.outputAppApk.set(outputAppApkFile(variant, path, null))
-                    }
+                    },
                 )
             }
         }
@@ -240,7 +240,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                 addAppApksToPrivacySandboxTestConfigsGeneration(
                     testVariantName = variant.name,
                     variant,
-                    variant.outputProviders
+                    variant.outputProviders,
                 )
             } else {
                 // TODO(b/347956800): Migrate to ApkOutputProviders after b/378675038
@@ -274,7 +274,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                                 }
                                 .files
                         )
-                    }
+                    },
                 )
             }
         }
@@ -299,7 +299,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                     config.attributes {
                         it.attribute(
                             BuildTypeAttr.ATTRIBUTE,
-                            objects.named(targetAppProjectVariant)
+                            objects.named(targetAppProjectVariant),
                         )
                         it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
                     }
@@ -320,7 +320,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                             }
                             .files
                     )
-                }
+                },
             )
         }
     }
@@ -329,12 +329,12 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
 private fun Project.addAppApkFromArtifactsToTestConfigGeneration(
     testVariantName: String,
     variant: Variant,
-    configureAction: Consumer<CopyApkFromArtifactsTask>
+    configureAction: Consumer<CopyApkFromArtifactsTask>,
 ) {
     val copyApkTask = registerCopyAppApkFromArtifactsTask(variant, configureAction)
     tasks.named(
         "${GENERATE_TEST_CONFIGURATION_TASK}$testVariantName",
-        GenerateTestConfigurationTask::class.java
+        GenerateTestConfigurationTask::class.java,
     ) { t ->
         t.appApksModel.set(copyApkTask.flatMap(CopyApkFromArtifactsTask::outputAppApksModel))
     }
@@ -356,7 +356,7 @@ private fun Project.addAppApksToPrivacySandboxTestConfigsGeneration(
         registerCopyPrivacySandboxMainAppApksTask(variant, outputProviders, excludeTestApk)
     tasks.named(
         "${GENERATE_PRIVACY_SANDBOX_MAIN_TEST_CONFIGURATION_TASK}${testVariantName}",
-        GenerateTestConfigurationTask::class.java
+        GenerateTestConfigurationTask::class.java,
     ) { t ->
         t.appApksModel.set(
             copyMainApksTask.flatMap(CopyApksFromOutputProviderTask::outputAppApksModel)
@@ -367,7 +367,7 @@ private fun Project.addAppApksToPrivacySandboxTestConfigsGeneration(
         registerCopyPrivacySandboxCompatAppApksTask(variant, outputProviders, excludeTestApk)
     tasks.named(
         "${GENERATE_PRIVACY_SANDBOX_COMPAT_TEST_CONFIGURATION_TASK}${testVariantName}",
-        GenerateTestConfigurationTask::class.java
+        GenerateTestConfigurationTask::class.java,
     ) { t ->
         t.appApksModel.set(
             copyCompatApksTask.flatMap(CopyApksFromOutputProviderTask::outputAppApksModel)

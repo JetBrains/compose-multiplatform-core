@@ -96,7 +96,7 @@ suspend fun PointerInputScope.detectTapGestures(
     onDoubleTap: ((Offset) -> Unit)? = null,
     onLongPress: ((Offset) -> Unit)? = null,
     onPress: suspend PressGestureScope.(Offset) -> Unit = NoPressGesture,
-    onTap: ((Offset) -> Unit)? = null
+    onTap: ((Offset) -> Unit)? = null,
 ) = coroutineScope {
     // special signal to indicate to the sending side that it shouldn't intercept and consume
     // cancel/up events as we're only require down events
@@ -240,7 +240,7 @@ private suspend fun AwaitPointerEventScope.awaitSecondDown(
  */
 internal suspend fun PointerInputScope.detectTapAndPress(
     onPress: suspend PressGestureScope.(Offset) -> Unit = NoPressGesture,
-    onTap: ((Offset) -> Unit)? = null
+    onTap: ((Offset) -> Unit)? = null,
 ) {
     val pressScope = PressGestureScopeImpl(this)
     coroutineScope {
@@ -271,7 +271,7 @@ internal suspend fun PointerInputScope.detectTapAndPress(
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with PointerEventPass instead.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true
@@ -314,7 +314,7 @@ private fun PointerEvent.isChangedToDown(requireUnconsumed: Boolean): Boolean {
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with PointerEventPass instead.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 suspend fun AwaitPointerEventScope.waitForUpOrCancellation(): PointerInputChange? =
     waitForUpOrCancellation(PointerEventPass.Main)
@@ -422,7 +422,7 @@ internal sealed class LongPressResult {
         " DetectTapGesturesEnableNewDispatchingBehavior controls the new flag" +
         " (isDetectTapGesturesImmediateCoroutineDispatchEnabled). Please use " +
         " isDetectTapGesturesImmediateCoroutineDispatchEnabled instead.",
-    ReplaceWith("ExperimentalFoundationApi", "androidx.compose.foundation")
+    ReplaceWith("ExperimentalFoundationApi", "androidx.compose.foundation"),
 )
 @Retention(AnnotationRetention.BINARY)
 @RequiresOptIn("This API feature-flags new behavior and will be removed in the future.")
@@ -441,8 +441,8 @@ annotation class ExperimentalTapGestureDetectorBehaviorApi
         " isDetectTapGesturesImmediateCoroutineDispatchEnabled instead.",
     ReplaceWith(
         "isDetectTapGesturesImmediateCoroutineDispatchEnabled",
-        "androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled"
-    )
+        "androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled",
+    ),
 )
 @OptIn(ExperimentalFoundationApi::class)
 @Suppress("DEPRECATION", "GetterSetterNames")
@@ -477,7 +477,7 @@ private val coroutineStartForCurrentDispatchBehavior
 private fun CoroutineScope.launchAwaitingReset(
     resetJob: Job,
     start: CoroutineStart = coroutineStartForCurrentDispatchBehavior,
-    block: suspend CoroutineScope.() -> Unit
+    block: suspend CoroutineScope.() -> Unit,
 ): Job =
     launch(start = start) {
         if (isDetectTapGesturesImmediateCoroutineDispatchEnabled) {

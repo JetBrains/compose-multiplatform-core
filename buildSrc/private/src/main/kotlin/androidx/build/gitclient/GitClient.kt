@@ -35,9 +35,7 @@ import org.gradle.process.ExecOperations
  *   and MANIFEST to resolve the files if these environmental variables are set, otherwise it will
  *   default to using git.
  */
-fun Project.getChangedFilesProvider(
-    baseCommitOverride: Provider<String>,
-): Provider<List<String>> {
+fun Project.getChangedFilesProvider(baseCommitOverride: Provider<String>): Provider<List<String>> {
     val changeInfoPath = System.getenv("CHANGE_INFO")
     val manifestPath = System.getenv("MANIFEST")
     return if (changeInfoPath != null && manifestPath != null) {
@@ -117,7 +115,7 @@ internal abstract class GitChangedFilesSource :
                         "-1",
                         "--merges",
                         "--oneline",
-                        "--pretty=format:%H"
+                        "--pretty=format:%H",
                     )
                     it.standardOutput = output
                     it.workingDir = gitDirInParentFilepath

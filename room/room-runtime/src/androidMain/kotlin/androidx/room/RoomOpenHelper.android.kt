@@ -30,7 +30,7 @@ public open class RoomOpenHelper(
     configuration: DatabaseConfiguration,
     delegate: Delegate,
     identityHash: String,
-    legacyHash: String
+    legacyHash: String,
 ) : SupportSQLiteOpenHelper.Callback(delegate.version) {
     private var configuration: DatabaseConfiguration?
     private val callbacks: List<RoomDatabase.Callback>? = configuration.callbacks
@@ -54,7 +54,7 @@ public open class RoomOpenHelper(
     public constructor(
         configuration: DatabaseConfiguration,
         delegate: Delegate,
-        legacyHash: String
+        legacyHash: String,
     ) : this(configuration, delegate, "", legacyHash)
 
     override fun onConfigure(db: SupportSQLiteDatabase) {
@@ -230,7 +230,7 @@ public open class RoomOpenHelper(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     public open class ValidationResult(
         @JvmField public val isValid: Boolean,
-        @JvmField public val expectedFoundMsg: String?
+        @JvmField public val expectedFoundMsg: String?,
     )
 
     public companion object {

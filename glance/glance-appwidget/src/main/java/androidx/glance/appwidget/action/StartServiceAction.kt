@@ -29,19 +29,19 @@ internal sealed interface StartServiceAction : Action {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StartServiceComponentAction(
     public val componentName: ComponentName,
-    override val isForegroundService: Boolean
+    override val isForegroundService: Boolean,
 ) : StartServiceAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StartServiceClassAction(
     public val serviceClass: Class<out Service>,
-    override val isForegroundService: Boolean
+    override val isForegroundService: Boolean,
 ) : StartServiceAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StartServiceIntentAction(
     public val intent: Intent,
-    override val isForegroundService: Boolean
+    override val isForegroundService: Boolean,
 ) : StartServiceAction
 
 /**
@@ -66,7 +66,7 @@ public fun actionStartService(intent: Intent, isForegroundService: Boolean = fal
  */
 public fun actionStartService(
     componentName: ComponentName,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): Action = StartServiceComponentAction(componentName, isForegroundService)
 
 /**
@@ -79,7 +79,7 @@ public fun actionStartService(
  */
 public fun <T : Service> actionStartService(
     service: Class<T>,
-    isForegroundService: Boolean = false
+    isForegroundService: Boolean = false,
 ): Action = StartServiceClassAction(service, isForegroundService)
 
 /**

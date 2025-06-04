@@ -63,7 +63,7 @@ class SelectionViewActions {
                         MotionEvent.ACTION_DOWN,
                         stopHandleCoordinates[0],
                         stopHandleCoordinates[1],
-                        0
+                        0,
                     )
                 uiController.injectMotionEvent(downEvent)
 
@@ -79,7 +79,7 @@ class SelectionViewActions {
                             MotionEvent.ACTION_MOVE,
                             newX,
                             stopHandleCoordinates[1],
-                            0
+                            0,
                         )
                     dragEvents.add(newEvent)
                 }
@@ -93,7 +93,7 @@ class SelectionViewActions {
                         MotionEvent.ACTION_UP,
                         stopHandleCoordinates[0] + 100,
                         stopHandleCoordinates[1],
-                        0
+                        0,
                     )
                 uiController.injectMotionEvent(upEvent)
             }
@@ -136,7 +136,7 @@ class SelectionViewActions {
             },
             Press.FINGER,
             InputDevice.SOURCE_TOUCHSCREEN,
-            MotionEvent.BUTTON_PRIMARY
+            MotionEvent.BUTTON_PRIMARY,
         )
     }
 
@@ -155,7 +155,7 @@ class SelectionViewActions {
         pdfY: Float,
         zoom: Float,
         scrollX: Int,
-        scrollY: Int
+        scrollY: Int,
     ): PointF {
         val viewX = (pdfX * zoom) - scrollX
         val viewY = (pdfY * zoom) - scrollY
@@ -177,7 +177,7 @@ class SelectionViewActions {
             override fun getConstraints(): Matcher<View> =
                 Matchers.allOf(
                     ViewMatchers.isDisplayed(),
-                    ViewMatchers.isAssignableFrom(PdfView::class.java)
+                    ViewMatchers.isAssignableFrom(PdfView::class.java),
                 )
 
             override fun getDescription() = "Tap on PDF link rectangle bounds"

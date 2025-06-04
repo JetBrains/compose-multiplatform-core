@@ -133,7 +133,7 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
             androidManifest,
             baselinesApiLocation,
             builtApiLocation,
-            outputApiLocations
+            outputApiLocations,
         )
 
         project.setupWithStableAidlPlugin()
@@ -143,7 +143,7 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
                 project,
                 config.variant.artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST),
                 builtApiLocation,
-                outputApiLocations
+                outputApiLocations,
             )
         } else if (config is AndroidMultiplatformApiTaskConfig) {
             // Android Multiplatform does not currently support resources, so we generate a blank
@@ -152,7 +152,7 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
                 project,
                 project.provider { BlankApiRegularFile(project) },
                 builtApiLocation,
-                outputApiLocations
+                outputApiLocations,
             )
         }
         multiplatformExtension?.let { multiplatformExtension ->
@@ -195,15 +195,15 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                 it.isTransitive = false
                 it.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named(BuildTypeAttr::class.java, "release")
+                    project.objects.named(BuildTypeAttr::class.java, "release"),
                 )
                 it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
-                    objects.named(Usage::class.java, Usage.JAVA_API)
+                    objects.named(Usage::class.java, Usage.JAVA_API),
                 )
                 it.attributes.attribute(
                     ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
-                    ArtifactTypeDefinition.JAR_TYPE
+                    ArtifactTypeDefinition.JAR_TYPE,
                 )
                 // If this is a KMP project targeting android, make sure to select the android
                 // compilation and not a different jvm target compilation
@@ -216,9 +216,9 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                         it.attributes.attribute(
                             Attribute.of(
                                 "org.jetbrains.kotlin.platform.type",
-                                KotlinPlatformType::class.java
+                                KotlinPlatformType::class.java,
                             ),
-                            KotlinPlatformType.androidJvm
+                            KotlinPlatformType.androidJvm,
                         )
                     }
                 }

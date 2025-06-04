@@ -32,7 +32,8 @@ public interface MeasureScope : Density {
     /**
      * Sets the size and alignment lines of the measured layout, as well as the positioning block
      * that defines the children positioning logic. The [placementBlock] is a lambda used for
-     * positioning children. [Placeable.placeAt] should be called on children inside placementBlock.
+     * positioning children. [SubspacePlaceable.placeAt] should be called on children inside
+     * placementBlock.
      *
      * @param width the measured width of the layout, in pixels
      * @param height the measured height of the layout, in pixels
@@ -43,14 +44,14 @@ public interface MeasureScope : Density {
         width: Int,
         height: Int,
         depth: Int,
-        placementBlock: Placeable.PlacementScope.() -> Unit,
+        placementBlock: SubspacePlaceable.SubspacePlacementScope.() -> Unit,
     ): MeasureResult {
         return object : MeasureResult {
             override val width = width
             override val height = height
             override val depth = depth
 
-            override fun placeChildren(placementScope: Placeable.PlacementScope) {
+            override fun placeChildren(placementScope: SubspacePlaceable.SubspacePlacementScope) {
                 placementScope.placementBlock()
             }
         }

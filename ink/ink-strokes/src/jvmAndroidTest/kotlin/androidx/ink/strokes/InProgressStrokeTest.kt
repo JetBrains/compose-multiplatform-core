@@ -147,7 +147,7 @@ class InProgressStrokeTest {
                 assertFailsWith<IllegalStateException> {
                     inProgressStroke.enqueueInputsOrThrow(
                         realInputs,
-                        ImmutableStrokeInputBatch.EMPTY
+                        ImmutableStrokeInputBatch.EMPTY,
                     )
                 }
             )
@@ -345,7 +345,7 @@ class InProgressStrokeTest {
                 assertFailsWith<IllegalArgumentException> {
                     inProgressStroke.enqueueInputsOrThrow(
                         realInputs,
-                        ImmutableStrokeInputBatch.EMPTY
+                        ImmutableStrokeInputBatch.EMPTY,
                     )
                 }
             )

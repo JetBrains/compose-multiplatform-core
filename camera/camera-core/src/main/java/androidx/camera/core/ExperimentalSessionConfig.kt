@@ -16,10 +16,7 @@
 
 package androidx.camera.core
 
-import androidx.annotation.RestrictTo
-
 /** Denotes that the annotated API is designed to be experimental SessionConfig feature. */
 @Retention(AnnotationRetention.BINARY)
 @RequiresOptIn
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public annotation class ExperimentalSessionConfig

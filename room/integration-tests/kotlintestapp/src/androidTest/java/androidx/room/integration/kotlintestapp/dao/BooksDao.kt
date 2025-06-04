@@ -325,7 +325,7 @@ interface BooksDao {
     fun deleteAndAddPublisher(
         oldPublisher: Publisher,
         newPublisher: Publisher,
-        fail: Boolean = false
+        fail: Boolean = false,
     ) {
         deletePublishers(oldPublisher)
         if (fail) {
@@ -420,13 +420,13 @@ interface BooksDao {
     @Transaction
     fun functionWithSuspendFunctionalParam(
         input: Book,
-        action: suspend (input: Book) -> Book
+        action: suspend (input: Book) -> Book,
     ): Book = runBlocking { action(input) }
 
     @Transaction
     suspend fun suspendFunctionWithSuspendFunctionalParam(
         input: Book,
-        action: suspend (input: Book) -> Book
+        action: suspend (input: Book) -> Book,
     ): Book = action(input)
 
     // Commented out because of https://youtrack.jetbrains.com/issue/KT-48013
@@ -495,7 +495,7 @@ interface BooksDao {
         val publisherId: String,
         @ColumnInfo(defaultValue = "0") val name: String,
         @Relation(parentColumn = "publisherId", entityColumn = "publisherId")
-        val relationEntity: Publisher
+        val relationEntity: Publisher,
     )
 
     @Transaction

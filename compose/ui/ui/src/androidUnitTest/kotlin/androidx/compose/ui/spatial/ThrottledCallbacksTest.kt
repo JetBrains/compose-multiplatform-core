@@ -246,7 +246,7 @@ class ThrottledCallbacksTest {
         id: Int,
         throttleMs: Long,
         debounceMs: Long,
-        callback: (RelativeLayoutBounds) -> Unit
+        callback: (RelativeLayoutBounds) -> Unit,
     ): RegistrationHandle {
         return registerOnRectChanged(id, throttleMs, debounceMs, fakeNode(), callback)
     }

@@ -38,7 +38,7 @@ internal class CameraSelectionOptimizer {
         @Throws(InitializationException::class)
         fun getSelectedAvailableCameraIds(
             cameraFactory: CameraFactory,
-            availableCamerasSelector: CameraSelector?
+            availableCamerasSelector: CameraSelector?,
         ): List<String> {
             try {
                 val availableCameraIds = mutableListOf<String>()
@@ -55,7 +55,7 @@ internal class CameraSelectionOptimizer {
                     try {
                         decideSkippedCameraIdByHeuristic(
                             cameraDevices,
-                            availableCamerasSelector.lensFacing
+                            availableCamerasSelector.lensFacing,
                         )
                     } catch (e: IllegalStateException) {
                         // Device doesn't need to have front and/or back camera.
@@ -97,7 +97,7 @@ internal class CameraSelectionOptimizer {
         // Returns null if no camera ids can be skipped.
         private fun decideSkippedCameraIdByHeuristic(
             cameraDevices: CameraDevices,
-            lensFacingInteger: Int?
+            lensFacingInteger: Int?,
         ): String? {
             var skippedCameraId: String? = null
 

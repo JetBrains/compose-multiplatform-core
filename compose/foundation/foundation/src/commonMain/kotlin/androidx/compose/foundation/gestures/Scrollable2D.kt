@@ -87,7 +87,7 @@ fun Modifier.scrollable2D(
     enabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = null,
     flingBehavior: FlingBehavior? = null,
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) =
     this then
         Scrollable2DElement(state, overscrollEffect, enabled, flingBehavior, interactionSource)
@@ -97,7 +97,7 @@ private class Scrollable2DElement(
     val overscrollEffect: OverscrollEffect?,
     val enabled: Boolean,
     val flingBehavior: FlingBehavior?,
-    val interactionSource: MutableInteractionSource?
+    val interactionSource: MutableInteractionSource?,
 ) : ModifierNodeElement<Scrollable2DNode>() {
     override fun create(): Scrollable2DNode {
         return Scrollable2DNode(state, overscrollEffect, flingBehavior, enabled, interactionSource)
@@ -145,13 +145,13 @@ internal class Scrollable2DNode(
     private var overscrollEffect: OverscrollEffect?,
     private var flingBehavior: FlingBehavior?,
     enabled: Boolean,
-    interactionSource: MutableInteractionSource?
+    interactionSource: MutableInteractionSource?,
 ) :
     DragGestureNode(
         canDrag = CanDragCalculation,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = null
+        orientationLock = null,
     ),
     SemanticsModifierNode,
     CompositionLocalConsumerModifierNode {
@@ -171,7 +171,7 @@ internal class Scrollable2DNode(
             overscrollEffect = overscrollEffect,
             flingBehavior = flingBehavior ?: defaultFlingBehavior,
             nestedScrollDispatcher = nestedScrollDispatcher,
-            isScrollableNodeAttached = { isAttached }
+            isScrollableNodeAttached = { isAttached },
         )
 
     private val nestedScrollConnection =
@@ -226,7 +226,7 @@ internal class Scrollable2DNode(
                 scrollableState = state,
                 overscrollEffect = overscrollEffect,
                 flingBehavior = resolvedFlingBehavior,
-                nestedScrollDispatcher = nestedScrollDispatcher
+                nestedScrollDispatcher = nestedScrollDispatcher,
             )
         this.overscrollEffect = overscrollEffect
         this.flingBehavior = flingBehavior
@@ -236,7 +236,7 @@ internal class Scrollable2DNode(
             canDrag = CanDragCalculation,
             enabled = enabled,
             interactionSource = interactionSource,
-            shouldResetPointerInputHandling = resetPointerInputHandling
+            shouldResetPointerInputHandling = resetPointerInputHandling,
         )
 
         if (shouldInvalidateSemantics) {
@@ -263,7 +263,7 @@ internal class Scrollable2DNode(
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (pointerEvent.changes.fastAny { canDrag.invoke(it) }) {
             super.onPointerEvent(pointerEvent, pass, bounds)
@@ -304,7 +304,7 @@ private class ScrollingLogic2D(
     private var overscrollEffect: OverscrollEffect?,
     private var flingBehavior: FlingBehavior,
     private var nestedScrollDispatcher: NestedScrollDispatcher,
-    private val isScrollableNodeAttached: () -> Boolean
+    private val isScrollableNodeAttached: () -> Boolean,
 ) : ScrollLogic {
     // specifies if this scrollable node is currently flinging
     override var isFlinging = false
@@ -321,7 +321,7 @@ private class ScrollingLogic2D(
 
             override fun scrollByWithOverscroll(
                 offset: Offset,
-                source: NestedScrollSource
+                source: NestedScrollSource,
             ): Offset {
                 latestScrollSource = source
                 val overscroll = overscrollEffect
@@ -349,14 +349,15 @@ private class ScrollingLogic2D(
             nestedScrollDispatcher.dispatchPostScroll(
                 consumedBySelfScroll,
                 deltaAvailableAfterScroll,
-                source
+                source,
             )
         return consumedByPreScroll + consumedBySelfScroll + consumedByPostScroll
     }
 
     fun shouldDispatchOverscroll(offset: Offset) = scrollableState.canScroll(offset)
 
-    fun shouldDispatchOverscroll(velocity: Velocity) = scrollableState.canScroll(velocity.angle)
+    fun shouldDispatchOverscroll(velocity: Velocity) =
+        scrollableState.canScroll(Offset(velocity.x, velocity.y))
 
     override fun performRawScroll(scroll: Offset): Offset {
         return if (scrollableState.isScrollInProgress) {
@@ -419,7 +420,7 @@ private class ScrollingLogic2D(
             } else {
                 Offset(
                     x = abs(cos(available.angle) * this) * sign(available.x),
-                    y = abs(sin(available.angle) * this) * sign(available.y)
+                    y = abs(sin(available.angle) * this) * sign(available.y),
                 )
             }
 
@@ -433,7 +434,7 @@ private class ScrollingLogic2D(
             } else {
                 Velocity(
                     x = abs(cos(available.angle) * this) * sign(available.x),
-                    y = abs(sin(available.angle) * this) * sign(available.y)
+                    y = abs(sin(available.angle) * this) * sign(available.y),
                 )
             }
 
@@ -453,7 +454,7 @@ private class ScrollingLogic2D(
                             val consumedOffset =
                                 nestedScrollScope.scrollByWithOverscroll(
                                     offset = pixelsOffset,
-                                    source = SideEffect
+                                    source = SideEffect,
                                 )
 
                             return consumedOffset.toMagnitudeFloat()
@@ -480,7 +481,7 @@ private class ScrollingLogic2D(
     /** Opens a scrolling session with nested scrolling and overscroll support. */
     suspend fun scroll(
         scrollPriority: MutatePriority = MutatePriority.Default,
-        block: suspend NestedScrollScope.() -> Unit
+        block: suspend NestedScrollScope.() -> Unit,
     ) {
         scrollableState.scroll(scrollPriority) {
             outerStateScope = this
@@ -493,7 +494,7 @@ private class ScrollingLogic2D(
         scrollableState: Scrollable2DState,
         overscrollEffect: OverscrollEffect?,
         flingBehavior: FlingBehavior,
-        nestedScrollDispatcher: NestedScrollDispatcher
+        nestedScrollDispatcher: NestedScrollDispatcher,
     ): Boolean {
         var resetPointerInputHandling = false
         if (this.scrollableState != scrollableState) {

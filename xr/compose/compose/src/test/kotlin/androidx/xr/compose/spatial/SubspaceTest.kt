@@ -16,12 +16,21 @@
 
 package androidx.xr.compose.spatial
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -55,10 +64,8 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -86,13 +93,84 @@ class SubspaceTest {
         PerceptionStackRetrySettings.FovPollingDispatcherOverride = null
     }
 
-    private fun doBlocking(context: CoroutineContext, block: suspend CoroutineScope.() -> Unit) {
-        runBlocking(context, block)
+    @Test
+    fun subspace_alreadyInSubspace_justRendersContentDirectly() {
+        runBlocking(testDispatcher.scheduler) {
+            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+            val testJxrPlatformAdapter =
+                TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                    activitySpace =
+                        TestActivitySpace(
+                            fakeRuntime.activitySpace,
+                            activitySpacePose = Pose.Identity,
+                            activitySpaceScale = Vector3(1f, 1f, 1f),
+                        )
+                    headActivityPose =
+                        TestHeadActivityPose(
+                            activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                        )
+                    leftCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.57f,
+                                    angleRight = 1.00f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                    rightCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.00f,
+                                    angleRight = 1.57f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                }
+
+            composeTestRule.setContent {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
+                    Subspace {
+                        Subspace {
+                            SpatialPanel(
+                                SubspaceModifier.fillMaxWidth()
+                                    .fillMaxHeight()
+                                    .testTag("innerPanel")
+                            ) {}
+                        }
+                    }
+                }
+            }
+            testDispatcher.scheduler.advanceUntilIdle()
+            composeTestRule.waitForIdle()
+
+            // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+            // DP_PER_METER = 1
+            // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() =
+            // ~2512 px
+            // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() =
+            // ~2512 px
+            composeTestRule
+                .onSubspaceNodeWithTag("innerPanel")
+                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+                .assertWidthIsEqualTo(2512.toDp())
+                .assertHeightIsEqualTo(2512.toDp())
+        }
     }
 
     @Test
-    fun subspace_alreadyInSubspace_justRendersContentDirectly() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_alreadyInApplicationSubspace_justRendersContentDirectly() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -131,76 +209,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
-                    Subspace {
-                        Subspace {
-                            SpatialPanel(
-                                SubspaceModifier.fillMaxWidth()
-                                    .fillMaxHeight()
-                                    .testTag("innerPanel")
-                            ) {}
-                        }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
-            // DP_PER_METER = 1
-            // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() =
-            // ~2512 px
-            // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() =
-            // ~2512 px
-            composeTestRule
-                .onSubspaceNodeWithTag("innerPanel")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-                .assertWidthIsEqualTo(2512.toDp())
-                .assertHeightIsEqualTo(2512.toDp())
-        }
-
-    @Test
-    fun applicationSubspace_alreadyInApplicationSubspace_justRendersContentDirectly() =
-        doBlocking(testDispatcher.scheduler) {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            val testJxrPlatformAdapter =
-                TestJxrPlatformAdapter.create(fakeRuntime).apply {
-                    activitySpace =
-                        TestActivitySpace(
-                            fakeRuntime.activitySpace,
-                            activitySpacePose = Pose.Identity,
-                            activitySpaceScale = Vector3(1f, 1f, 1f),
-                        )
-                    headActivityPose =
-                        TestHeadActivityPose(
-                            activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
-                        )
-                    leftCameraViewPose =
-                        TestCameraViewActivityPose(
-                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
-                            fov =
-                                CameraViewActivityPose.Fov(
-                                    angleLeft = -1.57f,
-                                    angleRight = 1.00f,
-                                    angleUp = 1.57f,
-                                    angleDown = -1.57f,
-                                ),
-                        )
-                    rightCameraViewPose =
-                        TestCameraViewActivityPose(
-                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
-                            fov =
-                                CameraViewActivityPose.Fov(
-                                    angleLeft = -1.00f,
-                                    angleRight = 1.57f,
-                                    angleUp = 1.57f,
-                                    angleDown = -1.57f,
-                                ),
-                        )
-                }
-
-            composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         ApplicationSubspace {
                             SpatialPanel(
@@ -227,104 +241,357 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun subspace_xrEnabled_contentIsCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup { Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("panel")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    fun subspace_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup { Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
         }
 
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
     @Test
-    fun applicationSubspace_unbounded_xrEnabled_contentIsCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints = VolumeConstraints(),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
+    fun applicationSubspace_unbounded_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100,
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup { ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun subspace_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun applicationSubspace_unbounded_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100,
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun subspace_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup { Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.getParent()
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+    }
+
+    @Test
+    fun applicationSubspace_unbounded_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.getParent()
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100,
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.getParent()
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup { ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        assertNotNull(node)
+        val panelEntity = node.semanticsEntity
+        assertNotNull(panelEntity)
+        val subspaceBoxEntity = panelEntity.getParent()
+        assertNotNull(subspaceBoxEntity)
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        assertThat(subspaceBoxEntity.getParent()).isEqualTo(session.scene.activitySpace)
+    }
+
+    @Test
+    fun subspace_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("panel")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
         }
 
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertNotNull(parentPanel)
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
     @Test
-    fun applicationSubspace_customBounded_xrEnabled_contentIsCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints =
-                            VolumeConstraints(
-                                minWidth = 0,
-                                maxWidth = 100,
-                                minHeight = 0,
-                                maxHeight = 100
-                            ),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
+    fun applicationSubspace_unbounded_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("panel")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
         }
+        testDispatcher.scheduler.advanceUntilIdle()
+        composeTestRule.waitForIdle()
+
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertNotNull(parentPanel)
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_xrEnabled_contentIsCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+    fun applicationSubspace_customBounded_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100,
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                    }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("panel")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
         }
 
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertNotNull(parentPanel)
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
     @Test
-    fun subspace_nonXr_contentIsNotCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup(isXrEnabled = false) {
+    fun applicationSubspace_fovBounded_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                    }
+                }
+            }
+        }
+
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertNotNull(parentPanel)
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
+    @Test
+    fun subspace_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
                     Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        showSubspace = false
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
     @Test
-    fun applicationSubspace_unbounded_nonXr_contentIsNotCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup(isXrEnabled = false) {
+    fun applicationSubspace_unbounded_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
                     ApplicationSubspace(
                         constraints = VolumeConstraints(),
                         constraintsBehavior = ConstraintsBehavior.Specified,
@@ -333,24 +600,31 @@ class SubspaceTest {
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        showSubspace = false
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
     @Test
-    fun applicationSubspace_customBounded_nonXr_contentIsNotCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup(isXrEnabled = false) {
+    fun applicationSubspace_customBounded_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
                     ApplicationSubspace(
                         constraints =
                             VolumeConstraints(
                                 minWidth = 0,
                                 maxWidth = 100,
                                 minHeight = 0,
-                                maxHeight = 100
+                                maxHeight = 100,
                             ),
                         constraintsBehavior = ConstraintsBehavior.Specified,
                     ) {
@@ -358,697 +632,306 @@ class SubspaceTest {
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        showSubspace = false
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
     @Test
-    fun applicationSubspace_fovBounded_nonXr_contentIsNotCreated() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup(isXrEnabled = false) {
+    fun applicationSubspace_fovBounded_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
                     ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        showSubspace = false
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
     @Test
-    fun subspace_contentIsParentedToActivitySpace() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup { Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
+    fun subspace_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val panel = node.semanticsEntity
-            val subspaceBox = panel?.getParent()
-            val session = composeTestRule.activity.session
-            assertNotNull(session)
-            assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        testJxrPlatformAdapter.requestHomeSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        testJxrPlatformAdapter.requestFullSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
     @Test
-    fun applicationSubspace_unbounded_contentIsParentedToActivitySpace() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints = VolumeConstraints(),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
-                    }
+    fun applicationSubspace_unbounded_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = fakeRuntime) {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val panel = node.semanticsEntity
-            val subspaceBox = panel?.getParent()
-            val session = composeTestRule.activity.session
-            assertNotNull(session)
-            assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestHomeSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestFullSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
     @Test
-    fun applicationSubspace_customBounded_contentIsParentedToActivitySpace() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints =
-                            VolumeConstraints(
-                                minWidth = 0,
-                                maxWidth = 100,
-                                minHeight = 0,
-                                maxHeight = 100
-                            ),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
-                    }
+    fun applicationSubspace_customBounded_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = fakeRuntime) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100,
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val panel = node.semanticsEntity
-            val subspaceBox = panel?.getParent()
-            val session = composeTestRule.activity.session
-            assertNotNull(session)
-            assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestHomeSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestFullSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
     @Test
-    fun applicationSubspace_fovBounded_contentIsParentedToActivitySpace() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-                }
+    fun applicationSubspace_fovBounded_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            assertNotNull(node)
-            val panelEntity = node.semanticsEntity
-            assertNotNull(panelEntity)
-            val subspaceBoxEntity = panelEntity.getParent()
-            assertNotNull(subspaceBoxEntity)
-            val session = composeTestRule.activity.session
-            assertNotNull(session)
-            assertThat(subspaceBoxEntity.getParent()).isEqualTo(session.scene.activitySpace)
         }
 
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        testJxrPlatformAdapter.requestHomeSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        testJxrPlatformAdapter.requestFullSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
     @Test
-    fun subspace_nestedSubspace_contentIsParentedToContainingPanel() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_unbounded_asNestedInSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
             composeTestRule.setContent {
                 TestSetup {
                     Subspace {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                        SpatialPanel {
+                            ApplicationSubspace(
+                                constraints = VolumeConstraints(),
+                                constraintsBehavior = ConstraintsBehavior.Specified,
+                            ) {}
                         }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val outerPanelEntity = outerPanelNode.semanticsEntity
-            val innerPanelNode =
-                composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-            val innerPanelEntity = innerPanelNode.semanticsEntity
-            val subspaceBoxEntity = innerPanelEntity?.getParent()
-            val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-            val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-            val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-            val parentPanel = subspaceRootContainerEntity?.getParent()
-            assertNotNull(parentPanel)
-            assertThat(parentPanel).isEqualTo(outerPanelEntity)
         }
+    }
 
     @Test
-    fun applicationSubspace_unbounded_nestedSubspace_contentIsParentedToContainingPanel() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_customBounded_asNestedInSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    Subspace {
+                        SpatialPanel {
+                            ApplicationSubspace(
+                                constraints =
+                                    VolumeConstraints(
+                                        minWidth = 0,
+                                        maxWidth = 100,
+                                        minHeight = 0,
+                                        maxHeight = 100,
+                                    ),
+                                constraintsBehavior = ConstraintsBehavior.Specified,
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_asNestedInSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup { Subspace { SpatialPanel { ApplicationSubspace {} } } }
+            }
+        }
+    }
+
+    @Test
+    fun applicationSubspace_unbounded_asNestedInUnboundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
             composeTestRule.setContent {
                 TestSetup {
                     ApplicationSubspace(
                         constraints = VolumeConstraints(),
                         constraintsBehavior = ConstraintsBehavior.Specified,
                     ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
-                        }
+                        SpatialPanel() { ApplicationSubspace(constraints = VolumeConstraints()) {} }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val outerPanelEntity = outerPanelNode.semanticsEntity
-            val innerPanelNode =
-                composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-            val innerPanelEntity = innerPanelNode.semanticsEntity
-            val subspaceBoxEntity = innerPanelEntity?.getParent()
-            val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-            val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-            val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-            val parentPanel = subspaceRootContainerEntity?.getParent()
-            assertNotNull(parentPanel)
-            assertThat(parentPanel).isEqualTo(outerPanelEntity)
         }
+    }
 
     @Test
-    fun applicationSubspace_customBounded_nestedSubspace_contentIsParentedToContainingPanel() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints =
-                            VolumeConstraints(
-                                minWidth = 0,
-                                maxWidth = 100,
-                                minHeight = 0,
-                                maxHeight = 100
-                            ),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
-                        }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val outerPanelEntity = outerPanelNode.semanticsEntity
-            val innerPanelNode =
-                composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-            val innerPanelEntity = innerPanelNode.semanticsEntity
-            val subspaceBoxEntity = innerPanelEntity?.getParent()
-            val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-            val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-            val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-            val parentPanel = subspaceRootContainerEntity?.getParent()
-            assertNotNull(parentPanel)
-            assertThat(parentPanel).isEqualTo(outerPanelEntity)
-        }
-
-    @Test
-    fun applicationSubspace_fovBounded_nestedSubspace_contentIsParentedToContainingPanel() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_Unbounded_asNestedInFovBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
             composeTestRule.setContent {
                 TestSetup {
                     ApplicationSubspace {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
-                        }
+                        SpatialPanel { ApplicationSubspace(constraints = VolumeConstraints()) {} }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-            val outerPanelEntity = outerPanelNode.semanticsEntity
-            val innerPanelNode =
-                composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-            val innerPanelEntity = innerPanelNode.semanticsEntity
-            val subspaceBoxEntity = innerPanelEntity?.getParent()
-            val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-            val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-            val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-            val parentPanel = subspaceRootContainerEntity?.getParent()
-            assertNotNull(parentPanel)
-            assertThat(parentPanel).isEqualTo(outerPanelEntity)
         }
+    }
 
     @Test
-    fun subspace_isDisposed() =
-        doBlocking(testDispatcher.scheduler) {
-            var showSubspace by mutableStateOf(true)
-
+    fun applicationSubspace_customBounded_asNestedinCustomBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
             composeTestRule.setContent {
                 TestSetup {
-                    if (showSubspace) {
-                        Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            showSubspace = false
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-        }
-
-    @Test
-    fun applicationSubspace_unbounded_isDisposed() =
-        doBlocking(testDispatcher.scheduler) {
-            var showSubspace by mutableStateOf(true)
-
-            composeTestRule.setContent {
-                TestSetup {
-                    if (showSubspace) {
-                        ApplicationSubspace(
-                            constraints = VolumeConstraints(),
-                            constraintsBehavior = ConstraintsBehavior.Specified,
-                        ) {
-                            SpatialPanel(SubspaceModifier.testTag("panel")) {}
-                        }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            showSubspace = false
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-        }
-
-    @Test
-    fun applicationSubspace_customBounded_isDisposed() =
-        doBlocking(testDispatcher.scheduler) {
-            var showSubspace by mutableStateOf(true)
-
-            composeTestRule.setContent {
-                TestSetup {
-                    if (showSubspace) {
-                        ApplicationSubspace(
-                            constraints =
-                                VolumeConstraints(
-                                    minWidth = 0,
-                                    maxWidth = 100,
-                                    minHeight = 0,
-                                    maxHeight = 100
-                                ),
-                            constraintsBehavior = ConstraintsBehavior.Specified,
-                        ) {
-                            SpatialPanel(SubspaceModifier.testTag("panel")) {}
-                        }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            showSubspace = false
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-        }
-
-    @Test
-    fun applicationSubspace_fovBounded_isDisposed() =
-        doBlocking(testDispatcher.scheduler) {
-            var showSubspace by mutableStateOf(true)
-
-            composeTestRule.setContent {
-                TestSetup {
-                    if (showSubspace) {
-                        ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            showSubspace = false
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-        }
-
-    @Test
-    fun subspace_onlyOneSceneExists_afterSpaceModeChanges() =
-        doBlocking(testDispatcher.scheduler) {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
-
-            composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
-                    Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            testJxrPlatformAdapter.requestHomeSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-
-            testJxrPlatformAdapter.requestFullSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-        }
-
-    @Test
-    fun applicationSubspace_unbounded_onlyOneSceneExists_afterSpaceModeChanges() =
-        doBlocking(testDispatcher.scheduler) {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-
-            composeTestRule.setContent {
-                TestSetup(runtime = fakeRuntime) {
-                    ApplicationSubspace(
-                        constraints = VolumeConstraints(),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
-                    }
-                }
-            }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            fakeRuntime.requestHomeSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-
-            fakeRuntime.requestFullSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-        }
-
-    @Test
-    fun applicationSubspace_customBounded_onlyOneSceneExists_afterSpaceModeChanges() =
-        doBlocking(testDispatcher.scheduler) {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-
-            composeTestRule.setContent {
-                TestSetup(runtime = fakeRuntime) {
                     ApplicationSubspace(
                         constraints =
                             VolumeConstraints(
                                 minWidth = 0,
-                                maxWidth = 100,
+                                maxWidth = 50,
                                 minHeight = 0,
-                                maxHeight = 100
+                                maxHeight = 50,
                             ),
                         constraintsBehavior = ConstraintsBehavior.Specified,
                     ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                        SpatialPanel {
+                            ApplicationSubspace(
+                                constraints =
+                                    VolumeConstraints(
+                                        minWidth = 0,
+                                        maxWidth = 100,
+                                        minHeight = 0,
+                                        maxHeight = 100,
+                                    ),
+                                constraintsBehavior = ConstraintsBehavior.Specified,
+                            ) {}
+                        }
                     }
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            fakeRuntime.requestHomeSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-
-            fakeRuntime.requestFullSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_onlyOneSceneExists_afterSpaceModeChanges() =
-        doBlocking(testDispatcher.scheduler) {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
-
+    fun applicationSubspace_fovBounded_asNestedInFovBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
-                    ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-                }
+                TestSetup { ApplicationSubspace { SpatialPanel { ApplicationSubspace {} } } }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            testJxrPlatformAdapter.requestHomeSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(0)
-
-            testJxrPlatformAdapter.requestFullSpaceMode()
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-            assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
         }
+    }
 
     @Test
-    fun applicationSubspace_unbounded_asNestedInSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        Subspace {
-                            SpatialPanel {
-                                ApplicationSubspace(
-                                    constraints = VolumeConstraints(),
-                                    constraintsBehavior = ConstraintsBehavior.Specified,
-                                ) {}
-                            }
-                        }
+    fun applicationSubspace_fovBounded_asNestedInUnboundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    ApplicationSubspace(constraints = VolumeConstraints()) {
+                        SpatialPanel { ApplicationSubspace {} }
                     }
                 }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
             }
         }
+    }
 
     @Test
-    fun applicationSubspace_customBounded_asNestedInSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        Subspace {
-                            SpatialPanel {
-                                ApplicationSubspace(
-                                    constraints =
-                                        VolumeConstraints(
-                                            minWidth = 0,
-                                            maxWidth = 100,
-                                            minHeight = 0,
-                                            maxHeight = 100
-                                        ),
-                                    constraintsBehavior = ConstraintsBehavior.Specified,
-                                ) {}
-                            }
-                        }
-                    }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_fovBounded_asNestedInSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup { Subspace { SpatialPanel { ApplicationSubspace {} } } }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_unbounded_asNestedInUnboundedApplicationSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        ApplicationSubspace(
-                            constraints = VolumeConstraints(),
-                            constraintsBehavior = ConstraintsBehavior.Specified,
-                        ) {
-                            SpatialPanel() {
-                                ApplicationSubspace(constraints = VolumeConstraints()) {}
-                            }
-                        }
-                    }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_Unbounded_asNestedInFovBoundedApplicationSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        ApplicationSubspace {
-                            SpatialPanel {
-                                ApplicationSubspace(constraints = VolumeConstraints()) {}
-                            }
-                        }
-                    }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_customBounded_asNestedinCustomBoundedApplicationSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        ApplicationSubspace(
-                            constraints =
-                                VolumeConstraints(
-                                    minWidth = 0,
-                                    maxWidth = 50,
-                                    minHeight = 0,
-                                    maxHeight = 50
-                                ),
-                            constraintsBehavior = ConstraintsBehavior.Specified,
-                        ) {
-                            SpatialPanel {
-                                ApplicationSubspace(
-                                    constraints =
-                                        VolumeConstraints(
-                                            minWidth = 0,
-                                            maxWidth = 100,
-                                            minHeight = 0,
-                                            maxHeight = 100
-                                        ),
-                                    constraintsBehavior = ConstraintsBehavior.Specified,
-                                ) {}
-                            }
-                        }
-                    }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_fovBounded_asNestedInFovBoundedApplicationSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup { ApplicationSubspace { SpatialPanel { ApplicationSubspace {} } } }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun applicationSubspace_fovBounded_asNestedInUnboundedApplicationSubspace_throwsError() =
-        doBlocking(testDispatcher.scheduler) {
-            assertFailsWith<IllegalStateException>(
-                message = "ApplicationSubspace cannot be nested within another Subspace."
-            ) {
-                composeTestRule.setContent {
-                    TestSetup {
-                        ApplicationSubspace(constraints = VolumeConstraints()) {
-                            SpatialPanel { ApplicationSubspace {} }
-                        }
-                    }
-                }
-                testDispatcher.scheduler.advanceUntilIdle()
-                composeTestRule.waitForIdle()
-            }
-        }
-
-    @Test
-    fun subspace_fillMaxSize_returnsCorrectWidthAndHeight() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_fillMaxSize_returnsCorrectWidthAndHeight() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1087,7 +970,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1096,7 +984,6 @@ class SubspaceTest {
                 }
             }
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
             // DP_PER_METER = 1
@@ -1110,10 +997,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun subspace_fillMaxSize_higherDensity_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1153,7 +1041,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         Subspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth(1.0f)
@@ -1165,7 +1058,6 @@ class SubspaceTest {
                 }
             }
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
             // DP_PER_METER = 1
@@ -1178,10 +1070,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(5023.toDp())
                 .assertHeightIsEqualTo(5023.toDp())
         }
+    }
 
     @Test
-    fun subspace_fillMaxSize_higherScale_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_fillMaxSize_higherScale_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1221,7 +1114,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         Subspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth(1.0f)
@@ -1233,7 +1131,6 @@ class SubspaceTest {
                 }
             }
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             // Distance in Meters = ActivitySpace unit (2) / ActivitySpaceScale (2) = 1
             // DP_PER_METER = 1
@@ -1246,10 +1143,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun subspace_zeroDistance_returnsDefaultConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_zeroDistance_returnsDefaultConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1285,7 +1183,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1294,7 +1197,6 @@ class SubspaceTest {
                 }
             }
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             composeTestRule
                 .onSubspaceNodeWithTag("box")
@@ -1306,10 +1208,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun subspace_zeroFov_returnsZeroConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_zeroFov_returnsZeroConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1336,7 +1239,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1352,16 +1260,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(0.dp)
                 .assertHeightIsEqualTo(0.dp)
         }
+    }
 
     @Test
-    fun subspace_nullHead_returnsDefaultConstraintsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_nullHead_returnsDefaultConstraintsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1392,10 +1306,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun subspace_headAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_headAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1431,7 +1346,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -1465,16 +1385,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun subspace_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1505,10 +1431,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun subspace_leftCameraAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_leftCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1537,7 +1464,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -1580,16 +1512,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun subspace_nullRightCamera_returnsDefaultConstraintsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_nullRightCamera_returnsDefaultConstraintsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1620,10 +1558,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun subspace_rightCameraAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun subspace_rightCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1652,7 +1591,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -1695,62 +1639,57 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints = VolumeConstraints(),
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialBox(
-                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                        ) {}
-                    }
+    fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints(),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("box")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-                .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
-                .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
         }
 
-    @Test
-    fun applicationSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() =
-        doBlocking(testDispatcher.scheduler) {
-            val customConstraints = VolumeConstraints(0, 100, 0, 100)
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
+            .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
+    }
 
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints = customConstraints,
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialBox(
-                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                        ) {}
-                    }
+    @Test
+    fun applicationSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
+        val customConstraints = VolumeConstraints(0, 100, 0, 100)
+
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = customConstraints,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("box")
-                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-                .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
-                .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
         }
 
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
+    }
+
     @Test
-    fun applicationSubspace_fovBounded_fillMaxSize_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_fillMaxSize_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1789,7 +1728,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -1812,10 +1756,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_fillMaxSize_higherDensity_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1855,7 +1800,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth(1.0f)
@@ -1880,10 +1830,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(5023.toDp())
                 .assertHeightIsEqualTo(5023.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_fillMaxSize_higherScale_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_fillMaxSize_higherScale_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1923,7 +1874,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth(1.0f)
@@ -1948,10 +1904,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_zeroDistance_returnsDefaultConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_zeroDistance_returnsDefaultConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -1987,7 +1944,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2008,10 +1970,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_zeroFov_returnsZeroConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_zeroFov_returnsZeroConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2038,7 +2001,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2054,16 +2022,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(0.dp)
                 .assertHeightIsEqualTo(0.dp)
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullHead_returnsSubspaceDefaultsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullHead_returnsSubspaceDefaultsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2094,23 +2068,29 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullHead_returnsCustomConstraintsAfterTimeoutIfProvided() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullHead_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace(
                         constraints =
                             VolumeConstraints(
                                 minWidth = 0,
                                 maxWidth = 100,
                                 minHeight = 0,
-                                maxHeight = 100
+                                maxHeight = 100,
                             )
                     ) {
                         SpatialBox(
@@ -2138,10 +2118,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(100.toDp())
                 .assertHeightIsEqualTo(100.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_headAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_headAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2177,7 +2158,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -2211,16 +2197,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2251,23 +2243,29 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullLeftCam_returnsCustomConstraintsAfterTimeoutIfProvided() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullLeftCam_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace(
                         constraints =
                             VolumeConstraints(
                                 minWidth = 0,
                                 maxWidth = 100,
                                 minHeight = 0,
-                                maxHeight = 100
+                                maxHeight = 100,
                             )
                     ) {
                         SpatialBox(
@@ -2295,10 +2293,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(100.toDp())
                 .assertHeightIsEqualTo(100.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_leftCameraAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_leftCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2327,7 +2326,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -2370,16 +2374,22 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullRightCamera_returnsDefaultConstraintsAfterTimeout() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullRightCamera_returnsDefaultConstraintsAfterTimeout() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2410,23 +2420,29 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_nullRightCam_returnsCustomConstraintsAfterTimeoutIfProvided() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_nullRightCam_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace(
                         constraints =
                             VolumeConstraints(
                                 minWidth = 0,
                                 maxWidth = 100,
                                 minHeight = 0,
-                                maxHeight = 100
+                                maxHeight = 100,
                             )
                     ) {
                         SpatialBox(
@@ -2454,10 +2470,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(100.toDp())
                 .assertHeightIsEqualTo(100.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_rightCameraAvailableAfter50ms_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_rightCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2486,7 +2503,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -2529,64 +2551,60 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() =
-        doBlocking(testDispatcher.scheduler) {
-            val initialConstraints =
-                VolumeConstraints(
-                    minWidth = 0,
-                    maxWidth = 100,
-                    minHeight = 0,
-                    maxHeight = 100,
-                    minDepth = 0,
-                    maxDepth = VolumeConstraints.INFINITY,
-                )
-            val updatedConstraints =
-                VolumeConstraints(
-                    minWidth = 50,
-                    maxWidth = 150,
-                    minHeight = 50,
-                    maxHeight = 150,
-                    minDepth = 0,
-                    maxDepth = VolumeConstraints.INFINITY,
-                )
-            val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+    fun applicationSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
+        val initialConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 100,
+                minHeight = 0,
+                maxHeight = 100,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val updatedConstraints =
+            VolumeConstraints(
+                minWidth = 50,
+                maxWidth = 150,
+                minHeight = 50,
+                maxHeight = 150,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
 
-            composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(
-                        constraints = constraintsState.value,
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialBox(
-                            modifier =
-                                SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
-                        ) {}
-                    }
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = constraintsState.value,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        modifier =
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
+                    ) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("testBox")
-                .assertWidthIsEqualTo(100.toDp())
-                .assertHeightIsEqualTo(100.toDp())
-
-            constraintsState.value = updatedConstraints
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("testBox")
-                .assertWidthIsEqualTo(150.toDp())
-                .assertHeightIsEqualTo(150.toDp())
         }
 
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+
+        constraintsState.value = updatedConstraints
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(150.toDp())
+            .assertHeightIsEqualTo(150.toDp())
+    }
+
     @Test
-    fun applicationSubspace_behaviorChangeFromFovToSpecified_shouldRecomposeAndChangeConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_behaviorChangeFromFovToSpecified_shouldRecomposeAndChangeConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val initialConstraintsBehavior = ConstraintsBehavior.FieldOfView
             val updatedConstraintsBehavior = ConstraintsBehavior.Specified
             val constraints =
@@ -2639,7 +2657,12 @@ class SubspaceTest {
                 }
 
             composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
+                TestSetup(
+                    runtime = testJxrPlatformAdapter,
+                    onSessionCreated = { session ->
+                        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                    },
+                ) {
                     ApplicationSubspace(
                         constraints = constraints,
                         constraintsBehavior = constraintsBehaviorState.value,
@@ -2674,102 +2697,98 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(constraints.maxWidth.toDp())
                 .assertHeightIsEqualTo(constraints.maxHeight.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_constraintsChangeWithSpecified_shouldRecomposeAndChangeConstraints() =
-        doBlocking(testDispatcher.scheduler) {
-            val initialConstraints =
-                VolumeConstraints(
-                    minWidth = 0,
-                    maxWidth = 100,
-                    minHeight = 0,
-                    maxHeight = 100,
-                    minDepth = 0,
-                    maxDepth = VolumeConstraints.INFINITY,
-                )
-            val updatedConstraints =
-                VolumeConstraints(
-                    minWidth = 0,
-                    maxWidth = 200,
-                    minHeight = 0,
-                    maxHeight = 200,
-                    minDepth = 0,
-                    maxDepth = VolumeConstraints.INFINITY,
-                )
+    fun applicationSubspace_constraintsChangeWithSpecified_shouldRecomposeAndChangeConstraints() {
+        val initialConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 100,
+                minHeight = 0,
+                maxHeight = 100,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val updatedConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 200,
+                minHeight = 0,
+                maxHeight = 200,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
 
-            val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
 
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            val testJxrPlatformAdapter =
-                TestJxrPlatformAdapter.create(fakeRuntime).apply {
-                    activitySpace =
-                        TestActivitySpace(
-                            fakeRuntime.activitySpace,
-                            activitySpacePose = Pose.Identity,
-                            activitySpaceScale = Vector3(1f, 1f, 1f),
-                        )
-                    headActivityPose =
-                        TestHeadActivityPose(
-                            activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
-                        )
-                    leftCameraViewPose =
-                        TestCameraViewActivityPose(
-                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
-                            fov =
-                                CameraViewActivityPose.Fov(
-                                    angleLeft = -1.57f,
-                                    angleRight = 1.00f,
-                                    angleUp = 1.57f,
-                                    angleDown = -1.57f,
-                                ),
-                        )
-                    rightCameraViewPose =
-                        TestCameraViewActivityPose(
-                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
-                            fov =
-                                CameraViewActivityPose.Fov(
-                                    angleLeft = -1.00f,
-                                    angleRight = 1.57f,
-                                    angleUp = 1.57f,
-                                    angleDown = -1.57f,
-                                ),
-                        )
-                }
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
 
-            composeTestRule.setContent {
-                TestSetup(runtime = testJxrPlatformAdapter) {
-                    ApplicationSubspace(
-                        constraints = constraintsState.value,
-                        constraintsBehavior = ConstraintsBehavior.Specified,
-                    ) {
-                        SpatialBox(
-                            modifier =
-                                SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
-                        ) {}
-                    }
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints = constraintsState.value,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        modifier =
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
+                    ) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("testBox")
-                .assertWidthIsEqualTo(initialConstraints.maxWidth.toDp())
-                .assertHeightIsEqualTo(initialConstraints.maxHeight.toDp())
-
-            constraintsState.value = updatedConstraints
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule
-                .onSubspaceNodeWithTag("testBox")
-                .assertWidthIsEqualTo(updatedConstraints.maxWidth.toDp())
-                .assertHeightIsEqualTo(updatedConstraints.maxHeight.toDp())
         }
 
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(initialConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(initialConstraints.maxHeight.toDp())
+
+        constraintsState.value = updatedConstraints
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(updatedConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(updatedConstraints.maxHeight.toDp())
+    }
+
     @Test
-    fun applicationSubspace_fovBounded_zeroScaleInitially_becomesNonZero_returnsCorrectConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_zeroScaleInitially_becomesNonZero_returnsCorrectConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testActivitySpace =
                 TestActivitySpace(
@@ -2810,7 +2829,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -2844,10 +2868,11 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToDefaultConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToDefaultConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2887,7 +2912,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -2913,10 +2943,11 @@ class SubspaceTest {
                     SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
                 )
         }
+    }
 
     @Test
-    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToCustomConstraints() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToCustomConstraints() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -2956,14 +2987,19 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace(
                             constraints =
                                 VolumeConstraints(
                                     minWidth = 0,
                                     maxWidth = 100,
                                     minHeight = 0,
-                                    maxHeight = 100
+                                    maxHeight = 100,
                                 )
                         ) {
                             SpatialBox(
@@ -2986,66 +3022,54 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(100.toDp())
                 .assertHeightIsEqualTo(100.toDp())
         }
+    }
 
     @Test
-    fun privateApplicationSubspace_mainPanelEntityHidden_whenSubspaceLeavesComposition() =
-        doBlocking(testDispatcher.scheduler) {
-            var showSubspace by mutableStateOf(true)
+    fun privateApplicationSubspace_mainPanelEntityHidden_whenSubspaceLeavesComposition() {
+        var showSubspace by mutableStateOf(true)
 
-            composeTestRule.setContent {
-                TestSetup {
-                    if (showSubspace) {
-                        ApplicationSubspace {}
-                    }
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
+                    ApplicationSubspace {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            val session = composeTestRule.activity.session
-            assertNotNull(session)
-            val mainPanelEntity = session.scene.mainPanelEntity
-            assertThat(mainPanelEntity.isHidden()).isEqualTo(true)
-
-            showSubspace = false
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            assertThat(mainPanelEntity.isHidden()).isEqualTo(false)
         }
 
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        val mainPanelEntity = session.scene.mainPanelEntity
+        assertThat(mainPanelEntity.isHidden()).isEqualTo(true)
+
+        showSubspace = false
+        composeTestRule.waitForIdle()
+
+        assertThat(mainPanelEntity.isHidden()).isEqualTo(false)
+    }
+
     @Test
-    fun applicationSubspace_headTrackingDisabled_returnsFallbackFovConstraints() =
-        doBlocking(testDispatcher.scheduler) {
-            composeTestRule.setContent {
-                TestSetup {
-                    val session = LocalSession.current
-                    assertNotNull(session)
-                    session.configure(Config(headTracking = HeadTrackingMode.DISABLED))
-                    ApplicationSubspace {
-                        SpatialBox(
-                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
-                        ) {}
-                    }
+    fun applicationSubspace_headTrackingDisabled_returnsFallbackFovConstraints() {
+        composeTestRule.setContent {
+            TestSetup {
+                val session = LocalSession.current
+                assertNotNull(session)
+                session.configure(Config(headTracking = HeadTrackingMode.DISABLED))
+                ApplicationSubspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
                 }
             }
-            testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
-
-            composeTestRule.onSubspaceNodeWithTag("box").assertExists()
-            composeTestRule
-                .onSubspaceNodeWithTag("box")
-                .assertWidthIsEqualTo(
-                    SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp()
-                )
-                .assertHeightIsEqualTo(
-                    SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp()
-                )
         }
 
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
     @Test
-    fun applicationSubspace_returnsEarly_afterCalculatedFovConstraintsValueIsDecided() =
-        doBlocking(testDispatcher.scheduler) {
+    fun applicationSubspace_returnsEarly_afterCalculatedFovConstraintsValueIsDecided() {
+        runBlocking(testDispatcher.scheduler) {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val testJxrPlatformAdapter =
                 TestJxrPlatformAdapter.create(fakeRuntime).apply {
@@ -3087,7 +3111,12 @@ class SubspaceTest {
 
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDensity provides densityState.value) {
-                    TestSetup(runtime = testJxrPlatformAdapter) {
+                    TestSetup(
+                        runtime = testJxrPlatformAdapter,
+                        onSessionCreated = { session ->
+                            session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+                        },
+                    ) {
                         ApplicationSubspace {
                             SpatialBox(
                                 SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
@@ -3098,7 +3127,6 @@ class SubspaceTest {
             }
 
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             composeTestRule
                 .onSubspaceNodeWithTag("box")
@@ -3109,7 +3137,6 @@ class SubspaceTest {
             densityState.value = Density(2f)
 
             testDispatcher.scheduler.advanceUntilIdle()
-            composeTestRule.waitForIdle()
 
             composeTestRule
                 .onSubspaceNodeWithTag("box")
@@ -3117,4 +3144,82 @@ class SubspaceTest {
                 .assertWidthIsEqualTo(2512.toDp())
                 .assertHeightIsEqualTo(2512.toDp())
         }
+    }
+
+    @Test
+    fun applicationSubspace_retainsState_whenSwitchingModes() {
+        val testJxrPlatformAdapter = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace {
+                        SpatialPanel {
+                            var state by remember { mutableStateOf(0) }
+                            Button(onClick = { state++ }) { Text("Increment") }
+                            Text("$state", modifier = Modifier.testTag("state"))
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        testJxrPlatformAdapter.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        testJxrPlatformAdapter.requestFullSpaceMode()
+        composeTestRule.onNodeWithText("Increment").performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+    }
+
+    @Test
+    fun applicationSubspace_retainsState_whenSwitchingModesStartingFromHomeSpace() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider {
+                TestSetup(runtime = runtime) {
+                    ApplicationSubspace {
+                        SpatialPanel {
+                            var state by remember { mutableStateOf(0) }
+                            Button(onClick = { state++ }) { Text("Increment") }
+                            Text("$state", modifier = Modifier.testTag("state"))
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        runtime.requestFullSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        runtime.requestFullSpaceMode()
+        composeTestRule.onNodeWithText("Increment").performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+    }
 }

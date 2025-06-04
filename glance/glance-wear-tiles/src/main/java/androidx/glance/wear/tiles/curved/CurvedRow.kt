@@ -53,7 +53,7 @@ public fun CurvedRow(
     anchorDegrees: Float = 270f,
     anchorType: AnchorType = AnchorType.Center,
     radialAlignment: RadialAlignment = RadialAlignment.Center,
-    content: CurvedScope.() -> Unit
+    content: CurvedScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableCurvedRow,
@@ -63,7 +63,7 @@ public fun CurvedRow(
             this.set(anchorType) { this.anchorType = it }
             this.set(radialAlignment) { this.radialAlignment = it }
         },
-        content = applyCurvedScope(content)
+        content = applyCurvedScope(content),
     )
 }
 
@@ -78,7 +78,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
             override fun curvedText(
                 text: String,
                 curvedModifier: GlanceCurvedModifier,
-                style: CurvedTextStyle?
+                style: CurvedTextStyle?,
             ) {
                 curvedChildList.add {
                     GlanceNode(
@@ -87,7 +87,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                             this.set(text) { this.text = it }
                             this.set(curvedModifier) { this.curvedModifier = it }
                             this.set(style) { this.style = it }
-                        }
+                        },
                     )
                 }
             }
@@ -99,7 +99,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                         update = {
                             this.set(color) { this.color = it }
                             this.set(curvedModifier) { this.curvedModifier = it }
-                        }
+                        },
                     )
                 }
             }
@@ -108,7 +108,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                 curvedChildList.add {
                     GlanceNode(
                         factory = ::EmittableCurvedSpacer,
-                        update = { this.set(curvedModifier) { this.curvedModifier = it } }
+                        update = { this.set(curvedModifier) { this.curvedModifier = it } },
                     )
                 }
             }
@@ -124,7 +124,7 @@ private fun CurvedChild(rotateContent: Boolean, content: @Composable () -> Unit)
     GlanceNode(
         factory = ::EmittableCurvedChild,
         update = { this.set(rotateContent) { this.rotateContent = it } },
-        content = content
+        content = content,
     )
 }
 
@@ -261,7 +261,7 @@ public interface CurvedScope {
     public fun curvedText(
         text: String,
         curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier,
-        style: CurvedTextStyle? = null
+        style: CurvedTextStyle? = null,
     )
 
     /**
@@ -272,7 +272,7 @@ public interface CurvedScope {
      */
     public fun curvedLine(
         color: ColorProvider,
-        curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier
+        curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier,
     )
 
     /**

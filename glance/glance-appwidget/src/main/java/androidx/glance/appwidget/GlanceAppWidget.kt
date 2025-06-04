@@ -56,7 +56,7 @@ import kotlinx.coroutines.CancellationException
  *   is overridden, [errorUiLayout] will not be read..
  */
 public abstract class GlanceAppWidget(
-    @LayoutRes internal open val errorUiLayout: Int = R.layout.glance_error_layout,
+    @LayoutRes internal open val errorUiLayout: Int = R.layout.glance_error_layout
 ) {
     @RestrictTo(Scope.LIBRARY_GROUP)
     public open fun getSessionManager(context: Context): SessionManager = GlanceSessionManager
@@ -85,10 +85,7 @@ public abstract class GlanceAppWidget(
      * @sample androidx.glance.appwidget.samples.provideGlanceSample
      * @sample androidx.glance.appwidget.samples.provideGlancePeriodicWorkSample
      */
-    public abstract suspend fun provideGlance(
-        context: Context,
-        id: GlanceId,
-    )
+    public abstract suspend fun provideGlance(context: Context, id: GlanceId)
 
     /**
      * Override this function to provide a Glance Composable that will be used when running this
@@ -156,11 +153,7 @@ public abstract class GlanceAppWidget(
     }
 
     /** Internal version of [update], to be used by the broadcast receiver directly. */
-    internal suspend fun update(
-        context: Context,
-        appWidgetId: Int,
-        options: Bundle? = null,
-    ) {
+    internal suspend fun update(context: Context, appWidgetId: Int, options: Bundle? = null) {
         Tracing.beginGlanceAppWidgetUpdate()
         val glanceId = AppWidgetId(appWidgetId)
         getOrCreateAppWidgetSession(context, glanceId, options) { session, wasRunning ->
@@ -221,7 +214,7 @@ public abstract class GlanceAppWidget(
         context: Context,
         glanceId: GlanceId,
         appWidgetId: Int,
-        throwable: Throwable
+        throwable: Throwable,
     ) {
         if (errorUiLayout == 0) {
             throw throwable // Maintains consistency with Glance 1.0 behavior.
@@ -229,7 +222,7 @@ public abstract class GlanceAppWidget(
             val rv =
                 RemoteViews(
                     context.packageName,
-                    errorUiLayout
+                    errorUiLayout,
                 ) // default impl: inflate the error layout
             AppWidgetManager.getInstance(context).updateAppWidget(appWidgetId, rv)
         }
@@ -263,7 +256,7 @@ public abstract class GlanceAppWidget(
     protected open fun createAppWidgetSession(
         context: Context,
         id: AppWidgetId,
-        options: Bundle? = null
+        options: Bundle? = null,
     ): AppWidgetSession = AppWidgetSession(this@GlanceAppWidget, id, options)
 }
 
@@ -280,7 +273,7 @@ public suspend fun GlanceAppWidget.updateAll(@Suppress("ContextFirst") context: 
  */
 public suspend inline fun <reified State> GlanceAppWidget.updateIf(
     @Suppress("ContextFirst") context: Context,
-    predicate: (State) -> Boolean
+    predicate: (State) -> Boolean,
 ) {
     val stateDef = stateDefinition
     requireNotNull(stateDef) { "GlanceAppWidget.updateIf cannot be used if no state is defined." }

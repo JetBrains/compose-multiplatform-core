@@ -105,7 +105,7 @@ fun LinearWavyProgressIndicator(
     stopSize: Dp = WavyProgressIndicatorDefaults.LinearTrackStopIndicatorSize,
     amplitude: (progress: Float) -> Float = WavyProgressIndicatorDefaults.indicatorAmplitude,
     wavelength: Dp = WavyProgressIndicatorDefaults.LinearDeterminateWavelength,
-    waveSpeed: Dp = wavelength // Match to 1 wavelength per second
+    waveSpeed: Dp = wavelength, // Match to 1 wavelength per second
 ) {
     Spacer(
         modifier =
@@ -119,7 +119,7 @@ fun LinearWavyProgressIndicator(
                 }
                 .size(
                     width = WavyProgressIndicatorDefaults.LinearContainerWidth,
-                    height = WavyProgressIndicatorDefaults.LinearContainerHeight
+                    height = WavyProgressIndicatorDefaults.LinearContainerHeight,
                 )
                 .clipToBounds()
                 .linearWavyProgressIndicator(
@@ -132,7 +132,7 @@ fun LinearWavyProgressIndicator(
                     stopSize = stopSize,
                     amplitude = amplitude,
                     wavelength = wavelength,
-                    waveSpeed = waveSpeed
+                    waveSpeed = waveSpeed,
                 )
     )
 }
@@ -174,7 +174,7 @@ fun LinearWavyProgressIndicator(
     gapSize: Dp = WavyProgressIndicatorDefaults.LinearIndicatorTrackGapSize,
     @FloatRange(from = 0.0, to = 1.0) amplitude: Float = 1f,
     wavelength: Dp = WavyProgressIndicatorDefaults.LinearIndeterminateWavelength,
-    waveSpeed: Dp = wavelength // Match to 1 wavelength per second
+    waveSpeed: Dp = wavelength, // Match to 1 wavelength per second
 ) {
     val infiniteTransition = rememberInfiniteTransition("LinearWavyProgressIndicatorProgress")
     val firstLineHead =
@@ -182,28 +182,28 @@ fun LinearWavyProgressIndicator(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = linearIndeterminateFirstLineHeadAnimationSpec,
-            label = "LinearWavyProgressIndicatorFirstHead"
+            label = "LinearWavyProgressIndicatorFirstHead",
         )
     val firstLineTail =
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = linearIndeterminateFirstLineTailAnimationSpec,
-            label = "LinearWavyProgressIndicatorFirstTail"
+            label = "LinearWavyProgressIndicatorFirstTail",
         )
     val secondLineHead =
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = linearIndeterminateSecondLineHeadAnimationSpec,
-            label = "LinearWavyProgressIndicatorSecondHead"
+            label = "LinearWavyProgressIndicatorSecondHead",
         )
     val secondLineTail =
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = linearIndeterminateSecondLineTailAnimationSpec,
-            label = "LinearWavyProgressIndicatorSecondTail"
+            label = "LinearWavyProgressIndicatorSecondTail",
         )
 
     Spacer(
@@ -213,7 +213,7 @@ fun LinearWavyProgressIndicator(
                 .progressSemantics()
                 .size(
                     WavyProgressIndicatorDefaults.LinearContainerWidth,
-                    WavyProgressIndicatorDefaults.LinearContainerHeight
+                    WavyProgressIndicatorDefaults.LinearContainerHeight,
                 )
                 .clipToBounds()
                 .linearWavyProgressIndicator(
@@ -228,7 +228,7 @@ fun LinearWavyProgressIndicator(
                     gapSize = gapSize,
                     amplitude = amplitude.fastCoerceIn(0f, 1f),
                     wavelength = wavelength,
-                    waveSpeed = waveSpeed
+                    waveSpeed = waveSpeed,
                 )
     )
 }
@@ -285,7 +285,7 @@ fun CircularWavyProgressIndicator(
     gapSize: Dp = WavyProgressIndicatorDefaults.CircularIndicatorTrackGapSize,
     amplitude: (progress: Float) -> Float = WavyProgressIndicatorDefaults.indicatorAmplitude,
     wavelength: Dp = WavyProgressIndicatorDefaults.CircularWavelength,
-    waveSpeed: Dp = wavelength // Match to 1 wavelength per second
+    waveSpeed: Dp = wavelength, // Match to 1 wavelength per second
 ) {
     Spacer(
         modifier =
@@ -300,7 +300,7 @@ fun CircularWavyProgressIndicator(
                     gapSize = gapSize,
                     amplitude = amplitude,
                     wavelength = wavelength,
-                    waveSpeed = waveSpeed
+                    waveSpeed = waveSpeed,
                 )
                 .semantics(mergeDescendants = true) {
                     val progressValue = progress()
@@ -355,7 +355,7 @@ fun CircularWavyProgressIndicator(
     gapSize: Dp = WavyProgressIndicatorDefaults.CircularIndicatorTrackGapSize,
     @FloatRange(from = 0.0, to = 1.0) amplitude: Float = 1f,
     wavelength: Dp = WavyProgressIndicatorDefaults.CircularWavelength,
-    waveSpeed: Dp = wavelength // Match to 1 wavelength per second
+    waveSpeed: Dp = wavelength, // Match to 1 wavelength per second
 ) {
     Box(modifier = modifier.size(WavyProgressIndicatorDefaults.CircularContainerSize)) {
         Spacer(
@@ -368,7 +368,7 @@ fun CircularWavyProgressIndicator(
                     gapSize = gapSize,
                     amplitude = amplitude,
                     wavelength = wavelength,
-                    waveSpeed = waveSpeed
+                    waveSpeed = waveSpeed,
                 )
         )
         // To overcome b/347736702 we are separating the progressSemantics() call to an independent
@@ -388,7 +388,7 @@ object WavyProgressIndicatorDefaults {
     val ProgressAnimationSpec: AnimationSpec<Float> =
         tween(
             durationMillis = MotionTokens.DurationLong2.toInt(),
-            easing = MotionTokens.EasingLinearCubicBezier
+            easing = MotionTokens.EasingLinearCubicBezier,
         )
 
     /** A default active indicator [Color]. */
@@ -408,7 +408,7 @@ object WavyProgressIndicatorDefaults {
                     with(LocalDensity.current) {
                         LinearProgressIndicatorTokens.ActiveThickness.toPx()
                     },
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
 
     /** A default circular progress indicator active indicator [Stroke]. */
@@ -420,7 +420,7 @@ object WavyProgressIndicatorDefaults {
                     with(LocalDensity.current) {
                         CircularProgressIndicatorTokens.ActiveThickness.toPx()
                     },
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
 
     /** A default linear progress indicator track [Stroke]. */
@@ -432,7 +432,7 @@ object WavyProgressIndicatorDefaults {
                     with(LocalDensity.current) {
                         LinearProgressIndicatorTokens.TrackThickness.toPx()
                     },
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
 
     /** A default circular progress indicator track [Stroke]. */
@@ -444,7 +444,7 @@ object WavyProgressIndicatorDefaults {
                     with(LocalDensity.current) {
                         CircularProgressIndicatorTokens.TrackThickness.toPx()
                     },
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
 
     /** A default wavelength of a determinate linear progress indicator when it's in a wavy form. */
@@ -496,12 +496,12 @@ object WavyProgressIndicatorDefaults {
 internal val IncreasingAmplitudeAnimationSpec: AnimationSpec<Float> =
     tween(
         durationMillis = MotionTokens.DurationLong2.toInt(),
-        easing = MotionTokens.EasingStandardCubicBezier
+        easing = MotionTokens.EasingStandardCubicBezier,
     )
 
 // Animation spec for decreasing the amplitude drawing when its changing.
 internal val DecreasingAmplitudeAnimationSpec: AnimationSpec<Float> =
     tween(
         durationMillis = MotionTokens.DurationLong2.toInt(),
-        easing = MotionTokens.EasingEmphasizedAccelerateCubicBezier
+        easing = MotionTokens.EasingEmphasizedAccelerateCubicBezier,
     )

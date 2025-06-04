@@ -86,26 +86,24 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class CameraControllerFragmentTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             testCameraRule,
-            CameraUtil.PreTestCameraIdList(cameraConfig)
+            CameraUtil.PreTestCameraIdList(cameraConfig),
         )
 
     @get:Rule
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -229,7 +227,7 @@ class CameraControllerFragmentTest(
 
                 override fun onFailure(t: Throwable) {}
             },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
         assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
     }
@@ -308,7 +306,7 @@ class CameraControllerFragmentTest(
         // TODO(b/147448711) Add back in once cuttlefish has correct user cropping functionality.
         Assume.assumeFalse(
             "Cuttlefish does not correctly handle crops. Unable to test.",
-            Build.MODEL.contains("Cuttlefish")
+            Build.MODEL.contains("Cuttlefish"),
         )
 
         // Arrange.
@@ -337,7 +335,7 @@ class CameraControllerFragmentTest(
         transformCapture.postRotate(
             captureToPreviewDegrees.toFloat(),
             width.toFloat() / 2,
-            height.toFloat() / 2
+            height.toFloat() / 2,
         )
         if (captureResult.isFlippedHorizontally) {
             transformCapture.postScale(-1F, 1F, width / 2F, height / 2F)
@@ -355,7 +353,7 @@ class CameraControllerFragmentTest(
         // useful. The test will be skipped.
         assumeTrue(
             "Test skipped. Device most likely in low light environment.",
-            captureLuminance > MIN_LUMINANCE && previewLuminance > MIN_LUMINANCE
+            captureLuminance > MIN_LUMINANCE && previewLuminance > MIN_LUMINANCE,
         )
 
         val captureMoment = getRgbMoments(captureBitmap)
@@ -527,7 +525,7 @@ class CameraControllerFragmentTest(
         // Skip test for b/253211491
         Assume.assumeFalse(
             "Skip tests for Cuttlefish API 30 eglCreateWindowSurface issue",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
     }
 
@@ -652,7 +650,7 @@ class CameraControllerFragmentTest(
             bitmap,
             rotationAndFlip.first,
             rotationAndFlip.second,
-            rotationAndFlip.third
+            rotationAndFlip.third,
         )
     }
 
@@ -695,7 +693,7 @@ class CameraControllerFragmentTest(
                 videoRecordingSemaphore.tryAcquire(
                     RECORDING_COUNT,
                     TIMEOUT_SECONDS,
-                    TimeUnit.SECONDS
+                    TimeUnit.SECONDS,
                 )
             )
             .isTrue()
@@ -731,7 +729,7 @@ class CameraControllerFragmentTest(
             CameraControllerFragment::class.java,
             null,
             R.style.AppTheme,
-            null
+            null,
         )
     }
 
@@ -785,7 +783,7 @@ class CameraControllerFragmentTest(
         val bitmap: Bitmap,
         val rotationDegrees: Int,
         val isFlippedHorizontally: Boolean,
-        val isFlippedVertically: Boolean
+        val isFlippedVertically: Boolean,
     )
 
     companion object {
@@ -807,7 +805,7 @@ class CameraControllerFragmentTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 }

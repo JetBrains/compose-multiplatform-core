@@ -424,7 +424,7 @@ class AccessibilityIteratorsTest {
     private fun multiLineText(
         text: String,
         fontSize: TextUnit = 20.sp,
-        width: TextUnit = 40.sp
+        width: TextUnit = 40.sp,
     ): TextLayoutResult {
         var textLayoutResult: TextLayoutResult? = null
         rule.setContent {
@@ -438,13 +438,13 @@ class AccessibilityIteratorsTest {
                                 Font(
                                         resId = androidx.testutils.fonts.R.font.sample_font,
                                         weight = FontWeight.Normal,
-                                        style = FontStyle.Normal
+                                        style = FontStyle.Normal,
                                     )
-                                    .toFontFamily()
+                                    .toFontFamily(),
                         ),
                     text = AnnotatedString(text),
                     modifier = Modifier.requiredWidth(width.toDp()),
-                    onTextLayout = { textLayoutResult = it }
+                    onTextLayout = { textLayoutResult = it },
                 )
             }
         }
@@ -460,7 +460,7 @@ class AccessibilityIteratorsTest {
                     value = state.value,
                     onValueChange = { state.value = it },
                     modifier = Modifier.testTag(TextFieldTag),
-                    onTextLayout = { textLayoutResult = it }
+                    onTextLayout = { textLayoutResult = it },
                 )
             }
         }

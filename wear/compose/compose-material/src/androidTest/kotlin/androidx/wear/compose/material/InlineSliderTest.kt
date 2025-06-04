@@ -52,7 +52,7 @@ public class InlineSliderTest {
                 onValueChange = {},
                 valueRange = 0f..10f,
                 steps = 5,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -69,7 +69,7 @@ public class InlineSliderTest {
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20f }
@@ -86,7 +86,7 @@ public class InlineSliderTest {
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20f }
@@ -111,7 +111,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -131,7 +131,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -151,7 +151,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -169,7 +169,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -186,7 +186,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -206,7 +206,7 @@ public class InlineSliderTest {
                 decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -226,7 +226,7 @@ public class InlineSliderTest {
                 increaseIcon = { Icon(InlineSliderDefaults.Increase, "Increase") },
                 decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -243,7 +243,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -260,7 +260,7 @@ public class InlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -283,9 +283,9 @@ public class InlineSliderTest {
                     Icon(
                         modifier = Modifier.testTag(iconTag),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
-                }
+                },
             )
         }
 
@@ -310,10 +310,10 @@ public class InlineSliderTest {
                     Icon(
                         modifier = Modifier.testTag(iconTag),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
                 },
-                decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") }
+                decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
             )
         }
         val unclippedBoundsInRoot = rule.onRoot().getUnclippedBoundsInRoot()
@@ -389,7 +389,7 @@ public class IntegerInlineSliderTest {
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -403,7 +403,7 @@ public class IntegerInlineSliderTest {
                 value = 2,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -417,7 +417,7 @@ public class IntegerInlineSliderTest {
                 value = 2,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 10, 2),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -431,7 +431,7 @@ public class IntegerInlineSliderTest {
                 value = 6,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 16, 6),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -447,7 +447,7 @@ public class IntegerInlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20 }
@@ -463,7 +463,7 @@ public class IntegerInlineSliderTest {
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20 }
@@ -479,7 +479,7 @@ public class IntegerInlineSliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -497,7 +497,7 @@ public class IntegerInlineSliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -515,7 +515,7 @@ public class IntegerInlineSliderTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -614,7 +614,7 @@ internal fun DefaultInlineSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int
+    steps: Int,
 ) {
     InlineSlider(
         modifier = modifier,
@@ -623,7 +623,7 @@ internal fun DefaultInlineSlider(
         decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
         onValueChange = onValueChange,
         valueRange = valueRange,
-        steps = steps
+        steps = steps,
     )
 }
 
@@ -632,7 +632,7 @@ internal fun DefaultInlineSlider(
     value: Int,
     onValueChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    valueProgression: IntProgression
+    valueProgression: IntProgression,
 ) {
     InlineSlider(
         modifier = modifier,

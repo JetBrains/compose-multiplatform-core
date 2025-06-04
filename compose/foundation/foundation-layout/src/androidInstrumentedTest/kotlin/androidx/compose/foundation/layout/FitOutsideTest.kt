@@ -216,7 +216,7 @@ class FitOutsideTest {
         builder.setInsets(Type.navigationBars(), Insets.of(left, 0, right, bottom))
         builder.setInsetsIgnoringVisibility(
             Type.navigationBars(),
-            Insets.of(left, 0, right, bottom)
+            Insets.of(left, 0, right, bottom),
         )
         builder.setVisible(Type.navigationBars(), left != 0 || right != 0 || bottom != 0)
 

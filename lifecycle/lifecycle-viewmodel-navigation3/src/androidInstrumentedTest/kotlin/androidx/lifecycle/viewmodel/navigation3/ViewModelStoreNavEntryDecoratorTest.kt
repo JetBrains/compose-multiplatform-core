@@ -114,7 +114,7 @@ class ViewModelStoreNavEntryDecoratorTest {
                 entryDecorators =
                     listOf(
                         rememberSavedStateNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator()
+                        rememberViewModelStoreNavEntryDecorator(),
                     ),
                 onBack = { backStack.removeAt(backStack.lastIndex) },
             ) { key ->
@@ -168,7 +168,7 @@ class ViewModelStoreNavEntryDecoratorTest {
                 entryDecorators =
                     listOf(
                         rememberSavedStateNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator()
+                        rememberViewModelStoreNavEntryDecorator(),
                     ),
                 onBack = { backStack.removeAt(backStack.lastIndex) },
             ) { key ->

@@ -32,7 +32,7 @@ actual constructor(
     /** The view name */
     public actual val name: String,
     /** The SQL of CREATE VIEW. */
-    public actual val sql: String?
+    public actual val sql: String?,
 ) {
     public actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 

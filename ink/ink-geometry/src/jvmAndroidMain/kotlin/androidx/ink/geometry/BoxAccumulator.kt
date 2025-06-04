@@ -58,7 +58,7 @@ public class BoxAccumulator {
         MutableBox()
             .populateFromTwoPoints(
                 ImmutableVec(box.xMin, box.yMin),
-                ImmutableVec(box.xMax, box.yMax)
+                ImmutableVec(box.xMax, box.yMax),
             ),
     )
 

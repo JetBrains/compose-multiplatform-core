@@ -135,7 +135,7 @@ fun BasicSecureTextField(
     // lambda.
     textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
-    scrollState: ScrollState = rememberScrollState()
+    scrollState: ScrollState = rememberScrollState(),
 ) {
     val obfuscationMaskState = rememberUpdatedState(textObfuscationCharacter)
     val secureTextFieldController = remember { SecureTextFieldController(obfuscationMaskState) }
@@ -206,7 +206,7 @@ fun BasicSecureTextField(
             codepointTransformation = codepointTransformation,
             decorator = decorator,
             isPassword = true,
-            scrollState = scrollState
+            scrollState = scrollState,
         )
     }
 }
@@ -317,7 +317,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                     onPasteRequested: (() -> Unit)?,
                     onCutRequested: (() -> Unit)?,
                     onSelectAllRequested: (() -> Unit)?,
-                    onAutofillRequested: (() -> Unit)?
+                    onAutofillRequested: (() -> Unit)?,
                 ) {
                     currentToolbar.showMenu(
                         rect = rect,
@@ -325,7 +325,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                         onSelectAllRequested = onSelectAllRequested,
                         onCopyRequested = null,
                         onCutRequested = null,
-                        onAutofillRequested = onAutofillRequested
+                        onAutofillRequested = onAutofillRequested,
                     )
                 }
             }
@@ -335,7 +335,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
 
 @Deprecated(
     message = "Please use the overload that takes in readOnly parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
@@ -370,13 +370,13 @@ fun BasicSecureTextField(
         cursorBrush = cursorBrush,
         decorator = decorator,
         textObfuscationMode = textObfuscationMode,
-        textObfuscationCharacter = textObfuscationCharacter
+        textObfuscationCharacter = textObfuscationCharacter,
     )
 }
 
 @Deprecated(
     message = "Please use the overload that takes in scrollState parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
@@ -413,6 +413,6 @@ fun BasicSecureTextField(
         decorator = decorator,
         textObfuscationMode = textObfuscationMode,
         textObfuscationCharacter = textObfuscationCharacter,
-        scrollState = rememberScrollState()
+        scrollState = rememberScrollState(),
     )
 }

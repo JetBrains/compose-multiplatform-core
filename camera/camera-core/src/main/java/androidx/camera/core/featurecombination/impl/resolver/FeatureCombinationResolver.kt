@@ -16,8 +16,8 @@
 
 package androidx.camera.core.featurecombination.impl.resolver
 
-import androidx.camera.core.UseCase
-import androidx.camera.core.featurecombination.Feature
+import androidx.camera.core.ExperimentalSessionConfig
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination
 
 /**
@@ -31,19 +31,17 @@ public interface FeatureCombinationResolver {
      * Returns a [FeatureCombinationResolutionResult] which is either a supported
      * [ResolvedFeatureCombination] instance or some error.
      *
-     * @param useCases The set of use cases to use with a feature combination.
-     * @param requiredFeatures The set of required [Feature]s, empty by default.
-     * @param orderedPreferredFeatures The list of preferred features in descending order of
-     *   priority, empty by default.
+     * @param sessionConfig The [SessionConfig] containing the use cases, required features, and
+     *   preferred features to be used for resolving the feature combination.
      * @return A [FeatureCombinationResolutionResult] indicating the result. In case of success, it
-     *   will contain a supported [ResolvedFeatureCombination].
-     * @throws IllegalArgumentException If both the [requiredFeatures] and
-     *   [orderedPreferredFeatures] are empty.
+     *   will contain a supported [ResolvedFeatureCombination]. If no suitable combination is found,
+     *   it will contain an error detailing the reason.
+     * @throws IllegalStateException If the underlying feature combination resolution logic
+     *   encounters an unexpected state.
      */
+    @OptIn(ExperimentalSessionConfig::class)
     @Throws(IllegalStateException::class)
     public fun resolveFeatureCombination(
-        useCases: Set<UseCase>,
-        requiredFeatures: Set<Feature> = emptySet(),
-        orderedPreferredFeatures: List<Feature> = emptyList()
+        sessionConfig: SessionConfig
     ): FeatureCombinationResolutionResult
 }

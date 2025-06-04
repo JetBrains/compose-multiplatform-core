@@ -55,13 +55,13 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             ConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                text = { Text("Your message has been sent") }
+                text = { Text("Your message has been sent") },
             ) {
                 DefaultSmallIcon()
             }
@@ -73,14 +73,14 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             val style = ConfirmationDialogDefaults.curvedTextStyle
             ConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                curvedText = { confirmationDialogCurvedText("Confirmed", style) }
+                curvedText = { confirmationDialogCurvedText("Confirmed", style) },
             ) {
                 DefaultIcon()
             }
@@ -92,13 +92,13 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             ConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                curvedText = null
+                curvedText = null,
             ) {
                 DefaultIcon()
             }
@@ -110,14 +110,14 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             val style = ConfirmationDialogDefaults.curvedTextStyle
             SuccessConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                curvedText = { confirmationDialogCurvedText("Success", style) }
+                curvedText = { confirmationDialogCurvedText("Success", style) },
             )
         }
     }
@@ -127,13 +127,13 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             SuccessConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                curvedText = null
+                curvedText = null,
             )
         }
     }
@@ -143,14 +143,14 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             val style = ConfirmationDialogDefaults.curvedTextStyle
             FailureConfirmationDialog(
                 visible = true,
                 modifier = modifier,
                 onDismissRequest = {},
-                curvedText = { confirmationDialogCurvedText("Failure", style) }
+                curvedText = { confirmationDialogCurvedText("Failure", style) },
             )
         }
     }
@@ -160,7 +160,7 @@ class ConfirmationScreenshotTest {
         rule.verifyConfirmationScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            screenSize = screenSize
+            screenSize = screenSize,
         ) { modifier ->
             FailureConfirmationDialog(
                 visible = true,
@@ -175,7 +175,7 @@ class ConfirmationScreenshotTest {
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
         screenSize: ScreenSize,
-        content: @Composable (modifier: Modifier) -> Unit
+        content: @Composable (modifier: Modifier) -> Unit,
     ) {
         setContentWithTheme {
             ScreenConfiguration(screenSize.size) {
@@ -185,10 +185,7 @@ class ConfirmationScreenshotTest {
 
         onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertAgainstGolden(
-                screenshotRule,
-                testName.goldenIdentifier(),
-            )
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
     }
 
     @Composable
@@ -197,7 +194,7 @@ class ConfirmationScreenshotTest {
             Icons.Filled.Add,
             modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
             tint = MaterialTheme.colorScheme.primary,
-            contentDescription = null
+            contentDescription = null,
         )
     }
 
@@ -207,7 +204,7 @@ class ConfirmationScreenshotTest {
             Icons.Filled.Add,
             modifier = Modifier.size(ConfirmationDialogDefaults.SmallIconSize),
             tint = MaterialTheme.colorScheme.primary,
-            contentDescription = null
+            contentDescription = null,
         )
     }
 }

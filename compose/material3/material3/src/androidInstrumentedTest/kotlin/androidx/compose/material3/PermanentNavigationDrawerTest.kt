@@ -59,7 +59,7 @@ class PermanentNavigationDrawerTest {
                 drawerContent = {
                     PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -75,7 +75,7 @@ class PermanentNavigationDrawerTest {
                         Box(Modifier.fillMaxSize().testTag("content"))
                     }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -93,7 +93,7 @@ class PermanentNavigationDrawerTest {
                     drawerContent = {
                         PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                     },
-                    content = {}
+                    content = {},
                 )
             }
         }
@@ -112,7 +112,7 @@ class PermanentNavigationDrawerTest {
                 drawerContent = {
                     PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -128,7 +128,7 @@ class PermanentNavigationDrawerTest {
                         Box(Modifier.fillMaxSize().testTag("content"))
                     }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -146,7 +146,7 @@ class PermanentNavigationDrawerTest {
                         Box(Modifier.fillMaxSize().testTag("navigationDrawerTag"))
                     }
                 },
-                content = {}
+                content = {},
             )
             navigationMenu = getString(Strings.NavigationMenu)
         }

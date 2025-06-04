@@ -45,7 +45,7 @@ open class MeasurementManagerImplCommon(
             mMeasurementManager.deleteRegistrations(
                 deletionRequest.convertToAdServices(),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -58,7 +58,7 @@ open class MeasurementManagerImplCommon(
                 attributionSource,
                 inputEvent,
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -70,7 +70,7 @@ open class MeasurementManagerImplCommon(
             mMeasurementManager.registerTrigger(
                 trigger,
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -82,7 +82,7 @@ open class MeasurementManagerImplCommon(
             mMeasurementManager.registerWebSource(
                 request.convertToAdServices(),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -98,7 +98,7 @@ open class MeasurementManagerImplCommon(
                         uri,
                         request.inputEvent,
                         Runnable::run,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }
@@ -112,7 +112,7 @@ open class MeasurementManagerImplCommon(
             mMeasurementManager.registerWebTrigger(
                 request.convertToAdServices(),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }
@@ -123,7 +123,7 @@ open class MeasurementManagerImplCommon(
         suspendCancellableCoroutine { continuation ->
             mMeasurementManager.getMeasurementApiStatus(
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
 }

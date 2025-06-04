@@ -32,10 +32,10 @@ import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.scenecore.impl.JxrPlatformAdapterAxr
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary
-import androidx.xr.scenecore.testing.FakeImpressApi
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
+import com.google.ar.imp.apibindings.FakeImpressApiImpl
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 import org.mockito.Mockito.mock
 import org.robolectric.shadows.ShadowDisplay
@@ -130,25 +130,6 @@ public fun createFakeSession(
     )
 
 /**
- * Create a fake [Session] for testing using configs from [TestJxrPlatformAdapter].
- *
- * A convenience method that creates a fake [Session] for testing. If runtime is not provided, a
- * fake [JxrPlatformAdapter] using [TestJxrPlatformAdapter] will be created by default.
- *
- * @param activity The [Activity] to use for the [Session].
- * @param runtime The [JxrPlatformAdapter] to use for the [Session].
- */
-internal fun createFakeSessionWithTestConfigs(
-    activity: Activity,
-    runtime: JxrPlatformAdapter = createFakeRuntime(activity),
-): Session =
-    Session(
-        activity,
-        FakeRuntimeFactory().createRuntime(activity).apply { lifecycleManager.create() },
-        runtime,
-    )
-
-/**
  * Create a fake [JxrPlatformAdapter] for testing.
  *
  * A convenience method that creates a fake [JxrPlatformAdapter] for testing.
@@ -162,7 +143,7 @@ public fun createFakeRuntime(activity: Activity): JxrPlatformAdapter =
         /* activity = */ activity,
         /* executor = */ FakeScheduledExecutorService(),
         /* extensions = */ (activity as SubspaceTestingActivity).extensions,
-        /* impressApi = */ FakeImpressApi(),
+        /* impressApi = */ FakeImpressApiImpl(),
         /* perceptionLibrary = */ PerceptionLibrary(),
         /* splitEngineSubspaceManager = */ mock(SplitEngineSubspaceManager::class.java),
         /* splitEngineRenderer = */ mock(ImpSplitEngineRenderer::class.java),

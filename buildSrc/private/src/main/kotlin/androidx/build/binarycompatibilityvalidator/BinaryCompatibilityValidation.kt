@@ -73,7 +73,7 @@ private const val ABI_GROUP_NAME = "abi"
 
 class BinaryCompatibilityValidation(
     val project: Project,
-    private val kotlinMultiplatformExtension: KotlinMultiplatformExtension
+    private val kotlinMultiplatformExtension: KotlinMultiplatformExtension,
 ) {
     private val projectVersion: Version = project.version()
 
@@ -100,7 +100,7 @@ class BinaryCompatibilityValidation(
     private fun configureKlibTasks(
         project: Project,
         checkAll: TaskProvider<Task>,
-        updateAll: TaskProvider<Task>
+        updateAll: TaskProvider<Task>,
     ) {
         if (kotlinMultiplatformExtension.nativeTargets().isEmpty()) {
             return
@@ -125,7 +125,7 @@ class BinaryCompatibilityValidation(
                 projectAbiDir,
                 generatedAndMergedApiFile,
                 projectVersion.toString(),
-                runtimeClasspath
+                runtimeClasspath,
             )
 
         val extractKlibAbi =
@@ -138,7 +138,7 @@ class BinaryCompatibilityValidation(
                 projectAbiDir,
                 klibExtractedFileDir,
                 currentIgnoreFile,
-                runtimeClasspath
+                runtimeClasspath,
             )
 
         updateKlibAbi.configure { update ->
@@ -157,11 +157,11 @@ class BinaryCompatibilityValidation(
     /* Check that the current ABI definition is up to date. */
     private fun Project.checkKlibAbiTask(
         projectApiFile: Provider<RegularFileProperty>,
-        generatedApiFile: Provider<RegularFileProperty>
+        generatedApiFile: Provider<RegularFileProperty>,
     ) =
         project.tasks.register(
             CHECK_NAME.appendCapitalized(NATIVE_SUFFIX),
-            CheckAbiEquivalenceTask::class.java
+            CheckAbiEquivalenceTask::class.java,
         ) {
             it.checkedInDump = projectApiFile
             it.builtDump = generatedApiFile
@@ -175,7 +175,7 @@ class BinaryCompatibilityValidation(
         klibApiDir: Directory,
         klibExtractDir: Provider<Directory>,
         ignoreFile: RegularFile,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ) =
         project.getRequiredCompatibilityAbiLocation(NATIVE_SUFFIX)?.let { requiredCompatFile ->
             val extractReleaseTask =
@@ -229,11 +229,11 @@ class BinaryCompatibilityValidation(
         klibApiDir: Directory,
         mergedKlibFile: Provider<RegularFileProperty>,
         projectVersion: String,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ) =
         project.tasks.register(
             UPDATE_NAME.appendCapitalized(NATIVE_SUFFIX),
-            UpdateAbiTask::class.java
+            UpdateAbiTask::class.java,
         ) {
             it.outputDir.set(klibApiDir)
             it.inputApiLocation.set(mergedKlibFile.map { fileProperty -> fileProperty.get() })
@@ -252,7 +252,7 @@ class BinaryCompatibilityValidation(
     private fun Project.extractKlibAbiTask(
         klibApiDir: Directory,
         extractDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ) =
         project.tasks.register(EXTRACT_NAME, KotlinKlibExtractAbiTask::class.java) {
             it.strictValidation.set(HostManager.hostIsMac)
@@ -272,7 +272,7 @@ class BinaryCompatibilityValidation(
     /* Merge target specific dumps into single file located in [mergeDir] */
     private fun Project.generateAbiTask(
         mergeFile: Provider<RegularFile>,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ) =
         project.tasks.register(GENERATE_NAME, KotlinKlibMergeAbiTask::class.java) {
             it.mergedApiFile.set(mergeFile)
@@ -283,7 +283,7 @@ class BinaryCompatibilityValidation(
     private fun Project.configureKlibTargets(
         mergeTask: TaskProvider<KotlinKlibMergeAbiTask>,
         abiBuildDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ) {
         val generatedDumps = objects.setProperty(KlibDumpMetadata::class.java)
         mergeTask.configure { it.dumps.addAll(generatedDumps) }
@@ -309,7 +309,7 @@ class BinaryCompatibilityValidation(
                         target,
                         objects.fileProperty().also {
                             it.set(buildTargetAbi.flatMap { it.outputAbiFile })
-                        }
+                        },
                     )
                 )
             }
@@ -335,12 +335,12 @@ class BinaryCompatibilityValidation(
         compilation: KotlinCompilation<*>,
         target: KlibTarget,
         outputFileDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection
+        runtimeClasspath: ConfigurableFileCollection,
     ): TaskProvider<KotlinKlibAbiBuildTask> {
         val buildTask =
             tasks.register(
                 GENERATE_NAME.appendCapitalized(target.targetName),
-                KotlinKlibAbiBuildTask::class.java
+                KotlinKlibAbiBuildTask::class.java,
             ) {
                 it.nonPublicMarkers.addAll(nonPublicMarkers)
                 it.target.set(target)
@@ -358,7 +358,7 @@ private fun Project.getRequiredCompatibilityAbiLocation(suffix: String) =
     getRequiredCompatibilityApiFileFromDir(
         project.getBcvFileDirectory().dir(suffix).asFile,
         project.version(),
-        ApiType.CLASSAPI
+        ApiType.CLASSAPI,
     )
 
 private fun KotlinMultiplatformExtension.nativeTargets() =
@@ -471,13 +471,13 @@ internal val konanTargetNameMapping =
         "linux_arm32_hfp" to "linuxArm32Hfp",
         "mingw_x86" to "mingwX86",
         "wasm-wasi" to "wasmWasi",
-        "wasm-js" to "wasmJs"
+        "wasm-js" to "wasmJs",
     )
 
 // b/410631668
 private fun instantiateKlibTarget(
     targetName: String,
-    configurableName: String = targetName
+    configurableName: String = targetName,
 ): KlibTarget {
     val constructor =
         KlibTarget::class.java.constructors.find { it.parameterCount == 2 }

@@ -43,7 +43,7 @@ private constructor(val tableName: String, val pojoTypeName: XTypeName, val fiel
             return EntityDeleteAdapterWriter(
                 tableName = entity.tableName,
                 pojoTypeName = entity.dataClass.typeName,
-                fields = fieldsToUse
+                fields = fieldsToUse,
             )
         }
     }
@@ -56,7 +56,7 @@ private constructor(val tableName: String, val pojoTypeName: XTypeName, val fiel
                     XFunSpec.builder(
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(CommonTypeNames.STRING)
@@ -71,7 +71,7 @@ private constructor(val tableName: String, val pojoTypeName: XTypeName, val fiel
                     XFunSpec.builder(
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             val stmtParam = "statement"
@@ -84,7 +84,7 @@ private constructor(val tableName: String, val pojoTypeName: XTypeName, val fiel
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
                                 propertiesWithIndices = mapped,
-                                scope = bindScope
+                                scope = bindScope,
                             )
                             addCode(bindScope.generate())
                         }

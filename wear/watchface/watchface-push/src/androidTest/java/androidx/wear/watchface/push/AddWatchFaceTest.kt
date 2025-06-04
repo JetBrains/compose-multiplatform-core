@@ -118,7 +118,7 @@ class AddWatchFaceTest {
                     readWatchFace(context, UNSECURE_APK).use { pipe ->
                         wfp.addWatchFace(
                             pipe.readFd,
-                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA="
+                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA=",
                         )
                     }
                 }
@@ -137,7 +137,7 @@ class AddWatchFaceTest {
                     readWatchFace(context, INVALID_PACKAGE_NAME_APK).use { pipe ->
                         wfp.addWatchFace(
                             pipe.readFd,
-                            "XPdIIO1kCKDsA+lYKq2Mw5bjC1VEAK2kqUApZgA87Eg=:MS4wLjA="
+                            "XPdIIO1kCKDsA+lYKq2Mw5bjC1VEAK2kqUApZgA87Eg=:MS4wLjA=",
                         )
                     }
                 }

@@ -49,7 +49,7 @@ public class OkioStorage<T>(
     private val coordinatorProducer: (Path, FileSystem) -> InterProcessCoordinator = { path, _ ->
         createSingleProcessCoordinator(path)
     },
-    private val producePath: () -> Path
+    private val producePath: () -> Path,
 ) : Storage<T> {
     private val canonicalPath by lazy {
         val path = producePath()
@@ -76,7 +76,7 @@ public class OkioStorage<T>(
             fileSystem,
             canonicalPath,
             serializer,
-            coordinatorProducer(canonicalPath, fileSystem)
+            coordinatorProducer(canonicalPath, fileSystem),
         ) {
             activeFilesLock.withLock { activeFiles.remove(canonicalPath.toString()) }
         }
@@ -93,7 +93,7 @@ internal class OkioStorageConnection<T>(
     private val path: Path,
     private val serializer: OkioSerializer<T>,
     override val coordinator: InterProcessCoordinator,
-    private val onClose: () -> Unit
+    private val onClose: () -> Unit,
 ) : StorageConnection<T> {
 
     private val closed = AtomicBoolean(false)
@@ -156,7 +156,7 @@ internal class OkioStorageConnection<T>(
 internal open class OkioReadScope<T>(
     protected val fileSystem: FileSystem,
     protected val path: Path,
-    protected val serializer: OkioSerializer<T>
+    protected val serializer: OkioSerializer<T>,
 ) : ReadScope<T> {
 
     private val closed = AtomicBoolean(false)
@@ -177,7 +177,7 @@ internal open class OkioReadScope<T>(
                     throw if (e is FileNotFoundException) {
                         wrapExceptionIfDueToDirectBoot(
                             parentDirPath = path.parent.toString(),
-                            exception = e
+                            exception = e,
                         )
                     } else e
                 }
@@ -200,7 +200,7 @@ internal open class OkioReadScope<T>(
 internal class OkioWriteScope<T>(
     fileSystem: FileSystem,
     path: Path,
-    serializer: OkioSerializer<T>
+    serializer: OkioSerializer<T>,
 ) : OkioReadScope<T>(fileSystem, path, serializer), WriteScope<T> {
 
     override suspend fun writeData(value: T) {
@@ -217,7 +217,7 @@ internal class OkioWriteScope<T>(
             throw if (e is FileNotFoundException) {
                 wrapExceptionIfDueToDirectBoot(
                     parentDirPath = path.parent.toString(),
-                    exception = e
+                    exception = e,
                 )
             } else e
         }

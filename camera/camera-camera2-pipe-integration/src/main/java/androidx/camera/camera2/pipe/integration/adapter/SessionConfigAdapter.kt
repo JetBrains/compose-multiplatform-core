@@ -158,7 +158,7 @@ public class SessionConfigAdapter(
         StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(
             sessionConfigs,
             useCaseConfigs,
-            mapping
+            mapping,
         )
 
         return mapping

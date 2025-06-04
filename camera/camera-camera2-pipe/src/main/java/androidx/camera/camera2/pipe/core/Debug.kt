@@ -102,7 +102,7 @@ public object Debug {
         return parametersToSortedStringPairs(parameters).joinToString(
             prefix = "{",
             postfix = "}",
-            limit = limit
+            limit = limit,
         ) {
             "${it.first}=${it.second}"
         }
@@ -152,7 +152,7 @@ public object Debug {
     public fun formatCameraGraphProperties(
         metadata: CameraMetadata,
         graphConfig: CameraGraph.Config,
-        cameraGraph: CameraGraph
+        cameraGraph: CameraGraph,
     ): String {
         val sharedCameraIds = graphConfig.sharedCameraIds.joinToString()
 

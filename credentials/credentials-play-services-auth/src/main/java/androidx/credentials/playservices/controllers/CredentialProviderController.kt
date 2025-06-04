@@ -48,7 +48,7 @@ internal abstract class CredentialProviderController<
     T2 : Any,
     R2 : Any,
     R1 : Any,
-    E1 : Any
+    E1 : Any,
 >(private val context: Context) : CredentialProviderBaseController(context) {
 
     companion object {
@@ -67,7 +67,7 @@ internal abstract class CredentialProviderController<
             resultCode: Int,
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (CreateCredentialException) -> Unit,
-            cancellationSignal: CancellationSignal?
+            cancellationSignal: CancellationSignal?,
         ): Boolean {
             if (resultCode != Activity.RESULT_OK) {
                 var exception: CreateCredentialException =
@@ -99,7 +99,7 @@ internal abstract class CredentialProviderController<
             resultCode: Int,
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (GetCredentialException) -> Unit,
-            cancellationSignal: CancellationSignal?
+            cancellationSignal: CancellationSignal?,
         ): Boolean {
             if (resultCode != Activity.RESULT_OK) {
                 var exception: GetCredentialException =
@@ -120,7 +120,7 @@ internal abstract class CredentialProviderController<
         @JvmStatic
         protected fun cancelOrCallbackExceptionOrResult(
             cancellationSignal: CancellationSignal?,
-            onResultOrException: () -> Unit
+            onResultOrException: () -> Unit,
         ) {
             if (CredentialProviderPlayServicesImpl.cancellationReviewer(cancellationSignal)) {
                 return
@@ -140,7 +140,7 @@ internal abstract class CredentialProviderController<
         conversionFn: (String?, String?) -> E1,
         executor: Executor,
         callback: CredentialManagerCallback<R1, E1>,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         val isError = resultData.getBoolean(FAILURE_RESPONSE_TAG)
         if (!isError) {
@@ -151,7 +151,7 @@ internal abstract class CredentialProviderController<
         val exception = conversionFn(errType, errMsg)
         cancelOrCallbackExceptionOrResult(
             cancellationSignal = cancellationSignal,
-            onResultOrException = { executor.execute { callback.onError(exception) } }
+            onResultOrException = { executor.execute { callback.onError(exception) } },
         )
         return true
     }
@@ -168,7 +168,7 @@ internal abstract class CredentialProviderController<
         request: T1,
         callback: CredentialManagerCallback<R1, E1>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     )
 
     /**

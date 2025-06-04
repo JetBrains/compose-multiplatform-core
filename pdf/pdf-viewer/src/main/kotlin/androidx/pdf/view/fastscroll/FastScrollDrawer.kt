@@ -51,7 +51,7 @@ public class FastScrollDrawer(
     @get:VisibleForTesting public var thumbDrawable: Drawable?,
     @get:VisibleForTesting public var pageIndicatorBackground: Drawable?,
     @get:VisibleForTesting public var thumbMarginEnd: Int,
-    @get:VisibleForTesting public var pageIndicatorMarginEnd: Int
+    @get:VisibleForTesting public var pageIndicatorMarginEnd: Int,
 ) {
     internal val thumbWidthPx = thumbDrawable?.intrinsicWidth ?: 0
     internal val thumbHeightPx = thumbDrawable?.intrinsicHeight ?: 0
@@ -66,7 +66,7 @@ public class FastScrollDrawer(
                 MaterialColors.getColor(
                     context,
                     com.google.android.material.R.attr.colorOnSurface,
-                    Color.BLACK
+                    Color.BLACK,
                 )
             textSize = pageIndicatorTextSize
             textAlign = Paint.Align.CENTER
@@ -118,7 +118,7 @@ public class FastScrollDrawer(
             thumbLeftPx.toFloat(),
             thumbTopPx.toFloat(),
             thumbRightPx.toFloat(),
-            thumbBottomPx.toFloat()
+            thumbBottomPx.toFloat(),
         )
         thumbDrawable?.draw(canvas)
 
@@ -129,7 +129,7 @@ public class FastScrollDrawer(
         canvas: Canvas,
         xOffset: Int,
         thumbTopPx: Int,
-        visiblePages: Range<Int>
+        visiblePages: Range<Int>,
     ) {
         currentPageIndicatorLabel =
             buildPageIndicatorLabel(
@@ -137,7 +137,7 @@ public class FastScrollDrawer(
                 visiblePages,
                 pdfDocument.pageCount,
                 R.string.label_page_single,
-                R.string.label_page_range
+                R.string.label_page_range,
             )
         val indicatorBounds =
             calculatePageIndicatorBounds(currentPageIndicatorLabel, xOffset, thumbTopPx)
@@ -153,11 +153,7 @@ public class FastScrollDrawer(
         canvas.drawText(currentPageIndicatorLabel, xPos.toFloat(), yPos.toFloat(), textPaint)
     }
 
-    internal fun calculatePageIndicatorBounds(
-        label: String,
-        xOffset: Int,
-        thumbTopPx: Int,
-    ): Rect {
+    internal fun calculatePageIndicatorBounds(label: String, xOffset: Int, thumbTopPx: Int): Rect {
         val labelWidth = textPaint.measureText(label)
         val pageIndicatorWidthPx = (labelWidth + (2 * pageIndicatorTextOffsetPx)).toInt()
         val pageIndicatorHeightPx = pageIndicatorHeightPx

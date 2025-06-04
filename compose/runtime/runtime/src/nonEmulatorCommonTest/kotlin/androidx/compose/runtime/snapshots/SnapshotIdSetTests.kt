@@ -5628,7 +5628,7 @@ class SnapshotIdSetTests {
         operations.fold(SnapshotIdSet.EMPTY) { prev, (value, op) ->
             assertTrue(
                 prev.get(value.toSnapshotId()) != op,
-                "Error on bit $value, expected ${!op}, received $op"
+                "Error on bit $value, expected ${!op}, received $op",
             )
             val result = if (op) prev.set(value.toSnapshotId()) else prev.clear(value.toSnapshotId())
             result

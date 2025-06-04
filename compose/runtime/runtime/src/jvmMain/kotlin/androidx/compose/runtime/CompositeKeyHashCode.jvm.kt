@@ -39,7 +39,7 @@ internal actual inline fun CompositeKeyHashCode.bottomUpCompoundWith(segment: In
 
 internal actual inline fun CompositeKeyHashCode.bottomUpCompoundWith(
     segment: CompositeKeyHashCode,
-    shift: Int
+    shift: Int,
 ) = this xor (segment rol shift)
 
 internal actual const val CompositeKeyHashSizeBits: Int = 64

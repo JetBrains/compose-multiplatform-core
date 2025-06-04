@@ -24,6 +24,7 @@ import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.math.FloatSize3d
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
@@ -130,9 +131,9 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         internal fun create(
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
-            bounds: Dimensions,
-            planeType: @PlaneTypeValue Int,
-            planeSemantic: @PlaneSemanticValue Int,
+            bounds: FloatSize3d,
+            planeType: @PlaneOrientationValue Int,
+            planeSemantic: @PlaneSemanticTypeValue Int,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
             val rtAnchorEntity =
@@ -225,9 +226,9 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         @JvmOverloads
         public fun create(
             session: Session,
-            bounds: Dimensions,
-            planeType: @PlaneTypeValue Int,
-            planeSemantic: @PlaneSemanticValue Int,
+            bounds: FloatSize3d,
+            planeType: @PlaneOrientationValue Int,
+            planeSemantic: @PlaneSemanticTypeValue Int,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
             check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
@@ -279,11 +280,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      */
     @JvmOverloads
     @Suppress("ExecutorRegistration")
-    public fun setOnSpaceUpdatedListener(
-        listener: OnSpaceUpdatedListener?,
-        executor: Executor? = null,
-    ) {
-        rtEntity.setOnSpaceUpdatedListener(listener?.let { { it.onSpaceUpdated() } }, executor)
+    public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor? = null) {
+        rtEntity.setOnSpaceUpdatedListener(listener, executor)
     }
 }
 

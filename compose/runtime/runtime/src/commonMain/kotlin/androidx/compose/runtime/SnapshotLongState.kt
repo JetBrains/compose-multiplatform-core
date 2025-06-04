@@ -158,7 +158,7 @@ internal open class SnapshotMutableLongStateImpl(value: Long) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val currentRecord = current as LongStateStateRecord
         val appliedRecord = applied as LongStateStateRecord

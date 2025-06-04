@@ -106,7 +106,7 @@ class PdfViewStateChangeTest {
         val pdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(VIEW_AND_PAGE_WIDTH, VIEW_AND_PAGE_HEIGHT) },
-                uri = Uri.parse("content://my.app/my.pdf")
+                uri = Uri.parse("content://my.app/my.pdf"),
             )
         // Don't supply PdfDocument to setupPdfView, as it will cause that document to be set each
         // time our Activity is created. In this case, we'd like to test recreating the Activity
@@ -135,7 +135,7 @@ class PdfViewStateChangeTest {
             val differentDocument =
                 FakePdfDocument(
                     pages = List(15) { Point(VIEW_AND_PAGE_WIDTH, 150) },
-                    uri = Uri.parse("content://another.app/pdf.pdf")
+                    uri = Uri.parse("content://another.app/pdf.pdf"),
                 )
             onActivity { activity ->
                 activity.findViewById<PdfView>(PDF_VIEW_ID)?.also {
@@ -175,7 +175,7 @@ class PdfViewStateChangeTest {
         val pdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(VIEW_AND_PAGE_WIDTH, VIEW_AND_PAGE_HEIGHT) },
-                uri = Uri.parse("content://my.app/my.pdf")
+                uri = Uri.parse("content://my.app/my.pdf"),
             )
         withContext(Dispatchers.Main) {
             setupPdfView(VIEW_AND_PAGE_WIDTH, VIEW_AND_PAGE_HEIGHT, pdfDocument)
@@ -191,7 +191,7 @@ class PdfViewStateChangeTest {
             val differentDocument =
                 FakePdfDocument(
                     List(10) { Point(VIEW_AND_PAGE_WIDTH, VIEW_AND_PAGE_HEIGHT) },
-                    uri = Uri.parse("content://browser/downloads/menu.pdf")
+                    uri = Uri.parse("content://browser/downloads/menu.pdf"),
                 )
             onActivity { activity ->
                 activity.findViewById<PdfView>(PDF_VIEW_ID)?.also {
@@ -226,7 +226,7 @@ private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocume
                 pdfDocument = fakePdfDocument
                 id = PDF_VIEW_ID
             },
-            ViewGroup.LayoutParams(width, height)
+            ViewGroup.LayoutParams(width, height),
         )
         activity.setContentView(container)
     }

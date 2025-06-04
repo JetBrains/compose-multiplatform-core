@@ -60,7 +60,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     enum class Driver {
         BUNDLED,
         ANDROID,
-        NONE
+        NONE,
     }
 
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -177,7 +177,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
                     "realCol_double",
                     "textCol",
                     "blobCol",
-                    "nullCol"
+                    "nullCol",
                 )
             assertThat(it.getColumnName(0)).isEqualTo("integerCol_long")
             assertThat(it.getColumnName(1)).isEqualTo("realCol_double")
@@ -263,7 +263,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
             wrapper.insert(
                 table = "TestEntity",
                 conflictAlgorithm = SQLiteDatabase.CONFLICT_NONE,
-                values = values
+                values = values,
             )
         assertThat(resultOne).isEqualTo(1)
         assertThat(database.dao().getEntities()).containsExactly(TestEntity(1))
@@ -272,7 +272,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
             wrapper.insert(
                 table = "TestEntity",
                 conflictAlgorithm = SQLiteDatabase.CONFLICT_IGNORE,
-                values = values
+                values = values,
             )
         assertThat(resultTwo).isEqualTo(-1)
         assertThat(database.dao().getEntities()).containsExactly(TestEntity(1))
@@ -305,7 +305,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
                 conflictAlgorithm = SQLiteDatabase.CONFLICT_NONE,
                 values = values,
                 whereClause = "id = ?",
-                whereArgs = arrayOf("1")
+                whereArgs = arrayOf("1"),
             )
         assertThat(resultOne).isEqualTo(1)
         assertThat(database.dao().getEntities()).contains(TestEntity(10))
@@ -316,7 +316,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
                 conflictAlgorithm = SQLiteDatabase.CONFLICT_IGNORE,
                 values = values,
                 whereClause = "id = ?",
-                whereArgs = arrayOf("2")
+                whereArgs = arrayOf("2"),
             )
         assertThat(resultTwo).isEqualTo(0)
     }

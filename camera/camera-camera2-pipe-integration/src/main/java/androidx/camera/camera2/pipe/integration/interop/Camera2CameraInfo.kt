@@ -30,7 +30,7 @@ import androidx.camera.core.impl.AdapterCameraInfo
 public class Camera2CameraInfo
 private constructor(
     private val cameraProperties: CameraProperties,
-    private val extensionsSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = null
+    private val extensionsSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = null,
 ) {
     @JvmSynthetic @JvmField public val cameraId: String = cameraProperties.cameraId.value
 
@@ -47,7 +47,8 @@ private constructor(
     public fun <T> getCameraCharacteristic(key: CameraCharacteristics.Key<T>): T? {
         extensionsSpecificChars?.forEach {
             if (it.first == key) {
-                @Suppress("UNCHECKED_CAST") return it.second as T
+                @Suppress("UNCHECKED_CAST")
+                return it.second as T
             }
         }
         return cameraProperties.metadata.getSafely(key)
@@ -98,7 +99,7 @@ private constructor(
                     camera2CameraInfo =
                         Camera2CameraInfo(
                             camera2CameraInfo.cameraProperties,
-                            cameraInfo.sessionProcessor?.availableCharacteristicsKeyValues
+                            cameraInfo.sessionProcessor?.availableCharacteristicsKeyValues,
                         )
                 }
             }

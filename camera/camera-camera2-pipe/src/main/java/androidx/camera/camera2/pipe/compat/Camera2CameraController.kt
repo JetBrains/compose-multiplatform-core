@@ -405,10 +405,7 @@ constructor(
     }
 
     @GuardedBy("lock")
-    private fun detachSessionAndCamera(
-        session: CaptureSessionState?,
-        camera: VirtualCamera?,
-    ) {
+    private fun detachSessionAndCamera(session: CaptureSessionState?, camera: VirtualCamera?) {
         val job =
             scope.launch {
                 session?.shutdown()

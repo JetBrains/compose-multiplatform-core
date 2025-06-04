@@ -61,7 +61,7 @@ class PerfettoHelper(
             $deviceSummaryString
             """
                 .trimIndent(),
-            cause
+            cause,
         )
     }
 
@@ -150,7 +150,7 @@ class PerfettoHelper(
                         Some perfetto data sources may not be ready.
                         Look at the `perfetto` log tag for additional information.
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
             perfettoPid = pid
@@ -187,7 +187,7 @@ class PerfettoHelper(
                     else -> {
                         throw perfettoStartupException(
                             "Unable to find path to tracing_on (e.g. $TRACING_ON_PATH)",
-                            null
+                            null,
                         )
                     }
                 }
@@ -211,7 +211,7 @@ class PerfettoHelper(
                     else -> {
                         throw perfettoStartupException(
                             "Saw unexpected tracing_on contents: $output",
-                            null
+                            null,
                         )
                     }
                 }
@@ -220,7 +220,7 @@ class PerfettoHelper(
             val duration = pollTracingOnMs * pollTracingOnMaxCount
             throw perfettoStartupException(
                 "Error: did not detect tracing on after $duration ms",
-                null
+                null,
             )
         }
 
@@ -266,7 +266,7 @@ class PerfettoHelper(
         Shell.killProcessesAndWait(
             listOf(Shell.ProcessPid(pid = pid, processName = perfettoProcessName)),
             waitPollPeriodMs = PERFETTO_KILL_WAIT_TIME_MS,
-            waitPollMaxCount = PERFETTO_KILL_WAIT_COUNT
+            waitPollMaxCount = PERFETTO_KILL_WAIT_COUNT,
         )
         perfettoPid = null
     }
@@ -333,7 +333,7 @@ class PerfettoHelper(
                 if (!success) {
                     Log.e(
                         LOG_TAG,
-                        "Result output directory $destDirectory not created successfully."
+                        "Result output directory $destDirectory not created successfully.",
                     )
                     return false
                 }
@@ -489,11 +489,11 @@ class PerfettoHelper(
                                 Log.d(
                                     LOG_TAG,
                                     "killing existing perfetto recording:" +
-                                        " ${it.processName} (pid=${it.pid})"
+                                        " ${it.processName} (pid=${it.pid})",
                                 )
                             }
                             Shell.killTerm(processes)
-                        }
+                        },
                     )
                 }
             }

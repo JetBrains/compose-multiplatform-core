@@ -26,7 +26,7 @@ data class Index(
     val name: String,
     val unique: Boolean,
     override val properties: Properties,
-    val orders: List<IndexOrder>
+    val orders: List<IndexOrder>,
 ) : HasSchemaIdentity, HasProperties {
     companion object {
         // should match the value in TableInfo.Index.DEFAULT_PREFIX
@@ -37,7 +37,7 @@ data class Index(
         name: String,
         unique: Boolean,
         fields: List<Property>,
-        orders: List<IndexOrder>
+        orders: List<IndexOrder>,
     ) : this(name, unique, Properties(fields), orders)
 
     override fun getIdKey() = buildString {
@@ -78,6 +78,6 @@ data class Index(
             unique,
             columnNames,
             orders.map { it.name },
-            createQuery(TABLE_NAME_PLACEHOLDER)
+            createQuery(TABLE_NAME_PLACEHOLDER),
         )
 }

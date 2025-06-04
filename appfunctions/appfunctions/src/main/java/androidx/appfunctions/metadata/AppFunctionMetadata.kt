@@ -101,7 +101,7 @@ constructor(
         schema: AppFunctionSchemaMetadata? = this.schema,
         parameters: List<AppFunctionParameterMetadata> = this.parameters,
         response: AppFunctionResponseMetadata = this.response,
-        components: AppFunctionComponentsMetadata = this.components
+        components: AppFunctionComponentsMetadata = this.components,
     ): AppFunctionMetadata {
         return AppFunctionMetadata(
             id = id,
@@ -110,7 +110,7 @@ constructor(
             schema = schema,
             parameters = parameters,
             response = response,
-            components = components
+            components = components,
         )
     }
 }
@@ -155,7 +155,7 @@ public data class CompileTimeAppFunctionMetadata(
         schema: AppFunctionSchemaMetadata? = null,
         parameters: List<AppFunctionParameterMetadata>? = null,
         response: AppFunctionResponseMetadata? = null,
-        components: AppFunctionComponentsMetadata? = null
+        components: AppFunctionComponentsMetadata? = null,
     ): CompileTimeAppFunctionMetadata {
         return CompileTimeAppFunctionMetadata(
             id = id ?: this.id,
@@ -163,7 +163,7 @@ public data class CompileTimeAppFunctionMetadata(
             schema = schema ?: this.schema,
             parameters = parameters ?: this.parameters,
             response = response ?: this.response,
-            components = components ?: this.components
+            components = components ?: this.components,
         )
     }
 
@@ -181,7 +181,7 @@ public data class CompileTimeAppFunctionMetadata(
             schemaCategory = schema?.category,
             schemaVersion = schema?.version,
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
-            response = response.toAppFunctionResponseMetadataDocument()
+            response = response.toAppFunctionResponseMetadataDocument(),
         )
     }
 }

@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.spatial.EdgeOffset.Companion.inner
 import androidx.xr.compose.subspace.MainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -70,7 +69,7 @@ class OrbiterTest {
     @Test
     fun orbiter_contentIsElevated() {
         composeTestRule.setContent {
-            TestSetup { Parent { Orbiter(OrbiterEdge.Top) { Text("Main Content") } } }
+            TestSetup { Parent { Orbiter(ContentEdge.Top) { Text("Main Content") } } }
         }
 
         composeTestRule.onNodeWithText("Main Content").assertExists()
@@ -81,7 +80,7 @@ class OrbiterTest {
     fun orbiter_nonXr_contentIsInline() {
         composeTestRule.setContent {
             TestSetup(isXrEnabled = false) {
-                Parent { Orbiter(OrbiterEdge.Top) { Text("Main Content") } }
+                Parent { Orbiter(ContentEdge.Top) { Text("Main Content") } }
             }
         }
 
@@ -92,7 +91,7 @@ class OrbiterTest {
     fun orbiter_homeSpaceMode_contentIsInline() {
         composeTestRule.setContent {
             TestSetup {
-                Parent { Orbiter(OrbiterEdge.Top) { Text("Main Content") } }
+                Parent { Orbiter(ContentEdge.Top) { Text("Main Content") } }
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
             }
         }
@@ -105,10 +104,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 Parent {
-                    Orbiter(
-                        OrbiterEdge.Top,
-                        settings = OrbiterSettings(shouldRenderInNonSpatial = false)
-                    ) {
+                    Orbiter(ContentEdge.Top, shouldRenderInNonSpatial = false) {
                         Text("Main Content")
                     }
                 }
@@ -124,10 +120,10 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 Parent {
-                    Orbiter(position = OrbiterEdge.Top) { Text("Top") }
-                    Orbiter(position = OrbiterEdge.Start) { Text("Start") }
-                    Orbiter(position = OrbiterEdge.End) { Text("End") }
-                    Orbiter(position = OrbiterEdge.Bottom) { Text("Bottom") }
+                    Orbiter(position = ContentEdge.Top) { Text("Top") }
+                    Orbiter(position = ContentEdge.Start) { Text("Start") }
+                    Orbiter(position = ContentEdge.End) { Text("End") }
+                    Orbiter(position = ContentEdge.Bottom) { Text("Bottom") }
                 }
             }
         }
@@ -140,7 +136,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
-                Parent { Orbiter(position = OrbiterEdge.Bottom) { Text("Bottom") } }
+                Parent { Orbiter(position = ContentEdge.Bottom) { Text("Bottom") } }
                 LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
             }
         }
@@ -153,10 +149,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup(isXrEnabled = false) {
                 Parent {
-                    Orbiter(
-                        OrbiterEdge.Top,
-                        settings = OrbiterSettings(shouldRenderInNonSpatial = false)
-                    ) {
+                    Orbiter(ContentEdge.Top, shouldRenderInNonSpatial = false) {
                         Text("Main Content")
                     }
                 }
@@ -172,11 +165,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup(isXrEnabled = false) {
                 Parent {
-                    Orbiter(
-                        OrbiterEdge.Top,
-                        settings =
-                            OrbiterSettings(shouldRenderInNonSpatial = shouldRenderInNonSpatial),
-                    ) {
+                    Orbiter(ContentEdge.Top, shouldRenderInNonSpatial = shouldRenderInNonSpatial) {
                         Text("Main Content")
                     }
                 }
@@ -195,7 +184,7 @@ class OrbiterTest {
                 LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
                 Box {
                     Text("Main Content")
-                    Orbiter(OrbiterEdge.Start) { Text("Orbiter Content") }
+                    Orbiter(ContentEdge.Start) { Text("Orbiter Content") }
                 }
             }
         }
@@ -214,7 +203,7 @@ class OrbiterTest {
                 Box(modifier = Modifier.size(100.dp)) {
                     Text("Main Content")
                     if (showOrbiter) {
-                        Orbiter(position = OrbiterEdge.Top) { Text("Top Orbiter Content") }
+                        Orbiter(position = ContentEdge.Top) { Text("Top Orbiter Content") }
                     }
                 }
             }
@@ -243,12 +232,16 @@ class OrbiterTest {
 
                 Parent {
                     Box(modifier = Modifier.size(100.dp)) { Text("Main Content") }
-                    Orbiter(position = OrbiterEdge.Top, offset = inner(0.dp)) {
+                    Orbiter(
+                        position = ContentEdge.Top,
+                        offset = 0.dp,
+                        offsetType = OrbiterOffsetType.InnerEdge,
+                    ) {
                         Text("Top Orbiter Content")
                     }
-                    Orbiter(position = OrbiterEdge.Start) { Text("Start Orbiter Content") }
-                    Orbiter(position = OrbiterEdge.Bottom) { Text("Bottom Orbiter Content") }
-                    Orbiter(position = OrbiterEdge.End) { Text("End Orbiter Content") }
+                    Orbiter(position = ContentEdge.Start) { Text("Start Orbiter Content") }
+                    Orbiter(position = ContentEdge.Bottom) { Text("Bottom Orbiter Content") }
+                    Orbiter(position = ContentEdge.End) { Text("End Orbiter Content") }
                 }
             }
         }
@@ -266,7 +259,7 @@ class OrbiterTest {
     fun orbiter_inSetContent_noSubspace_usesMainWindowSize() {
         composeTestRule.setContent {
             TestSetup {
-                Orbiter(OrbiterEdge.Top) {
+                Orbiter(ContentEdge.Top) {
                     // The content of the Orbiter. We'll use its size, which is constrained
                     // by the parent's panel size, to verify the change.
                     Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {
@@ -298,7 +291,7 @@ class OrbiterTest {
             TestSetup(runtime = testJxrPlatformAdapter) {
                 ApplicationSubspace {
                     SpatialPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel")) {
-                        Orbiter(OrbiterEdge.Top) {
+                        Orbiter(ContentEdge.Top) {
                             // The content of the Orbiter. We'll use its size, which is constrained
                             // by the parent's panel size, to verify the change.
                             Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {
@@ -332,7 +325,7 @@ class OrbiterTest {
                                 .height(panelHeightDp)
                                 .testTag("spatialPanelParent")
                     ) {
-                        Orbiter(OrbiterEdge.Start) {
+                        Orbiter(ContentEdge.Start) {
                             // The content of the Orbiter. We'll use its size, which is constrained
                             // by the parent's panel size, to verify the change.
                             Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox"))
@@ -369,7 +362,7 @@ class OrbiterTest {
             TestSetup(runtime = testJxrPlatformAdapter) {
                 ApplicationSubspace {
                     MainPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel"))
-                    Orbiter(OrbiterEdge.Top) {
+                    Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
                         // by the parent's panel size, to verify the change.
                         Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {}
@@ -400,7 +393,7 @@ class OrbiterTest {
                                 .height(panelHeightDp)
                                 .testTag("mainPanelParent")
                     )
-                    Orbiter(OrbiterEdge.Top) {
+                    Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
                         // by the parent's panel size, to verify the change.
                         Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox"))
@@ -428,7 +421,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    Orbiter(OrbiterEdge.Top) {
+                    Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
                         // by the parent's panel size, to verify the change.
                         Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {}
@@ -450,7 +443,7 @@ class OrbiterTest {
                 ApplicationSubspace {
                     // Say we are not in XR so the SpatialCapabilities are false.
                     CompositionLocalProvider(LocalHasXrSpatialFeature provides false) {
-                        Orbiter(position = OrbiterEdge.Top) {
+                        Orbiter(position = ContentEdge.Top) {
                             Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {}
                         }
                     }
@@ -487,12 +480,12 @@ class OrbiterTest {
                             0,
                             0,
                             targetResizeWidth,
-                            targetResizeHeight
+                            targetResizeHeight,
                         )
                     }
                 }
 
-                Orbiter(OrbiterEdge.Top) {
+                Orbiter(ContentEdge.Top) {
                     Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {
                         Text("Some Orbiter content")
                     }

@@ -28,12 +28,7 @@ import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 public object Dependencies {
     public val translatorSelector: TranslatorSelector by lazy {
         try {
-            TranslatorSelector::class
-                .java
-                .findImpl(
-                    prefix = "",
-                    suffix = "Impl",
-                )
+            TranslatorSelector::class.java.findImpl(prefix = "", suffix = "Impl")
         } catch (ex: Exception) {
             Log.d(APP_FUNCTIONS_TAG, "Cannot find TranslatorSelectorImpl")
             NullTranslatorSelector()

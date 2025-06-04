@@ -69,7 +69,7 @@ class StylingOptionsTestsV1 {
             launchFragmentInContainer(
                 fragmentArgs = styledFragment.arguments,
                 themeResId = themeResId,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             ) {
                 styledFragment
             }
@@ -97,7 +97,7 @@ class StylingOptionsTestsV1 {
             scenario,
             TEST_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
 
         // Espresso will wait on the idling resource on the next action performed hence adding a
@@ -134,7 +134,7 @@ class StylingOptionsTestsV1 {
             assertEquals(round(THUMB_DRAWABLE_WIDTH.dpToPx(context)).toInt(), scrollHandle?.width)
             assertEquals(
                 round(THUMB_END_MARGIN.dpToPx(context)).toInt(),
-                fastScrollView?.trackRightMargin
+                fastScrollView?.trackRightMargin,
             )
         }
         // assert scroll handles are visible

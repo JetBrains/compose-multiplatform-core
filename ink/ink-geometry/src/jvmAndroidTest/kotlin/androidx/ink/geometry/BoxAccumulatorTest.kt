@@ -200,7 +200,7 @@ class BoxAccumulatorTest {
                         MutableBox()
                             .populateFromTwoPoints(
                                 ImmutableVec(0.9F, 1.9F),
-                                ImmutableVec(3.1F, 4.1F)
+                                ImmutableVec(3.1F, 4.1F),
                             )
                     )
             )
@@ -474,7 +474,7 @@ class BoxAccumulatorTest {
                         MutableBox()
                             .populateFromTwoPoints(
                                 ImmutableVec(-150F, -300F),
-                                ImmutableVec(350F, 700F)
+                                ImmutableVec(350F, 700F),
                             )
                     )
             )
@@ -516,7 +516,7 @@ class BoxAccumulatorTest {
                         MutableBox()
                             .populateFromTwoPoints(
                                 ImmutableVec(-150F, -300F),
-                                ImmutableVec(350F, 700F)
+                                ImmutableVec(350F, 700F),
                             )
                     )
             )

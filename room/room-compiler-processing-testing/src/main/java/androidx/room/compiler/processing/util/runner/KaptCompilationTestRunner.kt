@@ -52,7 +52,7 @@ internal class KaptCompilationTestRunner(
         return KotlinCompilationResult(
             testRunner = this,
             processor = syntheticJavacProcessor,
-            delegate = result
+            delegate = result,
         )
     }
 }

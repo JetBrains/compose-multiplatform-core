@@ -60,7 +60,7 @@ import androidx.navigationevent.NavigationInputHandler
 // when a single parameter is provided as a trailing lambda.
 class OnBackPressedDispatcher(
     @Suppress("unused") private val fallbackOnBackPressed: Runnable?,
-    @Suppress("unused") private val onHasEnabledCallbacksChanged: Consumer<Boolean>?
+    @Suppress("unused") private val onHasEnabledCallbacksChanged: Consumer<Boolean>?,
 ) {
 
     /**
@@ -75,7 +75,7 @@ class OnBackPressedDispatcher(
             fallbackOnBackPressed = { fallbackOnBackPressed?.run() },
             onHasEnabledCallbacksChanged = { enabled ->
                 onHasEnabledCallbacksChanged?.accept(enabled)
-            }
+            },
         )
 
     @JvmOverloads
@@ -261,7 +261,7 @@ class OnBackPressedDispatcher(
 fun OnBackPressedDispatcher.addCallback(
     owner: LifecycleOwner? = null,
     enabled: Boolean = true,
-    onBackPressed: OnBackPressedCallback.() -> Unit
+    onBackPressed: OnBackPressedCallback.() -> Unit,
 ): OnBackPressedCallback {
     val callback =
         object : OnBackPressedCallback(enabled) {

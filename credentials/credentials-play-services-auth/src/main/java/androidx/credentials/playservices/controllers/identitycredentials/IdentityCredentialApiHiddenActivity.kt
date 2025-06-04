@@ -72,7 +72,7 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
                 /* flagsMask= */ 0,
                 /* flagsValues= */ 0,
                 /* extraFlags= */ 0,
-                /* options = */ null
+                /* options = */ null,
             )
         } else {
             resultReceiver?.reportError(errName = errorName, errMsg = "Internal error")
@@ -96,7 +96,7 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
         resultReceiver?.reportResult(
             requestCode = requestCode,
             resultCode = resultCode,
-            data = data
+            data = data,
         )
         mWaitingForActivityResult = false
         finish()

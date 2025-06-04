@@ -28,10 +28,8 @@ import com.google.common.truth.Truth.assertAbout
 
 /** Truth extension for a single [AttributedVibration]. */
 internal class AttributedVibrationSubject
-private constructor(
-    metadata: FailureMetadata?,
-    private val actual: AttributedVibration,
-) : Subject(metadata, actual) {
+private constructor(metadata: FailureMetadata?, private val actual: AttributedVibration) :
+    Subject(metadata, actual) {
 
     companion object {
         private val SUBJECT_FACTORY: Factory<AttributedVibrationSubject?, AttributedVibration> =

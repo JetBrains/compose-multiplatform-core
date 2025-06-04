@@ -163,7 +163,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     fun waitUntil(
         conditionDescription: String,
         timeoutMillis: Long = 1_000,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     ) {
         waitUntil(timeoutMillis, condition)
     }

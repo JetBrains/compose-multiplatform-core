@@ -79,11 +79,11 @@ public suspend fun updateAppWidgetState(
 @Suppress("UNCHECKED_CAST")
 public suspend fun <T> GlanceAppWidget.getAppWidgetState(
     @Suppress("ContextFirst") context: Context,
-    glanceId: GlanceId
+    glanceId: GlanceId,
 ): T =
     getAppWidgetState(
         context,
         checkNotNull(stateDefinition) { "No state defined in this provider" },
-        glanceId
+        glanceId,
     )
         as T

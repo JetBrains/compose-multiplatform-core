@@ -42,7 +42,7 @@ internal data class ComposableInfo(
     val isComposable: Boolean,
     val realParamsCount: Int,
     val changedParams: Int,
-    val defaultParams: Int
+    val defaultParams: Int,
 )
 
 /**
@@ -67,7 +67,7 @@ private fun Method.getComposableInfo(): ComposableInfo {
         totalParamsWithoutDefaults + defaultParams == totalParams,
         realParamsCount,
         changedParams,
-        defaultParams
+        defaultParams,
     )
 }
 
@@ -174,7 +174,7 @@ private inline fun <reified T> T.dup(count: Int): Array<T> {
 @Throws(NoSuchMethodException::class)
 fun Class<*>.getDeclaredComposableMethod(
     methodName: String,
-    vararg args: Class<*>
+    vararg args: Class<*>,
 ): ComposableMethod {
     val changedParams = changedParamCount(args.size, 0)
     val method =
@@ -184,7 +184,7 @@ fun Class<*>.getDeclaredComposableMethod(
                 methodName,
                 *args,
                 Composer::class.java, // composer param
-                *Int::class.java.dup(changedParams) // changed params
+                *Int::class.java.dup(changedParams), // changed params
             )
         } catch (e: ReflectiveOperationException) {
             val defaultParams = defaultParamCount(args.size)
@@ -194,7 +194,7 @@ fun Class<*>.getDeclaredComposableMethod(
                     *args,
                     Composer::class.java, // composer param
                     *Int::class.java.dup(changedParams), // changed param
-                    *Int::class.java.dup(defaultParams) // default param
+                    *Int::class.java.dup(defaultParams), // default param
                 )
             } catch (e2: ReflectiveOperationException) {
                 null

@@ -113,7 +113,7 @@ class ButtonTest {
                     imageButton(
                         onClick = CLICKABLE,
                         modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                        backgroundContent = { backgroundImage(IMAGE_ID) }
+                        backgroundContent = { backgroundImage(IMAGE_ID) },
                     )
                 }
             )
@@ -214,7 +214,7 @@ class ButtonTest {
                 imageButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    backgroundContent = { backgroundImage(IMAGE_ID) }
+                    backgroundContent = { backgroundImage(IMAGE_ID) },
                 )
             }
 
@@ -238,7 +238,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     backgroundContent = {
                         backgroundImage(protoLayoutResourceId = IMAGE_ID, overlayColor = color.argb)
-                    }
+                    },
                 )
             }
 
@@ -260,7 +260,7 @@ class ButtonTest {
                     modifier =
                         LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
                             .background(color.argb),
-                    content = { text(TEXT.layoutString) }
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -298,7 +298,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     width = expand(),
                     height = height.toDp(),
-                    content = { text(TEXT.layoutString) }
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -332,7 +332,7 @@ class ButtonTest {
                 buttonContainer(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    content = { text(TEXT.layoutString) }
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -341,7 +341,7 @@ class ButtonTest {
                 iconButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
 
@@ -350,7 +350,7 @@ class ButtonTest {
                 textButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    labelContent = { text(TEXT.layoutString) }
+                    labelContent = { text(TEXT.layoutString) },
                 )
             }
 
@@ -361,7 +361,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
                     secondaryLabelContent = { text(TEXT2.layoutString) },
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
 
@@ -372,7 +372,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
                     secondaryLabelContent = { text(TEXT2.layoutString) },
-                    avatarContent = { icon(IMAGE_ID) }
+                    avatarContent = { icon(IMAGE_ID) },
                 )
             }
 
@@ -382,7 +382,7 @@ class ButtonTest {
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
     }

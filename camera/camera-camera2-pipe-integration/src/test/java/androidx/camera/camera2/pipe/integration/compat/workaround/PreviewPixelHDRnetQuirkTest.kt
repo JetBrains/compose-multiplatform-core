@@ -140,7 +140,7 @@ class PreviewPixelHDRnetQuirkTest(
         cameraUseCaseAdapter =
             configureCameraUseCaseAdapter(
                 resolutionVGA,
-                configType = ImageCaptureConfig::class.java
+                configType = ImageCaptureConfig::class.java,
             )
 
         // Act. Update UseCase to create SessionConfig
@@ -194,11 +194,11 @@ class PreviewPixelHDRnetQuirkTest(
                     setSuggestedStreamSpec(
                         fakeCameraId,
                         configType,
-                        StreamSpec.builder(resolution).build()
+                        StreamSpec.builder(resolution).build(),
                     )
-                }
+                },
             ),
-            pipeCameraUseCaseAdapter
+            pipeCameraUseCaseAdapter,
         )
     }
 

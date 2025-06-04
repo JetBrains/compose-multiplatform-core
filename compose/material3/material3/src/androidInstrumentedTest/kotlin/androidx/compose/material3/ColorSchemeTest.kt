@@ -94,21 +94,21 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onPrimaryContainer,
-                        colorScheme.primaryContainer
+                        colorScheme.primaryContainer,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSecondaryContainer,
-                        colorScheme.secondaryContainer
+                        colorScheme.secondaryContainer,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onTertiaryContainer,
-                        colorScheme.tertiaryContainer
+                        colorScheme.tertiaryContainer,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -129,7 +129,7 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSurface,
-                        colorScheme.surfaceContainerHighest
+                        colorScheme.surfaceContainerHighest,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -140,7 +140,7 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSurface,
-                        colorScheme.surfaceContainerLowest
+                        colorScheme.surfaceContainerLowest,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -157,7 +157,7 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onPrimaryFixedVariant,
-                        colorScheme.primaryFixed
+                        colorScheme.primaryFixed,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -168,7 +168,7 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onPrimaryFixedVariant,
-                        colorScheme.primaryFixedDim
+                        colorScheme.primaryFixedDim,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -179,21 +179,21 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSecondaryFixedVariant,
-                        colorScheme.secondaryFixed
+                        colorScheme.secondaryFixed,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSecondaryFixed,
-                        colorScheme.secondaryFixedDim
+                        colorScheme.secondaryFixedDim,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onSecondaryFixedVariant,
-                        colorScheme.secondaryFixedDim
+                        colorScheme.secondaryFixedDim,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
@@ -204,21 +204,21 @@ class ColorSchemeTest {
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onTertiaryFixedVariant,
-                        colorScheme.tertiaryFixed
+                        colorScheme.tertiaryFixed,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onTertiaryFixed,
-                        colorScheme.tertiaryFixedDim
+                        colorScheme.tertiaryFixedDim,
                     )
                 )
                 .isAtLeast(expectedContrastValue)
             assertThat(
                     calculateContrastRatio(
                         colorScheme.onTertiaryFixedVariant,
-                        colorScheme.tertiaryFixedDim
+                        colorScheme.tertiaryFixedDim,
                     )
                 )
                 .isAtLeast(expectedContrastValue)

@@ -60,7 +60,7 @@ internal class KotlinCodeBlock(override val actual: KCodeBlock) :
             name: String,
             typeName: XTypeName,
             isMutable: Boolean,
-            assignExpr: XCodeBlock?
+            assignExpr: XCodeBlock?,
         ) = apply {
             val varOrVal = if (isMutable) "var" else "val"
             if (assignExpr != null) {

@@ -104,7 +104,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                             .addFilterPackageNames("android")
                             .setVerbatimSearchEnabled(true)
                             .setNumericSearchEnabled(true)
-                            .build()
+                            .build(),
                     )
                     .readAll { it.genericDocument }
                     .filterNotNull()
@@ -154,14 +154,14 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                                             AppFunctionReferenceTypeMetadata(
                                                 referenceDataType =
                                                     "com.testdata.RecursiveSerializable",
-                                                isNullable = true
-                                            )
+                                                isNullable = true,
+                                            ),
                                         )
                                     },
                                 required = listOf("nested"),
                                 qualifiedName = "com.testdata.RecursiveSerializable",
-                                isNullable = true
-                            )
+                                isNullable = true,
+                            ),
                         )
                     }
             )
@@ -177,10 +177,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_STRING,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val NO_SCHEMA_ENABLED_BY_DEFAULT =
@@ -195,10 +195,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val NO_SCHEMA_DISABLED_BY_DEFAULT =
@@ -213,10 +213,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val MEDIA_SCHEMA2_PRINT =
@@ -231,10 +231,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val MEDIA_SCHEMA_PRINT =
@@ -249,10 +249,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val NOTES_SCHEMA_PRINT =
@@ -267,10 +267,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val NO_SCHEMA_EXECUTION_FAIL =
@@ -285,10 +285,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType =
                             AppFunctionPrimitiveTypeMetadata(
                                 type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false
+                                isNullable = false,
                             )
                     ),
-                components = sharedComponents
+                components = sharedComponents,
             )
 
         val ADDITIONAL_LEGACY_CREATE_NOTE =
@@ -297,17 +297,13 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 packageName = "com.google.android.app.notes",
                 isEnabled = true,
                 schema =
-                    AppFunctionSchemaMetadata(
-                        category = "notes",
-                        name = "createNote",
-                        version = 1,
-                    ),
+                    AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap())
+                components = AppFunctionComponentsMetadata(emptyMap()),
             )
     }
 

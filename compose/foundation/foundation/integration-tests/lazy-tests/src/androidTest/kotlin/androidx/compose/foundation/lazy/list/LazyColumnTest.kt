@@ -272,7 +272,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
         rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 Modifier.testTag(LazyListTag).requiredWidth(100.dp),
-                horizontalAlignment = horizontalGravity
+                horizontalAlignment = horizontalGravity,
             ) {
                 items(listOf(1, 2)) {
                     if (it == 1) {
@@ -410,7 +410,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
                     .testTag(LazyListTag)
                     .graphicsLayer()
                     .background(Color.Blue),
-                state = state
+                state = state,
             ) {
                 items(2) {
                     val size = if (it == 0) 5.dp else 100.dp
@@ -596,7 +596,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
                         }
                     }
                 },
-                state
+                state,
             ) {
                 items(100) { Box(Modifier.size(itemSizeDp)) }
             }
@@ -645,6 +645,6 @@ internal fun Modifier.drawOutsideOfBounds() = drawBehind {
     drawRect(
         Color.Red,
         Offset(-inflate, -inflate),
-        Size(size.width + inflate * 2, size.height + inflate * 2)
+        Size(size.width + inflate * 2, size.height + inflate * 2),
     )
 }

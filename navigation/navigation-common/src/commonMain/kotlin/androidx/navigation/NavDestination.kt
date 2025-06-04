@@ -58,7 +58,7 @@ public expect open class NavDestination(navigatorName: String) {
         isExactDeepLink: Boolean,
         matchingPathSegments: Int,
         hasMatchingAction: Boolean,
-        mimeTypeMatchLevel: Int
+        mimeTypeMatchLevel: Int,
     ) : Comparable<DeepLinkMatch> {
         public val destination: NavDestination
         public val matchingArgs: SavedState?

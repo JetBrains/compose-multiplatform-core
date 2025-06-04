@@ -98,7 +98,7 @@ class SessionConfigAdapterTest {
 
                 override fun onError(
                     sessionConfig: SessionConfig,
-                    error: SessionConfig.SessionError
+                    error: SessionConfig.SessionError,
                 ) {
                     results.add(Pair(sessionConfig, error))
                 }
@@ -181,7 +181,7 @@ class SessionConfigAdapterTest {
                 options =
                     MutableOptionsBundle.create().apply {
                         insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
-                    }
+                    },
             )
         val fakeSurface2 = createTestDeferrableSurface()
         val fakeSessionConfig2 =
@@ -190,7 +190,7 @@ class SessionConfigAdapterTest {
                 options =
                     MutableOptionsBundle.create().apply {
                         insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
-                    }
+                    },
             )
 
         // Act.
@@ -221,7 +221,7 @@ class SessionConfigAdapterTest {
                 listOf(
                     fakePreviewSessionConfig,
                     fakeVideoSessionConfig,
-                    fakeStreamSharingSessionConfig
+                    fakeStreamSharingSessionConfig,
                 )
             )
 
@@ -241,7 +241,7 @@ class SessionConfigAdapterTest {
                 options =
                     MutableOptionsBundle.create().apply {
                         insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
-                    }
+                    },
             )
         val fakeSurface2 = createTestDeferrableSurface(containerClass = MediaCodec::class.java)
         val fakeSessionConfig2 =
@@ -250,7 +250,7 @@ class SessionConfigAdapterTest {
                 options =
                     MutableOptionsBundle.create().apply {
                         insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
-                    }
+                    },
             )
 
         // Act.
@@ -280,7 +280,7 @@ class SessionConfigAdapterTest {
         surface: DeferrableSurface,
         template: Int = TEMPLATE_PREVIEW,
         expectedFrameRateRange: Range<Int> = Range(15, 24),
-        options: androidx.camera.core.impl.Config? = null
+        options: androidx.camera.core.impl.Config? = null,
     ) =
         SessionConfig.Builder()
             .apply {
@@ -292,9 +292,7 @@ class SessionConfigAdapterTest {
             .build()
 }
 
-class FakeTestUseCase(
-    config: FakeUseCaseConfig,
-) : FakeUseCase(config) {
+class FakeTestUseCase(config: FakeUseCaseConfig) : FakeUseCase(config) {
     var cameraControlReady = false
 
     fun setupSessionConfig(sessionConfigBuilder: SessionConfig.Builder) {

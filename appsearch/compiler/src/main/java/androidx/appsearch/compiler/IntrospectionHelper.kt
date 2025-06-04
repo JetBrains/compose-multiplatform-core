@@ -218,7 +218,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
                 ) {
                     throw ProcessingException(
                         "A class annotated with AutoValue and Document cannot have a superclass",
-                        element
+                        element,
                     )
                 }
                 hierarchy.add(element)
@@ -255,7 +255,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
             leafElement: TypeElement,
             currentClass: TypeElement,
             hierarchy: Deque<TypeElement>,
-            visited: MutableSet<TypeElement>
+            visited: MutableSet<TypeElement>,
         ) {
             if (
                 currentClass.qualifiedName.contentEquals(java.lang.Object::class.java.canonicalName)
@@ -268,7 +268,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
                 throw ProcessingException(
                     "A class annotated with Document cannot inherit from a class " +
                         "annotated with AutoValue",
-                    leafElement
+                    leafElement,
                 )
             }
 
@@ -289,7 +289,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
                     leafElement,
                     MoreTypes.asTypeElement(superclass),
                     hierarchy,
-                    visited
+                    visited,
                 )
             }
             for (implementedInterface in currentClass.interfaces) {
@@ -297,7 +297,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
                     leafElement,
                     MoreTypes.asTypeElement(implementedInterface),
                     hierarchy,
-                    visited
+                    visited,
                 )
             }
         }
@@ -337,7 +337,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
     @Throws(ProcessingException::class)
     fun getDocumentPropertyAnnotation(
         clazz: TypeElement,
-        propertyName: String
+        propertyName: String,
     ): DocumentPropertyAnnotation? {
         for (enclosedElement in clazz.enclosedElements) {
             val getterOrField = tryCreateFor(enclosedElement, env)
@@ -373,7 +373,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
                 if (
                     typeUtils.isSameType(
                         (propertyType as DeclaredType).typeArguments.first(),
-                        validType
+                        validType,
                     )
                 ) {
                     return true
@@ -442,14 +442,14 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
      */
     fun validateIsGetterThatReturns(
         method: ExecutableElement,
-        expectedReturnType: TypeMirror
+        expectedReturnType: TypeMirror,
     ): MutableList<ProcessingException> {
         val errors: MutableList<ProcessingException> = validateIsGetter(method)
         if (!typeUtils.isAssignable(method.returnType, expectedReturnType)) {
             errors.add(
                 ProcessingException(
                     "Getter cannot be used: Does not return $expectedReturnType",
-                    method
+                    method,
                 )
             )
         }
@@ -484,7 +484,7 @@ class IntrospectionHelper internal constructor(private val env: ProcessingEnviro
             .map {
                 MethodTypeAndElement(
                     typeUtils.asMemberOf(type, it) as ExecutableType,
-                    it as ExecutableElement
+                    it as ExecutableElement,
                 )
             }
     }

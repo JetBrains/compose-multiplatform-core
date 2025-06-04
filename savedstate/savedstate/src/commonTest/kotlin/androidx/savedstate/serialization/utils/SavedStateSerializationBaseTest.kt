@@ -37,7 +37,7 @@ import kotlinx.serialization.modules.overwriteWith
  * in unit tests.
  */
 internal abstract class SavedStateSerializationBaseTest(
-    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
 ) : RobolectricTest() {
 
     private val configuration =
@@ -234,7 +234,7 @@ internal abstract class SavedStateSerializationBaseTest(
             BooleanArrayData(booleanArrayOf(true, false, true)),
             configuration,
             serializer,
-            assertion
+            assertion,
         )
     }
 
@@ -460,11 +460,7 @@ internal abstract class SavedStateSerializationBaseTest(
         serializer: KSerializer<PolymorphicNullMixedData>? = null,
         assertion: SavedStateAssertionScope<PolymorphicNullMixedData>.() -> Unit,
     ) {
-        val data =
-            PolymorphicNullMixedData(
-                base1 = null,
-                base2 = null,
-            )
+        val data = PolymorphicNullMixedData(base1 = null, base2 = null)
         doTest(data, configuration, serializer, assertion)
     }
 

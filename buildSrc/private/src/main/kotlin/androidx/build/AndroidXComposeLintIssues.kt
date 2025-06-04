@@ -32,9 +32,8 @@ internal val ComposeLintWarningIdsToTreatAsErrors =
         "AutoboxingStateValueProperty",
         "InvalidColorHexValue",
         "MissingColorAlphaChannel",
-        // TODO(b/416387032): Need to upgrade all binary dep usages
-        // "ModifierFactoryReturnType",
-        // "ModifierFactoryExtensionFunction",
+        "ModifierFactoryReturnType",
+        "ModifierFactoryExtensionFunction",
         "ModifierNodeInspectableProperties",
         "ModifierParameter",
         "MutableCollectionMutableState",
@@ -46,5 +45,5 @@ internal val ComposeLintWarningIdsToTreatAsErrors =
         "UseOfNonLambdaOffsetOverload",
         "MultipleAwaitPointerEventScopes",
         "LocalContextResourcesRead",
-        "ConfigurationScreenWidthHeight"
+        "ConfigurationScreenWidthHeight",
     )

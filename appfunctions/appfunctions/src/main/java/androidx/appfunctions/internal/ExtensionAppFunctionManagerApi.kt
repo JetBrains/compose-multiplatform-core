@@ -44,7 +44,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
     private val appFunctionManager: AppFunctionManager by lazy { AppFunctionManager(context) }
 
     override suspend fun executeAppFunction(
-        request: ExecuteAppFunctionRequest,
+        request: ExecuteAppFunctionRequest
     ): ExecuteAppFunctionResponse {
         return suspendCancellableCoroutine { cont ->
             val cancellationSignal = CancellationSignal()
@@ -56,7 +56,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                 object :
                     OutcomeReceiver<
                         com.android.extensions.appfunctions.ExecuteAppFunctionResponse,
-                        com.android.extensions.appfunctions.AppFunctionException
+                        com.android.extensions.appfunctions.AppFunctionException,
                     > {
                     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
                     override fun onResult(
@@ -76,7 +76,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                             )
                         cont.resume(ExecuteAppFunctionResponse.Error(exception))
                     }
-                }
+                },
             )
         }
     }
@@ -99,7 +99,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     override fun onError(error: Exception) {
                         cont.resumeWithException(error)
                     }
-                }
+                },
             )
         }
     }
@@ -122,7 +122,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     override fun onError(error: Exception) {
                         cont.resumeWithException(error)
                     }
-                }
+                },
             )
         }
     }

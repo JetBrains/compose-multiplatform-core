@@ -231,7 +231,7 @@ public class LevelIndicatorColors(
     public val indicatorColor: Color,
     public val trackColor: Color,
     public val disabledIndicatorColor: Color,
-    public val disabledTrackColor: Color
+    public val disabledTrackColor: Color,
 ) {
     /**
      * Returns a copy of this LevelIndicatorColors optionally overriding some of the values.
@@ -303,9 +303,8 @@ public class LevelIndicatorColors(
  * @param valueFraction the value fraction to adapt to a ScrollIndicatorState
  * @VisibleForTesting
  */
-internal class FractionPositionStateAdapter(
-    private val valueFraction: () -> Float,
-) : IndicatorState {
+internal class FractionPositionStateAdapter(private val valueFraction: () -> Float) :
+    IndicatorState {
 
     override val positionFraction = 1f // LevelIndicator always starts at the bottom
 

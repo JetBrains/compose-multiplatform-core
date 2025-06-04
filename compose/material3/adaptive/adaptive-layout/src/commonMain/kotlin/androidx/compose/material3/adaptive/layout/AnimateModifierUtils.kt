@@ -39,7 +39,7 @@ internal fun Placeable.PlacementScope.lookaheadOffset(lookaheadScope: LookaheadS
 
 internal fun Placeable.PlacementScope.convertOffsetToCurrentCoordinates(
     offset: IntOffset,
-    lookaheadScope: LookaheadScope
+    lookaheadScope: LookaheadScope,
 ): IntOffset =
     with(lookaheadScope) {
         // The offset is based on the lookahead coordinates, so we need to convert it to the local

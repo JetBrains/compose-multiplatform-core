@@ -81,7 +81,7 @@ public class ExerciseSegment(
         @JvmStatic
         fun isSegmentTypeCompatibleWithSessionType(
             @ExerciseSegmentTypes segmentType: Int,
-            @ExerciseTypes sessionType: Int
+            @ExerciseTypes sessionType: Int,
         ): Boolean {
             if (UNIVERSAL_SESSION_TYPES.contains(sessionType)) {
                 return true
@@ -354,7 +354,7 @@ public class ExerciseSegment(
                 EXERCISE_SEGMENT_TYPE_SIT_UP,
                 EXERCISE_SEGMENT_TYPE_SQUAT,
                 EXERCISE_SEGMENT_TYPE_UPPER_TWIST,
-                EXERCISE_SEGMENT_TYPE_WEIGHTLIFTING
+                EXERCISE_SEGMENT_TYPE_WEIGHTLIFTING,
             )
         internal val SWIMMING_SEGMENTS =
             setOf(
@@ -363,7 +363,7 @@ public class ExerciseSegment(
                 EXERCISE_SEGMENT_TYPE_SWIMMING_FREESTYLE,
                 EXERCISE_SEGMENT_TYPE_SWIMMING_BUTTERFLY,
                 EXERCISE_SEGMENT_TYPE_SWIMMING_MIXED,
-                EXERCISE_SEGMENT_TYPE_SWIMMING_OTHER
+                EXERCISE_SEGMENT_TYPE_SWIMMING_OTHER,
             )
 
         private val SESSION_TO_SEGMENTS_MAPPING =
@@ -379,7 +379,7 @@ public class ExerciseSegment(
                         EXERCISE_SEGMENT_TYPE_YOGA,
                         EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY,
                         EXERCISE_SEGMENT_TYPE_PILATES,
-                        EXERCISE_SEGMENT_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+                        EXERCISE_SEGMENT_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
                     ),
                 ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS to EXERCISE_SEGMENTS,
                 ExerciseSessionRecord.EXERCISE_TYPE_HIKING to

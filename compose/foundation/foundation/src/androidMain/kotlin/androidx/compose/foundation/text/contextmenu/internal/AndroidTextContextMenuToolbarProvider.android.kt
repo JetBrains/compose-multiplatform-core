@@ -58,7 +58,7 @@ import kotlinx.coroutines.channels.Channel
 @Composable
 internal fun ProvidePlatformTextContextMenuToolbar(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ProvidePlatformTextContextMenuToolbar(modifier, null, content)
 }
@@ -75,7 +75,7 @@ internal fun ProvidePlatformTextContextMenuToolbar(
 internal fun ProvidePlatformTextContextMenuToolbar(
     modifier: Modifier = Modifier,
     callbackInjector: ((TextActionModeCallback) -> TextActionModeCallback)?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var layoutCoordinates by remember {
         // onGloballyPositioned may fire with the same LayoutCoordinates containing different
@@ -92,7 +92,7 @@ internal fun ProvidePlatformTextContextMenuToolbar(
     CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides provider) {
         Box(
             propagateMinConstraints = true,
-            modifier = modifier.onGloballyPositioned { layoutCoordinates = it }
+            modifier = modifier.onGloballyPositioned { layoutCoordinates = it },
         ) {
             content()
         }
@@ -174,7 +174,7 @@ internal class AndroidTextContextMenuToolbarProvider(
 
     private fun createActionModeCallback(
         session: TextContextMenuSessionImpl,
-        dataProvider: TextContextMenuDataProvider
+        dataProvider: TextContextMenuDataProvider,
     ): TextActionModeCallback {
         val textCallback =
             TextActionModeCallbackImpl(
@@ -254,7 +254,7 @@ internal class AndroidTextContextMenuToolbarProvider(
                                 // can be called on the item itself.
                                 /* itemId = */ orderId,
                                 /* order = */ orderId,
-                                /* title = */ component.label
+                                /* title = */ component.label,
                             )
                         menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
                         menuItem.setOnMenuItemClickListener {
@@ -289,7 +289,7 @@ private object TextToolbarHelper {
             TextToolbarHelperApi23.startActionMode(
                 view = view,
                 actionModeCallback = FloatingTextActionModeCallback(textActionModeCallback),
-                type = ActionMode.TYPE_FLOATING
+                type = ActionMode.TYPE_FLOATING,
             )
         } else {
             view.startActionMode(PrimaryTextActionModeCallback(textActionModeCallback))
@@ -306,7 +306,7 @@ private object TextToolbarHelperApi23 {
     fun startActionMode(
         view: View,
         actionModeCallback: ActionMode.Callback,
-        type: Int
+        type: Int,
     ): ActionMode? = view.startActionMode(actionModeCallback, type)
 
     @RequiresApi(23)
@@ -340,7 +340,7 @@ internal interface TextActionModeCallback {
 
 @RequiresApi(23)
 private class FloatingTextActionModeCallback(
-    private val textActionModeCallback: TextActionModeCallback,
+    private val textActionModeCallback: TextActionModeCallback
 ) : ActionMode.Callback2(), ActionMode.Callback {
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean =
         textActionModeCallback.onCreateActionMode(mode, menu)
@@ -360,13 +360,13 @@ private class FloatingTextActionModeCallback(
             contentRect.left.fastRoundToInt(),
             contentRect.top.fastRoundToInt(),
             contentRect.right.fastRoundToInt(),
-            contentRect.bottom.fastRoundToInt()
+            contentRect.bottom.fastRoundToInt(),
         )
     }
 }
 
 private class PrimaryTextActionModeCallback(
-    private val textActionModeCallback: TextActionModeCallback,
+    private val textActionModeCallback: TextActionModeCallback
 ) : ActionMode.Callback {
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean =
         textActionModeCallback.onCreateActionMode(mode, menu)

@@ -73,7 +73,7 @@ constructor(
     override fun captureWith(
         streamIds: Set<StreamId>,
         parameters: Map<Any, Any?>,
-        capacity: Int
+        capacity: Int,
     ): FrameGraph.FrameBuffer {
         return frameBuffers.attach(streamIds, parameters, capacity)
     }
@@ -102,7 +102,7 @@ constructor(
 
     override fun <T> useSessionIn(
         scope: CoroutineScope,
-        action: suspend CoroutineScope.(FrameGraph.Session) -> T
+        action: suspend CoroutineScope.(FrameGraph.Session) -> T,
     ): Deferred<T> {
         TODO("Not yet implemented")
     }

@@ -33,7 +33,7 @@ suspend fun workForeground(
     spec: WorkSpec,
     worker: ListenableWorker,
     foregroundUpdater: ForegroundUpdater,
-    taskExecutor: TaskExecutor
+    taskExecutor: TaskExecutor,
 ) {
     if (!spec.expedited || Build.VERSION.SDK_INT >= 31) return
 

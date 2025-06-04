@@ -21,7 +21,12 @@ import androidx.annotation.RestrictTo
 import androidx.camera.core.featurecombination.Feature
 import androidx.camera.core.featurecombination.impl.UseCaseType
 import androidx.camera.core.featurecombination.impl.UseCaseType.Companion.getFeatureComboUseCaseType
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.core.util.Consumer
+import java.util.concurrent.Executor
 
 /**
  * Represents a session configuration to start a camera session. When used with `camera-lifecycle`,
@@ -40,18 +45,6 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  *   no viewport.
  * @property effects The list of [CameraEffect] to be applied on the camera session. If not set, the
  *   default is no effects.
- * @property requiredFeatures A set of `Feature` that are mandatory for the camera configuration. An
- *   [IllegalStateException] is thrown during camera configuration if adding all of the required
- *   features is not supported on a device. The [CameraInfo.isFeatureCombinationSupported] API can
- *   be used to check if the required features are supported. Alternatively, the features can be
- *   provided through the `preferredFeatures` property so that some features can be discarded
- *   according to priority if all of them are not supported. Note that [CameraEffect] or
- *   [ImageAnalysis] use case is currently not supported if this parameter is used.
- * @property preferredFeatures A list of preferred [Feature] that should be ordered according to
- *   priority in descending order, i.e. a `Feature` with a lower index in the list will be
- *   considered to have a higher priority. These features will be selected on a best-effort basis
- *   according to the priority. Note that [CameraEffect] or [ImageAnalysis] use case is currently
- *   not supported if this parameter is used.
  * @throws IllegalArgumentException If the combination of config options are conflicting or
  *   unsupported, e.g.
  *     - if any of the required features is not supported on the device
@@ -62,54 +55,56 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  *
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
-// TODO: b/414298514 - The class-wide restriction to remove when making SessionConfig API public.
-//  Removing only this restriction won't make the feature combo params public.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalSessionConfig
 public open class SessionConfig
-// TODO: b/384404392 - Remove when feature combo impl. is ready. The feature combo params should be
-//  kept restricted until then.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmOverloads
 constructor(
     useCases: List<UseCase>,
     public val viewPort: ViewPort? = null,
     public val effects: List<CameraEffect> = emptyList(),
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val requiredFeatures: Set<Feature> = emptySet(),
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val preferredFeatures: List<Feature> = emptyList(),
 ) {
     public val useCases: List<UseCase> = useCases.distinct()
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public var requiredFeatures: Set<Feature> = emptySet()
+        private set
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public var preferredFeatures: List<Feature> = emptyList()
+        private set
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val isLegacy: Boolean = false
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
+    // TODO(b/419462894): Refactor targetHighSpeedFrameRate into sessionType and targetFrameRate
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public open val sessionType: Int =
+        if (targetHighSpeedFrameRate != FRAME_RATE_RANGE_UNSPECIFIED) SESSION_TYPE_HIGH_SPEED
+        else SESSION_TYPE_REGULAR
 
-    init {
-        validateFeatureCombination()
-    }
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public var featureSelectionListener: Consumer<Set<Feature>> = Consumer<Set<Feature>> {}
+        private set
 
-    // TODO: b/384404392 - Remove this extra constructor when feature combo impl. is ready. The
-    //  feature combo params should be kept restricted until the impl. is ready. In order to unblock
-    //  the release of SessionConfig, we are splitting the constructor with and without the feature
-    //  params so that the one with feature params can be marked restricted. When feature combo
-    //  impl. is completed, we can just remove this constructor while removing the restricted
-    //  annotation for the primary constructor. Due to @JvmOverloads, only two new constructors will
-    //  be added without changing any previous one, so it won't be an API breaking change.
-    @JvmOverloads
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public var featureSelectionListenerExecutor: Executor = CameraXExecutors.mainThreadExecutor()
+        private set
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(
         useCases: List<UseCase>,
         viewPort: ViewPort? = null,
-        effects: List<CameraEffect> = emptyList()
-    ) : this(
-        useCases = useCases,
-        viewPort = viewPort,
-        effects = effects,
-        requiredFeatures = emptySet(),
-        preferredFeatures = emptyList()
-    ) {
+        effects: List<CameraEffect> = emptyList(),
+        requiredFeatures: Set<Feature> = emptySet(),
+        preferredFeatures: List<Feature> = emptyList(),
+    ) : this(useCases = useCases, viewPort = viewPort, effects = effects) {
+        this.requiredFeatures = requiredFeatures
+        this.preferredFeatures = preferredFeatures
         validateFeatureCombination()
     }
+
+    /** Creates the SessionConfig from use cases only. */
+    public constructor(vararg useCases: UseCase) : this(useCases.toList())
 
     private fun validateFeatureCombination() {
         if (requiredFeatures.isEmpty() && preferredFeatures.isEmpty()) {
@@ -155,7 +150,35 @@ constructor(
         }
     }
 
+    /**
+     * Sets a listener to know which features are finally selected when a session config is bound,
+     * based on the user-defined priorities/ordering for [preferredFeatures] and device
+     * capabilities.
+     *
+     * Both the required and the selected preferred features are notified to the listener. The
+     * listener is invoked when this session config is bound to camera (e.g. when the
+     * `androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle` API is invoked).
+     *
+     * Alternatively, the [CameraInfo.isFeatureCombinationSupported] API can be used to query if a
+     * set of features is supported before binding.
+     *
+     * @param executor The executor in which the listener will be invoked, main thread by default.
+     * @param listener The consumer to accept the final set of features when they are selected.
+     */
+    // TODO: b/384404392 - Remove when feature combo impl. is ready. The feature combo params should
+    //   be kept restricted until then.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @JvmOverloads
+    public fun setFeatureSelectionListener(
+        executor: Executor = CameraXExecutors.mainThreadExecutor(),
+        listener: Consumer<Set<Feature>>,
+    ) {
+        featureSelectionListener = listener
+        featureSelectionListenerExecutor = executor
+    }
+
     /** Builder for [SessionConfig] */
+    @ExperimentalSessionConfig
     public class Builder(private val useCases: List<UseCase>) {
         private var viewPort: ViewPort? = null
         private var effects: MutableList<CameraEffect> = mutableListOf()
@@ -233,7 +256,7 @@ public class LegacySessionConfig(
     useCases: List<UseCase>,
     viewPort: ViewPort? = null,
     effects: List<CameraEffect> = emptyList(),
-    public override val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
+    public override val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
 ) : SessionConfig(useCases, viewPort, effects) {
     public override val isLegacy: Boolean = true
 

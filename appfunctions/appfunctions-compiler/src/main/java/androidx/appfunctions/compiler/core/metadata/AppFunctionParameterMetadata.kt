@@ -25,7 +25,7 @@ data class AppFunctionParameterMetadata(
         return AppFunctionParameterMetadataDocument(
             name = name,
             isRequired = isRequired,
-            dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument()
+            dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
         )
     }
 }
@@ -35,5 +35,5 @@ data class AppFunctionParameterMetadataDocument(
     val id: String = APP_FUNCTION_ID_EMPTY,
     val name: String,
     val isRequired: Boolean,
-    val dataTypeMetadata: AppFunctionDataTypeMetadataDocument
+    val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
 )

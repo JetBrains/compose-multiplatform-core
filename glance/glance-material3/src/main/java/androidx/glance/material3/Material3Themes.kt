@@ -72,7 +72,7 @@ public fun ColorProviders(light: ColorScheme, dark: ColorScheme): ColorProviders
         widgetBackground =
             ColorProvider(
                 day = adjustColorToneForWidgetBackground(light.secondaryContainer),
-                night = adjustColorToneForWidgetBackground(dark.secondaryContainer)
+                night = adjustColorToneForWidgetBackground(dark.secondaryContainer),
             ),
     )
 }
@@ -113,7 +113,7 @@ public fun ColorProviders(scheme: ColorScheme): ColorProviders {
         // Widget background is a widget / glace specific token it is generally derived from the
         // secondary container color.
         widgetBackground =
-            ColorProvider(color = adjustColorToneForWidgetBackground(scheme.secondaryContainer))
+            ColorProvider(color = adjustColorToneForWidgetBackground(scheme.secondaryContainer)),
     )
 }
 

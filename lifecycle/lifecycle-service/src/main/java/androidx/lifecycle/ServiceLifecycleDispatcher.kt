@@ -69,7 +69,7 @@ public open class ServiceLifecycleDispatcher(provider: LifecycleOwner) {
 
     internal class DispatchRunnable(
         private val registry: LifecycleRegistry,
-        val event: Lifecycle.Event
+        val event: Lifecycle.Event,
     ) : Runnable {
         private var wasExecuted = false
 

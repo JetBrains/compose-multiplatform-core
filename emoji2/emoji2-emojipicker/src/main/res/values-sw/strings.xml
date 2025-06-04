@@ -39,4 +39,6 @@
     <string name="emoji_skin_tone_medium_content_desc" msgid="8880212664699697283">"ngozi ya rangi ya maji ya kunde"</string>
     <string name="emoji_skin_tone_medium_dark_content_desc" msgid="5500271767005002413">"ngozi ya rangi nyeusi kiasi"</string>
     <string name="emoji_skin_tone_dark_content_desc" msgid="943874297162865134">"ngozi ya rangi nyeusi"</string>
+    <!-- no translation found for emoji_content_desc (8523291959063935108) -->
+    <skip />
 </resources>

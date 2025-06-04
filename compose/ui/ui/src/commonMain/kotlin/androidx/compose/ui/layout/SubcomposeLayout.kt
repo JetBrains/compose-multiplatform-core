@@ -89,12 +89,12 @@ import androidx.compose.ui.util.fastForEach
 @Composable
 fun SubcomposeLayout(
     modifier: Modifier = Modifier,
-    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult
+    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
 ) {
     SubcomposeLayout(
         state = remember { SubcomposeLayoutState() },
         modifier = modifier,
-        measurePolicy = measurePolicy
+        measurePolicy = measurePolicy,
     )
 }
 
@@ -122,7 +122,7 @@ fun SubcomposeLayout(
 fun SubcomposeLayout(
     state: SubcomposeLayoutState,
     modifier: Modifier = Modifier,
-    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult
+    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
 ) {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val compositionContext = rememberCompositionContext()
@@ -137,7 +137,7 @@ fun SubcomposeLayout(
             set(localMap, SetResolvedCompositionLocals)
             set(materialized, SetModifier)
             set(compositeKeyHash, SetCompositeKeyHash)
-        }
+        },
     )
     if (!currentComposer.skipping) {
         SideEffect { state.forceRecomposeChildren() }
@@ -189,8 +189,8 @@ class SubcomposeLayoutState(private val slotReusePolicy: SubcomposeSlotReusePoli
         "This constructor is deprecated",
         ReplaceWith(
             "SubcomposeLayoutState(SubcomposeSlotReusePolicy(maxSlotsToRetainForReuse))",
-            "androidx.compose.ui.layout.SubcomposeSlotReusePolicy"
-        )
+            "androidx.compose.ui.layout.SubcomposeSlotReusePolicy",
+        ),
     )
     constructor(
         maxSlotsToRetainForReuse: Int
@@ -237,6 +237,9 @@ class SubcomposeLayoutState(private val slotReusePolicy: SubcomposeSlotReusePoli
         state.precompose(slotId, content)
 
     /**
+     * Creates [PausedPrecomposition], which allows to perform the composition in an incremental
+     * manner.
+     *
      * @param slotId unique id which represents the slot to compose into.
      * @param content the composable content which defines the slot.]
      * @return [PausedPrecomposition] for the given [slotId]. It allows to perform the composition
@@ -246,7 +249,7 @@ class SubcomposeLayoutState(private val slotReusePolicy: SubcomposeSlotReusePoli
      */
     fun createPausedPrecomposition(
         slotId: Any?,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ): PausedPrecomposition = state.precomposePaused(slotId, content)
 
     internal fun forceRecomposeChildren() = state.forceRecomposeChildren()
@@ -507,7 +510,7 @@ fun SubcomposeSlotReusePolicy(maxSlotsToRetainForReuse: Int): SubcomposeSlotReus
 @OptIn(ExperimentalComposeUiApi::class)
 internal class LayoutNodeSubcompositionsState(
     private val root: LayoutNode,
-    slotReusePolicy: SubcomposeSlotReusePolicy
+    slotReusePolicy: SubcomposeSlotReusePolicy,
 ) : ComposeNodeLifecycleCallback {
     var compositionContext: CompositionContext? = null
 
@@ -616,7 +619,7 @@ internal class LayoutNodeSubcompositionsState(
         node: LayoutNode,
         slotId: Any?,
         pausable: Boolean,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         val nodeState = nodeToNodeState.getOrPut(node) { NodeState(slotId, {}) }
         val contentChanged = nodeState.content !== content
@@ -910,7 +913,7 @@ internal class LayoutNodeSubcompositionsState(
         return object : LayoutNode.NoIntrinsicsMeasurePolicy(error = NoIntrinsicsMessage) {
             override fun MeasureScope.measure(
                 measurables: List<Measurable>,
-                constraints: Constraints
+                constraints: Constraints,
             ): MeasureResult {
                 scope.layoutDirection = layoutDirection
                 scope.density = density
@@ -956,7 +959,7 @@ internal class LayoutNodeSubcompositionsState(
 
     private inline fun createMeasureResult(
         result: MeasureResult,
-        crossinline placeChildrenBlock: () -> Unit
+        crossinline placeChildrenBlock: () -> Unit,
     ) =
         object : MeasureResult by result {
             override fun placeChildren() {
@@ -1073,7 +1076,7 @@ internal class LayoutNodeSubcompositionsState(
 
             override fun traverseDescendants(
                 key: Any?,
-                block: (TraversableNode) -> TraverseDescendantsAction
+                block: (TraversableNode) -> TraverseDescendantsAction,
             ) {
                 precomposeMap[slotId]?.nodes?.head?.traverseDescendants(key, block)
             }
@@ -1164,10 +1167,9 @@ internal class LayoutNodeSubcompositionsState(
     }
 
     private fun createNodeAt(index: Int) =
-        LayoutNode(
-                isVirtual = true,
-            )
-            .also { node -> ignoreRemeasureRequests { root.insertAt(index, node) } }
+        LayoutNode(isVirtual = true).also { node ->
+            ignoreRemeasureRequests { root.insertAt(index, node) }
+        }
 
     private fun move(from: Int, to: Int, count: Int = 1) {
         ignoreRemeasureRequests { root.move(from, to, count) }
@@ -1196,7 +1198,7 @@ internal class LayoutNodeSubcompositionsState(
     private class NodeState(
         var slotId: Any?,
         var content: @Composable () -> Unit,
-        var composition: ReusableComposition? = null
+        var composition: ReusableComposition? = null,
     ) {
         var forceRecompose = false
         var forceReuse = false
@@ -1228,7 +1230,7 @@ internal class LayoutNodeSubcompositionsState(
             height: Int,
             alignmentLines: Map<AlignmentLine, Int>,
             rulers: (RulerScope.() -> Unit)?,
-            placementBlock: Placeable.PlacementScope.() -> Unit
+            placementBlock: Placeable.PlacementScope.() -> Unit,
         ): MeasureResult {
             checkMeasuredSize(width, height)
             return object : MeasureResult {
@@ -1278,7 +1280,7 @@ internal class LayoutNodeSubcompositionsState(
 
     private fun approachSubcompose(
         slotId: Any?,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ): List<Measurable> {
         requirePrecondition(approachComposedSlotIds.size >= currentApproachIndex) {
             "Error: currentApproachIndex cannot be greater than the size of the" +

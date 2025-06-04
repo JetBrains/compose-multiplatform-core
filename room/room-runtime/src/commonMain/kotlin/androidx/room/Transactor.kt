@@ -66,7 +66,7 @@ public interface Transactor : PooledConnection {
      */
     public suspend fun <R> withTransaction(
         type: SQLiteTransactionType,
-        block: suspend TransactionScope<R>.() -> R
+        block: suspend TransactionScope<R>.() -> R,
     ): R
 
     /** Returns true if this connection has an active transaction, otherwise false. */

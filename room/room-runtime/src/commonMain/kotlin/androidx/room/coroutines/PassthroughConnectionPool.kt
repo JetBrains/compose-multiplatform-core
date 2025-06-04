@@ -24,6 +24,9 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.execSQL
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.withContext
 
 internal typealias TransactionWrapper<T> = suspend (suspend () -> T) -> T
 
@@ -41,27 +44,39 @@ internal class PassthroughConnectionPool(
     private val transactionWrapper: TransactionWrapper<*>? = null,
 ) : ConnectionPool {
 
-    private val connection = lazy {
-        PassthroughPooledConnection(transactionWrapper, driver.open(fileName))
-    }
+    private val connection = lazy { driver.open(fileName) }
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
-        return block.invoke(connection.value)
+        val confinedConnection = coroutineContext[ConnectionElement]?.connectionWrapper
+        if (confinedConnection != null) {
+            return block.invoke(confinedConnection)
+        }
+
+        val connectionWrapper = PassthroughConnection(transactionWrapper, connection.value)
+        return withContext(ConnectionElement(connectionWrapper)) { block.invoke(connectionWrapper) }
     }
 
     override fun close() {
         if (connection.isInitialized()) {
-            connection.value.delegate.close()
+            connection.value.close()
         }
+    }
+
+    private class ConnectionElement(val connectionWrapper: PassthroughConnection) :
+        CoroutineContext.Element {
+        companion object Key : CoroutineContext.Key<ConnectionElement>
+
+        override val key: CoroutineContext.Key<ConnectionElement>
+            get() = ConnectionElement
     }
 }
 
-private class PassthroughPooledConnection(
+private class PassthroughConnection(
     val transactionWrapper: TransactionWrapper<*>?,
-    val delegate: SQLiteConnection
+    val delegate: SQLiteConnection,
 ) : Transactor, RawConnectionAccessor {
 
     private var nestedTransactionCount = AtomicInt(0)
@@ -81,7 +96,7 @@ private class PassthroughPooledConnection(
 
     override suspend fun <R> withTransaction(
         type: Transactor.SQLiteTransactionType,
-        block: suspend TransactionScope<R>.() -> R
+        block: suspend TransactionScope<R>.() -> R,
     ): R {
         return if (transactionWrapper != null) {
             @Suppress("UNCHECKED_CAST") // Safe to cast since it just pipes the result
@@ -93,7 +108,7 @@ private class PassthroughPooledConnection(
 
     private suspend fun <R> transaction(
         type: Transactor.SQLiteTransactionType,
-        block: suspend TransactionScope<R>.() -> R
+        block: suspend TransactionScope<R>.() -> R,
     ): R {
         when (type) {
             Transactor.SQLiteTransactionType.DEFERRED ->
@@ -113,7 +128,8 @@ private class PassthroughPooledConnection(
         } catch (ex: Throwable) {
             success = false
             if (ex is ConnectionPool.RollbackException) {
-                @Suppress("UNCHECKED_CAST") return (ex.result as R)
+                @Suppress("UNCHECKED_CAST")
+                return (ex.result as R)
             } else {
                 exception = ex
                 throw ex
@@ -141,10 +157,10 @@ private class PassthroughPooledConnection(
     private inner class PassthroughTransactor<T> : TransactionScope<T>, RawConnectionAccessor {
 
         override val rawConnection: SQLiteConnection
-            get() = this@PassthroughPooledConnection.rawConnection
+            get() = this@PassthroughConnection.rawConnection
 
         override suspend fun <R> usePrepared(sql: String, block: (SQLiteStatement) -> R): R {
-            return this@PassthroughPooledConnection.usePrepared(sql, block)
+            return this@PassthroughConnection.usePrepared(sql, block)
         }
 
         override suspend fun <R> withNestedTransaction(

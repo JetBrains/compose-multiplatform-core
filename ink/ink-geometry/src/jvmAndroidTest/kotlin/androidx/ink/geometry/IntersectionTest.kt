@@ -1062,7 +1062,7 @@ class IntersectionTest {
                 mesh.intersects(
                     intersectingShape,
                     AffineTransform.IDENTITY,
-                    AffineTransform.IDENTITY
+                    AffineTransform.IDENTITY,
                 )
             )
             .isTrue()
@@ -1070,7 +1070,7 @@ class IntersectionTest {
                 mesh.intersects(
                     nonIntersectingShape,
                     AffineTransform.IDENTITY,
-                    AffineTransform.IDENTITY
+                    AffineTransform.IDENTITY,
                 )
             )
             .isFalse()
@@ -1078,7 +1078,7 @@ class IntersectionTest {
                 intersectingShape.intersects(
                     mesh,
                     AffineTransform.IDENTITY,
-                    AffineTransform.IDENTITY
+                    AffineTransform.IDENTITY,
                 )
             )
             .isTrue()
@@ -1086,7 +1086,7 @@ class IntersectionTest {
                 nonIntersectingShape.intersects(
                     mesh,
                     AffineTransform.IDENTITY,
-                    AffineTransform.IDENTITY
+                    AffineTransform.IDENTITY,
                 )
             )
             .isFalse()

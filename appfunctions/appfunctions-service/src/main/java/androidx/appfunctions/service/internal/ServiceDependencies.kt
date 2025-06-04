@@ -26,21 +26,11 @@ internal object ServiceDependencies {
 
     /** The instance of [AggregatedAppFunctionInventory]. */
     internal val aggregatedAppFunctionInventory: AggregatedAppFunctionInventory by lazy {
-        AggregatedAppFunctionInventory::class
-            .java
-            .findImpl(
-                prefix = "$",
-                suffix = "_Impl",
-            )
+        AggregatedAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
     }
 
     /** The instance of [AggregatedAppFunctionInvoker]. */
     internal val aggregatedAppFunctionInvoker: AggregatedAppFunctionInvoker by lazy {
-        AggregatedAppFunctionInvoker::class
-            .java
-            .findImpl(
-                prefix = "$",
-                suffix = "_Impl",
-            )
+        AggregatedAppFunctionInvoker::class.java.findImpl(prefix = "$", suffix = "_Impl")
     }
 }

@@ -169,7 +169,7 @@ internal fun MaterialScope.componentContainer(
     contentPadding: Padding,
     metadataTag: String?,
     content: (MaterialScope.() -> LayoutElement)?,
-    horizontalAlignment: Int = HORIZONTAL_ALIGN_CENTER
+    horizontalAlignment: Int = HORIZONTAL_ALIGN_CENTER,
 ): LayoutElement {
     val mod =
         LayoutModifier.semanticsRole(SEMANTICS_ROLE_BUTTON) then

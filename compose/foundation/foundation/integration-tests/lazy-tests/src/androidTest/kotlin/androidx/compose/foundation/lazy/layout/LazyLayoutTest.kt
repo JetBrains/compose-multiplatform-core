@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/420551535
+
 package androidx.compose.foundation.lazy.layout
 
 import android.os.Parcelable
@@ -83,7 +85,7 @@ class LazyLayoutTest {
                 measurePolicy = policy,
                 // this will return a new object everytime causing LazyLayout recomposition
                 // without causing remeasure
-                modifier = Modifier.composed { Modifier }
+                modifier = Modifier.composed { Modifier },
             )
         }
 
@@ -622,7 +624,7 @@ class LazyLayoutTest {
                         override fun onRemeasurementAvailable(value: Remeasurement) {
                             remeasurement = value
                         }
-                    }
+                    },
             ) { constraints ->
                 val node = compose(indexToCompose).first().measure(constraints)
                 layout(node.width, node.height) { node.place(0, 0) }
@@ -648,7 +650,7 @@ class LazyLayoutTest {
     private fun itemProvider(
         itemCount: () -> Int,
         hasContentType: Boolean? = false,
-        itemContent: @Composable (Int) -> Unit
+        itemContent: @Composable (Int) -> Unit,
     ): () -> LazyLayoutItemProvider {
         val provider =
             object : LazyLayoutItemProvider {

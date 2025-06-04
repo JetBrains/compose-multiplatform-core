@@ -47,7 +47,7 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
                 AdFormat.NATIVE_AD ->
                     listOf(
                         nativeAdView.findViewById(R.id.native_ad_remote_overlay_icon),
-                        nativeAdView.findViewById(R.id.native_ad_media_view_1)
+                        nativeAdView.findViewById(R.id.native_ad_media_view_1),
                     )
                 else -> listOf()
             }

@@ -93,11 +93,11 @@ internal class StubWindowMetricsCalculator : WindowMetricsCalculator {
         fun getWindowMetrics(
             windowManager: WindowManager,
             @UiContext context: Context,
-            overrideBounds: Rect?
+            overrideBounds: Rect?,
         ): WindowMetrics {
             return WindowMetrics(
                 overrideBounds ?: windowManager.currentWindowMetrics.bounds,
-                density = context.resources.displayMetrics.density
+                density = context.resources.displayMetrics.density,
             )
         }
     }

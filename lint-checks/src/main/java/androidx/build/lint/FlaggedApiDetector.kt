@@ -163,7 +163,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 ISSUE,
                 element,
                 context.getLocation(element),
-                "Failed to obtain flag string"
+                "Failed to obtain flag string",
             )
             return
         }
@@ -192,7 +192,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 element,
                 context.getLocation(element),
                 "Flagged APIs are subject to additional policies and may only be called by " +
-                    "libraries that have been allowlisted by Jetpack Working Group"
+                    "libraries that have been allowlisted by Jetpack Working Group",
             )
             return
         }
@@ -204,7 +204,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 element,
                 context.getLocation(element),
                 "Flagged APIs may only be called during alpha and must be removed before moving " +
-                    "to beta"
+                    "to beta",
             )
             return
         }
@@ -442,12 +442,12 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                         val arg1 =
                             ConstantEvaluator.evaluate(
                                 context,
-                                selector.getArgumentForParameter(0)!!
+                                selector.getArgumentForParameter(0)!!,
                             )
                         val arg2 =
                             ConstantEvaluator.evaluate(
                                 context,
-                                selector.getArgumentForParameter(1)!!
+                                selector.getArgumentForParameter(1)!!,
                             )
                         if (arg1 == flagPackage && arg2 == flagName) return true
                     }
@@ -478,7 +478,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     private fun autoFixWithFlagCheck(
         context: JavaContext,
         usage: UElement,
-        flagString: String
+        flagString: String,
     ): LintFix? {
         val flagPackage = flagString.substringBeforeLast('.')
         val flagName = flagString.substringAfterLast('.')
@@ -522,7 +522,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
      */
     private fun PsiElement.findParent(
         withSelf: Boolean,
-        predicate: (PsiElement?) -> Boolean
+        predicate: (PsiElement?) -> Boolean,
     ): PsiElement? {
         var current = if (withSelf) this else this.parent
         while (current != null && !predicate(current)) {

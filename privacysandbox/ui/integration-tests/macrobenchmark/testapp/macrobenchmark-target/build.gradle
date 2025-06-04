@@ -76,4 +76,11 @@ dependencies {
     implementation(libs.media3Ui)
     implementation(libs.media3Common)
     implementation(libs.media3Exoplayer)
+
+    // For macrobenchmark tests.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    androidTestImplementation(project(":internal-testutils-runtime"))
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.espressoCore)
 }

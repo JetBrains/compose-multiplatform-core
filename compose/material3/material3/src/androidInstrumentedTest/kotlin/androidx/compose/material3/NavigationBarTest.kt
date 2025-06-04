@@ -87,7 +87,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -115,7 +115,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -138,7 +138,7 @@ class NavigationBarTest {
                     label = { Text("Favorite") },
                     selected = true,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item2"),
@@ -146,13 +146,13 @@ class NavigationBarTest {
                     label = { Text("Favorite") },
                     selected = false,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item3"),
                     icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -180,7 +180,7 @@ class NavigationBarTest {
                             icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                             label = { Text(item) },
                             selected = index == 0,
-                            onClick = { /* do something */ }
+                            onClick = { /* do something */ },
                         )
                     }
                 }
@@ -208,7 +208,7 @@ class NavigationBarTest {
         val itemCoords = mutableMapOf<Int, LayoutCoordinates>()
         rule.setMaterialContent(
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 NavigationBar {
@@ -221,7 +221,7 @@ class NavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -263,7 +263,7 @@ class NavigationBarTest {
                             .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
                     },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     icon = {
@@ -275,7 +275,7 @@ class NavigationBarTest {
                             .isEqualTo(NavigationBarTokens.ItemInactiveLabelTextColor.value)
                     },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -299,7 +299,7 @@ class NavigationBarTest {
                             .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
                     },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     colors = customNavigationBarItemColors,
@@ -309,7 +309,7 @@ class NavigationBarTest {
                     },
                     label = { assertThat(LocalContentColor.current).isEqualTo(Color.Green) },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -345,7 +345,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -387,7 +387,7 @@ class NavigationBarTest {
                         label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
                     )
                 }
             }
@@ -417,7 +417,7 @@ class NavigationBarTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -446,7 +446,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     label = { Text("Label") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -489,7 +489,7 @@ class NavigationBarTest {
                         icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                         label = { Text(item) },
                         selected = selectedItem == index,
-                        onClick = { selectedItem = index }
+                        onClick = { selectedItem = index },
                     )
                 }
             }
@@ -525,7 +525,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = { clicks++ }
+                    onClick = { clicks++ },
                 )
             }
         }

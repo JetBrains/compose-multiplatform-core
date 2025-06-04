@@ -24,13 +24,13 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import kotlin.math.max
@@ -197,7 +197,7 @@ internal sealed class CoreBasePanelEntity(
 
             if (super.size != nextSize) {
                 super.size = nextSize
-                panelEntity.setSizeInPixels(PixelDimensions(size.width, size.height))
+                panelEntity.setSizeInPixels(IntSize2d(size.width, size.height))
                 updateShape()
             }
         }
@@ -265,8 +265,7 @@ internal class CoreSurfaceEntity(
             }
         }
 
-    private var currentFeatheringEffect: SpatialFeatheringEffect =
-        SpatialSmoothFeatheringEffect(ZeroFeatheringSize)
+    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
 
     override var size: IntVolumeSize
         get() = super.size

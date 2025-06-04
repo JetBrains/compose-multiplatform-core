@@ -44,7 +44,7 @@ class AppFunctionLocalDateTimeTest {
                 hour = hour,
                 minute = minute,
                 second = second,
-                nanoOfSecond = nanoOfSecond
+                nanoOfSecond = nanoOfSecond,
             )
 
         val resultLocalDateTime = appFunctionLocalDateTime.toLocalDateTime()

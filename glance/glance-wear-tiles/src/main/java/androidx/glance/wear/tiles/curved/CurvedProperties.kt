@@ -94,7 +94,7 @@ public class CurvedTextStyle(
     public val color: ColorProvider? = null,
     public val fontSize: TextUnit? = null,
     public val fontWeight: FontWeight? = null,
-    public val fontStyle: FontStyle? = null
+    public val fontStyle: FontStyle? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

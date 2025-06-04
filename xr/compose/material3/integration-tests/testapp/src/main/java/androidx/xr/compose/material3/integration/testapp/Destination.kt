@@ -17,7 +17,7 @@
 package androidx.xr.compose.material3.integration.testapp
 
 internal enum class Destination {
-    Dialog,
+    Dialog
 }
 
 internal val Destination.label: String

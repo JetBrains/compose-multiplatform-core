@@ -165,7 +165,7 @@ public class SessionProcessorManager(
                 postviewOutputSurface =
                     createOutputSurface(
                         postviewDeferrableSurface,
-                        postviewDeferrableSurface.surface.get()!!
+                        postviewDeferrableSurface.surface.get()!!,
                     )
             }
             Log.debug {
@@ -223,7 +223,7 @@ public class SessionProcessorManager(
                         DeferrableSurfaces.decrementAll(deferrableSurfaces)
                         postviewDeferrableSurface?.decrementUseCount()
                     },
-                    CameraXExecutors.directExecutor()
+                    CameraXExecutors.directExecutor(),
                 )
 
             val processorSessionConfigAdapter =
@@ -278,7 +278,7 @@ public class SessionProcessorManager(
 
     internal fun startRepeating(
         tagBundle: TagBundle,
-        captureCallback: CaptureCallback = object : CaptureCallback {}
+        captureCallback: CaptureCallback = object : CaptureCallback {},
     ) {
         synchronized(lock) {
             if (state != State.STARTED) return
@@ -325,7 +325,7 @@ public class SessionProcessorManager(
                             CaptureRequest.JPEG_ORIENTATION,
                             config.implementationOptions.retrieveOption(
                                 CaptureConfig.OPTION_ROTATION
-                            )
+                            ),
                         )
                     }
                     if (
@@ -337,7 +337,7 @@ public class SessionProcessorManager(
                             CaptureRequest.JPEG_QUALITY,
                             config.implementationOptions
                                 .retrieveOption(CaptureConfig.OPTION_JPEG_QUALITY)!!
-                                .toByte()
+                                .toByte(),
                         )
                     }
                     synchronized(lock) {
@@ -348,7 +348,7 @@ public class SessionProcessorManager(
                     sessionProcessor.startCapture(
                         config.isPostviewEnabled,
                         config.tagBundle,
-                        callback
+                        callback,
                     )
                 } else {
                     val options =

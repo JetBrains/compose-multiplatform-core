@@ -26,9 +26,7 @@ import androidx.annotation.RestrictTo
  */
 // TODO(b/406975359): Add min_supported_version
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-enum class SdkRuntimeUiLibVersions(
-    val apiLevel: Int,
-) {
+enum class SdkRuntimeUiLibVersions(val apiLevel: Int) {
 
     V1(apiLevel = 1);
 

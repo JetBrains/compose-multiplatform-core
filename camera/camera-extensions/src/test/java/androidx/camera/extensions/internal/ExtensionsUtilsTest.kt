@@ -74,7 +74,7 @@ class ExtensionsUtilsTest {
     private fun registerCameraCharacteristics(
         cameraId: String,
         activeArray: Rect,
-        physicalCameraId: Set<String>? = null
+        physicalCameraId: Set<String>? = null,
     ) {
         val characteristics0 = Mockito.mock(CameraCharacteristics::class.java)
         physicalCameraId?.let {

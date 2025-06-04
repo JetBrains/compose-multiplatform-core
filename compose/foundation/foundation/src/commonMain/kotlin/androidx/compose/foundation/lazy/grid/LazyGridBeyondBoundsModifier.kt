@@ -26,9 +26,7 @@ internal fun rememberLazyGridBeyondBoundsState(state: LazyGridState): LazyLayout
     return remember(state) { LazyGridBeyondBoundsState(state) }
 }
 
-internal class LazyGridBeyondBoundsState(
-    val state: LazyGridState,
-) : LazyLayoutBeyondBoundsState {
+internal class LazyGridBeyondBoundsState(val state: LazyGridState) : LazyLayoutBeyondBoundsState {
 
     override val itemCount: Int
         get() = state.layoutInfo.totalItemsCount

@@ -133,13 +133,11 @@ fun SettingsScreen() {
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Settings") }) }) { paddingValues ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
             // --- Phone Prefix Section ---
             Text(
                 text = "Configure the prefix added before dialing numbers.",
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
             OutlinedTextField(
                 value = prefix,
@@ -150,7 +148,7 @@ fun SettingsScreen() {
                 label = { Text("Phone Number Prefix") },
                 placeholder = { Text(DEFAULT_PREFIX) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Current Prefix: $prefix", modifier = Modifier.padding(bottom = 16.dp))
@@ -162,7 +160,7 @@ fun SettingsScreen() {
             Text(
                 text = "Call Extensions",
                 style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
 
             // Participant Extension Toggle
@@ -172,7 +170,7 @@ fun SettingsScreen() {
                 onCheckedChange = { isChecked ->
                     participantEnabled = isChecked
                     saveExtensionEnabled(context, KEY_PARTICIPANT_EXTENSION_ENABLED, isChecked)
-                }
+                },
             )
 
             // Local Call Silence Extension Toggle
@@ -184,9 +182,9 @@ fun SettingsScreen() {
                     saveExtensionEnabled(
                         context,
                         KEY_LOCAL_CALL_SILENCE_EXTENSION_ENABLED,
-                        isChecked
+                        isChecked,
                     )
-                }
+                },
             )
 
             // Call Icon Extension Toggle
@@ -196,7 +194,7 @@ fun SettingsScreen() {
                 onCheckedChange = { isChecked ->
                     callIconEnabled = isChecked
                     saveExtensionEnabled(context, KEY_CALL_ICON_EXTENSION_ENABLED, isChecked)
-                }
+                },
             )
         }
     }
@@ -208,12 +206,12 @@ fun SettingSwitchRow(
     text: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(text = text, modifier = Modifier.weight(1f).padding(end = 16.dp))
         Switch(checked = checked, onCheckedChange = onCheckedChange)

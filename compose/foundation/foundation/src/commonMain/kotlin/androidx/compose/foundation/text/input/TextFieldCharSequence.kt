@@ -95,7 +95,7 @@ internal class TextFieldCharSequence(
         destination: CharArray,
         destinationOffset: Int,
         sourceStartIndex: Int,
-        sourceEndIndex: Int
+        sourceEndIndex: Int,
     ) {
         text.toCharArray(destination, destinationOffset, sourceStartIndex, sourceEndIndex)
     }

@@ -73,7 +73,7 @@ public class SpatialAudioTrack {
         @JvmStatic
         public fun getSoundFieldAttributes(
             session: Session,
-            track: AudioTrack
+            track: AudioTrack,
         ): SoundFieldAttributes? {
             val rtAttributes =
                 session.platformAdapter.audioTrackExtensionsWrapper.getSoundFieldAttributes(track)

@@ -30,5 +30,5 @@ import androidx.annotation.RestrictTo
 public class SelectionBoundary(
     public val index: Int = 0,
     public val point: Point? = null,
-    public val isRtl: Boolean = false
+    public val isRtl: Boolean = false,
 )

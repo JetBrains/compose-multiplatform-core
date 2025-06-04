@@ -82,7 +82,7 @@ class TextFieldDecoratorTest {
                     ) {
                         innerTextField()
                     }
-                }
+                },
             )
         }
 
@@ -109,7 +109,7 @@ class TextFieldDecoratorTest {
                     ) {
                         innerTextField()
                     }
-                }
+                },
             )
         }
 
@@ -136,7 +136,7 @@ class TextFieldDecoratorTest {
                     ) {
                         innerTextField()
                     }
-                }
+                },
             )
         }
 
@@ -163,7 +163,7 @@ class TextFieldDecoratorTest {
                             Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .padding(16.dp)
                     )
-                }
+                },
             )
         }
 
@@ -190,7 +190,7 @@ class TextFieldDecoratorTest {
                             Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .padding(16.dp)
                     )
-                }
+                },
             )
         }
 
@@ -222,7 +222,7 @@ class TextFieldDecoratorTest {
                         decorationBoxConstraints = constraints
                         layout(0, 0) {}
                     }
-                }
+                },
             )
         }
 
@@ -253,7 +253,7 @@ class TextFieldDecoratorTest {
                     ) {
                         innerTextField()
                     }
-                }
+                },
             )
         }
 
@@ -284,7 +284,7 @@ class TextFieldDecoratorTest {
                     ) {
                         BasicText(state.text.toString())
                     }
-                }
+                },
             )
         }
 
@@ -315,7 +315,7 @@ class TextFieldDecoratorTest {
                     ) {
                         BasicText(state.text.toString())
                     }
-                }
+                },
             )
         }
 

@@ -58,7 +58,7 @@ class PostviewFormatValidatorTest(private val config: TestConfig) {
         val stillImageFormat: Int,
         val supportedPostviewFormats: List<Int>,
         val selectedPostviewFormatAndroidU: Int,
-        val selectedPostviewFormatOthers: Int
+        val selectedPostviewFormatOthers: Int,
     )
 
     companion object {
@@ -73,7 +73,7 @@ class PostviewFormatValidatorTest(private val config: TestConfig) {
                     YUV_420_888,
                     supportedPostviewFormats,
                     YUV_420_888,
-                    YUV_420_888
+                    YUV_420_888,
                 ),
                 TestConfig("Samsung", JPEG, supportedPostviewFormats, JPEG, YUV_420_888),
                 TestConfig("Samsung", JPEG_R, supportedPostviewFormats, UNKNOWN, YUV_420_888),

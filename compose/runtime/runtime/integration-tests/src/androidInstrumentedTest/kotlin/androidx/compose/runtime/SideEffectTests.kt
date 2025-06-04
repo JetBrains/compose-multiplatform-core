@@ -56,7 +56,7 @@ class SideEffectTests : BaseComposeTest() {
                 assertEquals(
                     emptyList(),
                     resultsAtComposition,
-                    "side effects weren't applied until after composition"
+                    "side effects weren't applied until after composition",
                 )
                 scope?.invalidate() ?: error("missing recompose function")
             }
@@ -138,9 +138,9 @@ class SideEffectTests : BaseComposeTest() {
                         "Unmountable:start",
                         "Unmountable:end",
                         "compose:end",
-                        "DisposableEffect"
+                        "DisposableEffect",
                     ),
-                    logHistory
+                    logHistory,
                 )
                 mount = false
             }
@@ -154,9 +154,9 @@ class SideEffectTests : BaseComposeTest() {
                         "DisposableEffect",
                         "compose:start",
                         "compose:end",
-                        "onDispose"
+                        "onDispose",
                     ),
-                    logHistory
+                    logHistory,
                 )
             }
     }
@@ -199,9 +199,9 @@ class SideEffectTests : BaseComposeTest() {
                         "DisposableEffect:a1",
                         "DisposableEffect:a2",
                         "DisposableEffect:b2",
-                        "DisposableEffect:b1"
+                        "DisposableEffect:b1",
                     ),
-                    logHistory
+                    logHistory,
                 )
                 mount = false
                 log("recompose")
@@ -219,9 +219,9 @@ class SideEffectTests : BaseComposeTest() {
                         "onDispose:a2",
                         "onDispose:a1",
                         "DisposableEffect:a1",
-                        "DisposableEffect:b1"
+                        "DisposableEffect:b1",
                     ),
-                    logHistory
+                    logHistory,
                 )
             }
     }
@@ -260,9 +260,9 @@ class SideEffectTests : BaseComposeTest() {
                         "recompose",
                         "recompose (key -> 345)",
                         "dispose:0",
-                        "DisposableEffect:1"
+                        "DisposableEffect:1",
                     ),
-                    logHistory
+                    logHistory,
                 )
             }
     }
@@ -310,17 +310,17 @@ class SideEffectTests : BaseComposeTest() {
                 assertNotEquals(
                     choreographerTime,
                     Long.MIN_VALUE,
-                    "Choreographer callback never ran"
+                    "Choreographer callback never ran",
                 )
                 assertNotEquals(
                     awaitFrameTime,
                     Long.MAX_VALUE,
-                    "awaitFrameNanos callback never ran"
+                    "awaitFrameNanos callback never ran",
                 )
                 assertEquals(
                     choreographerTime,
                     awaitFrameTime,
-                    "expected same values from choreographer post and awaitFrameNanos"
+                    "expected same values from choreographer post and awaitFrameNanos",
                 )
             }
     }
@@ -362,7 +362,7 @@ class SideEffectTests : BaseComposeTest() {
                 assertSame(
                     recomposerClock,
                     rememberCoroutineScopeFrameClock,
-                    "rememberCoroutineScope clock"
+                    "rememberCoroutineScope clock",
                 )
             }
     }

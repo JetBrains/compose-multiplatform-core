@@ -60,7 +60,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
                 width = ANY_WIDTH,
                 height = ANY_HEIGHT,
                 implementationMode = implementationMode,
-                requestId = "${testName.methodName}[${requestNum.andIncrement}]"
+                requestId = "${testName.methodName}[${requestNum.andIncrement}]",
             )
 
     @Test

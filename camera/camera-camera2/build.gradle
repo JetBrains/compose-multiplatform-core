@@ -42,6 +42,7 @@ dependencies {
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.arch.core:core-common:2.2.0")
     implementation("androidx.lifecycle:lifecycle-common:2.3.1")
+    implementation(project(":camera:featurecombinationquery:featurecombinationquery"))
 
     annotationProcessor(libs.autoValue)
 

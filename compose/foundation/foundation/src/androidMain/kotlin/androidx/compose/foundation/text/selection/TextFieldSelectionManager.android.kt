@@ -74,9 +74,9 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
                             }
                     },
                     useTextDefault = true,
-                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
-            }
+            },
         )
     }
 }
@@ -89,7 +89,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         textItem(resources, item, enabled) {
             onClick()
@@ -100,7 +100,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
         item: TextContextMenuItems,
         enabled: Boolean,
-        onClick: suspend () -> Unit
+        onClick: suspend () -> Unit,
     ) {
         textFieldItem(item, enabled) {
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
@@ -124,7 +124,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
 
 internal fun TextFieldSelectionManager.contextMenuBuilder(
     contextMenuState: ContextMenuState,
-    itemsAvailability: State<MenuItemsAvailability>
+    itemsAvailability: State<MenuItemsAvailability>,
 ): ContextMenuScope.() -> Unit = {
     fun textFieldItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
         TextItem(contextMenuState, label, enabled, operation)

@@ -47,7 +47,7 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
     ) {
         val gmsRequest =
             RegistrationRequest(
@@ -73,7 +73,7 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
     override fun onClearCredentialRegistry(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
     ) {
         TODO("b/368092001 - Not yet implemented")
     }
@@ -89,7 +89,7 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
     private fun isGooglePlayServicesAvailable(context: Context, minApkVersion: Int): Int {
         return googleApiAvailability.isGooglePlayServicesAvailable(
             context,
-            /*minApkVersion=*/ minApkVersion
+            /*minApkVersion=*/ minApkVersion,
         )
     }
 

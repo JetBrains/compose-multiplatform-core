@@ -28,13 +28,13 @@ import androidx.privacysandbox.ui.core.SharedUiAdapter
 @ExperimentalFeatures.SharedUiPresentationApi
 internal class SharedUiSessionProxy(
     private val uiProviderVersion: Int,
-    private val origSession: Any
+    private val origSession: Any,
 ) : SharedUiAdapter.Session {
     private val targetClass =
         Class.forName(
                 "androidx.privacysandbox.ui.core.SharedUiAdapter\$Session",
                 /* initialize = */ false,
-                origSession.javaClass.classLoader
+                origSession.javaClass.classLoader,
             )
             .also { it.cast(origSession) }
 

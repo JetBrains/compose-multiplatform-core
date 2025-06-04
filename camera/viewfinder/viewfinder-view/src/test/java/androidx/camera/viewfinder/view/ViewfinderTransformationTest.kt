@@ -83,7 +83,7 @@ class ViewfinderTransformationsTest {
                 cropRectLeft = CROP_RECT.left.toFloat(),
                 cropRectTop = CROP_RECT.top.toFloat(),
                 cropRectRight = CROP_RECT.right.toFloat(),
-                cropRectBottom = CROP_RECT.bottom.toFloat()
+                cropRectBottom = CROP_RECT.bottom.toFloat(),
             )
 
         viewfinderTransform.setResolution(SURFACE_SIZE)
@@ -93,7 +93,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE,
             LayoutDirection.LTR,
             view,
-            ARBITRARY_ROTATION
+            ARBITRARY_ROTATION,
         )
 
         // Assert.
@@ -119,7 +119,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.height.toFloat() / MISMATCHED_CROP_RECT.height(),
             0f,
             0f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -131,7 +131,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.height.toFloat() / MISMATCHED_CROP_RECT.height(),
             100f,
             0f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -143,7 +143,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.height.toFloat() / MISMATCHED_CROP_RECT.height(),
             200f,
             0f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -155,7 +155,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.height.toFloat() / MISMATCHED_CROP_RECT.height(),
             0f,
             0f,
-            FRONT_CAMERA
+            FRONT_CAMERA,
         )
     }
 
@@ -167,7 +167,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.width.toFloat() / MISMATCHED_CROP_RECT.width(),
             0f,
             0f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -179,7 +179,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.width.toFloat() / MISMATCHED_CROP_RECT.width(),
             0f,
             -100f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -191,7 +191,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.width.toFloat() / MISMATCHED_CROP_RECT.width(),
             0f,
             -200f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -203,7 +203,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE.height.toFloat() / MISMATCHED_CROP_RECT.height(),
             200f,
             0f,
-            BACK_CAMERA
+            BACK_CAMERA,
         )
     }
 
@@ -213,7 +213,7 @@ class ViewfinderTransformationsTest {
         scale: Float,
         translationX: Float,
         translationY: Float,
-        isFrontCamera: Boolean
+        isFrontCamera: Boolean,
     ) {
         // Arrange.
         viewfinderTransform.transformationInfo =
@@ -225,7 +225,7 @@ class ViewfinderTransformationsTest {
                 cropRectLeft = MISMATCHED_CROP_RECT.left.toFloat(),
                 cropRectTop = MISMATCHED_CROP_RECT.top.toFloat(),
                 cropRectRight = MISMATCHED_CROP_RECT.right.toFloat(),
-                cropRectBottom = MISMATCHED_CROP_RECT.bottom.toFloat()
+                cropRectBottom = MISMATCHED_CROP_RECT.bottom.toFloat(),
             )
 
         viewfinderTransform.setResolution(FIT_SURFACE_SIZE)
@@ -237,7 +237,7 @@ class ViewfinderTransformationsTest {
             PREVIEW_VIEW_SIZE,
             layoutDirection,
             view,
-            ARBITRARY_ROTATION
+            ARBITRARY_ROTATION,
         )
 
         // Assert.
@@ -306,7 +306,7 @@ class ViewfinderTransformationsTest {
         isFrontCamera: Boolean,
         cropRect: Rect,
         previewViewSize: Size,
-        rotationDegrees: Int
+        rotationDegrees: Int,
     ) {
         viewfinderTransform.transformationInfo =
             TransformationInfo(
@@ -316,14 +316,14 @@ class ViewfinderTransformationsTest {
                 cropRectLeft = cropRect.left.toFloat(),
                 cropRectTop = cropRect.top.toFloat(),
                 cropRectRight = cropRect.right.toFloat(),
-                cropRectBottom = cropRect.bottom.toFloat()
+                cropRectBottom = cropRect.bottom.toFloat(),
             )
         viewfinderTransform.setResolution(SURFACE_SIZE)
         viewfinderTransform.transformView(
             previewViewSize,
             LayoutDirection.LTR,
             view,
-            ARBITRARY_ROTATION
+            ARBITRARY_ROTATION,
         )
     }
 }

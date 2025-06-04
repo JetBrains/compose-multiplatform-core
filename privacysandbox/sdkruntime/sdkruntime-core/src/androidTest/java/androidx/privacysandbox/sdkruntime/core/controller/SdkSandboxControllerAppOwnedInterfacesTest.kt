@@ -39,7 +39,7 @@ class SdkSandboxControllerAppOwnedInterfacesTest {
     fun getAppOwnedSdkSandboxInterfaces_whenApiNotAvailable_returnsEmptyList() {
         assumeFalse(
             "Requires AppOwnedInterfaces API not available",
-            isAppOwnedInterfacesApiAvailable()
+            isAppOwnedInterfacesApiAvailable(),
         )
 
         val controllerCompat = sdkSandboxControllerMockRule.controllerCompat

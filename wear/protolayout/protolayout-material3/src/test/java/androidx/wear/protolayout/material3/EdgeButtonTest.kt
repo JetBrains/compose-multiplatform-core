@@ -106,7 +106,7 @@ class EdgeButtonTest {
                         colors =
                             ButtonColors(
                                 containerColor = COLOR_SCHEME.tertiaryContainer,
-                                iconColor = COLOR_SCHEME.onTertiary
+                                iconColor = COLOR_SCHEME.onTertiary,
                             ),
                     ) {
                         icon(RES_ID)
@@ -235,7 +235,7 @@ class EdgeButtonTest {
             materialScope(CONTEXT, DEVICE_CONFIGURATION, allowDynamicTheme = false) {
                 iconEdgeButton(
                     onClick = CLICKABLE,
-                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
+                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                 ) {
                     icon(RES_ID)
                 }
@@ -244,11 +244,11 @@ class EdgeButtonTest {
             materialScope(
                 CONTEXT,
                 DEVICE_CONFIGURATION_WITH_OLD_RENDERER,
-                allowDynamicTheme = false
+                allowDynamicTheme = false,
             ) {
                 iconEdgeButton(
                     onClick = CLICKABLE,
-                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
+                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                 ) {
                     icon(RES_ID)
                 }

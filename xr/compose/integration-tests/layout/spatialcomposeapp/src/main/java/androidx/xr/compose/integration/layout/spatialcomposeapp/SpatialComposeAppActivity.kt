@@ -65,10 +65,9 @@ import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.EdgeOffset.Companion.inner
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
-import androidx.xr.compose.spatial.OrbiterSettings
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialDialogProperties
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -157,29 +156,21 @@ class SpatialComposeAppActivity : ComponentActivity() {
                 ) {
                     Text("Switch Space Mode")
                 }
-                Button(
-                    onClick = {
-                        val intent =
-                            Intent(this@SpatialComposeAppActivity, VideoPlayerActivity::class.java)
-                        startActivity(intent)
-                    }
-                ) {
+                Button(onClick = { startActivity<VideoPlayerActivity>() }) {
                     Text("Launch Video Player")
                 }
-                Button(
-                    onClick = {
-                        val intent =
-                            Intent(
-                                this@SpatialComposeAppActivity,
-                                WindowManagerJxrTestActivity::class.java
-                            )
-                        startActivity(intent)
-                    }
-                ) {
+                Button(onClick = { startActivity<WindowManagerJxrTestActivity>() }) {
                     Text("Launch Window Manager JXR Test")
+                }
+                Button(onClick = { startActivity<StateTestAppActivity>() }) {
+                    Text("Launch Application State Test")
                 }
             }
         }
+    }
+
+    private inline fun <reified T : ComponentActivity> startActivity() {
+        startActivity(Intent(this, T::class.java))
     }
 
     @Composable
@@ -191,14 +182,15 @@ class SpatialComposeAppActivity : ComponentActivity() {
             SpatialCurvedRow(alignment = SpatialAlignment.BottomCenter, curveRadius = curveRadius) {
                 SpatialColumn(modifier = SubspaceModifier.weight(0.2f).fillMaxHeight()) {
                     Orbiter(
-                        position = OrbiterEdge.Start,
-                        offset = inner(8.dp),
+                        position = ContentEdge.Start,
+                        offset = 8.dp,
                         shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
+                        offsetType = OrbiterOffsetType.InnerEdge,
                     ) {
                         Surface {
                             Text(
                                 text = "Subspace Orbiter",
-                                modifier = Modifier.width(80.dp).padding(8.dp)
+                                modifier = Modifier.width(80.dp).padding(8.dp),
                             )
                         }
                     }
@@ -207,7 +199,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
-                        text = "Panel Bottom Left (View)"
+                        text = "Panel Bottom Left (View)",
                     )
                 }
                 SpatialColumn(
@@ -218,8 +210,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
                     MainPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth())
                     SpatialPanel(
                         modifier = SubspaceModifier.height(400.dp).fillMaxWidth(),
-                        intent =
-                            Intent(this@SpatialComposeAppActivity, AnotherActivity::class.java),
+                        intent = Intent(this@SpatialComposeAppActivity, AnotherActivity::class.java),
                     )
                 }
                 SpatialColumn(modifier = SubspaceModifier.weight(0.2f).fillMaxHeight()) {
@@ -260,11 +251,11 @@ class SpatialComposeAppActivity : ComponentActivity() {
             }
 
             Orbiter(
-                position = OrbiterEdge.End,
+                position = ContentEdge.End,
                 offset = 24.dp,
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
-                settings = OrbiterSettings(shouldRenderInNonSpatial = false),
                 elevation = SpatialElevationLevel.Level2,
+                shouldRenderInNonSpatial = false,
             ) {
                 IconButton(
                     onClick = { showArrows = !showArrows },
@@ -275,10 +266,10 @@ class SpatialComposeAppActivity : ComponentActivity() {
             }
 
             Orbiter(
-                position = OrbiterEdge.Bottom,
+                position = ContentEdge.Bottom,
                 offset = 24.dp,
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
-                settings = OrbiterSettings(shouldRenderInNonSpatial = false),
+                shouldRenderInNonSpatial = false,
             ) {
                 ToggleButton(
                     checked = moveResizeLocked,
@@ -307,11 +298,11 @@ class SpatialComposeAppActivity : ComponentActivity() {
             content()
 
             Orbiter(
-                position = OrbiterEdge.End,
+                position = ContentEdge.End,
                 offset = 24.dp,
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
-                settings = OrbiterSettings(shouldRenderInNonSpatial = false),
                 elevation = SpatialElevationLevel.Level2,
+                shouldRenderInNonSpatial = false,
             ) {
                 IconButton(onClick = {}, modifier = Modifier.background(Color.Gray)) {
                     Icon(imageVector = Icons.Filled.Check, contentDescription = "Add highlight")
@@ -324,14 +315,11 @@ class SpatialComposeAppActivity : ComponentActivity() {
             if (showDialog) {
                 SpatialDialog(
                     onDismissRequest = { showDialog = false },
-                    properties =
-                        SpatialDialogProperties(
-                            spatialElevationLevel = SpatialElevationLevel(128.dp)
-                        ),
+                    properties = SpatialDialogProperties(elevation = 128.dp),
                 ) {
                     Surface(
                         color = Color.White,
-                        modifier = Modifier.clip(RoundedCornerShape(5.dp))
+                        modifier = Modifier.clip(RoundedCornerShape(5.dp)),
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),

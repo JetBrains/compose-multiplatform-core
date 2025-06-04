@@ -127,7 +127,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
         method: PsiMethod,
         owner: String,
         name: String,
-        desc: String
+        desc: String,
     ): ApiRequirement {
         val apiDatabase = apiDatabase ?: return NO_API_REQUIREMENT
         val flagString = findFlagStringForElement(method)
@@ -372,7 +372,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
                 evaluator.getMethodDescription(
                     method,
                     includeName = false,
-                    includeReturn = false
+                    includeReturn = false,
                 ) // Couldn't compute description of method for some reason; probably
                     // failure to resolve parameter types
                     ?: return
@@ -611,7 +611,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
                         owner,
                         name,
                         desc,
-                        context.sourceSetType
+                        context.sourceSetType,
                     )
             ) {
                 return
@@ -684,7 +684,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
             method: PsiMethod,
             api: ApiRequirement,
             reference: UElement,
-            location: Location
+            location: Location,
         ) {
             if (call.containedInClassWithApiRequirement(api)) return
 
@@ -714,7 +714,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
         private fun createCallFix(
             method: PsiMethod,
             call: UCallExpression,
-            api: ApiRequirement
+            api: ApiRequirement,
         ): LintFix? {
             val callPsi = call.sourcePsi ?: return null
             val isKotlin = isKotlin(callPsi.language)
@@ -765,7 +765,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
             node: UExpression,
             actualType: PsiType,
             expectedType: PsiType,
-            actualTypeApi: ApiRequirement
+            actualTypeApi: ApiRequirement,
         ): LintFix? {
             val (wrapperMethodName, wrapperMethod) = generateCastingMethod(actualType, expectedType)
             val containingClass = node.getContainingUClass() ?: return null
@@ -791,7 +791,7 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
             node: UElement,
             replacementCall: String,
             insertionPoint: Location?,
-            insertionSource: String?
+            insertionSource: String?,
         ): LintFix {
             val fix = fix().name("Extract to static inner class").composite()
 
@@ -1133,7 +1133,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
                                 actualType !is PsiEllipsisType &&
                                 isInvalidCast(
                                     expectedType.canonicalTextForLanguage(isKotlin),
-                                    actualType.canonicalTextForLanguage(isKotlin)
+                                    actualType.canonicalTextForLanguage(isKotlin),
                                 )
                         ) {
                             expectedType
@@ -1229,17 +1229,13 @@ ${wrapperMethodBody.prependIndent("                            ")}
                         .trimIndent()
                 }
 
-            return Triple(
-                wrapperMethodName,
-                paramTypes,
-                methodBlock,
-            )
+            return Triple(wrapperMethodName, paramTypes, methodBlock)
         }
 
         /** Creates a method to cast from [fromType] to [toType]. */
         private fun generateCastingMethod(
             fromType: PsiType,
-            toType: PsiType
+            toType: PsiType,
         ): Pair<String, String> {
             val fromTypeStr = fromType.presentableText
             val toTypeStr = toType.presentableText
@@ -1255,7 +1251,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
                     }
 
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
 
@@ -1271,7 +1267,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
             fromType: String,
             toType: String,
             knownFromTypeApi: ApiRequirement? = null,
-            knownToTypeApi: ApiRequirement? = null
+            knownToTypeApi: ApiRequirement? = null,
         ): Boolean {
             // Casting to object is always safe
             if (toType == "java.lang.Object") return false
@@ -1306,7 +1302,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
 
         private fun getInheritanceChain(
             derivedClass: PsiClassType,
-            baseClass: PsiClassType?
+            baseClass: PsiClassType?,
         ): List<PsiClassType>? {
             if (derivedClass == baseClass) {
                 return emptyList()
@@ -1320,7 +1316,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
             derivedClass: PsiClassType,
             baseClass: PsiClassType?,
             visited: HashSet<PsiType>,
-            depth: Int
+            depth: Int,
         ): MutableList<PsiClassType>? {
             if (derivedClass == baseClass) {
                 return ArrayList(depth)
@@ -1346,7 +1342,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
                                 context,
                                 annotation,
                                 ATTR_VALUE,
-                                API_LEVEL_UNKNOWN_OR_1.toLong()
+                                API_LEVEL_UNKNOWN_OR_1.toLong(),
                             )
                             .toInt()
                     if (api <= 1) {
@@ -1356,7 +1352,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
                                     context,
                                     annotation,
                                     "api",
-                                    API_LEVEL_UNKNOWN_OR_1.toLong()
+                                    API_LEVEL_UNKNOWN_OR_1.toLong(),
                                 )
                                 .toInt()
                     }
@@ -1422,7 +1418,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
      */
     private fun PsiElement.findParent(
         withSelf: Boolean,
-        predicate: (PsiElement?) -> Boolean
+        predicate: (PsiElement?) -> Boolean,
     ): PsiElement? {
         var current = if (withSelf) this else this.parent
         while (current != null && !predicate(current)) {
@@ -1499,8 +1495,8 @@ ${wrapperMethodBody.prependIndent("                            ")}
                     Severity.ERROR,
                     Implementation(
                         ClassVerificationFailureDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
-                    )
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
                 )
                 .setOptions(listOf(METHOD_CALL_ALLUSAGES_OPTION))
                 .setAndroidSpecific(true)
@@ -1527,8 +1523,8 @@ ${wrapperMethodBody.prependIndent("                            ")}
                     Severity.ERROR,
                     Implementation(
                         ClassVerificationFailureDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
-                    )
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
                 )
                 .setOptions(listOf(IMPLICIT_CAST_ALLUSAGES_OPTION))
                 .setAndroidSpecific(true)

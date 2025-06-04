@@ -78,7 +78,7 @@ private class FocusGroupPropertiesNode :
             val targetViewFocused =
                 embeddedView.requestInteropFocus(
                     direction = requestedFocusDirection.toAndroidFocusDirection(),
-                    rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
+                    rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView),
                 )
             if (!targetViewFocused) {
                 cancelFocusChange()
@@ -111,13 +111,13 @@ private class FocusGroupPropertiesNode :
                             findNextFocus(
                                 hostView as ViewGroup,
                                 focusedChild,
-                                androidFocusDirection
+                                androidFocusDirection,
                             )
                         } else {
                             findNextFocusFromRect(
                                 hostView as ViewGroup,
                                 focusedRect,
-                                androidFocusDirection
+                                androidFocusDirection,
                             )
                         }
                     }
@@ -183,7 +183,7 @@ private class FocusGroupPropertiesNode :
                         force = false,
                         refreshFocusEvents = true,
                         clearOwnerFocus = false,
-                        focusDirection = Exit
+                        focusDirection = Exit,
                     )
                 }
             }
@@ -260,7 +260,7 @@ private fun View.containsDescendant(other: View): Boolean {
 private fun getCurrentlyFocusedRect(
     focusOwner: FocusOwner,
     hostView: View,
-    embeddedView: View
+    embeddedView: View,
 ): Rect? {
     val hostViewOffset = IntArray(2).also { hostView.getLocationOnScreen(it) }
     val embeddedViewOffset = IntArray(2).also { embeddedView.getLocationOnScreen(it) }
@@ -269,6 +269,6 @@ private fun getCurrentlyFocusedRect(
         focusedRect.left.toInt() + hostViewOffset[0] - embeddedViewOffset[0],
         focusedRect.top.toInt() + hostViewOffset[1] - embeddedViewOffset[1],
         focusedRect.right.toInt() + hostViewOffset[0] - embeddedViewOffset[0],
-        focusedRect.bottom.toInt() + hostViewOffset[1] - embeddedViewOffset[1]
+        focusedRect.bottom.toInt() + hostViewOffset[1] - embeddedViewOffset[1],
     )
 }

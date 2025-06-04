@@ -24,19 +24,19 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.BasePanelEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.PixelDimensions
-import androidx.xr.scenecore.PlaneSemantic
-import androidx.xr.scenecore.PlaneType
+import androidx.xr.scenecore.PlaneOrientation
+import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.samples.commontestview.DebugTextLinearView
 import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
@@ -98,7 +98,12 @@ class TransformationTestsActivity : AppCompatActivity() {
             GltfModelEntity.create(session, anchorModel, Pose.Identity)
 
         anchor =
-            AnchorEntity.create(session, Dimensions(0.1f, 0.1f), PlaneType.ANY, PlaneSemantic.ANY)
+            AnchorEntity.create(
+                session,
+                FloatSize3d(0.1f, 0.1f),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
+            )
         anchor!!.addChild(anchoredTransformWidgetEntity)
         anchoredTransformWidgetEntity.setPose(Pose.Identity)
 
@@ -144,7 +149,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                     if (panel == anchorDebugPanel) {
                         anchorDebugPanel.view.setLine(
                             "Anchor State",
-                            anchorStateToString(anchorState)
+                            anchorStateToString(anchorState),
                         )
                         if (anchorState != AnchorEntity.State.ANCHORED) {
                             continue
@@ -156,7 +161,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 updateDebugTextPanel(
                     mainActivityDebugView,
                     session.scene.mainPanelEntity,
-                    anchorState
+                    anchorState,
                 )
             }
         }
@@ -193,7 +198,7 @@ class TransformationTestsActivity : AppCompatActivity() {
     private fun createDebugPanelAndLabel(
         name: String,
         trackedEntity: Entity,
-        labelDimensions: Dimensions = Dimensions(140f, 50f),
+        labelDimensions: FloatSize3d = FloatSize3d(140f, 50f),
     ): DebugTextPanel {
         // Set position of the panel to be next to other panels created previously
         val panelPose = Pose(Vector3(-1.0f + debugTextPanelsToUpdate.size * 0.6f, -0.4f, 0.1f))
@@ -205,7 +210,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 session,
                 session.scene.activitySpace,
                 name = name,
-                pose = panelPose
+                pose = panelPose,
             )
         debugPanel.trackedEntity = trackedEntity
         debugTextPanelsToUpdate.add(debugPanel)
@@ -218,7 +223,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 trackedEntity,
                 name = name,
                 pixelDimensions =
-                    PixelDimensions(
+                    IntSize2d(
                         (labelDimensions.width * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
                         (labelDimensions.height * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
                     ),
@@ -242,7 +247,7 @@ class TransformationTestsActivity : AppCompatActivity() {
             }
         view.setLine("localPose", localPose)
 
-        view.setLine("worldSpacePose", trackedEntity.getActivitySpacePose().toFormattedString())
+        view.setLine("worldSpacePose", trackedEntity.activitySpacePose.toFormattedString())
         view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
 
         val activitySpacePose =
@@ -287,7 +292,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         moonDragon.setParent(planetDragon)
 
         // Create debug panels for the sun, planet, and moon
-        val largeLabelDimensions = Dimensions(700f, 200f)
+        val largeLabelDimensions = FloatSize3d(700f, 200f)
         createDebugPanelAndLabel("sunDragon", sunDragon, largeLabelDimensions)
         createDebugPanelAndLabel("planetDragon", planetDragon, largeLabelDimensions)
         createDebugPanelAndLabel("moonDragon", moonDragon, largeLabelDimensions)

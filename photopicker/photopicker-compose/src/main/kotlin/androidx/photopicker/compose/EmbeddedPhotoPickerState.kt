@@ -218,7 +218,7 @@ public interface EmbeddedPhotoPickerState {
 @ExperimentalPhotoPickerComposeApi
 public abstract class AbstractEmbeddedPhotoPickerState(
     isExpanded: Boolean = false,
-    media: Set<Uri> = emptySet<Uri>()
+    media: Set<Uri> = emptySet<Uri>(),
 ) : EmbeddedPhotoPickerState {
 
     private val openSession: AtomicReference<EmbeddedPhotoPickerSession?> = AtomicReference(null)
@@ -459,7 +459,7 @@ internal interface ClientCallbacks {
 @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 15)
 internal class EmbeddedPhotoPickerStateImpl(
     isExpanded: Boolean = false,
-    selectedMedia: Set<Uri> = emptySet()
+    selectedMedia: Set<Uri> = emptySet(),
 ) : AbstractEmbeddedPhotoPickerState(isExpanded, selectedMedia) {
 
     companion object {

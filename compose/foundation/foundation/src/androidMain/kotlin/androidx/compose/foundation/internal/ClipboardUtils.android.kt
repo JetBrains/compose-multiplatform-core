@@ -101,7 +101,7 @@ internal fun AnnotatedString.convertToCharSequence(): CharSequence {
             Annotation("androidx.compose.text.SpanStyle", encodeHelper.encodedString()),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
     return spannableString
@@ -449,7 +449,7 @@ internal class DecodeHelper(string: String) {
         return Shadow(
             color = decodeColor(),
             offset = Offset(decodeFloat(), decodeFloat()),
-            blurRadius = decodeFloat()
+            blurRadius = decodeFloat(),
         )
     }
 
@@ -493,7 +493,7 @@ private class MutableSpanStyle(
     var localeList: LocaleList? = null,
     var background: Color = Color.Unspecified,
     var textDecoration: TextDecoration? = null,
-    var shadow: Shadow? = null
+    var shadow: Shadow? = null,
 ) {
     fun toSpanStyle(): SpanStyle {
         return SpanStyle(
@@ -510,7 +510,7 @@ private class MutableSpanStyle(
             localeList = localeList,
             background = background,
             textDecoration = textDecoration,
-            shadow = shadow
+            shadow = shadow,
         )
     }
 }

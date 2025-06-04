@@ -39,7 +39,7 @@ public fun CircularProgressIndicator(
         update = {
             this.set(modifier) { this.modifier = it }
             this.set(color) { this.color = it }
-        }
+        },
     )
 }
 

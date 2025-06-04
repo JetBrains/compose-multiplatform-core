@@ -24,33 +24,36 @@ import androidx.annotation.RestrictTo
  * An instance of this class should be passed to [Session.configure()] to modify the current
  * configuration.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Config
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 constructor(
     public val planeTracking: PlaneTrackingMode = PlaneTrackingMode.DISABLED,
     public val handTracking: HandTrackingMode = HandTrackingMode.DISABLED,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val deviceTracking: DeviceTrackingMode = DeviceTrackingMode.DISABLED,
     public val depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
     public val anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
-    public val headTracking: HeadTrackingMode = HeadTrackingMode.DISABLED,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val geospatial: GeospatialMode = GeospatialMode.DISABLED,
 ) {
 
+    @JvmOverloads
     public constructor(
         planeTracking: PlaneTrackingMode = PlaneTrackingMode.DISABLED,
         handTracking: HandTrackingMode = HandTrackingMode.DISABLED,
+        headTracking: HeadTrackingMode = HeadTrackingMode.DISABLED,
         depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
         anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
-        headTracking: HeadTrackingMode = HeadTrackingMode.DISABLED,
     ) : this(
         planeTracking,
         handTracking,
+        headTracking.toDeviceTrackingMode(),
         depthEstimation,
         anchorPersistence,
-        headTracking,
         GeospatialMode.DISABLED,
     )
+
+    public val headTracking: HeadTrackingMode = deviceTracking.toHeadTrackingMode()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -58,9 +61,9 @@ constructor(
 
         if (planeTracking != other.planeTracking) return false
         if (handTracking != other.handTracking) return false
+        if (deviceTracking != other.deviceTracking) return false
         if (depthEstimation != other.depthEstimation) return false
         if (anchorPersistence != other.anchorPersistence) return false
-        if (headTracking != other.headTracking) return false
         if (geospatial != other.geospatial) return false
 
         return true
@@ -69,9 +72,9 @@ constructor(
     override fun hashCode(): Int {
         var result = planeTracking.hashCode()
         result = 31 * result + handTracking.hashCode()
+        result = 31 * result + deviceTracking.hashCode()
         result = 31 * result + depthEstimation.hashCode()
         result = 31 * result + anchorPersistence.hashCode()
-        result = 31 * result + headTracking.hashCode()
         result = 31 * result + geospatial.hashCode()
         return result
     }
@@ -80,16 +83,16 @@ constructor(
     public fun copy(
         planeTracking: PlaneTrackingMode = this.planeTracking,
         handTracking: HandTrackingMode = this.handTracking,
+        headTracking: HeadTrackingMode = this.headTracking,
         depthEstimation: DepthEstimationMode = this.depthEstimation,
         anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
-        headTracking: HeadTrackingMode = this.headTracking,
     ): Config {
         return Config(
             planeTracking = planeTracking,
             handTracking = handTracking,
+            deviceTracking = headTracking.toDeviceTrackingMode(),
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
-            headTracking = headTracking,
             geospatial = this.geospatial,
         )
     }
@@ -99,17 +102,17 @@ constructor(
     public fun copy(
         planeTracking: PlaneTrackingMode = this.planeTracking,
         handTracking: HandTrackingMode = this.handTracking,
+        deviceTracking: DeviceTrackingMode = this.deviceTracking,
         depthEstimation: DepthEstimationMode = this.depthEstimation,
         anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
-        headTracking: HeadTrackingMode = this.headTracking,
         geospatial: GeospatialMode = this.geospatial,
     ): Config {
         return Config(
             planeTracking = planeTracking,
             handTracking = handTracking,
+            deviceTracking = deviceTracking,
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
-            headTracking = headTracking,
             geospatial = geospatial,
         )
     }
@@ -142,7 +145,7 @@ constructor(
     /**
      * Feature that allows tracking of the user's hands and hand joints.
      *
-     * Setting this feature to [HandTrackingMode.ENABLED] requires that the `HAND_TRACKING` Android
+     * Setting this feature to [HandTrackingMode.BOTH] requires that the `HAND_TRACKING` Android
      * permission is granted by the calling application.
      */
     public class HandTrackingMode
@@ -153,21 +156,82 @@ constructor(
             /** Hands will not be tracked. */
             @JvmField public val DISABLED: HandTrackingMode = HandTrackingMode(0)
             /**
-             * Hands will be tracked. Note that setting this mode will consume additional runtime
-             * resources.
+             * Both the left and right hands will be tracked. Note that setting this mode will
+             * consume additional runtime resources.
              */
-            @JvmField public val ENABLED: HandTrackingMode = HandTrackingMode(1)
+            @JvmField public val BOTH: HandTrackingMode = HandTrackingMode(1)
         }
 
         override fun toString(): String {
-            return "HandTracking_" + if (mode == 0) "DISABLED" else "ENABLED"
+            return "HandTracking_" + if (mode == 0) "DISABLED" else "BOTH"
+        }
+    }
+
+    /**
+     * Feature that allows tracking of the device.
+     *
+     * This feature does not require any additional application permissions.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public class DeviceTrackingMode
+    private constructor(
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
+    ) {
+        public companion object {
+            /** Device pose will not be tracked. */
+            @JvmField public val DISABLED: DeviceTrackingMode = DeviceTrackingMode(0)
+            /**
+             * Device pose will be tracked and the last known pose from the system at the time of
+             * runtime update will be provided. Note that there is generally a delay between the
+             * actual device pose and the pose provided by the system by the time of the update.
+             */
+            @JvmField public val LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(1)
+        }
+
+        public fun toHeadTrackingMode(): HeadTrackingMode {
+            return if (mode == 0) HeadTrackingMode.DISABLED else HeadTrackingMode.LAST_KNOWN
+        }
+
+        override fun toString(): String {
+            return "DeviceTracking_" + if (mode == 0) "DISABLED" else "LAST_KNOWN"
+        }
+    }
+
+    /**
+     * Feature that allows tracking of the user's head pose.
+     *
+     * Setting this feature to [HeadTrackingMode.LAST_KNOWN] requires that the `HEAD_TRACKING`
+     * Android permission is granted by the calling application.
+     */
+    public class HeadTrackingMode
+    private constructor(
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
+    ) {
+        public companion object {
+            /** Head pose will not be tracked. */
+            @JvmField public val DISABLED: HeadTrackingMode = HeadTrackingMode(0)
+            /**
+             * Head pose will be tracked and the last known pose from the system at the time of
+             * runtime update will be provided. Note that there is generally a delay between the
+             * actual head pose and the pose provided by the system by the time of the update.
+             */
+            @JvmField public val LAST_KNOWN: HeadTrackingMode = HeadTrackingMode(1)
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun toDeviceTrackingMode(): DeviceTrackingMode {
+            return if (mode == 0) DeviceTrackingMode.DISABLED else DeviceTrackingMode.LAST_KNOWN
+        }
+
+        override fun toString(): String {
+            return "HeadTracking_" + if (mode == 0) "DISABLED" else "LAST_KNOWN"
         }
     }
 
     /**
      * Feature that allows more accurate information about scene depth and meshes.
      *
-     * Setting this feature to [DepthEstimationMode.ENABLED] requires that the
+     * Setting this feature to [DepthEstimationMode.SMOOTH_AND_RAW] requires that the
      * `SCENE_UNDERSTANDING_FINE` Android permission is granted by the calling application.
      */
     public class DepthEstimationMode
@@ -177,20 +241,30 @@ constructor(
         public companion object {
             /** No information about scene depth will be provided. */
             @JvmField public val DISABLED: DepthEstimationMode = DepthEstimationMode(0)
+
+            /** Depth estimation will be enabled with raw depth and confidence. */
+            @JvmField public val RAW_ONLY: DepthEstimationMode = DepthEstimationMode(1)
+
             /**
-             * Depth estimation will be enabled. Note that setting this mode will consume additional
-             * runtime resources.
+             * Depth estimation will be enabled with both raw and smooth depth and confidence. Note
+             * that setting this mode will consume additional runtime resources.
              */
-            @JvmField public val ENABLED: DepthEstimationMode = DepthEstimationMode(1)
+            @JvmField public val SMOOTH_AND_RAW: DepthEstimationMode = DepthEstimationMode(2)
         }
 
         override fun toString(): String {
-            return "DepthEstimation_" + if (mode == 0) "DISABLED" else "ENABLED"
+            return "DepthEstimation_" +
+                when (mode) {
+                    0 -> "DISABLED"
+                    1 -> "RAW_ONLY"
+                    2 -> "SMOOTH_AND_RAW"
+                    else -> "UNKNOWN"
+                }
         }
     }
 
     /**
-     * Feature that allows [Anchor]'s to be peristed through sessions.
+     * Feature that allows anchors to be persisted through sessions.
      *
      * This feature does not require any additional application permissions.
      */
@@ -201,30 +275,12 @@ constructor(
         public companion object {
             /** Anchors cannot be persisted. */
             @JvmField public val DISABLED: AnchorPersistenceMode = AnchorPersistenceMode(0)
-            /** Anchors may be persisted. */
-            @JvmField public val ENABLED: AnchorPersistenceMode = AnchorPersistenceMode(1)
+            /** Anchors may be persisted and will be saved in the application's local storage. */
+            @JvmField public val LOCAL: AnchorPersistenceMode = AnchorPersistenceMode(1)
         }
 
         override fun toString(): String {
-            return "AnchorPersistence_" + if (mode == 0) "DISABLED" else "ENABLED"
-        }
-    }
-
-    /**
-     * Feature that allows tracking of the user's head pose.
-     *
-     * Setting this feature to [HeadTrackingMode.ENABLED] requires that the `HEAD_TRACKING` Android
-     * permission is granted by the calling application.
-     */
-    public class HeadTrackingMode
-    private constructor(
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
-        public companion object {
-            /** Head pose will not be tracked. */
-            @JvmField public val DISABLED: HeadTrackingMode = HeadTrackingMode(0)
-            /** Head pose will be tracked. */
-            @JvmField public val ENABLED: HeadTrackingMode = HeadTrackingMode(1)
+            return "AnchorPersistence_" + if (mode == 0) "DISABLED" else "LOCAL"
         }
     }
 
@@ -246,7 +302,7 @@ constructor(
      *   generate high accuracy poses. GPS accuracy may be low in dense urban environments and
      *   indoors.
      *
-     * Setting this feature to [GeospatialMode.ENABLED] requires TODO: b/393500151 - permissions.
+     * Setting this feature to [GeospatialMode.EARTH] requires TODO: b/393500151 - permissions.
      *
      * Note that setting this mode will consume additional runtime resources.
      */
@@ -276,7 +332,7 @@ constructor(
              * - Include the Google Play Services Location Library as a dependency for your app. See
              *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
              *   for instructions on how to include this library in your app. If this library is not
-             *   linked, [session.configure] returns
+             *   linked, [Session.configure] returns
              *   [SessionResultGooglePlayServicesLocationLibraryNotLinked]
              * - Request and be granted the
              *   [ACCESS_FINE_LOCATION permission](https://developer.android.com/training/location/permissions);
@@ -301,7 +357,7 @@ constructor(
              * to check if the current device and selected camera support enabling this mode. These
              * checks are done in the call to [Session.configure].
              */
-            @JvmField public val ENABLED: GeospatialMode = GeospatialMode(1)
+            @JvmField public val EARTH: GeospatialMode = GeospatialMode(1)
         }
     }
 }

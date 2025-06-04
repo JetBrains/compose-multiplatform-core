@@ -35,7 +35,8 @@ public actual class ThreadLocal<T> {
     private val threadId = currentThreadId()
 
     public actual fun get(): T? {
-        @Suppress("UNCHECKED_CAST") return ThreadLocalData.threadLocalMap[threadId] as? T
+        @Suppress("UNCHECKED_CAST")
+        return ThreadLocalData.threadLocalMap[threadId] as? T
     }
 
     public actual fun set(value: T?) {

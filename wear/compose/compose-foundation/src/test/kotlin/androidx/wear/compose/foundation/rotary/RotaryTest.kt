@@ -133,7 +133,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 100,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
         rotaryFlingHandler.observeEvent(0, 0f)
 
@@ -157,7 +157,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 100,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
         rotaryFlingHandler.observeEvent(0, 0f)
 
@@ -200,7 +200,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 10,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
 
         // Sending events to simulate rotary scroll
@@ -213,7 +213,7 @@ class RotaryFlingHandlerTest {
             this,
             { beforeFlingCalled = true },
             RotaryScrollLogic(null, null, false),
-            {}
+            {},
         )
 
         delay(1000L)
@@ -257,7 +257,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 10,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
 
         // Sending events to simulate rotary scroll
@@ -270,7 +270,7 @@ class RotaryFlingHandlerTest {
             this,
             { beforeFlingCalled = true },
             RotaryScrollLogic(null, null, false),
-            {}
+            {},
         )
 
         delay(1000L)
@@ -324,7 +324,7 @@ class RotaryFlingTest {
                 advanceEventTime(10)
                 rotateToScrollVertically(itemSizePx * 6)
             },
-            lowRes = lowRes
+            lowRes = lowRes,
         )
 
         rule.runOnIdle {
@@ -337,7 +337,7 @@ class RotaryFlingTest {
     private fun testScroll(
         beforeScroll: () -> Unit,
         rotaryAction: RotaryInjectionScope.() -> Unit,
-        lowRes: Boolean
+        lowRes: Boolean,
     ) {
         rule.setContent {
             state = rememberLazyListState()
@@ -349,7 +349,7 @@ class RotaryFlingTest {
                             .testTag(TEST_TAG)
                             .rotaryScrollable(
                                 RotaryScrollableDefaults.behavior(state),
-                                focusRequester
+                                focusRequester,
                             ),
                     state = state,
                 ) {
@@ -376,11 +376,7 @@ class RotaryFlingTest {
 
         Mockito.doReturn(mockPackageManager).`when`(mockContext).packageManager
 
-        CompositionLocalProvider(
-            LocalContext provides mockContext,
-        ) {
-            content()
-        }
+        CompositionLocalProvider(LocalContext provides mockContext) { content() }
     }
 
     val TEST_TAG = "test-tag"

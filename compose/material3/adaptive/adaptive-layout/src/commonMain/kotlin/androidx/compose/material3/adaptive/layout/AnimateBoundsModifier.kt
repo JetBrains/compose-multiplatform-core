@@ -41,7 +41,7 @@ internal fun Modifier.animateBounds(
     animationSpec: FiniteAnimationSpec<IntRect>,
     scaleConversion: (IntOffset) -> IntOffset,
     lookaheadScope: LookaheadScope,
-    enabled: Boolean
+    enabled: Boolean,
 ) =
     this.then(
         AnimateBoundsElement(
@@ -58,7 +58,7 @@ private class AnimateBoundsElement(
     private val animationSpec: FiniteAnimationSpec<IntRect>,
     private val scaleConversion: (IntOffset) -> IntOffset,
     private val lookaheadScope: LookaheadScope,
-    private val enabled: Boolean
+    private val enabled: Boolean,
 ) : ModifierNodeElement<AnimateBoundsNode>() {
     private val inspectorInfo = debugInspectorInfo {
         name = "animateBounds"
@@ -121,7 +121,7 @@ private class AnimateBoundsNode(
     animationSpec: FiniteAnimationSpec<IntRect>,
     var scaleConversion: (IntOffset) -> IntOffset,
     var lookaheadScope: LookaheadScope,
-    var enabled: Boolean
+    var enabled: Boolean,
 ) : ApproachLayoutModifierNode, Modifier.Node() {
     val boundsTracker = BoundsTracker(animationSpec)
 
@@ -140,7 +140,7 @@ private class AnimateBoundsNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult =
         // MeasureScope.measure() will only be called during lookahead. Perform a "no-op" measuring
         // here and update target size and offset.
@@ -159,7 +159,7 @@ private class AnimateBoundsNode(
 
     override fun ApproachMeasureScope.approachMeasure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Use the current animating fraction to get the approach size and offset of the current
         // animating layout toward the target size and offset updated in measure().

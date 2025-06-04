@@ -61,7 +61,7 @@ public abstract class GlanceTemplateAppWidget : GlanceAppWidget() {
                 HORIZONTAL_S,
                 HORIZONTAL_M,
                 HORIZONTAL_L,
-                HORIZONTAL_XL
+                HORIZONTAL_XL,
             )
         )
 
@@ -70,11 +70,7 @@ public abstract class GlanceTemplateAppWidget : GlanceAppWidget() {
 
     final override suspend fun provideGlance(context: Context, id: GlanceId): Nothing =
         provideContent {
-            CompositionLocalProvider(
-                LocalTemplateMode provides mode(),
-            ) {
-                TemplateContent()
-            }
+            CompositionLocalProvider(LocalTemplateMode provides mode()) { TemplateContent() }
         }
 
     @Composable @GlanceComposable public abstract fun TemplateContent()

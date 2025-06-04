@@ -77,7 +77,7 @@ class CallRepository {
                     Log.e(
                         LOG_TAG,
                         "onServiceConnected: Error casting IBinder to LocalIcsBinder.Connector",
-                        e
+                        e,
                     )
                     mIsBound = false // Failed to get binder
                     // Might need to unbind here if appropriate
@@ -128,7 +128,7 @@ class CallRepository {
                 applicationContext.bindService(
                     intent,
                     mServiceConnection, // Use the stable member variable
-                    BIND_AUTO_CREATE
+                    BIND_AUTO_CREATE,
                 )
 
             if (didBind) {
@@ -138,7 +138,7 @@ class CallRepository {
             } else {
                 Log.e(
                     LOG_TAG,
-                    "bindService call returned false. Service might not be" + " available."
+                    "bindService call returned false. Service might not be" + " available.",
                 )
                 // Failed to initiate binding. Stop service
                 applicationContext.stopService(intent)
@@ -148,14 +148,14 @@ class CallRepository {
                 LOG_TAG,
                 "connectService: Failed to start/bind service due to" +
                     " SecurityException. Check permissions.",
-                e
+                e,
             )
             // Handle lack of permissions (rare for same-app service)
         } catch (e: IllegalStateException) {
             Log.e(
                 LOG_TAG,
                 "connectService: Failed to start/bind service due to" + " IllegalStateException.",
-                e
+                e,
             )
             // Can happen if trying to startForegroundService from background without permission
         } catch (e: Exception) {
@@ -182,7 +182,7 @@ class CallRepository {
                 Log.w(
                     LOG_TAG,
                     "disconnectService: ServiceConnection not registered?" + " Already unbound?",
-                    e
+                    e,
                 )
             }
             mIsBound = false

@@ -236,7 +236,7 @@ class ColorScheme(
                     "surfaceContainerHighest,\n" +
                     "surfaceContainerLow,\n" +
                     "surfaceContainerLowest,)"
-            )
+            ),
     )
     constructor(
         primary: Color,
@@ -375,7 +375,7 @@ class ColorScheme(
         tertiaryFixed: Color = this.tertiaryFixed,
         tertiaryFixedDim: Color = this.tertiaryFixedDim,
         onTertiaryFixed: Color = this.onTertiaryFixed,
-        onTertiaryFixedVariant: Color = this.onTertiaryFixedVariant
+        onTertiaryFixedVariant: Color = this.onTertiaryFixedVariant,
     ): ColorScheme =
         ColorScheme(
             primary = primary,
@@ -432,7 +432,7 @@ class ColorScheme(
         message =
             "Maintained for binary compatibility. Use overload with additional fixed roles " +
                 "instead",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     fun copy(
         primary: Color = this.primary,
@@ -501,7 +501,7 @@ class ColorScheme(
         message =
             "Maintained for binary compatibility. Use overload with additional fixed roles " +
                 "instead",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     fun copy(
         primary: Color = this.primary,
@@ -717,8 +717,60 @@ class ColorScheme(
     internal var defaultFloatingToolbarVibrantColorsCached: FloatingToolbarColors? = null
 
     @Deprecated(
-        level = DeprecationLevel.HIDDEN,
+        level = DeprecationLevel.WARNING,
         message = "Use constructor with additional 'surfaceContainer' roles.",
+        replaceWith =
+            ReplaceWith(
+                "ColorScheme(primary,\n" +
+                    "onPrimary,\n" +
+                    "primaryContainer,\n" +
+                    "onPrimaryContainer,\n" +
+                    "inversePrimary,\n" +
+                    "secondary,\n" +
+                    "onSecondary,\n" +
+                    "secondaryContainer,\n" +
+                    "onSecondaryContainer,\n" +
+                    "tertiary,\n" +
+                    "onTertiary,\n" +
+                    "tertiaryContainer,\n" +
+                    "onTertiaryContainer,\n" +
+                    "background,\n" +
+                    "onBackground,\n" +
+                    "surface,\n" +
+                    "onSurface,\n" +
+                    "surfaceVariant,\n" +
+                    "onSurfaceVariant,\n" +
+                    "surfaceTint,\n" +
+                    "inverseSurface,\n" +
+                    "inverseOnSurface,\n" +
+                    "error,\n" +
+                    "onError,\n" +
+                    "errorContainer,\n" +
+                    "onErrorContainer,\n" +
+                    "outline,\n" +
+                    "outlineVariant,\n" +
+                    "scrim,\n" +
+                    "surfaceBright,\n" +
+                    "surfaceDim,\n" +
+                    "surfaceContainer,\n" +
+                    "surfaceContainerHigh,\n" +
+                    "surfaceContainerHighest,\n" +
+                    "surfaceContainerLow,\n" +
+                    "surfaceContainerLowest,\n" +
+                    "primaryFixed,\n" +
+                    "primaryFixedDim,\n" +
+                    "onPrimaryFixed,\n" +
+                    "onPrimaryFixedVariant,\n" +
+                    "secondaryFixed,\n" +
+                    "secondaryFixedDim,\n" +
+                    "onSecondaryFixed,\n" +
+                    "onSecondaryFixedVariant,\n" +
+                    "tertiaryFixed,\n" +
+                    "tertiaryFixedDim,\n" +
+                    "onTertiaryFixed,\n" +
+                    "onTertiaryFixedVariant" +
+                    ")"
+            ),
     )
     constructor(
         primary: Color,
@@ -1084,9 +1136,7 @@ fun contentColorFor(backgroundColor: Color) =
  *   overlaid on top of it.
  */
 @Stable
-fun ColorScheme.surfaceColorAtElevation(
-    elevation: Dp,
-): Color {
+fun ColorScheme.surfaceColorAtElevation(elevation: Dp): Color {
     if (elevation == 0.dp) return surface
     val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
     return surfaceTint.copy(alpha = alpha).compositeOver(surface)
@@ -1108,13 +1158,13 @@ fun expressiveLightColorScheme() =
         onPrimaryContainer = PaletteTokens.Primary30,
         onSecondaryContainer = PaletteTokens.Secondary30,
         onTertiaryContainer = PaletteTokens.Tertiary30,
-        onErrorContainer = PaletteTokens.Error30
+        onErrorContainer = PaletteTokens.Error30,
     )
 
 @Deprecated(
     message =
         "Maintained for binary compatibility. Use overload with additional Fixed roles instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 /** Returns a light Material color scheme. */
 fun lightColorScheme(
@@ -1197,7 +1247,7 @@ fun lightColorScheme(
 @Deprecated(
     message =
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun lightColorScheme(
     primary: Color = ColorLightTokens.Primary,
@@ -1266,7 +1316,7 @@ fun lightColorScheme(
 @Deprecated(
     message =
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,
@@ -1348,7 +1398,7 @@ fun darkColorScheme(
 @Deprecated(
     message =
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,

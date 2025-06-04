@@ -58,7 +58,7 @@ class SandboxedSdkCompat private constructor(private val sdkImpl: SandboxedSdkIm
     @RestrictTo(LIBRARY_GROUP)
     constructor(
         sdkInterface: IBinder,
-        sdkInfo: SandboxedSdkInfo?
+        sdkInfo: SandboxedSdkInfo?,
     ) : this(CompatImpl(sdkInterface, sdkInfo))
 
     /**
@@ -130,7 +130,7 @@ class SandboxedSdkCompat private constructor(private val sdkImpl: SandboxedSdkIm
 
     private class CompatImpl(
         private val sdkInterface: IBinder,
-        private val sdkInfo: SandboxedSdkInfo?
+        private val sdkInfo: SandboxedSdkInfo?,
     ) : SandboxedSdkImpl {
 
         override fun getInterface(): IBinder {

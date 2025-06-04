@@ -115,7 +115,7 @@ public sealed interface TextOrientationSpan {
 internal enum class ResolvedOrientation {
     Upright,
     Rotate,
-    TateChuYoko
+    TateChuYoko,
 }
 
 /**
@@ -176,7 +176,7 @@ internal fun forEachOrientation(
     start: Int,
     end: Int,
     @OrientationMode textOrientation: Int,
-    consumer: (Int, Int, ResolvedOrientation) -> Unit
+    consumer: (Int, Int, ResolvedOrientation) -> Unit,
 ) {
     if (start >= end) {
         return
@@ -214,7 +214,7 @@ private inline fun forOrientationNoSpans(
     start: Int,
     end: Int,
     @OrientationMode textOrientation: Int,
-    crossinline consumer: (Int, Int, ResolvedOrientation) -> Unit
+    crossinline consumer: (Int, Int, ResolvedOrientation) -> Unit,
 ) {
     var prevProp = ResolvedOrientation.Upright // unused initial value
     var prevStart = start

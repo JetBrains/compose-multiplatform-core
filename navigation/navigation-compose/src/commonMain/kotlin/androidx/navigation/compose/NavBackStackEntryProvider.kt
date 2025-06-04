@@ -46,7 +46,7 @@ import kotlin.jvm.JvmName
 @Composable
 public fun NavBackStackEntry.LocalOwnersProvider(
     saveableStateHolder: SaveableStateHolder,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // This outer `CompositionLocalProvider` explicitly provides the owners from this
     // `NavBackStackEntry` directly to the `SaveableStateProvider`. This prevents potential issues,
@@ -54,7 +54,7 @@ public fun NavBackStackEntry.LocalOwnersProvider(
     CompositionLocalProvider(
         LocalViewModelStoreOwner provides this,
         LocalLifecycleOwner provides this,
-        LocalSavedStateRegistryOwner provides this
+        LocalSavedStateRegistryOwner provides this,
     ) {
         saveableStateHolder.SaveableStateProvider {
             // This inner `CompositionLocalProvider`, located inside the `SaveableStateProvider`

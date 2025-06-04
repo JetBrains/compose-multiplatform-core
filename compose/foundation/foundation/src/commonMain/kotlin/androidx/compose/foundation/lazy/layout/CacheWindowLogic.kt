@@ -30,9 +30,7 @@ import kotlin.math.sign
 
 /** Implements the logic for [LazyLayoutCacheWindow] prefetching and item preservation. */
 @OptIn(ExperimentalFoundationApi::class)
-internal abstract class CacheWindowLogic(
-    private val cacheWindow: LazyLayoutCacheWindow,
-) {
+internal abstract class CacheWindowLogic(private val cacheWindow: LazyLayoutCacheWindow) {
 
     /** Handles for prefetched items in the current forward window. */
     private val prefetchWindowHandles = mutableIntObjectMapOf<List<PrefetchHandle>>()
@@ -154,7 +152,7 @@ internal abstract class CacheWindowLogic(
                 prefetchForwardWindow = prefetchForwardWindow,
                 scrollDelta = delta,
                 mainAxisExtraSpaceStart = mainAxisExtraSpaceStart,
-                mainAxisExtraSpaceEnd = mainAxisExtraSpaceEnd
+                mainAxisExtraSpaceEnd = mainAxisExtraSpaceEnd,
             )
         }
     }
@@ -184,7 +182,7 @@ internal abstract class CacheWindowLogic(
         prefetchForwardWindow: Int,
         mainAxisExtraSpaceEnd: Int,
         mainAxisExtraSpaceStart: Int,
-        scrollDelta: Float
+        scrollDelta: Float,
     ) {
         val changedScrollDirection = scrollDelta.sign != previousPassDelta.sign
 
@@ -257,7 +255,7 @@ internal abstract class CacheWindowLogic(
         mainAxisExtraSpaceStart: Int,
         keepAroundWindow: Int,
         scrollDelta: Float,
-        itemsCount: Int
+        itemsCount: Int,
     ) {
 
         if (scrollDelta <= 0.0f) { // scrolling forward, keep around from firstVisible

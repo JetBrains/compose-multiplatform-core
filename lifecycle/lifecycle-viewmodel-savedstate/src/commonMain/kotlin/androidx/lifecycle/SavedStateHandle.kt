@@ -253,7 +253,7 @@ public expect class SavedStateHandle {
         @Suppress("DEPRECATION")
         public fun createHandle(
             restoredState: SavedState?,
-            defaultState: SavedState?
+            defaultState: SavedState?,
         ): SavedStateHandle
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun validateValue(value: Any?): Boolean

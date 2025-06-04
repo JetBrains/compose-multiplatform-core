@@ -25,7 +25,7 @@ public enum class Visibility {
     /** The node is invisible, but still uses the space in the layout. */
     Invisible,
     /** The node is invisible, and doesn't use any space, as if removed. */
-    Gone
+    Gone,
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -36,5 +36,5 @@ public data class VisibilityModifier(public val visibility: Visibility) : Glance
  *
  * @param visibility New visibility of the node.
  */
-public fun GlanceModifier.visibility(visibility: Visibility) =
+public fun GlanceModifier.visibility(visibility: Visibility): GlanceModifier =
     this.then(VisibilityModifier(visibility))

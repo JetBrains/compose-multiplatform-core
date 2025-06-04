@@ -50,7 +50,7 @@ import kotlinx.atomicfu.atomic
 internal interface Camera2CaptureSequenceProcessorFactory {
     fun create(
         session: CameraCaptureSessionWrapper,
-        surfaceMap: Map<StreamId, Surface>
+        surfaceMap: Map<StreamId, Surface>,
     ): CaptureSequenceProcessor<*, *>
 }
 
@@ -65,7 +65,7 @@ constructor(
     @Suppress("UNCHECKED_CAST")
     override fun create(
         session: CameraCaptureSessionWrapper,
-        surfaceMap: Map<StreamId, Surface>
+        surfaceMap: Map<StreamId, Surface>,
     ): CaptureSequenceProcessor<*, CaptureSequence<Any>> {
         return Camera2CaptureSequenceProcessor(
             session,
@@ -73,7 +73,7 @@ constructor(
             graphConfig.defaultTemplate,
             surfaceMap,
             streamGraph,
-            quirks.shouldWaitForRepeatingRequestStartOnDisconnect(graphConfig)
+            quirks.shouldWaitForRepeatingRequestStartOnDisconnect(graphConfig),
         )
             as CaptureSequenceProcessor<Any, CaptureSequence<Any>>
     }
@@ -113,7 +113,7 @@ internal class Camera2CaptureSequenceProcessor(
         graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
         sequenceListener: CaptureSequence.CaptureSequenceListener,
-        listeners: List<Request.Listener>
+        listeners: List<Request.Listener>,
     ): Camera2CaptureSequence? {
         val requestList = ArrayList<Camera2RequestMetadata>(requests.size)
         val captureRequests = ArrayList<CaptureRequest>(requests.size)
@@ -235,7 +235,7 @@ internal class Camera2CaptureSequenceProcessor(
                             requestTemplate,
                             isRepeating,
                             request,
-                            requestNumber
+                            requestNumber,
                         )
                     captureRequests.add(highSpeedRequestList[0])
                     requestList.add(metadata)
@@ -254,7 +254,7 @@ internal class Camera2CaptureSequenceProcessor(
                                 requestTemplate,
                                 isRepeating,
                                 request,
-                                requestNumber
+                                requestNumber,
                             )
 
                         captureRequests.add(highSpeedRequestList[i])
@@ -273,7 +273,7 @@ internal class Camera2CaptureSequenceProcessor(
                         requestTemplate,
                         isRepeating,
                         request,
-                        requestNumber
+                        requestNumber,
                     )
                 captureRequests.add(captureRequest)
                 requestList.add(metadata)
@@ -288,7 +288,7 @@ internal class Camera2CaptureSequenceProcessor(
             requestList,
             listeners,
             sequenceListener,
-            surfaceToStreamMap
+            surfaceToStreamMap,
         )
     }
 
@@ -310,7 +310,7 @@ internal class Camera2CaptureSequenceProcessor(
                     }
                     session.setRepeatingRequest(
                         captureSequence.captureRequestList[0],
-                        captureCallback
+                        captureCallback,
                     )
                 } else {
                     session.capture(captureSequence.captureRequestList[0], captureSequence)
@@ -400,7 +400,7 @@ internal class Camera2CaptureSequenceProcessor(
                         inputStream.id,
                         inputStream.maxImages,
                         inputStream.format,
-                        threads.camera2Handler
+                        threads.camera2Handler,
                     )
                 } catch (e: RuntimeException) {
                     Log.warn(e) { "Failed to create ImageWriter for session $session" }
@@ -416,7 +416,7 @@ internal class Camera2CaptureSequenceProcessor(
 
     private fun validateRequestList(
         requests: List<Request>,
-        session: CameraCaptureSessionWrapper
+        session: CameraCaptureSessionWrapper,
     ): Boolean {
         check(requests.isNotEmpty()) {
             "build(...) should never be called with an empty request list!"
@@ -497,7 +497,7 @@ internal class Camera2CaptureSequenceProcessor(
     private fun buildSurfaceMaps(
         requests: List<Request>,
         surfaceToStreamMap: MutableMap<Surface, StreamId>,
-        streamToSurfaceMap: MutableMap<StreamId, Surface>
+        streamToSurfaceMap: MutableMap<StreamId, Surface>,
     ): Boolean {
         check(requests.isNotEmpty()) {
             "build(...) should never be called with an empty request list!"
@@ -554,7 +554,7 @@ internal class Camera2CaptureSequenceProcessor(
      */
     private fun buildCaptureRequestBuilder(
         request: Request,
-        requestTemplate: RequestTemplate
+        requestTemplate: RequestTemplate,
     ): CaptureRequest.Builder? {
         val requestBuilder =
             if (request.inputRequest != null) {
@@ -603,7 +603,7 @@ internal class Camera2RequestMetadata(
     override val template: RequestTemplate,
     override val repeating: Boolean,
     override val request: Request,
-    override val requestNumber: RequestNumber
+    override val requestNumber: RequestNumber,
 ) : RequestMetadata {
     override fun <T> get(key: CaptureRequest.Key<T>): T? = captureRequest[key]
 

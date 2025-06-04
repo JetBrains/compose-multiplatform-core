@@ -40,6 +40,6 @@ interface LocalUiAdapter {
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SessionClient
+        client: SessionClient,
     )
 }

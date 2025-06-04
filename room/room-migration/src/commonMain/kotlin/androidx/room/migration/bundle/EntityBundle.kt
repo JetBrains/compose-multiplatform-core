@@ -30,7 +30,7 @@ public open class EntityBundle(
     @SerialName("fields") override val fields: List<FieldBundle>,
     @SerialName("primaryKey") override val primaryKey: PrimaryKeyBundle,
     @SerialName("indices") override val indices: List<IndexBundle> = emptyList(),
-    @SerialName("foreignKeys") override val foreignKeys: List<ForeignKeyBundle> = emptyList()
+    @SerialName("foreignKeys") override val foreignKeys: List<ForeignKeyBundle> = emptyList(),
 ) : BaseEntityBundle(), SchemaEquality<EntityBundle> {
 
     /** Creates the list of SQL queries that are necessary to create this entity. */

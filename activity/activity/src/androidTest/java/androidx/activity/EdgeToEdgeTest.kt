@@ -82,7 +82,7 @@ class EdgeToEdgeTest {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(Color.CYAN, Color.DKGRAY) { _ -> false },
                     navigationBarStyle =
-                        SystemBarStyle.auto(Color.CYAN, Color.DKGRAY) { _ -> false }
+                        SystemBarStyle.auto(Color.CYAN, Color.DKGRAY) { _ -> false },
                 )
                 val view = window.decorView
                 if (Build.VERSION.SDK_INT >= 29) {
@@ -126,7 +126,7 @@ class EdgeToEdgeTest {
             withActivity {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.dark(Color.DKGRAY),
-                    navigationBarStyle = SystemBarStyle.dark(Color.DKGRAY)
+                    navigationBarStyle = SystemBarStyle.dark(Color.DKGRAY),
                 )
                 val view = window.decorView
                 if (Build.VERSION.SDK_INT >= 26) {

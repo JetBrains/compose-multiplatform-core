@@ -41,7 +41,7 @@ public interface RegistryManagerProvider {
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
     )
 
     /**
@@ -55,7 +55,7 @@ public interface RegistryManagerProvider {
     public fun onClearCredentialRegistry(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>
+        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
     )
 
     /** Returns true if the provider is available on this device, or otherwise false. */

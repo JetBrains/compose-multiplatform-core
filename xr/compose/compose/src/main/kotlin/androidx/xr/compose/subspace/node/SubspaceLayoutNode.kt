@@ -25,14 +25,14 @@ import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
 import androidx.xr.compose.subspace.layout.LayoutMeasureScope
-import androidx.xr.compose.subspace.layout.Measurable
 import androidx.xr.compose.subspace.layout.MeasurePolicy
 import androidx.xr.compose.subspace.layout.MeasureResult
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsModifier
-import androidx.xr.compose.subspace.layout.Placeable
 import androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates
+import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.SubspaceRootMeasurePolicy
 import androidx.xr.compose.subspace.layout.applyCoreEntityNodes
 import androidx.xr.compose.unit.IntVolumeSize
@@ -64,8 +64,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     /** The parent node in the [SubspaceLayoutNode] hierarchy. */
     internal var parent: SubspaceLayoutNode? = null
 
-    /** Instance of [MeasurableLayout] to aid with measure/layout phases. */
-    public val measurableLayout: MeasurableLayout = MeasurableLayout()
+    /** Instance of [SubspaceMeasurableLayout] to aid with measure/layout phases. */
+    public val measurableLayout: SubspaceMeasurableLayout = SubspaceMeasurableLayout()
 
     /** The element system [SubspaceOwner]. This value is `null` until [attach] is called */
     internal var owner: SubspaceOwner? = null
@@ -297,13 +297,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     }
 
     /**
-     * A [Measurable] and [Placeable] object that is used to measure and lay out the children of
-     * this node.
+     * A [SubspaceMeasurable] and [SubspacePlaceable] object that is used to measure and lay out the
+     * children of this node.
      *
      * See [androidx.compose.ui.node.NodeCoordinator]
      */
-    public inner class MeasurableLayout :
-        Measurable, SubspaceLayoutCoordinates, SubspaceSemanticsInfo, Placeable() {
+    public inner class SubspaceMeasurableLayout :
+        SubspaceMeasurable, SubspaceLayoutCoordinates, SubspaceSemanticsInfo, SubspacePlaceable() {
         private var layoutPose: Pose? = null
         private var measureResult: MeasureResult? = null
 
@@ -317,14 +317,14 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         public val tail: SubspaceModifier.Node = TailModifierNode()
 
-        override fun measure(constraints: VolumeConstraints): Placeable =
+        override fun measure(constraints: VolumeConstraints): SubspacePlaceable =
             nodes.measureChain(constraints, ::measureJustThis)
 
         override fun adjustParams(params: ParentLayoutParamsAdjustable) {
             nodes.getAll<ParentLayoutParamsModifier>().forEach { it.adjustParams(params) }
         }
 
-        private fun measureJustThis(constraints: VolumeConstraints): Placeable {
+        private fun measureJustThis(constraints: VolumeConstraints): SubspacePlaceable {
             measureResult =
                 with(measurePolicy) {
                     LayoutMeasureScope(this@SubspaceLayoutNode)
@@ -354,8 +354,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             coreEntity?.size = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 
             measureResult?.placeChildren(
-                object : PlacementScope() {
-                    override val coordinates = this@MeasurableLayout
+                object : SubspacePlacementScope() {
+                    override val coordinates = this@SubspaceMeasurableLayout
                 }
             )
 

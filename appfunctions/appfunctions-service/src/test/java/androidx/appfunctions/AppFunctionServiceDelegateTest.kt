@@ -72,7 +72,7 @@ class AppFunctionServiceDelegateTest {
                 testDispatcher,
                 fakeAggregatedInventory,
                 fakeAggregatedInvoker,
-                fakeTranslatorSelector
+                fakeTranslatorSelector,
             )
     }
 
@@ -82,7 +82,7 @@ class AppFunctionServiceDelegateTest {
             ExecuteAppFunctionRequest(
                 targetPackageName = context.packageName,
                 functionIdentifier = "fakeFunctionId",
-                functionParameters = AppFunctionData.EMPTY
+                functionParameters = AppFunctionData.EMPTY,
             )
 
         assertThrows(AppFunctionFunctionNotFoundException::class.java) {
@@ -106,17 +106,14 @@ class AppFunctionServiceDelegateTest {
                                 AppFunctionPrimitiveTypeMetadata(
                                     type = TYPE_LONG,
                                     isNullable = false,
-                                )
+                                ),
                         )
                     ),
                 response =
                     AppFunctionResponseMetadata(
                         valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_UNIT,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_UNIT, isNullable = false)
+                    ),
             )
         )
         val request =
@@ -124,7 +121,7 @@ class AppFunctionServiceDelegateTest {
                 targetPackageName = context.packageName,
                 functionIdentifier = "invaliadParameterFunction",
                 // Missing requiredLong from the parameter
-                functionParameters = AppFunctionData.EMPTY
+                functionParameters = AppFunctionData.EMPTY,
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -143,11 +140,8 @@ class AppFunctionServiceDelegateTest {
                 response =
                     AppFunctionResponseMetadata(
                         valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_LONG,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
+                    ),
             )
         )
         // Returns String instead of Long
@@ -156,7 +150,7 @@ class AppFunctionServiceDelegateTest {
             ExecuteAppFunctionRequest(
                 targetPackageName = context.packageName,
                 functionIdentifier = "returnIncorrectResultFunction",
-                functionParameters = AppFunctionData.EMPTY
+                functionParameters = AppFunctionData.EMPTY,
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
@@ -175,11 +169,8 @@ class AppFunctionServiceDelegateTest {
                 response =
                     AppFunctionResponseMetadata(
                         valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                    ),
             )
         )
         fakeAggregatedInvoker.setAppFunctionResult("succeedFunction") { "TestString" }
@@ -187,7 +178,7 @@ class AppFunctionServiceDelegateTest {
             ExecuteAppFunctionRequest(
                 targetPackageName = context.packageName,
                 functionIdentifier = "succeedFunction",
-                functionParameters = AppFunctionData.EMPTY
+                functionParameters = AppFunctionData.EMPTY,
             )
 
         val response = runBlocking { executeFunctionBlocking(request) }
@@ -217,17 +208,14 @@ class AppFunctionServiceDelegateTest {
                                 AppFunctionPrimitiveTypeMetadata(
                                     type = TYPE_LONG,
                                     isNullable = false,
-                                )
+                                ),
                         )
                     ),
                 response =
                     AppFunctionResponseMetadata(
                         valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                    ),
             )
         )
         fakeAggregatedInvoker.setAppFunctionResult("succeedFunction") { "TestString" }
@@ -235,7 +223,7 @@ class AppFunctionServiceDelegateTest {
             ExecuteAppFunctionRequest(
                 targetPackageName = context.packageName,
                 functionIdentifier = "succeedFunction",
-                functionParameters = AppFunctionData.Builder("").setLong("testArg", 100L).build()
+                functionParameters = AppFunctionData.Builder("").setLong("testArg", 100L).build(),
             )
 
         val response = runBlocking { executeFunctionBlocking(request) }
@@ -260,7 +248,7 @@ class AppFunctionServiceDelegateTest {
                 targetPackageName = context.packageName,
                 functionIdentifier = "succeedFunction",
                 functionParameters = AppFunctionData.EMPTY,
-                useJetpackSchema = false
+                useJetpackSchema = false,
             )
 
         val response = runBlocking { executeFunctionBlocking(request) }
@@ -283,7 +271,7 @@ class AppFunctionServiceDelegateTest {
                 targetPackageName = context.packageName,
                 functionIdentifier = "succeedFunction",
                 functionParameters = AppFunctionData.EMPTY,
-                useJetpackSchema = true
+                useJetpackSchema = true,
             )
 
         val response = runBlocking { executeFunctionBlocking(request) }
@@ -296,11 +284,10 @@ class AppFunctionServiceDelegateTest {
     }
 
     private suspend fun executeFunctionBlocking(
-        request: ExecuteAppFunctionRequest,
+        request: ExecuteAppFunctionRequest
     ): ExecuteAppFunctionResponse = suspendCancellableCoroutine { cont ->
         delegate.onExecuteFunction(
             request,
-            "test",
             object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
                 override fun onResult(result: ExecuteAppFunctionResponse) {
                     cont.resume(result)
@@ -323,11 +310,8 @@ class AppFunctionServiceDelegateTest {
                 response =
                     AppFunctionResponseMetadata(
                         valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            )
-                    )
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                    ),
             )
     }
 
@@ -344,7 +328,7 @@ class AppFunctionServiceDelegateTest {
                 override suspend fun unsafeInvoke(
                     appFunctionContext: AppFunctionContext,
                     functionIdentifier: String,
-                    parameters: Map<String, Any?>
+                    parameters: Map<String, Any?>,
                 ): Any? {
                     return functionResultMap[functionIdentifier]?.invoke()
                 }

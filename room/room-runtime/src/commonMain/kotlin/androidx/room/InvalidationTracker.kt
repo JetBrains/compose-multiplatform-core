@@ -52,7 +52,7 @@ constructor(
     database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
     viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    vararg tableNames: String
+    vararg tableNames: String,
 ) {
     /**
      * Internal function to initialize tracker for a given connection. Invoked by generated code.
@@ -87,7 +87,7 @@ constructor(
     @JvmOverloads
     public fun createFlow(
         vararg tables: String,
-        emitInitialState: Boolean = true
+        emitInitialState: Boolean = true,
     ): Flow<Set<String>>
 
     /**
@@ -154,7 +154,7 @@ internal class TriggerBasedInvalidationTracker(
     private val useTempTable: Boolean,
     // Callback function for when a set of tables are invalidated, the 'id' of a table is its
     // index in the given `tableNames`
-    private val onInvalidatedTablesIds: (Set<Int>) -> Unit
+    private val onInvalidatedTablesIds: (Set<Int>) -> Unit,
 ) {
     /** Table name (lowercase) to index (id) in [tablesNames], used as a quick lookup map. */
     private val tableIdLookup: Map<String, Int>
@@ -227,7 +227,7 @@ internal class TriggerBasedInvalidationTracker(
     internal fun createFlow(
         resolvedTableNames: Array<String>,
         tableIds: IntArray,
-        emitInitialState: Boolean
+        emitInitialState: Boolean,
     ): Flow<Set<String>> {
         return flow {
             val shouldSync = observedTableStates.onObserverAdded(tableIds)
@@ -572,7 +572,7 @@ internal class ObservedTableStates(size: Int) {
     internal enum class ObserveOp {
         NO_OP, // Don't change observation / tracking state for a table
         ADD, // Starting observation / tracking of a table
-        REMOVE // Stop observation / tracking of a table
+        REMOVE, // Stop observation / tracking of a table
     }
 }
 

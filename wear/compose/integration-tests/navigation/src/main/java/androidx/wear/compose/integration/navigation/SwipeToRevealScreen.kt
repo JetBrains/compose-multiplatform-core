@@ -39,14 +39,14 @@ import androidx.wear.compose.material3.Text
 fun SwipeToRevealSingleButtonWithAnchoring() {
     Box(
         modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         SwipeToReveal(
             primaryAction = {
                 PrimaryActionButton(
                     onClick = { /* This block is called when the primary action is executed. */ },
                     icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    text = { Text("Delete") }
+                    text = { Text("Delete") },
                 )
             },
             onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
@@ -68,10 +68,10 @@ fun SwipeToRevealSingleButtonWithAnchoring() {
                                 CustomAccessibilityAction("Delete") {
                                     /* Add the primary action click handler here */
                                     true
-                                },
+                                }
                             )
                     },
-                onClick = {}
+                onClick = {},
             ) {
                 Text("This Button has only one action", modifier = Modifier.fillMaxWidth())
             }
@@ -83,14 +83,14 @@ fun SwipeToRevealSingleButtonWithAnchoring() {
 fun SwipeToRevealBothDirectionsNonAnchoring() {
     Box(
         modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         SwipeToReveal(
             primaryAction = {
                 PrimaryActionButton(
                     onClick = { /* This block is called when the primary action is executed. */ },
                     icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    text = { Text("Delete") }
+                    text = { Text("Delete") },
                 )
             },
             onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
@@ -103,7 +103,7 @@ fun SwipeToRevealBothDirectionsNonAnchoring() {
                 )
             },
             revealDirection = Bidirectional,
-            hasPartiallyRevealedState = false
+            hasPartiallyRevealedState = false,
         ) {
             Button(
                 modifier =
@@ -114,10 +114,10 @@ fun SwipeToRevealBothDirectionsNonAnchoring() {
                                 CustomAccessibilityAction("Delete") {
                                     /* Add the primary action click handler here */
                                     true
-                                },
+                                }
                             )
                     },
-                onClick = {}
+                onClick = {},
             ) {
                 Text("This Button has only one action", modifier = Modifier.fillMaxWidth())
             }

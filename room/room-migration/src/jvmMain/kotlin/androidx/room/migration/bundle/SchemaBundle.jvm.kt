@@ -30,7 +30,7 @@ import kotlinx.serialization.json.encodeToStream
 public actual class SchemaBundle
 actual constructor(
     @SerialName("formatVersion") public actual val formatVersion: Int,
-    @SerialName("database") public actual val database: DatabaseBundle
+    @SerialName("database") public actual val database: DatabaseBundle,
 ) : SchemaEquality<SchemaBundle> {
 
     actual override fun isSchemaEqual(other: SchemaBundle): Boolean {

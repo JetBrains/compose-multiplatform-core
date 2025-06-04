@@ -63,7 +63,7 @@ class NativeAdLoader(context: Context) {
                         Color.parseColor(headlineAssets?.getString(NativeAdAssetProperties.COLOR))
                     )
                 },
-                NativeAdAssetName.HEADLINE
+                NativeAdAssetName.HEADLINE,
             )
         )
 
@@ -76,7 +76,7 @@ class NativeAdLoader(context: Context) {
                         Color.parseColor(bodyAssets?.getString(NativeAdAssetProperties.COLOR))
                     )
                 },
-                NativeAdAssetName.BODY
+                NativeAdAssetName.BODY,
             )
         )
 
@@ -87,7 +87,7 @@ class NativeAdLoader(context: Context) {
                     adRemoteOverlayIcon,
                     NativeAdAssetName.AD_CHOICES,
                     sandboxedUiAdapter =
-                        SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets)
+                        SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets),
                 )
             )
         }
@@ -99,7 +99,7 @@ class NativeAdLoader(context: Context) {
                     adMediaView1,
                     NativeAdAssetName.MEDIA_VIEW_1,
                     sandboxedUiAdapter =
-                        SandboxedUiAdapterFactory.createFromCoreLibInfo(mediaView1Assets)
+                        SandboxedUiAdapterFactory.createFromCoreLibInfo(mediaView1Assets),
                 )
             )
         }
@@ -112,7 +112,7 @@ class NativeAdLoader(context: Context) {
                     val bitmap = BitmapFactory.decodeByteArray(iconByteArray, 0, iconByteArray.size)
                     setImageBitmap(bitmap)
                 },
-                NativeAdAssetName.ICON
+                NativeAdAssetName.ICON,
             )
         )
 
@@ -124,11 +124,11 @@ class NativeAdLoader(context: Context) {
                         PlayerViewProvider()
                             .PlayerWithState(
                                 context,
-                                mediaView2Assets?.getString(NativeAdAssetProperties.URL)!!
+                                mediaView2Assets?.getString(NativeAdAssetProperties.URL)!!,
                             )
                             .initializePlayer()
                 },
-                NativeAdAssetName.MEDIA_VIEW_2
+                NativeAdAssetName.MEDIA_VIEW_2,
             )
         )
 
@@ -143,7 +143,7 @@ class NativeAdLoader(context: Context) {
                         )
                     )
                 },
-                NativeAdAssetName.CALL_TO_ACTION
+                NativeAdAssetName.CALL_TO_ACTION,
             )
         )
     }

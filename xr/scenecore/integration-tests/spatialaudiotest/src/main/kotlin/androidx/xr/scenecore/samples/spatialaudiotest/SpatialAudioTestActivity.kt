@@ -34,11 +34,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.PointSourceParams
 import androidx.xr.scenecore.SoundFieldAttributes
 import androidx.xr.scenecore.SpatialAudioTrack
@@ -67,7 +67,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 soundPanelView,
-                PixelDimensions(640, 480),
+                IntSize2d(640, 480),
                 "sound panel",
                 Pose(Vector3(0F, 0F, 0.5F)),
             )
@@ -304,7 +304,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
                 SpatialAudioTrackBuilder.setSoundFieldAttributes(
                     session,
                     builder,
-                    soundFieldAttributes
+                    soundFieldAttributes,
                 )
         }
     }
@@ -372,7 +372,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
                 SpatializerConstants.SOURCE_TYPE_POINT_SOURCE -> {
                     Log.d(
                         TAG,
-                        "Point Source: ${SpatialAudioTrack.getPointSourceParams(session, audioTrack)}"
+                        "Point Source: ${SpatialAudioTrack.getPointSourceParams(session, audioTrack)}",
                     )
                 }
                 SpatializerConstants.SOURCE_TYPE_SOUND_FIELD -> {

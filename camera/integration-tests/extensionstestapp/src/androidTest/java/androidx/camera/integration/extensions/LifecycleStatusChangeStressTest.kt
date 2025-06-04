@@ -106,7 +106,7 @@ class LifecycleStatusChangeStressTest(private val config: CameraXExtensionTestPa
         CameraXExtensionsTestUtil.assumeExtensionModeSupported(
             extensionsManager,
             config.cameraId,
-            config.extensionMode
+            config.extensionMode,
         )
 
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
@@ -154,7 +154,7 @@ class LifecycleStatusChangeStressTest(private val config: CameraXExtensionTestPa
 
     private fun pauseResumeActivity_checkOutput_repeatedly(
         verificationTarget: Int,
-        repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount()
+        repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount(),
     ) {
         val activityScenario = launchCameraExtensionsActivity(config.cameraId, config.extensionMode)
 
@@ -195,7 +195,7 @@ class LifecycleStatusChangeStressTest(private val config: CameraXExtensionTestPa
 
     private fun pauseResumeActivityRepeatedly_thenCheckOutput(
         verificationTarget: Int,
-        repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount()
+        repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount(),
     ) {
         val activityScenario = launchCameraExtensionsActivity(config.cameraId, config.extensionMode)
 

@@ -114,7 +114,7 @@ class TraceProcessorBenchmark {
                 // the macrobenchmark instance of the server is running at the same time.
                 TraceProcessor.runSingleSessionServer(
                     absoluteTracePath = traceFile.absolutePath,
-                    block = block
+                    block = block,
                 )
             }
         }
@@ -178,7 +178,7 @@ class TraceProcessorBenchmark {
             listOf(
                 TraceSectionMetric(
                     sectionName = SECTION_NAME,
-                    targetPackageOnly = false // tracing in test process, not target app
+                    targetPackageOnly = false, // tracing in test process, not target app
                 )
             )
 

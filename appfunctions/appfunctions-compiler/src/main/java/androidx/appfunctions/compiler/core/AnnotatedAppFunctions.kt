@@ -252,7 +252,7 @@ data class AnnotatedAppFunctions(
                 ?.findAnnotation(AppFunctionSchemaDefinitionAnnotation.CLASS_NAME)
         return computeAppFunctionAnnotationProperties(
             appFunctionAnnotation = appFunctionAnnotation,
-            schemaDefinitionAnnotation = schemaDefinitionAnnotation
+            schemaDefinitionAnnotation = schemaDefinitionAnnotation,
         )
     }
 
@@ -280,9 +280,7 @@ data class AnnotatedAppFunctions(
         val appFunctionSerializableClassDeclaration =
             appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
                 as KSClassDeclaration
-        return AnnotatedAppFunctionSerializable(
-                appFunctionSerializableClassDeclaration,
-            )
+        return AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
             .parameterizedBy(appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments)
             .validate()
     }

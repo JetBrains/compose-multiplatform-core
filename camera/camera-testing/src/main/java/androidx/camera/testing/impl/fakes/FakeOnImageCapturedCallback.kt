@@ -41,7 +41,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 public class FakeOnImageCapturedCallback(
     captureCount: Int = 1,
-    private val closeImageOnSuccess: Boolean = true
+    private val closeImageOnSuccess: Boolean = true,
 ) : ImageCapture.OnImageCapturedCallback() {
     public data class CapturedImage(val image: ImageProxy, val properties: ImageProperties)
 
@@ -78,7 +78,7 @@ public class FakeOnImageCapturedCallback(
                         rotationDegrees = image.imageInfo.rotationDegrees,
                         cropRect = image.cropRect,
                         exif = getExif(image),
-                    )
+                    ),
             )
         )
         if (closeImageOnSuccess) {
@@ -116,7 +116,7 @@ public class FakeOnImageCapturedCallback(
     public suspend fun awaitCapturesAndAssert(
         timeout: Duration = CAPTURE_TIMEOUT,
         capturedImagesCount: Int = 0,
-        errorsCount: Int = 0
+        errorsCount: Int = 0,
     ) {
         Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
         Truth.assertThat(results.size).isEqualTo(capturedImagesCount)

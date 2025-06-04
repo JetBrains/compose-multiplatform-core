@@ -158,7 +158,7 @@ public fun TimePicker(
             selectedIndex,
             if (is12hour) hourState.selectedOptionIndex + 1 else hourState.selectedOptionIndex,
             hourString,
-            Plurals.TimePickerHoursContentDescription
+            Plurals.TimePickerHoursContentDescription,
         )
     }
 
@@ -226,7 +226,7 @@ public fun TimePicker(
                     color = colors.pickerLabelColor,
                     style = styles.labelTextStyle,
                     maxLines = maxTextLines,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(styles.sectionVerticalPadding))
                 Row(
@@ -254,10 +254,7 @@ public fun TimePicker(
                             modifier = Modifier.width(styles.optionWidth).fillMaxHeight(),
                             selected = selectedIndex == FocusableElements.Hours.index,
                             onSelected = {
-                                onPickerSelected(
-                                    FocusableElements.Hours,
-                                    FocusableElements.Minutes,
-                                )
+                                onPickerSelected(FocusableElements.Hours, FocusableElements.Minutes)
                             },
                             contentDescription = hoursContentDescription,
                             option =
@@ -268,14 +265,14 @@ public fun TimePicker(
                                     indexToText = { "%02d".format(if (is12hour) it + 1 else it) },
                                     optionHeight = styles.optionHeight,
                                 ),
-                            verticalSpacing = styles.optionSpacing
+                            verticalSpacing = styles.optionSpacing,
                         )
 
                         Separator(
                             textStyle = styles.optionTextStyle,
                             color = colors.separatorColor,
                             separatorPadding = styles.separatorPadding,
-                            text = ":"
+                            text = ":",
                         )
 
                         // Minutes Picker
@@ -290,7 +287,7 @@ public fun TimePicker(
                                         FocusableElements.ConfirmButton
                                     } else {
                                         FocusableElements.SecondsOrPeriod
-                                    }
+                                    },
                                 )
                             },
                             contentDescription = minutesContentDescription,
@@ -302,7 +299,7 @@ public fun TimePicker(
                                     unselectedContentColor = colors.unselectedPickerContentColor,
                                     optionHeight = styles.optionHeight,
                                 ),
-                            verticalSpacing = styles.optionSpacing
+                            verticalSpacing = styles.optionSpacing,
                         )
 
                         // Seconds or Period picker
@@ -334,7 +331,7 @@ public fun TimePicker(
                                             colors.unselectedPickerContentColor,
                                         optionHeight = styles.optionHeight,
                                     ),
-                                verticalSpacing = styles.optionSpacing
+                                verticalSpacing = styles.optionSpacing,
                             )
                         }
                     }
@@ -353,7 +350,7 @@ public fun TimePicker(
                                 )
                                 .with(
                                     ChronoField.AMPM_OF_DAY,
-                                    secondOrPeriodSelectedOption.toLong()
+                                    secondOrPeriodSelectedOption.toLong(),
                                 )
                         } else {
                             LocalTime.of(
@@ -374,7 +371,7 @@ public fun TimePicker(
                 colors =
                     buttonColors(
                         contentColor = colors.confirmButtonContentColor,
-                        containerColor = colors.confirmButtonContainerColor
+                        containerColor = colors.confirmButtonContainerColor,
                     ),
             ) {
                 Icon(
@@ -557,7 +554,7 @@ public class TimePickerColors(
 @Composable
 private fun getTimePickerStyles(
     timePickerType: TimePickerType,
-    optionalThirdPicker: PickerData?
+    optionalThirdPicker: PickerData?,
 ): TimePickerStyles {
     val isLargeScreen = isLargeScreen()
     val labelTextStyle =
@@ -598,11 +595,7 @@ private fun getTimePickerStyles(
     val indexToText = optionalThirdPicker?.indexToText ?: { "" }
 
     val (twoDigitsWidth, textLabelWidth) =
-        remember(
-            density.density,
-            LocalConfiguration.current.screenWidthDp,
-            optionTextStyle,
-        ) {
+        remember(density.density, LocalConfiguration.current.screenWidthDp, optionTextStyle) {
             val mm =
                 measurer.measure(
                     "0123456789\n${indexToText(0)}\n${indexToText(1)}",
@@ -629,7 +622,7 @@ private fun getTimePickerStyles(
         optionHeight = optionHeight,
         optionSpacing = optionSpacing,
         separatorPadding = separatorPadding,
-        sectionVerticalPadding = if (isLargeScreen) 6.dp else 4.dp
+        sectionVerticalPadding = if (isLargeScreen) 6.dp else 4.dp,
     )
 }
 
@@ -640,7 +633,7 @@ private fun getOptionalThirdPicker(
     context: Context,
     timePickerType: TimePickerType,
     selectedIndex: Int?,
-    time: LocalTime
+    time: LocalTime,
 ): PickerData? =
     when (timePickerType) {
         TimePickerType.HoursMinutesSeconds24H -> {
@@ -664,7 +657,7 @@ private fun getOptionalThirdPicker(
                 state = secondState,
                 contentDescription = secondsContentDescription,
                 label = secondString,
-                indexToText = { "%02d".format(it) }
+                indexToText = { "%02d".format(it) },
             )
         }
         TimePickerType.HoursMinutesAmPm12H -> {
@@ -696,7 +689,7 @@ private fun getOptionalThirdPicker(
                 state = periodState,
                 contentDescription = periodContentDescription,
                 label = "",
-                indexToText = { if (it == 0) amString else pmString }
+                indexToText = { if (it == 0) amString else pmString },
             )
         }
         else -> null

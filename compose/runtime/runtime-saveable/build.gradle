@@ -75,6 +75,7 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
+                implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:test-utils"))

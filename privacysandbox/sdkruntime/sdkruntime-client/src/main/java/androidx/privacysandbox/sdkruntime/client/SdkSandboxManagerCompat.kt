@@ -80,7 +80,7 @@ class SdkSandboxManagerCompat
 private constructor(
     private val platformApi: PlatformApi,
     private val localSdkRegistry: LocalSdkRegistry,
-    private val appOwnedSdkRegistry: AppOwnedSdkRegistry
+    private val appOwnedSdkRegistry: AppOwnedSdkRegistry,
 ) {
     /**
      * Load SDK in a SDK sandbox java process or locally.
@@ -125,7 +125,7 @@ private constructor(
     internal fun loadLocalSdkWithVersionOverride(
         sdkName: String,
         params: Bundle,
-        apiVersion: Int
+        apiVersion: Int,
     ): SandboxedSdkCompat {
         val customHandshake =
             VersionHandshake(overrideClientVersion = apiVersion, overrideSdkVersion = apiVersion)
@@ -162,7 +162,7 @@ private constructor(
      */
     fun addSdkSandboxProcessDeathCallback(
         callbackExecutor: Executor,
-        callback: SdkSandboxProcessDeathCallbackCompat
+        callback: SdkSandboxProcessDeathCallbackCompat,
     ) {
         platformApi.addSdkSandboxProcessDeathCallback(callbackExecutor, callback)
     }
@@ -250,7 +250,7 @@ private constructor(
         @DoNotInline
         fun addSdkSandboxProcessDeathCallback(
             callbackExecutor: Executor,
-            callback: SdkSandboxProcessDeathCallbackCompat
+            callback: SdkSandboxProcessDeathCallbackCompat,
         )
 
         @DoNotInline
@@ -292,7 +292,7 @@ private constructor(
         @DoNotInline
         override fun addSdkSandboxProcessDeathCallback(
             callbackExecutor: Executor,
-            callback: SdkSandboxProcessDeathCallbackCompat
+            callback: SdkSandboxProcessDeathCallbackCompat,
         ) {
             synchronized(sandboxDeathCallbackDelegates) {
                 val delegate = SdkSandboxProcessDeathCallbackDelegate(callback)
@@ -326,7 +326,7 @@ private constructor(
                     sdkName,
                     params,
                     Runnable::run,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -352,7 +352,7 @@ private constructor(
 
         override fun addSdkSandboxProcessDeathCallback(
             callbackExecutor: Executor,
-            callback: SdkSandboxProcessDeathCallbackCompat
+            callback: SdkSandboxProcessDeathCallbackCompat,
         ) {}
 
         override fun removeSdkSandboxProcessDeathCallback(

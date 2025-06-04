@@ -188,7 +188,7 @@ internal class Media3SurfaceProcessor(
     private fun configureProcessor(
         input: SurfaceRequest,
         output: SurfaceOutput,
-        processor: DefaultVideoFrameProcessor
+        processor: DefaultVideoFrameProcessor,
     ) {
         // Gets user configured transformation from CameraX Effects API, and build a media3 effect
         // that applies that transformation.
@@ -209,7 +209,7 @@ internal class Media3SurfaceProcessor(
             VideoFrameProcessor.INPUT_TYPE_SURFACE_AUTOMATIC_FRAME_REGISTRATION,
             format,
             listOf(cameraXTransformEffect, *effects.toTypedArray()),
-            0
+            0,
         )
     }
 
@@ -222,7 +222,7 @@ internal class Media3SurfaceProcessor(
                 override fun onInputStreamRegistered(
                     inputType: Int,
                     format: Format,
-                    effects: List<Effect>
+                    effects: List<Effect>,
                 ) {
                     synchronized(lock) {
                         if (activeProcessors.isNotEmpty()) {
@@ -250,7 +250,7 @@ internal class Media3SurfaceProcessor(
                     createColorInfo(input.dynamicRange),
                     /*renderFramesAutomatically=*/ true,
                     directExecutor(),
-                    wrappingListener
+                    wrappingListener,
                 )
         Log.d(TAG, "Created processor $newProcessor")
         configureProcessor(input, output, newProcessor)
@@ -281,7 +281,7 @@ internal class Media3SurfaceProcessor(
                 outputSurface,
                 output.size.width,
                 output.size.height,
-                /* orientationDegrees= */ 0
+                /* orientationDegrees= */ 0,
             )
         )
         connectedOutput = output

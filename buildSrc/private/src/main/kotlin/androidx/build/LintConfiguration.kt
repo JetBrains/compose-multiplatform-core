@@ -48,7 +48,7 @@ fun Project.configureLint() {
             is KotlinMultiplatformAndroidPlugin ->
                 configureAndroidMultiplatformProjectForLint(
                     extensions.getByType<AndroidXMultiplatformExtension>().agpKmpExtension,
-                    extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                    extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>(),
                 )
             // Only configure non-multiplatform Java projects via JavaPlugin. Multiplatform
             // projects targeting Java (e.g. `jvm { withJava() }`) are configured via
@@ -84,7 +84,7 @@ private fun Project.configureAndroidProjectForLint(isLibrary: Boolean) =
 
 private fun Project.configureAndroidMultiplatformProjectForLint(
     extension: KotlinMultiplatformAndroidLibraryTarget,
-    componentsExtension: KotlinMultiplatformAndroidComponentsExtension
+    componentsExtension: KotlinMultiplatformAndroidComponentsExtension,
 ) {
     componentsExtension.finalizeDsl {
         // The lintAnalyze task is used by `androidx-studio-integration-lint.sh`.
@@ -284,12 +284,6 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Broken in 7.0.0-alpha15 due to b/187343720
         disable.add("UnusedResources")
 
-        // b/416046484: broken in 8.11.0-alpha10+ (Kotlin 2.2.0)
-        // TODO(b/416387032): Need to upgrade all binary dep usages
-        disable.add("ModifierFactoryExtensionFunction")
-        disable.add("ModifierFactoryReturnType")
-        disable.add("ModifierFactoryUnreferencedReceiver")
-
         // Disable NullAnnotationGroup check for :compose:ui:ui-text (b/233788571)
         if (isLibrary && project.group == "androidx.compose.ui" && project.name == "ui-text") {
             disable.add("NullAnnotationGroup")
@@ -339,6 +333,8 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             // This lint check is specifically for libraries.
             disable.add("MissingServiceExportedEqualsTrue")
         }
+
+        fatal.add("CheckResult")
 
         val lintXmlPath =
             if (extension.type == SoftwareType.SAMPLES) {

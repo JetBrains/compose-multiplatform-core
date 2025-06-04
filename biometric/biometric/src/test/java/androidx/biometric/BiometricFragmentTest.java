@@ -205,7 +205,8 @@ public class BiometricFragmentTest {
                 doThrow(NullPointerException.class).when(biometricPrompt).authenticate(
                         any(android.os.CancellationSignal.class),
                         any(Executor.class),
-                        any(android.hardware.biometrics.BiometricPrompt.AuthenticationCallback.class));
+                        any(android.hardware.biometrics.BiometricPrompt
+                                .AuthenticationCallback.class));
                 when(mContext.getString(anyInt())).thenReturn(errString);
 
                 fragment.authenticateWithBiometricPrompt(biometricPrompt, mContext);

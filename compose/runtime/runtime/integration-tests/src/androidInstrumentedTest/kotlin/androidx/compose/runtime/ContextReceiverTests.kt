@@ -55,7 +55,7 @@ class ContextReceiverTests : BaseComposeTest() {
     fun composableA(
         param1: Int,
         param2: String = "Hello",
-        onBodyInvoked: (Int, String, String) -> Unit
+        onBodyInvoked: (Int, String, String) -> Unit,
     ) {
         onBodyInvoked(param1, param2, getA())
     }
@@ -86,7 +86,7 @@ class ContextReceiverTests : BaseComposeTest() {
     fun composableB(
         param1: Int,
         param2: String = "Hello",
-        onBodyInvoked: (Int, String, String) -> Unit
+        onBodyInvoked: (Int, String, String) -> Unit,
     ) {
         onBodyInvoked(param1, param2, getB())
     }

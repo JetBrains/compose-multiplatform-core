@@ -46,7 +46,7 @@ public class FormWidgetInfo(
     public val multiLineText: Boolean = false,
     maxLength: Int? = null,
     fontSize: Float? = null,
-    listItems: List<ListItem>? = null
+    listItems: List<ListItem>? = null,
 ) : Parcelable {
     init {
         if (editableText) {
@@ -107,7 +107,7 @@ public class FormWidgetInfo(
         maxLength = parcel.readInt().takeIf { it != Int.MIN_VALUE },
         fontSize = parcel.readFloat().takeIf { it != Float.MIN_VALUE },
         listItems =
-            parcel.createTypedArrayList(ListItem.CREATOR).takeIf { it?.isNotEmpty() == true }
+            parcel.createTypedArrayList(ListItem.CREATOR).takeIf { it?.isNotEmpty() == true },
     )
 
     override fun describeContents(): Int = 0
@@ -140,7 +140,7 @@ public class FormWidgetInfo(
             multiLineText,
             maxLength,
             fontSize,
-            listItems
+            listItems,
         )
     }
 
@@ -172,7 +172,7 @@ public class FormWidgetInfo(
         WIDGET_TYPE_COMBOBOX,
         WIDGET_TYPE_LISTBOX,
         WIDGET_TYPE_TEXTFIELD,
-        WIDGET_TYPE_SIGNATURE
+        WIDGET_TYPE_SIGNATURE,
     )
     public annotation class WidgetType
 

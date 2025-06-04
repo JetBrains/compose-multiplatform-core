@@ -23,7 +23,7 @@ import androidx.annotation.RestrictTo
 public class GlanceNodeSelector<R>(
     public val description: String,
     private val previousChainedSelector: GlanceNodeSelector<R>? = null,
-    private val selector: (Iterable<GlanceNode<R>>) -> SelectionResult<R>
+    private val selector: (Iterable<GlanceNode<R>>) -> SelectionResult<R>,
 ) {
 
     /** Returns nodes selected by previous chained selectors followed by the current selector. */
@@ -37,7 +37,7 @@ public class GlanceNodeSelector<R>(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SelectionResult<R>(
     public val selectedNodes: List<GlanceNode<R>>,
-    public val errorMessageOnNoMatch: String? = null
+    public val errorMessageOnNoMatch: String? = null,
 )
 
 /**
@@ -61,7 +61,7 @@ public fun <R> GlanceNodeMatcher<R>.matcherToSelector(): GlanceNodeSelector<R> {
 public fun <R> GlanceNodeSelector<R>.addIndexedSelector(index: Int): GlanceNodeSelector<R> {
     return GlanceNodeSelector(
         description = "(${this.description})[$index]",
-        previousChainedSelector = this
+        previousChainedSelector = this,
     ) { nodes ->
         val nodesList = nodes.toList()
         val minimumExpectedCount = index + 1
@@ -74,8 +74,8 @@ public fun <R> GlanceNodeSelector<R>.addIndexedSelector(index: Int): GlanceNodeS
                     buildErrorReasonForIndexOutOfMatchedNodeBounds(
                         description,
                         requestedIndex = minimumExpectedCount,
-                        actualCount = nodesList.size
-                    )
+                        actualCount = nodesList.size,
+                    ),
             )
         }
     }
@@ -88,11 +88,11 @@ public fun <R> GlanceNodeSelector<R>.addIndexedSelector(index: Int): GlanceNodeS
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun <R> GlanceNodeSelector<R>.addMatcherSelector(
     selectorName: String,
-    matcher: GlanceNodeMatcher<R>
+    matcher: GlanceNodeMatcher<R>,
 ): GlanceNodeSelector<R> {
     return GlanceNodeSelector(
         description = "(${this.description}).$selectorName(${matcher.description})",
-        previousChainedSelector = this
+        previousChainedSelector = this,
     ) { nodes ->
         SelectionResult(selectedNodes = nodes.filter { matcher.matches(it) })
     }
@@ -106,7 +106,7 @@ public fun <R> GlanceNodeSelector<R>.addMatcherSelector(
 public fun <R> GlanceNodeSelector<R>.addChildrenSelector(): GlanceNodeSelector<R> {
     return GlanceNodeSelector(
         description = "($description).children()",
-        previousChainedSelector = this
+        previousChainedSelector = this,
     ) { nodes ->
         if (nodes.count() != 1) {
             SelectionResult(
@@ -115,8 +115,8 @@ public fun <R> GlanceNodeSelector<R>.addChildrenSelector(): GlanceNodeSelector<R
                     buildErrorReasonForCountMismatch(
                         matcherDescription = description,
                         expectedCount = 1,
-                        actualCount = nodes.count()
-                    )
+                        actualCount = nodes.count(),
+                    ),
             )
         } else {
             SelectionResult(selectedNodes = nodes.single().children())

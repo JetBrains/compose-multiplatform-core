@@ -59,7 +59,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class AudioEncoderConfigAudioProfileResolverTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     companion object {
@@ -68,15 +68,13 @@ class AudioEncoderConfigAudioProfileResolverTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val defaultAudioSpec = AudioSpec.builder().build()
@@ -90,7 +88,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         CameraXUtil.initialize(context, cameraConfig).get()
@@ -130,7 +128,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         defaultAudioSpec,
                         audioSettings,
-                        audioProfile
+                        audioProfile,
                     )
                     .get()
 
@@ -158,7 +156,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     defaultAudioSettings,
-                    profile
+                    profile,
                 )
                 .get()
         val defaultChannelCount = defaultConfig.channelCount
@@ -173,7 +171,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     higherChannelCountAudioSettings,
-                    profile
+                    profile,
                 )
                 .get()
 
@@ -196,7 +194,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     defaultAudioSettings,
-                    profile
+                    profile,
                 )
                 .get()
         val defaultSampleRate = defaultConfig.captureSampleRate
@@ -211,7 +209,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     higherSampleRateAudioSettings,
-                    profile
+                    profile,
                 )
                 .get()
 
@@ -245,7 +243,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         higherAudioSpec,
                         defaultAudioSettings,
-                        profile
+                        profile,
                     )
                     .get()
                     .bitrate
@@ -259,7 +257,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         lowerAudioSpec,
                         defaultAudioSettings,
-                        profile
+                        profile,
                     )
                     .get()
                     .bitrate
