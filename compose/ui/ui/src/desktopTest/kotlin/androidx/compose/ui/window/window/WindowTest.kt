@@ -755,7 +755,7 @@ class WindowTest {
     fun `swing frame init called before it is displayable`() = runApplicationTest {
         var isDisplayableInInit: Boolean? = null
         launchTestApplication {
-            SwingFrame(
+            SwingWindow(
                 onCloseRequest = ::exitApplication,
                 init = {
                     isDisplayableInInit = it.isDisplayable
