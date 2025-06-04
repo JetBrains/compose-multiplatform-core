@@ -5627,7 +5627,7 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_UserInputView$st
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter|androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
-abstract fun interface androidx.compose.ui.window/DisposeComposeWindow { // androidx.compose.ui.window/DisposeComposeWindow|null[0]
+abstract interface androidx.compose.ui.window/DisposeComposeWindow { // androidx.compose.ui.window/DisposeComposeWindow|null[0]
     abstract fun dispose() // androidx.compose.ui.window/DisposeComposeWindow.dispose|dispose(){}[0]
 }
 

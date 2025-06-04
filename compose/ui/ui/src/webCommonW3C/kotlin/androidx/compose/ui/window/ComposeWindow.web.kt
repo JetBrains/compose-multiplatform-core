@@ -171,8 +171,7 @@ internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
-) : LifecycleOwner, ViewModelStoreOwner
-{
+) : LifecycleOwner, ViewModelStoreOwner {
     private var isDisposed = false
 
     private val density: Density = Density(
@@ -592,8 +591,10 @@ fun CanvasBasedWindow(
         state = if (requestResize == null) DefaultWindowState(document.documentElement!!) else ComposeWindowState.createFromLambda(requestResize)
     )
 
-    return DisposeComposeWindow {
-        window.dispose()
+    return object : DisposeComposeWindow {
+        override fun dispose() {
+            window.dispose()
+        }
     }
 }
 
@@ -634,8 +635,10 @@ fun ComposeViewport(
         state = DefaultWindowState(viewportContainer)
     )
 
-    return DisposeComposeWindow {
-        window.dispose()
+    return object : DisposeComposeWindow {
+        override fun dispose() {
+            window.dispose()
+        }
     }
 }
 
@@ -648,7 +651,7 @@ fun ComposeViewport(
  * of resources when the window is no longer needed.
  */
 @ExperimentalComposeUiApi
-fun interface DisposeComposeWindow {
+interface DisposeComposeWindow {
     /**
      * Disposes the Compose window and releases all associated resources.
      * Should be called when the window is no longer needed to prevent memory leaks.
