@@ -50,6 +50,7 @@ class WebInteropTest : OnCanvasTests {
         createComposeWindow {
             if (!showDiv.value) return@createComposeWindow
             WebElementView(
+                modifier = Modifier.size(50.dp),
                 factory = {
                     (document.createElement("div") as HTMLDivElement).apply {
                         innerText = textState.value
