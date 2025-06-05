@@ -41,7 +41,10 @@ val HtmlInteropDemos = Screen.Selection(
     Screen.Example("LazyDirections") { LazyDirections() },
     Screen.Example("Map") { Map() },
     Screen.Example("SyncTextState") { SyncTextState() },
-    Screen.Example("SyncTextStateViaParameter") { SyncTextStateViaParameter() }
+    Screen.Example("SyncTextStateViaParameter") { SyncTextStateViaParameter() },
+    Screen.Example("Nested Compose Viewport") {
+        NestedComposeViewportDemo()
+    }
 )
 
 
