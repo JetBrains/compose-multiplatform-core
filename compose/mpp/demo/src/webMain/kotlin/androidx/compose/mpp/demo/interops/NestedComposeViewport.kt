@@ -42,7 +42,7 @@ import androidx.compose.ui.viewinterop.WebElementView
 import androidx.compose.ui.window.ComposeViewport
 
 private val ttGoogleMaps =
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243.2605247413949!2d4.892652290246295!3d52.337941149334604!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c60b47904314db%3A0xf4b8123a04612968!2sJetBrains%20N.V.%20(Main%20Building)!5e0!3m2!1sen!2snl!4v1748355529708!5m2!1sen!2snl"
+    "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1361.8421810316931!2d4.894047523068853!3d52.338403908686736!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2snl!4v1749117010713!5m2!1sen!2snl"
 private val ttOSM =
     "https://www.openstreetmap.org/export/embed.html?bbox=4.890965223312379%2C52.33722052818563%2C4.893990755081177%2C52.33860862450587&amp;layer=mapnik"
 
