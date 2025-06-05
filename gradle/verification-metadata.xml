@@ -95,6 +95,7 @@
             <trusting group="androidx.room"/>
             <trusting group="androidx.savedstate"/>
             <trusting group="androidx.sqlite"/>
+            <trusting group="androidx.tracing"/>
             <trusting group="androidx.window"/>
             <trusting group="com.android"/>
             <trusting group="com.android.databinding"/>
@@ -201,6 +202,7 @@
          <trusted-key id="32B92F2FF75FDF37DC811C3C2F566D4221D3EC52" group="com.ryanharter.auto.value"/>
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF">
             <trusting group="org.jetbrains" name="annotations"/>
+            <trusting group="org.jetbrains.runtime" name="jbr-api" version="1.5.0"/>
             <trusting group="org.jetbrains.trove4j" name="trove4j"/>
          </trusted-key>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B">
