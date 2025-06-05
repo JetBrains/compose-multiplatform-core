@@ -35,13 +35,14 @@ plugins {
 androidXMultiplatform {
     androidTarget()
     desktop()
+    mingwX64()
+    linux()
     mac()
     ios()
+    tvos()
+    watchos()
     js()
     wasmJs()
-
-    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
