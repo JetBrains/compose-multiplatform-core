@@ -41,6 +41,12 @@ import androidx.compose.ui.util.fastForEach
  *   relative to.
  */
 internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
+    private var dispatchingEvent = false
+    private var dispatchCancelAfterDispatchedEvent = false
+    private var clearNodeCacheAfterDispatchedEvent = false
+    private var removeSpecificNodesAfterDispatchedEvent = false
+
+    private val nodesToRemove = MutableObjectList<Modifier.Node>()
 
     /*@VisibleForTesting*/
     internal val root: NodeParent = NodeParent()
@@ -119,6 +125,11 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     }
 
     private fun removePointerInputModifierNode(pointerInputNode: Modifier.Node) {
+        if (dispatchingEvent) {
+            removeSpecificNodesAfterDispatchedEvent = true
+            nodesToRemove.add(pointerInputNode)
+            return
+        }
         root.removePointerInputModifierNode(pointerInputNode)
     }
 
@@ -151,6 +162,12 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
             root.cleanUpHover()
             return false
         }
+
+        // In some rare cases, a cancel or a request to remove a pointer input node might come in
+        // during an event. To avoid problems, we use `dispatchingEvent` to guard against that and
+        // if a cancel or request to remove nodes comes in, we delay it until after the event has
+        // been dispatched.
+        dispatchingEvent = true
         var dispatchHit =
             root.dispatchMainEventPass(
                 internalPointerEvent.changes,
@@ -159,11 +176,35 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 isInBounds
             )
         dispatchHit = root.dispatchFinalEventPass(internalPointerEvent) || dispatchHit
+        dispatchingEvent = false
+
+        if (removeSpecificNodesAfterDispatchedEvent) {
+            removeSpecificNodesAfterDispatchedEvent = false
+
+            for (i in 0 until nodesToRemove.size) {
+                removePointerInputModifierNode(nodesToRemove[i])
+            }
+            nodesToRemove.clear()
+        }
+
+        if (dispatchCancelAfterDispatchedEvent) {
+            dispatchCancelAfterDispatchedEvent = false
+            processCancel()
+        }
+
+        if (clearNodeCacheAfterDispatchedEvent) {
+            clearNodeCacheAfterDispatchedEvent = false
+            clearPreviouslyHitModifierNodeCache()
+        }
 
         return dispatchHit
     }
 
     fun clearPreviouslyHitModifierNodeCache() {
+        if (clearNodeCacheAfterDispatchedEvent) {
+            clearNodeCacheAfterDispatchedEvent = true
+            return
+        }
         root.clear()
     }
 
@@ -174,6 +215,10 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      * data.
      */
     fun processCancel() {
+        if (dispatchingEvent) {
+            dispatchCancelAfterDispatchedEvent = true
+            return
+        }
         root.dispatchCancel()
         clearPreviouslyHitModifierNodeCache()
     }
