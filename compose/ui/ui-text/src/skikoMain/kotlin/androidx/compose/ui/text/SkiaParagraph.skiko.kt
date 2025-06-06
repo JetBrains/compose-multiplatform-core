@@ -392,7 +392,26 @@ internal class SkiaParagraph(
         }
 
     override fun getOffsetForPosition(position: Offset): Int {
-        val glyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+        val initialGlyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+
+        // Check if the position is inside a complex character with non-spacing marks
+        // If it is, adjust the position to the next possible space
+        var glyphPosition = initialGlyphPosition
+        if (glyphPosition in 0 until text.length) {
+            // Check if the current position has a non-spacing mark
+            val isNonSpacingMark = text.codePointAt(glyphPosition).isNonSpacingMark()
+
+            if (isNonSpacingMark) {
+                // Find the boundaries of the complex character
+                val precedingBreak = text.findPrecedingBreak(glyphPosition)
+                val followingBreak = text.findFollowingBreak(glyphPosition)
+
+                // If we're inside a complex character, jump to the end of it
+                if (precedingBreak != glyphPosition && followingBreak != glyphPosition) {
+                    glyphPosition = followingBreak
+                }
+            }
+        }
 
         // Below we apply a workaround for skiko/skia issue:
         //
@@ -436,6 +455,23 @@ internal class SkiaParagraph(
         val rightX = rects?.lastOrNull()?.rect?.right ?: expectedLine.right.toFloat()
 
         if (leftX == rightX) {
+            return glyphPosition
+        }
+
+        // Check if the last character of the line is a non-spacing mark
+        val hasNonSpacingMarkAtEnd = if (isNotEmptyLine && expectedLine.endExcludingWhitespaces > 0) {
+            val lastCharIndex = expectedLine.endExcludingWhitespaces - 1
+            if (lastCharIndex >= 0 && lastCharIndex < text.length) {
+                text.codePointAt(lastCharIndex).isNonSpacingMark()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+
+        // If the line ends with a non-spacing mark, don't apply the workaround
+        if (hasNonSpacingMarkAtEnd) {
             return glyphPosition
         }
 

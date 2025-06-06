@@ -38,6 +38,9 @@ internal actual fun CodePoint.isNeutralDirection(): Boolean =
         else -> false
     }
 
+internal actual fun CodePoint.isNonSpacingMark(): Boolean =
+    getDirectionality() == CharDirectionality.NONSPACING_MARK
+
 /**
  * Get the Unicode directionality of a character.
  */
