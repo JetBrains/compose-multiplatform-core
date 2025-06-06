@@ -47,6 +47,7 @@ internal class LazyGridBeyondBoundsState(
         if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
         val viewportSize = state.layoutInfo.singleAxisViewportSize
         val lineAverageSize = state.layoutInfo.visibleLinesAverageMainAxisSize()
+        if (lineAverageSize == 0) return 1
         return (viewportSize / lineAverageSize).coerceAtLeast(1)
     }
 }
