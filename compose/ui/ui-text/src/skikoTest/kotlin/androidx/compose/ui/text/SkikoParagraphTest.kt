@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -25,6 +26,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 // Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
 class SkikoParagraphTest {
@@ -375,6 +377,49 @@ class SkikoParagraphTest {
         val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.End))
         val cursorHorizontalPosition = paragraph.getHorizontalPosition(0, false)
         assertEquals(maxWidthConstraint.toFloat(), cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getOffsetForPosition_insideComplexCharacter_shouldJumpToEnd() {
+        val text = "abc\u0915\u094D abc" // "abcक् abc"
+        val paragraph = simpleParagraph(text)
+
+        val complexCharStart = 3 // Index of 'क'
+        val complexCharBox = paragraph.getBoundingBox(complexCharStart)
+
+        // Try to position the caret inside the complex character
+        val insideOffset =
+            Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
+        val position = paragraph.getOffsetForPosition(insideOffset)
+
+        assertEquals(
+            5, // after 'क्'
+            position,
+            message = "The position should be at the end of the complex character, not inside it"
+        )
+    }
+
+    /**
+     * Test that the caret can be placed at the end of a line when a complex character
+     * is the last character in the line.
+     */
+    @Test
+    fun getOffsetForPosition_endOfLineWithComplexCharacter_shouldPositionCorrectly() {
+        val text = "abc\u0915\u094D" // "abcक्"
+        val paragraph = simpleParagraph(text)
+
+        val complexCharStart = 3
+        val complexCharBox = paragraph.getBoundingBox(complexCharStart)
+
+        val afterOffset = Offset(complexCharBox.right + 5, complexCharBox.center.y)
+        val position = paragraph.getOffsetForPosition(afterOffset)
+
+
+        assertEquals(
+            5,
+            position,
+            message = "The position should be at the end of the text"
+        )
     }
 
 
