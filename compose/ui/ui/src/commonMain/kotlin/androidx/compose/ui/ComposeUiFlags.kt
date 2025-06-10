@@ -100,4 +100,11 @@ object ComposeUiFlags {
      * the cost of initializing the focus system.
      */
     @Suppress("MutableBareField") @JvmField var isTrackFocusEnabled: Boolean = true
+
+    /**
+     * Changes ComposeView's getFocusedRect() call to return an empty rect when nothing is
+     * focusable. When this flag is disabled, if the ComposeView has nothing focusable,
+     * getFocusedRect() will call super.getFocusRect().
+     */
+    @Suppress("MutableBareField") @JvmField var isGetFocusedRectReturnEmptyEnabled: Boolean = true
 }
