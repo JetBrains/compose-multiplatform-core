@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.awt
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
@@ -45,17 +46,37 @@ internal fun Component.isParentOf(component: Component?): Boolean {
     return false
 }
 
-internal fun IntRect.toAwtRectangle(density: Density): Rectangle {
-    val left = floor(left / density.density).toInt()
-    val top = floor(top / density.density).toInt()
-    val right = ceil(right / density.density).toInt()
-    val bottom = ceil(bottom / density.density).toInt()
-    val width = right - left
-    val height = bottom - top
-    return Rectangle(
-        left, top, width, height
-    )
+internal fun toAwtRectangle(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    density: Float
+): Rectangle {
+    val rleft = floor(left / density).toInt()
+    val rtop = floor(top / density).toInt()
+    val rright = ceil(right / density).toInt()
+    val rbottom = ceil(bottom / density).toInt()
+    val rwidth = rright - rleft
+    val rheight = rbottom - rtop
+    return Rectangle(rleft, rtop, rwidth, rheight)
 }
+
+internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRectangle(
+    left = left.toFloat(),
+    top = top.toFloat(),
+    right = right.toFloat(),
+    bottom = bottom.toFloat(),
+    density = density.density
+)
+
+internal fun Rect.toAwtRectangle(density: Density) = toAwtRectangle(
+    left = left,
+    top = top,
+    right = right,
+    bottom = bottom,
+    density = density.density
+)
 
 internal fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)
 
