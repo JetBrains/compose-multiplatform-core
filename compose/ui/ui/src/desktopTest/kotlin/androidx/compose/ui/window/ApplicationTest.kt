@@ -30,6 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -146,5 +149,25 @@ class ApplicationTest {
 
         awaitIdle()
         assertThat(windowClock).isNotEqualTo(appClock)
+    }
+
+    @Test
+    fun `retrieving screen location immediately does not crash`() = runApplicationTest {
+        launchTestApplication {
+            Window(onCloseRequest = {}) {
+                Box(
+                    Modifier
+                        .size(100.dp)
+                        .onGloballyPositioned {
+                            it.positionOnScreen()
+                        }
+                        .onPlaced {
+                            it.positionOnScreen()
+                        }
+                )
+            }
+        }
+
+        awaitIdle()
     }
 }

@@ -72,11 +72,15 @@ internal class PlatformWindowContext {
     fun convertWindowToLocalPosition(container: Component, positionInWindow: Offset) =
         positionInWindow - offsetInWindow(container).toOffset(container.density)
 
-    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset =
-        localPosition + container.locationOnScreen.toOffset(container.density)
+    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset {
+        if (!container.isShowing) return Offset.Unspecified
+        return localPosition + container.locationOnScreen.toOffset(container.density)
+    }
 
-    fun convertScreenToLocalPosition(container: Component, positionOnScreen: Offset): Offset =
-        positionOnScreen - container.locationOnScreen.toOffset(container.density)
+    fun convertScreenToLocalPosition(container: Component, positionOnScreen: Offset): Offset {
+        if (!container.isShowing) return Offset.Unspecified
+        return positionOnScreen - container.locationOnScreen.toOffset(container.density)
+    }
 
     /**
      * Calculates the offset of the given [container] within the window.
@@ -94,7 +98,7 @@ internal class PlatformWindowContext {
     }
 }
 
-private fun Point.toOffset(density: Density): Offset {
+internal fun Point.toOffset(density: Density): Offset {
     val scale = density.density
     return Offset(
         x = x * scale,
