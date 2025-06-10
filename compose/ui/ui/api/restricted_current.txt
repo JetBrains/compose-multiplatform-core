@@ -133,7 +133,6 @@ package androidx.compose.ui {
 
   @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public final class ComposeUiFlags {
     property public final boolean NewNestedScrollFlingDispatchingEnabled;
-    property public final boolean isGetFocusedRectReturnEmptyEnabled;
     property public final boolean isRectTrackingEnabled;
     property public final boolean isRemoveFocusedViewFixEnabled;
     property public final boolean isSemanticAutofillEnabled;
@@ -141,7 +140,6 @@ package androidx.compose.ui {
     property public final boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
     field public static boolean NewNestedScrollFlingDispatchingEnabled;
-    field public static boolean isGetFocusedRectReturnEmptyEnabled;
     field public static boolean isRectTrackingEnabled;
     field public static boolean isRemoveFocusedViewFixEnabled;
     field public static boolean isSemanticAutofillEnabled;
