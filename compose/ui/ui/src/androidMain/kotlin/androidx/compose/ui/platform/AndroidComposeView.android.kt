@@ -939,12 +939,19 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
      * system for accurate focus searching and so ViewRootImpl will scroll correctly.
      */
     override fun getFocusedRect(rect: Rect) {
-        onFetchFocusRect()?.run {
-            rect.left = left.fastRoundToInt()
-            rect.top = top.fastRoundToInt()
-            rect.right = right.fastRoundToInt()
-            rect.bottom = bottom.fastRoundToInt()
-        } ?: super.getFocusedRect(rect)
+        val focusRect = onFetchFocusRect()
+        if (focusRect != null) {
+            rect.left = focusRect.left.fastRoundToInt()
+            rect.top = focusRect.top.fastRoundToInt()
+            rect.right = focusRect.right.fastRoundToInt()
+            rect.bottom = focusRect.bottom.fastRoundToInt()
+        } else {
+            if (focusOwner.focusSearch(Down, null) { true } != true) {
+                rect.set(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
+            } else {
+                super.getFocusedRect(rect)
+            }
+        }
     }
 
     /**
