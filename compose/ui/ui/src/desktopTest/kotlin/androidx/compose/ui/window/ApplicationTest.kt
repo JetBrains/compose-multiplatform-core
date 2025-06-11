@@ -42,11 +42,13 @@ import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import java.awt.Frame
 import java.awt.Point
+import java.awt.Toolkit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
+import org.junit.Assume
 import org.junit.Test
 
 class ApplicationTest {
@@ -214,6 +216,8 @@ class ApplicationTest {
 
     @Test
     fun `positionOnScreen is Unspecified when window is iconified`() = runApplicationTest {
+        Assume.assumeTrue(Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.ICONIFIED))
+
         lateinit var window: ComposeWindow
         var positionOnScreen: Offset = Offset.Unspecified
         launchTestApplication {
