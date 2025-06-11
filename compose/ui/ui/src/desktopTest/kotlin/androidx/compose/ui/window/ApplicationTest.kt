@@ -241,7 +241,7 @@ class ApplicationTest {
 
         window.state = Frame.ICONIFIED
         awaitIdle()
-        delay(2000)  // Wait out the macOS iconify animation
+        delay(10000)  // Wait out the macOS iconify animation
         assertEquals(Frame.ICONIFIED, window.state, "Window is not iconified")
         assertFalse(positionOnScreen.isSpecified, "Position on screen is specified when window is iconified")
     }
