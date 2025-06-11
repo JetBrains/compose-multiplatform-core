@@ -21,6 +21,13 @@ import org.jetbrains.skia.GradientStyle
 
 actual typealias Shader = org.jetbrains.skia.Shader
 
+internal actual class TransformShader {
+    actual var shader: Shader? = null
+    actual fun transform(matrix: Matrix?) {
+        // TODO https://youtrack.jetbrains.com/issue/CMP-7912
+    }
+}
+
 internal actual fun ActualLinearGradientShader(
     from: Offset,
     to: Offset,
@@ -77,6 +84,9 @@ internal actual fun ActualImageShader(
         tileModeY.toSkiaTileMode()
     )
 }
+
+internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
+    dst // TODO https://youtrack.jetbrains.com/issue/CMP-7912
 
 private fun List<Color>.toIntArray(): IntArray =
     IntArray(size) { i -> this[i].toArgb() }
