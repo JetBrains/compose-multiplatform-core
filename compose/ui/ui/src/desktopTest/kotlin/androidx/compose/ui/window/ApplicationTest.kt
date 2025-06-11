@@ -215,7 +215,9 @@ class ApplicationTest {
     }
 
     @Test
-    fun `positionOnScreen is Unspecified when window is iconified`() = runApplicationTest {
+    fun `positionOnScreen is Unspecified when window is iconified`() = runApplicationTest(
+        useDelay = true,
+    ) {
         Assume.assumeTrue(Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.ICONIFIED))
 
         lateinit var window: ComposeWindow
