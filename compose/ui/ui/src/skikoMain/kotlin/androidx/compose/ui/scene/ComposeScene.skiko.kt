@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
@@ -146,6 +145,15 @@ interface ComposeScene {
      * @see PlatformContext.convertWindowToLocalPosition
      */
     fun invalidatePositionInWindow()
+
+    /**
+     * Invalidates position of the [ComposeScene]'s window. It will trigger callbacks like
+     * [Modifier.onGloballyPositioned] so they can recalculate actual position on screen.
+     *
+     * @see PlatformContext.convertLocalToScreenPosition
+     * @see PlatformContext.convertScreenToLocalPosition
+     */
+    fun invalidatePositionOnScreen()
 
     /**
      * Returns true if there are pending recompositions, renders or dispatched tasks.

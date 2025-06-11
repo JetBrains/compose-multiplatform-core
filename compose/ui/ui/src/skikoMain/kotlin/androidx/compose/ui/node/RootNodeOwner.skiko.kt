@@ -250,6 +250,10 @@ internal class RootNodeOwner(
         onLightingInfoChanged()
     }
 
+    fun invalidatePositionOnScreen() {
+        measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+    }
+
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
         ownedLayerManager.draw(canvas)
         clearInvalidObservations()
@@ -299,6 +303,10 @@ internal class RootNodeOwner(
 
     fun onKeyEvent(keyEvent: KeyEvent): Boolean {
         return focusOwner.dispatchKeyEvent(keyEvent) || handleFocusKeys(keyEvent)
+    }
+
+    fun onWindowPositionChanged() {
+
     }
 
     private fun handleFocusKeys(keyEvent: KeyEvent): Boolean {

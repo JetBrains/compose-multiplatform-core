@@ -571,6 +571,10 @@ internal class ComposeSceneMediator(
         )
     }
 
+    fun onWindowPositionChanged() = catchExceptions {
+        scene.invalidatePositionOnScreen()
+    }
+
     fun onChangeDensity(density: Density = container.density) = catchExceptions {
         if (scene.density != density) {
             scene.density = density

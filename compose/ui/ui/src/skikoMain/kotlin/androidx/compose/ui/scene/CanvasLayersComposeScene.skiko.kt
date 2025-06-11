@@ -205,6 +205,11 @@ private class CanvasLayersComposeSceneImpl(
         mainOwner.invalidatePositionInWindow()
     }
 
+    override fun invalidatePositionOnScreen() {
+        check(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
+        mainOwner.invalidatePositionOnScreen()
+    }
+
     override fun createComposition(content: @Composable () -> Unit): Composition {
         return mainOwner.setContent(
             compositionContext,
