@@ -285,48 +285,48 @@ public final class androidx/compose/material/ColorsKt {
 public final class androidx/compose/material/ComposableSingletons$AppBarKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$AppBarKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-2$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1260131259$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$269254275$material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$BackdropScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$BackdropScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$2057676608$material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$BottomSheetScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$BottomSheetScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-2$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-3$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-505419337$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$687232378$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$937349512$material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$ScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$ScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-3$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-4$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-5$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-6$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-7$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-8$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1341284559$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1406416085$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1624772335$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1836397928$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1714259275$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$566090785$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$866784315$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$939725476$material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$SnackbarHostKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$SnackbarHostKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1890101041$material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$TabRowKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$TabRowKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1216856915$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-222041980$material ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/material/ContentAlpha {

@@ -1,9 +1,9 @@
 public final class androidx/compose/desktop/ui/tooling/preview/runtime/ComposableSingletons$PreviewRunnerKt {
 	public static final field INSTANCE Landroidx/compose/desktop/ui/tooling/preview/runtime/ComposableSingletons$PreviewRunnerKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui_tooling ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$ui_tooling ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda-3$ui_tooling ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$344283497$ui_tooling ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$586312763$ui_tooling ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$967998815$ui_tooling ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/ui/tooling/ComposableInvoker {

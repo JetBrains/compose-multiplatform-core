@@ -131,8 +131,8 @@ public final class androidx/compose/ui/CombinedModifier : androidx/compose/ui/Mo
 public final class androidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt {
 	public static final field INSTANCE Landroidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-120220721$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1296475654$ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/ui/ComposeUiFlags {
@@ -454,6 +454,10 @@ public final class androidx/compose/ui/awt/AwtEvents_desktopKt {
 	public static final fun getAwtEventOrNull-ZmokQxo (Ljava/lang/Object;)Ljava/awt/event/KeyEvent;
 }
 
+public final class androidx/compose/ui/awt/AwtWindow_desktopKt {
+	public static final fun AwtWindow (ZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
 public final class androidx/compose/ui/awt/ComposeDialog : javax/swing/JDialog {
 	public static final field $stable I
 	public fun <init> ()V
@@ -584,9 +588,19 @@ public final class androidx/compose/ui/awt/RenderSettings$Companion {
 	public final fun getDefault ()Landroidx/compose/ui/awt/RenderSettings;
 }
 
+public final class androidx/compose/ui/awt/SwingDialog_desktopKt {
+	public static final fun SwingDialog (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/window/DialogState;ZLjava/lang/String;Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/window/WindowDecoration;ZZZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;III)V
+	public static final fun SwingDialog (ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
 public final class androidx/compose/ui/awt/SwingPanel_desktopKt {
 	public static final fun SwingPanel-euL9pac (JLkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun getNoOpUpdate ()Lkotlin/jvm/functions/Function1;
+}
+
+public final class androidx/compose/ui/awt/SwingWindow_desktopKt {
+	public static final fun SwingWindow (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/window/WindowState;ZLjava/lang/String;Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/window/WindowDecoration;ZZZZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;III)V
+	public static final fun SwingWindow (ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class androidx/compose/ui/draganddrop/DragAndDropEvent {
@@ -2541,7 +2555,7 @@ public final class androidx/compose/ui/layout/BeyondBoundsLayoutKt {
 public final class androidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt {
 	public static final field INSTANCE Landroidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$641200809$ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/layout/ContentScale {
@@ -4478,7 +4492,7 @@ public final class androidx/compose/ui/window/AwtWindow_desktopKt {
 public final class androidx/compose/ui/window/ComposableSingletons$Tray_desktopKt {
 	public static final field INSTANCE Landroidx/compose/ui/window/ComposableSingletons$Tray_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda-1$ui ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2071755610$ui ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/ui/window/DefaultWindowExceptionHandlerFactory : androidx/compose/ui/window/WindowExceptionHandlerFactory {

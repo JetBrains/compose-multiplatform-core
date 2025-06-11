@@ -119,7 +119,7 @@ internal class AccessibilityController(
                     SemanticsProperties.TextSelectionRange -> {
                         component.composeAccessibleContext.firePropertyChange(
                             ACCESSIBLE_CARET_PROPERTY,
-                            prev, (entry.value as TextRange).start
+                            (prev as? TextRange)?.start, (entry.value as TextRange).start
                         )
                     }
 
@@ -157,7 +157,7 @@ internal class AccessibilityController(
                         val value = entry.value as ProgressBarRangeInfo
                         component.composeAccessibleContext.firePropertyChange(
                             ACCESSIBLE_VALUE_PROPERTY,
-                            prev,
+                            (prev as? ProgressBarRangeInfo)?.current,
                             value.current
                         )
                     }

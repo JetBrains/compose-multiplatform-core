@@ -33,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeDialog
+import androidx.compose.ui.awt.SwingDialog
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
@@ -82,7 +83,7 @@ class DialogWindowTest {
             }
 
             if (isOpen) {
-                DialogWindow(
+                SwingDialog(
                     create = ::createWindow,
                     dispose = ComposeDialog::dispose
                 ) {
@@ -117,7 +118,7 @@ class DialogWindowTest {
             }
 
             if (isOpen) {
-                DialogWindow(
+                SwingDialog(
                     create = ::createWindow,
                     dispose = ComposeDialog::dispose,
                     update = { it.title = title }
@@ -693,6 +694,22 @@ class DialogWindowTest {
         waitForIdle()
 
         assertDialogStateEquals(expectedState, restoredState)
+    }
+
+    @Test
+    fun `swing dialog init called before it is displayable`() = runApplicationTest {
+        var isDisplayableInInit: Boolean? = null
+        launchTestApplication {
+            SwingDialog(
+                onCloseRequest = ::exitApplication,
+                init = {
+                    isDisplayableInInit = it.isDisplayable
+                }
+            ) { }
+        }
+
+        awaitIdle()
+        assertThat(isDisplayableInInit).isFalse()
     }
 }
 

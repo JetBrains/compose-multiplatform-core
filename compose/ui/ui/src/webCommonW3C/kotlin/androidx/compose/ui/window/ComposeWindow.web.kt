@@ -56,10 +56,14 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.LocalInteropContainer
+import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.viewinterop.InteropViewGroup
+import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -85,6 +89,7 @@ import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HTMLTitleElement
 import org.w3c.dom.MediaQueryListEvent
@@ -197,6 +202,27 @@ internal class ComposeWindow(
         override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(canvasEvents, state.globalEvents, density) {
             override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                 get() = scene.rootDragAndDropNode
+        }
+
+        private fun getCanvasCoordinates(): Pair<Double, Double> {
+            return canvas.getBoundingClientRect().let {
+                it.left to it.top
+            }
+        }
+
+        override fun convertLocalToWindowPosition(localPosition: Offset): Offset {
+            val (canvasX, canvasY) = getCanvasCoordinates()
+            return Offset(
+                x = (canvasX + localPosition.x / density.density).toFloat(),
+                y = (canvasY + localPosition.y / density.density).toFloat()
+            )
+        }
+
+        override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset {
+            val (canvasX, canvasY) = getCanvasCoordinates()
+            val localX = (positionInWindow.x - canvasX) * density.density
+            val localY = (positionInWindow.y - canvasY) * density.density
+            return Offset(x = localX.toFloat(), y = localY.toFloat())
         }
 
         override val textInputService = object : WebTextInputService() {
@@ -356,13 +382,21 @@ internal class ComposeWindow(
 
         scene.density = density
 
+        val interopContainerElement = document.createElement("div") as HTMLElement
+        document.body!!.appendChild(interopContainerElement)
+        val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
+
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
                 LocalLifecycleOwner provides this,
                 LocalInternalViewModelStoreOwner provides this,
+                LocalInteropContainer provides interopContainer,
                 content = {
-                    content()
+                    interopContainer.TrackInteropPlacementContainer {
+                        content()
+                    }
+
                     rememberCoroutineScope().launch {
                         state.sizeFlow().collect { size ->
                             this@ComposeWindow.resize(size)

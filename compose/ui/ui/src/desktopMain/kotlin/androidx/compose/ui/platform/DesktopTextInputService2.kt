@@ -168,7 +168,6 @@ private class InputMethodSession(
 
     override fun getTextLocation(offset: TextHitInfo?): Rectangle? {
         val awtRect = request.focusedRectInRoot()?.let {
-            println("focusedRect: $it")
             val centerX = it.topCenter.x
             it.copy(left = centerX, right = centerX).toAwtRectangleRounded(component.density)
         } ?: return null

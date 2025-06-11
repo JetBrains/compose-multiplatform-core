@@ -5700,6 +5700,18 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporary
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop|#static{}androidx_compose_ui_platform_WebTextInputService$stableprop[0]
 
 // Targets: [js, wasmJs]
+final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop|#static{}androidx_compose_ui_viewinterop_InteropViewGroup$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropContainer$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropContainer$stableprop|#static{}androidx_compose_ui_viewinterop_WebInteropContainer$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop|#static{}androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop|#static{}androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop[0]
+
+// Targets: [js, wasmJs]
 final val androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop|#static{}androidx_compose_ui_window_ComposeWindow$stableprop[0]
 
 // Targets: [js, wasmJs]
@@ -5719,6 +5731,9 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_WebTextInputSess
 
 // Targets: [js, wasmJs]
 final fun (androidx.compose.ui.input.pointer/PointerIcon.Companion).androidx.compose.ui.input.pointer/fromKeyword(kotlin/String): androidx.compose.ui.input.pointer/PointerIcon // androidx.compose.ui.input.pointer/fromKeyword|fromKeyword@androidx.compose.ui.input.pointer.PointerIcon.Companion(kotlin.String){}[0]
+
+// Targets: [js, wasmJs]
+final fun <#A: org.w3c.dom/HTMLElement> androidx.compose.ui.viewinterop/WebElementView(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/WebElementView|WebElementView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<org.w3c.dom.HTMLElement>}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_WebDragAndDropManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_WebDragAndDropManager$stableprop_getter|androidx_compose_ui_draganddrop_WebDragAndDropManager$stableprop_getter(){}[0]
@@ -5764,6 +5779,18 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporary
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter|androidx_compose_ui_platform_WebTextInputService$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter|androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropContainer$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropContainer$stableprop_getter|androidx_compose_ui_viewinterop_WebInteropContainer$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop_getter|androidx_compose_ui_viewinterop_WebInteropElementHolder$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter|androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/CanvasBasedWindow(kotlin/String? = ..., kotlin/String = ..., kotlin.coroutines/SuspendFunction0<androidx.compose.ui.unit/IntSize>? = ..., kotlin/Boolean = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/CanvasBasedWindow|CanvasBasedWindow(kotlin.String?;kotlin.String;kotlin.coroutines.SuspendFunction0<androidx.compose.ui.unit.IntSize>?;kotlin.Boolean;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]

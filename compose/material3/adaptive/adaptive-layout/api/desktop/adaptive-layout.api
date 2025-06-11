@@ -71,7 +71,7 @@ public final class androidx/compose/material3/adaptive/layout/AnimatedPaneScope$
 public final class androidx/compose/material3/adaptive/layout/ComposableSingletons$ThreePaneScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/layout/ComposableSingletons$ThreePaneScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$adaptive_layout ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$17047608$adaptive_layout ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/material3/adaptive/layout/DockedEdge : java/lang/Enum {
