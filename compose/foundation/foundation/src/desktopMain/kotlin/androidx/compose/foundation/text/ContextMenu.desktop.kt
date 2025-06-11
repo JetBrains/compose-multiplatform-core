@@ -27,13 +27,16 @@ import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.contextMenuOpenDetector
 import androidx.compose.foundation.internal.nativeClipboardHasText
 import androidx.compose.foundation.text.TextContextMenu.TextManager
+import androidx.compose.foundation.text.input.getSelectedText
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
+import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionManager
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
@@ -46,6 +49,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.getSelectedText
 import java.awt.Component
 import javax.swing.JPopupMenu
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -64,8 +70,17 @@ internal actual fun ContextMenuArea(
     enabled: Boolean,
     content: @Composable () -> Unit
 ) {
-    // TODO: Implement merged from Compose 1.7.0 overload
-    content()
+    if (!enabled) {
+        content()
+        return
+    }
+
+    val state = remember { ContextMenuState() }
+    val coroutineScope = rememberCoroutineScope()
+    val textManager = remember(selectionState, coroutineScope) {
+        selectionState.textManager(coroutineScope)
+    }
+    LocalTextContextMenu.current.Area(textManager, state, content)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -127,6 +142,56 @@ private val TextFieldSelectionManager.textManager: TextManager get() = object : 
 
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
         this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
+    }
+}
+
+private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope): TextManager {
+    return object : TextManager {
+
+        override val selectedText
+            get() = AnnotatedString(textFieldState.visualText.getSelectedText().toString())
+
+        private fun launchUndispatched(block: suspend CoroutineScope.() -> Unit) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED, block = block)
+        }
+
+        private fun cutImpl() = launchUndispatched { cut() }
+
+        private fun copyImpl() = launchUndispatched { copy() }
+
+        private fun pasteImpl() = launchUndispatched { paste() }
+
+        override val cut: (() -> Unit)?
+            get() = if (canCut()) ::cutImpl else null
+
+        override val copy: (() -> Unit)?
+            get() = if (canCopy()) ::copyImpl else null
+
+        override val paste: (() -> Unit)?
+            get() {
+                launchUndispatched { updateClipboardEntry() }
+                return if (canPaste()) ::pasteImpl else null
+            }
+
+        override val selectAll: (() -> Unit)?
+            get() = if (canSelectAll()) ::selectAll else null
+
+        override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
+            if (!textLayoutState.isPositionOnText(offset)) return
+            val index = textLayoutState.getOffsetForPosition(offset, coerceInVisibleBounds = false)
+            if (index == -1) return
+
+            if (index !in textFieldState.visualText.selection) {
+                val selection = updateSelection(
+                    textFieldCharSequence = textFieldState.visualText,
+                    startOffset = index,
+                    endOffset = index,
+                    isStartHandle = false,
+                    adjustment = SelectionAdjustment.Word,
+                )
+                textFieldState.selectCharsIn(selection)
+            }
+        }
     }
 }
 
