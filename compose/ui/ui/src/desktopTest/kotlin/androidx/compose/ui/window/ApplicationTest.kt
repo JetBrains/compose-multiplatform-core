@@ -222,6 +222,7 @@ class ApplicationTest {
 
         lateinit var window: ComposeWindow
         var positionOnScreen: Offset = Offset.Unspecified
+        var onGloballyPositionedCalled = false
         launchTestApplication {
             Window(onCloseRequest = {}) {
                 window = this@Window.window
@@ -230,6 +231,7 @@ class ApplicationTest {
                     Modifier
                         .size(100.dp)
                         .onGloballyPositioned {
+                            onGloballyPositionedCalled = true
                             positionOnScreen = it.positionOnScreen()
                         }
                 )
@@ -239,9 +241,11 @@ class ApplicationTest {
         awaitIdle()
         assertTrue(positionOnScreen.isSpecified, "Initial position on screen is unspecified")
 
+        onGloballyPositionedCalled = false
         window.state = Frame.ICONIFIED
         awaitIdle()
-        delay(10000)  // Wait out the macOS iconify animation
+        delay(2000)  // Wait out the macOS iconify animation
+        assertTrue(onGloballyPositionedCalled, "onGloballyPositioned not called when window is iconified")
         assertEquals(Frame.ICONIFIED, window.state, "Window is not iconified")
         assertFalse(positionOnScreen.isSpecified, "Position on screen is specified when window is iconified")
     }
