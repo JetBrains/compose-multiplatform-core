@@ -305,10 +305,6 @@ internal class RootNodeOwner(
         return focusOwner.dispatchKeyEvent(keyEvent) || handleFocusKeys(keyEvent)
     }
 
-    fun onWindowPositionChanged() {
-
-    }
-
     private fun handleFocusKeys(keyEvent: KeyEvent): Boolean {
         // TODO(b/177931787) : Consider creating a KeyInputManager like we have for FocusManager so
         //  that this common logic can be used by all owners.

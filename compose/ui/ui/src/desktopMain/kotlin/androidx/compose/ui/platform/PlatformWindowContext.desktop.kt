@@ -82,9 +82,10 @@ internal class PlatformWindowContext {
         block: (locationOnScreen: Offset) -> Offset
     ): Offset {
         if (!component.isShowing) return Offset.Unspecified
-        (SwingUtilities.getWindowAncestor(component) as? Frame)?.let { frame ->
-            if (frame.state == Frame.ICONIFIED) return Offset.Unspecified
-        }
+
+        val frame = SwingUtilities.getWindowAncestor(component) as? Frame
+        if ((frame != null) && (frame.state == Frame.ICONIFIED)) return Offset.Unspecified
+
         return block(component.locationOnScreen.toOffset(component.density))
     }
 
