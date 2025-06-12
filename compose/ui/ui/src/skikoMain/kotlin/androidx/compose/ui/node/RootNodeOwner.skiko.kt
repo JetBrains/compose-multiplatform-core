@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.PlatformFocusOwner
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.SkiaGraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -155,7 +156,7 @@ internal class RootNodeOwner(
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     private var isDisposed = false
-    private var currentPositionOnScreen: Offset = positionOnScreen()
+    private var currentCornersOnScreen: List<Offset>? = cornersOnScreen()
 
     init {
         snapshotObserver.startObserving()
@@ -220,13 +221,28 @@ internal class RootNodeOwner(
         onLightingInfoChanged()
     }
 
-    private fun positionOnScreen() = platformContext.convertLocalToScreenPosition(Offset.Zero) 
+    private fun cornersOnScreen() = size?.let { size ->
+        val width = size.width.toFloat()
+        val height = size.height.toFloat()
+        val corners =
+            listOf(
+                Offset.Zero,
+                Offset(x = width, y = 0f),
+                Offset(x = 0f, y = height),
+                Offset(x = width, y = height)
+            ).map {
+                platformContext.convertLocalToScreenPosition(it)
+            }
+        if (corners.any { it.isUnspecified }) null else corners
+    }
 
     fun invalidatePositionOnScreen() {
-        val positionOnScreen = positionOnScreen()
-        if (positionOnScreen != currentPositionOnScreen) {
+        // Look at all corners, because platformContext.convertLocalToScreenPosition can also
+        // rotate, skew etc.
+        val cornersOnScreen = cornersOnScreen()
+        if (cornersOnScreen != currentCornersOnScreen) {
             measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
-            currentPositionOnScreen = positionOnScreen
+            currentCornersOnScreen = cornersOnScreen
         }
     }
 
