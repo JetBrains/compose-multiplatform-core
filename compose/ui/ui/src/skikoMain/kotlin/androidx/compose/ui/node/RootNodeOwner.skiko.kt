@@ -155,6 +155,7 @@ internal class RootNodeOwner(
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     private var isDisposed = false
+    private var currentPositionOnScreen: Offset = positionOnScreen()
 
     init {
         snapshotObserver.startObserving()
@@ -219,8 +220,14 @@ internal class RootNodeOwner(
         onLightingInfoChanged()
     }
 
+    private fun positionOnScreen() = platformContext.convertLocalToScreenPosition(Offset.Zero) 
+
     fun invalidatePositionOnScreen() {
-        measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+        val positionOnScreen = positionOnScreen()
+        if (positionOnScreen != currentPositionOnScreen) {
+            measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+            currentPositionOnScreen = positionOnScreen
+        }
     }
 
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
