@@ -20,8 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 
 internal actual fun invokeComposable(composer: Composer, composable: @Composable () -> Unit) {
-    @Suppress("UNCHECKED_CAST")
-    val realFn = composable as Function2<Composer, Int, Unit>
+    @Suppress("UNCHECKED_CAST") val realFn = composable as Function2<Composer, Int, Unit>
     realFn(composer, 1)
 }
 

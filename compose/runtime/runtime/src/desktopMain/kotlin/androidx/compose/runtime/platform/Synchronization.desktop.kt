@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.runtime.platform
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias SynchronizedObject = androidx.compose.runtime.SynchronizedObject
 
 @Suppress("NOTHING_TO_INLINE")

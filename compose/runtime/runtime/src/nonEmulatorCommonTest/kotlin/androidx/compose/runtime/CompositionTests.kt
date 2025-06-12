@@ -4394,16 +4394,18 @@ class CompositionTests {
     }
 
     /* TODO: Restore after updating to Kotlin 2.2
-            Due to a bug in Kotlin 2.1.2x https://youtrack.jetbrains.com/issue/KT-77508, compilation of
-            the tests for K/JS and K/Native fails with
-            "Wrong number of parameters in wrapper: expected: 0 bound and 2 unbound, but 0 found".
-            So ignoring doesn't really work for this case. For now the test is moved to CompositionJvmTests
+        Due to a bug in Kotlin 2.1.2x https://youtrack.jetbrains.com/issue/KT-77508, compilation of
+        the tests for K/JS and K/Native fails with
+        "Wrong number of parameters in wrapper: expected: 0 bound and 2 unbound, but 0 found".
+        So ignoring doesn't really work for this case. For now the test is moved to CompositionJvmTests
+
     @Test
     fun composableDelegates() = compositionTest {
         val local = compositionLocalOf { "Default" }
         val delegatedLocal by local
         compose {
             Text(delegatedLocal)
+
             CompositionLocalProvider(local provides "Scoped") { Text(delegatedLocal) }
         }
         validate {
@@ -4476,7 +4478,6 @@ class CompositionTests {
 
     // Regression test for b/288717411
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397/Investigate-failing-compose-runtime-tests-when-running-with-LV-K2
     fun test_forgottenValue_isFreedFromSlotTable() = compositionTest {
         val value = Any()
         var rememberValue by mutableStateOf(false)
@@ -5113,7 +5114,8 @@ private inline fun InlineSubcomposition(crossinline content: @Composable () -> U
     }
 
 @Composable
-private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
+private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) =
+    current
 
 // for 274185312
 

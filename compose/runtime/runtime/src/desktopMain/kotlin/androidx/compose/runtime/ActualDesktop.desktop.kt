@@ -22,14 +22,13 @@ import kotlinx.coroutines.delay
     "MonotonicFrameClocks are not globally applicable across platforms. " +
         "Use an appropriate local clock."
 )
-actual val DefaultMonotonicFrameClock: MonotonicFrameClock get() = SixtyFpsMonotonicFrameClock
+actual val DefaultMonotonicFrameClock: MonotonicFrameClock
+    get() = SixtyFpsMonotonicFrameClock
 
 private object SixtyFpsMonotonicFrameClock : MonotonicFrameClock {
     private const val fps = 60
 
-    override suspend fun <R> withFrameNanos(
-        onFrame: (Long) -> R
-    ): R {
+    override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
         delay(1000L / fps)
         return onFrame(System.nanoTime())
     }

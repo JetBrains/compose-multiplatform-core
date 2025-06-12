@@ -28,6 +28,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.density
 import java.awt.Component
 import java.awt.Container
+import java.awt.Frame
 import java.awt.Point
 import javax.swing.SwingUtilities
 import kotlin.math.roundToInt
@@ -72,14 +73,32 @@ internal class PlatformWindowContext {
     fun convertWindowToLocalPosition(container: Component, positionInWindow: Offset) =
         positionInWindow - offsetInWindow(container).toOffset(container.density)
 
-    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset {
-        if (!container.isShowing) return Offset.Unspecified
-        return localPosition + container.locationOnScreen.toOffset(container.density)
+    /**
+     * If the [component]'s location on screen is undefined, returns [Offset.Unspecified]; otherwise
+     * passes its location on screen to [block] and returns its return value.
+     */
+    private inline fun withLocationOnScreenOrUnspecified(
+        component: Component,
+        block: (locationOnScreen: Offset) -> Offset
+    ): Offset {
+        if (!component.isShowing) return Offset.Unspecified
+
+        val frame = SwingUtilities.getWindowAncestor(component) as? Frame
+        if ((frame != null) && (frame.state == Frame.ICONIFIED)) return Offset.Unspecified
+
+        return block(component.locationOnScreen.toOffset(component.density))
     }
 
-    fun convertScreenToLocalPosition(container: Component, positionOnScreen: Offset): Offset {
-        if (!container.isShowing) return Offset.Unspecified
-        return positionOnScreen - container.locationOnScreen.toOffset(container.density)
+    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset {
+        return withLocationOnScreenOrUnspecified(container) {
+            localPosition + it
+        }
+    }
+
+    fun convertScreenToLocalPosition(container: Component, locationOnScreen: Offset): Offset {
+        return withLocationOnScreenOrUnspecified(container) {
+            locationOnScreen - it
+        }
     }
 
     /**

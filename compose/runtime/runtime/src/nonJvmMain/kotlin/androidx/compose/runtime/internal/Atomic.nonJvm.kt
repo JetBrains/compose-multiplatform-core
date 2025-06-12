@@ -20,20 +20,28 @@ import kotlinx.atomicfu.atomic
 
 internal actual class AtomicReference<V> actual constructor(value: V) {
     private val delegate = atomic(value)
+
     actual fun get() = delegate.value
+
     actual fun set(value: V) {
         delegate.value = value
     }
+
     actual fun getAndSet(value: V) = delegate.getAndSet(value)
+
     actual fun compareAndSet(expect: V, newValue: V) = delegate.compareAndSet(expect, newValue)
 }
 
 internal actual class AtomicInt actual constructor(value: Int) {
     private val delegate = atomic(value)
+
     actual fun get(): Int = delegate.value
+
     actual fun set(value: Int) {
         delegate.value = value
     }
+
     actual fun add(amount: Int): Int = delegate.addAndGet(amount)
+
     actual fun compareAndSet(expect: Int, newValue: Int) = delegate.compareAndSet(expect, newValue)
 }

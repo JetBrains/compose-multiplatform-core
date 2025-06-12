@@ -154,13 +154,14 @@ internal class ComposeContainer(
     }
 
     /**
-     * The listener to [window] size changes.
+     * The listener to [window] size and position changes.
      */
-    private val windowSizeListener = object : ComponentAdapter() {
+    private val windowBoundsListener = object : ComponentAdapter() {
         // When the window is moved to a display with a different density, componentResized is
         // called on the window, but not on `windowContainer`, so we need to update the size
         // here too.
         override fun componentResized(e: ComponentEvent?) = onWindowContainerSizeChanged()
+        override fun componentMoved(e: ComponentEvent?) = onWindowPositionChanged()
     }
 
     val contentComponent by mediator::contentComponent
@@ -208,16 +209,20 @@ internal class ComposeContainer(
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
     override fun windowLostFocus(event: WindowEvent) = onWindowFocusChanged()
 
-    override fun windowOpened(e: WindowEvent) = Unit
+    override fun windowOpened(e: WindowEvent) {
+        onWindowPositionChanged()
+    }
     override fun windowClosing(e: WindowEvent) = Unit
     override fun windowClosed(e: WindowEvent) = Unit
     override fun windowIconified(e: WindowEvent) {
         isMinimized = true
         updateLifecycleState()
+        onWindowPositionChanged()
     }
     override fun windowDeiconified(e: WindowEvent) {
         isMinimized = false
         updateLifecycleState()
+        onWindowPositionChanged()
     }
     override fun windowActivated(e: WindowEvent) = Unit
     override fun windowDeactivated(e: WindowEvent) = Unit
@@ -249,6 +254,12 @@ internal class ComposeContainer(
         // so we need to force re-validate it.
         container.validate()
         container.repaint()
+    }
+
+    private fun onWindowPositionChanged() {
+        if (!isDisposed) {
+            mediator.onWindowPositionChanged()
+        }
     }
 
     /**
@@ -290,7 +301,6 @@ internal class ComposeContainer(
     fun removeNotify() {
         isDetached = true
         updateLifecycleState()
-
         setWindow(null)
     }
 
@@ -311,12 +321,12 @@ internal class ComposeContainer(
         this.window?.let {
             it.removeWindowFocusListener(this)
             it.removeWindowListener(this)
-            it.removeComponentListener(windowSizeListener)
+            it.removeComponentListener(windowBoundsListener)
         }
         window?.let {
             it.addWindowFocusListener(this)
             it.addWindowListener(this)
-            it.addComponentListener(windowSizeListener)
+            it.addComponentListener(windowBoundsListener)
         }
         this.window = window
 

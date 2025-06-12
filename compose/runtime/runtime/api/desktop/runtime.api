@@ -572,6 +572,8 @@ public final class androidx/compose/runtime/PausableMonotonicFrameClock : androi
 public abstract interface class androidx/compose/runtime/PausedComposition {
 	public abstract fun apply ()V
 	public abstract fun cancel ()V
+	public abstract fun isApplied ()Z
+	public abstract fun isCancelled ()Z
 	public abstract fun isComplete ()Z
 	public abstract fun resume (Landroidx/compose/runtime/ShouldPauseCallback;)Z
 }
@@ -651,6 +653,7 @@ public abstract interface class androidx/compose/runtime/RecomposerInfo {
 	public abstract fun getChangeCount ()J
 	public abstract fun getHasPendingWork ()Z
 	public abstract fun getState ()Lkotlinx/coroutines/flow/Flow;
+	public fun observe (Landroidx/compose/runtime/tooling/CompositionRegistrationObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
 }
 
 public final class androidx/compose/runtime/RecomposerKt {
@@ -1259,8 +1262,13 @@ public abstract interface class androidx/compose/runtime/tooling/CompositionInst
 }
 
 public abstract interface class androidx/compose/runtime/tooling/CompositionObserver {
-	public abstract fun onBeginComposition (Landroidx/compose/runtime/Composition;Ljava/util/Map;)V
-	public abstract fun onEndComposition (Landroidx/compose/runtime/Composition;)V
+	public abstract fun onBeginComposition (Landroidx/compose/runtime/tooling/ObservableComposition;)V
+	public abstract fun onEndComposition (Landroidx/compose/runtime/tooling/ObservableComposition;)V
+	public abstract fun onReadInScope (Landroidx/compose/runtime/RecomposeScope;Ljava/lang/Object;)V
+	public abstract fun onScopeDisposed (Landroidx/compose/runtime/RecomposeScope;)V
+	public abstract fun onScopeEnter (Landroidx/compose/runtime/RecomposeScope;)V
+	public abstract fun onScopeExit (Landroidx/compose/runtime/RecomposeScope;)V
+	public abstract fun onScopeInvalidated (Landroidx/compose/runtime/RecomposeScope;Ljava/lang/Object;)V
 }
 
 public abstract interface class androidx/compose/runtime/tooling/CompositionObserverHandle {
@@ -1268,23 +1276,20 @@ public abstract interface class androidx/compose/runtime/tooling/CompositionObse
 }
 
 public final class androidx/compose/runtime/tooling/CompositionObserverKt {
-	public static final fun observe (Landroidx/compose/runtime/Composition;Landroidx/compose/runtime/tooling/CompositionObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
-	public static final fun observe (Landroidx/compose/runtime/RecomposeScope;Landroidx/compose/runtime/tooling/RecomposeScopeObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
 	public static final fun observe (Landroidx/compose/runtime/Recomposer;Landroidx/compose/runtime/tooling/CompositionRegistrationObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
+	public static final fun setObserver (Landroidx/compose/runtime/Composition;Landroidx/compose/runtime/tooling/CompositionObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
 }
 
 public abstract interface class androidx/compose/runtime/tooling/CompositionRegistrationObserver {
-	public abstract fun onCompositionRegistered (Landroidx/compose/runtime/Recomposer;Landroidx/compose/runtime/Composition;)V
-	public abstract fun onCompositionUnregistered (Landroidx/compose/runtime/Recomposer;Landroidx/compose/runtime/Composition;)V
+	public abstract fun onCompositionRegistered (Landroidx/compose/runtime/tooling/ObservableComposition;)V
+	public abstract fun onCompositionUnregistered (Landroidx/compose/runtime/tooling/ObservableComposition;)V
 }
 
 public final class androidx/compose/runtime/tooling/InspectionTablesKt {
 	public static final fun getLocalInspectionTables ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
 
-public abstract interface class androidx/compose/runtime/tooling/RecomposeScopeObserver {
-	public abstract fun onBeginScopeComposition (Landroidx/compose/runtime/RecomposeScope;)V
-	public abstract fun onEndScopeComposition (Landroidx/compose/runtime/RecomposeScope;)V
-	public abstract fun onScopeDisposed (Landroidx/compose/runtime/RecomposeScope;)V
+public abstract interface class androidx/compose/runtime/tooling/ObservableComposition {
+	public abstract fun setObserver (Landroidx/compose/runtime/tooling/CompositionObserver;)Landroidx/compose/runtime/tooling/CompositionObserverHandle;
 }
 

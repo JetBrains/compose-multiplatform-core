@@ -93,7 +93,7 @@ internal actual fun SnapshotIdArray.withIdInsertedAt(index: Int, id: SnapshotId)
         destination = newArray,
         destinationOffset = index + 1,
         startIndex = index,
-        endIndex = newSize - 1
+        endIndex = newSize - 1,
     )
     newArray[index] = id
     return newArray
@@ -110,7 +110,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = 0,
             startIndex = 0,
-            endIndex = index
+            endIndex = index,
         )
     }
     if (index < newSize) {
@@ -118,7 +118,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = index,
             startIndex = index + 1,
-            endIndex = newSize + 1
+            endIndex = newSize + 1,
         )
     }
     return newArray

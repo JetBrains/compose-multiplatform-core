@@ -30,6 +30,7 @@ import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SnapshotContextElementTests {
+    // TODO: b/409725929
     @Test
     @IgnoreJsTarget
     @IgnoreWasmTarget

@@ -739,6 +739,7 @@ public final class androidx/compose/ui/draw/CacheDrawScope : androidx/compose/ui
 	public final fun getLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
 	public final fun getSize-NH-jbRc ()J
 	public final fun obtainGraphicsLayer ()Landroidx/compose/ui/graphics/layer/GraphicsLayer;
+	public final fun obtainShadowContext ()Landroidx/compose/ui/graphics/shadow/ShadowContext;
 	public final fun onDrawBehind (Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/draw/DrawResult;
 	public final fun onDrawWithContent (Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/draw/DrawResult;
 	public final fun record-TdoYBX4 (Landroidx/compose/ui/graphics/layer/GraphicsLayer;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;JLkotlin/jvm/functions/Function1;)V
@@ -785,6 +786,44 @@ public final class androidx/compose/ui/draw/DrawResult {
 	public static final field $stable I
 }
 
+public abstract interface class androidx/compose/ui/draw/DropShadowScope : androidx/compose/ui/draw/ShadowScope {
+}
+
+public final class androidx/compose/ui/draw/DropShadowScope$DefaultImpls {
+	public static fun roundToPx--R2X_6o (Landroidx/compose/ui/draw/DropShadowScope;J)I
+	public static fun roundToPx-0680j_4 (Landroidx/compose/ui/draw/DropShadowScope;F)I
+	public static fun toDp-GaN1DYA (Landroidx/compose/ui/draw/DropShadowScope;J)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/DropShadowScope;F)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/DropShadowScope;I)F
+	public static fun toDpSize-k-rfVVM (Landroidx/compose/ui/draw/DropShadowScope;J)J
+	public static fun toPx--R2X_6o (Landroidx/compose/ui/draw/DropShadowScope;J)F
+	public static fun toPx-0680j_4 (Landroidx/compose/ui/draw/DropShadowScope;F)F
+	public static fun toRect (Landroidx/compose/ui/draw/DropShadowScope;Landroidx/compose/ui/unit/DpRect;)Landroidx/compose/ui/geometry/Rect;
+	public static fun toSize-XkaWNTQ (Landroidx/compose/ui/draw/DropShadowScope;J)J
+	public static fun toSp-0xMU5do (Landroidx/compose/ui/draw/DropShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/DropShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/DropShadowScope;I)J
+}
+
+public abstract interface class androidx/compose/ui/draw/InnerShadowScope : androidx/compose/ui/draw/ShadowScope {
+}
+
+public final class androidx/compose/ui/draw/InnerShadowScope$DefaultImpls {
+	public static fun roundToPx--R2X_6o (Landroidx/compose/ui/draw/InnerShadowScope;J)I
+	public static fun roundToPx-0680j_4 (Landroidx/compose/ui/draw/InnerShadowScope;F)I
+	public static fun toDp-GaN1DYA (Landroidx/compose/ui/draw/InnerShadowScope;J)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/InnerShadowScope;F)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/InnerShadowScope;I)F
+	public static fun toDpSize-k-rfVVM (Landroidx/compose/ui/draw/InnerShadowScope;J)J
+	public static fun toPx--R2X_6o (Landroidx/compose/ui/draw/InnerShadowScope;J)F
+	public static fun toPx-0680j_4 (Landroidx/compose/ui/draw/InnerShadowScope;F)F
+	public static fun toRect (Landroidx/compose/ui/draw/InnerShadowScope;Landroidx/compose/ui/unit/DpRect;)Landroidx/compose/ui/geometry/Rect;
+	public static fun toSize-XkaWNTQ (Landroidx/compose/ui/draw/InnerShadowScope;J)J
+	public static fun toSp-0xMU5do (Landroidx/compose/ui/draw/InnerShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/InnerShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/InnerShadowScope;I)J
+}
+
 public final class androidx/compose/ui/draw/PainterModifierKt {
 	public static final fun paint (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/painter/Painter;ZLandroidx/compose/ui/Alignment;Landroidx/compose/ui/layout/ContentScale;FLandroidx/compose/ui/graphics/ColorFilter;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun paint$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/painter/Painter;ZLandroidx/compose/ui/Alignment;Landroidx/compose/ui/layout/ContentScale;FLandroidx/compose/ui/graphics/ColorFilter;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
@@ -800,10 +839,48 @@ public final class androidx/compose/ui/draw/ScaleKt {
 }
 
 public final class androidx/compose/ui/draw/ShadowKt {
+	public static final fun dropShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun dropShadow-hLWuAgI (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;J)Landroidx/compose/ui/Modifier;
+	public static synthetic fun dropShadow-hLWuAgI$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;JILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun innerShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/InnerShadow;)Landroidx/compose/ui/Modifier;
+	public static final fun innerShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun shadow-s4CzXII (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;ZJJ)Landroidx/compose/ui/Modifier;
 	public static synthetic fun shadow-s4CzXII$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;ZJJILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static final synthetic fun shadow-ziNgDLE (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;Z)Landroidx/compose/ui/Modifier;
 	public static synthetic fun shadow-ziNgDLE$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;ZILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/ui/draw/ShadowScope : androidx/compose/ui/unit/Density {
+	public abstract fun getAlpha ()F
+	public abstract fun getBlendMode-0nO6VwU ()I
+	public abstract fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public abstract fun getColor-0d7_KjU ()J
+	public abstract fun getOffset-F1C5BW0 ()J
+	public abstract fun getRadius ()F
+	public abstract fun getSpread ()F
+	public abstract fun setAlpha (F)V
+	public abstract fun setBlendMode-s9anfk8 (I)V
+	public abstract fun setBrush (Landroidx/compose/ui/graphics/Brush;)V
+	public abstract fun setColor-8_81llA (J)V
+	public abstract fun setOffset-k-4lQ0M (J)V
+	public abstract fun setRadius (F)V
+	public abstract fun setSpread (F)V
+}
+
+public final class androidx/compose/ui/draw/ShadowScope$DefaultImpls {
+	public static fun roundToPx--R2X_6o (Landroidx/compose/ui/draw/ShadowScope;J)I
+	public static fun roundToPx-0680j_4 (Landroidx/compose/ui/draw/ShadowScope;F)I
+	public static fun toDp-GaN1DYA (Landroidx/compose/ui/draw/ShadowScope;J)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/ShadowScope;F)F
+	public static fun toDp-u2uoSUM (Landroidx/compose/ui/draw/ShadowScope;I)F
+	public static fun toDpSize-k-rfVVM (Landroidx/compose/ui/draw/ShadowScope;J)J
+	public static fun toPx--R2X_6o (Landroidx/compose/ui/draw/ShadowScope;J)F
+	public static fun toPx-0680j_4 (Landroidx/compose/ui/draw/ShadowScope;F)F
+	public static fun toRect (Landroidx/compose/ui/draw/ShadowScope;Landroidx/compose/ui/unit/DpRect;)Landroidx/compose/ui/geometry/Rect;
+	public static fun toSize-XkaWNTQ (Landroidx/compose/ui/draw/ShadowScope;J)J
+	public static fun toSp-0xMU5do (Landroidx/compose/ui/draw/ShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/ShadowScope;F)J
+	public static fun toSp-kPz2Gy4 (Landroidx/compose/ui/draw/ShadowScope;I)J
 }
 
 public final class androidx/compose/ui/focus/FocusChangedModifierKt {
@@ -3418,6 +3495,7 @@ public abstract interface class androidx/compose/ui/node/SemanticsModifierNode :
 	public abstract fun applySemantics (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
 	public fun getShouldClearDescendantSemantics ()Z
 	public fun getShouldMergeDescendantSemantics ()Z
+	public fun isImportantForBounds ()Z
 }
 
 public final class androidx/compose/ui/node/SemanticsModifierNodeKt {
@@ -3902,6 +3980,7 @@ public abstract interface class androidx/compose/ui/scene/ComposeScene {
 	public abstract fun hasInvalidations ()Z
 	public abstract fun hitTestInteropView-k-4lQ0M (J)Ljava/lang/Object;
 	public abstract fun invalidatePositionInWindow ()V
+	public abstract fun invalidatePositionOnScreen ()V
 	public abstract fun render (Landroidx/compose/ui/graphics/Canvas;J)V
 	public abstract fun sendKeyEvent-ZmokQxo (Ljava/lang/Object;)Z
 	public abstract fun sendPointerEvent--c_cFIg (ILjava/util/List;IIJJLjava/lang/Object;Landroidx/compose/ui/input/pointer/PointerButton;)Z

@@ -219,6 +219,10 @@ internal class RootNodeOwner(
         onLightingInfoChanged()
     }
 
+    fun invalidatePositionOnScreen() {
+        measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+    }
+
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
         ownedLayerManager.draw(canvas)
         clearInvalidObservations()

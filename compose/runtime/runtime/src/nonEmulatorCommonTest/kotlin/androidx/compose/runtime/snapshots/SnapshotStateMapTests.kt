@@ -20,7 +20,6 @@ package androidx.compose.runtime.snapshots
 
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.runTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -136,13 +135,12 @@ class SnapshotStateMapTests {
         validateWrite { map -> map.entries.clear() }
     }
 
+    // TODO: b/409729875
+    //  test passes if the order is changed to assertEquals(entries.first, entries.second)
     @Test
     @IgnoreJsTarget
     @IgnoreWasmTarget
     @IgnoreNativeTarget
-    // Ignored on js and native:
-    // test passes if the order is changed to
-    // assertEquals(entries.first, entries.second)
     fun validateEntriesIterator() {
         validateRead { map, normalMap ->
             for (entries in map.entries.zip(normalMap.entries)) {
@@ -222,14 +220,22 @@ class SnapshotStateMapTests {
         validateWrite { map -> map.entries.remove(map.entries.first()) }
     }
 
+    // TODO: b/409727470
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
     fun validateEntriesRemoveAll() {
         validateWrite { map -> map.entries.removeAll(map.entries.filter { it.key % 2 == 0 }) }
     }
 
+    // TODO: b/409727470
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
     fun validateEntriesRetainAll() {
         validateWrite { map -> map.entries.retainAll(map.entries.filter { it.key % 2 == 0 }) }
     }
@@ -394,8 +400,8 @@ class SnapshotStateMapTests {
     @IgnoreJsTarget
     @IgnoreWasmTarget
     @IgnoreNativeTarget
-    // Ignored for native:
-    // SnapshotStateMap removes a correct element (same as on jvm and js) - entry(key=1,value=1f)
+    // Ignored for js, wasm and native:
+    // SnapshotStateMap removes a correct element - entry(key=1,value=1f)
     // The test fails because MutableMap (normalMap) removes entry(key=1, value=5f)
     // due to an entry search by value starting from the end of an array (in native HashMap impl).
     fun validateValuesRemove() {

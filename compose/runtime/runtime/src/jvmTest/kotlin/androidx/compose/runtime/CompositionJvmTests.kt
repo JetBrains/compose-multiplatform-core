@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,12 @@ import kotlin.test.Test
 @Stable
 @Suppress("unused")
 class CompositionJvmTests {
-    // https://youtrack.jetbrains.com/issue/KT-77508
+    /* TODO: Move this test back to commonTest after updating to Kotlin 2.2
+       Due to a bug in Kotlin 2.1.2x https://youtrack.jetbrains.com/issue/KT-77508, compilation of
+       the tests for K/JS and K/Native fails with
+       "Wrong number of parameters in wrapper: expected: 0 bound and 2 unbound, but 0 found".
+       So ignoring doesn't really work for this case.
+    */
     @Test
     fun composableDelegates() = compositionTest {
         val local = compositionLocalOf { "Default" }
@@ -45,4 +50,5 @@ class CompositionJvmTests {
 }
 
 @Composable
-private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) = current
+private operator fun <T> CompositionLocal<T>.getValue(thisRef: Any?, property: KProperty<*>) =
+    current

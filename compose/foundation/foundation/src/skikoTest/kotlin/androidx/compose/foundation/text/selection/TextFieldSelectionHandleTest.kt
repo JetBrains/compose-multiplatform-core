@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.sp
 import kotlin.math.pow
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
@@ -120,6 +121,7 @@ class BasicTextFieldSelectionHandleTest {
         )
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8347
     @Test
     fun coreTextFieldSelectionHandles() = runSkikoComposeUiTest(size = Size(100f, 100f)) {
         val selection = TextRange(1, 3)

@@ -32,20 +32,24 @@ internal fun runTest(
     dispatchTimeoutMs: Long = DEFAULT_DISPATCH_TIMEOUT_MS,
     timeoutMs: Long? = null,
     expected: KClass<out Throwable>? = null,
-    testBody: suspend TestScope.() -> Unit
-): TestResult = kotlinx.coroutines.test.runTest(context, timeout = dispatchTimeoutMs.milliseconds) {
-    val testScope = this
-    if (timeoutMs == null) {
-        runTestImpl(expected) { testBody() }
-    } else {
-        testWithTimeout(timeoutMs) {
-            testBody(testScope)
-            runTestImpl(expected) { testBody(testScope) }
+    testBody: suspend TestScope.() -> Unit,
+): TestResult =
+    kotlinx.coroutines.test.runTest(context, timeout = dispatchTimeoutMs.milliseconds) {
+        val testScope = this
+        if (timeoutMs == null) {
+            runTestImpl(expected) { testBody() }
+        } else {
+            testWithTimeout(timeoutMs) {
+                testBody(testScope)
+                runTestImpl(expected) { testBody(testScope) }
+            }
         }
     }
-}
 
-internal expect suspend fun testWithTimeout(timeoutMs: Long, block: suspend CoroutineScope.() -> Unit)
+internal expect suspend fun testWithTimeout(
+    timeoutMs: Long,
+    block: suspend CoroutineScope.() -> Unit,
+)
 
 private inline fun runTestImpl(expected: KClass<out Throwable>? = null, block: () -> Unit) {
     if (expected != null) {
@@ -57,7 +61,7 @@ private inline fun runTestImpl(expected: KClass<out Throwable>? = null, block: (
         }
         assertTrue(
             exception != null && expected.isInstance(exception),
-            "Expected $expected to be thrown"
+            "Expected $expected to be thrown",
         )
     } else {
         block()

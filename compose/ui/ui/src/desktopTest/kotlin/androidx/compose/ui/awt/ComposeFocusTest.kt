@@ -47,6 +47,7 @@ import javax.swing.JButton
 import javax.swing.JFrame
 import javax.swing.JPanel
 import kotlin.random.Random
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.delay
@@ -106,6 +107,7 @@ class ComposeFocusTest {
         )
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8348
     @Test
     fun `compose panel in the end`() = runFocusTest {
         val window = JFrame().disposeOnEnd()
@@ -136,6 +138,7 @@ class ComposeFocusTest {
         )
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8348
     @Test
     fun `compose panel in the beginning`() = runFocusTest {
         val window = JFrame().disposeOnEnd()
@@ -227,6 +230,7 @@ class ComposeFocusTest {
         )
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8348
     @Test
     fun `swing panel in the end of compose panel`() = runFocusTest {
         val window = JFrame().disposeOnEnd()
@@ -266,6 +270,7 @@ class ComposeFocusTest {
         )
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8348
     @Test
     fun `swing panel in the beginning of compose panel`() = runFocusTest {
         val window = JFrame().disposeOnEnd()

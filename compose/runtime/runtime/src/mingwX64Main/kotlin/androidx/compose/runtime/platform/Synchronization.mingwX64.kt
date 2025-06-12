@@ -18,10 +18,10 @@ package androidx.compose.runtime.platform
 import androidx.compose.runtime.internal.currentThreadId
 import kotlinx.atomicfu.*
 
+@Suppress("NOTHING_TO_INLINE")
 internal actual inline fun makeSynchronizedObject(ref: Any?) = SynchronizedObject()
 
 @PublishedApi
-@Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
 internal actual inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R {
     lock.run {
         lock()
@@ -36,34 +36,38 @@ internal actual inline fun <R> synchronized(lock: SynchronizedObject, block: () 
 /**
  * Re-entrant spin lock implementation.
  *
- * `SynchronizedObject` from `kotlinx-atomicfu` library was used before.
- * However, it is still [experimental](https://github.com/Kotlin/kotlinx-atomicfu?tab=readme-ov-file#locks)
- * and has [a performance problem](https://github.com/Kotlin/kotlinx-atomicfu/issues/412)
- * that seriously affects Compose.
+ * `SynchronizedObject` from `kotlinx-atomicfu` library was used before. However, it is still
+ * [experimental](https://github.com/Kotlin/kotlinx-atomicfu?tab=readme-ov-file#locks) and has
+ * [a performance problem](https://github.com/Kotlin/kotlinx-atomicfu/issues/412) that seriously
+ * affects Compose.
  *
- * Using a posix mutex is [problematic for mingwX64](https://youtrack.jetbrains.com/issue/KT-70449/Posix-declarations-differ-much-for-mingwX64-and-LinuxDarwin-targets),
+ * Using a posix mutex is
+ * [problematic for mingwX64](https://youtrack.jetbrains.com/issue/KT-70449/Posix-declarations-differ-much-for-mingwX64-and-LinuxDarwin-targets),
  * so we just use a simple spin lock for mingwX64 (maybe reconsidered in case of problems).
  */
-internal actual class SynchronizedObject {
+@PublishedApi
+internal actual class SynchronizedObject internal constructor() {
 
-    companion object {
+    private companion object {
         private const val NO_OWNER = -1L
     }
 
     private val owner: AtomicLong = atomic(NO_OWNER)
     private var reEnterCount: Int = 0
 
-    fun lock() {
+    @PublishedApi
+    internal fun lock() {
         if (owner.value == currentThreadId()) {
             reEnterCount += 1
         } else {
             // Busy wait
-            while (!owner.compareAndSet(NO_OWNER, currentThreadId())){}
+            while (!owner.compareAndSet(NO_OWNER, currentThreadId())) {}
         }
     }
 
-    fun unlock() {
-        require (owner.value == currentThreadId())
+    @PublishedApi
+    internal fun unlock() {
+        require(owner.value == currentThreadId())
         if (reEnterCount > 0) {
             reEnterCount -= 1
         } else {

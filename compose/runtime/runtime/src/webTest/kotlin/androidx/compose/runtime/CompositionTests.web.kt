@@ -25,8 +25,10 @@ import kotlinx.coroutines.test.TestResult
 
 // This test duplicates the common CompositionTest, but makes it run properly on web.
 // This test requires that compositionTest is called in the test body.
-// On Web, compositionTest calls returns a Promise, and it's ignored when not returned from the Test method.
-// Here we make sure it runs (not ignored) by wrapping it in another Promise returned from the Test method.
+// On Web, compositionTest calls returns a Promise, and it's ignored when not returned from the Test
+// method.
+// Here we make sure it runs (not ignored) by wrapping it in another Promise returned from the Test
+// method.
 class CompositionTestWeb {
 
     @Test // https://youtrack.jetbrains.com/issue/CMP-7453
@@ -53,21 +55,22 @@ class CompositionTestWeb {
         assertFailsWith(IllegalStateException::class, message = "Throw") {
             promiseStarted = true
             compositionTest {
-                val rememberObject = mutableStateOf(false)
+                    val rememberObject = mutableStateOf(false)
 
-                compose {
-                    if (rememberObject.value) {
-                        @Suppress("UNUSED_EXPRESSION") remember { observed }
-                        error("Throw")
+                    compose {
+                        if (rememberObject.value) {
+                            @Suppress("UNUSED_EXPRESSION") remember { observed }
+                            error("Throw")
+                        }
                     }
+
+                    assertTrue(abandonedObjects.isEmpty())
+
+                    rememberObject.value = true
+
+                    advance(ignorePendingWork = true)
                 }
-
-                assertTrue(abandonedObjects.isEmpty())
-
-                rememberObject.value = true
-
-                advance(ignorePendingWork = true)
-            }.awaitCompletion()
+                .awaitCompletion()
 
             promiseCompleted = true
         }
@@ -78,8 +81,8 @@ class CompositionTestWeb {
     }
 }
 
-
 internal expect suspend fun TestResult.awaitCompletion()
+
 internal expect fun wrapTestWithCoroutine(block: suspend () -> Unit): TestResult
 
 class TestWrapTest {
@@ -88,12 +91,9 @@ class TestWrapTest {
     fun t() = wrapTestWithCoroutine {
         var result = false
 
-        kotlinx.coroutines.test.runTest {
-            result = true
-        }.awaitCompletion()
+        kotlinx.coroutines.test.runTest { result = true }.awaitCompletion()
 
         assertTrue(result)
         println("Completed\n")
     }
 }
-
