@@ -53,20 +53,28 @@ class BinaryCompatibilityChecker(
 
     private fun checkBinariesAreCompatible(
         errors: CompatibilityErrors,
-        validate: Boolean
+        validate: Boolean,
+        shouldFreeze: Boolean = false
     ): CompatibilityErrors {
-        return newLibraryAbi.checkIsBinaryCompatibleWith(oldLibraryAbi, errors, validate)
+        return newLibraryAbi.checkIsBinaryCompatibleWith(
+            oldLibraryAbi,
+            errors,
+            validate,
+            shouldFreeze
+        )
     }
 
     private fun LibraryAbi.checkIsBinaryCompatibleWith(
         olderLibraryAbi: LibraryAbi,
         errors: CompatibilityErrors,
-        validate: Boolean
+        validate: Boolean,
+        shouldFreeze: Boolean
     ): CompatibilityErrors {
         topLevelDeclarations.isBinaryCompatibleWith(
             olderLibraryAbi.topLevelDeclarations,
             uniqueName,
-            errors
+            errors,
+            shouldFreeze
         )
         if (validate && errors.isNotEmpty()) {
             throw ValidationException(errors.toString())
@@ -77,7 +85,8 @@ class BinaryCompatibilityChecker(
     private fun AbiDeclarationContainer.isBinaryCompatibleWith(
         oldContainer: AbiDeclarationContainer,
         parentQualifiedName: String,
-        errors: CompatibilityErrors
+        errors: CompatibilityErrors,
+        shouldFreeze: Boolean
     ) {
         val isBinaryCompatibleWith:
             AbiDeclaration.(AbiDeclaration, String, CompatibilityErrors) -> Unit =
@@ -90,7 +99,8 @@ class BinaryCompatibilityChecker(
             uniqueId = AbiDeclaration::asTypeString,
             isBinaryCompatibleWith = isBinaryCompatibleWith,
             parentQualifiedName = parentQualifiedName,
-            errors = errors
+            errors = errors,
+            isAllowedAddition = { !shouldFreeze }
         )
     }
 
@@ -353,14 +363,27 @@ class BinaryCompatibilityChecker(
             newLibraries: Map<String, LibraryAbi>,
             oldLibraries: Map<String, LibraryAbi>,
             baselines: Set<String> = emptySet(),
-            validate: Boolean = true
+            validate: Boolean = true,
+            shouldFreeze: Boolean = false
         ): List<CompatibilityError> {
+            val errors = CompatibilityErrors(baselines, "meta")
             val removedTargets = oldLibraries.keys - newLibraries.keys
+            val addedTargets = newLibraries.keys - oldLibraries.keys
             if (removedTargets.isNotEmpty()) {
-                val errors =
+                errors.addAll(
                     removedTargets.flatMap {
                         CompatibilityErrors(baselines, it).apply { add("Target was removed") }
                     }
+                )
+            }
+            if (shouldFreeze && addedTargets.isNotEmpty()) {
+                errors.addAll(
+                    addedTargets.flatMap {
+                        CompatibilityErrors(baselines, it).apply { add("Target was added") }
+                    }
+                )
+            }
+            if (errors.isNotEmpty()) {
                 if (validate) {
                     throw ValidationException(errors.toString())
                 }
@@ -369,9 +392,9 @@ class BinaryCompatibilityChecker(
             return oldLibraries.keys.flatMap { target ->
                 val newLib = newLibraries[target]!!
                 val oldLib = oldLibraries[target]!!
-                val errors = CompatibilityErrors(baselines, target)
+                val errorsForTarget = CompatibilityErrors(baselines, target)
                 BinaryCompatibilityChecker(newLib, oldLib)
-                    .checkBinariesAreCompatible(errors, validate)
+                    .checkBinariesAreCompatible(errorsForTarget, validate, shouldFreeze)
             }
         }
 
@@ -379,13 +402,15 @@ class BinaryCompatibilityChecker(
             newLibraries: Map<String, LibraryAbi>,
             oldLibraries: Map<String, LibraryAbi>,
             baselineFile: File?,
-            validate: Boolean = true
+            validate: Boolean = true,
+            shouldFreeze: Boolean = false
         ) =
             checkAllBinariesAreCompatible(
                 newLibraries,
                 oldLibraries,
                 baselineFile?.asBaselineErrors() ?: emptySet(),
-                validate
+                validate,
+                shouldFreeze
             )
     }
 }
