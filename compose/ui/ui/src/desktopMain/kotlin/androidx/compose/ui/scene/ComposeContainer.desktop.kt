@@ -89,7 +89,7 @@ internal class ComposeContainer(
     windowContainer: JLayeredPane = container,
 
     private val layerType: LayerType = ComposeFeatureFlags.layerType,
-    private val renderSettings: RenderSettings,
+    private val renderSettings: RenderSettings = RenderSettings.fromEnvironmentVariable(),
 ) : WindowFocusListener, WindowListener, LifecycleOwner, ViewModelStoreOwner {
     val windowContext = PlatformWindowContext()
     var window: Window? = null

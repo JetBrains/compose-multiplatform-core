@@ -15,17 +15,13 @@
  */
 package androidx.compose.ui.awt
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,10 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusTarget
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.layout
@@ -52,9 +45,7 @@ import com.google.common.truth.Truth.assertThat
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
-import java.awt.event.FocusEvent
 import java.awt.event.MouseEvent
-import javax.swing.JButton
 import javax.swing.JFrame
 import javax.swing.JPanel
 import junit.framework.TestCase.assertTrue
@@ -184,7 +175,6 @@ class ComposePanelTest {
 
             val composePanel = ComposePanel(
                 skiaLayerAnalytics = analytics,
-                renderSettings = RenderSettings.Default
             )
             composePanel.size = Dimension(100, 100)
 
