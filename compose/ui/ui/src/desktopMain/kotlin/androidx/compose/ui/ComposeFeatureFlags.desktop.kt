@@ -44,7 +44,7 @@ internal enum class LayerType {
 
 /**
  * The helper singleton object that provides the access to feature flags that
- * configure Compose behaviour.
+ * configure Compose behavior.
  */
 internal object ComposeFeatureFlags {
 
@@ -58,14 +58,26 @@ internal object ComposeFeatureFlags {
 
     /**
      * Indicates whether [androidx.compose.ui.awt.ComposePanel] should use Swing graphics for rendering.
-     * This prevents transitional rendering issues when panels are being shown, hidden, or resized.
+     * This prevents transitional rendering issues when panels are being shown, hidden or resized.
      * It also enables proper layering when combining Swing components and compose panels.
      *
      * Please note that it requires additional copy from offscreen texture to Swing graphics,
      * so it has some performance penalty.
+     *
+     * @deprecated Use [androidx.compose.ui.awt.RenderSettings.SwingGraphics] parameter in 
+     * [androidx.compose.ui.awt.ComposePanel.renderSettings] instead.
      */
+    @Deprecated("Use RenderSettings.SwingGraphics parameter instead")
     val useSwingGraphics: Boolean
-        get() = System.getProperty("compose.swing.render.on.graphics").toBoolean()
+        get() {
+            val useSwingGraphics = System.getProperty("compose.swing.render.on.graphics").toBoolean()
+            if (useSwingGraphics) {
+                println("The global environment variable \"compose.swing.render.on.graphics\" is deprecated. " +
+                    "Please use [RenderSettings.SwingGraphics] in [ComposePanel.renderSettings] argument instead. " +
+                    "Note that this variable has no effect when used with [ComposeWindow] or [ComposeDialog].")
+            }
+            return useSwingGraphics
+        }
 
     /**
      * Indicates whether interop blending is enabled.

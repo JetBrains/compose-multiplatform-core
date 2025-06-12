@@ -33,8 +33,6 @@ import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
-import androidx.compose.ui.scene.skia.SwingSkiaLayerComponent
-import androidx.compose.ui.scene.skia.WindowSkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -80,7 +78,6 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * @property window The window ancestor of the [container].
  * @property windowContainer A container used for additional layers and as reference
  *  for window coordinate space.
- * @property useSwingGraphics Flag indicating if offscreen rendering to Swing graphics is used.
  * @property layerType The type of layer used for Popup/Dialog.
  * @property renderSettings The settings for rendering.
  */
@@ -91,7 +88,6 @@ internal class ComposeContainer(
     window: Window? = null,
     windowContainer: JLayeredPane = container,
 
-    private val useSwingGraphics: Boolean = false,
     private val layerType: LayerType = ComposeFeatureFlags.layerType,
     private val renderSettings: RenderSettings,
 ) : WindowFocusListener, WindowListener, LifecycleOwner, ViewModelStoreOwner {
@@ -191,7 +187,7 @@ internal class ComposeContainer(
         setWindow(window)
         this.windowContainer = windowContainer
 
-        if (layerType == LayerType.OnComponent && !useSwingGraphics) {
+        if (layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics) {
             error("LayerType.OnComponent can only be used with rendering via Swing graphics")
         }
     }
@@ -359,17 +355,13 @@ internal class ComposeContainer(
             LayerType.OnWindow -> OverlayRenderDecorator(mediator, ::onRenderOverlay)
             else -> mediator
         }
-        return if (useSwingGraphics) {
-            SwingSkiaLayerComponent(mediator, renderDelegate, skiaLayerAnalytics)
-        } else {
-            WindowSkiaLayerComponent(
-                mediator,
-                windowContext,
-                renderDelegate,
-                skiaLayerAnalytics,
-                renderSettings
-            )
-        }
+        return SkiaLayerComponent(
+            mediator = mediator,
+            windowContext = windowContext,
+            renderDelegate = renderDelegate,
+            skiaLayerAnalytics = skiaLayerAnalytics,
+            renderSettings = renderSettings
+        )
     }
 
     private fun createComposeScene(mediator: ComposeSceneMediator): ComposeScene {

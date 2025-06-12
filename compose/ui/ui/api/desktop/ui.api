@@ -503,8 +503,8 @@ public final class androidx/compose/ui/awt/ComposeDialog : javax/swing/JDialog {
 public final class androidx/compose/ui/awt/ComposePanel : javax/swing/JLayeredPane {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Lorg/jetbrains/skiko/SkiaLayerAnalytics;ZLandroidx/compose/ui/awt/RenderSettings;)V
-	public synthetic fun <init> (Lorg/jetbrains/skiko/SkiaLayerAnalytics;ZLandroidx/compose/ui/awt/RenderSettings;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/jetbrains/skiko/SkiaLayerAnalytics;Landroidx/compose/ui/awt/RenderSettings;)V
+	public synthetic fun <init> (Lorg/jetbrains/skiko/SkiaLayerAnalytics;Landroidx/compose/ui/awt/RenderSettings;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun add (Ljava/awt/Component;)Ljava/awt/Component;
 	public fun addFocusListener (Ljava/awt/event/FocusListener;)V
 	public fun addNotify ()V
@@ -577,15 +577,21 @@ public final class androidx/compose/ui/awt/ComposeWindow : javax/swing/JFrame {
 	public final fun setUndecoratedResizerThickness-0680j_4 (F)V
 }
 
-public final class androidx/compose/ui/awt/RenderSettings {
+public abstract class androidx/compose/ui/awt/RenderSettings {
 	public static final field $stable I
-	public static final field Companion Landroidx/compose/ui/awt/RenderSettings$Companion;
+}
+
+public final class androidx/compose/ui/awt/RenderSettings$SkiaSurface : androidx/compose/ui/awt/RenderSettings {
+	public static final field $stable I
+	public fun <init> ()V
 	public fun <init> (Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun isVsyncEnabled ()Ljava/lang/Boolean;
 }
 
-public final class androidx/compose/ui/awt/RenderSettings$Companion {
-	public final fun getDefault ()Landroidx/compose/ui/awt/RenderSettings;
+public final class androidx/compose/ui/awt/RenderSettings$SwingGraphics : androidx/compose/ui/awt/RenderSettings {
+	public static final field $stable I
+	public fun <init> ()V
 }
 
 public final class androidx/compose/ui/awt/SwingDialog_desktopKt {

@@ -52,15 +52,15 @@ internal class ComposeWindowPanel(
         container = this,
         skiaLayerAnalytics = skiaLayerAnalytics,
         window = window,
-        useSwingGraphics = false, // Swing graphics is not supposed to be used here.
         layerType = ComposeFeatureFlags.layerType.let {
             // LayerType.OnComponent may can only be used with rendering via Swing graphics,
             // but it's always disabled here. Using fallback instead of [check] to support
             // opening separate windows from [ComposePanel] with such layer type.
             if (it == LayerType.OnComponent) LayerType.OnSameCanvas else it
         },
-        // TODO: Add RenderingSettings to ComposeWindowPanel constructor
-        renderSettings = RenderSettings.Default
+        // Swing graphics is not supposed to be used here.
+        // TODO: Add isVsyncEnabled flag to ComposeWindowPanel constructor
+        renderSettings = RenderSettings.SkiaSurface()
     )
     private val composeContainer
         get() = requireNotNull(_composeContainer) {
@@ -101,11 +101,6 @@ internal class ComposeWindowPanel(
             override fun getDefaultComponent(aContainer: Container?) = null
         }
         isFocusCycleRoot = true
-
-        if (ComposeFeatureFlags.useSwingGraphics) {
-            println("Usage of \"compose.swing.render.on.graphics\" affect only behaviour of ComposePanel." +
-                "Usage together with ComposeWindow or ComposeDialog won't have any effect.")
-        }
     }
 
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
