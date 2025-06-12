@@ -202,6 +202,11 @@ class BinaryCompatibilityValidation(
                 )
                 it.ignoreFile.set(ignoreFile)
                 it.runtimeClasspath.from(runtimeClasspath)
+                it.projectVersion = provider { projectVersion.toString() }
+                it.referenceVersion =
+                    extractReleaseTask.map { extract ->
+                        extract.outputAbiFile.get().asFile.nameWithoutExtension
+                    }
             }
             project.tasks.register(CHECK_RELEASE_NAME, CheckAbiIsCompatibleTask::class.java) {
                 it.currentApiDump.set(mergedApiFile.map { fileProperty -> fileProperty.get() })
