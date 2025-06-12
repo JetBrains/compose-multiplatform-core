@@ -61,7 +61,6 @@ sealed class RenderSettings {
     class SkiaSurface(val isVsyncEnabled: Boolean? = null): RenderSettings()
 
     internal companion object {
-        @Suppress("DEPRECATION")
         internal fun fromEnvironmentVariable(): RenderSettings =
             if (ComposeFeatureFlags.useSwingGraphics) {
                 SwingGraphics()
