@@ -78,7 +78,8 @@ object ComposeFoundationFlags {
      * context menu that has no public APIs will be used instead.
      */
     // TODO: https://youtrack.jetbrains.com/issue/CMP-7757/Adopt-new-context-menu-API
-    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
+    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled =
+        ComposeFoundationDefaultFlagValues.isNewContextMenuEnabled
 
     /**
      * Whether to use the new smart selection feature in
