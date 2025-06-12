@@ -9,6 +9,5 @@ public final class androidx/compose/desktop/ui/tooling/preview/runtime/Composabl
 public final class androidx/compose/ui/tooling/ComposableInvoker {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/ui/tooling/ComposableInvoker;
-	public final fun invokeComposable (Ljava/lang/String;Ljava/lang/String;Landroidx/compose/runtime/Composer;[Ljava/lang/Object;)V
 }
 

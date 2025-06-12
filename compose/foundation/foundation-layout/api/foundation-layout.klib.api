@@ -52,57 +52,9 @@ abstract interface androidx.compose.foundation.layout/ColumnScope { // androidx.
     abstract fun (androidx.compose.ui/Modifier).weight(kotlin/Float, kotlin/Boolean = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/ColumnScope.weight|weight@androidx.compose.ui.Modifier(kotlin.Float;kotlin.Boolean){}[0]
 }
 
-abstract interface androidx.compose.foundation.layout/ContextualFlowColumnOverflowScope : androidx.compose.foundation.layout/FlowColumnOverflowScope // androidx.compose.foundation.layout/ContextualFlowColumnOverflowScope|null[0]
+abstract interface androidx.compose.foundation.layout/FlowColumnScope : androidx.compose.foundation.layout/ColumnScope // androidx.compose.foundation.layout/FlowColumnScope|null[0]
 
-abstract interface androidx.compose.foundation.layout/ContextualFlowColumnScope : androidx.compose.foundation.layout/ColumnScope { // androidx.compose.foundation.layout/ContextualFlowColumnScope|null[0]
-    abstract val indexInLine // androidx.compose.foundation.layout/ContextualFlowColumnScope.indexInLine|{}indexInLine[0]
-        abstract fun <get-indexInLine>(): kotlin/Int // androidx.compose.foundation.layout/ContextualFlowColumnScope.indexInLine.<get-indexInLine>|<get-indexInLine>(){}[0]
-    abstract val lineIndex // androidx.compose.foundation.layout/ContextualFlowColumnScope.lineIndex|{}lineIndex[0]
-        abstract fun <get-lineIndex>(): kotlin/Int // androidx.compose.foundation.layout/ContextualFlowColumnScope.lineIndex.<get-lineIndex>|<get-lineIndex>(){}[0]
-    abstract val maxHeightInLine // androidx.compose.foundation.layout/ContextualFlowColumnScope.maxHeightInLine|{}maxHeightInLine[0]
-        abstract fun <get-maxHeightInLine>(): androidx.compose.ui.unit/Dp // androidx.compose.foundation.layout/ContextualFlowColumnScope.maxHeightInLine.<get-maxHeightInLine>|<get-maxHeightInLine>(){}[0]
-    abstract val maxWidth // androidx.compose.foundation.layout/ContextualFlowColumnScope.maxWidth|{}maxWidth[0]
-        abstract fun <get-maxWidth>(): androidx.compose.ui.unit/Dp // androidx.compose.foundation.layout/ContextualFlowColumnScope.maxWidth.<get-maxWidth>|<get-maxWidth>(){}[0]
-
-    abstract fun (androidx.compose.ui/Modifier).fillMaxColumnWidth(kotlin/Float = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/ContextualFlowColumnScope.fillMaxColumnWidth|fillMaxColumnWidth@androidx.compose.ui.Modifier(kotlin.Float){}[0]
-}
-
-abstract interface androidx.compose.foundation.layout/ContextualFlowRowOverflowScope : androidx.compose.foundation.layout/FlowRowOverflowScope // androidx.compose.foundation.layout/ContextualFlowRowOverflowScope|null[0]
-
-abstract interface androidx.compose.foundation.layout/ContextualFlowRowScope : androidx.compose.foundation.layout/RowScope { // androidx.compose.foundation.layout/ContextualFlowRowScope|null[0]
-    abstract val indexInLine // androidx.compose.foundation.layout/ContextualFlowRowScope.indexInLine|{}indexInLine[0]
-        abstract fun <get-indexInLine>(): kotlin/Int // androidx.compose.foundation.layout/ContextualFlowRowScope.indexInLine.<get-indexInLine>|<get-indexInLine>(){}[0]
-    abstract val lineIndex // androidx.compose.foundation.layout/ContextualFlowRowScope.lineIndex|{}lineIndex[0]
-        abstract fun <get-lineIndex>(): kotlin/Int // androidx.compose.foundation.layout/ContextualFlowRowScope.lineIndex.<get-lineIndex>|<get-lineIndex>(){}[0]
-    abstract val maxHeight // androidx.compose.foundation.layout/ContextualFlowRowScope.maxHeight|{}maxHeight[0]
-        abstract fun <get-maxHeight>(): androidx.compose.ui.unit/Dp // androidx.compose.foundation.layout/ContextualFlowRowScope.maxHeight.<get-maxHeight>|<get-maxHeight>(){}[0]
-    abstract val maxWidthInLine // androidx.compose.foundation.layout/ContextualFlowRowScope.maxWidthInLine|{}maxWidthInLine[0]
-        abstract fun <get-maxWidthInLine>(): androidx.compose.ui.unit/Dp // androidx.compose.foundation.layout/ContextualFlowRowScope.maxWidthInLine.<get-maxWidthInLine>|<get-maxWidthInLine>(){}[0]
-
-    abstract fun (androidx.compose.ui/Modifier).fillMaxRowHeight(kotlin/Float = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/ContextualFlowRowScope.fillMaxRowHeight|fillMaxRowHeight@androidx.compose.ui.Modifier(kotlin.Float){}[0]
-}
-
-abstract interface androidx.compose.foundation.layout/FlowColumnOverflowScope : androidx.compose.foundation.layout/FlowColumnScope { // androidx.compose.foundation.layout/FlowColumnOverflowScope|null[0]
-    abstract val shownItemCount // androidx.compose.foundation.layout/FlowColumnOverflowScope.shownItemCount|{}shownItemCount[0]
-        abstract fun <get-shownItemCount>(): kotlin/Int // androidx.compose.foundation.layout/FlowColumnOverflowScope.shownItemCount.<get-shownItemCount>|<get-shownItemCount>(){}[0]
-    abstract val totalItemCount // androidx.compose.foundation.layout/FlowColumnOverflowScope.totalItemCount|{}totalItemCount[0]
-        abstract fun <get-totalItemCount>(): kotlin/Int // androidx.compose.foundation.layout/FlowColumnOverflowScope.totalItemCount.<get-totalItemCount>|<get-totalItemCount>(){}[0]
-}
-
-abstract interface androidx.compose.foundation.layout/FlowColumnScope : androidx.compose.foundation.layout/ColumnScope { // androidx.compose.foundation.layout/FlowColumnScope|null[0]
-    abstract fun (androidx.compose.ui/Modifier).fillMaxColumnWidth(kotlin/Float = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/FlowColumnScope.fillMaxColumnWidth|fillMaxColumnWidth@androidx.compose.ui.Modifier(kotlin.Float){}[0]
-}
-
-abstract interface androidx.compose.foundation.layout/FlowRowOverflowScope : androidx.compose.foundation.layout/FlowRowScope { // androidx.compose.foundation.layout/FlowRowOverflowScope|null[0]
-    abstract val shownItemCount // androidx.compose.foundation.layout/FlowRowOverflowScope.shownItemCount|{}shownItemCount[0]
-        abstract fun <get-shownItemCount>(): kotlin/Int // androidx.compose.foundation.layout/FlowRowOverflowScope.shownItemCount.<get-shownItemCount>|<get-shownItemCount>(){}[0]
-    abstract val totalItemCount // androidx.compose.foundation.layout/FlowRowOverflowScope.totalItemCount|{}totalItemCount[0]
-        abstract fun <get-totalItemCount>(): kotlin/Int // androidx.compose.foundation.layout/FlowRowOverflowScope.totalItemCount.<get-totalItemCount>|<get-totalItemCount>(){}[0]
-}
-
-abstract interface androidx.compose.foundation.layout/FlowRowScope : androidx.compose.foundation.layout/RowScope { // androidx.compose.foundation.layout/FlowRowScope|null[0]
-    abstract fun (androidx.compose.ui/Modifier).fillMaxRowHeight(kotlin/Float = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/FlowRowScope.fillMaxRowHeight|fillMaxRowHeight@androidx.compose.ui.Modifier(kotlin.Float){}[0]
-}
+abstract interface androidx.compose.foundation.layout/FlowRowScope : androidx.compose.foundation.layout/RowScope // androidx.compose.foundation.layout/FlowRowScope|null[0]
 
 abstract interface androidx.compose.foundation.layout/PaddingValues { // androidx.compose.foundation.layout/PaddingValues|null[0]
     abstract fun calculateBottomPadding(): androidx.compose.ui.unit/Dp // androidx.compose.foundation.layout/PaddingValues.calculateBottomPadding|calculateBottomPadding(){}[0]
@@ -145,67 +97,6 @@ abstract interface androidx.compose.foundation.layout/WindowInsets { // androidx
     final object Companion // androidx.compose.foundation.layout/WindowInsets.Companion|null[0]
 }
 
-final class androidx.compose.foundation.layout/ContextualFlowColumnOverflow : androidx.compose.foundation.layout/FlowLayoutOverflow { // androidx.compose.foundation.layout/ContextualFlowColumnOverflow|null[0]
-    final object Companion { // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion|null[0]
-        final val Clip // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.Clip|{}Clip[0]
-            final fun <get-Clip>(): androidx.compose.foundation.layout/ContextualFlowColumnOverflow // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.Clip.<get-Clip>|<get-Clip>(){}[0]
-        final val Visible // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.Visible|{}Visible[0]
-            final fun <get-Visible>(): androidx.compose.foundation.layout/ContextualFlowColumnOverflow // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.Visible.<get-Visible>|<get-Visible>(){}[0]
-
-        final fun expandIndicator(kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): androidx.compose.foundation.layout/ContextualFlowColumnOverflow // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.expandIndicator|expandIndicator(kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
-        final fun expandOrCollapseIndicator(kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Int, androidx.compose.ui.unit/Dp, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.foundation.layout/ContextualFlowColumnOverflow // androidx.compose.foundation.layout/ContextualFlowColumnOverflow.Companion.expandOrCollapseIndicator|expandOrCollapseIndicator(kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Int;androidx.compose.ui.unit.Dp;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-    }
-}
-
-final class androidx.compose.foundation.layout/ContextualFlowRowOverflow : androidx.compose.foundation.layout/FlowLayoutOverflow { // androidx.compose.foundation.layout/ContextualFlowRowOverflow|null[0]
-    final object Companion { // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion|null[0]
-        final val Clip // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.Clip|{}Clip[0]
-            final fun <get-Clip>(): androidx.compose.foundation.layout/ContextualFlowRowOverflow // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.Clip.<get-Clip>|<get-Clip>(){}[0]
-        final val Visible // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.Visible|{}Visible[0]
-            final fun <get-Visible>(): androidx.compose.foundation.layout/ContextualFlowRowOverflow // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.Visible.<get-Visible>|<get-Visible>(){}[0]
-
-        final fun expandIndicator(kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): androidx.compose.foundation.layout/ContextualFlowRowOverflow // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.expandIndicator|expandIndicator(kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
-        final fun expandOrCollapseIndicator(kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Function3<androidx.compose.foundation.layout/ContextualFlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Int, androidx.compose.ui.unit/Dp, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.foundation.layout/ContextualFlowRowOverflow // androidx.compose.foundation.layout/ContextualFlowRowOverflow.Companion.expandOrCollapseIndicator|expandOrCollapseIndicator(kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Function3<androidx.compose.foundation.layout.ContextualFlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Int;androidx.compose.ui.unit.Dp;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-    }
-}
-
-final class androidx.compose.foundation.layout/FlowColumnOverflow : androidx.compose.foundation.layout/FlowLayoutOverflow { // androidx.compose.foundation.layout/FlowColumnOverflow|null[0]
-    final object Companion { // androidx.compose.foundation.layout/FlowColumnOverflow.Companion|null[0]
-        final val Clip // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.Clip|{}Clip[0]
-            final fun <get-Clip>(): androidx.compose.foundation.layout/FlowColumnOverflow // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.Clip.<get-Clip>|<get-Clip>(){}[0]
-        final val Visible // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.Visible|{}Visible[0]
-            final fun <get-Visible>(): androidx.compose.foundation.layout/FlowColumnOverflow // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.Visible.<get-Visible>|<get-Visible>(){}[0]
-
-        final fun expandIndicator(kotlin/Function3<androidx.compose.foundation.layout/FlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): androidx.compose.foundation.layout/FlowColumnOverflow // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.expandIndicator|expandIndicator(kotlin.Function3<androidx.compose.foundation.layout.FlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
-        final fun expandOrCollapseIndicator(kotlin/Function3<androidx.compose.foundation.layout/FlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Function3<androidx.compose.foundation.layout/FlowColumnOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Int, androidx.compose.ui.unit/Dp, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.foundation.layout/FlowColumnOverflow // androidx.compose.foundation.layout/FlowColumnOverflow.Companion.expandOrCollapseIndicator|expandOrCollapseIndicator(kotlin.Function3<androidx.compose.foundation.layout.FlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Function3<androidx.compose.foundation.layout.FlowColumnOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Int;androidx.compose.ui.unit.Dp;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-    }
-}
-
-final class androidx.compose.foundation.layout/FlowRowOverflow : androidx.compose.foundation.layout/FlowLayoutOverflow { // androidx.compose.foundation.layout/FlowRowOverflow|null[0]
-    final object Companion { // androidx.compose.foundation.layout/FlowRowOverflow.Companion|null[0]
-        final val Clip // androidx.compose.foundation.layout/FlowRowOverflow.Companion.Clip|{}Clip[0]
-            final fun <get-Clip>(): androidx.compose.foundation.layout/FlowRowOverflow // androidx.compose.foundation.layout/FlowRowOverflow.Companion.Clip.<get-Clip>|<get-Clip>(){}[0]
-        final val Visible // androidx.compose.foundation.layout/FlowRowOverflow.Companion.Visible|{}Visible[0]
-            final fun <get-Visible>(): androidx.compose.foundation.layout/FlowRowOverflow // androidx.compose.foundation.layout/FlowRowOverflow.Companion.Visible.<get-Visible>|<get-Visible>(){}[0]
-
-        final fun expandIndicator(kotlin/Function3<androidx.compose.foundation.layout/FlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): androidx.compose.foundation.layout/FlowRowOverflow // androidx.compose.foundation.layout/FlowRowOverflow.Companion.expandIndicator|expandIndicator(kotlin.Function3<androidx.compose.foundation.layout.FlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
-        final fun expandOrCollapseIndicator(kotlin/Function3<androidx.compose.foundation.layout/FlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Function3<androidx.compose.foundation.layout/FlowRowOverflowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, kotlin/Int, androidx.compose.ui.unit/Dp, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.foundation.layout/FlowRowOverflow // androidx.compose.foundation.layout/FlowRowOverflow.Companion.expandOrCollapseIndicator|expandOrCollapseIndicator(kotlin.Function3<androidx.compose.foundation.layout.FlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Function3<androidx.compose.foundation.layout.FlowRowOverflowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;kotlin.Int;androidx.compose.ui.unit.Dp;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-    }
-}
-
-final class androidx.compose.foundation.layout/MutableWindowInsets : androidx.compose.foundation.layout/WindowInsets { // androidx.compose.foundation.layout/MutableWindowInsets|null[0]
-    constructor <init>(androidx.compose.foundation.layout/WindowInsets = ...) // androidx.compose.foundation.layout/MutableWindowInsets.<init>|<init>(androidx.compose.foundation.layout.WindowInsets){}[0]
-
-    final var insets // androidx.compose.foundation.layout/MutableWindowInsets.insets|{}insets[0]
-        final fun <get-insets>(): androidx.compose.foundation.layout/WindowInsets // androidx.compose.foundation.layout/MutableWindowInsets.insets.<get-insets>|<get-insets>(){}[0]
-        final fun <set-insets>(androidx.compose.foundation.layout/WindowInsets) // androidx.compose.foundation.layout/MutableWindowInsets.insets.<set-insets>|<set-insets>(androidx.compose.foundation.layout.WindowInsets){}[0]
-
-    final fun getBottom(androidx.compose.ui.unit/Density): kotlin/Int // androidx.compose.foundation.layout/MutableWindowInsets.getBottom|getBottom(androidx.compose.ui.unit.Density){}[0]
-    final fun getLeft(androidx.compose.ui.unit/Density, androidx.compose.ui.unit/LayoutDirection): kotlin/Int // androidx.compose.foundation.layout/MutableWindowInsets.getLeft|getLeft(androidx.compose.ui.unit.Density;androidx.compose.ui.unit.LayoutDirection){}[0]
-    final fun getRight(androidx.compose.ui.unit/Density, androidx.compose.ui.unit/LayoutDirection): kotlin/Int // androidx.compose.foundation.layout/MutableWindowInsets.getRight|getRight(androidx.compose.ui.unit.Density;androidx.compose.ui.unit.LayoutDirection){}[0]
-    final fun getTop(androidx.compose.ui.unit/Density): kotlin/Int // androidx.compose.foundation.layout/MutableWindowInsets.getTop|getTop(androidx.compose.ui.unit.Density){}[0]
-}
-
 final value class androidx.compose.foundation.layout/WindowInsetsSides { // androidx.compose.foundation.layout/WindowInsetsSides|null[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.foundation.layout/WindowInsetsSides.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.foundation.layout/WindowInsetsSides.hashCode|hashCode(){}[0]
@@ -231,8 +122,6 @@ final value class androidx.compose.foundation.layout/WindowInsetsSides { // andr
             final fun <get-Vertical>(): androidx.compose.foundation.layout/WindowInsetsSides // androidx.compose.foundation.layout/WindowInsetsSides.Companion.Vertical.<get-Vertical>|<get-Vertical>(){}[0]
     }
 }
-
-sealed class androidx.compose.foundation.layout/FlowLayoutOverflow // androidx.compose.foundation.layout/FlowLayoutOverflow|null[0]
 
 final object androidx.compose.foundation.layout/Arrangement { // androidx.compose.foundation.layout/Arrangement|null[0]
     final val Bottom // androidx.compose.foundation.layout/Arrangement.Bottom|{}Bottom[0]
@@ -296,12 +185,6 @@ final object androidx.compose.foundation.layout/Arrangement { // androidx.compos
         final fun spacedBy(androidx.compose.ui.unit/Dp, androidx.compose.ui/Alignment.Horizontal): androidx.compose.foundation.layout/Arrangement.Horizontal // androidx.compose.foundation.layout/Arrangement.Absolute.spacedBy|spacedBy(androidx.compose.ui.unit.Dp;androidx.compose.ui.Alignment.Horizontal){}[0]
         final fun spacedBy(androidx.compose.ui.unit/Dp, androidx.compose.ui/Alignment.Vertical): androidx.compose.foundation.layout/Arrangement.Vertical // androidx.compose.foundation.layout/Arrangement.Absolute.spacedBy|spacedBy(androidx.compose.ui.unit.Dp;androidx.compose.ui.Alignment.Vertical){}[0]
     }
-}
-
-final object androidx.compose.foundation.layout/ComposeFoundationLayoutFlags { // androidx.compose.foundation.layout/ComposeFoundationLayoutFlags|null[0]
-    final var isWindowInsetsDefaultPassThroughEnabled // androidx.compose.foundation.layout/ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled|{}isWindowInsetsDefaultPassThroughEnabled[0]
-        final fun <get-isWindowInsetsDefaultPassThroughEnabled>(): kotlin/Boolean // androidx.compose.foundation.layout/ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled.<get-isWindowInsetsDefaultPassThroughEnabled>|<get-isWindowInsetsDefaultPassThroughEnabled>(){}[0]
-        final fun <set-isWindowInsetsDefaultPassThroughEnabled>(kotlin/Boolean) // androidx.compose.foundation.layout/ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled.<set-isWindowInsetsDefaultPassThroughEnabled>|<set-isWindowInsetsDefaultPassThroughEnabled>(kotlin.Boolean){}[0]
 }
 
 final val androidx.compose.foundation.layout/DefaultColumnMeasurePolicy // androidx.compose.foundation.layout/DefaultColumnMeasurePolicy|{}DefaultColumnMeasurePolicy[0]
@@ -467,11 +350,7 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.foundation.layout/wrap
 final fun (androidx.compose.ui/Modifier).androidx.compose.foundation.layout/wrapContentWidth(androidx.compose.ui/Alignment.Horizontal = ..., kotlin/Boolean = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/wrapContentWidth|wrapContentWidth@androidx.compose.ui.Modifier(androidx.compose.ui.Alignment.Horizontal;kotlin.Boolean){}[0]
 final fun androidx.compose.foundation.layout/Box(androidx.compose.ui/Modifier, androidx.compose.runtime/Composer?, kotlin/Int) // androidx.compose.foundation.layout/Box|Box(androidx.compose.ui.Modifier;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/BoxWithConstraints(androidx.compose.ui/Modifier?, androidx.compose.ui/Alignment?, kotlin/Boolean, kotlin/Function3<androidx.compose.foundation.layout/BoxWithConstraintsScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/BoxWithConstraints|BoxWithConstraints(androidx.compose.ui.Modifier?;androidx.compose.ui.Alignment?;kotlin.Boolean;kotlin.Function3<androidx.compose.foundation.layout.BoxWithConstraintsScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun androidx.compose.foundation.layout/ContextualFlowColumn(kotlin/Int, androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.ui/Alignment.Horizontal?, kotlin/Int, kotlin/Int, androidx.compose.foundation.layout/ContextualFlowColumnOverflow?, kotlin/Function4<androidx.compose.foundation.layout/ContextualFlowColumnScope, kotlin/Int, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/ContextualFlowColumn|ContextualFlowColumn(kotlin.Int;androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.ui.Alignment.Horizontal?;kotlin.Int;kotlin.Int;androidx.compose.foundation.layout.ContextualFlowColumnOverflow?;kotlin.Function4<androidx.compose.foundation.layout.ContextualFlowColumnScope,kotlin.Int,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun androidx.compose.foundation.layout/ContextualFlowRow(kotlin/Int, androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.ui/Alignment.Vertical?, kotlin/Int, kotlin/Int, androidx.compose.foundation.layout/ContextualFlowRowOverflow?, kotlin/Function4<androidx.compose.foundation.layout/ContextualFlowRowScope, kotlin/Int, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/ContextualFlowRow|ContextualFlowRow(kotlin.Int;androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.ui.Alignment.Vertical?;kotlin.Int;kotlin.Int;androidx.compose.foundation.layout.ContextualFlowRowOverflow?;kotlin.Function4<androidx.compose.foundation.layout.ContextualFlowRowScope,kotlin.Int,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun androidx.compose.foundation.layout/FlowColumn(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.ui/Alignment.Horizontal?, kotlin/Int, kotlin/Int, androidx.compose.foundation.layout/FlowColumnOverflow?, kotlin/Function3<androidx.compose.foundation.layout/FlowColumnScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowColumn|FlowColumn(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.ui.Alignment.Horizontal?;kotlin.Int;kotlin.Int;androidx.compose.foundation.layout.FlowColumnOverflow?;kotlin.Function3<androidx.compose.foundation.layout.FlowColumnScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/FlowColumn(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.ui/Alignment.Horizontal?, kotlin/Int, kotlin/Int, kotlin/Function3<androidx.compose.foundation.layout/FlowColumnScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowColumn|FlowColumn(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.ui.Alignment.Horizontal?;kotlin.Int;kotlin.Int;kotlin.Function3<androidx.compose.foundation.layout.FlowColumnScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun androidx.compose.foundation.layout/FlowRow(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.ui/Alignment.Vertical?, kotlin/Int, kotlin/Int, androidx.compose.foundation.layout/FlowRowOverflow?, kotlin/Function3<androidx.compose.foundation.layout/FlowRowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowRow|FlowRow(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.ui.Alignment.Vertical?;kotlin.Int;kotlin.Int;androidx.compose.foundation.layout.FlowRowOverflow?;kotlin.Function3<androidx.compose.foundation.layout.FlowRowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/FlowRow(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.ui/Alignment.Vertical?, kotlin/Int, kotlin/Int, kotlin/Function3<androidx.compose.foundation.layout/FlowRowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowRow|FlowRow(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.ui.Alignment.Vertical?;kotlin.Int;kotlin.Int;kotlin.Function3<androidx.compose.foundation.layout.FlowRowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/PaddingValues(androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ...): androidx.compose.foundation.layout/PaddingValues // androidx.compose.foundation.layout/PaddingValues|PaddingValues(androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]
 final fun androidx.compose.foundation.layout/PaddingValues(androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ...): androidx.compose.foundation.layout/PaddingValues // androidx.compose.foundation.layout/PaddingValues|PaddingValues(androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]
