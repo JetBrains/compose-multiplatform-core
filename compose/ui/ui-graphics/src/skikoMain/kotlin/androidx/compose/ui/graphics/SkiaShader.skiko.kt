@@ -86,7 +86,7 @@ internal actual fun ActualImageShader(
 }
 
 internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
-    dst // TODO https://youtrack.jetbrains.com/issue/CMP-7912
+    org.jetbrains.skia.Shader.makeBlend(mode = blendMode.toSkia(), dst = dst, src = src)
 
 private fun List<Color>.toIntArray(): IntArray =
     IntArray(size) { i -> this[i].toArgb() }
