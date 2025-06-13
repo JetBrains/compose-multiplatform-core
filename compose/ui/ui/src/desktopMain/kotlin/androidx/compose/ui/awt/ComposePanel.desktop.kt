@@ -49,12 +49,27 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  */
 class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics,
-    private val renderSettings: RenderSettings = RenderSettings.fromEnvironmentVariable()
+    private val renderSettings: RenderSettings = DefaultRenderSettings
 ) : JLayeredPane() {
     constructor() : this(
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-        renderSettings = RenderSettings.fromEnvironmentVariable()
+        renderSettings = DefaultRenderSettings
     )
+
+    companion object {
+        /**
+         * [RenderSettings] based on the current environment variable configuration.
+         *
+         * @see ComposeFeatureFlags.useSwingGraphicsInComposePanel
+         */
+        @ExperimentalComposeUiApi
+        val DefaultRenderSettings: RenderSettings
+            get() = if (ComposeFeatureFlags.useSwingGraphicsInComposePanel) {
+                SwingGraphics()
+            } else {
+                SkiaSurface()
+            }
+    }
 
     init {
         check(isEventDispatchThread()) {
@@ -316,15 +331,3 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     val renderApi: GraphicsApi
         get() = _composeContainer?.renderApi ?: GraphicsApi.UNKNOWN
 }
-
-/**
- * Creates [RenderSettings] based on the current environment variable configuration.
- *
- * @see ComposeFeatureFlags.useSwingGraphics
- */
-private fun RenderSettings.Companion.fromEnvironmentVariable(): RenderSettings =
-    if (ComposeFeatureFlags.useSwingGraphics) {
-        SwingGraphics()
-    } else {
-        SkiaSurface()
-    }

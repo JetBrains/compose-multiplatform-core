@@ -59,6 +59,4 @@ sealed class RenderSettings {
      */
     @ExperimentalComposeUiApi
     class SkiaSurface(val isVsyncEnabled: Boolean? = null): RenderSettings()
-
-    internal companion object
 }

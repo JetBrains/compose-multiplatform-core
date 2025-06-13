@@ -66,7 +66,7 @@ internal object ComposeFeatureFlags {
      * Please note that it requires additional copy from offscreen texture to Swing graphics,
      * so it has some performance penalty.
      */
-    val useSwingGraphics: Boolean
+    val useSwingGraphicsInComposePanel: Boolean
         get() = System.getProperty("compose.swing.render.on.graphics").toBoolean()
 
     /**
