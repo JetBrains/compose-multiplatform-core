@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UIKitKeepScreenOnManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -302,6 +303,8 @@ internal class ComposeSceneMediator(
         view = userInputView,
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
+
+    private val keepScreenOnManager = UIKitKeepScreenOnManager.instance
 
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
@@ -709,6 +712,7 @@ internal class ComposeSceneMediator(
         override val textToolbar get() = this@ComposeSceneMediator.textInputService
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
+        override val keepScreenOnManager get() = this@ComposeSceneMediator.keepScreenOnManager
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)

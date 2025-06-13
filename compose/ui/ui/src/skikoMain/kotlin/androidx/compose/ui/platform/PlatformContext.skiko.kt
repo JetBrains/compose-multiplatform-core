@@ -123,6 +123,8 @@ interface PlatformContext {
 
     val dragAndDropManager: PlatformDragAndDropManager get() = EmptyDragAndDropManager
 
+    val keepScreenOnManager: PlatformKeepScreenOnManager get() = EmptyKeepScreenOnManager
+
     /**
      * The listener to track [RootForTest]s.
      *
@@ -246,6 +248,8 @@ private object EmptyFocusManager : FocusManager {
 }
 
 private object EmptyDragAndDropManager : PlatformDragAndDropManager
+
+private object EmptyKeepScreenOnManager : PlatformKeepScreenOnManager
 
 /**
  * Helper delegate to re-send missing events to a new listener.
