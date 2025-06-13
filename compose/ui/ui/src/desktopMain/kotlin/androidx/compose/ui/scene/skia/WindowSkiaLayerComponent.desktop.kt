@@ -34,7 +34,7 @@ import org.jetbrains.skiko.SkikoRenderDelegate
  * Provides a heavyweight AWT [contentComponent] used to render content
  * (provided by [SkikoRenderDelegate]) on-screen with Skia.
  *
- * This component renders content directly to a skia surface for better performance,
+ * This component renders content directly to a Skia surface for better performance,
  * using the configuration specified in [renderSettings]. It configures the vsync behavior
  * based on the [RenderSettings.SkiaSurface.isVsyncEnabled] property.
  *

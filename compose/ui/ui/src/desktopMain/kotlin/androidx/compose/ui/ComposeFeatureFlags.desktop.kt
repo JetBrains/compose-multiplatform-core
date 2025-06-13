@@ -16,6 +16,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 
@@ -63,8 +64,11 @@ internal object ComposeFeatureFlags {
      * This variable has no effect when used with [androidx.compose.ui.awt.ComposeWindow] or
      * [androidx.compose.ui.awt.ComposeDialog].
      *
-     * Please note that it requires additional copy from offscreen texture to Swing graphics,
-     * so it has some performance penalty.
+     * Note: This approach requires an additional copy from offscreen texture to Swing graphics
+     * on each re-draw, which may result in some performance penalty (proportional to the size)
+     * compared to [SkiaSurface].
+     *
+     * @see androidx.compose.ui.awt.RenderSettings.SwingGraphics
      */
     val useSwingGraphicsInComposePanel: Boolean
         get() = System.getProperty("compose.swing.render.on.graphics").toBoolean()

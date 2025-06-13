@@ -38,8 +38,9 @@ sealed class RenderSettings {
      * rendering issues when panels are being shown, hidden or resized. It also enables proper 
      * layering when combining Swing components and Compose panels.
      *
-     * Note: This approach requires an additional copy from offscreen texture to Swing graphics,
-     * which may result in some performance penalty compared to [SkiaSurface].
+     * Note: This approach requires an additional copy from offscreen texture to Swing graphics
+     * on each re-draw, which may result in some performance penalty (proportional to the size)
+     * compared to [SkiaSurface].
      */
     @ExperimentalComposeUiApi
     class SwingGraphics: RenderSettings()
