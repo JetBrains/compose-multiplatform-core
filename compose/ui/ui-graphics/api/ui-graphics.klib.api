@@ -928,15 +928,6 @@ final class androidx.compose.ui.graphics/Shadow { // androidx.compose.ui.graphic
     }
 }
 
-final class androidx.compose.ui.graphics/SkiaGraphicsContext : androidx.compose.ui.graphics/GraphicsContext { // androidx.compose.ui.graphics/SkiaGraphicsContext|null[0]
-    constructor <init>(kotlin/Boolean = ...) // androidx.compose.ui.graphics/SkiaGraphicsContext.<init>|<init>(kotlin.Boolean){}[0]
-
-    final fun createGraphicsLayer(): androidx.compose.ui.graphics.layer/GraphicsLayer // androidx.compose.ui.graphics/SkiaGraphicsContext.createGraphicsLayer|createGraphicsLayer(){}[0]
-    final fun dispose() // androidx.compose.ui.graphics/SkiaGraphicsContext.dispose|dispose(){}[0]
-    final fun releaseGraphicsLayer(androidx.compose.ui.graphics.layer/GraphicsLayer) // androidx.compose.ui.graphics/SkiaGraphicsContext.releaseGraphicsLayer|releaseGraphicsLayer(androidx.compose.ui.graphics.layer.GraphicsLayer){}[0]
-    final fun setLightingInfo(kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ...) // androidx.compose.ui.graphics/SkiaGraphicsContext.setLightingInfo|setLightingInfo(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float){}[0]
-}
-
 final class androidx.compose.ui.graphics/SolidColor : androidx.compose.ui.graphics/Brush { // androidx.compose.ui.graphics/SolidColor|null[0]
     constructor <init>(androidx.compose.ui.graphics/Color) // androidx.compose.ui.graphics/SolidColor.<init>|<init>(androidx.compose.ui.graphics.Color){}[0]
 
@@ -1980,10 +1971,6 @@ final val androidx.compose.ui.graphics/union // androidx.compose.ui.graphics/uni
 final val androidx.compose.ui.graphics/xor // androidx.compose.ui.graphics/xor|@androidx.compose.ui.graphics.PathOperation.Companion{}xor[0]
     final fun (androidx.compose.ui.graphics/PathOperation.Companion).<get-xor>(): androidx.compose.ui.graphics/PathOperation // androidx.compose.ui.graphics/xor.<get-xor>|<get-xor>@androidx.compose.ui.graphics.PathOperation.Companion(){}[0]
 
-final var androidx.compose.ui.graphics/alphaMultiplier // androidx.compose.ui.graphics/alphaMultiplier|@androidx.compose.ui.graphics.Canvas{}alphaMultiplier[0]
-    final fun (androidx.compose.ui.graphics/Canvas).<get-alphaMultiplier>(): kotlin/Float // androidx.compose.ui.graphics/alphaMultiplier.<get-alphaMultiplier>|<get-alphaMultiplier>@androidx.compose.ui.graphics.Canvas(){}[0]
-    final fun (androidx.compose.ui.graphics/Canvas).<set-alphaMultiplier>(kotlin/Float) // androidx.compose.ui.graphics/alphaMultiplier.<set-alphaMultiplier>|<set-alphaMultiplier>@androidx.compose.ui.graphics.Canvas(kotlin.Float){}[0]
-
 final fun (androidx.compose.ui.geometry/Rect).androidx.compose.ui.graphics/toSkiaRect(): org.jetbrains.skia/Rect // androidx.compose.ui.graphics/toSkiaRect|toSkiaRect@androidx.compose.ui.geometry.Rect(){}[0]
 final fun (androidx.compose.ui.geometry/RoundRect).androidx.compose.ui.graphics/toSkiaRRect(): org.jetbrains.skia/RRect // androidx.compose.ui.graphics/toSkiaRRect|toSkiaRRect@androidx.compose.ui.geometry.RoundRect(){}[0]
 final fun (androidx.compose.ui.graphics.colorspace/ColorSpace).androidx.compose.ui.graphics.colorspace/adapt(androidx.compose.ui.graphics.colorspace/WhitePoint, androidx.compose.ui.graphics.colorspace/Adaptation = ...): androidx.compose.ui.graphics.colorspace/ColorSpace // androidx.compose.ui.graphics.colorspace/adapt|adapt@androidx.compose.ui.graphics.colorspace.ColorSpace(androidx.compose.ui.graphics.colorspace.WhitePoint;androidx.compose.ui.graphics.colorspace.Adaptation){}[0]
@@ -2056,7 +2043,6 @@ final fun androidx.compose.ui.graphics/findFirstCubicRoot(kotlin/Float, kotlin/F
 final fun androidx.compose.ui.graphics/findFirstRoot(androidx.compose.ui.graphics/PathSegment, kotlin/Float): kotlin/Float // androidx.compose.ui.graphics/findFirstRoot|findFirstRoot(androidx.compose.ui.graphics.PathSegment;kotlin.Float){}[0]
 final fun androidx.compose.ui.graphics/lerp(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, kotlin/Float): androidx.compose.ui.graphics/Color // androidx.compose.ui.graphics/lerp|lerp(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;kotlin.Float){}[0]
 final fun androidx.compose.ui.graphics/lerp(androidx.compose.ui.graphics/Shadow, androidx.compose.ui.graphics/Shadow, kotlin/Float): androidx.compose.ui.graphics/Shadow // androidx.compose.ui.graphics/lerp|lerp(androidx.compose.ui.graphics.Shadow;androidx.compose.ui.graphics.Shadow;kotlin.Float){}[0]
-final fun androidx.compose.ui.graphics/prepareTransformationMatrix(androidx.compose.ui.graphics/Matrix, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float) // androidx.compose.ui.graphics/prepareTransformationMatrix|prepareTransformationMatrix(androidx.compose.ui.graphics.Matrix;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float){}[0]
 final inline fun (androidx.compose.ui.graphics.drawscope/DrawScope).androidx.compose.ui.graphics.drawscope/clipPath(androidx.compose.ui.graphics/Path, androidx.compose.ui.graphics/ClipOp = ..., kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>) // androidx.compose.ui.graphics.drawscope/clipPath|clipPath@androidx.compose.ui.graphics.drawscope.DrawScope(androidx.compose.ui.graphics.Path;androidx.compose.ui.graphics.ClipOp;kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]
 final inline fun (androidx.compose.ui.graphics.drawscope/DrawScope).androidx.compose.ui.graphics.drawscope/clipRect(kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., androidx.compose.ui.graphics/ClipOp = ..., kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>) // androidx.compose.ui.graphics.drawscope/clipRect|clipRect@androidx.compose.ui.graphics.drawscope.DrawScope(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;androidx.compose.ui.graphics.ClipOp;kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]
 final inline fun (androidx.compose.ui.graphics.drawscope/DrawScope).androidx.compose.ui.graphics.drawscope/draw(androidx.compose.ui.unit/Density, androidx.compose.ui.unit/LayoutDirection, androidx.compose.ui.graphics/Canvas, androidx.compose.ui.geometry/Size, androidx.compose.ui.graphics.layer/GraphicsLayer? = ..., kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>) // androidx.compose.ui.graphics.drawscope/draw|draw@androidx.compose.ui.graphics.drawscope.DrawScope(androidx.compose.ui.unit.Density;androidx.compose.ui.unit.LayoutDirection;androidx.compose.ui.graphics.Canvas;androidx.compose.ui.geometry.Size;androidx.compose.ui.graphics.layer.GraphicsLayer?;kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]

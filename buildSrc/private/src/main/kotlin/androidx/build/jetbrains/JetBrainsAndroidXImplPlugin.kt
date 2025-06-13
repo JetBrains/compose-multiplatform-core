@@ -184,7 +184,42 @@ private fun enableBinaryCompatibilityValidator(project: Project) {
             project.apply(plugin = "org.jetbrains.kotlinx.binary-compatibility-validator")
             project.extensions.getByType(ApiValidationExtension::class.java).apply {
                 klib.enabled = true
+                nonPublicMarkers += NON_PUBLIC_MARKERS
             }
         }
     }
 }
+
+// Not ideal to have a list instead of a pattern to match but this is all the API supports right now
+// https://github.com/Kotlin/binary-compatibility-validator/issues/280
+private val NON_PUBLIC_MARKERS =
+    setOf(
+        "androidx.annotation.Experimental",
+        "androidx.compose.animation.ExperimentalAnimationApi",
+        "androidx.compose.animation.ExperimentalSharedTransitionApi",
+        "androidx.compose.animation.core.ExperimentalAnimatableApi",
+        "androidx.compose.animation.core.ExperimentalAnimationSpecApi",
+        "androidx.compose.animation.core.ExperimentalTransitionApi",
+        "androidx.compose.animation.core.InternalAnimationApi",
+        "androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+        "androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi",
+        "androidx.compose.foundation.ExperimentalFoundationApi",
+        "androidx.compose.foundation.InternalFoundationApi",
+        "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        "androidx.compose.material.ExperimentalMaterialApi",
+        "androidx.compose.runtime.ExperimentalComposeApi",
+        "androidx.compose.runtime.ExperimentalComposeRuntimeApi",
+        "androidx.compose.runtime.InternalComposeApi",
+        "androidx.compose.runtime.InternalComposeTracingApi",
+        "androidx.compose.ui.ExperimentalComposeUiApi",
+        "androidx.compose.ui.InternalComposeUiApi",
+        "androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi",
+        "androidx.compose.ui.node.InternalCoreApi",
+        "androidx.compose.ui.test.ExperimentalTestApi",
+        "androidx.compose.ui.test.InternalTestApi",
+        "androidx.compose.ui.text.ExperimentalTextApi",
+        "androidx.compose.ui.text.InternalTextApi",
+        "androidx.compose.ui.unit.ExperimentalUnitApi",
+        "androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi",
+        "androidx.window.core.ExperimentalWindowApi",
+    )
