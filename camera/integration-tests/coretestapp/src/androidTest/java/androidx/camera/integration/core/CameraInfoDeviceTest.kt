@@ -18,6 +18,7 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.os.Build
+import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
@@ -194,6 +195,25 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
     fun getSupportedFrameRateRanges_withPreviewAndImageCapture_returnsValidSubset() {
         // Arrange.
         val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val useCases = listOf(preview, imageCapture)
+        assumeTrue(camera.isUseCasesCombinationSupported(*useCases.toTypedArray()))
+        val sessionConfig = SessionConfig(useCases)
+
+        // Act.
+        val allSupportedFps = cameraInfo.supportedFrameRateRanges
+        val supportedFpsForSessionConfig = cameraInfo.getSupportedFrameRateRanges(sessionConfig)
+
+        // Assert.
+        assertThat(supportedFpsForSessionConfig).isNotEmpty()
+        assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
+    }
+
+    @OptIn(ExperimentalSessionConfig::class)
+    @Test
+    fun getSupportedFrameRateRanges_withTargetFrameRateSet_returnsValidSubset() {
+        // Arrange.
+        val preview = Preview.Builder().setTargetFrameRate(Range.create(60, 60)).build()
         val imageCapture = ImageCapture.Builder().build()
         val useCases = listOf(preview, imageCapture)
         assumeTrue(camera.isUseCasesCombinationSupported(*useCases.toTypedArray()))

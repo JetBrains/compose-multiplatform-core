@@ -284,9 +284,12 @@ final class ExtensionsInfo {
     VendorExtender getVendorExtender(@ExtensionMode.Mode int mode, boolean useCamera2Extensions) {
         VendorExtender vendorExtender;
         if (useCamera2Extensions) {
-            // Always returns Camera2ExtensionsVendorExtender when API level is 31 or above and
+            // Returns Camera2ExtensionsVendorExtender only when API level is 33 or above and
             // configImplType is PIPE.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // CameraExtensionCharacteristics#getAvailableCaptureRequestKeys(int) is supported
+            // since API level 33 that allows app to clearly know whether features like
+            // tap-to-focus or zoom ratio are supported or not.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 vendorExtender = new Camera2ExtensionsVendorExtender(mode,
                         Objects.requireNonNull(mCamera2ExtensionsInfo));
             } else {

@@ -151,10 +151,6 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             lifecycleCameraRepository.removeLifecycleCameras(lifecycleCameraKeys)
         }
 
-        if (cameraX != null) {
-            cameraX!!.cameraFactory.cameraCoordinator.shutdown()
-        }
-
         val shutdownFuture =
             if (cameraX != null) cameraX!!.shutdown() else Futures.immediateFuture<Void>(null)
 

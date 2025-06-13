@@ -89,7 +89,6 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getDeviceConfiguration()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.DeviceParametersBuilders.@Nullable DeviceParameters
                 getDeviceParameters() {
             if (mImpl.hasDeviceConfiguration()) {
@@ -107,7 +106,6 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getCurrentState()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.StateBuilders.@Nullable State getState() {
             if (mImpl.hasCurrentState()) {
                 return androidx.wear.tiles.StateBuilders.State.fromProto(mImpl.getCurrentState());
@@ -299,7 +297,6 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getDeviceConfiguration()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.DeviceParametersBuilders.@Nullable DeviceParameters
                 getDeviceParameters() {
             if (mImpl.hasDeviceConfiguration()) {
@@ -397,7 +394,6 @@ public final class RequestBuilders {
              * @deprecated Use {@link setDeviceConfiguration(DeviceParameters)} instead.
              */
             @Deprecated
-            @SuppressWarnings("deprecation") // for backward compatibility
             public @NonNull Builder setDeviceParameters(
                     androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                             deviceParameters) {

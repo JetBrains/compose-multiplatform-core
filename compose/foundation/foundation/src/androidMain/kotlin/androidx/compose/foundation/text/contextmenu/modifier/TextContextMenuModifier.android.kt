@@ -16,7 +16,7 @@
 
 package androidx.compose.foundation.text.contextmenu.modifier
 
-import android.content.res.Resources
+import android.content.Context
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -24,19 +24,19 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalContext
 
-internal fun Modifier.addTextContextMenuComponentsWithResources(
-    builder: TextContextMenuBuilderScope.(Resources) -> Unit
-): Modifier = this then AddTextContextMenuDataComponentsWithResourcesElement(builder)
+internal fun Modifier.addTextContextMenuComponentsWithContext(
+    builder: TextContextMenuBuilderScope.(Context) -> Unit
+): Modifier = this then AddTextContextMenuDataComponentsWithContextElement(builder)
 
-private class AddTextContextMenuDataComponentsWithResourcesElement(
-    private val builder: TextContextMenuBuilderScope.(Resources) -> Unit
-) : ModifierNodeElement<AddTextContextMenuDataComponentsWithResourcesNode>() {
-    override fun create(): AddTextContextMenuDataComponentsWithResourcesNode =
-        AddTextContextMenuDataComponentsWithResourcesNode(builder)
+private class AddTextContextMenuDataComponentsWithContextElement(
+    private val builder: TextContextMenuBuilderScope.(Context) -> Unit
+) : ModifierNodeElement<AddTextContextMenuDataComponentsWithContextNode>() {
+    override fun create(): AddTextContextMenuDataComponentsWithContextNode =
+        AddTextContextMenuDataComponentsWithContextNode(builder)
 
-    override fun update(node: AddTextContextMenuDataComponentsWithResourcesNode) {
+    override fun update(node: AddTextContextMenuDataComponentsWithContextNode) {
         node.builder = builder
     }
 
@@ -47,7 +47,7 @@ private class AddTextContextMenuDataComponentsWithResourcesElement(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is AddTextContextMenuDataComponentsWithResourcesElement) return false
+        if (other !is AddTextContextMenuDataComponentsWithContextElement) return false
 
         if (builder !== other.builder) return false
 
@@ -57,10 +57,10 @@ private class AddTextContextMenuDataComponentsWithResourcesElement(
     override fun hashCode(): Int = builder.hashCode()
 }
 
-private class AddTextContextMenuDataComponentsWithResourcesNode(
-    var builder: TextContextMenuBuilderScope.(Resources) -> Unit
+private class AddTextContextMenuDataComponentsWithContextNode(
+    var builder: TextContextMenuBuilderScope.(Context) -> Unit
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode {
     init {
-        delegate(AddTextContextMenuDataComponentsNode { builder(currentValueOf(LocalResources)) })
+        delegate(AddTextContextMenuDataComponentsNode { builder(currentValueOf(LocalContext)) })
     }
 }

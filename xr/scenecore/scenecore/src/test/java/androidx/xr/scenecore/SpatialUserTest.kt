@@ -96,71 +96,62 @@ class SpatialUserTest {
     @Test
     fun getNullCameraViews_returnsNullCameraViews() {
         whenever(mockRuntime.getCameraViewActivityPose(anyInt())).thenReturn(null)
-        val leftView = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        assertThat(leftView).isNull()
+        val leftView = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        val rightView = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
 
-        val rightView = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+        assertThat(leftView).isNull()
         assertThat(rightView).isNull()
     }
 
     @Test
     fun getCameraViews_returnsNullThenCameraViewsWhenAvailable() {
         whenever(mockRuntime.getCameraViewActivityPose(anyInt())).thenReturn(null)
-        var leftView = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        assertThat(leftView).isNull()
+        var leftView = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        var rightView = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
 
-        var rightView = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+        assertThat(spatialUser.cameraViews).isEmpty()
+        assertThat(leftView).isNull()
         assertThat(rightView).isNull()
 
         whenever(mockRuntime.getCameraViewActivityPose(anyInt())).thenReturn(mock())
-        leftView = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        assertThat(leftView).isNotNull()
+        leftView = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        rightView = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
 
-        rightView = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+        assertThat(spatialUser.cameraViews).isNotEmpty()
+        assertThat(leftView).isNotNull()
         assertThat(rightView).isNotNull()
     }
 
     @Test
     fun getCameraViews_returnsCameraView() {
-        val leftView = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        assertThat(leftView).isNotNull()
+        val leftView = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        val rightView = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
 
-        val rightView = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+        assertThat(spatialUser.cameraViews).isNotEmpty()
+        assertThat(leftView).isNotNull()
         assertThat(rightView).isNotNull()
     }
 
     @Test
     fun getCameraViewsTwice_returnsSameCameraView() {
-        val leftView1 = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        val leftView2 = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
+        val leftView1 = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        val leftView2 = spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+        val rightView1 = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
+        val rightView2 = spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
 
         assertThat(leftView1).isEqualTo(leftView2)
-
-        val rightView1 = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
-        val rightView2 = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
-
         assertThat(rightView1).isEqualTo(rightView2)
     }
 
     @Test
-    fun getCameraViews_returnsCameraViews() {
-        val cameraViews = spatialUser.getCameraViews()
-
-        val leftView = spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
-        val rightView = spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
-
-        assertThat(cameraViews).containsExactly(leftView, rightView)
-    }
-
-    @Test
-    fun getCameraViews_returnsEmptyListIfNullCamera() {
+    fun getCameraViews_returnsEmptyMapIfNullCamera() {
         val mockRuntimeNoCamera = mock<JxrPlatformAdapter>()
         whenever(mockRuntimeNoCamera.headActivityPose).thenReturn(mock())
         whenever(mockRuntimeNoCamera.getCameraViewActivityPose(anyInt())).thenReturn(null)
         val spatialUserNoCamera =
             SpatialUser.create(session.runtime.lifecycleManager, mockRuntimeNoCamera)
 
-        val cameraViews = spatialUserNoCamera.getCameraViews()
+        val cameraViews = spatialUserNoCamera.cameraViews
 
         assertThat(cameraViews).isEmpty()
     }

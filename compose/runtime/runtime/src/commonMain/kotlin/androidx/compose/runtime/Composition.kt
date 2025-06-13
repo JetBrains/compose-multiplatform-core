@@ -888,6 +888,31 @@ internal class CompositionImpl(
 
     override fun prepareCompose(block: () -> Unit) = composer.prepareCompose(block)
 
+    /**
+     * Extract the invalidations that are in the group with the given marker. This is used when
+     * movable content is moved between tables and the content was invalidated. This is used to move
+     * the invalidations with the content.
+     */
+    internal fun extractInvalidationsOf(anchor: Anchor): List<Pair<RecomposeScopeImpl, Any>> {
+        return if (invalidations.size > 0) {
+            val result = mutableListOf<Pair<RecomposeScopeImpl, Any>>()
+            val slotTable = slotTable
+            invalidations.removeIf { scope, value ->
+                val scopeAnchor = scope.anchor
+                if (scopeAnchor != null && slotTable.inGroup(anchor, scopeAnchor)) {
+                    result.add(scope to value)
+
+                    // Remove the invalidation
+                    true
+                } else {
+                    // Keep the invalidation
+                    false
+                }
+            }
+            result
+        } else emptyList()
+    }
+
     private fun addPendingInvalidationsLocked(value: Any, forgetConditionalScopes: Boolean) {
         observations.forEachScopeOf(value) { scope ->
             if (
@@ -1227,15 +1252,11 @@ internal class CompositionImpl(
                 val delegate =
                     invalidationDelegate?.let { changeDelegate ->
                         // Invalidations are delegated when recomposing changes to movable content
-                        // that
-                        // is destined to be moved. The movable content is composed in the
-                        // destination
-                        // composer but all the recompose scopes point the current composer and will
-                        // arrive
-                        // here. this redirects the invalidations that will be moved to the
-                        // destination
-                        // composer instead of recording an invalid invalidation in the from
-                        // composer.
+                        // that is destined to be moved. The movable content is composed in the
+                        // destination composer but all the recompose scopes point the current
+                        // composer and will arrive here. this redirects the invalidations that
+                        // will be moved to the destination composer instead of recording an
+                        // invalid invalidation in the from composer.
                         if (slotTable.groupContainsAnchor(invalidationDelegateGroup, anchor)) {
                             changeDelegate
                         } else null
@@ -1254,8 +1275,7 @@ internal class CompositionImpl(
                         invalidations.set(scope, ScopeInvalidated)
                     } else if (instance !is DerivedState<*>) {
                         // If observer is not set, we only need to add derived states to
-                        // invalidation,
-                        // as regular states are always going to invalidate.
+                        // invalidation, as regular states are always going to invalidate.
                         invalidations.set(scope, ScopeInvalidated)
                     } else {
                         if (!invalidations.anyScopeOf(scope) { it === ScopeInvalidated }) {

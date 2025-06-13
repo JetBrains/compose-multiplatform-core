@@ -18,6 +18,8 @@ package androidx.wear.compose.material3
 
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
@@ -55,6 +57,7 @@ public fun LevelIndicator(
     @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ) {
+    val updatedValue by rememberUpdatedState(value)
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
     val paddingHorizontal = LevelIndicatorDefaults.edgePadding
     val radius = screenWidthDp / 2 - paddingHorizontal.value - strokeWidth.value / 2
@@ -62,7 +65,7 @@ public fun LevelIndicator(
     val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius
 
     IndicatorImpl(
-        state = FractionPositionStateAdapter { value().coerceIn(0f, 1f) },
+        state = FractionPositionStateAdapter { updatedValue().coerceIn(0f, 1f) },
         indicatorHeight = indicatorHeight.dp,
         indicatorWidth = strokeWidth,
         paddingHorizontal = paddingHorizontal,

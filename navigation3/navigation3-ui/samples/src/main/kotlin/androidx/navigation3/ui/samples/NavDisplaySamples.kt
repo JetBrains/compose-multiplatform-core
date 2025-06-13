@@ -130,18 +130,19 @@ fun SceneNavSharedEntrySample() {
      * A [NavEntryDecorator] that wraps each entry in a shared element that is controlled by the
      * [Scene].
      */
-    val sharedEntryInSceneNavEntryDecorator = navEntryDecorator { entry ->
-        with(localNavSharedTransitionScope.current) {
-            Box(
-                Modifier.sharedElement(
-                    rememberSharedContentState(entry.key),
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                )
-            ) {
-                entry.content(entry.key)
+    val sharedEntryInSceneNavEntryDecorator =
+        navEntryDecorator<Any> { entry ->
+            with(localNavSharedTransitionScope.current) {
+                Box(
+                    Modifier.sharedElement(
+                        rememberSharedContentState(entry.contentKey),
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    )
+                ) {
+                    entry.Content()
+                }
             }
         }
-    }
 
     val backStack = rememberNavBackStack(CatList)
     SharedTransitionLayout {

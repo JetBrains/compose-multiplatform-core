@@ -7,17 +7,20 @@ package androidx.navigation3.runtime {
   }
 
   public final class EntryClassProvider<T> {
-    ctor public EntryClassProvider(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    ctor @BytecodeOnly public EntryClassProvider(kotlin.reflect.KClass<T!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    ctor public EntryClassProvider(kotlin.reflect.KClass<T> clazz, kotlin.jvm.functions.Function1<T,?> clazzContentKey, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    ctor @BytecodeOnly public EntryClassProvider(kotlin.reflect.KClass<T!>, kotlin.jvm.functions.Function1<T!,? extends java.lang.Object!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public kotlin.reflect.KClass<T> component1();
-    method public java.util.Map<java.lang.String,java.lang.Object> component2();
-    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
-    method public androidx.navigation3.runtime.EntryClassProvider<T> copy(optional kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly public androidx.navigation3.runtime.EntryClassProvider<T!> copy(kotlin.reflect.KClass<T!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public kotlin.jvm.functions.Function1<T,java.lang.Object> component2();
+    method public java.util.Map<java.lang.String,java.lang.Object> component3();
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component4();
+    method public androidx.navigation3.runtime.EntryClassProvider<T> copy(optional kotlin.reflect.KClass<T> clazz, optional kotlin.jvm.functions.Function1<T,?> clazzContentKey, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public androidx.navigation3.runtime.EntryClassProvider<T!> copy(kotlin.reflect.KClass<T!>, kotlin.jvm.functions.Function1<T!,? extends java.lang.Object!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public kotlin.reflect.KClass<T> getClazz();
+    method public kotlin.jvm.functions.Function1<T,java.lang.Object> getClazzContentKey();
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
     method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
     property public kotlin.reflect.KClass<T> clazz;
+    property public kotlin.jvm.functions.Function1<T,java.lang.Object> clazzContentKey;
     property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
     property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
@@ -26,35 +29,38 @@ package androidx.navigation3.runtime {
   }
 
   public final class EntryProvider<T> {
-    ctor public EntryProvider(T key, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    ctor @BytecodeOnly public EntryProvider(T, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    ctor public EntryProvider(T key, Object contentKey, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    ctor @BytecodeOnly public EntryProvider(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public T component1();
-    method public java.util.Map<java.lang.String,java.lang.Object> component2();
-    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
-    method public androidx.navigation3.runtime.EntryProvider<T> copy(optional T key, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly public androidx.navigation3.runtime.EntryProvider<T!> copy(T, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public Object component2();
+    method public java.util.Map<java.lang.String,java.lang.Object> component3();
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component4();
+    method public androidx.navigation3.runtime.EntryProvider<T> copy(optional T key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public androidx.navigation3.runtime.EntryProvider<T!> copy(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public Object getContentKey();
     method public T getKey();
     method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
     property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public Object contentKey;
     property public T key;
     property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
   @androidx.navigation3.runtime.EntryDsl public final class EntryProviderBuilder<T> {
     ctor public EntryProviderBuilder(kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback);
-    method public <T> void addEntryProvider(kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly public <T> void addEntryProvider(kotlin.reflect.KClass<T!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method public <T> void addEntryProvider(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly public <T> void addEntryProvider(T, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public <T> void addEntryProvider(kotlin.reflect.KClass<T> clazz, optional kotlin.jvm.functions.Function1<T,?> clazzContentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public <T> void addEntryProvider(kotlin.reflect.KClass<T!>, kotlin.jvm.functions.Function1<T!,? extends java.lang.Object!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public <T> void addEntryProvider(T key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public <T> void addEntryProvider(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> build();
   }
 
   public final class EntryProviderKt {
-    method public static inline <reified T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<? extends java.lang.Object?>, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.ComposableInferredTarget(scheme="[0[0]]") public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<? extends java.lang.Object!>!, java.util.Map<java.lang.String!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
-    method public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<T>, T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method @BytecodeOnly public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<T!>, T, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public static inline <reified T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<? extends java.lang.Object?>, optional kotlin.jvm.functions.Function1<T,?> clazzContentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<? extends java.lang.Object!>!, kotlin.jvm.functions.Function1<T!,? extends java.lang.Object!>!, java.util.Map<java.lang.String!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
+    method public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<T>, T key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method @BytecodeOnly public static <T> void entry(androidx.navigation3.runtime.EntryProviderBuilder<T!>, T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public static inline <T> kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> entryProvider(optional kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.EntryProviderBuilder<T>,kotlin.Unit> builder);
   }
 
@@ -64,13 +70,13 @@ package androidx.navigation3.runtime {
   }
 
   public class NavEntry<T> {
-    ctor public NavEntry(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    ctor @BytecodeOnly public NavEntry(T, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
-    method public T getKey();
+    ctor public NavEntry(T key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    ctor @BytecodeOnly public NavEntry(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @androidx.compose.runtime.Composable public void Content();
+    method @BytecodeOnly @androidx.compose.runtime.Composable public void Content(androidx.compose.runtime.Composer?, int);
+    method public final Object getContentKey();
     method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
-    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
-    property public T key;
+    property public final Object contentKey;
     property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
@@ -87,9 +93,6 @@ package androidx.navigation3.runtime {
   public class NavEntryWrapper<T> extends androidx.navigation3.runtime.NavEntry<T> {
     ctor public NavEntryWrapper(androidx.navigation3.runtime.NavEntry<T> navEntry);
     method public final androidx.navigation3.runtime.NavEntry<T> getNavEntry();
-    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
-    property public T key;
-    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
     property public final androidx.navigation3.runtime.NavEntry<T> navEntry;
   }
 

@@ -62,6 +62,8 @@ import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.internal.CameraViewActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -375,10 +377,11 @@ class SubspaceTest {
 
         val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panel = node.semanticsEntity
-        val subspaceBox = panel?.getParent()
-        val session = composeTestRule.activity.session
-        assertNotNull(session)
-        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+        val subspaceBox = panel?.parent
+        val session = assertNotNull(composeTestRule.activity.session)
+        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
     }
 
     @Test
@@ -396,10 +399,11 @@ class SubspaceTest {
 
         val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panel = node.semanticsEntity
-        val subspaceBox = panel?.getParent()
-        val session = composeTestRule.activity.session
-        assertNotNull(session)
-        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+        val subspaceBox = panel?.parent
+        val session = assertNotNull(composeTestRule.activity.session)
+        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
     }
 
     @Test
@@ -423,10 +427,11 @@ class SubspaceTest {
 
         val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panel = node.semanticsEntity
-        val subspaceBox = panel?.getParent()
-        val session = composeTestRule.activity.session
-        assertNotNull(session)
-        assertThat(subspaceBox?.getParent()).isEqualTo(session.scene.activitySpace)
+        val subspaceBox = panel?.parent
+        val session = assertNotNull(composeTestRule.activity.session)
+        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
     }
 
     @Test
@@ -439,11 +444,12 @@ class SubspaceTest {
         assertNotNull(node)
         val panelEntity = node.semanticsEntity
         assertNotNull(panelEntity)
-        val subspaceBoxEntity = panelEntity.getParent()
+        val subspaceBoxEntity = panelEntity.parent
         assertNotNull(subspaceBoxEntity)
-        val session = composeTestRule.activity.session
-        assertNotNull(session)
-        assertThat(subspaceBoxEntity.getParent()).isEqualTo(session.scene.activitySpace)
+        val session = assertNotNull(composeTestRule.activity.session)
+        val subspaceRootEntity = assertNotNull(subspaceBoxEntity.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
     }
 
     @Test
@@ -463,11 +469,11 @@ class SubspaceTest {
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.getParent()
-        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-        val parentPanel = subspaceRootContainerEntity?.getParent()
+        val subspaceBoxEntity = innerPanelEntity?.parent
+        val subspaceLayoutEntity = subspaceBoxEntity?.parent
+        val subspaceRootEntity = subspaceLayoutEntity?.parent
+        val subspaceRootContainerEntity = subspaceRootEntity?.parent
+        val parentPanel = subspaceRootContainerEntity?.parent
         assertNotNull(parentPanel)
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
@@ -494,11 +500,11 @@ class SubspaceTest {
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.getParent()
-        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-        val parentPanel = subspaceRootContainerEntity?.getParent()
+        val subspaceBoxEntity = innerPanelEntity?.parent
+        val subspaceLayoutEntity = subspaceBoxEntity?.parent
+        val subspaceRootEntity = subspaceLayoutEntity?.parent
+        val subspaceRootContainerEntity = subspaceRootEntity?.parent
+        val parentPanel = subspaceRootContainerEntity?.parent
         assertNotNull(parentPanel)
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
@@ -529,11 +535,11 @@ class SubspaceTest {
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.getParent()
-        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-        val parentPanel = subspaceRootContainerEntity?.getParent()
+        val subspaceBoxEntity = innerPanelEntity?.parent
+        val subspaceLayoutEntity = subspaceBoxEntity?.parent
+        val subspaceRootEntity = subspaceLayoutEntity?.parent
+        val subspaceRootContainerEntity = subspaceRootEntity?.parent
+        val parentPanel = subspaceRootContainerEntity?.parent
         assertNotNull(parentPanel)
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
@@ -555,11 +561,11 @@ class SubspaceTest {
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.getParent()
-        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
-        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
-        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
-        val parentPanel = subspaceRootContainerEntity?.getParent()
+        val subspaceBoxEntity = innerPanelEntity?.parent
+        val subspaceLayoutEntity = subspaceBoxEntity?.parent
+        val subspaceRootEntity = subspaceLayoutEntity?.parent
+        val subspaceRootContainerEntity = subspaceRootEntity?.parent
+        val parentPanel = subspaceRootContainerEntity?.parent
         assertNotNull(parentPanel)
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
@@ -3025,7 +3031,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun privateApplicationSubspace_mainPanelEntityHidden_whenSubspaceLeavesComposition() {
+    fun privateApplicationSubspace_mainPanelEntityDisabled_whenSubspaceLeavesComposition() {
         var showSubspace by mutableStateOf(true)
 
         composeTestRule.setContent {
@@ -3039,12 +3045,12 @@ class SubspaceTest {
         val session = composeTestRule.activity.session
         assertNotNull(session)
         val mainPanelEntity = session.scene.mainPanelEntity
-        assertThat(mainPanelEntity.isHidden()).isEqualTo(true)
+        assertThat(mainPanelEntity.isEnabled()).isEqualTo(false)
 
         showSubspace = false
         composeTestRule.waitForIdle()
 
-        assertThat(mainPanelEntity.isHidden()).isEqualTo(false)
+        assertThat(mainPanelEntity.isEnabled()).isEqualTo(true)
     }
 
     @Test
@@ -3151,14 +3157,12 @@ class SubspaceTest {
         val testJxrPlatformAdapter = createFakeRuntime(composeTestRule.activity)
 
         composeTestRule.setContent {
-            CompositionLocalProvider {
-                TestSetup(runtime = testJxrPlatformAdapter) {
-                    ApplicationSubspace {
-                        SpatialPanel {
-                            var state by remember { mutableStateOf(0) }
-                            Button(onClick = { state++ }) { Text("Increment") }
-                            Text("$state", modifier = Modifier.testTag("state"))
-                        }
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialPanel {
+                        var state by remember { mutableStateOf(0) }
+                        Button(onClick = { state++ }) { Text("Increment") }
+                        Text("$state", modifier = Modifier.testTag("state"))
                     }
                 }
             }
@@ -3221,5 +3225,54 @@ class SubspaceTest {
         runtime.requestHomeSpaceMode()
 
         composeTestRule.onNodeWithTag("state").assertTextContains("5")
+    }
+
+    @Test
+    fun applicationSubspace_usesProvidedRootContainer() {
+        var testNode: Entity? = null
+
+        composeTestRule.setContent {
+            TestSetup {
+                testNode = ContentlessEntity.create(LocalSession.current!!, "TestRoot")
+                CompositionLocalProvider(LocalSubspaceRootNode provides testNode) {
+                    assertThat(LocalSession.current!!.scene.centerOfAttention).isNull()
+                    ApplicationSubspace {
+                        SpatialBox(modifier = SubspaceModifier.testTag("Box")) {}
+                    }
+                }
+            }
+        }
+
+        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
+        val boxEntity = assertNotNull(boxNode.semanticsEntity)
+        val layoutRootEntity = assertNotNull(boxEntity.parent)
+        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
+        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
+
+        assertThat(testNode).isEqualTo(subspaceRootContainer)
+    }
+
+    @Test
+    fun applicationSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
+        composeTestRule.setContent {
+            TestSetup {
+                assertThat(LocalSession.current!!.scene.centerOfAttention).isNull()
+                ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
+                ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
+            }
+        }
+
+        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
+        val boxEntity = assertNotNull(boxNode.semanticsEntity)
+        val layoutRootEntity = assertNotNull(boxEntity.parent)
+        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
+        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
+        val boxNode2 = composeTestRule.onSubspaceNodeWithTag("Box2").fetchSemanticsNode()
+        val boxEntity2 = assertNotNull(boxNode2.semanticsEntity)
+        val layoutRootEntity2 = assertNotNull(boxEntity2.parent)
+        val subspaceRootEntity2 = assertNotNull(layoutRootEntity2.parent)
+        val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
+
+        assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
     }
 }

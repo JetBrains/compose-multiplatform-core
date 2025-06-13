@@ -242,7 +242,7 @@ class ParameterFactoryTest {
                 parameter("tileMode", ParameterType.String, "Clamp", index = 5)
                 parameter("createdSize", ParameterType.String, "Unspecified", index = 6)
                 parameter(
-                    "transformMatrix",
+                    "transform",
                     ParameterType.String,
                     Matrix::class.java.simpleName,
                     index = 8,

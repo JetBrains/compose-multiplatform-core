@@ -171,8 +171,10 @@ class NavDisplayTest {
             ) {
                 when (it) {
                     First ->
-                        NavEntry(First) { numberOnScreen1 = rememberSaveable { mutableStateOf(0) } }
-                    Second -> NavEntry(Second) {}
+                        NavEntry(First, First.toString()) {
+                            numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
+                        }
+                    Second -> NavEntry(Second, Second.toString()) {}
                     else -> error("Invalid key passed")
                 }
             }
@@ -207,12 +209,12 @@ class NavDisplayTest {
             ) {
                 when (it) {
                     First ->
-                        NavEntry(First) {
+                        NavEntry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
                         }
                     Second ->
-                        NavEntry(Second) {
+                        NavEntry(Second, Second.toString()) {
                             numberOnScreen2 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen2: ${numberOnScreen2.value}")
                         }
@@ -396,12 +398,12 @@ class NavDisplayTest {
                 onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
                 entryProvider =
                     entryProvider {
-                        entry(First) {
+                        entry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
                             Text(first)
                         }
-                        entry(Second) {
+                        entry(Second, Second.toString()) {
                             numberOnScreen2 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen2: ${numberOnScreen2.value}")
                             Text(second)
@@ -570,12 +572,12 @@ class NavDisplayTest {
             ) {
                 when (it) {
                     First ->
-                        NavEntry(First) {
+                        NavEntry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
                         }
                     Second ->
-                        NavEntry(Second) {
+                        NavEntry(Second, Second.toString()) {
                             numberOnScreen2 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen2: ${numberOnScreen2.value}")
                         }
@@ -649,7 +651,7 @@ class NavDisplayTest {
             ) {
                 when (it) {
                     First ->
-                        NavEntry(First) {
+                        NavEntry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
                         }
@@ -723,7 +725,7 @@ class NavDisplayTest {
             ) {
                 when (it) {
                     First ->
-                        NavEntry(First) {
+                        NavEntry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Text("numberOnScreen1: ${numberOnScreen1.value}")
                         }
@@ -786,7 +788,7 @@ class NavDisplayTest {
             ) { outerKey ->
                 when (outerKey) {
                     First ->
-                        NavEntry(First) {
+                        NavEntry(First, First.toString()) {
                             numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
                             Column {
                                 Text("numberOnScreen1: ${numberOnScreen1.value}")
@@ -800,7 +802,7 @@ class NavDisplayTest {
                                 ) { innerKey ->
                                     when (innerKey) {
                                         First ->
-                                            NavEntry(First) {
+                                            NavEntry(First, First.toString()) {
                                                 nestedNumberOnScreen1 = rememberSaveable {
                                                     mutableStateOf(0)
                                                 }

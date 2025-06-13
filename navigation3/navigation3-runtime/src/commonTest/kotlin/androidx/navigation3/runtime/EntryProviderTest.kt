@@ -25,15 +25,15 @@ class EntryProviderTest {
     @Test
     fun entryProvider_withUniqueInitializers_returnsEntries() {
         val provider = entryProvider {
-            entry("first") {}
-            entry("second") {}
+            entry("first", "first") {}
+            entry("second", "second") {}
         }
 
         val entry1 = provider.invoke("first")
         val entry2 = provider.invoke("second")
 
-        assertThat(entry1.key).isEqualTo("first")
-        assertThat(entry2.key).isEqualTo("second")
+        assertThat(entry1.contentKey).isEqualTo("first")
+        assertThat(entry2.contentKey).isEqualTo("second")
     }
 
     @Test

@@ -144,7 +144,7 @@ class FrameCaptureTests {
             // cameraGraph?
 
             advanceUntilIdle()
-            assertThat(frameCaptureJob.isCompleted) // Ensure verification is complete
+            assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
             cameraGraphSimulator.close()
         }
 }

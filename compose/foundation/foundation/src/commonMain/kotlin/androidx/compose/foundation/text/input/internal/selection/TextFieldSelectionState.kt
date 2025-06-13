@@ -119,8 +119,8 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalFoundationApi::class)
 internal class TextFieldSelectionState(
-    val textFieldState: TransformedTextFieldState,
-    val textLayoutState: TextLayoutState,
+    internal val textFieldState: TransformedTextFieldState,
+    internal val textLayoutState: TextLayoutState,
     private var density: Density,
     enabled: Boolean,
     readOnly: Boolean,
@@ -247,7 +247,7 @@ internal class TextFieldSelectionState(
         get() = textLayoutState.textLayoutNodeCoordinates?.takeIf { it.isAttached }
 
     /** Whether the contents of this TextField can be changed by the user. */
-    private val editable: Boolean
+    internal val editable: Boolean
         get() = enabled && !readOnly
 
     /**

@@ -23,12 +23,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.DecayAnimationSpec
-import androidx.compose.animation.core.FloatDecayAnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -36,18 +34,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
-import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.TargetedFlingBehavior
-import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.snapTo
-import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
-import androidx.compose.foundation.gestures.snapping.snapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -69,7 +60,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,26 +70,24 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -119,7 +107,10 @@ import androidx.wear.compose.material3.SwipeToRevealDefaults.bidirectionalGestur
 import androidx.wear.compose.material3.SwipeToRevealDefaults.gestureInclusion
 import androidx.wear.compose.material3.tokens.SwipeToRevealTokens
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
+import androidx.wear.compose.materialcore.SwipeableV2State
 import androidx.wear.compose.materialcore.screenWidthDp
+import androidx.wear.compose.materialcore.swipeAnchors
+import androidx.wear.compose.materialcore.swipeableV2
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -171,7 +162,7 @@ import kotlinx.coroutines.launch
  *
  * Example of [SwipeToReveal] with a [TransformingLazyColumn]
  *
- * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
+ * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnResetOnScrollSample
  * @param primaryAction The primary action of this component.
  *   [SwipeToRevealScope.PrimaryActionButton] should be used to create a button for this slot. If
  *   [undoPrimaryAction] is provided, the undo button will be displayed after [SwipeToReveal] has
@@ -245,6 +236,9 @@ public fun SwipeToReveal(
 
     val hapticFeedback = LocalHapticFeedback.current
 
+    // A no-op NestedScrollConnection which does not consume scroll/fling events
+    val noOpNestedScrollConnection = remember { object : NestedScrollConnection {} }
+
     @SuppressLint("PrimitiveInCollection")
     val anchors: Set<RevealValue> =
         if (revealDirection == Bidirectional) {
@@ -309,60 +303,55 @@ public fun SwipeToReveal(
                             }
                         }
                     }
-                    .anchoredDraggable(
-                        state = revealState.anchoredDraggableState,
+                    .swipeableV2(
+                        state = revealState.swipeableState,
                         orientation = Orientation.Horizontal,
                         enabled =
                             allowSwipe &&
                                 revealState.currentValue != LeftRevealed &&
                                 revealState.currentValue != RightRevealed,
-                        flingBehavior =
-                            anchoredDraggableFlingBehavior(
-                                state = revealState.anchoredDraggableState,
-                                snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
-                                positionalThreshold = AnchoredDraggableDefaults.PositionalThreshold,
-                                density = LocalDensity.current,
-                            ),
                     )
-                    .onSizeChanged { size ->
-                        // Update the total width which will be used to calculate the anchors
-                        val width = size.width.toFloat()
-                        val draggableAnchors = DraggableAnchors {
-                            for (anchor in anchors) {
-                                when (anchor) {
-                                    Covered -> 0f
-                                    LeftRevealing,
-                                    RightRevealing -> {
-                                        if (secondaryAction == null && !hasPartiallyRevealedState) {
-                                            null
-                                        } else {
-                                            val anchorSideMultiplier =
-                                                if (anchor == RightRevealing) -1 else 1
+                    .swipeAnchors(state = revealState.swipeableState, possibleValues = anchors) {
+                        value,
+                        layoutSize ->
+                        val swipeableWidthPx = layoutSize.width.toFloat()
+                        // Multiply the anchor with -1f to get the actual swipeable anchor
+                        when (value) {
+                            Covered -> 0f
+                            LeftRevealing,
+                            RightRevealing -> {
+                                if (secondaryAction == null && !hasPartiallyRevealedState) {
+                                    null
+                                } else {
+                                    val anchorSideMultiplier =
+                                        if (value == RightRevealing) -1 else 1
 
-                                            val result =
-                                                (anchorWidthPx / screenWidthPx) *
-                                                    width *
-                                                    anchorSideMultiplier
+                                    val result =
+                                        (anchorWidthPx / screenWidthPx) *
+                                            swipeableWidthPx *
+                                            anchorSideMultiplier
 
-                                            if (anchor == RightRevealing) {
-                                                revealState.revealThreshold = abs(result)
-                                            }
-
-                                            result
-                                        }
+                                    if (value == RightRevealing) {
+                                        revealState.revealThreshold = abs(result)
                                     }
-                                    LeftRevealed,
-                                    RightRevealed -> {
-                                        val anchorSideMultiplier =
-                                            if (anchor == RightRevealed) -1 else 1
-                                        width * anchorSideMultiplier
-                                    }
-                                    else -> null
-                                }?.let { anchor at it }
+
+                                    result
+                                }
                             }
+                            LeftRevealed,
+                            RightRevealed -> {
+                                val anchorSideMultiplier = if (value == RightRevealed) -1 else 1
+                                swipeableWidthPx * anchorSideMultiplier
+                            }
+                            else -> null
                         }
-                        revealState.anchoredDraggableState.updateAnchors(draggableAnchors)
                     }
+                    // NestedScrollDispatcher sends the scroll/fling events from the node to its
+                    // parent
+                    // and onwards including the modifier chain. Apply it in the end to let nested
+                    // scroll
+                    // connection applied before this modifier consume the scroll/fling events.
+                    .nestedScroll(noOpNestedScrollConnection, revealState.nestedScrollDispatcher)
         ) {
             val canSwipeRight = revealDirection == Bidirectional
 
@@ -486,11 +475,9 @@ public fun SwipeToReveal(
                                         ),
                                     label = "RevealedContentAlpha",
                                 )
-                            var revealedContentHeight by remember { mutableIntStateOf(0) }
                             Row(
                                 modifier =
                                     Modifier.graphicsLayer { alpha = revealedContentAlpha.value }
-                                        .onSizeChanged { revealedContentHeight = it.height }
                                         .layout { measurable, constraints ->
                                             val placeable =
                                                 measurable.measure(
@@ -505,13 +492,7 @@ public fun SwipeToReveal(
                                                     )
                                                 )
                                             layout(placeable.width, placeable.height) {
-                                                placeable.placeRelative(
-                                                    0,
-                                                    calculateVerticalOffsetBasedOnScreenPosition(
-                                                        revealedContentHeight,
-                                                        globalPosition,
-                                                    ),
-                                                )
+                                                placeable.placeRelative(0, 0)
                                             }
                                         },
                                 horizontalArrangement = Arrangement.Absolute.Right,
@@ -769,8 +750,23 @@ public object SwipeToRevealDefaults {
 
     internal val IconSize = 26.dp
 
+    /** Default animation spec used when moving between states. */
+    internal val AnimationSpec: AnimationSpec<Float> =
+        tween(durationMillis = RAPID_ANIMATION, easing = FastOutSlowInEasing)
+
     /** Default padding space between action slots. */
     internal val Padding = 4.dp
+
+    /**
+     * Default position threshold that needs to be swiped in order to transition to the next state.
+     * For example, a threshold of 0.5 with a revealing ratio of 0.7 means that the user needs to
+     * swipe at least 35% (0.5 * 0.7) of the component width to go from [Covered] to
+     * [RightRevealing] and at least 85% (0.7 + 0.5 * (1 - 0.7)) of the component width to go from
+     * [RightRevealing] to [RightRevealed].
+     */
+    internal val PositionalThreshold: (totalDistance: Float) -> Float = { totalDistance: Float ->
+        totalDistance * 0.5f
+    }
 }
 
 @Composable
@@ -1083,7 +1079,7 @@ public value class RevealDirection private constructor(private val value: Int) {
 public class RevealState(initialValue: RevealValue) {
     /** The current [RevealValue] based on the status of the component. */
     public val currentValue: RevealValue
-        get() = anchoredDraggableState.settledValue
+        get() = swipeableState.currentValue
 
     /**
      * The target [RevealValue] based on the status of the component. This will be equal to the
@@ -1091,15 +1087,15 @@ public class RevealState(initialValue: RevealValue) {
      * returns the next [RevealValue] based on the animation/swipe direction.
      */
     public val targetValue: RevealValue
-        get() = anchoredDraggableState.targetValue
+        get() = swipeableState.targetValue
 
     /** Returns whether the animation is running or not. */
     public val isAnimationRunning: Boolean
-        get() = anchoredDraggableState.isAnimationRunning
+        get() = swipeableState.isAnimationRunning
 
     /** The current amount by which the revealable content has been revealed. */
     public val offset: Float
-        get() = anchoredDraggableState.offset
+        get() = swipeableState.offset ?: 0f
 
     /**
      * Snaps to the [targetValue] without any animation (if a previous item was already revealed,
@@ -1112,7 +1108,7 @@ public class RevealState(initialValue: RevealValue) {
         if (targetValue != Covered) {
             resetLastState(this)
         }
-        anchoredDraggableState.snapTo(targetValue)
+        swipeableState.snapTo(targetValue)
     }
 
     /**
@@ -1126,7 +1122,7 @@ public class RevealState(initialValue: RevealValue) {
             resetLastState(this)
         }
         try {
-            anchoredDraggableState.animateTo(targetValue)
+            swipeableState.animateTo(targetValue)
         } finally {
             if (targetValue == Covered) {
                 lastActionType = RevealActionType.None
@@ -1134,7 +1130,19 @@ public class RevealState(initialValue: RevealValue) {
         }
     }
 
-    internal val anchoredDraggableState = AnchoredDraggableState(initialValue = initialValue)
+    internal val nestedScrollDispatcher: NestedScrollDispatcher = NestedScrollDispatcher()
+
+    /** [androidx.wear.compose.materialcore.SwipeableV2State] internal instance for the state. */
+    internal val swipeableState =
+        SwipeableV2State(
+            initialValue = initialValue,
+            animationSpec = SwipeToRevealDefaults.AnimationSpec,
+            confirmValueChange = { revealValue -> confirmValueChangeAndReset(revealValue) },
+            positionalThreshold = { totalDistance ->
+                SwipeToRevealDefaults.PositionalThreshold(totalDistance)
+            },
+            nestedScrollDispatcher = nestedScrollDispatcher,
+        )
 
     internal var lastActionType: RevealActionType by mutableStateOf(RevealActionType.None)
 
@@ -1154,7 +1162,16 @@ public class RevealState(initialValue: RevealValue) {
      *
      * @throws IllegalStateException If the offset has not been initialized yet
      */
-    internal fun requireOffset(): Float = anchoredDraggableState.requireOffset()
+    internal fun requireOffset(): Float = swipeableState.requireOffset()
+
+    private suspend fun confirmValueChangeAndReset(revealValue: RevealValue): Boolean {
+        val currentState = this
+        // Update the state if the reveal value is changing to a different value than Covered.
+        if (revealValue != Covered) {
+            resetLastState(currentState)
+        }
+        return true
+    }
 
     /**
      * Resets last state if a different SwipeToReveal is being moved to new anchor and the last
@@ -1388,31 +1405,6 @@ private fun fadeOutUndo(): ContentTransform =
             fadeOut(animationSpec = tween(durationMillis = SHORT_ANIMATION, easing = LinearEasing)),
     )
 
-private fun calculateVerticalOffsetBasedOnScreenPosition(
-    childHeight: Int,
-    globalPosition: LayoutCoordinates?,
-): Int {
-    if (globalPosition == null || !globalPosition.positionOnScreen().isSpecified) {
-        return 0
-    }
-    val positionOnScreen = globalPosition.positionOnScreen()
-    val boundsInWindow = globalPosition.boundsInWindow()
-    val parentTop = positionOnScreen.y.toInt()
-    val parentHeight = globalPosition.size.height
-    val parentBottom = parentTop + parentHeight
-    if (parentTop >= boundsInWindow.top && parentBottom <= boundsInWindow.bottom) {
-        // Don't offset if the item is fully on screen
-        return 0
-    }
-
-    // Avoid going outside parent bounds
-    val minCenter = parentTop + childHeight / 2
-    val maxCenter = parentTop + parentHeight - childHeight / 2
-    val desiredCenter = boundsInWindow.center.y.toInt().coerceIn(minCenter, maxCenter)
-    val actualCenter = parentTop + parentHeight / 2
-    return desiredCenter - actualCenter
-}
-
 private fun startFadeInFraction(hasSecondaryAction: Boolean) =
     if (hasSecondaryAction) {
         DOUBLE_ICON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
@@ -1426,109 +1418,6 @@ private fun endFadeInFraction(hasSecondaryAction: Boolean) =
     } else {
         SINGLE_ICON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
     }
-
-/**
- * Copy from [androidx.compose.foundation.gestures.anchoredDraggableFlingBehavior], overriding the
- * value passed in `velocityThreshold` to [anchoredDraggableLayoutInfoProvider].
- */
-private fun <T> anchoredDraggableFlingBehavior(
-    state: AnchoredDraggableState<T>,
-    density: Density,
-    positionalThreshold: (totalDistance: Float) -> Float,
-    snapAnimationSpec: AnimationSpec<Float>,
-): TargetedFlingBehavior =
-    snapFlingBehavior(
-        decayAnimationSpec = NoOpDecayAnimationSpec,
-        snapAnimationSpec = snapAnimationSpec,
-        snapLayoutInfoProvider =
-            anchoredDraggableLayoutInfoProvider(
-                state = state,
-                positionalThreshold = positionalThreshold,
-                velocityThreshold = { with(density) { VelocityThreshold.toPx() } },
-            ),
-    )
-
-/** Exact copy from [androidx.compose.foundation.gestures.NoOpDecayAnimationSpec]. */
-private val NoOpDecayAnimationSpec: DecayAnimationSpec<Float> =
-    object : FloatDecayAnimationSpec {
-            override val absVelocityThreshold = 0f
-
-            override fun getValueFromNanos(
-                playTimeNanos: Long,
-                initialValue: Float,
-                initialVelocity: Float,
-            ) = 0f
-
-            override fun getDurationNanos(initialValue: Float, initialVelocity: Float) = 0L
-
-            override fun getVelocityFromNanos(
-                playTimeNanos: Long,
-                initialValue: Float,
-                initialVelocity: Float,
-            ) = 0f
-
-            override fun getTargetValue(initialValue: Float, initialVelocity: Float) = 0f
-        }
-        .generateDecayAnimationSpec()
-
-/** Exact copy from [androidx.compose.foundation.gestures.AnchoredDraggableLayoutInfoProvider]. */
-private fun <T> anchoredDraggableLayoutInfoProvider(
-    state: AnchoredDraggableState<T>,
-    positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
-): SnapLayoutInfoProvider =
-    object : SnapLayoutInfoProvider {
-
-        // We never decay in AnchoredDraggable's fling
-        override fun calculateApproachOffset(velocity: Float, decayOffset: Float) = 0f
-
-        override fun calculateSnapOffset(velocity: Float): Float {
-            val currentOffset = state.requireOffset()
-            val target =
-                state.anchors.computeTarget(
-                    currentOffset = currentOffset,
-                    velocity = velocity,
-                    positionalThreshold = positionalThreshold,
-                    velocityThreshold = velocityThreshold,
-                )
-            return state.anchors.positionOf(target) - currentOffset
-        }
-    }
-
-/** Exact copy from [androidx.compose.foundation.gestures.computeTarget]. */
-private fun <T> DraggableAnchors<T>.computeTarget(
-    currentOffset: Float,
-    velocity: Float,
-    positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
-): T {
-    val currentAnchors = this
-    require(!currentOffset.isNaN()) { "The offset provided to computeTarget must not be NaN." }
-    val isMoving = abs(velocity) > 0.0f
-    val isMovingForward = isMoving && velocity > 0f
-    // When we're not moving, pick the closest anchor and don't consider directionality
-    return if (!isMoving) {
-        currentAnchors.closestAnchor(currentOffset)!!
-    } else if (abs(velocity) >= abs(velocityThreshold())) {
-        currentAnchors.closestAnchor(currentOffset, searchUpwards = isMovingForward)!!
-    } else {
-        val left = currentAnchors.closestAnchor(currentOffset, false)!!
-        val leftAnchorPosition = currentAnchors.positionOf(left)
-        val right = currentAnchors.closestAnchor(currentOffset, true)!!
-        val rightAnchorPosition = currentAnchors.positionOf(right)
-        val distance = abs(leftAnchorPosition - rightAnchorPosition)
-        val relativeThreshold = abs(positionalThreshold(distance))
-        val closestAnchorFromStart =
-            if (isMovingForward) leftAnchorPosition else rightAnchorPosition
-        val relativePosition = abs(closestAnchorFromStart - currentOffset)
-        when (relativePosition >= relativeThreshold) {
-            true -> if (isMovingForward) right else left
-            false -> if (isMovingForward) left else right
-        }
-    }
-}
-
-private val VelocityThreshold = 800.dp
 
 internal const val CustomTouchSlopMultiplier = 1.20f
 

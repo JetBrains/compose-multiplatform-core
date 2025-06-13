@@ -243,6 +243,9 @@ androidXMultiplatform {
 
 android {
     namespace = "androidx.sqlite.driver.bundled"
+    buildTypes.configureEach {
+        consumerProguardFiles("src/androidMain/proguard-rules.pro")
+    }
 }
 
 androidx {

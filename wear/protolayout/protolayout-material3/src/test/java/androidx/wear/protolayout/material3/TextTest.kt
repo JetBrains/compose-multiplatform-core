@@ -57,6 +57,30 @@ class TextTest {
             .isEqualTo(roundness.toFontSettingProto())
     }
 
+    @Test
+    fun textAutoSize_inflates() {
+        val text =
+            materialScope(
+                context = ApplicationProvider.getApplicationContext(),
+                deviceConfiguration = DEVICE_PARAMETERS,
+            ) {
+                text(
+                    text = TEXT,
+                    typography = Typography.TITLE_MEDIUM, // 16sp
+                    incrementsForTypographySize = listOf(-2f, 4f),
+                )
+            }
+        val provider = LayoutElementAssertionsProvider(text)
+
+        // Underlying implementation is just calling androidx.wear.protolayout.layout.basicText
+        // which is fully tested for all fields
+        provider.onElement(hasText(TEXT.staticValue)).assertExists()
+        assertThat((text as Text).fontStyle!!.sizes).hasSize(3)
+        assertThat(text.fontStyle!!.sizes[0].value).isEqualTo(14) // -2 step
+        assertThat(text.fontStyle!!.sizes[1].value).isEqualTo(20) // 4 steps
+        assertThat(text.fontStyle!!.sizes[2].value).isEqualTo(16) // main
+    }
+
     private companion object {
         val TEXT = "Text test".layoutString
         const val COLOR = Color.YELLOW

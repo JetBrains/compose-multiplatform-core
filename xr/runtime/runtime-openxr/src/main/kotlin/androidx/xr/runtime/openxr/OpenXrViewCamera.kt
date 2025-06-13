@@ -22,16 +22,17 @@ import androidx.xr.runtime.internal.ViewCamera
 import androidx.xr.runtime.math.Pose
 
 /** Wraps the device tracking data. */
-// TODO("b/416275880")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrViewCamera internal constructor() : ViewCamera, Updatable {
+public class OpenXrViewCamera internal constructor() : ViewCamera {
 
-    // TODO("b/416275880")
-    override val pose: Pose = Pose()
+    override var pose: Pose = Pose()
+        private set
 
-    // TODO("b/416275880")
-    override val fieldOfView: FieldOfView = FieldOfView(0f, 0f, 0f, 0f)
+    override var fieldOfView: FieldOfView = FieldOfView(0f, 0f, 0f, 0f)
+        private set
 
-    // TODO("b/416275880")
-    override fun update(xrTime: Long) {}
+    internal fun update(state: ViewCameraState) {
+        pose = state.pose
+        fieldOfView = state.fieldOfView
+    }
 }

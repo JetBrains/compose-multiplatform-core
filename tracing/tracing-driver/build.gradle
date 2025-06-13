@@ -21,12 +21,13 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.tracing.driver"
+    }
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
@@ -91,8 +92,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "AndroidX Tracing Driver"
-}
-
-android {
-    namespace = "androidx.tracing.driver"
 }

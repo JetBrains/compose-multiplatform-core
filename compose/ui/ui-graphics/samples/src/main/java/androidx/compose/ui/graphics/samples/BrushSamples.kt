@@ -28,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.unit.dp
 
 @Sampled
@@ -180,8 +178,7 @@ fun CompositeShaderSample() {
                 val bitmapBrush = ShaderBrush(ImageShader(bitmap))
                 val sweepBrush =
                     Brush.sweepGradient(listOf(Color.Red, Color.Blue, Color.Cyan, Color.Green))
-                val compositeBrush =
-                    Brush.compositeShaderBrush(bitmapBrush, sweepBrush, BlendMode.SrcIn)
+                val compositeBrush = Brush.composite(bitmapBrush, sweepBrush, BlendMode.SrcIn)
                 onDrawBehind { drawRect(brush = compositeBrush) }
             }
     )

@@ -113,7 +113,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
             }
             .use { session ->
                 // Ensure session has an initially valid Surface
-                assertThat(session.surface.isValid)
+                assertThat(session.surface.isValid).isTrue()
 
                 detachViewfinder()
                 InstrumentationRegistry.getInstrumentation().waitForIdleSync()
@@ -136,7 +136,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
             }
             .use { session ->
                 // Ensure session has an initially valid Surface
-                assertThat(session.surface.isValid)
+                assertThat(session.surface.isValid).isTrue()
                 surface = session.surface
             }
         // After session is closed, surface should still be valid since view is still attached

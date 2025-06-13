@@ -43,76 +43,60 @@ class SdkSandboxCrossProcessLatencyMetricTest {
                 apiLevel = 35,
             )
 
-        val e2eLatencyMetric =
-            SdkSandboxCrossProcessLatencyMetric("checkClientOpenSession", "onUiDisplayed", "e2e")
-        val openSessionMediateeLatencyMetric =
+        val crossProcessLatencyMetric =
             SdkSandboxCrossProcessLatencyMetric(
-                "checkClientOpenSession",
-                "checkClientOpenSession",
-                "openSessionMediatee",
-                occurrenceOfEndTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST,
+                "UiLib#checkClientOpenSession",
+                "UiLib#checkClientOpenSessionSandbox",
+                "timeToMediateeOpenSession",
             )
-        val uiDisplayLatencyMetric =
+        val sameProcessLatencyMetric =
             SdkSandboxCrossProcessLatencyMetric(
-                "checkClientOpenSession",
-                "onUiDisplayed",
-                "uiDisplay",
-                occurrenceOfBeginTrace = SdkSandboxCrossProcessLatencyMetric.TraceOccurrence.LAST,
+                "UiLib#checkClientOpenSession",
+                "UiLib#ssvOnUiDisplayed",
+                "e2e",
             )
-        val crossProcessUiDisplayLatencyMetric =
+        val endPointBeforeBeginPointCase =
             SdkSandboxCrossProcessLatencyMetric(
-                "sdkOpenSession",
-                "onUiDisplayed",
-                "crossProcessUiDisplay",
+                "UiLib#ssvOnUiDisplayed",
+                "UiLib#checkClientOpenSessionSandbox",
+                "errorCase",
             )
 
         val result1 =
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
-                e2eLatencyMetric.getMeasurements(captureInfo = captureInfo, traceSession = this)
+                crossProcessLatencyMetric.getMeasurements(
+                    captureInfo = captureInfo,
+                    traceSession = this,
+                )
             }
-
         val result2 =
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
-                openSessionMediateeLatencyMetric.getMeasurements(
+                sameProcessLatencyMetric.getMeasurements(
                     captureInfo = captureInfo,
                     traceSession = this,
                 )
             }
-
         val result3 =
             TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
-                uiDisplayLatencyMetric.getMeasurements(
-                    captureInfo = captureInfo,
-                    traceSession = this,
-                )
-            }
-
-        val result4 =
-            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
-                crossProcessUiDisplayLatencyMetric.getMeasurements(
+                endPointBeforeBeginPointCase.getMeasurements(
                     captureInfo = captureInfo,
                     traceSession = this,
                 )
             }
 
         assertEqualMeasurements(
-            expected = listOf(Metric.Measurement("e2eLatencyMillis", 270.9)),
+            expected = listOf(Metric.Measurement("timeToMediateeOpenSessionLatencyMillis", 124.5)),
             observed = result1,
             threshold = 0.1,
         )
         assertEqualMeasurements(
-            expected = listOf(Metric.Measurement("openSessionMediateeLatencyMillis", 72.0)),
+            expected = listOf(Metric.Measurement("e2eLatencyMillis", 185.3)),
             observed = result2,
             threshold = 0.1,
         )
         assertEqualMeasurements(
-            expected = listOf(Metric.Measurement("uiDisplayLatencyMillis", 199.0)),
+            expected = listOf(Metric.Measurement("errorCaseLatencyMillis", 0.0)),
             observed = result3,
-            threshold = 0.1,
-        )
-        assertEqualMeasurements(
-            expected = listOf(Metric.Measurement("crossProcessUiDisplayLatencyMillis", 251.6)),
-            observed = result4,
             threshold = 0.1,
         )
     }

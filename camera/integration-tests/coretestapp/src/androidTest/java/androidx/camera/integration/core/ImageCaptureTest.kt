@@ -73,7 +73,6 @@ import androidx.camera.core.resolutionselector.ResolutionFilter
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE
 import androidx.camera.core.resolutionselector.ResolutionStrategy
-import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.integration.core.util.CameraInfoUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
@@ -91,6 +90,7 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeOnImageCapturedCallback
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
 import androidx.camera.testing.impl.mocks.MockScreenFlash
+import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.core.content.ContextCompat
@@ -486,7 +486,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         if (saveLocation.exists()) {
             saveLocation.delete()
         }
-        assertThat(!saveLocation.exists())
+        assertThat(!saveLocation.exists()).isTrue()
 
         canSaveToFile(saveLocation)
     }
@@ -494,7 +494,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     @Test
     fun saveCanSucceed_withExistingFile() {
         val saveLocation = temporaryFolder.newFile("test.jpg")
-        assertThat(saveLocation.exists())
+        assertThat(saveLocation.exists()).isTrue()
 
         canSaveToFile(saveLocation)
     }
@@ -988,7 +988,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
                 override fun onError(exception: ImageCaptureException) {}
             }
         val saveLocation = temporaryFolder.newFile("test.jpg")
-        assertThat(saveLocation.exists())
+        assertThat(saveLocation.exists()).isTrue()
         useCase.takePicture(
             ImageCapture.OutputFileOptions.Builder(saveLocation).build(),
             mainExecutor,

@@ -77,8 +77,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-private val DEFAULT_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
-
 @LargeTest
 @RunWith(Parameterized::class)
 internal class ImageAnalysisTest(
@@ -125,9 +123,11 @@ internal class ImageAnalysisTest(
     private lateinit var handler: Handler
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+    private lateinit var cameraSelector: CameraSelector
 
     @Before
     fun setUp(): Unit = runBlocking {
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         ProcessCameraProvider.configureInstance(cameraConfig)
 
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
@@ -155,8 +155,6 @@ internal class ImageAnalysisTest(
 
     @Test
     fun exceedMaxImagesWithoutClosing_doNotCrash() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
-
         // Arrange.
         val queueDepth = 3
         val semaphore = Semaphore(0)
@@ -176,11 +174,7 @@ internal class ImageAnalysisTest(
 
         // Act.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_FRONT_CAMERA,
-                useCase,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
 
         // Assert: waiting for images does not crash.
@@ -207,7 +201,7 @@ internal class ImageAnalysisTest(
         runBlocking {
             val useCase = ImageAnalysis.Builder().setBackpressureStrategy(strategy).build()
             withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             }
             useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
             analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)
@@ -221,7 +215,7 @@ internal class ImageAnalysisTest(
         val useCase = ImageAnalysis.Builder().build()
         // Bind but do not start lifecycle
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             cameraProvider.unbindAll()
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -266,7 +260,7 @@ internal class ImageAnalysisTest(
     fun defaultAspectRatioWillBeSet_whenTargetResolutionIsNotSet() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val config = useCase.currentConfig as ImageOutputConfig
         assertThat(config.targetAspectRatio).isEqualTo(AspectRatio.RATIO_4_3)
@@ -278,7 +272,7 @@ internal class ImageAnalysisTest(
         val useCase =
             ImageAnalysis.Builder().setTargetAspectRatio(AspectRatio.RATIO_DEFAULT).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val config = useCase.currentConfig as ImageOutputConfig
         assertThat(config.targetAspectRatio).isEqualTo(AspectRatio.RATIO_4_3)
@@ -287,7 +281,6 @@ internal class ImageAnalysisTest(
     @Suppress("DEPRECATION") // legacy resolution API
     @Test
     fun defaultAspectRatioWontBeSet_whenTargetResolutionIsSet() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
         val useCase = ImageAnalysis.Builder().setTargetResolution(DEFAULT_RESOLUTION).build()
         assertThat(
                 useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO)
@@ -295,11 +288,7 @@ internal class ImageAnalysisTest(
             .isFalse()
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(
                 useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO)
@@ -311,7 +300,7 @@ internal class ImageAnalysisTest(
     fun viewPort_OverwriteCropRect(): Unit = runBlocking {
         // Arrange.
         val rotation =
-            if (CameraUtil.getSensorOrientation(CameraSelector.LENS_FACING_BACK)!! % 180 != 0)
+            if (CameraUtil.getSensorOrientation(cameraSelector.lensFacing!!)!! % 180 != 0)
                 Surface.ROTATION_90
             else Surface.ROTATION_0
         val imageProxyDeferred = CompletableDeferred<ImageProxy>()
@@ -328,11 +317,7 @@ internal class ImageAnalysisTest(
         withContext(Dispatchers.Main) {
             val useCaseGroup =
                 UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(imageAnalysis).build()
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCaseGroup)
         }
         val imageProxy = withTimeoutOrNull(5000) { imageProxyDeferred.await() }
 
@@ -359,11 +344,7 @@ internal class ImageAnalysisTest(
                 .setTargetRotation(Surface.ROTATION_0)
                 .build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
 
         // Updates target rotation from ROTATION_0 to ROTATION_90.
@@ -381,7 +362,7 @@ internal class ImageAnalysisTest(
         val initialConfig = useCase.currentConfig
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             cameraProvider.unbind(useCase)
         }
         val configAfterUnbinding = useCase.currentConfig
@@ -395,7 +376,7 @@ internal class ImageAnalysisTest(
         withContext(Dispatchers.Main) {
             val useCase = ImageAnalysis.Builder().build()
 
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             useCase.targetRotation = Surface.ROTATION_180
 
             // Check the target rotation is kept when the use case is unbound.
@@ -404,7 +385,7 @@ internal class ImageAnalysisTest(
 
             // Check the target rotation is kept when the use case is rebound to the
             // lifecycle.
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             assertThat(useCase.targetRotation).isEqualTo(Surface.ROTATION_180)
         }
     }
@@ -414,7 +395,7 @@ internal class ImageAnalysisTest(
     fun useCaseCanBeReusedInSameCamera() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
@@ -422,7 +403,7 @@ internal class ImageAnalysisTest(
         analysisResultsSemaphore = Semaphore(/* permits= */ 0)
         // Rebind the use case to the same camera.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
     }
@@ -432,7 +413,7 @@ internal class ImageAnalysisTest(
     fun useCaseCanBeReusedInDifferentCamera() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
@@ -440,7 +421,7 @@ internal class ImageAnalysisTest(
         analysisResultsSemaphore = Semaphore(/* permits= */ 0)
         // Rebind the use case to different camera.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
     }
@@ -455,11 +436,7 @@ internal class ImageAnalysisTest(
     fun returnCorrectTargetRotation_afterUseCaseIsAttached() = runBlocking {
         val imageAnalysis = ImageAnalysis.Builder().setTargetRotation(Surface.ROTATION_180).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
         assertThat(imageAnalysis.targetRotation).isEqualTo(Surface.ROTATION_180)
     }
@@ -486,11 +463,7 @@ internal class ImageAnalysisTest(
         val imageAnalysis =
             ImageAnalysis.Builder().setResolutionSelector(resolutionSelector).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
         assertThat(imageAnalysis.resolutionInfo!!.resolution).isEqualTo(maxHighResolutionOutputSize)
         imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -515,7 +488,7 @@ internal class ImageAnalysisTest(
                 )
                 .build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val resolutionSelector = useCase.currentConfig.retrieveOption(OPTION_RESOLUTION_SELECTOR)
         // The default 4:3 AspectRatioStrategy is kept
@@ -535,13 +508,12 @@ internal class ImageAnalysisTest(
 
     @Test
     fun analyzerAnalyzesImages_whenSessionErrorListenerReceivesError() = runBlocking {
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+
         val imageAnalysis = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelectors[0], imageAnalysis)
         }
 
         imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -551,20 +523,14 @@ internal class ImageAnalysisTest(
         // Checks that image can be received successfully when onError is received.
         triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
-        if (CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbind(imageAnalysis)
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    imageAnalysis,
-                )
-            }
-
-            // Checks that image can be received successfully when onError is received by the old
-            // error listener.
-            triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
+        withContext(Dispatchers.Main) {
+            cameraProvider.unbind(imageAnalysis)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelectors[1], imageAnalysis)
         }
+
+        // Checks that image can be received successfully when onError is received by the old
+        // error listener.
+        triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         // Checks that image can be received successfully when onError is received by the new
         // error listener.
@@ -620,7 +586,7 @@ internal class ImageAnalysisTest(
             camera =
                 cameraProvider.bindToLifecycle(
                     fakeLifecycleOwner,
-                    DEFAULT_CAMERA_SELECTOR,
+                    cameraSelector,
                     preview,
                     imageCapture,
                     imageAnalysis,
@@ -640,11 +606,7 @@ internal class ImageAnalysisTest(
             // will not be kept to cause test failure
             imageAnalysis.clearAnalyzer()
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis,
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
 
         val expectedOutputResolution2 = getRotatedResolution(camera!!, imageAnalysis)

@@ -20,8 +20,10 @@ import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
@@ -55,6 +57,7 @@ import androidx.xr.runtime.math.Pose
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SurfaceEntity
 private constructor(
+    private val lifecycleManager: LifecycleManager,
     rtEntity: RtSurfaceEntity,
     entityManager: EntityManager,
     canvasShape: CanvasShape,
@@ -137,7 +140,7 @@ private constructor(
     public object StereoMode {
         // Each eye will see the entire surface (no separation)
         public const val MONO: Int = 0
-        // The [bottom, top] halves of the surface will map to [left, right] eyes
+        // The [top, bottom] halves of the surface will map to [left, right] eyes
         public const val TOP_BOTTOM: Int = 1
         // The [left, right] halves of the surface will map to [left, right] eyes
         public const val SIDE_BY_SIDE: Int = 2
@@ -292,6 +295,7 @@ private constructor(
         /**
          * Factory method for SurfaceEntity.
          *
+         * @param lifecycleManager A SceneCore LifecycleManager
          * @param adapter JxrPlatformAdapter to use.
          * @param entityManager A SceneCore EntityManager
          * @param stereoMode An [Int] which defines how surface subregions map to eyes
@@ -303,6 +307,7 @@ private constructor(
          * @return a SurfaceEntity instance
          */
         internal fun create(
+            lifecycleManager: LifecycleManager,
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
             stereoMode: Int = StereoMode.SIDE_BY_SIDE,
@@ -323,6 +328,7 @@ private constructor(
                 }
             val surfaceEntity =
                 SurfaceEntity(
+                    lifecycleManager,
                     adapter.createSurfaceEntity(
                         getRtStereoMode(stereoMode),
                         pose,
@@ -364,6 +370,7 @@ private constructor(
             contentColorMetadata: ContentColorMetadata? = null,
         ): SurfaceEntity =
             SurfaceEntity.create(
+                session.runtime.lifecycleManager,
                 session.platformAdapter,
                 session.scene.entityManager,
                 stereoMode,
@@ -540,10 +547,14 @@ private constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws IllegalStateException if HEAD_TRACKING permission is not configured.
+     * @throws [IllegalStateException] if [Session.config.headTracking] is set to
+     *   [Config.HeadTrackingMode.DISABLED].
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
+        check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
+            "Config.HeadTrackingMode is set to Disabled."
+        }
         return rtEntity.getPerceivedResolution().toPerceivedResolutionResult()
     }
 }

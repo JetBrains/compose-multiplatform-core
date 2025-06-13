@@ -80,10 +80,13 @@ public class CustomTabsClient {
      * @return Whether the binding was successful.
      */
     public static boolean bindCustomTabsService(@NonNull Context context,
-            @Nullable String packageName, @NonNull CustomTabsServiceConnection connection) {
+            @NonNull String packageName, @NonNull CustomTabsServiceConnection connection) {
         connection.setApplicationContext(context.getApplicationContext());
         Intent intent = new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION);
-        if (!TextUtils.isEmpty(packageName)) intent.setPackage(packageName);
+        if (packageName.isEmpty()) {
+            throw new IllegalArgumentException("Service Intents must be explicit");
+        }
+        intent.setPackage(packageName);
         return context.bindService(intent, connection,
                 Context.BIND_AUTO_CREATE | Context.BIND_WAIVE_PRIORITY);
     }
@@ -104,10 +107,13 @@ public class CustomTabsClient {
      * @return Whether the binding was successful.
      */
     public static boolean bindCustomTabsServicePreservePriority(@NonNull Context context,
-            @Nullable String packageName, @NonNull CustomTabsServiceConnection connection) {
+            @NonNull String packageName, @NonNull CustomTabsServiceConnection connection) {
         connection.setApplicationContext(context.getApplicationContext());
         Intent intent = new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION);
-        if (!TextUtils.isEmpty(packageName)) intent.setPackage(packageName);
+        if (packageName.isEmpty()) {
+            throw new IllegalArgumentException("Service Intents must be explicit");
+        }
+        intent.setPackage(packageName);
         return context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 

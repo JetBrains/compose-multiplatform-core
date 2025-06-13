@@ -21,13 +21,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("com.squareup.wire")
 }
 
 androidXMultiplatform {
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.tracing.driver.wire"
+    }
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
@@ -106,8 +107,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "AndroidX Tracing Driver Wire"
-}
-
-android {
-    namespace = "androidx.tracing.driver.wire"
 }

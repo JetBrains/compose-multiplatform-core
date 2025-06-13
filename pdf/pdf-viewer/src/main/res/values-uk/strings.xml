@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Цей PDF-файл не можна редагувати"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Контент скопійовано з PDF-файлу"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Смуга прокрутки"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"Підтвердити"</string>
 </resources>

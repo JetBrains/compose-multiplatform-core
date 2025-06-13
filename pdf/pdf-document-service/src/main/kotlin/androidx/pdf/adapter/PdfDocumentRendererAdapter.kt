@@ -66,6 +66,9 @@ internal class PdfDocumentRendererAdapter(pfd: ParcelFileDescriptor, password: S
             page?.close()
         } else {
             removedPage.close()
+            if (page != removedPage) {
+                page?.close()
+            }
         }
     }
 

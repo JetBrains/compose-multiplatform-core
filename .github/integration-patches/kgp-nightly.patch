@@ -1,5 +1,41 @@
+diff --git a/benchmark/benchmark-darwin-core/build.gradle b/benchmark/benchmark-darwin-core/build.gradle
+index 557a7d86351..5e32bdedc5f 100644
+--- a/benchmark/benchmark-darwin-core/build.gradle
++++ b/benchmark/benchmark-darwin-core/build.gradle
+@@ -5,6 +5,7 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++import androidx.build.KotlinTarget
+ import androidx.build.PlatformIdentifier
+ import androidx.build.SoftwareType
+ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+@@ -57,4 +58,5 @@ androidx {
+     type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
+     inceptionYear = "2022"
+     description = "AndroidX Benchmarks - Darwin Core"
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/benchmark/benchmark-darwin/build.gradle b/benchmark/benchmark-darwin/build.gradle
+index df41397197c..b3e51525fbf 100644
+--- a/benchmark/benchmark-darwin/build.gradle
++++ b/benchmark/benchmark-darwin/build.gradle
+@@ -5,6 +5,7 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++import androidx.build.KotlinTarget
+ import androidx.build.PlatformIdentifier
+ import androidx.build.SoftwareType
+ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+@@ -88,4 +89,5 @@ androidx {
+     inceptionYear = "2022"
+     description = "AndroidX Benchmarks - Darwin"
+     type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
 diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
-index a5cb37624a5..104947526ee 100644
+index 4814e86b29f..1380774a52b 100644
 --- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 +++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 @@ -36,6 +36,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeNullability
@@ -10,7 +46,7 @@ index a5cb37624a5..104947526ee 100644
  import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
  import org.jetbrains.kotlin.library.abi.LibraryAbi
  
-@@ -753,6 +754,8 @@ private fun File.asBaselineErrors(): Set<String> =
+@@ -756,6 +757,8 @@ private fun File.asBaselineErrors(): Set<String> =
  private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
      AbiValueParameter by param
  
@@ -102,7 +138,7 @@ index 13d986907ba..1803dfe1b2c 100644
          )
      }
 diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
-index df9a32562a3..eb635373fe6 100644
+index 6ae71e2bc7e..90c120097a9 100644
 --- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
 +++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
 @@ -31,6 +31,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeArgument
@@ -113,7 +149,7 @@ index df9a32562a3..eb635373fe6 100644
  import org.jetbrains.kotlin.library.abi.AbiVariance
  import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
  import org.jetbrains.kotlin.library.abi.impl.AbiTypeParameterImpl
-@@ -314,6 +315,7 @@ internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParamete
+@@ -315,6 +316,7 @@ internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParamete
      val isVararg = cursor.parseVarargSymbol() != null
      val hasDefaultArg = cursor.parseDefaultArg() != null
      return AbiValueParameterImpl(
@@ -256,10 +292,10 @@ index ca622cb9784..05010e19cd8 100644
                      )
                      .finalLinkCommands()
 diff --git a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
-index 4469549334d..0b5b233f7b2 100644
+index 4469549334d..8e78cc82547 100644
 --- a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
 +++ b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
-@@ -37,6 +37,7 @@ interface AndroidXConfiguration {
+@@ -37,9 +37,11 @@ interface AndroidXConfiguration {
      val kotlinBomVersion: Provider<String>
  }
  
@@ -267,6 +303,10 @@ index 4469549334d..0b5b233f7b2 100644
  enum class KotlinTarget(val apiVersion: KotlinVersion, val catalogVersion: String) {
      KOTLIN_2_0(KotlinVersion.KOTLIN_2_0, "kotlin20"),
      KOTLIN_2_1(KotlinVersion.KOTLIN_2_1, "kotlin21"),
++    KOTLIN_2_2(KotlinVersion.KOTLIN_2_2, "kotlin22"),
+     DEFAULT(KOTLIN_2_0),
+     LATEST(KOTLIN_2_1);
+ 
 diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
 index e4fc41c8f5f..7f47c625aa9 100644
 --- a/buildSrc/shared.gradle
@@ -280,6 +320,42 @@ index e4fc41c8f5f..7f47c625aa9 100644
                  "-Xskip-metadata-version-check",
                  "-Xjdk-release=17",
          )
+diff --git a/collection/collection-ktx/build.gradle b/collection/collection-ktx/build.gradle
+index 784c4a88435..9add531894c 100644
+--- a/collection/collection-ktx/build.gradle
++++ b/collection/collection-ktx/build.gradle
+@@ -21,6 +21,7 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ 
+ plugins {
+@@ -37,4 +38,5 @@ androidx {
+     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+     inceptionYear = "2018"
+     description = "Kotlin extensions for 'collection' artifact"
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/collection/collection/build.gradle b/collection/collection/build.gradle
+index 2ab99afd991..9efa72619e4 100644
+--- a/collection/collection/build.gradle
++++ b/collection/collection/build.gradle
+@@ -22,6 +22,7 @@
+  * modifying its settings.
+  */
+ 
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ import androidx.build.PlatformIdentifier
+ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+@@ -178,4 +179,5 @@ androidx {
+     description = "Standalone efficient collections."
+     // TODO: b/326456246
+     optOutJSpecify = true
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
 diff --git a/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt b/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt
 index 4a1bc0f1812..25646accd8d 100644
 --- a/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt
@@ -292,6 +368,18 @@ index 4a1bc0f1812..25646accd8d 100644
  
  package androidx.compose.runtime.internal
  
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+index 4da80d4cc2d..c0c33defb6a 100644
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -52,6 +52,7 @@ kotlin19 = "1.9.24"
+ # Use the most up-to-date patch
+ kotlin20 = "2.0.21"
+ kotlin21 = "2.1.20"
++kotlin22 = "2.2.20"
+ kotlin = "2.1.21"
+ kotlinBenchmark = "0.4.11"
+ kotlinGradlePluginAnnotations = "1.9.24"
 diff --git a/gradle/verification-keyring.keys b/gradle/verification-keyring.keys
 index 50231c427df..bcddb57893b 100644
 --- a/gradle/verification-keyring.keys

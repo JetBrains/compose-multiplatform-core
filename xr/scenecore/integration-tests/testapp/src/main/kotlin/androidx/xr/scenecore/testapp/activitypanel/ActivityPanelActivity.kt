@@ -111,13 +111,9 @@ class ActivityPanelActivity : AppCompatActivity() {
     }
 
     private fun getSizeInLocalSpace(activityPanelEntity: ActivityPanelEntity): FloatSize3d {
-        val scaledSize = activityPanelEntity.getSize()
+        val scaledSize = activityPanelEntity.size
         val spaceScale = activityPanelEntity.getScale()
-        return FloatSize3d(
-            scaledSize.width / spaceScale,
-            scaledSize.height / spaceScale,
-            scaledSize.depth / spaceScale,
-        )
+        return FloatSize3d(scaledSize.width / spaceScale, scaledSize.height / spaceScale)
     }
 
     companion object {

@@ -26,12 +26,16 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.paging.compose"
+        // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
+        experimentalProperties["android.lint.useK2Uast"] = false
+    }
 
     sourceSets {
         commonMain {
@@ -84,11 +88,4 @@ androidx {
     description = "Compose integration with Paging"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":paging:paging-compose:paging-compose-samples"))
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.paging.compose"
-    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
-    experimentalProperties["android.lint.useK2Uast"] = false
 }

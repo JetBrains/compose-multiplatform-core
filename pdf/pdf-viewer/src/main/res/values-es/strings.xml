@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Este PDF no se puede editar"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Contenido copiado del PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Barra de desplazamiento"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"Confirmar"</string>
 </resources>

@@ -17,7 +17,6 @@
 package androidx.wear.protolayout.modifiers
 
 import android.annotation.SuppressLint
-import androidx.annotation.RestrictTo
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_NONE
 import androidx.wear.protolayout.ModifiersBuilders.Semantics
 import androidx.wear.protolayout.ModifiersBuilders.SemanticsRole
@@ -56,7 +55,6 @@ fun LayoutModifier.semanticsRole(@SemanticsRole semanticsRole: Int): LayoutModif
     this then BaseSemanticElement(semanticsRole = semanticsRole)
 
 /** Mark the element as heading for a section of content for accessibility purpose. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresSchemaVersion(major = 1, minor = 600)
 fun LayoutModifier.semanticsHeading(heading: Boolean): LayoutModifier =
     this then BaseSemanticElement(heading = heading)

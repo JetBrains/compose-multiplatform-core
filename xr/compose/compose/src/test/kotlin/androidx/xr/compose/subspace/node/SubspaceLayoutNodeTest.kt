@@ -65,7 +65,7 @@ class SubspaceLayoutNodeTest {
                     .onSubspaceNodeWithTag("Child")
                     .fetchSemanticsNode()
                     .semanticsEntity
-                    ?.getParent()
+                    ?.parent
             )
             .isEqualTo(parentEntity)
     }

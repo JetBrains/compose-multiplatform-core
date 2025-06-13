@@ -16,27 +16,26 @@
 package androidx.compose.ui.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.InsetsRulers
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.node.LayoutModifierNode
-import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.fontscaling.MathUtils.lerp
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 @Composable
 @Sampled
@@ -53,12 +52,16 @@ fun WindowInsetsRulersSample() {
                 val width = constraints.maxWidth
                 val height = constraints.maxHeight
                 layout(width, height) {
-                    val top = maxOf(0, InsetsRulers.SystemBars.top.current(0f).roundToInt())
+                    val top =
+                        maxOf(0, WindowInsetsRulers.SystemBars.current.top.current(0f).roundToInt())
                     val topArea = measurables[0].measure(Constraints.fixed(width, top))
                     topArea.place(0, 0)
 
                     val bottom =
-                        minOf(height, InsetsRulers.SystemBars.bottom.current(0f).roundToInt())
+                        minOf(
+                            height,
+                            WindowInsetsRulers.SystemBars.current.bottom.current(0f).roundToInt(),
+                        )
                     val bottomArea =
                         measurables[1].measure(Constraints.fixed(width, height - bottom))
                     bottomArea.place(0, bottom)
@@ -78,6 +81,58 @@ fun WindowInsetsRulersSample() {
 
 @Composable
 @Sampled
+fun SourceAndTargetInsetsSample() {
+    Column(Modifier.fillMaxSize()) {
+        // TextField will show the IME when it is focused.
+        TextField("HelloWorld", {}, Modifier.fillMaxWidth())
+        // When the IME shows, animate the content to align with the top of the IME.
+        // When the IME hides, animate the content to the top of the Box.
+        val verticalPosition = remember { Animatable(0f) }
+        val coroutineScope = rememberCoroutineScope()
+        Box(
+            Modifier.fillMaxSize().background(Color.Yellow).layout { measurable, constraints ->
+                if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        val placeable =
+                            measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                        val ime = WindowInsetsRulers.Ime
+                        val animationProperties = ime.getAnimationProperties(this)
+                        val height = constraints.maxHeight.toFloat()
+                        val sourceBottom = animationProperties.source.bottom.current(height)
+                        val targetBottom = animationProperties.target.bottom.current(height)
+                        val targetPosition =
+                            if (!animationProperties.isVisible || sourceBottom < targetBottom) {
+                                // IME is either not visible or animating away
+                                0f
+                            } else if (animationProperties.isAnimating) {
+                                // IME is visible and animating
+                                targetBottom - placeable.height
+                            } else {
+                                // IME is visible and not animating, so use the IME poosition
+                                ime.current.bottom.current(height) - placeable.height
+                            }
+                        if (targetPosition != verticalPosition.targetValue) {
+                            coroutineScope.launch { verticalPosition.animateTo(targetPosition) }
+                        }
+                        placeable.place(0, verticalPosition.value.roundToInt())
+                    }
+                } else {
+                    // It should only get here if inside scrollable content or aligning to an
+                    // alignment
+                    // line.
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+            }
+        ) {
+            // content
+            Box(Modifier.size(100.dp).background(Color.Blue))
+        }
+    }
+}
+
+@Composable
+@Sampled
 fun InsetsRulersAlphaSample() {
     Layout(
         modifier = Modifier.fillMaxSize(),
@@ -90,17 +145,19 @@ fun InsetsRulersAlphaSample() {
             val width = constraints.maxWidth
             val height = constraints.maxHeight
             layout(width, height) {
-                val top = InsetsRulers.StatusBars.top.current(0f).roundToInt()
-                val bottom = InsetsRulers.NavigationBars.bottom.current(0f).roundToInt()
+                val top = WindowInsetsRulers.StatusBars.current.top.current(0f).roundToInt()
+                val bottom =
+                    WindowInsetsRulers.NavigationBars.current.bottom.current(0f).roundToInt()
                 measurables[0].measure(Constraints.fixed(width, top)).placeWithLayer(0, 0) {
-                    alpha = InsetsRulers.StatusBars.alpha(this@layout)
+                    alpha = WindowInsetsRulers.StatusBars.getAnimationProperties(this@layout).alpha
                 }
                 measurables[2].measure(Constraints.fixed(width, height - bottom)).place(0, bottom)
                 measurables[1].measure(Constraints.fixed(width, bottom - top)).placeWithLayer(
                     0,
                     top,
                 ) {
-                    alpha = InsetsRulers.NavigationBars.alpha(this@layout)
+                    alpha =
+                        WindowInsetsRulers.NavigationBars.getAnimationProperties(this@layout).alpha
                 }
             }
         },
@@ -109,77 +166,33 @@ fun InsetsRulersAlphaSample() {
 
 @Composable
 @Sampled
-fun AnimatableInsetsRulersSample() {
-    class LandOnImeModifierNode : Modifier.Node(), LayoutModifierNode {
-        override fun MeasureScope.measure(
-            measurable: Measurable,
-            constraints: Constraints,
-        ): MeasureResult {
-            return if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
-                val width = constraints.maxWidth
-                val height = constraints.maxHeight
-                layout(width, height) {
-                    val node = this@LandOnImeModifierNode
-                    val placeable = measurable.measure(constraints)
-                    val bottom =
-                        with(node) {
-                            if (!InsetsRulers.Ime.isAnimating(node)) {
-                                if (InsetsRulers.Ime.isVisible(node)) {
-                                    InsetsRulers.Ime.bottom.current(Float.NaN)
-                                } else {
-                                    Float.NaN
-                                }
-                            } else {
-                                val start = InsetsRulers.Ime.source.bottom.current(Float.NaN)
-                                val end = InsetsRulers.Ime.target.bottom.current(Float.NaN)
-                                val fraction = InsetsRulers.Ime.interpolatedFraction(node)
-                                if (start.isNaN() || end.isNaN()) {
-                                    Float.NaN // don't know where it is animating
-                                } else if (start > end) { // animate IME up
-                                    lerp(placeable.height.toFloat(), end, fraction)
-                                } else { // animating down
-                                    lerp(start, placeable.height.toFloat(), fraction)
-                                }
-                            }
-                        }
-                    val y =
-                        if (bottom.isNaN()) {
-                            0 // place at the top
-                        } else if (bottom > height) {
-                            height - placeable.height // place at the bottom
-                        } else { // place somewhere in the middle
-                            bottom.roundToInt() - placeable.height
-                        }
-                    placeable.place(0, y)
+fun RulersIgnoringVisibilitySample() {
+    // When the status bar is visible, don't show the content that would be in the status area.
+    // When the status bar is hidden, show content that would be in the status area.
+    Layout(
+        modifier = Modifier.fillMaxSize(),
+        content = {
+            Box(Modifier.background(Color.Blue)) // status bar area content
+            Box(Modifier.background(Color.Yellow)) // normal content
+        },
+        measurePolicy = { measurables, constraints ->
+            val width = constraints.maxWidth
+            val height = constraints.maxHeight
+            layout(width, height) {
+                val top =
+                    WindowInsetsRulers.StatusBars.rulersIgnoringVisibility.top
+                        .current(0f)
+                        .roundToInt()
+                val statusBarAnimationProperties =
+                    WindowInsetsRulers.StatusBars.getAnimationProperties(this)
+                if (!statusBarAnimationProperties.isVisible) {
+                    // Only place the status bar content when the status bar isn't visible. We don't
+                    // want it cluttering the status bar area when the status bar is shown.
+                    measurables[0].measure(Constraints.fixed(width, top)).place(0, 0)
                 }
-            } else {
-                // Can't work with the rulers if we can't take the full size
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                // Place the normal content below where the status bar would be.
+                measurables[1].measure(Constraints.fixed(width, height - top)).place(0, top)
             }
-        }
-    }
-
-    class LandOnImeElement : ModifierNodeElement<LandOnImeModifierNode>() {
-        override fun create(): LandOnImeModifierNode = LandOnImeModifierNode()
-
-        override fun hashCode(): Int = 0
-
-        override fun equals(other: Any?): Boolean = other is LandOnImeElement
-
-        override fun update(node: LandOnImeModifierNode) {}
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        Box(LandOnImeElement()) {
-            // This content will rest at the top, but then animate to land on the IME when it is
-            // animated in.
-            Box(Modifier.size(100.dp).background(Color.Blue))
-        }
-        TextField(
-            "Hello World",
-            onValueChange = {},
-            Modifier.safeDrawingPadding().align(Alignment.BottomEnd),
-        )
-    }
+        },
+    )
 }

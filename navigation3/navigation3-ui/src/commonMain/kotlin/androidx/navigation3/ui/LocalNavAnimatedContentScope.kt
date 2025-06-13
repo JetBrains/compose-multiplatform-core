@@ -21,7 +21,7 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 
 /**
- * Local provider of [AnimatedContentScope] to [androidx.navigation3.runtime.NavEntry.content].
+ * Local provider of [AnimatedContentScope] to [androidx.navigation3.runtime.NavEntry.Content].
  *
  * This does not have a default value since the AnimatedContentScope is provided at runtime by
  * AnimatedContent.

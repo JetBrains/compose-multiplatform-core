@@ -54,7 +54,7 @@ fun <T : Any> ListDetailNavDisplay(
     DecoratedNavEntryProvider(backstack, entryProvider, entryDecorators) { entries ->
         val lastEntry = entries.last()
         if (isSinglePaneLayout) {
-            Box(modifier = modifier) { lastEntry.content.invoke(lastEntry.key) }
+            Box(modifier = modifier) { lastEntry.Content() }
         } else {
             Row {
                 var rightEntry: NavEntry<T>? = null
@@ -70,15 +70,13 @@ fun <T : Any> ListDetailNavDisplay(
                     leftEntry = lastEntry
                 }
                 // Left pane
-                Box(modifier = modifier.fillMaxWidth(0.5F)) {
-                    leftEntry.content.invoke(leftEntry.key)
-                }
+                Box(modifier = modifier.fillMaxWidth(0.5F)) { leftEntry.Content() }
                 // Right pane
                 Box(modifier = modifier.fillMaxWidth()) {
                     if (rightEntry == null) {
                         Text("Please select an item")
                     } else {
-                        rightEntry.content.invoke(rightEntry.key)
+                        rightEntry.Content()
                     }
                 }
             }

@@ -104,7 +104,7 @@ package androidx.xr.compose.testing {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static void setSubspaceContent(androidx.compose.ui.test.junit4.AndroidComposeTestRule<? extends java.lang.Object?,androidx.xr.compose.testing.SubspaceTestingActivity>, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static void setSubspaceContent(androidx.compose.ui.test.junit4.AndroidComposeTestRule<? extends java.lang.Object?,androidx.xr.compose.testing.SubspaceTestingActivity>, kotlin.jvm.functions.Function0<kotlin.Unit> uiContent, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public static void setSubspaceContent(androidx.compose.ui.test.junit4.AndroidComposeTestRule<? extends java.lang.Object!,androidx.xr.compose.testing.SubspaceTestingActivity!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method @BytecodeOnly @SuppressCompatibility @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) @androidx.compose.runtime.ComposableInferredTarget(scheme="[0[0][androidx.xr.compose.subspace.SubspaceComposable]]") public static void setSubspaceContent(androidx.compose.ui.test.junit4.AndroidComposeTestRule<? extends java.lang.Object!,androidx.xr.compose.testing.SubspaceTestingActivity!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public static void setSubspaceContent(androidx.compose.ui.test.junit4.AndroidComposeTestRule<? extends java.lang.Object!,androidx.xr.compose.testing.SubspaceTestingActivity!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class TestActivitySpace implements androidx.xr.runtime.internal.ActivitySpace {
@@ -198,6 +198,7 @@ package androidx.xr.compose.testing {
     method @BytecodeOnly public androidx.xr.runtime.internal.Entity createEntity(androidx.xr.runtime.math.Pose, String, androidx.xr.runtime.internal.Entity);
     method @BytecodeOnly public androidx.xr.runtime.internal.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.GltfModelResource, androidx.xr.runtime.internal.Entity);
     method @BytecodeOnly public androidx.xr.runtime.internal.InteractableComponent createInteractableComponent(java.util.concurrent.Executor, androidx.xr.runtime.internal.InputEventListener);
+    method @BytecodeOnly public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource!>? createKhronosPbrMaterial(androidx.xr.runtime.internal.KhronosPbrMaterialSpec);
     method @BytecodeOnly public androidx.xr.runtime.internal.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose);
     method @BytecodeOnly public androidx.xr.runtime.internal.MovableComponent createMovableComponent(boolean, boolean, java.util.Set<androidx.xr.runtime.internal.AnchorPlacement!>, boolean);
     method @BytecodeOnly public androidx.xr.runtime.internal.PanelEntity createPanelEntity(android.content.Context, androidx.xr.runtime.math.Pose, android.view.View, androidx.xr.runtime.internal.Dimensions, String, androidx.xr.runtime.internal.Entity);
@@ -209,6 +210,7 @@ package androidx.xr.compose.testing {
     method @BytecodeOnly @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode, androidx.xr.runtime.internal.Dimensions);
     method @BytecodeOnly public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int, androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape, int, androidx.xr.runtime.internal.Entity);
     method @BytecodeOnly public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource!>? createWaterMaterial(boolean);
+    method @BytecodeOnly public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource);
     method @BytecodeOnly public void destroyTexture(androidx.xr.runtime.internal.TextureResource);
     method @BytecodeOnly public void destroyWaterMaterial(androidx.xr.runtime.internal.MaterialResource);
     method @BytecodeOnly public void dispose();
@@ -239,23 +241,52 @@ package androidx.xr.compose.testing {
     method @BytecodeOnly public void requestFullSpaceMode();
     method @BytecodeOnly public void requestHomeSpaceMode();
     method public void setActivitySpace(androidx.xr.runtime.internal.ActivitySpace);
-    method @BytecodeOnly public void setAlphaMap(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method @BytecodeOnly public void setAlphaStepMultiplier(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setAmbientOcclusionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setAmbientOcclusionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
+    method @BytecodeOnly public void setBaseColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector4);
+    method @BytecodeOnly public void setBaseColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setBaseColorUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
+    method @BytecodeOnly public void setClearcoatFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float, float, float);
+    method @BytecodeOnly public void setClearcoatNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setClearcoatTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setEmissiveFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector3);
+    method @BytecodeOnly public void setEmissiveTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setEmissiveUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
     method @BytecodeOnly public android.os.Bundle setFullSpaceMode(android.os.Bundle);
     method @BytecodeOnly public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle);
     method public void setHeadActivityPose(androidx.xr.compose.testing.TestHeadActivityPose?);
+    method @BytecodeOnly public void setIndexOfRefractionOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
     method public void setLeftCameraViewPose(androidx.xr.compose.testing.TestCameraViewActivityPose?);
     method public void setMainPanelEntity(androidx.xr.runtime.internal.PanelEntity);
-    method @BytecodeOnly public void setNormalBoundary(androidx.xr.runtime.internal.MaterialResource, float);
-    method @BytecodeOnly public void setNormalMap(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method @BytecodeOnly public void setNormalSpeed(androidx.xr.runtime.internal.MaterialResource, float);
-    method @BytecodeOnly public void setNormalTiling(androidx.xr.runtime.internal.MaterialResource, float);
-    method @BytecodeOnly public void setNormalZ(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setMetallicFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setMetallicRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
+    method @BytecodeOnly public void setNormalBoundaryOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setNormalFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setNormalMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setNormalSpeedOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setNormalTilingOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setNormalUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
+    method @BytecodeOnly public void setNormalZOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
     method @BytecodeOnly public void setPreferredAspectRatio(android.app.Activity, float);
-    method @BytecodeOnly public void setReflectionMap(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setReflectionMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
     method public void setRightCameraViewPose(androidx.xr.compose.testing.TestCameraViewActivityPose?);
+    method @BytecodeOnly public void setRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setSheenColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector3);
+    method @BytecodeOnly public void setSheenColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setSheenRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setSheenRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
     method @BytecodeOnly public void setSpatialModeChangeListener(androidx.xr.runtime.internal.SpatialModeChangeListener);
     method @BytecodeOnly public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor, java.util.function.Consumer<androidx.xr.runtime.internal.SpatialVisibility!>);
+    method @BytecodeOnly public void setTransmissionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method @BytecodeOnly public void setTransmissionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method @BytecodeOnly public void setTransmissionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
     method public void setUnknownCameraViewPose(androidx.xr.compose.testing.TestCameraViewActivityPose?);
     method @BytecodeOnly public void startRenderer();
     method @BytecodeOnly public void stopRenderer();
@@ -276,7 +307,7 @@ package androidx.xr.compose.testing {
 
   public final class TestSetupKt {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @androidx.compose.runtime.Composable public static void TestSetup(optional boolean isXrEnabled, optional androidx.xr.runtime.internal.JxrPlatformAdapter? runtime, optional kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session,kotlin.Unit> onSessionCreated, kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method @BytecodeOnly @SuppressCompatibility @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableInferredTarget(scheme="[0[0]]") public static void TestSetup(boolean, androidx.xr.runtime.internal.JxrPlatformAdapter?, kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) @androidx.compose.runtime.Composable public static void TestSetup(boolean, androidx.xr.runtime.internal.JxrPlatformAdapter?, kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
 }

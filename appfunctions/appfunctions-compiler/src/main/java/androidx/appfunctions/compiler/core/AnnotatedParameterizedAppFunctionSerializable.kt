@@ -72,6 +72,20 @@ class AnnotatedParameterizedAppFunctionSerializable(
         }
     }
 
+    override val factoryVariableName: String by lazy {
+        val variableName = jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() }
+        val typeArgumentSuffix =
+            typeParameterMap.values.joinToString { typeArgument ->
+                typeArgument
+                    .toTypeName()
+                    .toString()
+                    .replace(Regex("[_<>]"), "_")
+                    .replace("?", "_Nullable")
+                    .toPascalCase()
+            }
+        "${variableName}${typeArgumentSuffix}Factory"
+    }
+
     /**
      * Returns the annotated class's properties as defined in its primary constructor.
      *

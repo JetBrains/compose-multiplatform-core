@@ -87,7 +87,6 @@ public interface SurfaceEntity : Entity {
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws IllegalStateException if HEAD_TRACKING permission is not configured.
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult

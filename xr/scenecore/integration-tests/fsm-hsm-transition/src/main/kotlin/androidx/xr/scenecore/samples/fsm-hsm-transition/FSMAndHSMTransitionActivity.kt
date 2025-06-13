@@ -32,15 +32,16 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.scene
 import com.google.common.util.concurrent.ListenableFuture
+import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.function.Consumer
 
@@ -52,7 +53,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
     private var movableActive: Boolean = false
     private var skyboxActive: Boolean = false
     private val skyboxFuture: ListenableFuture<ExrImage> by lazy {
-        ExrImage.create(session, "skyboxes/BlueSkybox.zip")
+        ExrImage.createFromZipAsync(session, Paths.get("skyboxes", "BlueSkybox.zip"))
     }
     private var boundsListener = Consumer<FloatSize3d> {}
 
@@ -61,7 +62,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
         setContentView(R.layout.main_activity)
         val textMainPanelPixelDimensions = findViewById<TextView>(R.id.mainPanelPixelDimensions)
         fun mainPanelPixelDimensionsString() =
-            "{w:${session.scene.mainPanelEntity.getSizeInPixels().width}, h:${session.scene.mainPanelEntity.getSizeInPixels().height}}"
+            "{w:${session.scene.mainPanelEntity.sizeInPixels.width}, h:${session.scene.mainPanelEntity.sizeInPixels.height}}"
         textMainPanelPixelDimensions.text = mainPanelPixelDimensionsString()
 
         val buttonRequestFSM: Button = findViewById(R.id.buttonFsm)
@@ -137,11 +138,11 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
 
         val resizePortraitFsm: Button = findViewById(R.id.resizePortraitFsm)
         resizePortraitFsm.setOnClickListener {
-            session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1200, 1600))
+            session.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
         }
         val resizeLandscapeFsm: Button = findViewById(R.id.resizeLandscapeFsm)
         resizeLandscapeFsm.setOnClickListener {
-            session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1600, 1200))
+            session.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
         }
 
         val textRadio: TextView = findViewById(R.id.radioLabel)
@@ -174,7 +175,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
             object : ResizeListener {
                 override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
                     Log.i(TAG, "resize event $finalSize")
-                    (entity as BasePanelEntity<*>).setSize(finalSize)
+                    (entity as PanelEntity).size = finalSize.to2d()
                     textMainPanelPixelDimensions.text = mainPanelPixelDimensionsString()
                 }
             },
@@ -183,7 +184,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
 
         val switchMovable: Switch = findViewById(R.id.movableSwitch)
         switchMovable.setOnCheckedChangeListener { _, isChecked ->
-            movableComponent.size = session.scene.mainPanelEntity.getSize()
+            movableComponent.size = session.scene.mainPanelEntity.size.to3d()
             when (isChecked) {
                 true -> movableActive = session.scene.mainPanelEntity.addComponent(movableComponent)
                 false ->
@@ -195,7 +196,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
 
         val switchResizable: Switch = findViewById(R.id.resizableSwitch)
         switchResizable.setOnCheckedChangeListener { _, isChecked ->
-            resizableComponent.size = session.scene.mainPanelEntity.getSize()
+            resizableComponent.size = session.scene.mainPanelEntity.size.to3d()
             when (isChecked) {
                 true ->
                     resizableActive = session.scene.mainPanelEntity.addComponent(resizableComponent)

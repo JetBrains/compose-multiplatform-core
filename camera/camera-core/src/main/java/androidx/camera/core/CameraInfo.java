@@ -24,7 +24,6 @@ import android.view.Surface;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
@@ -318,8 +317,9 @@ public interface CameraInfo {
      * <p>There is no guarantee that these ranges can be used for every size surface or
      * combination of use cases. If attempting to run the device using an unsupported range, there
      * may be stability issues or the device may quietly choose another frame rate operating range.
-     *
-     * <p>The returned set does not have any ordering guarantees and frame rate ranges may overlap.
+     * The returned set does not have any ordering guarantees. To get the guaranteed supported
+     * frame rate ranges under UseCase combination constraints, use
+     * {@link #getSupportedFrameRateRanges(SessionConfig)}.
      *
      * @return The set of FPS ranges supported by the device's AE algorithm
      * @see androidx.camera.video.VideoCapture.Builder#setTargetFrameRate(Range)
@@ -337,6 +337,12 @@ public interface CameraInfo {
      * based on the specific configuration of {@link UseCase}s, which might influence the
      * available ranges.
      *
+     * <p>If the provided {@link SessionConfig} has a target frame rate range already set (e.g.,
+     * set via {@link androidx.camera.video.VideoCapture.Builder#setTargetFrameRate(Range)}),
+     * this method will ignore that specific setting. The returned set represents all ranges the
+     * device can support under the given {@link SessionConfig}, irrespective of any pre-defined
+     * target frame rate within the config itself.
+     *
      * <p>When CameraX is configured to run with the camera2 implementation, this list will be
      * derived from
      * {@link android.hardware.camera2.CameraCharacteristics#CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES}
@@ -345,16 +351,13 @@ public interface CameraInfo {
      *
      * <p>The returned set of frame rate ranges is guaranteed to be supported with the given
      * {@link SessionConfig}. An empty set will be returned if the provided {@link SessionConfig}
-     * is invalid.
-     *
-     * <p>The returned set does not have any ordering guarantees and frame rate ranges may overlap.
+     * is invalid. The returned set does not have any ordering guarantees.
      *
      * @param sessionConfig The {@link SessionConfig} to query supported frame rate ranges for.
      * @return The set of FPS ranges supported by the device's AE algorithm for the given session
      * config.
-     * @see androidx.camera.video.VideoCapture.Builder#setTargetFrameRate(Range)
+     * @see SessionConfig.Builder#setFrameRate(Range)
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @ExperimentalSessionConfig
     default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
             @NonNull SessionConfig sessionConfig) {
@@ -559,9 +562,9 @@ public interface CameraInfo {
      * @throws IllegalArgumentException If some features conflict with each other by having
      *   different values for the same feature type and can thus never be supported together.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: Expose the API for public release.
     @ExperimentalFeatureCombination
+    @ExperimentalSessionConfig
     default boolean isFeatureCombinationSupported(@NonNull SessionConfig sessionConfig) {
         return false;
     }

@@ -37,6 +37,7 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -60,7 +61,8 @@ internal class AnchorRenderer(
         updateJob =
             SupervisorJob(
                 coroutineScope.launch() {
-                    gltfAnchorModel = GltfModel.create(session, "models/xyzArrows.glb").await()
+                    gltfAnchorModel =
+                        GltfModel.createAsync(session, Paths.get("models/xyzArrows.glb")).await()
                     planeRenderer.renderedPlanes.collect { attachInteractableComponents(it) }
                 }
             )
@@ -159,7 +161,7 @@ internal class AnchorRenderer(
                             )
                         )
                     } else if (state.trackingState == TrackingState.STOPPED) {
-                        entity.setHidden(true)
+                        entity.setEnabled(false)
                     }
                 }
             }

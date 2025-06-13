@@ -206,7 +206,7 @@ public class ServiceWorkerWebSettingsImpl extends ServiceWorkerWebSettingsCompat
     }
 
     @Override
-    public void setIncludeCookiesOnShouldInterceptRequest(boolean enabled) {
+    public void setIncludeCookiesOnShouldInterceptRequestEnabled(boolean enabled) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
         if (!feature.isSupportedByWebView()) {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
@@ -215,7 +215,7 @@ public class ServiceWorkerWebSettingsImpl extends ServiceWorkerWebSettingsCompat
     }
 
     @Override
-    public boolean getIncludeCookiesOnShouldInterceptRequest() {
+    public boolean isIncludeCookiesOnShouldInterceptRequestEnabled() {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
         if (!feature.isSupportedByWebView()) {
             throw WebViewFeatureInternal.getUnsupportedOperationException();

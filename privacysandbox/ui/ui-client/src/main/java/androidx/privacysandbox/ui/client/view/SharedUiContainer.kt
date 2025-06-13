@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
 import androidx.annotation.VisibleForTesting
+import androidx.customview.poolingcontainer.isWithinPoolingContainer
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SharedUiAdapter
@@ -55,7 +56,8 @@ import kotlin.math.max
  * __Asset registration__: Client-owned views and [SandboxedSdkView]s can be registered as assets
  * using [registerSharedUiAsset] and unregistered using [unregisterSharedUiAsset].
  */
-@OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
@@ -66,12 +68,12 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
         object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
 
-            // TODO(b/352500350): don't unregister assets if the container/asset is inside a pooling
-            // container.
             override fun onViewDetachedFromWindow(v: View) {
+                if (isWithinPoolingContainer && containsView(v)) return
                 unregisterSharedUiAsset(v)
             }
         }
+    private val poolingContainerListenerDelegate = PoolingContainerListenerDelegate(this)
 
     private var sessionManager: SessionManager? = null
 
@@ -171,12 +173,14 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        maybeAttachPoolingContainerListener()
         sessionManager?.checkClientOpenSession()
     }
 
     override fun onDetachedFromWindow() {
-        // TODO(b/352500350): add PoolingContainer support
-        sessionManager?.closeClient()
+        if (!isWithinPoolingContainer) {
+            sessionManager?.closeClient()
+        }
         super.onDetachedFromWindow()
     }
 
@@ -194,6 +198,8 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * Child views that are [View.GONE] are ignored and don't take any space.
      */
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        maybeAttachPoolingContainerListener()
+
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             // Ignore View.GONE views as these are not expected to take any space for layout
@@ -273,6 +279,10 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
             parentView = currentView.parent
         }
         return false
+    }
+
+    private fun maybeAttachPoolingContainerListener() {
+        poolingContainerListenerDelegate.maybeAttachListener { sessionManager?.closeClient() }
     }
 
     private inner class SessionManager(val sharedUiAdapter: SharedUiAdapter) {

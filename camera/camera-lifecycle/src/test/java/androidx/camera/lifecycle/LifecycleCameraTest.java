@@ -20,7 +20,6 @@ import static androidx.camera.core.featurecombination.Feature.FPS_60;
 import static androidx.camera.core.featurecombination.Feature.HDR_HLG10;
 import static androidx.camera.core.featurecombination.Feature.IMAGE_ULTRA_HDR;
 import static androidx.camera.core.featurecombination.Feature.PREVIEW_STABILIZATION;
-import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -28,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import android.os.Build;
-import android.util.Range;
 import android.util.Rational;
 import android.view.Surface;
 
@@ -61,6 +59,7 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -87,7 +86,8 @@ public class LifecycleCameraTest {
     private FakeUseCase mFakeUseCase2;
     private ViewPort mViewPort;
     private CameraEffect mEffect;
-    private Range<Integer> mFrameRateRange;
+    private final FakeSurfaceProcessor mFakeSurfaceProcessor = new FakeSurfaceProcessor(
+            directExecutor());
 
     @Before
     public void setUp() {
@@ -126,9 +126,12 @@ public class LifecycleCameraTest {
         mFakeUseCase2 = new FakeUseCase();
         mViewPort = new ViewPort.Builder(
                 new Rational(4, 3), Surface.ROTATION_0).build();
-        mEffect = new FakeSurfaceEffect(directExecutor(),
-                new FakeSurfaceProcessor(directExecutor()));
-        mFrameRateRange = new Range<>(30, 30);
+        mEffect = new FakeSurfaceEffect(directExecutor(), mFakeSurfaceProcessor);
+    }
+
+    @After
+    public void tearDown() {
+        mFakeSurfaceProcessor.cleanUp();
     }
 
     @Test
@@ -270,9 +273,7 @@ public class LifecycleCameraTest {
     }
 
     private LegacySessionConfig createLegacySessonConfig(UseCase... useCase) {
-        return new LegacySessionConfig(
-                Arrays.asList(useCase), null, Collections.emptyList(),
-                FRAME_RATE_RANGE_UNSPECIFIED);
+        return new LegacySessionConfig(Arrays.asList(useCase), null, Collections.emptyList());
     }
 
     private SessionConfig createSessionConfig(UseCase useCase) {
@@ -297,8 +298,10 @@ public class LifecycleCameraTest {
                 .isEqualTo(sessionConfig.getViewPort());
         assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
                 .isEqualTo(sessionConfig.getEffects());
-        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
-                .isEqualTo(sessionConfig.getTargetHighSpeedFrameRate());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getSessionType()).isEqualTo(
+                sessionConfig.getSessionType());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getFrameRate())
+                .isEqualTo(sessionConfig.getFrameRateRange());
     }
 
     @Test
@@ -449,8 +452,7 @@ public class LifecycleCameraTest {
         SessionConfig legacySessionConfig = new LegacySessionConfig(
                 Arrays.asList(mFakeUseCase),
                 mViewPort,
-                Arrays.asList(mEffect),
-                mFrameRateRange);
+                Arrays.asList(mEffect));
         mLifecycleCamera.bind(legacySessionConfig);
 
         assertThat(mFakeCamera.getAttachedUseCases()).containsExactly(mFakeUseCase);
@@ -458,8 +460,10 @@ public class LifecycleCameraTest {
                 .isEqualTo(legacySessionConfig.getViewPort());
         assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
                 .isEqualTo(legacySessionConfig.getEffects());
-        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
-                .isEqualTo(legacySessionConfig.getTargetHighSpeedFrameRate());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getSessionType()).isEqualTo(
+                legacySessionConfig.getSessionType());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getFrameRate())
+                .isEqualTo(legacySessionConfig.getFrameRateRange());
     }
 
     @Test
@@ -552,8 +556,7 @@ public class LifecycleCameraTest {
         SessionConfig legacySessionConfig1 = new LegacySessionConfig(
                 Arrays.asList(mFakeUseCase),
                 mViewPort,
-                Arrays.asList(mEffect),
-                mFrameRateRange
+                Arrays.asList(mEffect)
         );
         SessionConfig legacySessionConfig2 = createLegacySessonConfig(mFakeUseCase2);
 
@@ -564,8 +567,10 @@ public class LifecycleCameraTest {
                 .isEqualTo(legacySessionConfig2.getViewPort());
         assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getEffects())
                 .isEqualTo(legacySessionConfig2.getEffects());
-        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getTargetHighSpeedFps())
-                .isEqualTo(legacySessionConfig2.getTargetHighSpeedFrameRate());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getSessionType())
+                .isEqualTo(legacySessionConfig2.getSessionType());
+        assertThat(mLifecycleCamera.getCameraUseCaseAdapter().getFrameRate())
+                .isEqualTo(legacySessionConfig2.getFrameRateRange());
     }
 
     @Test

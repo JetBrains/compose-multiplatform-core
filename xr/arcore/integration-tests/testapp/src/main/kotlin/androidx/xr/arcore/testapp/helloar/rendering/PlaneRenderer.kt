@@ -93,9 +93,9 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
                 plane.state.collect { state ->
                     if (state.trackingState == TrackingState.TRACKING) {
                         if (state.label == Plane.Label.UNKNOWN) {
-                            entity.setHidden(true)
+                            entity.setEnabled(false)
                         } else {
-                            entity.setHidden(false)
+                            entity.setEnabled(true)
                             counter++
                             entity.setPose(
                                 session.scene.perceptionSpace
@@ -109,17 +109,16 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
                             updateViewText(view, plane, state)
                             if (counter > PANEL_RESIZE_UPDATE_COUNT) {
                                 val panelExtentsInPixels = convertMetersToPixels(state.extents)
-                                entity.setSizeInPixels(
+                                entity.sizeInPixels =
                                     IntSize2d(
                                         width = panelExtentsInPixels.x.toInt(),
                                         height = panelExtentsInPixels.y.toInt(),
                                     )
-                                )
                                 counter = 0
                             }
                         }
                     } else if (state.trackingState == TrackingState.STOPPED) {
-                        entity.setHidden(true)
+                        entity.setEnabled(false)
                     }
                 }
             }

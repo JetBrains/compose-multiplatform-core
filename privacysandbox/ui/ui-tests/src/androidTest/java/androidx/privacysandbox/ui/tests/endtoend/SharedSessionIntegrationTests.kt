@@ -153,20 +153,20 @@ class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boole
     fun testSessionClientProxy_methodsOnObjectClass() {
         // Only makes sense when a dynamic proxy is involved in the flow
         assumeTrue(invokeBackwardsCompatFlow)
-        val testSessionClient = TestSharedUiSessionClient()
+        val testSharedUiSessionClient = TestSharedUiSessionClient()
 
         val sdkAdapter =
             sessionManager.createSharedUiAdapterAndEstablishSession(
-                testSharedSessionClient = testSessionClient
+                testSharedSessionClient = testSharedUiSessionClient
             )
 
         // Verify toString, hashCode and equals have been implemented for dynamic proxy
         val testSession = sdkAdapter.session as TestSharedUiAdapter.TestSession
         val client = testSession.sessionClient
 
-        assertThat(client.toString()).contains(testSessionClient.toString())
+        assertThat(client.toString()).contains(testSharedUiSessionClient.toString())
         assertThat(client.equals(client)).isTrue()
-        assertThat(client).isNotEqualTo(testSessionClient)
+        assertThat(client).isNotEqualTo(testSharedUiSessionClient)
         assertThat(client.hashCode()).isEqualTo(client.hashCode())
     }
 }

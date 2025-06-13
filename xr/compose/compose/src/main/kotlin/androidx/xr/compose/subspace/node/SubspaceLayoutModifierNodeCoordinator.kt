@@ -16,11 +16,11 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.xr.compose.subspace.layout.LayoutMeasureScope
-import androidx.xr.compose.subspace.layout.MeasureResult
+import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
 import androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
+import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.unit.IntVolumeSize
@@ -103,12 +103,12 @@ internal class SubspaceLayoutModifierNodeCoordinator(
     override val size: IntVolumeSize
         get() = IntVolumeSize(width = measuredWidth, height = measuredHeight, depth = measuredDepth)
 
-    private var measureResult: MeasureResult? = null
+    private var subspaceMeasureResult: SubspaceMeasureResult? = null
     private var layoutPose: Pose? = null
 
     public override fun placeAt(pose: Pose) {
         layoutPose = pose
-        measureResult?.placeChildren(
+        subspaceMeasureResult?.placeChildren(
             object : SubspacePlacementScope() {
                 public override val coordinates = this@SubspaceLayoutModifierNodeCoordinator
             }
@@ -125,14 +125,14 @@ internal class SubspaceLayoutModifierNodeCoordinator(
     override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
         with(layoutModifierNode) {
             val measurable: SubspaceMeasurable = child ?: layoutNode!!.measurableLayout
-            val measureResult: MeasureResult =
-                LayoutMeasureScope(layoutNode!!).measure(measurable, constraints).also {
-                    this@SubspaceLayoutModifierNodeCoordinator.measureResult = it
+            val subspaceMeasureResult: SubspaceMeasureResult =
+                LayoutSubspaceMeasureScope(layoutNode!!).measure(measurable, constraints).also {
+                    this@SubspaceLayoutModifierNodeCoordinator.subspaceMeasureResult = it
                 }
 
-            measuredWidth = measureResult.width
-            measuredHeight = measureResult.height
-            measuredDepth = measureResult.depth
+            measuredWidth = subspaceMeasureResult.width
+            measuredHeight = subspaceMeasureResult.height
+            measuredDepth = subspaceMeasureResult.depth
         }
 
         return this

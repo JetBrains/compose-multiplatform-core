@@ -16,8 +16,6 @@
 
 package androidx.camera.core.impl;
 
-import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
-
 import android.util.Range;
 import android.util.Size;
 
@@ -50,11 +48,10 @@ public abstract class AttachedSurfaceInfo {
             @NonNull DynamicRange dynamicRange,
             @NonNull List<UseCaseConfigFactory.CaptureType> captureTypes,
             @Nullable Config implementationOptions,
-            @NonNull Range<Integer> targetFrameRate,
-            @NonNull Range<Integer> targetHighSpeedFrameRate) {
+            int sessionType,
+            @NonNull Range<Integer> targetFrameRate) {
         return new AutoValue_AttachedSurfaceInfo(surfaceConfig, imageFormat, size,
-                dynamicRange, captureTypes, implementationOptions, targetFrameRate,
-                targetHighSpeedFrameRate);
+                dynamicRange, captureTypes, implementationOptions, sessionType, targetFrameRate);
     }
 
     /**
@@ -65,13 +62,10 @@ public abstract class AttachedSurfaceInfo {
             @NonNull Config implementationOptions) {
         StreamSpec.Builder streamSpecBuilder =
                 StreamSpec.builder(getSize())
+                        .setSessionType(getSessionType())
+                        .setExpectedFrameRateRange(getTargetFrameRate())
                         .setDynamicRange(getDynamicRange())
                         .setImplementationOptions(implementationOptions);
-        if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(getTargetHighSpeedFrameRate())) {
-            streamSpecBuilder.setExpectedFrameRateRange(getTargetHighSpeedFrameRate());
-        } else if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(getTargetFrameRate())) {
-            streamSpecBuilder.setExpectedFrameRateRange(getTargetFrameRate());
-        }
         return streamSpecBuilder.build();
     }
 
@@ -95,11 +89,11 @@ public abstract class AttachedSurfaceInfo {
     /** Returns the implementations of this surface. */
     public abstract @Nullable Config getImplementationOptions();
 
+    /** Returns the session type. */
+    public abstract int getSessionType();
+
     /** Returns the configuration target frame rate. */
     public abstract @NonNull Range<Integer> getTargetFrameRate();
-
-    /** Returns the configuration target high speed frame rate. */
-    public abstract @NonNull Range<Integer> getTargetHighSpeedFrameRate();
 }
 
 

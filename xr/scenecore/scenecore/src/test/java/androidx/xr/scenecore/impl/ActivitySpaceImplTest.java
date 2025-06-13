@@ -92,7 +92,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     private FakeImpressApiImpl mFakeImpressApi;
     private JxrPlatformAdapter mTestRuntime;
     private ActivitySpaceImpl mActivitySpace;
-    private NodeRepository mNodeRepository = NodeRepository.getInstance();
+    private final NodeRepository mNodeRepository = NodeRepository.getInstance();
 
     private JxrPlatformAdapter createTestJxrPlatformAdapter(
             boolean unScaledGravityAlignedActivitySpace) {
@@ -274,55 +274,18 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     }
 
     @Test
-    public void getRotationForGravityAlignment_identityTransform_returnsIdentityQuaternion() {
-        Matrix4 identityTransform = Matrix4.Identity;
-        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(identityTransform);
-
-        assertThat(rotation.getX()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getZ()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getW()).isWithin(0.001f).of(1.0f);
-    }
-
-    @Test
-    public void getRotationForGravityAlignment_rotateX90Transform_returnsExpectedQuaternion() {
-        // Create a transform that rotates the space 90 degrees around the x axis.
-        Matrix4 rotateX90Transform =
-                Matrix4.fromQuaternion(Quaternion.fromRotation(Vector3.Up, Vector3.Backward));
-        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(rotateX90Transform);
-
-        assertThat(rotation.getX()).isWithin(0.001f).of(-0.707f);
-        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getZ()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getW()).isWithin(0.001f).of(0.707f);
-    }
-
-    @Test
-    public void getRotationForGravityAlignment_rotateZ90Transform_returnsExpectedQuaternion() {
-        // Create a transform that rotates the space 90 degrees around the z axis.
-        Matrix4 rotateZ90Transform =
-                Matrix4.fromQuaternion(Quaternion.fromRotation(Vector3.Right, Vector3.Up));
-        Quaternion rotation = mActivitySpace.getRotationForGravityAlignment(rotateZ90Transform);
-
-        assertThat(rotation.getX()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getY()).isWithin(0.001f).of(0.0f);
-        assertThat(rotation.getZ()).isWithin(0.001f).of(-0.707f);
-        assertThat(rotation.getW()).isWithin(0.001f).of(0.707f);
-    }
-
-    @Test
     public void handleOriginUpdate_unscaledGravityAlignedFalse_handlerCalled() {
         FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
         mActivitySpace.setSpatialModeChangeListener(handler);
 
         Quaternion initialRotation = Quaternion.fromEulerAngles(30, 0, 0);
-        Matrix4 newTransform =
-                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(2.5f, 2.5f, 2.5f));
+        Vector3 initialScale = new Vector3(2.0f, 2.0f, 2.0f);
+        Matrix4 newTransform = Matrix4.fromTrs(Vector3.Zero, initialRotation, initialScale);
 
         mActivitySpace.handleOriginUpdate(newTransform);
 
         assertThat(handler.getLastRecommendedPose()).isEqualTo(new Pose());
-        assertThat(handler.getLastRecommendedScale()).isEqualTo(new Vector3(1.0f, 1.0f, 1.0f));
+        assertThat(handler.getLastRecommendedScale()).isEqualTo(Vector3.One);
         assertThat(handler.getUpdateCount()).isEqualTo(1);
     }
 
@@ -336,25 +299,31 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
         mActivitySpace.setSpatialModeChangeListener(handler);
 
         Quaternion initialRotation = Quaternion.fromEulerAngles(45, 0, 0);
-        Matrix4 newTransform =
-                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(2.0f, 2.0f, 2.0f));
+        Vector3 initialScale = new Vector3(2.0f, 2.0f, 2.0f);
+        Matrix4 newTransform = Matrix4.fromTrs(Vector3.One, initialRotation, initialScale);
 
         mActivitySpace.handleOriginUpdate(newTransform);
 
         Vector3 activitySpaceScale =
                 RuntimeUtils.getVector3(mNodeRepository.getScale(mActivitySpace.getNode()));
-        assertVector3(activitySpaceScale, new Vector3(1.0f, 1.0f, 1.0f));
+        assertVector3(
+                activitySpaceScale,
+                new Vector3(
+                        1f / initialScale.getX(),
+                        1f / initialScale.getY(),
+                        1f / initialScale.getZ()));
         Quaternion activitySpaceRotation =
                 RuntimeUtils.getQuaternion(
                         mNodeRepository.getOrientation(mActivitySpace.getNode()));
-        Quaternion expectedRotation = mActivitySpace.getRotationForGravityAlignment(newTransform);
+        Quaternion expectedRotation = initialRotation.getInverse();
         assertThat(activitySpaceRotation.getX()).isWithin(0.001f).of(expectedRotation.getX());
         assertThat(activitySpaceRotation.getY()).isWithin(0.001f).of(expectedRotation.getY());
         assertThat(activitySpaceRotation.getZ()).isWithin(0.001f).of(expectedRotation.getZ());
         assertThat(activitySpaceRotation.getW()).isWithin(0.001f).of(expectedRotation.getW());
 
-        assertThat(handler.getLastRecommendedPose()).isEqualTo(new Pose());
-        assertVector3(handler.getLastRecommendedScale(), new Vector3(2.0f, 2.0f, 2.0f));
+        Pose expectedPose = new Pose(Vector3.Zero, initialRotation);
+        assertThat(handler.getLastRecommendedPose()).isEqualTo(expectedPose);
+        assertVector3(handler.getLastRecommendedScale(), initialScale);
         assertThat(handler.getUpdateCount()).isEqualTo(1);
     }
 
@@ -367,18 +336,24 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
         mActivitySpace.setSpatialModeChangeListener(null);
 
         Quaternion initialRotation = Quaternion.fromEulerAngles(0, 0, 90);
-        Matrix4 newTransform =
-                Matrix4.fromTrs(Vector3.Zero, initialRotation, new Vector3(3f, 3f, 3f));
+        Vector3 initialScale = new Vector3(3.0f, 3.0f, 3.0f);
+        Matrix4 newTransform = Matrix4.fromTrs(Vector3.Zero, initialRotation, initialScale);
 
         mActivitySpace.handleOriginUpdate(newTransform);
 
         Vector3 activitySpaceScale =
                 RuntimeUtils.getVector3(mNodeRepository.getScale(mActivitySpace.getNode()));
-        assertVector3(activitySpaceScale, new Vector3(1.0f, 1.0f, 1.0f));
+        assertVector3(
+                activitySpaceScale,
+                new Vector3(
+                        1.0f / initialScale.getX(),
+                        1.0f / initialScale.getY(),
+                        1.0f / initialScale.getZ()));
         Quaternion activitySpaceRotation =
                 RuntimeUtils.getQuaternion(
                         mNodeRepository.getOrientation(mActivitySpace.getNode()));
-        Quaternion expectedRotation = mActivitySpace.getRotationForGravityAlignment(newTransform);
+        Quaternion expectedRotation =
+                Matrix4Ext.getUnscaled(newTransform).getRotation().getInverse();
         assertThat(activitySpaceRotation.getX()).isWithin(0.001f).of(expectedRotation.getX());
         assertThat(activitySpaceRotation.getY()).isWithin(0.001f).of(expectedRotation.getY());
         assertThat(activitySpaceRotation.getZ()).isWithin(0.001f).of(expectedRotation.getZ());

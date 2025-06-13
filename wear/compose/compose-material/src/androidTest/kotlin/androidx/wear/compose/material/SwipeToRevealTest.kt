@@ -661,9 +661,53 @@ class SwipeToRevealTest {
         }
 
         rule.runOnIdle {
-            // assert that state does not reset
+            // assert that state does not reset when it is fully swiped then another S2R is swiped
             assertEquals(RevealValue.RightRevealed, revealStateOne.currentValue)
             assertEquals(RevealValue.RightRevealing, revealStateTwo.currentValue)
+        }
+    }
+
+    @Test
+    fun onMultiSwipeBiDirection_whenLastStateRevealed_doesNotReset() {
+        lateinit var revealStateOne: RevealState
+        lateinit var revealStateTwo: RevealState
+        val testTagOne = "testTagOne"
+        val testTagTwo = "testTagTwo"
+        rule.setContent {
+            revealStateOne =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            revealStateTwo =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            Column {
+                swipeToRevealWithDefaults(
+                    state = revealStateOne,
+                    modifier = Modifier.testTag(testTagOne),
+                )
+                swipeToRevealWithDefaults(
+                    state = revealStateTwo,
+                    modifier = Modifier.testTag(testTagTwo),
+                )
+            }
+        }
+
+        // swipe the first S2R to Left Revealed (full screen swipe)
+        rule.onNodeWithTag(testTagOne).performTouchInput {
+            swipeRight(startX = 0f, endX = width.toFloat())
+        }
+
+        // swipe the second S2R to a reveal value
+        rule.onNodeWithTag(testTagTwo).performTouchInput {
+            swipeRight(startX = 0f, endX = width / 2f)
+        }
+
+        rule.runOnIdle {
+            // assert that state does not reset when it is fully swiped then another S2R is swiped
+            assertEquals(RevealValue.LeftRevealed, revealStateOne.currentValue)
+            assertEquals(RevealValue.LeftRevealing, revealStateTwo.currentValue)
         }
     }
 
@@ -686,6 +730,36 @@ class SwipeToRevealTest {
             }
         }
 
+        // assert that state resets when it is partial swiped then another S2R is swiped
+        rule.runOnIdle { assertEquals(RevealValue.Covered, revealStateOne.currentValue) }
+    }
+
+    @Test
+    fun onSnapForDifferentStates_biDirection_lastOneGetsReset() {
+        lateinit var revealStateOne: RevealState
+        lateinit var revealStateTwo: RevealState
+        rule.setContent {
+            revealStateOne =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            revealStateTwo =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            swipeToRevealWithDefaults(state = revealStateOne)
+            swipeToRevealWithDefaults(state = revealStateTwo)
+
+            val coroutineScope = rememberCoroutineScope()
+            coroutineScope.launch {
+                // First change
+                revealStateOne.snapTo(RevealValue.LeftRevealing)
+                // Second change, in a different state
+                revealStateTwo.snapTo(RevealValue.LeftRevealing)
+            }
+        }
+
+        // assert that state resets when it is partial swiped then another S2R is swiped
         rule.runOnIdle { assertEquals(RevealValue.Covered, revealStateOne.currentValue) }
     }
 
@@ -703,6 +777,33 @@ class SwipeToRevealTest {
             val coroutineScope = rememberCoroutineScope()
             coroutineScope.launch {
                 revealStateOne.snapTo(RevealValue.RightRevealing) // First change
+                revealStateOne.snapTo(lastValue) // Second change, same state
+            }
+        }
+
+        rule.runOnIdle { assertEquals(lastValue, revealStateOne.currentValue) }
+    }
+
+    @Test
+    fun onMultiSnapOnSameState_biDirection_doesNotReset() {
+        lateinit var revealStateOne: RevealState
+        lateinit var revealStateTwo: RevealState
+        val lastValue = RevealValue.LeftRevealed
+        rule.setContent {
+            revealStateOne =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            revealStateTwo =
+                rememberRevealState(
+                    anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                )
+            swipeToRevealWithDefaults(state = revealStateOne)
+            swipeToRevealWithDefaults(state = revealStateTwo)
+
+            val coroutineScope = rememberCoroutineScope()
+            coroutineScope.launch {
+                revealStateOne.snapTo(RevealValue.LeftRevealing) // First change
                 revealStateOne.snapTo(lastValue) // Second change, same state
             }
         }

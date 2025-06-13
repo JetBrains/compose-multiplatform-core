@@ -83,7 +83,7 @@ internal constructor(
         if (annotation != null) {
             tableName = extractTableName(element, annotation)
             entityIndices = extractIndices(annotation, tableName)
-            inheritSuperIndices = annotation["inheritSuperIndices"]?.asBoolean() == true
+            inheritSuperIndices = annotation["inheritSuperIndices"]?.asBoolean() ?: false
             foreignKeyInputs = extractForeignKeys(annotation)
         } else {
             tableName = element.name
@@ -392,7 +392,7 @@ internal constructor(
                 PrimaryKey(
                     declaredIn = field.element.enclosingElement,
                     properties = Properties(field),
-                    autoGenerateId = primaryKeyAnnotation["autoGenerate"]?.asBoolean() == true,
+                    autoGenerateId = primaryKeyAnnotation["autoGenerate"]?.asBoolean() ?: false,
                 )
             }
         }
@@ -451,7 +451,7 @@ internal constructor(
     ): List<PrimaryKey> {
         return embeddedProperties.mapNotNull { embeddedProperty ->
             embeddedProperty.property.element.getAnnotation(androidx.room.PrimaryKey::class)?.let {
-                val autoGenerate = it["autoGenerate"]?.asBoolean() == true
+                val autoGenerate = it["autoGenerate"]?.asBoolean() ?: false
                 context.checker.check(
                     !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
                     embeddedProperty.property.element,

@@ -32,6 +32,8 @@ class SdkApiConstants {
                 const val BASIC_WEBVIEW = 1
                 const val WEBVIEW_FROM_LOCAL_ASSETS = 2
                 const val NON_WEBVIEW_VIDEO = 3
+                const val SCROLL_VIEW = 4
+                const val SCROLL_VIEW_APP_CAN_NOT_SCROLL = 5
             }
         }
 
@@ -82,6 +84,7 @@ class SdkApiConstants {
                 const val POOLING_CONTAINER = 2
                 const val RESIZE_HIDDEN = 3
                 const val OCCLUSIONS_HIDDEN = 4
+                const val SCROLL_HIDDEN = 5
             }
         }
 

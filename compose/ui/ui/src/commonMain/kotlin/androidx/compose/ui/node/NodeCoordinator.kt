@@ -19,6 +19,7 @@ package androidx.compose.ui.node
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.mutableObjectIntMapOf
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
@@ -49,7 +50,6 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
-import androidx.compose.ui.ui.FrameRateCategory
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -403,6 +403,16 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         this.zIndex = zIndex
         if (!isPlacingForAlignment) {
             captureRulersIfNeeded(measureResult)
+        }
+        if (this === layoutNode.outerCoordinator) {
+            layoutNode
+                .requireOwner()
+                .rectManager
+                .onLayoutPositionChanged(
+                    layoutNode,
+                    position,
+                    !layoutNode.measurePassDelegate.placedOnce,
+                )
         }
     }
 
@@ -1444,7 +1454,9 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
                     }
                     val owner = layoutNode.requireOwner()
                     owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                    owner.requestOnPositionedCallback(layoutNode)
+                    if (layoutNode.globallyPositionedObservers > 0) {
+                        owner.requestOnPositionedCallback(layoutNode)
+                    }
                 }
             }
         }

@@ -170,7 +170,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 is LibraryPlugin -> configureWithLibraryPlugin(project, androidXExtension)
                 is AppPlugin -> configureWithAppPlugin(project, androidXExtension)
                 is TestPlugin -> configureWithTestPlugin(project, androidXExtension)
-                is KspGradleSubplugin -> configureWithKspPlugin(project, androidXExtension)
+                is KspGradleSubplugin -> configureWithKspPlugin(project)
                 is KotlinMultiplatformAndroidPlugin ->
                     configureWithKotlinMultiplatformAndroidPlugin(
                         project,
@@ -560,7 +560,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             // Disable any source JAR task(s) added by KotlinMultiplatformPlugin.
             // https://youtrack.jetbrains.com/issue/KT-55881
             project.tasks.withType(Jar::class.java).configureEach { jarTask ->
-                if (jarTask.name == "jvmSourcesJar") {
+                if (jarTask.name == "androidSourcesJar" || jarTask.name == "jvmSourcesJar") {
                     // We can't set duplicatesStrategy directly on the Jar task since it will get
                     // overridden when the KotlinMultiplatformPlugin creates child specs, but we
                     // can set it on a per-file basis.
@@ -641,15 +641,8 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project.configureJavaCompilationWarnings(androidXExtension)
     }
 
-    private fun configureWithKspPlugin(project: Project, androidXExtension: AndroidXExtension) =
-        project.extensions.getByType<KspExtension>().apply {
-            useKsp2.set(
-                androidXExtension.kotlinTarget.map {
-                    it.apiVersion == KotlinVersion.KOTLIN_2_0 ||
-                        it.apiVersion == KotlinVersion.KOTLIN_2_1
-                }
-            )
-        }
+    private fun configureWithKspPlugin(project: Project) =
+        project.extensions.getByType<KspExtension>().useKsp2.set(true)
 
     private fun configureCommonAndroidLibrary(
         project: Project,
@@ -752,7 +745,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
         project.configureProjectForApiTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
         project.configureProjectForKzipTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
-
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
             project.configureMultiplatformSourcesForAndroid(
                 variant.name,

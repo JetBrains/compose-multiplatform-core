@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.test:core:$testCoreVersion")
     implementation("androidx.test:rules:$testRulesVersion")
     implementation("androidx.test:runner:$testRunnerVersion")
+    implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation("androidx.appcompat:appcompat:1.1.0")
     implementation("androidx.core:core:1.1.0")

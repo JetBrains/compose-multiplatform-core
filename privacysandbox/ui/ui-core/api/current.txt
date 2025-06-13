@@ -17,6 +17,9 @@ package androidx.privacysandbox.ui.core {
   public sealed interface ExperimentalFeatures {
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental. It may be changed in the future without notice.", level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public static @interface ExperimentalFeatures.ChangingContentUiZOrderApi {
+  }
+
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental. It may be changed in the future without notice.", level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public static @interface ExperimentalFeatures.DelegatingAdapterApi {
   }
 

@@ -20,13 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavEntry
 
 internal data class SinglePaneScene<T : Any>(
-    override val key: T,
+    override val key: Any,
     val entry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
     override val entries: List<NavEntry<T>> = listOf(entry)
 
-    override val content: @Composable () -> Unit = { entry.content.invoke(entry.key) }
+    override val content: @Composable () -> Unit = { entry.Content() }
 }
 
 /**
@@ -37,7 +37,7 @@ public class SinglePaneSceneStrategy<T : Any> : SceneStrategy<T> {
     @Composable
     override fun calculateScene(entries: List<NavEntry<T>>, onBack: (Int) -> Unit): Scene<T> =
         SinglePaneScene(
-            key = entries.last().key,
+            key = entries.last().contentKey,
             entry = entries.last(),
             previousEntries = entries.dropLast(1),
         )

@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.platform.LocalSession
@@ -33,25 +32,18 @@ import androidx.xr.compose.unit.toIntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.MoveListener
+import androidx.xr.scenecore.PanelEntity
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 
 /**
  * When the movable modifier is present and enabled, draggable UI controls will be shown that allow
- * the user to move the element in 3D space. This feature is only available for [SpatialPanels] at
- * the moment.
- *
- * The order of the [SubspaceModifier]s is important. Please take note of this when using movable.
- * If you have the following modifier chain: SubspaceModifier.offset().size().movable(), the
- * modifiers will work as expected. If instead you have this modifier chain:
- * SubspaceModifier.size().offset().movable(), you will experience unexpected placement behavior
- * when using the movable modifier. In general, the offset modifier should be specified before the
- * size modifier, and the movable modifier should be specified last.
+ * the user to move the element in 3D space. This feature is only available for
+ * [SpatialPanels][androidx.xr.compose.subspace.SpatialPanel] at the moment.
  *
  * @param enabled true if this composable should be movable.
  * @param stickyPose if enabled, the user specified position will be retained when the modifier is
@@ -67,10 +59,9 @@ import kotlinx.coroutines.asExecutor
  *   This will only be called if [enabled] is true. If the callback returns false the default
  *   behavior of moving this composable's subspace hierarchy will be executed. If it returns true,
  *   it is the responsibility of the callback to process the event. The callback will be called with
- *   the [MoveEvent] type @see [MoveEvent].
- *     @see [MoveEvent].
+ *   the [MoveEvent] type.
+ * @see [MoveEvent].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.movable(
     enabled: Boolean = true,
     stickyPose: Boolean = false,
@@ -83,13 +74,6 @@ public fun SubspaceModifier.movable(
         MovableElement(enabled, onMoveStart, onMoveEnd, onMove, stickyPose, scaleWithDistance)
     )
 
-@Deprecated(
-    message = "Use MoveEvent instead",
-    replaceWith = ReplaceWith("MoveEvent"),
-    level = DeprecationLevel.WARNING,
-)
-public typealias PoseChangeEvent = MoveEvent
-
 /**
  * An event representing a change in pose, scale, and size.
  *
@@ -99,10 +83,8 @@ public typealias PoseChangeEvent = MoveEvent
  *   with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
- * @property type The type of move event.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-open public class MoveEvent(
+public open class MoveEvent(
     public var pose: Pose = Pose.Identity,
     public var scale: Float = 1.0F,
     public var size: IntVolumeSize = IntVolumeSize.Zero,
@@ -131,6 +113,9 @@ open public class MoveEvent(
 /**
  * An event representing the start of a move event.
  *
+ * This is expected to trigger when the user first starts moving the movable element and should only
+ * be called once per move action.
+ *
  * @property pose The initial pose of the composable in the subspace, relative to its parent, with
  *   its translation being expressed in pixels.
  * @property scale The initial scale of the composable as a result of its motion. This value will
@@ -138,7 +123,6 @@ open public class MoveEvent(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class MoveStartEvent(
     pose: Pose = Pose.Identity,
     scale: Float = 1.0F,
@@ -162,6 +146,9 @@ public class MoveStartEvent(
 /**
  * An event representing the end of a move event.
  *
+ * This is expected to trigger when the user finishes moving the movable element and should only be
+ * called once per move action.
+ *
  * @property pose The final pose of the composable in the subspace, relative to its parent, with its
  *   translation being expressed in pixels.
  * @property scale The final scale of the composable as a result of its motion. This value will
@@ -169,7 +156,6 @@ public class MoveStartEvent(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class MoveEndEvent(
     pose: Pose = Pose.Identity,
     scale: Float = 1.0F,
@@ -278,10 +264,10 @@ internal class MovableNode(
         }
     }
 
-    override fun MeasureScope.measure(
+    override fun SubspaceMeasureScope.measure(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
-    ): MeasureResult {
+    ): SubspaceMeasureResult {
         // modifyCoreEntity happens during placement, so we need to update the component state here
         // before measurement
         updateState()
@@ -341,14 +327,12 @@ internal class MovableNode(
         initialParent: Entity,
     ) {
         previousPose = initialPose
-
-        updatePoseOnMove(
-            previousPose,
-            initialPose,
-            initialScale,
-            IntVolumeSize.Zero,
-            ::MoveStartEvent,
-        )
+        updatePoseOnMove(previousPose, initialPose, initialScale, IntVolumeSize.Zero) {
+            pose,
+            scale,
+            size ->
+            MoveStartEvent(pose, scale, size).also { onMoveStart?.invoke(it) }
+        }
     }
 
     override fun onMoveUpdate(
@@ -362,7 +346,7 @@ internal class MovableNode(
             currentPose,
             currentScale,
             when (entity) {
-                is BasePanelEntity<*> -> entity.getSize().toIntVolumeSize(density)
+                is PanelEntity -> entity.size.to3d().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
             },
             ::MoveEvent,
@@ -379,10 +363,12 @@ internal class MovableNode(
     ) {
         val finalSize: IntVolumeSize =
             when (entity) {
-                is BasePanelEntity<*> -> entity.getSize().toIntVolumeSize(density)
+                is PanelEntity -> entity.size.to3d().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
             }
-        updatePoseOnMove(previousPose, finalPose, finalScale, finalSize, ::MoveEndEvent)
+        updatePoseOnMove(previousPose, finalPose, finalScale, finalSize) { pose, scale, size ->
+            MoveEndEvent(pose, scale, size).also { onMoveEnd?.invoke(it) }
+        }
         previousPose = Pose.Identity
     }
 
@@ -401,11 +387,6 @@ internal class MovableNode(
         val previousCorePose = previousPose.convertMetersToPixels(density)
         val corePose = nextPose.convertMetersToPixels(density)
         val moveEvent = eventCreator(corePose, scale, size)
-        if (moveEvent is MoveStartEvent) {
-            onMoveStart?.invoke(moveEvent)
-        } else if (moveEvent is MoveEndEvent) {
-            onMoveEnd?.invoke(moveEvent)
-        }
         if (onMove?.invoke(moveEvent) == true) {
             // We're done, the user app will handle the event.
             return

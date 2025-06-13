@@ -2642,8 +2642,7 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void
-            clearSpatialVisibilityChangedListener_doesNotStopPerceivedResolutionListener() {
+    public void clearSpatialVisibilityChangedListener_doesNotStopPerceivedResolutionListener() {
         @SuppressWarnings("unchecked")
         Consumer<SpatialVisibility> mockSpatialListener =
                 (Consumer<SpatialVisibility>) mock(Consumer.class);
@@ -2701,8 +2700,7 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void
-            removePerceivedResolutionChangedListener_doesNotStopSpatialListener() {
+    public void removePerceivedResolutionChangedListener_doesNotStopSpatialListener() {
         ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
         @SuppressWarnings("unchecked")
         Consumer<SpatialVisibility> mockSpatialListener =
@@ -2725,8 +2723,7 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void
-            removePerceivedResolutionChangedListener_doesNotStopAnotherPerceivedResListener() {
+    public void removePerceivedResolutionChangedListener_doesNotStopAnotherPerceivedResListener() {
         ShadowXrExtensions shadowXrExtensions = ShadowXrExtensions.extract(mXrExtensions);
         @SuppressWarnings("unchecked")
         Consumer<PixelDimensions> mockListener1 = (Consumer<PixelDimensions>) mock(Consumer.class);

@@ -25,12 +25,15 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.constraintlayout.compose"
+        androidResources.enable = true
+    }
 
     sourceSets {
         commonMain {
@@ -113,9 +116,4 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":constraintlayout:constraintlayout-compose:constraintlayout-compose-samples"))
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.constraintlayout.compose"
 }

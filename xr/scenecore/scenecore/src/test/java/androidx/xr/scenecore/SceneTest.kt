@@ -375,4 +375,13 @@ class SceneTest {
         rtSpatialStateChangeHandler.onSpatialModeChanged(pose, scale)
         verify(mockSpatialModeChangeListener).onSpatialModeChanged(pose, scale.x)
     }
+
+    @Test
+    fun getSpatialCapabilities_invokesAdapterGetSpatialCapabilities() {
+        val expectedCapabilities = SpatialCapabilities(1)
+        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(1))
+        val actualCapabilities = session.scene.spatialCapabilities
+        verify(mockPlatformAdapter).spatialCapabilities
+        assertThat(actualCapabilities).isEqualTo(expectedCapabilities)
+    }
 }

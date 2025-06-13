@@ -123,6 +123,11 @@ internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCa
         fakeCamera.cameraDevice.cameraAudioRestriction = mode.value
     }
 
+    override fun onDeviceClosing() {
+        currentStateCallback?.onSessionDisconnected()
+        currentExtensionStateCallback?.onSessionDisconnected()
+    }
+
     override fun onDeviceClosed() {
         currentStateCallback?.onSessionFinalized()
         currentExtensionStateCallback?.onSessionFinalized()

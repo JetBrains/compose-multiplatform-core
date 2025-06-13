@@ -112,6 +112,7 @@ val TextDemos =
                 listOf(
                     ComposableDemo("Typeface") { TypefaceDemo() },
                     ComposableDemo("Variable Fonts") { VariableFontsDemo() },
+                    ComposableDemo("Font Variation Settings") { FontVariationSettingsDemo() },
                     ComposableDemo("FontFamily fallback") { FontFamilyDemo() },
                     ComposableDemo("All system font families") { SystemFontFamilyDemo() },
                     ComposableDemo("Emoji Compat") { EmojiCompatDemo() },

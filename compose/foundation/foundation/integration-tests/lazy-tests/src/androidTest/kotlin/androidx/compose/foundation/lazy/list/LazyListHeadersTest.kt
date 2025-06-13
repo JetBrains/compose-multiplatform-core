@@ -49,6 +49,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -391,6 +392,24 @@ class LazyListHeadersTest {
             .onNodeWithTag(secondHeaderTag)
             .assertTopPositionInRootIsEqualTo(itemSizeDp - scrollDistanceDp)
         rule.onNodeWithTag("0").assertTopPositionInRootIsEqualTo(itemSizeDp * 2 - scrollDistanceDp)
+    }
+
+    @Test
+    fun lazyColumn_withEmptyHeader_shouldNotCrash() {
+        val items = (1..2).map { it.toString() }
+        val error = runCatching {
+            rule.setContent {
+                LazyColumn(Modifier.height(300.dp)) {
+                    stickyHeader {}
+
+                    items(items) {
+                        Spacer(Modifier.height(101.dp).fillParentMaxWidth().testTag(it))
+                    }
+                }
+            }
+        }
+
+        assertTrue { error.isSuccess }
     }
 }
 

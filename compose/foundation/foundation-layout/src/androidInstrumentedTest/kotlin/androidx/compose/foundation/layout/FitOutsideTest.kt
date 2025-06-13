@@ -21,10 +21,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.InsetsRulers.NavigationBars
-import androidx.compose.ui.layout.InsetsRulers.StatusBars
-import androidx.compose.ui.layout.InsetsRulers.SystemBars
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.NavigationBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.SystemBars
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
@@ -70,7 +70,7 @@ class FitOutsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitOutside(SystemBars).onPlaced {
+                    Modifier.fillMaxSize().fitOutside(SystemBars.current).onPlaced {
                         insideCoordinates = it
                     }
                 )
@@ -95,7 +95,7 @@ class FitOutsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitOutside(SystemBars).onPlaced {
+                    Modifier.fillMaxSize().fitOutside(SystemBars.current).onPlaced {
                         insideCoordinates = it
                     }
                 )
@@ -120,7 +120,7 @@ class FitOutsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitOutside(SystemBars).onPlaced {
+                    Modifier.fillMaxSize().fitOutside(SystemBars.current).onPlaced {
                         insideCoordinates = it
                     }
                 )
@@ -146,7 +146,7 @@ class FitOutsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitOutside(SystemBars).onPlaced {
+                    Modifier.fillMaxSize().fitOutside(SystemBars.current).onPlaced {
                         insideCoordinates = it
                     }
                 )
@@ -171,7 +171,7 @@ class FitOutsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize()) {
                 Box(
-                    Modifier.fillMaxSize().fitOutside(NavigationBars).onPlaced {
+                    Modifier.fillMaxSize().fitOutside(NavigationBars.current).onPlaced {
                         insideCoordinates = it
                     }
                 )
@@ -197,7 +197,7 @@ class FitOutsideTest {
                             }
                         }
                         .onPlaced { insideCoordinates = it }
-                        .fitOutside(StatusBars)
+                        .fitOutside(StatusBars.current)
                         .size(size)
                 )
             }

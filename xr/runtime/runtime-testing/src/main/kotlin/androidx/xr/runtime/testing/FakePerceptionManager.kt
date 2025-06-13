@@ -41,6 +41,9 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: FakeRuntimeArDevice = FakeRuntimeArDevice()
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val viewCameras: List<FakeRuntimeViewCamera> = listOf(FakeRuntimeViewCamera())
+
     override val earth: Earth = FakeRuntimeEarth()
 
     private val hitResults = mutableListOf<HitResult>()

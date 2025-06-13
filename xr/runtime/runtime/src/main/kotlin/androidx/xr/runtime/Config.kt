@@ -21,8 +21,18 @@ import androidx.annotation.RestrictTo
 /**
  * Defines a configuration state of all available features to be set at runtime.
  *
- * An instance of this class should be passed to [Session.configure()] to modify the current
- * configuration.
+ * An instance of this class should be passed to [Session.configure] to set the current
+ * configuration. Use [Config.copy] on [Session.config] to modify a copy of the existing
+ * configuration to pass to [Session.configure].
+ *
+ * @property planeTracking Feature that allows tracking of and provides information about scene
+ *   planes. See [Config.PlaneTrackingMode].
+ * @property handTracking Feature that allows tracking of the user's hands and hand joints. See
+ *   [Config.HandTrackingMode].
+ * @property depthEstimation Feature that allows more accurate information about scene depth and
+ *   meshes. See [Config.DepthEstimationMode].
+ * @property anchorPersistence Feature that allows anchors to be persisted through sessions. See
+ *   [Config.AnchorPersistenceMode].
  */
 public class Config
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -37,6 +47,24 @@ constructor(
     public val geospatial: GeospatialMode = GeospatialMode.DISABLED,
 ) {
 
+    /**
+     * Defines a configuration state of all available features to be set at runtime.
+     *
+     * An instance of this class should be passed to [Session.configure] to set the current
+     * configuration. Use [Config.copy] on [Session.config] to modify a copy of the existing
+     * configuration to pass to [Session.configure].
+     *
+     * @param planeTracking Feature that allows tracking of and provides information about scene
+     *   planes. See [Config.PlaneTrackingMode].
+     * @param handTracking Feature that allows tracking of the user's hands and hand joints. See
+     *   [Config.HandTrackingMode].
+     * @param headTracking Feature that allows tracking of the user's head position. See
+     *   [Config.HeadTrackingMode].
+     * @param depthEstimation Feature that allows more accurate information about scene depth and
+     *   meshes. See [Config.DepthEstimationMode].
+     * @param anchorPersistence Feature that allows anchors to be persisted through sessions. See
+     *   [Config.AnchorPersistenceMode].
+     */
     @JvmOverloads
     public constructor(
         planeTracking: PlaneTrackingMode = PlaneTrackingMode.DISABLED,
@@ -53,6 +81,7 @@ constructor(
         GeospatialMode.DISABLED,
     )
 
+    /** Feature that allows tracking of the user's head position. See [Config.HeadTrackingMode]. */
     public val headTracking: HeadTrackingMode = deviceTracking.toHeadTrackingMode()
 
     override fun equals(other: Any?): Boolean {

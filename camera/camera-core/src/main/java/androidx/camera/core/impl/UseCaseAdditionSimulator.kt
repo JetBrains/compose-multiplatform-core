@@ -88,7 +88,8 @@ public object UseCaseAdditionSimulator {
         val cameraUseCaseAdapter = cameraUseCaseAdapterProvider.provide(cameraInfoInternal.cameraId)
         cameraUseCaseAdapter.viewPort = sessionConfig.viewPort
         cameraUseCaseAdapter.effects = sessionConfig.effects
-        cameraUseCaseAdapter.setTargetHighSpeedFrameRate(sessionConfig.targetHighSpeedFrameRate)
+        cameraUseCaseAdapter.sessionType = sessionConfig.sessionType
+        cameraUseCaseAdapter.frameRate = sessionConfig.frameRateRange
 
         return cameraUseCaseAdapter.simulateAddUseCases(
             sessionConfig.useCases,

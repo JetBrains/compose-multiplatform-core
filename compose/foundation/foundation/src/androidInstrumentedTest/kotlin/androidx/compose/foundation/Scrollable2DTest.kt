@@ -20,6 +20,7 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isFlingContinuationAtBoundsEnabled
 import androidx.compose.foundation.gestures.DefaultFlingBehavior
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Scroll2DScope
@@ -95,6 +96,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -947,8 +949,10 @@ class Scrollable2DTest {
         assertThat(childDeltas).isEqualTo(dragged)
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun scrollable_nestedFling_shouldCancelWhenHitTheBounds() {
+        Assume.assumeFalse(isFlingContinuationAtBoundsEnabled)
         var latestAvailableVelocity = Velocity.Zero
         var onPostFlingCalled = false
         val connection =
@@ -988,6 +992,84 @@ class Scrollable2DTest {
             assertThat(onPostFlingCalled).isTrue()
             assertThat(latestAvailableVelocity.y).isNonZero()
         }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun scrollable_nestedFling_shouldCancelWhenHitTheBounds_ifRemoved() {
+        Assume.assumeTrue(isFlingContinuationAtBoundsEnabled)
+        var shouldEmmit by mutableStateOf(true)
+        var latestScroll = Offset.Zero
+        val connection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    latestScroll += available
+                    return super.onPreScroll(available, source)
+                }
+            }
+
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            Box(Modifier.nestedScroll(connection)) {
+                if (shouldEmmit) {
+                    Box(
+                        Modifier.size(400.dp)
+                            .testTag("scrollable")
+                            .scrollable2D(rememberScrollable2DState { Offset.Zero })
+                    )
+                }
+            }
+        }
+        var swipeSize = 0f
+        rule.onNodeWithTag("scrollable").performTouchInput {
+            swipeSize = bottom - top
+            swipeDown()
+        }
+
+        rule.mainClock.advanceTimeUntil { latestScroll.y.absoluteValue > swipeSize }
+        rule.runOnIdle { shouldEmmit = false }
+        rule.mainClock.advanceTimeByFrame()
+        latestScroll = Offset.Zero
+
+        rule.mainClock.autoAdvance = true
+        rule.runOnIdle { assertThat(latestScroll).isEqualTo(Offset.Zero) }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun scrollable_nestedFling_shouldContinueSendingDeltasWhenHitBounds() {
+        Assume.assumeTrue(isFlingContinuationAtBoundsEnabled)
+        var flingDeltas = Offset.Zero
+        val connection =
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.SideEffect) flingDeltas += available
+                    return available
+                }
+            }
+
+        var simulateHitBounds = false
+        val scrollState = Scrollable2DState { if (simulateHitBounds) Offset.Zero else it }
+        rule.setContent {
+            Box(Modifier.nestedScroll(connection)) {
+                Box(Modifier.size(200.dp).testTag("column").scrollable2D(scrollState))
+            }
+        }
+
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("column").performTouchInput { swipeDown(center.y, bottomCenter.y) }
+
+        rule.mainClock.advanceTimeBy(200)
+        simulateHitBounds = true
+
+        flingDeltas = Offset.Zero
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertThat(flingDeltas.y).isNonZero()
     }
 
     @Test
@@ -1030,7 +1112,10 @@ class Scrollable2DTest {
         rule.setContent {
             Box(
                 Modifier.nestedScroll(topConnection)
-                    .scrollable2D(flingBehavior = fling, state = rememberScrollable2DState { it })
+                    .scrollable2D(
+                        flingBehavior = fling,
+                        state = rememberScrollable2DState { Offset.Zero },
+                    )
             ) {
                 Column(
                     Modifier.nestedScroll(middleConnection)

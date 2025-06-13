@@ -35,12 +35,16 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.compose.SandboxedSdkUi
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants
 import androidx.privacysandbox.ui.integration.testapp.fragments.BaseFragment
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
+// OptIn calling the experimental API SandboxedSdkUi(SandboxedUiAdapter, Modifier,
+// SandboxedSdkViewEventListener?, Boolean)
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class LazyListFragment : BaseFragment() {
 
     private var adapters by mutableStateOf(listOf<AdAdapterItem>())

@@ -16,10 +16,8 @@
 
 package androidx.room.processor
 
-import androidx.room.AutoMigration
 import androidx.room.SkipQueryVerification
 import androidx.room.compiler.codegen.XTypeName
-import androidx.room.compiler.codegen.asClassName
 import androidx.room.compiler.processing.XAnnotation
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XTypeElement
@@ -138,7 +136,7 @@ class DatabaseProcessor(baseContext: Context, val element: XTypeElement) {
         )
 
         val constructorObject = processConstructorObject(element)
-        val exportSchema = dbAnnotation["exportSchema"]?.asBoolean() == true
+        val exportSchema = dbAnnotation["exportSchema"]?.asBoolean() ?: true
         val database =
             Database(
                 version = version,
@@ -166,7 +164,8 @@ class DatabaseProcessor(baseContext: Context, val element: XTypeElement) {
             return emptyList()
         }
 
-        if (dbAnnotation["exportSchema"]?.asBoolean() != true) {
+        val exportSchemaEnabled = dbAnnotation["exportSchema"]?.asBoolean() ?: true
+        if (!exportSchemaEnabled) {
             context.logger.e(element, AUTO_MIGRATION_FOUND_BUT_EXPORT_SCHEMA_OFF)
             return emptyList()
         }

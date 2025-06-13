@@ -524,12 +524,40 @@ final class SupportedSurfaceCombination {
     }
 
     /**
-     * Finds a frame rate range supported by the device that is closest to the target frame rate
+     * Finds a frame rate range supported by the device that is closest to the target frame rate.
      *
-     * @param targetFrameRate the Target Frame Rate resolved from all current existing surfaces
-     *                        and incoming new use cases
-     * @param availableFpsRanges the device available frame rate ranges
-     * @return a frame rate range supported by the device that is closest to targetFrameRate
+     * <p>This method first adjusts the {@code targetFrameRate} parameter to ensure it does not
+     * exceed {@code maxFps}, i.e. the target frame rate is capped by {@code maxFps} before
+     * comparison. For example, if target is [30,60] and {@code maxFps} is 50, the effective target
+     * for comparison becomes [30,50].
+     *
+     * <p>Then, the method iterates through `availableFpsRanges` to find the best match.
+     *
+     * <p>The selection prioritizes ranges that:
+     * <ol>
+     *     <li>Exactly match the target frame rate.</li>
+     *     <li>Intersect with the target frame rate. Among intersecting ranges, the one with the
+     *         largest intersection is chosen. If multiple ranges have the same largest
+     *         intersection, further tie-breaking rules are applied (see
+     *         {@code compareIntersectingRanges}).</li>
+     *     <li>Do not intersect with the target frame rate. Among non-intersecting ranges, the
+     *         one with the smallest distance to the target frame rate is chosen. If multiple
+     *         ranges have the same smallest distance, the higher range is preferred. If they
+     *         are still tied (e.g., one range is above and one is below with the same distance),
+     *         the range with the shorter length is chosen.</li>
+     * </ol>
+     *
+     * <p>If the target frame rate is {@link StreamSpec#FRAME_RATE_RANGE_UNSPECIFIED} or
+     * {@code availableFpsRanges} is null, {@link StreamSpec#FRAME_RATE_RANGE_UNSPECIFIED} is
+     * returned.
+     *
+     * @param targetFrameRate    The Target Frame Rate resolved from all current existing surfaces
+     *                           and incoming new use cases
+     * @param maxFps             The maximum FPS allowed by the current configuration.
+     * @param availableFpsRanges A nullable array of frame rate ranges available on the device.
+     * @return A frame rate range supported by the device that is closest to the
+     *         {@code targetFrameRate}, or {@link StreamSpec#FRAME_RATE_RANGE_UNSPECIFIED} if no
+     *         suitable range is found or inputs are invalid.
      */
     private @NonNull Range<Integer> getClosestSupportedDeviceFrameRate(
             @NonNull Range<Integer> targetFrameRate, int maxFps,
@@ -651,14 +679,19 @@ final class SupportedSurfaceCombination {
     /**
      * Finds the suggested stream specifications of the newly added UseCaseConfig.
      *
-     * @param cameraMode                         the working camera mode.
-     * @param attachedSurfaces                   the existing surfaces.
-     * @param newUseCaseConfigsSupportedSizeMap  newly added UseCaseConfig to supported output
-     *                                           sizes map.
-     * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
-     * @param hasVideoCapture                    whether the use cases has video capture.
-     * @param allowFeatureCombinationResolutions whether to allow feature combination resolutions.
-     * @param findMaxSupportedFrameRate          whether to find the max supported frame rate.
+     * @param cameraMode                        the working camera mode.
+     * @param attachedSurfaces                  the existing surfaces.
+     * @param newUseCaseConfigsSupportedSizeMap newly added UseCaseConfig to supported output
+     *                                          sizes map.
+     * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
+     * @param hasVideoCapture                   whether the use cases has video capture.
+     * @param isFeatureComboInvocation          whether the code flow involves CameraX feature combo
+     *                                          API (e.g. {@link
+     *                                          androidx.camera.core.SessionConfig#requiredFeatures}
+     *                                          ).
+     * @param findMaxSupportedFrameRate          whether to find the max supported frame rate. If
+     *                                           this is true, the target frame rate settings
+     *                                           will be ignored when calculating the stream spec.
      * @return a {@link SurfaceStreamSpecQueryResult}.
      * @throws IllegalArgumentException if the suggested solution for newUseCaseConfigs cannot be
      *                                  found. This may be due to no available output size, no
@@ -673,15 +706,13 @@ final class SupportedSurfaceCombination {
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
             boolean hasVideoCapture,
-            boolean allowFeatureCombinationResolutions,
+            boolean isFeatureComboInvocation,
             boolean findMaxSupportedFrameRate) {
         // Refresh Preview Size based on current display configurations.
         refreshPreviewSize();
 
-        Range<Integer> targetHighSpeedFpsRange = HighSpeedResolver.getTargetHighSpeedFrameRate(
-                attachedSurfaces, newUseCaseConfigsSupportedSizeMap.keySet());
-
-        boolean isHighSpeedOn = !targetHighSpeedFpsRange.equals(FRAME_RATE_RANGE_UNSPECIFIED);
+        boolean isHighSpeedOn = HighSpeedResolver.isHighSpeedOn(attachedSurfaces,
+                newUseCaseConfigsSupportedSizeMap.keySet());
         // Filter out unsupported sizes for high-speed at the beginning to ensure correct
         // resolution selection later. High-speed session requires all surface sizes to be the same.
         if (isHighSpeedOn) {
@@ -701,16 +732,23 @@ final class SupportedSurfaceCombination {
         boolean isUltraHdrOn = isUltraHdrOn(attachedSurfaces, newUseCaseConfigsSupportedSizeMap);
 
         // Calculates the target FPS range
-        Range<Integer> targetFpsRange = isHighSpeedOn ? targetHighSpeedFpsRange
-                : getTargetFpsRange(attachedSurfaces, newUseCaseConfigs, useCasesPriorityOrder);
+        Range<Integer> targetFpsRange;
+        if (findMaxSupportedFrameRate) {
+            // In finding for maxFps mode, ignore the targetFrameRate setting so that it doesn't
+            // break calculations by any frame rate checks.
+            targetFpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
+        } else {
+            targetFpsRange = getTargetFpsRange(attachedSurfaces, newUseCaseConfigs,
+                    useCasesPriorityOrder);
+        }
 
         FeatureSettings featureSettings = createFeatureSettings(cameraMode, hasVideoCapture,
                 resolvedDynamicRanges, isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn,
-                /* requiresFeatureComboQuery = */ false, targetFpsRange);
+                isFeatureComboInvocation, /* requiresFeatureComboQuery = */  false, targetFpsRange);
 
         CheckingMethod checkingMethod = getCheckingMethod(
                 resolvedDynamicRanges.values(), targetFpsRange, isPreviewStabilizationOn,
-                isUltraHdrOn, allowFeatureCombinationResolutions);
+                isUltraHdrOn, isFeatureComboInvocation);
 
         return resolveSpecsByCheckingMethod(checkingMethod, featureSettings,
                 attachedSurfaces, newUseCaseConfigsSupportedSizeMap, newUseCaseConfigs,
@@ -765,6 +803,7 @@ final class SupportedSurfaceCombination {
                         featureSettings.getCameraMode(), featureSettings.hasVideoCapture(),
                         resolvedDynamicRanges, featureSettings.isPreviewStabilizationOn(),
                         featureSettings.isUltraHdrOn(), featureSettings.isHighSpeedOn(),
+                        featureSettings.isFeatureComboInvocation(),
                         /* requiresFeatureComboQuery = */ true,
                         featureSettings.getTargetFpsRange());
 
@@ -787,6 +826,7 @@ final class SupportedSurfaceCombination {
                             featureSettings.getCameraMode(), featureSettings.hasVideoCapture(),
                             resolvedDynamicRanges, featureSettings.isPreviewStabilizationOn(),
                             featureSettings.isUltraHdrOn(), featureSettings.isHighSpeedOn(),
+                            featureSettings.isFeatureComboInvocation(),
                             /* requiresFeatureComboQuery = */ true,
                             featureSettings.getTargetFpsRange());
 
@@ -920,6 +960,8 @@ final class SupportedSurfaceCombination {
                 resolvedDynamicRanges, maxSupportedFps,
                 findMaxSupportedFrameRate);
 
+        Logger.d(TAG, "resolveSpecsBySettings: bestSizesAndFps = " + bestSizesAndFps);
+
         List<Size> savedSizes = bestSizesAndFps.getBestSizes();
         int savedConfigMaxFps = bestSizesAndFps.getMaxFpsForBestSizes();
         List<Size> savedSizesForStreamUseCase = bestSizesAndFps.getBestSizesForStreamUseCase();
@@ -936,6 +978,17 @@ final class SupportedSurfaceCombination {
                 targetFrameRateForDevice = getClosestSupportedDeviceFrameRate(
                         featureSettings.getTargetFpsRange(), savedConfigMaxFps,
                         availableFpsRanges);
+
+                if (featureSettings.isFeatureComboInvocation()
+                        && !targetFrameRateForDevice.equals(featureSettings.getTargetFpsRange())) {
+                    throw new IllegalArgumentException(
+                            "Target FPS range " + featureSettings.getTargetFpsRange()
+                                    + " is not supported. Max FPS supported by the calculated best"
+                                    + " combination: " + savedConfigMaxFps + ". Calculated best FPS"
+                                    + " range for device: " + targetFrameRateForDevice
+                                    + ". Device supported FPS ranges: "
+                                    + Arrays.toString(availableFpsRanges));
+                }
             }
             for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
                 Size resolutionForUseCase = savedSizes.get(
@@ -997,8 +1050,8 @@ final class SupportedSurfaceCombination {
     private CheckingMethod getCheckingMethod(
             @NonNull Collection<DynamicRange> dynamicRanges, @Nullable Range<Integer> fps,
             boolean isPreviewStabilizationOn, boolean isUltraHdrOn,
-            boolean allowFeatureCombinationResolutions) {
-        if (!allowFeatureCombinationResolutions) {
+            boolean isFeatureComboInvocation) {
+        if (!isFeatureComboInvocation) {
             return WITHOUT_FEATURE_COMBO;
         }
 
@@ -1156,14 +1209,15 @@ final class SupportedSurfaceCombination {
 
         // When using the combinations guaranteed via feature combination APIs, targetFpsRange must
         // be strictly maintained rather than just choosing the combination with highest max FPS.
-        if (featureSettings.requiresFeatureComboQuery()
+        if (featureSettings.isFeatureComboInvocation()
                 && !FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange)
-                && savedConfigMaxFps < targetFpsRange.getUpper()) {
-            return new BestSizesAndMaxFpsForConfigs(null, null, FRAME_RATE_UNLIMITED,
+                && (savedConfigMaxFps == FRAME_RATE_UNLIMITED
+                || savedConfigMaxFps < targetFpsRange.getUpper())) {
+            return BestSizesAndMaxFpsForConfigs.of(null, null, FRAME_RATE_UNLIMITED,
                     FRAME_RATE_UNLIMITED, FRAME_RATE_UNLIMITED);
         }
 
-        return new BestSizesAndMaxFpsForConfigs(savedSizes, savedSizesForStreamUseCase,
+        return BestSizesAndMaxFpsForConfigs.of(savedSizes, savedSizesForStreamUseCase,
                 savedConfigMaxFps, savedConfigMaxFpsForStreamUseCase, maxFpsForAllSizes);
     }
 
@@ -1219,7 +1273,7 @@ final class SupportedSurfaceCombination {
             @CameraMode.Mode int cameraMode, boolean hasVideoCapture,
             @NonNull Map<UseCaseConfig<?>, DynamicRange> resolvedDynamicRanges,
             boolean isPreviewStabilizationOn, boolean isUltraHdrOn, boolean isHighSpeedOn,
-            boolean requiresFeatureComboQuery,
+            boolean isFeatureComboInvocation, boolean requiresFeatureComboQuery,
             @NonNull Range<Integer> targetFpsRange) {
         int requiredMaxBitDepth = getRequiredMaxBitDepth(resolvedDynamicRanges);
 
@@ -1238,14 +1292,14 @@ final class SupportedSurfaceCombination {
                     CameraMode.toLabelString(cameraMode)));
         }
 
-        if (cameraMode != CameraMode.DEFAULT && requiresFeatureComboQuery) {
+        if (cameraMode != CameraMode.DEFAULT && isFeatureComboInvocation) {
             throw new IllegalArgumentException(String.format("Camera device id is %s. Feature "
                             + "combination query is not currently supported in %s camera mode.",
                     mCameraId,
                     CameraMode.toLabelString(cameraMode)));
         }
 
-        if (isHighSpeedOn && requiresFeatureComboQuery) {
+        if (isHighSpeedOn && isFeatureComboInvocation) {
             throw new IllegalArgumentException("High-speed session is not supported with feature"
                     + " combination");
         }
@@ -1256,8 +1310,8 @@ final class SupportedSurfaceCombination {
         }
 
         return FeatureSettings.of(cameraMode, hasVideoCapture, requiredMaxBitDepth,
-                isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn, requiresFeatureComboQuery,
-                targetFpsRange);
+                isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn, isFeatureComboInvocation,
+                requiresFeatureComboQuery, targetFpsRange);
     }
 
     /**
@@ -1408,7 +1462,7 @@ final class SupportedSurfaceCombination {
         // For feature combination, target FPS range must be strictly supported, so we can filter
         // out unsupported sizes earlier. Feature combination may also have some output sizes
         // mapping to ConfigSize.NOT_SUPPORT, those can be filtered out earlier as well.
-        if (featureSettings.requiresFeatureComboQuery()
+        if (featureSettings.isFeatureComboInvocation()
                 && (configSize == ConfigSize.NOT_SUPPORT
                 || (!FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange)
                 && maxFrameRate < targetFpsRange.getUpper()))
@@ -2024,41 +2078,25 @@ final class SupportedSurfaceCombination {
 
     }
 
-    static class BestSizesAndMaxFpsForConfigs {
-        private final List<Size> mBestSizes;
-        private final int mMaxFpsForBestSizes;
-        private final List<Size> mBestSizesForStreamUseCase;
-        private final int mMaxFpsForStreamUseCase;
-        private final int mMaxFpsForAllSizes;
-
-        BestSizesAndMaxFpsForConfigs(List<Size> bestSizes, List<Size> bestSizesForStreamUseCase,
-                int maxFpsForBestSizes, int maxFpsForStreamUseCase, int maxFpsForAllSizes) {
-            mBestSizes = bestSizes;
-            mBestSizesForStreamUseCase = bestSizesForStreamUseCase;
-            mMaxFpsForBestSizes = maxFpsForBestSizes;
-            mMaxFpsForStreamUseCase = maxFpsForStreamUseCase;
-            mMaxFpsForAllSizes = maxFpsForAllSizes;
+    @AutoValue
+    abstract static class BestSizesAndMaxFpsForConfigs {
+        static @NonNull BestSizesAndMaxFpsForConfigs of(@Nullable List<Size> bestSizes,
+                @Nullable List<Size> bestSizesForStreamUseCase, int maxFpsForBestSizes,
+                int maxFpsForStreamUseCase, int maxFpsForAllSizes) {
+            return new AutoValue_SupportedSurfaceCombination_BestSizesAndMaxFpsForConfigs(
+                    bestSizes, bestSizesForStreamUseCase, maxFpsForBestSizes,
+                    maxFpsForStreamUseCase, maxFpsForAllSizes);
         }
 
-        public List<Size> getBestSizes() {
-            return mBestSizes;
-        }
+        @Nullable abstract List<Size> getBestSizes();
 
-        public int getMaxFpsForBestSizes() {
-            return mMaxFpsForBestSizes;
-        }
+        @Nullable abstract List<Size> getBestSizesForStreamUseCase();
 
-        public List<Size> getBestSizesForStreamUseCase() {
-            return mBestSizesForStreamUseCase;
-        }
+        abstract int getMaxFpsForBestSizes();
 
-        public int getMaxFpsForStreamUseCase() {
-            return mMaxFpsForStreamUseCase;
-        }
+        abstract int getMaxFpsForStreamUseCase();
 
-        public int getMaxFpsForAllSizes() {
-            return mMaxFpsForAllSizes;
-        }
+        abstract int getMaxFpsForAllSizes();
     }
 
     enum CheckingMethod {
@@ -2077,10 +2115,12 @@ final class SupportedSurfaceCombination {
         static @NonNull FeatureSettings of(@CameraMode.Mode int cameraMode,
                 boolean hasVideoCapture, @RequiredMaxBitDepth int requiredMaxBitDepth,
                 boolean isPreviewStabilizationOn, boolean isUltraHdrOn, boolean isHighSpeedOn,
-                boolean requiresFeatureComboQuery, @NonNull Range<Integer> targetFpsRange) {
+                boolean isFeatureComboInvocation, boolean requiresFeatureComboQuery,
+                @NonNull Range<Integer> targetFpsRange) {
             return new AutoValue_SupportedSurfaceCombination_FeatureSettings(cameraMode,
                     hasVideoCapture, requiredMaxBitDepth, isPreviewStabilizationOn, isUltraHdrOn,
-                    isHighSpeedOn, requiresFeatureComboQuery, targetFpsRange);
+                    isHighSpeedOn, isFeatureComboInvocation, requiresFeatureComboQuery,
+                    targetFpsRange);
         }
 
         /**
@@ -2130,7 +2170,17 @@ final class SupportedSurfaceCombination {
         abstract boolean isHighSpeedOn();
 
         /**
-         * Whether feature combination query is required.
+         * Whether the code invocation is started through CameraX feature combination APIs.
+         *
+         * @see androidx.camera.core.CameraInfo#isFeatureCombinationSupported
+         * @see androidx.camera.core.SessionConfig#requiredFeatures
+         * @see androidx.camera.core.SessionConfig#preferredFeatures
+         */
+        abstract boolean isFeatureComboInvocation();
+
+        /**
+         * Whether feature combination query (i.e. the Camera2/Jetpack FCQ APIs) is required for
+         * checking if config combinations are supported.
          */
         abstract boolean requiresFeatureComboQuery();
 

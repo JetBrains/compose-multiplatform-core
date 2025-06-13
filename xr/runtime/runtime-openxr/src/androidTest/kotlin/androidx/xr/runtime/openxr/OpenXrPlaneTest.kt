@@ -86,7 +86,7 @@ class OpenXrPlaneTest {
 
         val anchor = underTest.createAnchor(Pose())
 
-        assertThat(xrResources.updatables).containsExactly(underTest, anchor as Updatable)
+        assertThat(xrResources.updatables).contains(anchor as Updatable)
     }
 
     @Test
@@ -112,7 +112,7 @@ class OpenXrPlaneTest {
 
         anchor.detach()
 
-        assertThat(xrResources.updatables).containsExactly(underTest)
+        assertThat(xrResources.updatables).doesNotContain(anchor)
     }
 
     @Test

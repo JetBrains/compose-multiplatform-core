@@ -69,12 +69,15 @@ internal fun DataOrigin.toPlatformDataOrigin(): PlatformDataOrigin {
 }
 
 internal fun Device.toPlatformDevice(): PlatformDevice {
-    @Suppress("WrongConstant") // Platform intdef and jetpack intdef match in value.
-    return PlatformDeviceBuilder()
-        .apply {
-            setType(type)
+    val platformDeviceBuilder =
+        PlatformDeviceBuilder().apply {
             manufacturer?.let { setManufacturer(it) }
             model?.let { setModel(it) }
         }
-        .build()
+
+    return try {
+        platformDeviceBuilder.setType(type.toPlatformDevice()).build()
+    } catch (_: IllegalArgumentException) {
+        platformDeviceBuilder.setType(Device.TYPE_UNKNOWN.toPlatformDevice()).build()
+    }
 }

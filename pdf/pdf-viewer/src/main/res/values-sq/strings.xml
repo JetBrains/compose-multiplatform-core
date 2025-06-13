@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Ky skedar PDF nuk mund të modifikohet"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Përmbajtja e kopjuar nga PDF-ja"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Shiriti i lëvizjes"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"Konfirmo"</string>
 </resources>

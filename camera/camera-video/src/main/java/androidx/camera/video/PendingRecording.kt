@@ -19,11 +19,17 @@ import android.Manifest
 import android.content.Context
 import androidx.annotation.CheckResult
 import androidx.annotation.RequiresPermission
+import androidx.annotation.RestrictTo
 import androidx.camera.core.impl.utils.ContextUtil
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.core.content.PermissionChecker
 import androidx.core.util.Consumer
 import androidx.core.util.Preconditions
 import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.currentCoroutineContext
 
 /**
  * A recording that can be started at a future time.
@@ -226,5 +232,21 @@ internal constructor(
         this.listenerExecutor = listenerExecutor
         eventListener = listener
         return recorder.start(this)
+    }
+
+    /**
+     * Starts the recording, making it an active recording.
+     *
+     * @param listener the event listener to handle video record events.
+     * @throws IllegalStateException if the associated Recorder currently has an unfinished active
+     *   recording.
+     * @see PendingRecording.start
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun start(listener: Consumer<VideoRecordEvent>): Recording {
+        val callbackExecutor =
+            (currentCoroutineContext()[ContinuationInterceptor] as? CoroutineDispatcher)
+                ?.asExecutor() ?: CameraXExecutors.directExecutor()
+        return start(callbackExecutor, listener)
     }
 }

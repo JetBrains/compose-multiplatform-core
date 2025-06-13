@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.widget.TextView
 import androidx.xr.runtime.Session
@@ -36,6 +37,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
+import java.nio.file.Paths
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import org.junit.Before
@@ -247,6 +249,7 @@ class EntityManagerTest {
     private fun createPanelEntity() {
         panelEntity =
             PanelEntity.create(
+                session.runtime.lifecycleManager,
                 activity,
                 mockPlatformAdapter,
                 entityManager,
@@ -257,7 +260,9 @@ class EntityManagerTest {
     }
 
     private fun createGltfEntity() {
-        gltfModel = GltfModel.create(session, "test.glb").get()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            gltfModel = GltfModel.createAsync(session, Paths.get("test.glb")).get()
+        }
         gltfModelEntity = GltfModelEntity.create(mockPlatformAdapter, entityManager, gltfModel)
     }
 
@@ -276,6 +281,7 @@ class EntityManagerTest {
     private fun createActivityPanelEntity() {
         activityPanelEntity =
             ActivityPanelEntity.create(
+                session.runtime.lifecycleManager,
                 mockPlatformAdapter,
                 entityManager,
                 IntSize2d(640, 480),

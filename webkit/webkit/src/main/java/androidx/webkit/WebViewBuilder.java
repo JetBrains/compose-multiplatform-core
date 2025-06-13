@@ -35,19 +35,23 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * The WebViewBuilder can be used in place of {@link android.webkit.WebView}'s constructor.
+ * WebViewBuilder can be used in place of {@link android.webkit.WebView}'s constructor.
  *
  * <p>This API allows you to declare how the WebView will be used via APIs like {@link
- * androidx.webkit.Policy.Builder}.
+ * RestrictionAllowlist}.
  *
  * <p>WebView instances constructed by this builder can be used as direct drop-in replacements for
  * WebView's created by the class constructor with no additional code changes.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class WebViewBuilder {
-    private @Nullable Policy mPolicy;
+    private boolean mRestrictJavascriptInterface;
+    private final @NonNull List<RestrictionAllowlist> mAllowLists =
+            new ArrayList<RestrictionAllowlist>();
 
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
@@ -56,21 +60,30 @@ public final class WebViewBuilder {
 
     @Nullable WebViewBuilderBoundaryInterface mBuilderStateBoundary;
 
-    /**
-     * This builder is able to construct WebView with some initial configuration before it will be
-     * used. It is able to apply policies via {@link #setPolicy(Policy)} to apply controls over how
-     * WebView may be used.
-     */
     public WebViewBuilder() {}
 
     /**
-     * Set a WebView policy to introduce restrictions over what WebViews built are capable of doing.
+     * Restrict {@link WebView#addJavascriptInterface(Object, String)} and {@link
+     * WebView#removeJavascriptInterface(String)} from being callable.
      *
-     * @param policy The policy that will apply to all WebViews built.
+     * <p>This needs to be called in order to allow specific origin patterns to inject javascript
+     * interfaces via {@link RestrictionAllowlist#addJavascriptInterface(Object, String)}.
+     */
+    public @NonNull WebViewBuilder restrictJavascriptInterface() {
+        mRestrictJavascriptInterface = true;
+        return this;
+    }
+
+    /**
+     * Add an allowlist of behaviors for a list origin patterns. All allowlists will be merged
+     * together. A WebViewBuilderException will be thrown from {@link WebViewBuilder#build(Context)}
+     * if a behavior is allow listed that has not been restricted via the WebViewBuilder.
+     *
+     * @param allowList An allow list that will allow behaviors for the origin patterns provided.
      */
     @Experimental
-    public @NonNull WebViewBuilder setPolicy(@NonNull Policy policy) {
-        mPolicy = policy;
+    public @NonNull WebViewBuilder addAllowlist(@NonNull RestrictionAllowlist allowList) {
+        mAllowLists.add(allowList);
         return this;
     }
 
@@ -100,8 +113,17 @@ public final class WebViewBuilder {
 
         WebViewBuilderBoundaryInterface.Config config =
                 new WebViewBuilderBoundaryInterface.Config();
-        mPolicy.configure(config);
 
-        return mBuilderStateBoundary.build(context, config);
+        config.restrictJavascriptInterface = mRestrictJavascriptInterface;
+
+        try {
+            for (RestrictionAllowlist allowList : mAllowLists) {
+                allowList.configure(config);
+            }
+
+            return mBuilderStateBoundary.build(context, config);
+        } catch (RuntimeException e) {
+            throw new WebViewBuilderException(e);
+        }
     }
 }

@@ -23,7 +23,11 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.withoutVisualEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Alignment
@@ -36,10 +40,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
@@ -126,6 +137,69 @@ class PagerScaffoldTest {
             pageIndicatorColor = pageIndicatorColor,
             assertVisible = false,
         )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun edge_button_doesnt_disappear() {
+        val TLC_TAG = "TLC_TAG"
+        val EHB_TAG = "EHB_TAG"
+        val EHB_COLOR = Color.Red
+        val pageCount = 3
+        val pagerState = PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            HorizontalPagerScaffold(
+                pagerState = pagerState,
+                pageIndicator = {},
+                modifier = Modifier.size(300.dp),
+            ) {
+                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex
+                    ->
+                    val scrollState = rememberTransformingLazyColumnState()
+                    val overscrollEffect = rememberOverscrollEffect()
+
+                    ScreenScaffold(
+                        scrollState = scrollState,
+                        overscrollEffect = overscrollEffect,
+                        modifier = Modifier.fillMaxSize(),
+                        edgeButton = {
+                            EdgeButton(
+                                onClick = {},
+                                modifier = Modifier.testTag(EHB_TAG + pageIndex.toString()),
+                                colors = ButtonDefaults.buttonColors(containerColor = EHB_COLOR),
+                            ) {
+                                Text("Edge Button")
+                            }
+                        },
+                    ) { paddingValuesFromScaffold ->
+                        TransformingLazyColumn(
+                            state = scrollState,
+                            contentPadding = paddingValuesFromScaffold,
+                            overscrollEffect = overscrollEffect?.withoutVisualEffect(),
+                            modifier =
+                                Modifier.fillMaxSize().testTag(TLC_TAG + pageIndex.toString()),
+                        ) {
+                            items(20) { Text("Item #$it") }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TLC_TAG + "0").performTouchInput { repeat(10) { swipeUp() } }
+
+        // Edge Button should be visible after scroll
+        rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
+
+        // Go to the second page and back
+        rule.runOnIdle { scope.launch { pagerState.scrollToPage(1) } }
+        rule.runOnIdle { scope.launch { pagerState.scrollToPage(0) } }
+
+        // Edge Button should be visible again
+        rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

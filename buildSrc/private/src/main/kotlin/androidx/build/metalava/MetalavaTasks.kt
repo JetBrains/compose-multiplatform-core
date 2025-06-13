@@ -26,7 +26,6 @@ import androidx.build.checkapi.CompilationInputs
 import androidx.build.checkapi.MultiplatformCompilationInputs
 import androidx.build.checkapi.SourceSetInputs
 import androidx.build.checkapi.getRequiredCompatibilityApiLocation
-import androidx.build.shouldGenerateBytecodeApis
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
 import org.gradle.api.Project
@@ -77,8 +76,6 @@ internal object MetalavaTasks {
                 // If we will be updating the api lint baselines, then we should do that before
                 // using it to validate the generated api
                 task.mustRunAfter("updateApiLintBaseline")
-
-                task.includeBytecodeApis.set(project.shouldGenerateBytecodeApis())
             }
         project.registerVersionMetadataComponent(generateApi)
 

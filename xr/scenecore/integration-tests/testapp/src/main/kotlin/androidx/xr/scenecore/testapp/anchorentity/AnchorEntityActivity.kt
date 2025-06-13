@@ -36,6 +36,8 @@ import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.nio.file.Path
+import java.nio.file.Paths
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
@@ -88,7 +90,7 @@ class AnchorEntityActivity : AppCompatActivity() {
                 Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
 
-            xyzModel = GltfModel.create(session!!, XYZ_ARROWS_MODEL).await()
+            xyzModel = GltfModel.createAsync(session!!, XYZ_ARROWS_MODEL).await()
 
             // Create anchored gltf entity
             anchorEntity =
@@ -106,6 +108,6 @@ class AnchorEntityActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val XYZ_ARROWS_MODEL = "models/xyzArrows.glb"
+        val XYZ_ARROWS_MODEL: Path = Paths.get("models", "xyzArrows.glb")
     }
 }

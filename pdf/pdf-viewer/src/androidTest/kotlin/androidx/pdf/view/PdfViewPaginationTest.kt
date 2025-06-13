@@ -34,6 +34,8 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -44,6 +46,8 @@ import org.junit.runner.RunWith
 class PdfViewPaginationTest {
     var topPageMarginPx: Int = 0
     var pageMarginPx: Int = 0
+
+    private var pdfView: PdfView? = null // This is initialized in the setup process
 
     @After
     fun tearDown() {
@@ -62,6 +66,52 @@ class PdfViewPaginationTest {
                 .checkPagesAreVisible(firstVisiblePage = 0, visiblePages = 5)
             close()
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class) // Needed for advanceUntilIdle
+    @Test
+    fun testBgDimensionLoad() = runTest {
+        val pageDims = List(5) { Point(50, 100) } + List(5) { Point(50, 200) }
+        val pdfDocument = FakePdfDocument(pageDims)
+        setupPdfView(width = 500, height = 1000, pdfDocument)
+        pdfView?.backgroundScope = this
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            pdfDocument.waitForLayout(untilPage = 1)
+            Espresso.onView(withId(PDF_VIEW_ID)).checkPagesAreVisible(firstVisiblePage = 0)
+
+            // If all pages are loaded, the total height will be sum of the following
+            //          100 * 5 + 200 * 5 = 1500
+            //          topMargin + spacing-between-pages
+            assertThat(pdfView?.contentHeight).isEqualTo(1500 + 10 * pageMarginPx + topPageMarginPx)
+            close()
+        }
+        advanceUntilIdle()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class) // Needed for advanceUntilIdle
+    @Test
+    fun testBgDimensionLoadWithMissingValues() = runTest {
+        val pageDims =
+            List(4) { Point(50, 100) } +
+                listOf(null) + // 5th page will throw a cancellation exception
+                List(5) { Point(50, 200) }
+        val pdfDocument = FakePdfDocument(pageDims)
+        pdfView?.backgroundScope = this
+        setupPdfView(width = 500, height = 1000, pdfDocument)
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            pdfDocument.waitForLayout(untilPage = 1)
+            Espresso.onView(withId(PDF_VIEW_ID)).checkPagesAreVisible(firstVisiblePage = 0)
+
+            // As 5th page throws cancellation exception, it is approximated by values of the 6th.
+            // If all pages are loaded, the total height will be sum of the following
+            //          100 * 4 + 200 * 6 = 1600
+            //          topMargin + spacing-between-pages
+            assertThat(pdfView?.contentHeight).isEqualTo(1600 + 10 * pageMarginPx + topPageMarginPx)
+            close()
+        }
+        advanceUntilIdle()
     }
 
     @Test
@@ -476,8 +526,9 @@ class PdfViewPaginationTest {
             pageMarginPx = activity.getDimensions(R.dimen.page_spacing).roundToInt()
             topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin).roundToInt()
             val container = FrameLayout(activity)
+            pdfView = PdfView(activity)
             container.addView(
-                PdfView(activity).apply {
+                pdfView?.apply {
                     pdfDocument = fakePdfDocument
                     id = PDF_VIEW_ID
                 },

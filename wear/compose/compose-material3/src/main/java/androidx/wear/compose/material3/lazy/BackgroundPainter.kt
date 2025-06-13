@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.painter.Painter
 
 internal class BackgroundPainter(
     internal val scale: DrawScope.() -> Float,
+    internal val height: DrawScope.() -> Float,
     internal val shape: Shape,
     private val border: BorderStroke?,
     private val backgroundPainter: Painter,
@@ -44,7 +45,7 @@ internal class BackgroundPainter(
         // We want to create the outline as if the scaling effect was not applied, so, for example,
         // Corners with a radius specified in dp keep that radius as we scale.
         val actualScale = scale()
-        val actualSize = size * actualScale
+        val actualSize = (size.copy(height = height()) * actualScale)
         withTransform(
             transformBlock = { scale(1 / actualScale, 1 / actualScale, pivot = Offset.Zero) }
         ) {

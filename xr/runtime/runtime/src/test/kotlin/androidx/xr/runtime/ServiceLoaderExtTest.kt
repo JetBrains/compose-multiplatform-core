@@ -23,6 +23,8 @@ import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 import androidx.xr.runtime.internal.RuntimeFactory
 import androidx.xr.runtime.internal.Service
+import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
+import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import androidx.xr.runtime.testing.AnotherFakeStateExtender
 import androidx.xr.runtime.testing.FakeJxrPlatformAdapterFactory
 import androidx.xr.runtime.testing.FakeRuntimeFactory

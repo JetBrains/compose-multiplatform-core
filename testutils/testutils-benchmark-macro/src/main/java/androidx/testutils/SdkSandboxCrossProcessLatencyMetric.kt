@@ -29,34 +29,13 @@ import androidx.benchmark.traceprocessor.TraceProcessor
  * @param endPointName Name of end tracepoint.
  * @param eventName Name of the final metric that is spit out after the test run. The metric name
  *   will be {$eventName}LatencyMillis.
- * @param occurrenceOfBeginTrace Occurrence of the begin tracepoint among other traces with the same
- *   name. Default value is TraceOccurrence.FIRST.
- * @param occurrenceOfEndTrace Occurrence of the end tracepoint among other traces with the same
- *   name. Default value is TraceOccurrence.FIRST.
  */
 @OptIn(ExperimentalMetricApi::class)
 public class SdkSandboxCrossProcessLatencyMetric(
     private val beginPointName: String,
     private val endPointName: String,
     private val eventName: String,
-    private val occurrenceOfBeginTrace: TraceOccurrence = TraceOccurrence.FIRST,
-    private val occurrenceOfEndTrace: TraceOccurrence = TraceOccurrence.FIRST,
 ) : TraceMetric() {
-    /**
-     * There may be multiple occurrences of the tracepoint in the traces collected. For example, if
-     * we add a tracepoint at [SandboxedSdkView] checkClientOpenSession method for mediatee with
-     * mediator overlay case, this will be logged twice - first time for mediator
-     * [SandboxedUiAdapter], and then another time for the mediatee [SandboxedUiAdapter]. In such
-     * cases we need to specify which occurrence we care about.
-     *
-     * For the tracepoints finalised currently, we have at best 2 occurrences of the same
-     * tracepoint. More values can be added if needed.
-     */
-    enum class TraceOccurrence {
-        FIRST,
-        LAST,
-    }
-
     @OptIn(ExperimentalMetricApi::class)
     override fun getMeasurements(
         captureInfo: CaptureInfo,
@@ -74,22 +53,22 @@ public class SdkSandboxCrossProcessLatencyMetric(
                    ts AS ts1,
                    "event" AS event,
                    LOWER(TRIM(process_name)) as process_name_1
-                   FROM process_slice WHERE name = '${beginPointName}'
+                   FROM thread_slice WHERE name = '${beginPointName}')
                """
                 .trimIndent() +
-                getQueryByTraceOccurrence(occurrenceOfBeginTrace) +
                 """
                LEFT JOIN
                (SELECT
                    ts AS ts2,
                    "event" AS event,
                    LOWER(TRIM(process_name)) as process_name_2
-                   FROM process_slice WHERE name = '${endPointName}'
+                   FROM thread_slice WHERE name = '${endPointName}')
                """
                     .trimIndent() +
-                getQueryByTraceOccurrence(occurrenceOfEndTrace) +
                 " USING (event)) " +
-                checkIfEventsInSameOrSandboxProcess()
+                checkIfEventsInSameOrSandboxProcess() +
+                chooseFirstTracepointAfterBeginPoint()
+
         val rowSequence = traceSession.query(query)
         // First row (or null) is returned.
         val latencyResultNanos = rowSequence.firstOrNull()?.long("latency_in_nanos")
@@ -103,16 +82,6 @@ public class SdkSandboxCrossProcessLatencyMetric(
         }
     }
 
-    private fun getQueryByTraceOccurrence(traceOccurrence: TraceOccurrence): String {
-        return if (traceOccurrence == TraceOccurrence.FIRST) {
-            // Returned row will be the one which was logged first.
-            " ORDER BY ts LIMIT 1) "
-        } else {
-            // Returned row will be the one which was logged last.
-            " ORDER BY ts DESC LIMIT 1) "
-        }
-    }
-
     private fun checkIfEventsInSameOrSandboxProcess(): String {
         return """
             WHERE (process_name_1 = process_name_2
@@ -120,5 +89,10 @@ public class SdkSandboxCrossProcessLatencyMetric(
             OR process_name_2 = CONCAT(process_name_1, "_sdk_sandbox"))
         """
             .trimIndent()
+    }
+
+    private fun chooseFirstTracepointAfterBeginPoint(): String {
+        // Choose only the first tracepoint with (name == endPoint) that occurred after begin point.
+        return " AND ts2 > ts1 ORDER BY latency_in_nanos LIMIT 1"
     }
 }

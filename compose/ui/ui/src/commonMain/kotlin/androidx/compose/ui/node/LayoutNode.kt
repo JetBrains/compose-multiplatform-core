@@ -313,6 +313,9 @@ internal class LayoutNode(
         if (instance.layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
             layoutDelegate.childrenAccessingCoordinatesDuringPlacement++
         }
+        if (instance.globallyPositionedObservers > 0) {
+            globallyPositionedObservers++
+        }
     }
 
     private fun exceptionMessageForParentingOrOwnership(instance: LayoutNode) =
@@ -364,6 +367,10 @@ internal class LayoutNode(
             child.detach()
         }
         child._foldedParent = null
+        if (child.globallyPositionedObservers > 0) {
+            globallyPositionedObservers--
+        }
+
         child.outerCoordinator.wrappedBy = null
 
         if (child.isVirtual) {
@@ -993,7 +1000,24 @@ internal class LayoutNode(
      * Flag used by [OnPositionedDispatcher] to identify LayoutNodes that have already had their
      * [OnGloballyPositionedModifier]'s dispatch called so that they aren't called multiple times.
      */
-    internal var needsOnPositionedDispatch = false
+    internal var needsOnGloballyPositionedDispatch = false
+
+    /**
+     * Count of attached [GlobalPositionAwareModifierNode] modifiers or children having such
+     * modifiers in their subtree.
+     */
+    var globallyPositionedObservers: Int = 0
+        set(value) {
+            if (field != value) {
+                if (value > 0 && field == 0) {
+                    parent?.globallyPositionedObservers++
+                }
+                if (value == 0 && field > 0) {
+                    parent?.globallyPositionedObservers--
+                }
+                field = value
+            }
+        }
 
     internal fun place(x: Int, y: Int) {
         if (intrinsicsUsageByParent == UsageByParent.NotUsed) {
@@ -1162,7 +1186,13 @@ internal class LayoutNode(
 
     internal fun invalidateOnPositioned() {
         // If we've already scheduled a measure, the positioned callbacks will get called anyway
-        if (layoutPending || measurePending || needsOnPositionedDispatch) return
+        if (
+            globallyPositionedObservers == 0 ||
+                layoutPending ||
+                measurePending ||
+                needsOnGloballyPositionedDispatch
+        )
+            return
         requireOwner().requestOnPositionedCallback(this)
     }
 

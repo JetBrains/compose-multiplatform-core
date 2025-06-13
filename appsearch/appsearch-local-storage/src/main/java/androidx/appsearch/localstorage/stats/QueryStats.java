@@ -113,12 +113,27 @@ public final class QueryStats extends BaseStats {
      * may be skipped.
      */
     private final boolean mNativeIsFirstPage;
+    /**
+     * The number of additional pages retrieved after the first page if it did not retrieve
+     * enough results.
+     */
+    private final int mAdditionalPageCount;
     /** The requested number of results in one page. */
     private final int mNativeRequestedPageSize;
     /** The actual number of results returned in the current page. */
     private final int mNativeNumResultsReturnedCurrentPage;
+    /**
+     * The number of results returned in all additional pages that are retrieved if the first
+     * page did not retrieve enough results.
+     */
+    private final int mNumResultsReturnedAdditionalPages;
     /** Overall time used for the native function call. */
     private final int mNativeLatencyMillis;
+    /**
+     * Overall time used for retrieving additional pages if the first page did not retrieve
+     * enough results.
+     */
+    private final int mAdditionalPageRetrievalLatencyMillis;
     /** Time used to rank the scored results. */
     private final int mNativeRankingLatencyMillis;
     /**
@@ -164,9 +179,12 @@ public final class QueryStats extends BaseStats {
         mVisibilityScope = builder.mVisibilityScope;
         mSearchSourceLogTag = builder.mSearchSourceLogTag;
         mNativeIsFirstPage = builder.mNativeIsFirstPage;
+        mAdditionalPageCount = builder.mAdditionalPageCount;
         mNativeRequestedPageSize = builder.mNativeRequestedPageSize;
         mNativeNumResultsReturnedCurrentPage = builder.mNativeNumResultsReturnedCurrentPage;
+        mNumResultsReturnedAdditionalPages = builder.mNumResultsReturnedAdditionalPages;
         mNativeLatencyMillis = builder.mNativeLatencyMillis;
+        mAdditionalPageRetrievalLatencyMillis = builder.mAdditionalPageRetrievalLatencyMillis;
         mNativeRankingLatencyMillis = builder.mNativeRankingLatencyMillis;
         mNativeDocumentRetrievingLatencyMillis = builder.mNativeDocumentRetrievingLatencyMillis;
         mNativeNumResultsWithSnippets = builder.mNativeNumResultsWithSnippets;
@@ -250,6 +268,14 @@ public final class QueryStats extends BaseStats {
         return mNativeIsFirstPage;
     }
 
+    /**
+     * Returns the number of additional pages retrieved after the first page if it did not
+     * return enough results.
+     */
+    public int getAdditionalPageCount() {
+        return mAdditionalPageCount;
+    }
+
     /** Returns the requested number of results in one page. */
     public int getRequestedPageSize() {
         return mNativeRequestedPageSize;
@@ -260,9 +286,25 @@ public final class QueryStats extends BaseStats {
         return mNativeNumResultsReturnedCurrentPage;
     }
 
+    /**
+     * Returns the number of results returned in all additional pages that are retrieved if the
+     * first page did not retrieve enough results.
+     */
+    public int getAdditionalPagesReturnedResultCount() {
+        return mNumResultsReturnedAdditionalPages;
+    }
+
     /** Returns how much time spent on the native calls. */
     public int getNativeLatencyMillis() {
         return mNativeLatencyMillis;
+    }
+
+    /**
+     * Returns how much time is spent retrieving additional pages if the first page did not
+     * return enough results.
+     */
+    public int getAdditionalPageRetrievalLatencyMillis() {
+        return mAdditionalPageRetrievalLatencyMillis;
     }
 
     /** Returns time used to rank the scored results. */
@@ -412,9 +454,12 @@ public final class QueryStats extends BaseStats {
         int mVisibilityScope;
         @Nullable String mSearchSourceLogTag;
         boolean mNativeIsFirstPage;
+        int mAdditionalPageCount;
         int mNativeRequestedPageSize;
         int mNativeNumResultsReturnedCurrentPage;
+        int mNumResultsReturnedAdditionalPages;
         int mNativeLatencyMillis;
+        int mAdditionalPageRetrievalLatencyMillis;
         int mNativeRankingLatencyMillis;
         int mNativeDocumentRetrievingLatencyMillis;
         int mNativeNumResultsWithSnippets;
@@ -515,6 +560,14 @@ public final class QueryStats extends BaseStats {
             return this;
         }
 
+        /** Sets the actual number of results returned in the current page. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setAdditionalPagesReturnedResultCount(
+                int additionalPagesReturnedResultCount) {
+            mNumResultsReturnedAdditionalPages = additionalPagesReturnedResultCount;
+            return this;
+        }
+
         /** Sets the requested number of results in one page. */
         @CanIgnoreReturnValue
         public @NonNull Builder setRequestedPageSize(int requestedPageSize) {
@@ -530,10 +583,29 @@ public final class QueryStats extends BaseStats {
             return this;
         }
 
+        /** Sets the number of additional pages retrieved after the first one if it did not
+         * return enough results. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setAdditionalPageCount(int additionalPageCount) {
+            mAdditionalPageCount = additionalPageCount;
+            return this;
+        }
+
         /** Sets overall time used for the native function calls. */
         @CanIgnoreReturnValue
         public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
+            return this;
+        }
+
+        /**
+         * Sets overall time used for retrieving additional pages if the first page did not
+         * return enough results.
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setAdditionalPageRetrievalLatencyMillis(
+                int additionalPageRetrievalLatencyMillis) {
+            mAdditionalPageRetrievalLatencyMillis = additionalPageRetrievalLatencyMillis;
             return this;
         }
 

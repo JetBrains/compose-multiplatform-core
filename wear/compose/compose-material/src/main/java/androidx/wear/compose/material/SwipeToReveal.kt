@@ -569,7 +569,7 @@ private fun ActionWrapper(
     // Change opacity of shape from 0% to 100% between 10% and 20% of the progress
     val shapeAlpha =
         if (revealState.revealThreshold > 0)
-            ((-revealState.offset - revealState.revealThreshold * 0.1f) /
+            ((abs(revealState.offset) - revealState.revealThreshold * 0.1f) /
                     (0.1f * revealState.revealThreshold))
                 .coerceIn(0.0f, 1.0f)
         else 1f
@@ -651,7 +651,7 @@ private fun ActionIcon(revealState: RevealState, content: @Composable () -> Unit
     // Change opacity of icons from 0% to 100% between 50% to 75% of the progress
     val iconAlpha =
         if (revealState.revealThreshold > 0)
-            ((-revealState.offset - revealState.revealThreshold * 0.5f) /
+            ((abs(revealState.offset) - revealState.revealThreshold * 0.5f) /
                     (revealState.revealThreshold * 0.25f))
                 .coerceIn(0.0f, 1.0f)
         else 1f
@@ -662,8 +662,9 @@ private fun ActionIcon(revealState: RevealState, content: @Composable () -> Unit
                 start = 0.7f,
                 stop = 1.0f,
                 fraction =
-                    (-revealState.offset - revealState.revealThreshold * 0.5f) /
-                        revealState.revealThreshold + 0.5f,
+                    ((abs(revealState.offset) - revealState.revealThreshold * 0.5f) /
+                            (revealState.revealThreshold * 0.5f))
+                        .coerceIn(0.0f, 1.0f),
             )
         else 1f
     Box(
@@ -967,12 +968,17 @@ internal constructor(
 
     /**
      * Resets last state if a different SwipeToReveal is being moved to new anchor and the last
-     * state is in [RevealValue.RightRevealing] mode which represents no action has been performed
-     * yet. In [RevealValue.RightRevealed], the action has been performed and it will not be reset.
+     * state is in either [RevealValue.RightRevealing] or [RevealValue.LeftRevealing] mode which
+     * represents no action has been performed yet. In [RevealValue.RightRevealed] or
+     * [RevealValue.LeftRevealed], the action has been performed and it will not be reset.
      */
     private suspend fun resetLastState(currentState: RevealState) {
         val oldState = SingleSwipeCoordinator.lastUpdatedState.getAndSet(currentState)
-        if (currentState != oldState && oldState?.currentValue == RevealValue.RightRevealing) {
+        if (
+            currentState != oldState &&
+                (oldState?.currentValue == RevealValue.RightRevealing ||
+                    oldState?.currentValue == RevealValue.LeftRevealing)
+        ) {
             oldState.animateTo(RevealValue.Covered)
         }
     }

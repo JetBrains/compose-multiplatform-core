@@ -559,10 +559,6 @@ class CameraXInitRetryTest {
                                 override fun getCameraManager(): Any? {
                                     throw testException
                                 }
-
-                                override fun getStreamSpecsCalculator(): StreamSpecsCalculator {
-                                    throw testException
-                                }
                             }
                     )
                 )

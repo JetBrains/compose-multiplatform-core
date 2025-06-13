@@ -28,6 +28,7 @@ import androidx.xr.runtime.internal.HitTestResult.HitTestSurfaceType as RtHitTes
 import androidx.xr.runtime.internal.InputEvent as RtInputEvent
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo as RtHitInfo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.KhronosPbrMaterialSpec as RtKhronosPbrMaterialSpec
 import androidx.xr.runtime.internal.MoveEvent as RtMoveEvent
 import androidx.xr.runtime.internal.PerceivedResolutionResult as RtPerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
@@ -40,6 +41,7 @@ import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RtTextureSampler
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Ray
@@ -67,9 +69,22 @@ internal fun FloatSize3d.toRtDimensions(): RtDimensions {
     return RtDimensions(width, height, depth)
 }
 
+/**
+ * Extension function that converts a [androidx.xr.runtime.math.FloatSize2d] to [RtDimensions],
+ * setting the `depth` field to 0.
+ */
+internal fun FloatSize2d.toRtDimensions(): RtDimensions {
+    return RtDimensions(width, height, 0f)
+}
+
 /** Extension function that converts a [RtDimensions] to [FloatSize3d]. */
 internal fun RtDimensions.toFloatSize3d(): FloatSize3d {
     return FloatSize3d(width, height, depth)
+}
+
+/** Extension function that converts a [RtDimensions] to [FloatSize3d]. */
+internal fun RtDimensions.toFloatSize2d(): FloatSize2d {
+    return FloatSize2d(width, height)
 }
 
 /**
@@ -333,6 +348,11 @@ internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon? {
         RtSpatialPointerIcon.TYPE_DEFAULT -> null
         else -> error("Unknown spatial pointer icon type: $this")
     }
+}
+
+/** Extension function that converts a [KhronosPbrMaterialSpec] to [RtKhronosPbrMaterialSpec]. */
+internal fun KhronosPbrMaterialSpec.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
+    return RtKhronosPbrMaterialSpec(lightingModel, blendMode, doubleSidedMode)
 }
 
 /**

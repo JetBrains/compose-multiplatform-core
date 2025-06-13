@@ -35,6 +35,7 @@ dependencies {
     api(libs.kotlinCoroutinesRx3)
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
+    api(project(":xr:runtime:runtime-manifest"))
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.lifecycle:lifecycle-common:2.8.7")
 

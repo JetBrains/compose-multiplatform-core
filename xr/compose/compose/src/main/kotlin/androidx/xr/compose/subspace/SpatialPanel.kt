@@ -51,15 +51,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.core.graphics.drawable.toDrawable
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.platform.coreMainPanelEntity
 import androidx.xr.compose.platform.getActivity
-import androidx.xr.compose.subspace.layout.MeasurePolicy
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.layout.SubspaceLayout
+import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompositionLocalMap
@@ -68,6 +68,7 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasur
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
 import androidx.xr.compose.unit.Meter.Companion.millimeters
 import androidx.xr.compose.unit.toMeter
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -90,6 +91,7 @@ public object SpatialPanelDefaults {
     public val shape: SpatialShape = SpatialRoundedCornerShape(CornerSize(32.dp))
 
     /** Default minimum dimensions for a Spatial Panel in Meters. */
+    // TODO: When unrestricting this API, change this type to FloatSize2d
     public val minimumPanelDimension: FloatSize3d = FloatSize3d(0.1f, 0.1f, 0.1f)
 }
 
@@ -126,7 +128,7 @@ public fun SpatialPanel(
             PanelEntity.create(
                 session = this,
                 view = frameLayout,
-                dimensions = SpatialPanelDefaults.minimumPanelDimension,
+                dimensions = SpatialPanelDefaults.minimumPanelDimension.to2d(),
                 name = entityName("SpatialPanel"),
                 pose = Pose.Identity,
             )
@@ -245,13 +247,13 @@ private fun <T : View> AndroidViewPanel(
             PanelEntity.create(
                 session = this,
                 view = view,
-                dimensions = SpatialPanelDefaults.minimumPanelDimension,
+                dimensions = SpatialPanelDefaults.minimumPanelDimension.to2d(),
                 name = "ViewPanel",
                 pose = Pose.Identity,
             )
         }
 
-    val measurePolicy = MeasurePolicy { _, constraints ->
+    val measurePolicy = SubspaceMeasurePolicy { _, constraints ->
         view.measure(
             MeasureSpec.makeMeasureSpec(
                 constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
@@ -306,7 +308,7 @@ public fun SpatialPanel(
             PanelEntity.create(
                 session = this,
                 view = view,
-                dimensions = SpatialPanelDefaults.minimumPanelDimension,
+                dimensions = SpatialPanelDefaults.minimumPanelDimension.to2d(),
                 name = entityName("SpatialPanel"),
                 pose = Pose.Identity,
             )
@@ -387,8 +389,7 @@ public fun MainPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
 ) {
-    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val mainPanel = session.coreMainPanelEntity
+    val mainPanel = LocalCoreMainPanelEntity.current ?: return
     LaunchedEffect(shape) { mainPanel.shape = shape }
 
     val view = LocalContext.current.getActivity().window?.decorView ?: LocalView.current
@@ -458,12 +459,12 @@ public fun SpatialPanel(
                     PanelEntity.create(
                             session = session,
                             view = scrimView,
-                            dimensions = FloatSize3d(scrimWidth.toM(), scrimHeight.toM()),
+                            dimensions = FloatSize2d(scrimWidth.toM(), scrimHeight.toM()),
                             name = entityName("ScrimPanel"),
                             pose = Pose.Identity,
                         )
                         .apply {
-                            setParent(activityPanelEntity.entity)
+                            parent = activityPanelEntity.entity
                             setPose(Pose(translation = Vector3(0f, 0f, 3.millimeters.toM())))
                         }
                 }

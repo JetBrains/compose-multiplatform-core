@@ -5,7 +5,7 @@ import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import javax.`annotation`.processing.Generated
 
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
-public class `$MyNoteFactory` : AppFunctionSerializableFactory<CreateNoteFunction.Data.MyNote> {
+public class `$CreateNoteFunction$Data$MyNoteFactory` : AppFunctionSerializableFactory<CreateNoteFunction.Data.MyNote> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): CreateNoteFunction.Data.MyNote {
     val myAttachmentFactory = `$MyAttachmentFactory`()
 

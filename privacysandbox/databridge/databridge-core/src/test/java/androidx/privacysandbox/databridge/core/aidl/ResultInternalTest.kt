@@ -54,7 +54,8 @@ class ResultInternalTest(
             .that(restored.valueInternal?.isValueNull)
             .isEqualTo(original.valueInternal?.isValueNull)
         expect.that(restored.valueInternal?.value).isEqualTo(original.valueInternal?.value)
-
+        // This verifies there are no bytes left to be read on the Parcel.
+        parcel.enforceNoDataAvail()
         parcel.recycle()
     }
 

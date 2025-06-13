@@ -50,7 +50,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.ui.requestedFrameRate
+import androidx.compose.ui.requestedFrameRate
 import androidx.compose.ui.unit.dp
 
 internal val isArrEnabled =

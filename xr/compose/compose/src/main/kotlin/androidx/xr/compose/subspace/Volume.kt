@@ -16,13 +16,26 @@
 
 package androidx.xr.compose.subspace
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
+
+/**
+ * Marks Subspace APIs that are experimental and likely to change or be removed in the future.
+ *
+ * Any usage of a declaration annotated with `@ExperimentalSubspaceVolumeApi` must be accepted
+ * either by annotating that usage with `@OptIn(ExperimentalSubspaceVolumeApi::class)` or by
+ * propagating the annotation to the containing declaration.
+ */
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "This is an experimental API. It may be changed or removed in the future.",
+)
+@Retention(AnnotationRetention.BINARY)
+public annotation class ExperimentalSubspaceVolumeApi
 
 /**
  * A composable that represents a 3D volume of space within which an application can fill content.
@@ -35,7 +48,7 @@ import androidx.xr.scenecore.Entity
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@ExperimentalSubspaceVolumeApi
 public fun Volume(modifier: SubspaceModifier = SubspaceModifier, onVolumeEntity: (Entity) -> Unit) {
     SubspaceLayout(
         modifier = modifier,

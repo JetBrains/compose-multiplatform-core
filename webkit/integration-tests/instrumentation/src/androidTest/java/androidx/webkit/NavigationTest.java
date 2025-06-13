@@ -90,7 +90,7 @@ public class NavigationTest {
         }
 
         public Navigation waitForNavigationStart() throws InterruptedException {
-            return startedNavigations.poll(1, TimeUnit.MILLISECONDS);
+            return startedNavigations.poll(1, TimeUnit.SECONDS);
         }
 
         public Navigation waitForNavigationComplete() throws InterruptedException {

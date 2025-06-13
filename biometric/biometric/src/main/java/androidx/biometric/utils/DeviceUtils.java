@@ -22,8 +22,8 @@ import android.os.Build;
 
 import androidx.annotation.RestrictTo;
 import androidx.biometric.BiometricPrompt;
-import androidx.biometric.FingerprintDialogFragment;
 import androidx.biometric.R;
+import androidx.biometric.internal.FingerprintDialogFragment;
 
 import org.jspecify.annotations.NonNull;
 

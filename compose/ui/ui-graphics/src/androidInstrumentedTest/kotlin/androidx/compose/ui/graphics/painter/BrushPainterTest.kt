@@ -92,7 +92,7 @@ class BrushPainterTest {
             )
         val dstImage = createImageBitmap()
         val brushPainter =
-            BrushPainter(Brush.compositeShaderBrush(bitmapBrush, gradientBrush, BlendMode.SrcIn))
+            BrushPainter(Brush.composite(bitmapBrush, gradientBrush, BlendMode.SrcIn))
         drawPainter(brushPainter, Canvas(dstImage), size)
         val pixelMap = dstImage.toPixelMap()
         assertEquals(Color.Red, pixelMap[0, 0])

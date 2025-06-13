@@ -32,6 +32,7 @@ import androidx.test.uiautomator.scrollToElement
 import androidx.test.uiautomator.simpleViewResourceName
 import androidx.test.uiautomator.textAsString
 import androidx.test.uiautomator.uiAutomator
+import androidx.test.uiautomator.waitForStable
 import androidx.test.uiautomator.watcher.ScopedUiWatcher
 import org.junit.Before
 import org.junit.Test
@@ -72,6 +73,18 @@ class UiAutomatorTestScopeTest {
     fun waitForStable() = uiAutomator {
         startActivity(MainActivity::class.java)
         waitForStableInActiveWindow(stableTimeoutMs = 10000, stableIntervalMs = 5000)
+
+        // The timeout of onElement is set to `0`: this should fail if the previous transition
+        // hasn't completed.
+        onElement(0) { simpleViewResourceName() == "button" }.click()
+    }
+
+    @Test
+    @LargeTest
+    fun nodeWaitForStable() = uiAutomator {
+        startActivity(MainActivity::class.java)
+
+        onElement { packageName == APP_PACKAGE_NAME }.waitForStable()
 
         // The timeout of onElement is set to `0`: this should fail if the previous transition
         // hasn't completed.

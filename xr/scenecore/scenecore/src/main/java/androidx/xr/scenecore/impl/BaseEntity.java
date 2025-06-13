@@ -155,10 +155,10 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
                 mScale = scale;
                 break;
             case Space.ACTIVITY:
-                mScale = scale.div(getActivitySpaceScale());
+                mScale = scale.div(mParent.getActivitySpaceScale());
                 break;
             case Space.REAL_WORLD:
-                mScale = scale.div(getWorldSpaceScale());
+                mScale = scale.div(mParent.getWorldSpaceScale());
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);

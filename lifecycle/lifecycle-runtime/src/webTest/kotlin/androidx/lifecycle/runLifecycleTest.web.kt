@@ -17,9 +17,9 @@
 package androidx.lifecycle
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.promise
 import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.runTest
 
-actual fun runLifecycleTest(block: suspend CoroutineScope.() -> Unit): TestResult =
-    MainScope().promise { block() }
+actual fun runLifecycleTest(block: suspend CoroutineScope.() -> Unit): TestResult = runTest {
+    block()
+}

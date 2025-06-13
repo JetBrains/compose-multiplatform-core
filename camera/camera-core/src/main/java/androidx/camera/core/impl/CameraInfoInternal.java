@@ -295,9 +295,9 @@ public interface CameraInfoInternal extends CameraInfo {
      * allow feature combination resolutions.
      */
     default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions) {
+            int cameraMode, boolean isFeatureComboInvocation) {
         return isUseCaseCombinationSupported(useCases, cameraMode,
-                allowFeatureCombinationResolutions, CameraConfigs.defaultConfig());
+                isFeatureComboInvocation, CameraConfigs.defaultConfig());
     }
 
     /**
@@ -305,8 +305,7 @@ public interface CameraInfoInternal extends CameraInfo {
      * {@link CameraConfig}, and the option to allow feature combination resolutions.
      */
     default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions,
-            @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
         return false;
     }
 

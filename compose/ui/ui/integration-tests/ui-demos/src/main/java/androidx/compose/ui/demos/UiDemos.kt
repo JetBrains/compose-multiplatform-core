@@ -117,6 +117,7 @@ import androidx.compose.ui.demos.viewinterop.ViewInteropDemo
 import androidx.compose.ui.samples.NestedScrollConnectionSample
 import androidx.compose.ui.samples.SetFrameRateCategorySample
 import androidx.compose.ui.samples.SetFrameRateSample
+import androidx.compose.ui.samples.SourceAndTargetInsetsSample
 import androidx.compose.ui.samples.TraverseModifierDemo
 
 private val GestureDemos =
@@ -359,5 +360,8 @@ val CoreDemos =
             ComposableDemo("Screen coordinates") { ScreenCoordinatesDemo(it) },
             ComposableDemo("Clipboard") { ClipboardDemo() },
             ActivityDemo("Simple chat", SimpleChatActivity::class),
+            ComposableDemo("Window insets Source and Target Rulers") {
+                SourceAndTargetInsetsSample()
+            },
         ),
     )

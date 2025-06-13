@@ -267,6 +267,7 @@ public object PlaceholderDefaults {
  */
 @Stable
 public class PlaceholderState(isVisible: Boolean) {
+
     /**
      * Whether the placeholder should be visible. Note that if there is an animation running, this
      * is the target state for the animation.
@@ -585,6 +586,9 @@ internal class PlaceholderAnimationHelper() {
 
     /** Unregister as a user. Animations will not run if there are no users. */
     fun unregister() {
+        require(registeredUsers >= 1) {
+            "Calls to unregister() can't be more than calls to register()"
+        }
         AnimationCoordinator.unregister()
         registeredUsers--
     }

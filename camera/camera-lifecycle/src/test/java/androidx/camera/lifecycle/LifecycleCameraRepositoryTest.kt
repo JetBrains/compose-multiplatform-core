@@ -16,7 +16,6 @@
 package androidx.camera.lifecycle
 
 import android.os.Build
-import android.util.Range
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ExperimentalSessionConfig
@@ -29,7 +28,6 @@ import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
-import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.testing.fakes.FakeCamera
@@ -637,12 +635,11 @@ class LifecycleCameraRepositoryTest {
         useCases: List<UseCase>,
         viewPort: ViewPort? = null,
         effects: List<CameraEffect> = emptyList(),
-        targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         cameraCoordinator: CameraCoordinator? = defaultCameraCoordinator,
     ) {
         bindToLifecycleCamera(
             lifecycleCamera,
-            LegacySessionConfig(useCases, viewPort, effects, targetHighSpeedFrameRate),
+            LegacySessionConfig(useCases, viewPort, effects),
             cameraCoordinator,
         )
     }

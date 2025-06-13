@@ -168,7 +168,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
             boolean hasVideoCapture,
-            boolean allowFeatureCombinationResolutions,
+            boolean isFeatureComboInvocation,
             boolean findMaxSupportedFrameRate) {
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
@@ -187,7 +187,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                 newUseCaseConfigsSupportedSizeMap,
                 isPreviewStabilizationOn,
                 hasVideoCapture,
-                allowFeatureCombinationResolutions,
+                isFeatureComboInvocation,
                 findMaxSupportedFrameRate);
     }
 }

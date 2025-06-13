@@ -49,7 +49,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -187,7 +186,7 @@ internal fun Pager(
                     useLocalOverscrollFactory = false,
                     bringIntoViewSpec = pagerBringIntoViewSpec,
                 )
-                .dragDirectionDetector(state)
+                .dragOffsetDetector(state)
                 .nestedScroll(pageNestedScrollConnection),
         measurePolicy = measurePolicy,
         prefetchState = state.prefetchState,
@@ -279,27 +278,25 @@ private fun rememberPagerItemProviderLambda(
 }
 
 /** A modifier to detect up and down events in a Pager. */
-private fun Modifier.dragDirectionDetector(state: PagerState) =
-    this then
-        Modifier.pointerInput(state) {
-            coroutineScope {
-                awaitEachGesture {
-                    val downEvent =
-                        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    var upEventOrCancellation: PointerInputChange? = null
-                    state.upDownDifference = Offset.Zero // Reset
-                    while (upEventOrCancellation == null) {
-                        val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                        if (event.changes.fastAll { it.changedToUp() }) {
-                            // All pointers are up
-                            upEventOrCancellation = event.changes[0]
-                        }
+private fun Modifier.dragOffsetDetector(state: PagerState) =
+    this.pointerInput(state) {
+        coroutineScope {
+            awaitEachGesture {
+                val downEvent =
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                state.onGestureStarted()
+                var upEventOrCancellation: PointerInputChange? = null
+                while (upEventOrCancellation == null) {
+                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                    if (event.changes.fastAll { it.changedToUp() }) {
+                        // All pointers are up
+                        upEventOrCancellation = event.changes[0]
                     }
-
-                    state.upDownDifference = upEventOrCancellation.position - downEvent.position
                 }
+                state.onGestureFinished(upEventOrCancellation.position - downEvent.position)
             }
         }
+    }
 
 private class PagerBringIntoViewSpec(
     val pagerState: PagerState,
@@ -379,31 +376,34 @@ private class PagerWrapperFlingBehavior(
     val pagerState: PagerState,
 ) : FlingBehavior {
     override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-        val scope: ScrollScope = this
-        val resultVelocity =
-            with(originalFlingBehavior) {
-                performFling(initialVelocity) { remainingScrollOffset ->
-                    val flingPageDisplacement =
-                        if (pagerState.pageSizeWithSpacing != 0) {
-                            remainingScrollOffset / (pagerState.pageSizeWithSpacing)
-                        } else {
-                            0f
-                        }
-                    val targetPage = flingPageDisplacement.roundToInt() + pagerState.currentPage
-                    with(pagerState) { scope.updateTargetPage(targetPage) }
+        try {
+            val scope: ScrollScope = this
+            val resultVelocity =
+                with(originalFlingBehavior) {
+                    performFling(initialVelocity) { remainingScrollOffset ->
+                        val flingPageDisplacement =
+                            if (pagerState.pageSizeWithSpacing != 0) {
+                                remainingScrollOffset / (pagerState.pageSizeWithSpacing)
+                            } else {
+                                0f
+                            }
+                        val targetPage = flingPageDisplacement.roundToInt() + pagerState.currentPage
+                        with(pagerState) { scope.updateTargetPage(targetPage) }
+                    }
                 }
+
+            // fling finished, correct snapping for rounding
+            if (
+                pagerState.currentPageOffsetFraction != 0.0f &&
+                    pagerState.currentPageOffsetFraction.absoluteValue < 1e-3
+            ) {
+                pagerState.requestScrollToPage(pagerState.currentPage)
+            } else {
+                pagerState.currentPageOffsetFraction
             }
-
-        // fling finished, correct snapping for rounding
-        if (
-            pagerState.currentPageOffsetFraction != 0.0f &&
-                pagerState.currentPageOffsetFraction.absoluteValue < 1e-3
-        ) {
-            pagerState.requestScrollToPage(pagerState.currentPage)
-        } else {
-            pagerState.currentPageOffsetFraction
+            return resultVelocity
+        } finally {
+            pagerState.onFlingFinished()
         }
-
-        return resultVelocity
     }
 }

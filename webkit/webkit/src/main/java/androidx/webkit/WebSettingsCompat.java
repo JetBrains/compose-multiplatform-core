@@ -1341,10 +1341,9 @@ public class WebSettingsCompat {
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @param enabled  Whether cookie access during request intercept should be enabled.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static void setIncludeCookiesOnShouldInterceptRequest(
+    public static void setIncludeCookiesOnShouldInterceptRequestEnabled(
             @NonNull WebSettings settings, boolean enabled) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
         if (!feature.isSupportedByWebView()) {
@@ -1362,12 +1361,11 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @see #setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)
+     * @see #setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static boolean getIncludeCookiesOnShouldInterceptRequest(
+    public static boolean isIncludeCookiesOnShouldInterceptRequestEnabled(
             @NonNull WebSettings settings) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
         if (!feature.isSupportedByWebView()) {

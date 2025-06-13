@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"이 PDF는 수정할 수 없습니다."</string>
     <string name="clipboard_label" msgid="8943155331324944981">"PDF에서 복사된 콘텐츠"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"스크롤바"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"확인"</string>
 </resources>

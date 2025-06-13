@@ -32,6 +32,8 @@ import androidx.core.util.Preconditions;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Information about the success or failure of an AppSearch call.
@@ -60,7 +62,8 @@ public final class AppSearchResult<ValueType> {
             RESULT_DENIED,
             RESULT_RATE_LIMITED,
             RESULT_ALREADY_EXISTS,
-            RESULT_ABORTED
+            RESULT_ABORTED,
+            RESULT_UNAVAILABLE
     })
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
@@ -142,6 +145,14 @@ public final class AppSearchResult<ValueType> {
     @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ABORTED)
     @ExperimentalAppSearchApi
     public static final int RESULT_ABORTED = 13;
+
+    /**
+     * An error occurred due to AppSearch not having the necessary resources to execute the API
+     * call.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_UNAVAILABLE)
+    @ExperimentalAppSearchApi
+    public static final int RESULT_UNAVAILABLE = 14;
 
     @ResultCode private final int mResultCode;
     private final @Nullable ValueType mResultValue;
@@ -259,6 +270,7 @@ public final class AppSearchResult<ValueType> {
 
     /** @exportToFramework:hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static @NonNull <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
             @NonNull Throwable t) {
         // Log for traceability. NOT_FOUND is logged at VERBOSE because this error can occur during
@@ -279,7 +291,11 @@ public final class AppSearchResult<ValueType> {
 
         String exceptionClass = t.getClass().getSimpleName();
         @AppSearchResult.ResultCode int resultCode;
-        if (t instanceof IllegalStateException || t instanceof NullPointerException) {
+        if (t instanceof CancellationException || t instanceof InterruptedException) {
+            resultCode = AppSearchResult.RESULT_ABORTED;
+        } else if (t instanceof IllegalStateException
+                || t instanceof NullPointerException
+                || t instanceof ExecutionException) {
             resultCode = AppSearchResult.RESULT_INTERNAL_ERROR;
         } else if (t instanceof IllegalArgumentException) {
             resultCode = AppSearchResult.RESULT_INVALID_ARGUMENT;

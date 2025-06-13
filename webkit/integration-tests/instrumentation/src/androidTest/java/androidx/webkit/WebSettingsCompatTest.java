@@ -72,7 +72,7 @@ public class WebSettingsCompatTest {
     public void tearDown() {
         if (mWebViewOnUiThread != null) {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.COOKIE_INTERCEPT)) {
-                WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequest(
+                WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(
                         mWebViewOnUiThread.getSettings(), false);
             }
             mWebViewOnUiThread.cleanUp();
@@ -379,7 +379,7 @@ public class WebSettingsCompatTest {
     public void testCookieInterceptReceivesHeaderAndSetsCookies() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
         WebSettings settings = mWebViewOnUiThread.getSettings();
-        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequest(settings, true);
+        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(settings, true);
         settings.setJavaScriptEnabled(true);
 
         String interceptUrl = "http://example.com/intercept.html";
@@ -407,7 +407,7 @@ public class WebSettingsCompatTest {
     public void testCookieInterceptNoHeadersAndSetsNoCookiesIfDisabled() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
         WebSettings settings = mWebViewOnUiThread.getSettings();
-        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequest(settings, false);
+        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(settings, false);
         settings.setJavaScriptEnabled(true);
 
         String interceptUrl = "http://example.com/intercept.html";
@@ -443,7 +443,7 @@ public class WebSettingsCompatTest {
                                     new ByteArrayInputStream(
                                             "hello, world".getBytes(StandardCharsets.UTF_8)));
                             response.setCookies(List.of("bar=baz", "baz=foo"));
-                            return response;
+                            return response.toWebResourceResponse();
                         }
                         return null;
                     }

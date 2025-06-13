@@ -25,6 +25,7 @@ import androidx.xr.runtime.internal.Earth as RuntimeEarth
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakePerceptionManager
 import androidx.xr.runtime.testing.FakeRuntimeAnchor
+import androidx.xr.runtime.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.testing.FakeRuntimeEarth
 import androidx.xr.runtime.testing.FakeRuntimeHand
 import androidx.xr.runtime.testing.FakeRuntimePlane
@@ -75,6 +76,15 @@ class XrResourcesManagerTest {
 
         assertThat(underTest.leftHand).isNull()
         assertThat(underTest.rightHand).isNull()
+    }
+
+    @Test
+    fun initiateArDevice_setsArDevice() {
+        val runtimeArDevice = FakeRuntimeArDevice()
+
+        underTest.initiateArDevice(runtimeArDevice)
+
+        assertThat(underTest.arDevice.runtimeArDevice).isEqualTo(runtimeArDevice)
     }
 
     @Test

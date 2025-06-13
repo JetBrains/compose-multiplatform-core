@@ -19,6 +19,9 @@ package androidx.xr.glimmer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,29 +46,44 @@ import androidx.compose.ui.unit.dp
  * A surface is a fundamental building block in Glimmer. A surface represents a distinct visual area
  * or 'physical' boundary for components such as buttons and cards. A surface is responsible for:
  * 1) Clipping: a surface clips its children to the shape specified by [shape]
- * 2) Border: a surface draws an inner [border] to emphasize the boundary of the component
+ * 2) Border: a surface draws an inner [border] to emphasize the boundary of the component. When
+ *    focused, a surface draws a wider border with a focused highlight on top to indicate the focus
+ *    state.
  * 3) Background: a surface has a background color of [color].
  * 4) Content color: a surface provides a [contentColor] for text and icons inside the surface. By
  *    default this is calculated from the provided background color.
  *
+ * This surface is focusable by default - set [focusable] to false for un-interactive / decorative
+ * surfaces.
+ *
  * @sample androidx.xr.glimmer.samples.SurfaceSample
+ * @param focusable whether this surface is focusable, true by default. Most surfaces should be
+ *   focusable to allow navigation between surfaces in a screen. Unfocusable surfaces may be used
+ *   for decorative only elements, such as surfaces used in a compound component with a separate
+ *   focusable area.
  * @param shape the [Shape] used to clip this surface, and also used to draw the background and
  *   border
  * @param color the background [Color] for this surface
  * @param contentColor the [Color] for content inside this surface
  * @param border an optional inner border for this surface
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this surface. Note that if `null` is provided, interactions will
+ *   still happen internally.
  */
 @Composable
 public fun Modifier.surface(
+    focusable: Boolean = true,
     shape: Shape = SurfaceDefaults.Shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
+    interactionSource: MutableInteractionSource? = null,
 ): Modifier =
     this.clip(shape)
         .then(if (border != null) Modifier.border(border, shape) else Modifier)
         .background(color = color, shape = shape)
         .then(SurfaceNodeElement(contentColor))
+        .focusable(enabled = focusable, interactionSource = interactionSource)
 
 /** Default values used for [surface]. */
 public object SurfaceDefaults {

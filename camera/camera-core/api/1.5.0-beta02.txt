@@ -54,6 +54,7 @@ package androidx.camera.core {
     method public int getSensorRotationDegrees();
     method public int getSensorRotationDegrees(int);
     method public default java.util.Set<android.util.Range<java.lang.Integer!>!> getSupportedFrameRateRanges();
+    method @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public default java.util.Set<android.util.Range<java.lang.Integer!>!> getSupportedFrameRateRanges(androidx.camera.core.SessionConfig);
     method public androidx.lifecycle.LiveData<java.lang.Integer!> getTorchState();
     method public default androidx.lifecycle.LiveData<java.lang.Integer!> getTorchStrengthLevel();
     method public androidx.lifecycle.LiveData<androidx.camera.core.ZoomState!> getZoomState();
@@ -636,10 +637,13 @@ package androidx.camera.core {
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange);
     method public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
+    method public final android.util.Range<java.lang.Integer> getFrameRateRange();
     method public final java.util.List<androidx.camera.core.UseCase> getUseCases();
     method public final androidx.camera.core.ViewPort? getViewPort();
     property public final java.util.List<androidx.camera.core.CameraEffect> effects;
+    property public final android.util.Range<java.lang.Integer> frameRateRange;
     property public final java.util.List<androidx.camera.core.UseCase> useCases;
     property public final androidx.camera.core.ViewPort? viewPort;
   }
@@ -649,6 +653,7 @@ package androidx.camera.core {
     ctor public SessionConfig.Builder(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     method public androidx.camera.core.SessionConfig.Builder addEffect(androidx.camera.core.CameraEffect effect);
     method public androidx.camera.core.SessionConfig build();
+    method public androidx.camera.core.SessionConfig.Builder setFrameRateRange(android.util.Range<java.lang.Integer> frameRateRange);
     method public androidx.camera.core.SessionConfig.Builder setViewPort(androidx.camera.core.ViewPort viewPort);
   }
 

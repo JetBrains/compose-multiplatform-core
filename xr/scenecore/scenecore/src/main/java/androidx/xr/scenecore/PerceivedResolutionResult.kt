@@ -16,17 +16,15 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.IntSize2d
 
-// TODO(b/418014995): Move this and PixelDimensions as top-level Runtime classes
+// TODO(b/418014995): Move this to top-level Runtime classes
 /**
  * Represents the outcome of an attempt to calculate the perceived resolution of an entity. This
  * sealed class encapsulates the different states: success with the calculated dimensions, or
  * specific failure reasons.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public sealed class PerceivedResolutionResult {
+public abstract class PerceivedResolutionResult internal constructor() {
 
     /**
      * Indicates that the perceived resolution was successfully calculated.

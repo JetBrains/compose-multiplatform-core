@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
+import android.util.Range
 import android.util.Rational
 import android.view.Surface
 import androidx.annotation.OptIn
@@ -82,6 +83,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assume.assumeTrue
+import org.junit.AssumptionViolatedException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -1006,6 +1008,47 @@ class ProcessCameraProviderTest(
             // Assert.
             assertThat(preview.effect).isEqualTo(effect)
             assertThat(provider.isConcurrentCameraModeOn).isFalse()
+        }
+    }
+
+    @Test
+    fun bindSessionConfig_withSupportedFrameRate(): Unit = runBlocking {
+        // Arrange.
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        val provider = ProcessCameraProvider.getInstance(context).await()
+        val preview = Preview.Builder().build()
+        val cameraInfo = provider.getCameraInfo(cameraSelector)
+        val availableFrameRateRanges =
+            cameraInfo.getSupportedFrameRateRanges(SessionConfig(useCases = listOf(preview)))
+        val expectedFrameRateRange =
+            availableFrameRateRanges.firstOrNull()
+                ?: throw AssumptionViolatedException("No supported frame rate")
+        val sessionConfig =
+            SessionConfig(useCases = listOf(preview), frameRateRange = expectedFrameRateRange)
+
+        withContext(Dispatchers.Main) {
+            // Act.
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig)
+        }
+
+        assertThat(preview.attachedStreamSpec!!.expectedFrameRateRange)
+            .isEqualTo(expectedFrameRateRange)
+    }
+
+    @Test
+    fun bindSessionConfig_withUnsupportedFrameRate_throwException(): Unit = runBlocking {
+        // Arrange.
+        ProcessCameraProvider.configureInstance(cameraConfig)
+        val provider = ProcessCameraProvider.getInstance(context).await()
+        val preview = Preview.Builder().build()
+        val sessionConfig =
+            SessionConfig(useCases = listOf(preview), frameRateRange = Range(1, 100))
+
+        withContext(Dispatchers.Main) {
+            // Act & Assert.
+            assertThrows(IllegalArgumentException::class.java) {
+                provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig)
+            }
         }
     }
 

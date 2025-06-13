@@ -46,7 +46,10 @@ public data class ValueInternal(
             "DOUBLE" -> parcel.writeDouble(value as Double)
             "BOOLEAN" -> parcel.writeBoolean(value as Boolean)
             "STRING" -> parcel.writeString(value as String)
-            "STRING_SET" -> parcel.writeStringList(value as List<String?>?)
+            "STRING_SET" -> {
+                val valueSet = value as Set<*>
+                parcel.writeStringList(valueSet.toList() as List<String?>?)
+            }
             "BYTE_ARRAY" -> parcel.writeByteArray(value as ByteArray)
             else -> throw IllegalArgumentException("Unsupported type: $type")
         }
@@ -71,12 +74,12 @@ public data class ValueInternal(
                         "DOUBLE" -> parcel.readDouble()
                         "BOOLEAN" -> parcel.readBoolean()
                         "STRING" -> parcel.readString()
-                        "STRING_SET" -> parcel.createStringArrayList()
+                        "STRING_SET" -> parcel.createStringArrayList()?.toSet()
                         "BYTE_ARRAY" -> parcel.createByteArray()
                         else -> throw IllegalArgumentException("Unsupported type: $type")
                     }
                 } else {
-                    null
+                    parcel.readString()
                 }
             return ValueInternal(type, isValueNull, value)
         }

@@ -47,6 +47,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
@@ -150,13 +151,15 @@ class HandTrackingActivity : ComponentActivity() {
                     lifecycleScope.launch {
                         session.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                             setContent { MainPanel(session) }
-                            val xyzModel = GltfModel.create(session, "models/xyzArrows.glb").await()
+                            val xyzModel =
+                                GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
+                                    .await()
 
                             val leftHandJointEntityMap =
                                 HandJointType.entries.associateWith {
                                     GltfModelEntity.create(session, xyzModel).also {
                                         it.setScale(0.015f)
-                                        it.setHidden(true)
+                                        it.setEnabled(false)
                                     }
                                 }
 
@@ -164,7 +167,7 @@ class HandTrackingActivity : ComponentActivity() {
                                 HandJointType.entries.associateWith {
                                     GltfModelEntity.create(session, xyzModel).also {
                                         it.setScale(0.015f)
-                                        it.setHidden(true)
+                                        it.setEnabled(false)
                                     }
                                 }
 
@@ -192,11 +195,11 @@ class HandTrackingActivity : ComponentActivity() {
     ) {
         for ((jointType, gltfModelEntity) in jointEntityMap) {
             if (handState.trackingState == TrackingState.TRACKING) {
-                // According to the experiment, calling setHidden will significantly
-                // increase the latency. Thus, check the hidden state before calling
-                // setHidden.
-                if (gltfModelEntity.isHidden(false)) {
-                    gltfModelEntity.setHidden(false)
+                // According to the experiment, calling setEnabled will significantly
+                // increase the latency. Thus, check the enabled state before calling
+                // setEnabled.
+                if (!gltfModelEntity.isEnabled(false)) {
+                    gltfModelEntity.setEnabled(true)
                 }
                 val transformedPose =
                     session.scene.perceptionSpace.transformPoseTo(
@@ -205,13 +208,13 @@ class HandTrackingActivity : ComponentActivity() {
                     )
                 gltfModelEntity.setPose(transformedPose)
             } else {
-                // According to the experiment, calling setHidden will significantly
-                // increase the latency. Thus, check the hidden state before calling
-                // setHidden.
-                if (gltfModelEntity.isHidden(false)) {
+                // According to the experiment, calling setEnabled will significantly
+                // increase the latency. Thus, check the enabled state before calling
+                // setEnabbled.
+                if (!gltfModelEntity.isEnabled(false)) {
                     return
                 }
-                gltfModelEntity.setHidden(true)
+                gltfModelEntity.setEnabled(false)
             }
         }
     }
@@ -306,7 +309,7 @@ class HandTrackingActivity : ComponentActivity() {
             if (leftHand == null || rightHand == null) {
                 Text("Hand module is not supported.")
             } else {
-                val handedness = Hand.getHandedness(contentResolver)
+                val handedness = Hand.getPrimaryHandSide(contentResolver)
                 Text("Handedness: ${handedness}")
                 val leftHandState = leftHand.state.collectAsState().value
                 val rightHandState = rightHand.state.collectAsState().value

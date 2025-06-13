@@ -128,11 +128,12 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
 
         val platform = getPlatform(parameters.konanTarget)
 
-        // Specify max-page-size to align ELF regions to 16kb
+        // Specify max-page-size to align ELF regions to 16kb and use LLVM linker
+        // See https://youtrack.jetbrains.com/issue/KT-71728
         val linkerFlags =
             parameters.linkerArgs.get() +
                 if (parameters.konanTarget.get().asKonanTarget.family == Family.ANDROID) {
-                    listOf("-z", "max-page-size=16384")
+                    listOf("-fuse-ld=lld", "-z", "max-page-size=16384")
                 } else {
                     emptyList()
                 }

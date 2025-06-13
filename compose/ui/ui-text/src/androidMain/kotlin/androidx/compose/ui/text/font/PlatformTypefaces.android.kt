@@ -23,8 +23,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.util.fastJoinToString
 
 /** Primary internal interface for resolving typefaces from Android platform */
 internal interface PlatformTypefaces {
@@ -259,14 +257,6 @@ private object TypefaceCompatApi26 {
         localPaint.typeface = typeface
         localPaint.fontVariationSettings = variationSettings.toAndroidString(context)
         return localPaint.typeface
-    }
-
-    @ExperimentalTextApi
-    private fun FontVariation.Settings.toAndroidString(context: Context): String {
-        val density = Density(context)
-        return settings.fastJoinToString { setting ->
-            "'${setting.axisName}' ${setting.toVariationValue(density)}"
-        }
     }
 }
 

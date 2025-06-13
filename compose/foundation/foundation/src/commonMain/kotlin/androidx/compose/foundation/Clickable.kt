@@ -17,10 +17,12 @@
 package androidx.compose.foundation
 
 import androidx.collection.mutableLongObjectMapOf
+import androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.ScrollableContainerNode
 import androidx.compose.foundation.gestures.detectTapAndPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.isChangedToDown
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -32,6 +34,7 @@ import androidx.compose.ui.focus.FocusRequesterModifierNode
 import androidx.compose.ui.focus.Focusability
 import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
@@ -44,8 +47,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.isOutOfBounds
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
@@ -57,6 +62,7 @@ import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -71,6 +77,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
+import kotlin.math.max
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -936,16 +945,104 @@ internal open class ClickableNode(
         role = role,
         onClick = onClick,
     ) {
-    override suspend fun PointerInputScope.clickPointerInput() {
-        detectTapAndPress(
-            onPress = { offset ->
-                if (enabled) {
-                    requestFocusWhenInMouseInputMode()
-                    handlePressInteraction(offset)
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private val isSuspendingPointerInputEnabled =
+        // old behavior prior this flag was heavily relying on coroutines dispatching
+        !isDetectTapGesturesImmediateCoroutineDispatchEnabled ||
+            !ComposeFoundationFlags.isNonSuspendingPointerInputInClickableEnabled
+
+    override fun createPointerInputNodeIfNeeded(): SuspendingPointerInputModifierNode? =
+        if (isSuspendingPointerInputEnabled) {
+            SuspendingPointerInputModifierNode {
+                detectTapAndPress(
+                    onPress = { offset ->
+                        if (enabled) {
+                            requestFocusWhenInMouseInputMode()
+
+                            handlePressInteraction(offset)
+                        }
+                    },
+                    onTap = { if (enabled) onClick() },
+                )
+            }
+        } else {
+            null
+        }
+
+    private fun getExtendedTouchPadding(size: IntSize): Size {
+        // copied from SuspendingPointerInputModifierNodeImpl.extendedTouchPadding:
+        // TODO expose this as a new public api available outside of suspending apis b/422396609
+        val minimumTouchTargetSizeDp = currentValueOf(LocalViewConfiguration).minimumTouchTargetSize
+        val minimumTouchTargetSize = with(requireDensity()) { minimumTouchTargetSizeDp.toSize() }
+        val size = size
+        val horizontal = max(0f, minimumTouchTargetSize.width - size.width) / 2f
+        val vertical = max(0f, minimumTouchTargetSize.height - size.height) / 2f
+        return Size(horizontal, vertical)
+    }
+
+    private var downEvent: PointerInputChange? = null
+
+    @OptIn(ExperimentalFoundationApi::class)
+    override fun onPointerEvent(
+        pointerEvent: PointerEvent,
+        pass: PointerEventPass,
+        bounds: IntSize,
+    ) {
+        super.onPointerEvent(pointerEvent, pass, bounds)
+        if (isSuspendingPointerInputEnabled) {
+            return
+        }
+        if (pass == PointerEventPass.Main) {
+            val downEvent = this.downEvent
+            if (downEvent == null) {
+                if (pointerEvent.isChangedToDown(requireUnconsumed = true)) {
+                    val change = pointerEvent.changes[0]
+                    change.consume()
+                    this.downEvent = change
+                    if (enabled) {
+                        requestFocusWhenInMouseInputMode()
+                        handlePressInteractionStart(change.position)
+                    }
                 }
-            },
-            onTap = { if (enabled) onClick() },
-        )
+            } else if (pointerEvent.changes.fastAll { it.changedToUp() }) {
+                // All pointers are up
+                val up = pointerEvent.changes[0]
+                up.consume()
+                if (enabled) {
+                    handlePressInteractionRelease(downEvent.position)
+                    onClick()
+                }
+                this.downEvent = null
+            } else {
+                val touchPadding = getExtendedTouchPadding(bounds)
+                if (
+                    pointerEvent.changes.fastAny {
+                        it.isConsumed || it.isOutOfBounds(bounds, touchPadding)
+                    }
+                ) {
+                    // Canceled
+                    this.downEvent = null
+                    handlePressInteractionCancel()
+                }
+            }
+        } else if (pass == PointerEventPass.Final && downEvent != null) {
+            // Check for cancel by position consumption. We can look on the Final pass of the
+            // existing pointer event because it comes after the pass we checked above.
+            if (pointerEvent.changes.fastAny { it.isConsumed && it != downEvent }) {
+                // Canceled
+                downEvent = null
+                handlePressInteractionCancel()
+            }
+        }
+    }
+
+    override fun onCancelPointerInput() {
+        super.onCancelPointerInput()
+        if (downEvent != null) {
+            downEvent = null
+            handlePressInteractionCancel()
+        }
     }
 
     fun update(
@@ -1008,7 +1105,7 @@ private class CombinedClickableNode(
     private val longKeyPressJobs = mutableLongObjectMapOf<Job>()
     private val doubleKeyClickStates = mutableLongObjectMapOf<DoubleKeyClickState>()
 
-    override suspend fun PointerInputScope.clickPointerInput() {
+    override fun createPointerInputNodeIfNeeded() = SuspendingPointerInputModifierNode {
         detectTapGestures(
             onDoubleTap =
                 if (enabled && onDoubleClick != null) {
@@ -1282,7 +1379,7 @@ internal abstract class AbstractClickableNode(
      * Handles subclass-specific click related pointer input logic. Hover is already handled
      * elsewhere, so this should only handle clicks.
      */
-    abstract suspend fun PointerInputScope.clickPointerInput()
+    abstract fun createPointerInputNodeIfNeeded(): SuspendingPointerInputModifierNode?
 
     open fun SemanticsPropertyReceiver.applyAdditionalSemantics() {}
 
@@ -1450,7 +1547,7 @@ internal abstract class AbstractClickableNode(
         }
     }
 
-    final override fun onPointerEvent(
+    override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
         bounds: IntSize,
@@ -1466,12 +1563,15 @@ internal abstract class AbstractClickableNode(
             }
         }
         if (pointerInputNode == null) {
-            pointerInputNode = delegate(SuspendingPointerInputModifierNode { clickPointerInput() })
+            val node = createPointerInputNodeIfNeeded()
+            if (node != null) {
+                pointerInputNode = delegate(node)
+            }
         }
         pointerInputNode?.onPointerEvent(pointerEvent, pass, bounds)
     }
 
-    final override fun onCancelPointerInput() {
+    override fun onCancelPointerInput() {
         // Press cancellation is handled as part of detecting presses
         interactionSource?.let { interactionSource ->
             hoverInteraction?.let { oldValue ->
@@ -1560,6 +1660,67 @@ internal abstract class AbstractClickableNode(
     }
 
     protected fun resetPointerInputHandler() = pointerInputNode?.resetPointerInputHandler()
+
+    private var delayJob: Job? = null
+
+    protected fun handlePressInteractionStart(offset: Offset) {
+        interactionSource?.let { interactionSource ->
+            val press = PressInteraction.Press(offset)
+            if (delayPressInteraction()) {
+                delayJob =
+                    coroutineScope.launch {
+                        delay(TapIndicationDelay)
+                        interactionSource.emit(press)
+                        pressInteraction = press
+                    }
+            } else {
+                pressInteraction = press
+                coroutineScope.launch { interactionSource.emit(press) }
+            }
+        }
+    }
+
+    protected fun handlePressInteractionRelease(offset: Offset) {
+        interactionSource?.let { interactionSource ->
+            if (delayJob?.isActive == true) {
+                coroutineScope.launch {
+                    delayJob?.cancelAndJoin()
+                    // The press released successfully, before the timeout duration - emit the press
+                    // interaction instantly.
+                    val press = PressInteraction.Press(offset)
+                    val release = PressInteraction.Release(press)
+                    interactionSource.emit(press)
+                    interactionSource.emit(release)
+                }
+            } else {
+                pressInteraction?.let { pressInteraction ->
+                    coroutineScope.launch {
+                        val endInteraction = PressInteraction.Release(pressInteraction)
+                        interactionSource.emit(endInteraction)
+                    }
+                }
+            }
+            pressInteraction = null
+        }
+    }
+
+    protected fun handlePressInteractionCancel() {
+        interactionSource?.let { interactionSource ->
+            if (delayJob?.isActive == true) {
+                // We didn't finish sending the press, and we are cancelled, so we don't emit
+                // any interaction.
+                delayJob?.cancel()
+            } else {
+                pressInteraction?.let { pressInteraction ->
+                    coroutineScope.launch {
+                        val endInteraction = PressInteraction.Cancel(pressInteraction)
+                        interactionSource.emit(endInteraction)
+                    }
+                }
+            }
+            pressInteraction = null
+        }
+    }
 
     protected suspend fun PressGestureScope.handlePressInteraction(offset: Offset) {
         interactionSource?.let { interactionSource ->

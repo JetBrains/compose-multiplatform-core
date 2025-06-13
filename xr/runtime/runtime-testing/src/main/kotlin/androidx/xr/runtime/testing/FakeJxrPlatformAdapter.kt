@@ -37,6 +37,7 @@ import androidx.xr.runtime.internal.HeadActivityPose
 import androidx.xr.runtime.internal.InputEventListener
 import androidx.xr.runtime.internal.InteractableComponent
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.KhronosPbrMaterialSpec
 import androidx.xr.runtime.internal.LoggingEntity
 import androidx.xr.runtime.internal.MaterialResource
 import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper
@@ -58,7 +59,10 @@ import androidx.xr.runtime.internal.SubspaceNodeEntity
 import androidx.xr.runtime.internal.SurfaceEntity
 import androidx.xr.runtime.internal.TextureResource
 import androidx.xr.runtime.internal.TextureSampler
+import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.math.Vector4
 import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.Futures.immediateFailedFuture
 import com.google.common.util.concurrent.ListenableFuture
@@ -164,21 +168,185 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun destroyWaterMaterial(material: MaterialResource) {}
 
-    override fun setReflectionMap(material: MaterialResource, reflectionMap: TextureResource) {}
+    override fun setReflectionMapOnWaterMaterial(
+        material: MaterialResource,
+        reflectionMap: TextureResource,
+    ) {}
 
-    override fun setNormalMap(material: MaterialResource, normalMap: TextureResource) {}
+    override fun setNormalMapOnWaterMaterial(
+        material: MaterialResource,
+        normalMap: TextureResource,
+    ) {}
 
-    override fun setNormalTiling(material: MaterialResource, normalTiling: Float) {}
+    override fun setNormalTilingOnWaterMaterial(material: MaterialResource, normalTiling: Float) {}
 
-    override fun setNormalSpeed(material: MaterialResource, normalSpeed: Float) {}
+    override fun setNormalSpeedOnWaterMaterial(material: MaterialResource, normalSpeed: Float) {}
 
-    override fun setAlphaStepMultiplier(material: MaterialResource, alphaStepMultiplier: Float) {}
+    override fun setAlphaStepMultiplierOnWaterMaterial(
+        material: MaterialResource,
+        alphaStepMultiplier: Float,
+    ) {}
 
-    override fun setAlphaMap(material: MaterialResource, alphaMap: TextureResource) {}
+    override fun setAlphaMapOnWaterMaterial(
+        material: MaterialResource,
+        alphaMap: TextureResource,
+    ) {}
 
-    override fun setNormalZ(material: MaterialResource, normalZ: Float) {}
+    override fun setNormalZOnWaterMaterial(material: MaterialResource, normalZ: Float) {}
 
-    override fun setNormalBoundary(material: MaterialResource, normalBoundary: Float) {}
+    override fun setNormalBoundaryOnWaterMaterial(
+        material: MaterialResource,
+        normalBoundary: Float,
+    ) {}
+
+    @Suppress("AsyncSuffixFuture")
+    override fun createKhronosPbrMaterial(
+        spec: KhronosPbrMaterialSpec
+    ): ListenableFuture<MaterialResource>? =
+        immediateFailedFuture<MaterialResource>(NotImplementedError())
+
+    override fun destroyKhronosPbrMaterial(material: MaterialResource) {}
+
+    override fun setBaseColorTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        baseColor: TextureResource,
+    ) {}
+
+    override fun setBaseColorUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setBaseColorFactorsOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factors: Vector4,
+    ) {}
+
+    override fun setMetallicRoughnessTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        metallicRoughness: TextureResource,
+    ) {}
+
+    override fun setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setMetallicFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float) {}
+
+    override fun setRoughnessFactorOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factor: Float,
+    ) {}
+
+    override fun setNormalTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        normal: TextureResource,
+    ) {}
+
+    override fun setNormalUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setNormalFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float) {}
+
+    override fun setAmbientOcclusionTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        ambientOcclusion: TextureResource,
+    ) {}
+
+    override fun setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setAmbientOcclusionFactorOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factor: Float,
+    ) {}
+
+    override fun setEmissiveTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        emissive: TextureResource,
+    ) {}
+
+    override fun setEmissiveUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setEmissiveFactorsOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factors: Vector3,
+    ) {}
+
+    override fun setClearcoatTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        clearcoat: TextureResource,
+    ) {}
+
+    override fun setClearcoatNormalTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        clearcoatNormal: TextureResource,
+    ) {}
+
+    override fun setClearcoatRoughnessTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        clearcoatRoughness: TextureResource,
+    ) {}
+
+    override fun setClearcoatFactorsOnKhronosPbrMaterial(
+        material: MaterialResource,
+        intensity: Float,
+        roughness: Float,
+        normal: Float,
+    ) {}
+
+    override fun setSheenColorTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        sheenColor: TextureResource,
+    ) {}
+
+    override fun setSheenColorFactorsOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factors: Vector3,
+    ) {}
+
+    override fun setSheenRoughnessTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        sheenRoughness: TextureResource,
+    ) {}
+
+    override fun setSheenRoughnessFactorOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factor: Float,
+    ) {}
+
+    override fun setTransmissionTextureOnKhronosPbrMaterial(
+        material: MaterialResource,
+        transmission: TextureResource,
+    ) {}
+
+    override fun setTransmissionUvTransformOnKhronosPbrMaterial(
+        material: MaterialResource,
+        uvTransform: Matrix3,
+    ) {}
+
+    override fun setTransmissionFactorOnKhronosPbrMaterial(
+        material: MaterialResource,
+        factor: Float,
+    ) {}
+
+    override fun setIndexOfRefractionOnKhronosPbrMaterial(
+        material: MaterialResource,
+        indexOfRefraction: Float,
+    ) {}
+
+    override fun setAlphaCutoffOnKhronosPbrMaterial(
+        material: MaterialResource,
+        alphaCutoff: Float,
+    ) {}
 
     override fun createGltfEntity(
         pose: Pose,

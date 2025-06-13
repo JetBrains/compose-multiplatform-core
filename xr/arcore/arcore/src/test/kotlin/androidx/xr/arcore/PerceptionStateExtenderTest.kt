@@ -19,6 +19,7 @@ package androidx.xr.arcore
 import android.app.Activity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.CoreState
+import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
@@ -26,6 +27,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntime
+import androidx.xr.runtime.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.runtime.testing.FakeRuntimeHand
 import androidx.xr.runtime.testing.FakeRuntimePlane
@@ -197,6 +199,59 @@ class PerceptionStateExtenderTest {
                 handJoints[jointType]!!.rotation,
             )
         }
+    }
+
+    @Test
+    fun extend_withTwoStates_arDeviceStateUpdated(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(fakeRuntime)
+        val coreState = CoreState(timeSource.markNow())
+        underTest.extend(coreState)
+        check(coreState.perceptionState!!.arDevice.state.value.devicePose == Pose())
+
+        // act
+        timeSource += 10.milliseconds
+        val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+
+        val runtimeArDevice = fakeRuntime.perceptionManager.arDevice!! as FakeRuntimeArDevice
+        runtimeArDevice.devicePose = expectedDevicePose
+        val coreState2 = CoreState(timeSource.markNow())
+        underTest.extend(coreState2)
+
+        // assert
+        assertThat(coreState2.perceptionState!!.arDevice.state.value.devicePose)
+            .isEqualTo(expectedDevicePose)
+    }
+
+    @Test
+    fun extend_withTwoStates_viewCameraStateUpdated(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(fakeRuntime)
+        val coreState = CoreState(timeSource.markNow())
+        underTest.extend(coreState)
+        check(coreState.perceptionState!!.viewCameras.isNotEmpty())
+        check(coreState.perceptionState!!.viewCameras[0].state.value.pose == Pose())
+        check(
+            coreState.perceptionState!!.viewCameras[0].state.value.fieldOfView ==
+                FieldOfView(0f, 0f, 0f, 0f)
+        )
+
+        // act
+        timeSource += 10.milliseconds
+        val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+        val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+
+        val runtimeViewCamera = fakeRuntime.perceptionManager.viewCameras[0]
+        runtimeViewCamera.pose = expectedPose
+        runtimeViewCamera.fieldOfView = expectedFov
+        val coreState2 = CoreState(timeSource.markNow())
+        underTest.extend(coreState2)
+
+        // assert
+        assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.pose)
+            .isEqualTo(expectedPose)
+        assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.fieldOfView)
+            .isEqualTo(expectedFov)
     }
 
     @Test

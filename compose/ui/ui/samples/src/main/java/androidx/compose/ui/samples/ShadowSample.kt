@@ -25,8 +25,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.shadow.DropShadow
-import androidx.compose.ui.graphics.shadow.InnerShadow
+import androidx.compose.ui.graphics.shadow.ShadowParams
 import androidx.compose.ui.unit.dp
 
 @Sampled
@@ -38,11 +37,11 @@ fun ShadowSample() {
 @Sampled
 @Composable
 fun DropShadowSample() {
-    Box(Modifier.size(100.dp, 100.dp).dropShadow(RectangleShape, DropShadow(12.dp)))
+    Box(Modifier.size(100.dp, 100.dp).dropShadow(RectangleShape, ShadowParams(12.dp)))
 }
 
 @Sampled
 @Composable
 fun InnerShadowSample() {
-    Box(Modifier.size(100.dp, 100.dp).innerShadow(RectangleShape, InnerShadow(12.dp)))
+    Box(Modifier.size(100.dp, 100.dp).innerShadow(RectangleShape, ShadowParams(12.dp)))
 }

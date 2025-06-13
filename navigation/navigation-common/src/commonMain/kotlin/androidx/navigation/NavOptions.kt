@@ -102,7 +102,7 @@ public expect class NavOptions {
     public fun shouldPopUpToSaveState(): Boolean
 
     /** Builder for constructing new instances of NavOptions. */
-    public class Builder {
+    public class Builder() {
 
         /**
          * Launch a navigation target as single-top if you are making a lateral navigation between

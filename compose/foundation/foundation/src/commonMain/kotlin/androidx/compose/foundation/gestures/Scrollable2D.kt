@@ -19,6 +19,7 @@ package androidx.compose.foundation.gestures
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.splineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isFlingContinuationAtBoundsEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.OverscrollEffect
@@ -447,7 +448,14 @@ private class ScrollingLogic2D(
                         override fun scrollBy(pixels: Float): Float {
                             val pixelsOffset = pixels.toDecomposedOffset()
 
-                            if (shouldCancelFling(pixelsOffset)) {
+                            val cancelFling =
+                                if (isFlingContinuationAtBoundsEnabled) {
+                                    !isScrollableNodeAttached.invoke()
+                                } else {
+                                    shouldCancelFling(pixelsOffset)
+                                }
+
+                            if (pixelsOffset != Offset.Zero && cancelFling) {
                                 throw FlingCancellationException()
                             }
 

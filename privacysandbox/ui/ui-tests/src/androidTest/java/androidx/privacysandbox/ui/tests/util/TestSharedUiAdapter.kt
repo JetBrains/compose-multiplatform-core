@@ -23,8 +23,13 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
+// TODO(b/340471014): remove global latches once shared UI event listener is implemented.
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-class TestSharedUiAdapter(private val isFailingSession: Boolean = false) : SharedUiAdapter {
+class TestSharedUiAdapter(
+    private val isFailingSession: Boolean = false,
+    private val globalOpenSessionLatch: CountDownLatch? = null,
+    private val globalCloseSessionLatch: CountDownLatch? = null,
+) : SharedUiAdapter {
     private val openSessionLatch: CountDownLatch = CountDownLatch(1)
     private val closeSessionLatch: CountDownLatch = CountDownLatch(1)
 
@@ -45,18 +50,24 @@ class TestSharedUiAdapter(private val isFailingSession: Boolean = false) : Share
     lateinit var session: SharedUiAdapter.Session
     lateinit var client: SharedUiAdapter.SessionClient
 
+    fun triggerOnSessionError() {
+        client.onSessionError(Throwable("Test Exception"))
+    }
+
     override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
         session =
             if (isFailingSession) FailingTestSession(client, clientExecutor)
             else TestSession(client)
         client.onSessionOpened(session)
         openSessionLatch.countDown()
+        globalOpenSessionLatch?.countDown()
     }
 
     inner class TestSession(val sessionClient: SharedUiAdapter.SessionClient) :
         SharedUiAdapter.Session {
         override fun close() {
             closeSessionLatch.countDown()
+            globalCloseSessionLatch?.countDown()
         }
     }
 

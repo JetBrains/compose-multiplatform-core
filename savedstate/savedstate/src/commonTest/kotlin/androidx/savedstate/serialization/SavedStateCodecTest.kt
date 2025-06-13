@@ -18,6 +18,7 @@ package androidx.savedstate.serialization
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
+import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.RobolectricTest
 import androidx.savedstate.SavedState
 import androidx.savedstate.read
@@ -46,6 +47,7 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlinx.serialization.serializer
 
+@IgnoreWebTarget
 @ExperimentalSerializationApi
 internal class SavedStateCodecTest : RobolectricTest() {
     @Test

@@ -66,7 +66,6 @@ import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.roundToLong
 import kotlin.math.sign
-import kotlin.ranges.IntRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -184,7 +183,16 @@ internal constructor(
     }
 
     /** Difference between the last up and last down events of a scroll event. */
-    internal var upDownDifference: Offset by mutableStateOf(Offset.Zero)
+    private var upDownDifference: Offset by mutableStateOf(Offset.Zero)
+    internal val dragGestureDelta
+        get() =
+            if (layoutInfo.orientation == Orientation.Horizontal) {
+                upDownDifference.x
+            } else {
+                upDownDifference.y
+            }
+
+    private var showWaitForFling: Boolean = false
 
     private val scrollPosition = PagerScrollPosition(currentPage, currentPageOffsetFraction, this)
 
@@ -396,14 +404,8 @@ internal constructor(
      *
      * @sample androidx.compose.foundation.samples.ObservingStateChangesInPagerStateSample
      */
-    val settledPage by
-        derivedStateOf(structuralEqualityPolicy()) {
-            if (isScrollInProgress) {
-                settledPageState
-            } else {
-                this.currentPage
-            }
-        }
+    val settledPage: Int
+        get() = settledPageState
 
     /**
      * The page this [Pager] intends to settle to. During fling or animated scroll (from
@@ -636,12 +638,25 @@ internal constructor(
         block: suspend ScrollScope.() -> Unit,
     ) {
         awaitScrollDependencies()
-        // will scroll and it's not scrolling already update settled page
-        if (!isScrollInProgress) {
-            settledPageState = currentPage
+        try {
+            scrollableState.scroll(scrollPriority, block)
+        } finally {
+            programmaticScrollTargetPage = -1 // reset animated scroll target page indicator
+            if (!showWaitForFling) settledPageState = currentPage
         }
-        scrollableState.scroll(scrollPriority, block)
-        programmaticScrollTargetPage = -1 // reset animated scroll target page indicator
+    }
+
+    internal fun onGestureStarted() {
+        upDownDifference = Offset.Zero
+        showWaitForFling = true
+    }
+
+    internal fun onGestureFinished(offset: Offset) {
+        upDownDifference = offset
+    }
+
+    internal fun onFlingFinished() {
+        showWaitForFling = false
     }
 
     override fun dispatchRawDelta(delta: Float): Float {

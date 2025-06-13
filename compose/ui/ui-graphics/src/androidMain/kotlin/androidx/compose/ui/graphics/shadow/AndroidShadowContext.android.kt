@@ -24,10 +24,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 
 private typealias DropShadowCache =
-    MutableScatterMap<AndroidShadowContext.DropShadowKey, DropShadowRenderer>
+    MutableScatterMap<AndroidShadowContext.ShadowKey, DropShadowRenderer>
 
 private typealias InnerShadowCache =
-    MutableScatterMap<AndroidShadowContext.InnerShadowKey, InnerShadowRenderer>
+    MutableScatterMap<AndroidShadowContext.ShadowKey, InnerShadowRenderer>
 
 /** Create a new [ShadowContext] */
 fun ShadowContext(): ShadowContext = AndroidShadowContext()
@@ -37,20 +37,15 @@ private class AndroidShadowContext :
 
     private var dropShadowCache: DropShadowCache? = null
     private var innerShadowCache: InnerShadowCache? = null
-    private var dropShadowKey: DropShadowKey? = null
-    private var innerShadowKey: InnerShadowKey? = null
+    private var shadowKey: ShadowKey? = null
 
     private fun obtainDropShadowCache(): DropShadowCache =
         dropShadowCache ?: DropShadowCache().also { dropShadowCache = it }
 
-    private fun obtainDropShadowKey(): DropShadowKey =
-        dropShadowKey ?: DropShadowKey().also { dropShadowKey = it }
-
     private fun obtainInnerShadowCache(): InnerShadowCache =
         innerShadowCache ?: InnerShadowCache().also { innerShadowCache = it }
 
-    private fun obtainInnerShadowKey(): InnerShadowKey =
-        innerShadowKey ?: InnerShadowKey().also { innerShadowKey = it }
+    private fun obtainShadowKey(): ShadowKey = shadowKey ?: ShadowKey().also { shadowKey = it }
 
     // Class to represent a lookup key for cached ShadowRenderer implementations
     // Note: Take care not to mutate a key which is used in the cache maps as the hash code depends
@@ -60,24 +55,7 @@ private class AndroidShadowContext :
         var size: Size = Size.Zero,
         var layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         var density: Float = 1f,
-    )
-
-    /**
-     * Lookup key for DropShadow based ShadowRenderer implementations var to support avoiding
-     * allocations for local lookups
-     */
-    data class DropShadowKey(
-        var shadowKey: ShadowKey = ShadowKey(),
-        var dropShadow: DropShadow? = null,
-    )
-
-    /**
-     * Lookup key for InnerShadow based ShadowRenderer implementations var to support avoiding
-     * allocations for local lookups
-     */
-    data class InnerShadowKey(
-        var shadowKey: ShadowKey = ShadowKey(),
-        var innerShadow: InnerShadow? = null,
+        var shadowParams: ShadowParams? = null,
     )
 
     override fun obtainDropShadowRenderer(
@@ -85,26 +63,23 @@ private class AndroidShadowContext :
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        dropShadow: DropShadow,
+        shadowParams: ShadowParams,
     ): DropShadowRenderer {
         synchronized(this) {
             val key =
-                obtainDropShadowKey().apply {
-                    this.shadowKey.apply {
-                        this.shape = shape
-                        this.size = size
-                        this.layoutDirection = layoutDirection
-                        this.density = density.density
-                    }
-                    this.dropShadow = dropShadow
+                obtainShadowKey().apply {
+                    this.shape = shape
+                    this.size = size
+                    this.layoutDirection = layoutDirection
+                    this.density = density.density
+                    // The renderer does not use the offset
+                    this.shadowParams = shadowParams.copyWithoutOffset()
                 }
             var renderer = obtainDropShadowCache()[key]
             if (renderer == null) {
                 val outline = shape.createOutline(size, layoutDirection, density)
-                renderer = DropShadowRenderer(dropShadow, outline)
-                // Note it is important to deep copy the key here as we use a mutable tmp
-                // key to save on allocations for lookups of previously created entries
-                obtainDropShadowCache()[key.copy(shadowKey = key.shadowKey.copy())] = renderer
+                renderer = DropShadowRenderer(shadowParams, outline)
+                obtainDropShadowCache()[key.copy()] = renderer
             }
             return renderer
         }
@@ -115,45 +90,42 @@ private class AndroidShadowContext :
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        innerShadow: InnerShadow,
+        shadowParams: ShadowParams,
     ): InnerShadowRenderer {
         synchronized(this) {
             val key =
-                obtainInnerShadowKey().apply {
-                    this.shadowKey.apply {
-                        this.shape = shape
-                        this.size = size
-                        this.layoutDirection = layoutDirection
-                        this.density = density.density
-                    }
-                    this.innerShadow = innerShadow
+                obtainShadowKey().apply {
+                    this.shape = shape
+                    this.size = size
+                    this.layoutDirection = layoutDirection
+                    this.density = density.density
+                    this.shadowParams = shadowParams
                 }
             var renderer = obtainInnerShadowCache()[key]
             if (renderer == null) {
                 val outline = shape.createOutline(size, layoutDirection, density)
-                renderer = InnerShadowRenderer(innerShadow, outline)
-                // Note it is important to deep copy the key here as we use a mutable tmp
-                // key to save on allocations for lookups of previously created entries
-                obtainInnerShadowCache()[key.copy(shadowKey = key.shadowKey.copy())] = renderer
+                renderer = InnerShadowRenderer(shadowParams, outline)
+                obtainInnerShadowCache()[key.copy()] = renderer
             }
             return renderer
         }
     }
 
-    override fun createDropShadowPainter(shape: Shape, dropShadow: DropShadow): DropShadowPainter =
-        DropShadowPainter(shape, dropShadow, this)
+    override fun createDropShadowPainter(
+        shape: Shape,
+        shadowParams: ShadowParams,
+    ): DropShadowPainter = DropShadowPainter(shape, shadowParams, this)
 
     override fun createInnerShadowPainter(
         shape: Shape,
-        innerShadow: InnerShadow,
-    ): InnerShadowPainter = InnerShadowPainter(shape, innerShadow, this)
+        shadowParams: ShadowParams,
+    ): InnerShadowPainter = InnerShadowPainter(shape, shadowParams, this)
 
     override fun clearCache() {
         synchronized(this) {
             dropShadowCache?.clear()
-            dropShadowKey = null
             innerShadowCache?.clear()
-            innerShadowKey = null
+            shadowKey = null
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.textfield
 
+import androidx.compose.foundation.contextmenu.ProcessTextItemOverrideRule
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
@@ -68,6 +69,8 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
 
     private val text = "Text Text Text"
     private val textFieldTag = "BTF"
+
+    @get:Rule val processTextRule = ProcessTextItemOverrideRule()
 
     @Test
     @SdkSuppress(maxSdkVersion = 25)

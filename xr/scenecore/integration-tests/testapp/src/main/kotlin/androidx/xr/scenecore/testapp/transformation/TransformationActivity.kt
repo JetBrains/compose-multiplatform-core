@@ -34,11 +34,11 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
@@ -48,6 +48,7 @@ import androidx.xr.scenecore.testapp.common.DebugTextLinearView
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -240,8 +241,8 @@ class TransformationActivity : AppCompatActivity() {
         view.setLine("Distance to ActivitySpace", length(activitySpacePose.translation).toString())
         view.setLine("Distance to Main Panel", length(mainPanelSpacePose.translation).toString())
         when (trackedEntity) {
-            is BasePanelEntity<*> -> {
-                view.setLine("Panel size", trackedEntity.getSize().toString())
+            is PanelEntity -> {
+                view.setLine("Panel size", trackedEntity.size.toString())
                 view.setLine("Panel scale", trackedEntity.getScale().toString())
             }
         }
@@ -263,8 +264,10 @@ class TransformationActivity : AppCompatActivity() {
     }
 
     private suspend fun loadModels() {
-        solarSystemEntityModel = GltfModel.create(session!!, "models/Dragon_Evolved.gltf").await()
-        staticEntityModel = GltfModel.create(session!!, "models/xyzArrows.glb").await()
+        solarSystemEntityModel =
+            GltfModel.createAsync(session!!, Paths.get("models", "Dragon_Evolved.gltf")).await()
+        staticEntityModel =
+            GltfModel.createAsync(session!!, Paths.get("models", "xyzArrows.glb")).await()
     }
 
     private fun entitySolarSystem() {
@@ -272,19 +275,19 @@ class TransformationActivity : AppCompatActivity() {
             GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
                 it.setScale(3f)
                 it.setPose(Pose(Vector3(-0.5f, 3f, -9f)))
-                it.setParent(session!!.scene.activitySpace)
+                it.parent = session!!.scene.activitySpace
             }
         planetEntity =
             GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
                 it.setScale(0.5f)
                 it.setPose(Pose(Vector3(-1f, 3f, -9f)))
-                it.setParent(sunEntity)
+                it.parent = sunEntity
             }
         moonEntity =
             GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
                 it.setScale(0.5f)
                 it.setPose(Pose(Vector3(-1.5f, 3f, -9f)))
-                it.setParent(planetEntity)
+                it.parent = planetEntity
             }
         orbitModelAroundParent(planetEntity, 4f, 0f, 20000f)
         orbitModelAroundParent(moonEntity, 2f, 1.67f, 5000f)

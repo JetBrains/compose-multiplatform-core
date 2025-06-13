@@ -169,7 +169,7 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
      */
     private var wasScrollingForward = false
 
-    private var previousPassItemCount = 0
+    private var previousPassItemCount = UnsetItemCount
     private var previousPassDelta = 0f
 
     override fun LazyGridPrefetchScope.onScroll(delta: Float, layoutInfo: LazyGridLayoutInfo) {
@@ -228,7 +228,7 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
         val currentPassItemCount = layoutInfo.totalItemsCount
         // total item count changed, re-trigger prefetch.
         if (
-            previousPassItemCount != 0 && // we already have info about the item count
+            previousPassItemCount != UnsetItemCount && // we already have info about the item count
                 previousPassDelta != 0.0f && // and scroll direction
                 previousPassItemCount != currentPassItemCount && // and the item count changed
                 layoutInfo.visibleItemsInfo.isNotEmpty()
@@ -336,3 +336,5 @@ internal class LazyGridPrefetchResultScopeImpl(
 
     override fun getMainAxisSize(itemIndexInLine: Int): Int = mainAxisSizes[itemIndexInLine]
 }
+
+private const val UnsetItemCount = -1

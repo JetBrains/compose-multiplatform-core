@@ -82,11 +82,11 @@ private val callbackLock = makeSynchronizedObject()
  * in [anchor] and call [block] when recomposition is requested. It is created by
  * [Composer.startRestartGroup] and is used to track how to restart the group.
  */
-internal class RecomposeScopeImpl(owner: RecomposeScopeOwner?) : ScopeUpdateScope, RecomposeScope {
+internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
+    ScopeUpdateScope, RecomposeScope {
 
+    /** The backing store for the boolean flags tracked by the recompose scope. */
     private var flags: Int = 0
-
-    private var owner: RecomposeScopeOwner? = owner
 
     /**
      * An anchor to the location in the slot table that start the group associated with this

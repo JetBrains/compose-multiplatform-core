@@ -2,42 +2,6 @@
 <issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
-        id="CheckResult"
-        message="The result of `addListener` is not used"
-        errorLine1="        mRotationProvider.addListener(mainThreadExecutor(),"
-        errorLine2="        ^">
-        <location
-            file="src/main/java/androidx/camera/view/CameraController.java"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `addListener` is not used"
-        errorLine1="        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerKept)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/view/RotationProviderTest.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `addListener` is not used"
-        errorLine1="        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerRemoved)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/view/RotationProviderTest.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `addListener` is not used"
-        errorLine1="        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor()) { rotation = it }"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/view/RotationProviderTest.kt"/>
-    </issue>
-
-    <issue
         id="BanThreadSleep"
         message="Uses Thread.sleep()"
         errorLine1="        Thread.sleep(1000)"

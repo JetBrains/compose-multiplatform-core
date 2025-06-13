@@ -640,14 +640,23 @@ val WearMaterialDemos =
                         listOf(
                             ComposableDemo("S2R Chip, 2 actions") { params ->
                                 SwipeToRevealChips(
-                                    params.swipeToDismissBoxState,
+                                    isBiDirection = false,
+                                    swipeToDismissBoxState = params.swipeToDismissBoxState,
                                     includeSecondaryAction = true,
                                 )
                             },
                             ComposableDemo("S2R Chip, 1 action") { params ->
                                 SwipeToRevealChips(
-                                    params.swipeToDismissBoxState,
+                                    isBiDirection = false,
+                                    swipeToDismissBoxState = params.swipeToDismissBoxState,
                                     includeSecondaryAction = false,
+                                )
+                            },
+                            ComposableDemo("S2R Chip, Bi-Direction") { params ->
+                                SwipeToRevealChips(
+                                    isBiDirection = true,
+                                    swipeToDismissBoxState = params.swipeToDismissBoxState,
+                                    includeSecondaryAction = true,
                                 )
                             },
                             ComposableDemo("S2R Card") { params ->

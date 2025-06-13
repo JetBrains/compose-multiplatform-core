@@ -26,8 +26,9 @@ import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextContextMenuItems.Copy
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.addProcessedTextContextMenuItems
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.platformDefaultKeyMapping
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
@@ -38,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.IntSize
 
 internal actual fun isCopyKeyEvent(keyEvent: KeyEvent) =
@@ -88,14 +90,14 @@ internal fun SelectionManager.contextMenuBuilder(
 
 internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
     selectionManager: SelectionManager
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.selectionContainerItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
         onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
         }
@@ -113,4 +115,12 @@ internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
         }
         separator()
     }
+
+    val text = selectionManager.getSelectedText() ?: return@addTextContextMenuComponentsWithContext
+    addProcessedTextContextMenuItems(
+        context = context,
+        editable = false,
+        text = text,
+        selection = TextRange(0, text.length),
+    )
 }

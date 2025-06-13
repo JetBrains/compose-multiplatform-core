@@ -19,11 +19,10 @@ package androidx.credentials.providerevents.service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import androidx.credentials.providerevents.CredentialEventsProvider
+import androidx.credentials.providerevents.DeviceSetupProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -53,20 +52,16 @@ class DeviceSetupServiceTest {
         val intent =
             Intent().apply {
                 putExtra(
-                    CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY,
-                    DummyCredentialEventsProvider::class.java.name,
+                    DeviceSetupProvider.DEVICE_SETUP_PROVIDER_KEY,
+                    DummyDeviceSetupProvider::class.java.name,
                 )
             }
         val binder = service.onBind(intent)
         assertThat(binder).isNotNull()
     }
 
-    // Dummy implementation of CredentialEventsProvider for testing
-    class DummyCredentialEventsProvider : CredentialEventsProvider {
-        override fun getStubImplementation(service: CredentialProviderEventsService): IBinder? {
-            return Binder()
-        }
-
+    // Dummy implementation of DummyDeviceSetupProvider for testing
+    class DummyDeviceSetupProvider : DeviceSetupProvider {
         override fun getStubImplementation(service: DeviceSetupService): IBinder? {
             return Binder()
         }

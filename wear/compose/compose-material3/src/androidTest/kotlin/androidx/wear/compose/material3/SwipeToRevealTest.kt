@@ -27,12 +27,16 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -79,6 +83,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -754,6 +759,56 @@ class SwipeToRevealTest {
     }
 
     @Test
+    fun onRightSwipe_dispatchEventsToParent() {
+        var onPreScrollDispatch = 0f
+        rule.setContent {
+            val nestedScrollConnection = remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(
+                        available: Offset,
+                        source: NestedScrollSource,
+                    ): Offset {
+                        onPreScrollDispatch = available.x
+                        return available
+                    }
+                }
+            }
+            Box(modifier = Modifier.nestedScroll(nestedScrollConnection)) {
+                SwipeToRevealWithDefaults(modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+
+        assert(onPreScrollDispatch > 0)
+    }
+
+    @Test
+    fun onLeftSwipe_dispatchEventsToParent() {
+        var onPreScrollDispatch = 0f
+        rule.setContent {
+            val nestedScrollConnection = remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(
+                        available: Offset,
+                        source: NestedScrollSource,
+                    ): Offset {
+                        onPreScrollDispatch = available.x
+                        return available
+                    }
+                }
+            }
+            Box(modifier = Modifier.nestedScroll(nestedScrollConnection)) {
+                SwipeToRevealWithDefaults(modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeLeft() }
+
+        assert(onPreScrollDispatch < 0) // Swiping left means the dispatch will be negative
+    }
+
+    @Test
     fun onFullSwipeRight_wrappedInSTDBBidirectionalGI_noSwipe() {
         verifyGesture(
             expectedRevealValue = Covered,
@@ -783,7 +838,7 @@ class SwipeToRevealTest {
             wrappedInSwipeToDismissBox = true,
             enableTouchSlop = false,
         ) {
-            swipeRight(startX = width / 2f)
+            swipeRight(startX = width * 0.2f)
         }
     }
 
@@ -950,6 +1005,7 @@ class SwipeToRevealTest {
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertDoesNotExist()
     }
 
+    @Ignore("b/420629546")
     @Test
     fun onPrimaryActionClick_doesNotTriggerOnSwipePrimaryAction() {
         var onPrimaryActionClick = false

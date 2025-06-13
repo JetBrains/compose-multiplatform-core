@@ -331,8 +331,12 @@ public constructor(
             pause()
         }
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-        _runtime?.lifecycleManager?.stop()
         activitySessionMap.remove(activity)
+        // TODO: b/422830134 - Remove this check once there are multiple OpenXrManagers.
+        if (activitySessionMap.isEmpty()) {
+            _runtime?.lifecycleManager?.stop()
+        }
+
         for (sessionConnector in sessionConnectors) {
             sessionConnector.close()
         }

@@ -23,9 +23,9 @@ import android.os.CancellationSignal
 import android.os.Handler
 import android.os.Looper
 import android.os.ResultReceiver
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.core.os.BundleCompat.getParcelable
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.DigitalCredential
@@ -41,8 +41,8 @@ import androidx.credentials.internal.toJetpackGetException
 import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController
 import androidx.credentials.playservices.controllers.CredentialProviderController
+import androidx.credentials.playservices.controllers.ResponseUtils
 import androidx.credentials.playservices.controllers.identitycredentials.IdentityCredentialApiHiddenActivity
-import androidx.credentials.provider.PendingIntentHandler
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.identitycredentials.CredentialOption
@@ -90,63 +90,17 @@ internal class CredentialProviderGetDigitalCredentialController(private val cont
                 ) {
                     return
                 } else {
-                    handleResponse(
+                    ResponseUtils.handleGetCredentialResponse(
                         resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
                         resultCode,
-                        resultData.getParcelable(RESULT_DATA_TAG),
+                        getParcelable(resultData, RESULT_DATA_TAG, Intent::class.java),
+                        executor,
+                        callback,
+                        cancellationSignal,
                     )
                 }
             }
         }
-
-    internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int, data: Intent?) {
-        if (uniqueRequestCode != CONTROLLER_REQUEST_CODE) {
-            Log.w(
-                TAG,
-                "Returned request code $CONTROLLER_REQUEST_CODE which " +
-                    " does not match what was given $uniqueRequestCode",
-            )
-            return
-        }
-
-        if (
-            maybeReportErrorResultCodeGet(
-                resultCode,
-                { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
-                { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal,
-            )
-        ) {
-            return
-        }
-
-        if (data == null) {
-            cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                this.executor.execute {
-                    this.callback.onError(
-                        GetCredentialUnknownException("No provider data returned.")
-                    )
-                }
-            }
-        } else {
-            val response = PendingIntentHandler.retrieveGetCredentialResponse(data)
-            if (response != null) {
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    this.executor.execute { this.callback.onResult(response) }
-                }
-            } else {
-                val providerException = PendingIntentHandler.retrieveGetCredentialException(data)
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    this.executor.execute {
-                        this.callback.onError(
-                            providerException
-                                ?: GetCredentialUnknownException("Unexpected configuration error")
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     override fun invokePlayServices(
         request: GetCredentialRequest,

@@ -20,10 +20,8 @@ import android.app.Activity;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
@@ -138,53 +136,69 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     }
 
     /**
-     * Returns the rotation that should be applied to the ActivitySpace to align it with the gravity
-     * vector in the world space.
+     * Handles the updates to scene core root transform.
+     *
+     * <pre>
+     * Hierarchy:
+     * OpenXR Unbounded Reference Space Origin
+     *  └── Scene Parent Node (Intermediate system-managed node)
+     *      └── Scene Root Node (ActivitySpace Node)
+     *
+     * Transform Flow:
+     *   1. The system updates the transform of the 'Scene Parent Node' when in HOME_SPACE mode.
+     *   2. The 'Scene Root Node' becomes a child of 'Scene Parent Node' and inherits its transform
+     *      when activity enters FULL_SPACE_MANAGED mode.
+     * </pre>
+     *
+     * <p>By inverting the full inherited rotation and scale, SceneCore effectively re-orients the
+     * ActivitySpace to be unscaled and gravity-aligned like its grand parent OpenXR unbounded
+     * space.
+     *
+     * <p>To maintain continuity when entering FSM, SceneCore provides the original rotation and
+     * scale of the scene parent transform via the onSpatialModeChanged callback. This ensures FSM
+     * continuity when spatial modes change.
+     *
+     * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
      */
-    @VisibleForTesting
-    Quaternion getRotationForGravityAlignment(Matrix4 transform) {
-        // Get the origin's local down vector.
-        Vector3 localDown = transform.getPose().getDown();
-        // This is the gravity direction in the world space.
-        Vector3 gravityDirection = Vector3.Down;
-        // This is the rotation that should be applied to the ActivitySpace origin to align it with
-        // the
-        // gravity vector in the world space.
-        return Quaternion.fromRotation(localDown, gravityDirection);
-    }
-
     public void handleOriginUpdate(Matrix4 newTransform) {
-        // Update the transform in case we are receiving transform update from the spatial state
-        // change.
         mOpenXrReferenceSpaceTransform.set(newTransform);
-        Vector3 activitySpaceScale = new Vector3(1.0f, 1.0f, 1.0f);
+        Vector3 transformScaleAbsolute = new Vector3(1.0f, 1.0f, 1.0f);
+        Quaternion activitySpaceRotation = Quaternion.Identity;
 
-        // Handle unscaling and gravity alignment for activity space in case of origin update.
         if (mUnscaledGravityAlignedActivitySpace) {
-            // Undoing the scale of the ActivitySpace.
-            Quaternion rotation = getRotationForGravityAlignment(newTransform);
-            activitySpaceScale = newTransform.getScale();
-            Log.i(TAG, "handleOriginUpdate: activitySpaceScale: " + activitySpaceScale);
-            Log.i(TAG, "handleOriginUpdate: rotation: " + rotation);
+            Vector3 transformScale = newTransform.getScale();
+            transformScaleAbsolute =
+                    new Vector3(
+                            Math.abs(transformScale.getX()),
+                            Math.abs(transformScale.getY()),
+                            Math.abs(transformScale.getZ()));
+            // Get the unscaled rotation of the activity space.
+            activitySpaceRotation = Matrix4Ext.getUnscaled(newTransform).getRotation();
+            Quaternion gravityAlignedRotation = activitySpaceRotation.getInverse();
             try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
                 transaction
-                        .setScale(mNode, 1.0f, 1.0f, 1.0f)
+                        .setScale(
+                                mNode,
+                                1.0f / transformScaleAbsolute.getX(),
+                                1.0f / transformScaleAbsolute.getY(),
+                                1.0f / transformScaleAbsolute.getZ())
                         .setOrientation(
                                 mNode,
-                                rotation.getX(),
-                                rotation.getY(),
-                                rotation.getZ(),
-                                rotation.getW())
+                                gravityAlignedRotation.getX(),
+                                gravityAlignedRotation.getY(),
+                                gravityAlignedRotation.getZ(),
+                                gravityAlignedRotation.getW())
                         .apply();
             }
         }
 
-        // If the activity space is unscaled gravity aligned, we need to scale the
-        // center of attention entity by the recommended scale of the activity space.
-        // Setting the pose to identity as the activity space origin is already
-        // translated to the recommended pose provided in the scene parent transform.
+        // The translation is zero - since the activity space origin has been already translated by
+        // system.
+        // SceneCore is relaying the same rotation and scale that activity space would have
+        // inherited if it was in HOME_SPACE mode for continuity in FULL_SPACE_MANAGED mode.
         if (mSpatialModeChangeListener != null) {
-            mSpatialModeChangeListener.onSpatialModeChanged(new Pose(), activitySpaceScale);
+            mSpatialModeChangeListener.onSpatialModeChanged(
+                    new Pose(Vector3.Zero, activitySpaceRotation), transformScaleAbsolute);
         }
     }
 
@@ -345,11 +359,5 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                 },
                 mExecutor);
         return updatedHitTestFuture;
-    }
-
-    @Override
-    public void onSpaceUpdated() {
-        super.onSpaceUpdated();
-        handleOriginUpdate(mOpenXrReferenceSpaceTransform.get());
     }
 }

@@ -134,6 +134,23 @@ internal value class ScopeMap<Key : Any, Scope : Any>(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    inline fun removeIf(crossinline predicate: (Key, Scope) -> Boolean) {
+        map.removeIf { key, scopes ->
+            key as Key
+            when (scopes) {
+                is MutableScatterSet<*> -> {
+                    scopes as MutableScatterSet<Scope>
+                    scopes.removeIf { predicate(key, it) }
+                    scopes.isEmpty()
+                }
+                else -> {
+                    predicate(key, scopes as Scope)
+                }
+            }
+        }
+    }
+
     /**
      * Removes given scope from all sets. If all scopes for a given value are removed, that value is
      * removed as well.

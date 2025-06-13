@@ -31,7 +31,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
  */
 fun SemanticsNodeInteraction.assertIsDisplayed(): SemanticsNodeInteraction {
     if (!isDisplayed()) {
-        throw AssertionError("Assert failed: The component is not displayed!")
+        throw AssertionError(
+            "Assert failed: The component with ${selector.description} is not displayed!"
+        )
     }
     return this
 }
@@ -43,7 +45,9 @@ fun SemanticsNodeInteraction.assertIsDisplayed(): SemanticsNodeInteraction {
  */
 fun SemanticsNodeInteraction.assertIsNotDisplayed(): SemanticsNodeInteraction {
     if (!isNotDisplayed()) {
-        throw AssertionError("Assert failed: The component is displayed!")
+        throw AssertionError(
+            "Assert failed: The component with ${selector.description} is displayed!"
+        )
     }
     return this
 }

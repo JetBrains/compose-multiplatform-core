@@ -98,6 +98,7 @@ package androidx.xr.runtime.openxr {
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand getRightHand();
     method public java.util.Collection<androidx.xr.runtime.internal.Trackable> getTrackables();
+    method public java.util.List<androidx.xr.runtime.internal.ViewCamera> getViewCameras();
     method public java.util.List<androidx.xr.runtime.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.runtime.internal.Anchor loadAnchor(java.util.UUID uuid);
     method public androidx.xr.runtime.internal.Anchor loadAnchorFromNativePointer(long nativePointer);
@@ -108,6 +109,7 @@ package androidx.xr.runtime.openxr {
     property public androidx.xr.runtime.internal.Hand leftHand;
     property public androidx.xr.runtime.internal.Hand rightHand;
     property public java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
+    property public java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPlane implements androidx.xr.runtime.internal.Plane {
@@ -150,7 +152,21 @@ package androidx.xr.runtime.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrViewCamera implements androidx.xr.runtime.internal.ViewCamera {
     method public androidx.xr.runtime.FieldOfView getFieldOfView();
     method public androidx.xr.runtime.math.Pose getPose();
-    method public void update(long xrTime);
+    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.Pose pose;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) internal final class ViewCameraState {
+    ctor public ViewCameraState();
+    ctor public ViewCameraState(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
+    method public androidx.xr.runtime.math.Pose component1();
+    method public androidx.xr.runtime.FieldOfView component2();
+    method public androidx.xr.runtime.openxr.ViewCameraState copy(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
+    method internal boolean equals(Object? other);
+    method public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method public androidx.xr.runtime.math.Pose getPose();
+    method internal int hashCode();
+    method internal String toString();
     property public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose pose;
   }

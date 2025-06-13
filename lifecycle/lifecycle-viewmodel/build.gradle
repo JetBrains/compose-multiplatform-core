@@ -39,8 +39,9 @@ androidXMultiplatform {
     linux()
     mac()
     ios()
-    tvos()
     watchos()
+    tvos()
+    mingwX64()
     js()
     wasmJs()
 
@@ -94,7 +95,7 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.core:core-ktx:1.2.0")
                 implementation(libs.testExtJunit)

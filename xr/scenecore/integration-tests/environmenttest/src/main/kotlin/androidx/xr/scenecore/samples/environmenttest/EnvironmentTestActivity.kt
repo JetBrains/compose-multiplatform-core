@@ -56,6 +56,7 @@ import androidx.xr.scenecore.SpatialCapabilities
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlin.math.roundToInt
 import kotlinx.coroutines.guava.await
 
@@ -77,7 +78,7 @@ class EnvironmentTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val mActivity = this
 
-        session.scene.mainPanelEntity.setSizeInPixels(IntSize2d(width = 1500, height = 2000))
+        session.scene.mainPanelEntity.sizeInPixels = IntSize2d(width = 1500, height = 2000)
 
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         session.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener { newOpacity ->
@@ -266,16 +267,22 @@ class EnvironmentTestActivity : ComponentActivity() {
         var blueSkybox by remember { mutableStateOf<ExrImage?>(null) }
 
         LaunchedEffect(Unit) {
-            groundGeo = GltfModel.create(session, "models/GroundGeometry.glb").await()
+            groundGeo =
+                GltfModel.createAsync(session, Paths.get("models", "GroundGeometry.glb")).await()
         }
         LaunchedEffect(Unit) {
-            rocksGeo = GltfModel.create(session, "models/RocksGeometry.glb").await()
+            rocksGeo =
+                GltfModel.createAsync(session, Paths.get("models", "RocksGeometry.glb")).await()
         }
         LaunchedEffect(Unit) {
-            greySkybox = ExrImage.create(session, "skyboxes/GreySkybox.zip").await()
+            greySkybox =
+                ExrImage.createFromZipAsync(session, Paths.get("skyboxes", "GreySkybox.zip"))
+                    .await()
         }
         LaunchedEffect(Unit) {
-            blueSkybox = ExrImage.create(session, "skyboxes/BlueSkybox.zip").await()
+            blueSkybox =
+                ExrImage.createFromZipAsync(session, Paths.get("skyboxes", "BlueSkybox.zip"))
+                    .await()
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {

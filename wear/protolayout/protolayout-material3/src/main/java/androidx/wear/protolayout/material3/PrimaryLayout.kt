@@ -136,6 +136,7 @@ import kotlin.math.ceil
  * @sample androidx.wear.protolayout.material3.samples.cardSample
  * @sample androidx.wear.protolayout.material3.samples.oneSlotButtonsSample
  * @sample androidx.wear.protolayout.material3.samples.graphicDataCardSample
+ * @sample androidx.wear.protolayout.material3.samples.primaryLayoutWithTextNotImportantForAccessibility
  */
 // TODO: b/346958146 - Link visuals once they are available.
 // TODO: b/353247528 - Handle the icon.

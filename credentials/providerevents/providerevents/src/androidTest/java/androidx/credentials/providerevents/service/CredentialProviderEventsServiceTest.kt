@@ -66,9 +66,5 @@ class CredentialProviderEventsServiceTest {
         override fun getStubImplementation(service: CredentialProviderEventsService): IBinder? {
             return Binder()
         }
-
-        override fun getStubImplementation(service: DeviceSetupService): IBinder? {
-            return Binder()
-        }
     }
 }

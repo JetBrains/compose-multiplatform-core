@@ -36,14 +36,14 @@ dependencies {
 }
 
 android {
-    namespace = "androidx.wear.watchface.push"
+    namespace = "androidx.wear.watchfacepush"
     defaultConfig {
         minSdk = 36
     }
 }
 
 androidx {
-    name = "androidx.wear.watchfacepush:watchfacepush"
+    name = "Watch Face Push"
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "This library makes it easy for developers to access the Watch Face Push API"

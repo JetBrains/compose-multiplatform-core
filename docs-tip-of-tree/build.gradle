@@ -395,7 +395,6 @@ dependencies {
     docs(project(":wear:watchface:watchface-editor"))
     docs(project(":wear:watchface:watchface-editor-guava"))
     docs(project(":wear:watchface:watchface-guava"))
-    docs(project(":wear:watchface:watchface-push"))
     docs(project(":wear:watchface:watchface-style"))
     docs(project(":wear:watchfacepush:watchfacepush"))
     docs(project(":wear:wear"))
@@ -430,9 +429,11 @@ dependencies {
     docs(project(":xr:compose:material3:material3"))
     docs(project(":xr:glimmer:glimmer"))
     docs(project(":xr:runtime:runtime"))
+    docs(project(":xr:runtime:runtime-manifest"))
     docs(project(":xr:runtime:runtime-openxr"))
     docs(project(":xr:runtime:runtime-testing"))
     docs(project(":xr:scenecore:scenecore"))
+    docs(project(":xr:scenecore:scenecore-guava"))
     docs(project(":xr:scenecore:scenecore-testing"))
 }
 afterEvaluate {

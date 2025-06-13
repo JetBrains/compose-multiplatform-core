@@ -21,8 +21,10 @@ package androidx.navigation3.runtime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlin.jvm.JvmSuppressWildcards
 
@@ -33,6 +35,7 @@ import kotlin.jvm.JvmSuppressWildcards
  * Note: the order in which the [NavEntryDecorator]s are added to the list determines their scope,
  * i.e. a [NavEntryDecorator] added earlier in a list has its data available to those added later.
  *
+ * @param T the type of the backStack key
  * @param backStack the list of keys that represent the backstack
  * @param entryDecorators the [NavEntryDecorator]s that are providing data to the content
  * @param entryProvider a function that returns the [NavEntry] for a given key
@@ -50,17 +53,26 @@ public fun <T : Any> DecoratedNavEntryProvider(
     // to ensure our lambda below takes the correct type
     entryProvider as (T) -> NavEntry<T>
 
-    // Generates a list of entries that are wrapped with the given providers
-    val entries =
-        backStack.map {
-            val entry = entryProvider.invoke(it)
-            decorateEntry(entry, entryDecorators as List<NavEntryDecorator<T>>)
-        }
+    /**
+     * We scope the block to a backStack to support multiple backStack / backStack swapping with
+     * hoisted states. The DisposableEffects/onDispose for a particular backStack will only trigger
+     * for operations on the same backStack i.e. navigate / pop. This is so that when we swap
+     * between two lists, i.e. from listOf[A, B] to listOf[C, D], A and B will not be considered as
+     * pop, meaning their state will be preserved and recovered when returning to the first list.
+     */
+    key(backStack) {
+        // Generates a list of entries that are wrapped with the given providers
+        val entries =
+            backStack.mapIndexed { index, key ->
+                val entry = entryProvider.invoke(key)
+                decorateEntry(entry, entryDecorators as List<NavEntryDecorator<T>>)
+            }
 
-    // Provides the entire backstack to the previously wrapped entries
-    val initial: @Composable () -> Unit = remember(entries) { { content(entries) } }
+        // Provides the entire backstack to the previously wrapped entries
+        val initial: @Composable () -> Unit = remember(entries) { { content(entries) } }
 
-    PrepareBackStack(backStack, entryDecorators, initial)
+        PrepareBackStack(entries, entryDecorators, initial)
+    }
 }
 
 /**
@@ -78,62 +90,28 @@ internal fun <T : Any> decorateEntry(
 ): NavEntry<T> {
     val initial =
         object : NavEntryWrapper<T>(entry) {
-            override val content: @Composable ((T) -> Unit) = {
-                val key = entry.key
-                // Tracks whether the key is changed
-                var keyChanged = false
+            @Composable
+            override fun Content() {
                 val localInfo = LocalNavEntryDecoratorLocalInfo.current
-                val keyIds = localInfo.keyIds[key]
-                val lastId = keyIds!!.last()
-                var id: Int =
-                    rememberSaveable(keyIds.last()) {
-                        keyChanged = true
-                        lastId
-                    }
-                id =
-                    rememberSaveable(keyIds.size) {
-                        // if the key changed, use the current id
-                        // If the key was not changed, and the current id is not in composition
-                        // or on
-                        // the
-                        // back
-                        // stack then update the id with the last item from the backstack with
-                        // the
-                        // associated
-                        // key. This ensures that we can handle duplicates, both consecutive and
-                        // non-consecutive
-                        if (
-                            !keyChanged &&
-                                (!localInfo.idsInComposition.contains(id) || keyIds.contains(id))
-                        ) {
-                            lastId
-                        } else {
-                            id
-                        }
-                    }
-
-                keyChanged = false
+                val idsInComposition = localInfo.idsInComposition
 
                 // store onPop for every decorator that has ever decorated this entry
                 // so that onPop will be called for newly added or removed decorators as well
                 val popCallbacks = remember { LinkedHashSet<(Any) -> Unit>() }
 
-                DisposableEffect(key1 = key) {
-                    localInfo.idsInComposition.add(id)
+                DisposableEffect(key1 = contentKey) {
+                    idsInComposition.add(contentKey)
                     onDispose {
-                        val notInComposition = localInfo.idsInComposition.remove(id)
-                        val popped = !localInfo.keyIds.contains(key)
-                        if (notInComposition && popped) {
+                        val notInComposition = idsInComposition.remove(contentKey)
+                        val popped = !localInfo.contentKeys.contains(contentKey)
+                        if (popped && notInComposition) {
+
                             // we reverse the scopes before popping to imitate the order
                             // of onDispose calls if each scope/decorator had their own
                             // onDispose
                             // calls for clean up
                             // convert to mutableList first for backwards compat.
-                            popCallbacks.toMutableList().reversed().forEach { it(key) }
-                            // If the refCount is 0, remove the key from the refCount.
-                            if (localInfo.keyIds[key]?.isEmpty() == true) {
-                                localInfo.keyIds.remove(key)
-                            }
+                            popCallbacks.toMutableList().reversed().forEach { it(contentKey) }
                         }
                     }
                 }
@@ -153,46 +131,36 @@ internal fun <T : Any> decorateEntry(
  * 2. have never been composed (i.e. never invoked with [DecorateNavEntry])
  */
 @Composable
-internal fun PrepareBackStack(
-    backStack: List<Any>,
+internal fun <T : Any> PrepareBackStack(
+    entries: List<NavEntry<T>>,
     decorators: List<NavEntryDecorator<*>>,
     content: @Composable (() -> Unit),
 ) {
     val localInfo = remember { NavEntryDecoratorLocalInfo() }
+    val contentKeys = localInfo.contentKeys
 
-    backStack.forEachIndexed { index, key ->
-        val id = getIdForEntry(key, index)
-        localInfo.keyIds.getOrPut(key) { LinkedHashSet() }.add(id)
-
+    // update this backStack so that onDispose has access to the latest backStack to check
+    // if an entry has been popped
+    val latestBackStack by rememberUpdatedState(entries.map { it.contentKey })
+    latestBackStack.forEach { contentKey ->
+        contentKeys.add(contentKey)
         // store onPop for every decorator has ever decorated this key
         // so that onPop will be called for newly added or removed decorators as well
-        val popCallbacks = remember(key) { LinkedHashSet<(Any) -> Unit>() }
+        val popCallbacks = remember(contentKey) { LinkedHashSet<(Any) -> Unit>() }
         decorators.distinct().forEach { popCallbacks.add(it.onPop) }
 
-        DisposableEffect(key) {
-            // We update here as part of composition to ensure the value is available to
-            // ProvideToEntry
-            localInfo.keyIds.getOrPut(key) { LinkedHashSet() }.add(id)
+        DisposableEffect(contentKey) {
             onDispose {
-                // If the backStack count is less than the refCount for the key, remove the
-                // state since that means we removed a key from the backstack, and set the
-                // refCount to the backstack count.
-                val backstackCount = backStack.count { it == key }
-                val lastKeyCount = localInfo.keyIds[key]?.size ?: 0
-                if (backstackCount < lastKeyCount) {
-                    // if popped, remove id from set of ids for this key
-                    localInfo.keyIds[key]!!.remove(id)
-                    // run onPop callback
-                    if (!localInfo.idsInComposition.contains(id)) {
-                        // we reverse the order before popping to imitate the order
-                        // of onDispose calls if each scope/decorator had their own onDispose
-                        // calls for clean up. convert to mutableList first for backwards compat.
-                        popCallbacks.toMutableList().reversed().forEach { it(key) }
-                    }
-                }
-                // If the refCount is 0, remove the key from the refCount.
-                if (localInfo.keyIds[key]?.isEmpty() == true) {
-                    localInfo.keyIds.remove(key)
+                val popped =
+                    if (!latestBackStack.contains(contentKey)) {
+                        contentKeys.remove(contentKey)
+                    } else false
+                // run onPop callback
+                if (popped && !localInfo.idsInComposition.contains(contentKey)) {
+                    // we reverse the order before popping to imitate the order
+                    // of onDispose calls if each scope/decorator had their own onDispose
+                    // calls for clean up. convert to mutableList first for backwards compat.
+                    popCallbacks.toMutableList().reversed().forEach { it(contentKey) }
                 }
             }
         }
@@ -201,9 +169,8 @@ internal fun PrepareBackStack(
 }
 
 private class NavEntryDecoratorLocalInfo {
-    val keyIds: MutableMap<Any, LinkedHashSet<Int>> = mutableMapOf()
-    @Suppress("PrimitiveInCollection") // The order of the element matters
-    val idsInComposition: LinkedHashSet<Int> = LinkedHashSet<Int>()
+    val contentKeys: MutableSet<Any> = mutableSetOf()
+    val idsInComposition: MutableSet<Any> = mutableSetOf()
     val popCallbacks: LinkedHashMap<Int, (key: Any) -> Unit> = LinkedHashMap()
 }
 
@@ -214,5 +181,3 @@ private val LocalNavEntryDecoratorLocalInfo =
                 "ProvideToBackStack before calling ProvideToEntry."
         )
     }
-
-private fun getIdForEntry(key: Any, count: Int): Int = 31 * key.hashCode() + count

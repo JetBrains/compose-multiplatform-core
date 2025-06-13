@@ -16,14 +16,9 @@
 
 package androidx.xr.compose.platform
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionCreateSuccess
 
 /**
  * A composition local that provides the current Jetpack XR [Session].
@@ -32,23 +27,5 @@ import androidx.xr.runtime.SessionCreateSuccess
  */
 public val LocalSession: ProvidableCompositionLocal<Session?> =
     compositionLocalWithComputedDefaultOf {
-        if (SpatialConfiguration.hasXrSpatialFeature(LocalContext.currentValue)) {
-            val sessionResult = Session.create(LocalContext.currentValue.getActivity())
-            (sessionResult as? SessionCreateSuccess)?.session
-        } else {
-            null
-        }
+        LocalComposeXrOwners.currentValue?.session
     }
-
-private val mainPanelEntityMap: MutableMap<Session, CoreMainPanelEntity> = mutableMapOf()
-
-/**
- * The [CoreMainPanelEntity] compose wrapper that represents the main panel for this [Session].
- *
- * In order to react to the main panel's size changes we need to add a listener to the main view.
- * Tracking the instance of CoreMainPanelEntity allows us to limit the number of listeners added and
- * makes it so we don't have to worry about disposing the instance every time it is used.
- */
-internal val Session.coreMainPanelEntity: CoreMainPanelEntity
-    @Composable
-    get() = mainPanelEntityMap.getOrPut(this) { CoreMainPanelEntity(this, LocalDensity.current) }

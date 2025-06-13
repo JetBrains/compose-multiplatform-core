@@ -74,7 +74,7 @@ package androidx.navigationevent {
 
   public final class NavigationInputHandler {
     ctor public NavigationInputHandler(androidx.navigationevent.NavigationEventDispatcher dispatcher);
-    method @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public void setOnBackInvokedDispatcher(android.window.OnBackInvokedDispatcher invoker);
+    method @RequiresApi(33) public void setOnBackInvokedDispatcher(android.window.OnBackInvokedDispatcher invoker);
   }
 
   public final class ViewTreeNavigationEventDispatcherOwner_androidKt {

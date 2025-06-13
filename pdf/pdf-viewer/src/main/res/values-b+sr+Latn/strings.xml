@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Ovaj PDF ne može da se izmeni"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Sadržaj je kopiran iz PDF-a"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Traka za skrolovanje"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"Potvrdi"</string>
 </resources>

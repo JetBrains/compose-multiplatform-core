@@ -203,7 +203,11 @@ class CameraSelectionOptimizerTest {
 
         cameraFactory = Mockito.spy(actualCameraFactory)
 
-        return CameraSelectionOptimizer.getSelectedAvailableCameraIds(cameraFactory, cameraSelector)
+        return CameraSelectionOptimizer.getSelectedAvailableCameraIds(
+            cameraFactory,
+            cameraSelector,
+            NO_OP_STREAM_SPECS_CALCULATOR,
+        )
     }
 
     private fun initCharacteristics(cameraId: String, lensFacing: Int, focalLength: Float) {

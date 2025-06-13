@@ -38,7 +38,6 @@ import androidx.camera.core.ZoomState
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.internal.ImmutableZoomState
-import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -47,6 +46,7 @@ import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
+import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.concurrent.futures.await
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -79,7 +79,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
 class ZoomControlDeviceTest(
-    private val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -950,34 +950,29 @@ class ZoomControlDeviceTest(
         private const val MAX_ZOOM = 4f
 
         @JvmStatic
-        @Parameterized.Parameters(name = "selector={0},config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
 
         private fun ZoomState.isEquivalentTo(other: ZoomState): Boolean {
             return zoomRatio == other.zoomRatio &&

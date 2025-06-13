@@ -21,10 +21,24 @@ import androidx.annotation.RestrictTo
 
 /** Success response of exporting the credentials to the provider */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ExportCredentialsResponse {
+public class ExportCredentialsResponse(
+    public val numSuccess: Int,
+    public val numFailure: Int,
+    public val numIgnored: Int,
+) {
     public companion object {
+        // values derived from identity credential sdk
+        private const val NUM_SUCCESS_KEY = "NUM_SUCCESS"
+        private const val NUM_FAILURE_KEY = "NUM_FAILURE"
+        private const val NUM_IGNORED_KEY = "NUM_IGNORED"
+
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        public fun asBundle(response: ExportCredentialsResponse): Bundle = Bundle()
+        public fun asBundle(response: ExportCredentialsResponse): Bundle =
+            Bundle().apply {
+                putInt(NUM_SUCCESS_KEY, response.numSuccess)
+                putInt(NUM_FAILURE_KEY, response.numFailure)
+                putInt(NUM_IGNORED_KEY, response.numIgnored)
+            }
     }
 }

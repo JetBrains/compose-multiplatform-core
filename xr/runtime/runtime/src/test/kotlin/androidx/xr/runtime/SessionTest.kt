@@ -52,6 +52,7 @@ class SessionTest {
     private lateinit var testScope: TestScope
 
     @get:Rule val activityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
+    @get:Rule val secondActivityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
 
     @Before
     fun setUp() {
@@ -67,6 +68,9 @@ class SessionTest {
         val result = Session.create(activity) as SessionCreateSuccess
 
         assertThat(result.session).isNotNull()
+
+        // Destroy the session to clean up the static activity map.
+        result.session.destroy()
     }
 
     @Test
@@ -75,6 +79,9 @@ class SessionTest {
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.INITIALIZED)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -86,6 +93,9 @@ class SessionTest {
         // "//third_party/arcore/androidx/java/androidx/xr/testing" dependency.
         val stateExtender = underTest.stateExtenders.first() as FakeStateExtender
         assertThat(stateExtender.isInitialized).isTrue()
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -150,6 +160,9 @@ class SessionTest {
         val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
         assertThat(platformAdapter).isNotNull()
         assertThat(platformAdapter.state.name).isEqualTo("CREATED")
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -186,6 +199,9 @@ class SessionTest {
 
         assertThat(result).isInstanceOf(SessionConfigureSuccess::class.java)
         assertThat(underTest.config).isEqualTo(config)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -203,6 +219,9 @@ class SessionTest {
 
         assertThat(result).isInstanceOf(SessionConfigurePermissionsNotGranted::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -219,6 +238,9 @@ class SessionTest {
 
         assertThat(result).isInstanceOf(SessionConfigureConfigurationNotSupported::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     // TODO(b/349855733): Add a test to verify configure() calls the corresponding LifecycleManager
@@ -233,6 +255,9 @@ class SessionTest {
         assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.RESUMED)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -243,6 +268,9 @@ class SessionTest {
         assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
         assertThat((underTest.platformAdapter as FakeJxrPlatformAdapter).state.name)
             .isEqualTo("STARTED")
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -276,6 +304,9 @@ class SessionTest {
 
             val actualDuration = afterTimeMark - beforeTimeMark
             assertThat(actualDuration).isEqualTo(expectedDuration)
+
+            // Destroy the session to clean up the static activity map.
+            underTest.destroy()
         }
 
     @Test
@@ -289,6 +320,9 @@ class SessionTest {
             awaitNewCoreState(underTest, this)
 
             assertThat(stateExtender.extended).isNotEmpty()
+
+            // Destroy the session to clean up the static activity map.
+            underTest.destroy()
         }
 
     @Test
@@ -300,6 +334,9 @@ class SessionTest {
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -311,6 +348,9 @@ class SessionTest {
 
         val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
         assertThat(platformAdapter.state.name).isEqualTo("PAUSED")
+
+        // Destroy the session to clean up the static activity map.
+        underTest.destroy()
     }
 
     @Test
@@ -340,6 +380,46 @@ class SessionTest {
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+    }
+
+    @Test
+    fun destroy_withMultiple_doesNotSetFinalActivity() {
+        var secondActivity: Activity? = null
+        secondActivityScenarioRule.scenario.onActivity { secondActivity = it }
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
+        underTest.resume()
+
+        // Destroy the session while the other session is still active.
+        underTest.destroy()
+
+        val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
+        // This should not be stopped because there is still an active activity but it will update
+        // to PAUSED.
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
+
+        // Destroy the second session to clean up the static activity map.
+        secondSession.destroy()
+    }
+
+    @Test
+    fun destroy_lastDestroyed_setFinalActivityTrue() {
+        var secondActivity: Activity? = null
+        secondActivityScenarioRule.scenario.onActivity { secondActivity = it }
+        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
+        secondSession.resume()
+        secondSession.destroy()
+        underTest.resume()
+
+        // Destroy the session after the other session was destroyed.
+        underTest.destroy()
+
+        val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+
+        // Destroy the second session to clean up the static activity map.
+        secondSession.destroy()
     }
 
     @Test

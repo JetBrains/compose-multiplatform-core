@@ -353,7 +353,7 @@ constructor(
     override fun isUseCaseCombinationSupported(
         useCases: List<UseCase>,
         cameraMode: Int,
-        allowFeatureCombinationResolutions: Boolean,
+        isFeatureComboInvocation: Boolean,
         cameraConfig: androidx.camera.core.impl.CameraConfig,
     ): Boolean {
         // If the UseCases exceed the resolutions then it will throw an exception
@@ -363,7 +363,7 @@ constructor(
                 cameraInfoInternal = this,
                 newUseCases = useCases,
                 cameraConfig = cameraConfig,
-                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions,
+                isFeatureComboInvocation = isFeatureComboInvocation,
             )
         } catch (e: IllegalArgumentException) {
             debug(e) {

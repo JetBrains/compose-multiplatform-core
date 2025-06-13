@@ -69,6 +69,7 @@ internal class Page(
     isAccessibilityEnabled: Boolean,
     /** A list represent the [FormWidgetInfo] present on the page. */
     formWidgetInfos: List<FormWidgetInfo>? = null,
+    private val pdfFormFillingConfig: PdfFormFillingConfig,
 ) {
     init {
         require(pageNum >= 0) { "Invalid negative page" }
@@ -76,7 +77,6 @@ internal class Page(
 
     /** Handles rendering bitmaps for this page using [PdfDocument] */
     private var bitmapFetcher: BitmapFetcher? = null
-
     // Pre-allocated values to avoid allocations at drawing time
     private val highlightPaint =
         Paint().apply {
@@ -87,6 +87,7 @@ internal class Page(
             isDither = true
         }
     private val highlightRect = RectF()
+    private val formWidgetHighlightRect = RectF()
     private val tileLocationRect = RectF()
 
     private var fetchPageTextJob: Job? = null
@@ -255,6 +256,21 @@ internal class Page(
             highlightRect.offset(locationInView.left.toFloat(), locationInView.top.toFloat())
             highlightPaint.color = highlight.color
             canvas.drawRect(highlightRect, highlightPaint)
+        }
+
+        if (pdfFormFillingConfig.isFormFillingEnabled()) {
+            // TODO (b/420905226): Add handling for other widget types as well
+            formWidgetInfos
+                ?.filter { it.widgetType == FormWidgetInfo.WIDGET_TYPE_TEXTFIELD }
+                ?.forEach {
+                    formWidgetHighlightRect.set(it.widgetRect)
+                    formWidgetHighlightRect.offset(
+                        locationInView.left.toFloat(),
+                        locationInView.top.toFloat(),
+                    )
+                    highlightPaint.color = pdfFormFillingConfig.formFieldsHighlightColor
+                    canvas.drawRect(formWidgetHighlightRect, highlightPaint)
+                }
         }
     }
 

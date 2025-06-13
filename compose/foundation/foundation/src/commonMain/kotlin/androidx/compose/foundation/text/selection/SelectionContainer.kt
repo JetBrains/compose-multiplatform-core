@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.ContextMenuArea
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
@@ -108,6 +110,12 @@ internal fun SelectionContainer(
     manager.textToolbar = LocalTextToolbar.current
     manager.onSelectionChange = onSelectionChange
     manager.selection = selection
+    @OptIn(ExperimentalFoundationApi::class)
+    if (ComposeFoundationFlags.isSmartSelectionEnabled) {
+        manager.platformSelectionBehaviors =
+            rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, null)
+        manager.coroutineScope = coroutineScope
+    }
 
     // TODO: upstreaming https://youtrack.jetbrains.com/issue/CMP-7517/Upstream-rememberClipboardEventsHandler
     rememberClipboardEventsHandler(

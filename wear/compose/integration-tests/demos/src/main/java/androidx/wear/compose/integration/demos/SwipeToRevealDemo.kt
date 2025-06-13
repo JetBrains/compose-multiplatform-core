@@ -53,11 +53,13 @@ import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.RevealActionType
+import androidx.wear.compose.material.RevealDirection
 import androidx.wear.compose.material.RevealState
 import androidx.wear.compose.material.RevealValue
 import androidx.wear.compose.material.SwipeToRevealCard
 import androidx.wear.compose.material.SwipeToRevealChip
 import androidx.wear.compose.material.SwipeToRevealDefaults
+import androidx.wear.compose.material.SwipeToRevealDefaults.createRevealAnchors
 import androidx.wear.compose.material.SwipeToRevealPrimaryAction
 import androidx.wear.compose.material.SwipeToRevealSecondaryAction
 import androidx.wear.compose.material.SwipeToRevealUndoAction
@@ -71,6 +73,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
 @Composable
 fun SwipeToRevealChips(
+    isBiDirection: Boolean = false,
     swipeToDismissBoxState: SwipeToDismissBoxState,
     includeSecondaryAction: Boolean,
 ) {
@@ -79,14 +82,23 @@ fun SwipeToRevealChips(
 
     ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
-            Text(text = "Swipe To Reveal Chips - Undo")
+            Text(
+                text =
+                    if (isBiDirection) "Swipe To Reveal Chips - Bi-Direction"
+                    else "Swipe To Reveal Chips - Undo"
+            )
             Spacer(Modifier.size(15.dp))
         }
         repeat(itemCount) {
             val currentState = expandableStateMapping.getOrPutNew(it)
             expandableItem(state = currentState) { expanded ->
                 var undoActionEnabled by remember { mutableStateOf(true) }
-                val revealState = rememberRevealState()
+                val revealState =
+                    if (isBiDirection)
+                        rememberRevealState(
+                            anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
+                        )
+                    else rememberRevealState()
                 val coroutineScope = rememberCoroutineScope()
                 val deleteItem: () -> Unit = {
                     coroutineScope.launch {

@@ -186,7 +186,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 "playerControls",
                 Pose(Vector3(0.0f, -0.25f, 0.25f)), // below and slightly in front of the canvas
             )
-        controlPanelEntity!!.setParent(surfaceEntity!!)
+        controlPanelEntity!!.parent = surfaceEntity!!
 
         // TODO: b/413478924 - Use controlPanelEntity.view when the api is available.
         val parentView: View =

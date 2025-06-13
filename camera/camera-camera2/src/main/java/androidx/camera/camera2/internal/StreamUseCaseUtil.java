@@ -233,7 +233,8 @@ public final class StreamUseCaseUtil {
     public static boolean shouldUseStreamUseCase(
             SupportedSurfaceCombination.@NonNull FeatureSettings featureSettings) {
         return featureSettings.getCameraMode() == CameraMode.DEFAULT
-                && featureSettings.getRequiredMaxBitDepth() == DynamicRange.BIT_DEPTH_8_BIT;
+                && featureSettings.getRequiredMaxBitDepth() == DynamicRange.BIT_DEPTH_8_BIT
+                && !featureSettings.isHighSpeedOn();
     }
 
     /**

@@ -29,12 +29,15 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3.adaptive.layout"
+        androidResources.enable = true
+    }
     desktop()
     mac()
     ios()
@@ -161,9 +164,4 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material3:adaptive:adaptive-samples"))
     addGoldenImageAssets()
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material3.adaptive.layout"
 }

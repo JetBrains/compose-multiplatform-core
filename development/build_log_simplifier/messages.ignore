@@ -374,8 +374,8 @@ For more details, see: https://kotl\.in/gradle/internal\-compiler\-symbols
 # b/359449191
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
-> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:macrobenchmark:testapp:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
-> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:macrobenchmark:testapp:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
+> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:macrobenchmark:testapp:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
+> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:macrobenchmark:testapp:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
 # > Task :room:integration-tests:room-testapp:runErrorProneWithPreKmpCompilerRelease
 \$OUT_DIR/androidx/room/integration\-tests/room\-testapp/build/errorProne/WithPreKmpCompilerRelease/androidx/room/integration/testapp/database/CustomerDao_Impl\.java:[0-9]+: warning: \[removal\] finalize\(\) in Object has been deprecated and marked for removal
 protected void finalize\(\) \{

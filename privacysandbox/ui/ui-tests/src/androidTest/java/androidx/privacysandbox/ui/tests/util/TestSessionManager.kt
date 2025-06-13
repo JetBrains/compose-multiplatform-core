@@ -50,6 +50,8 @@ import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
 /** A utility class for performing session-related operations for integration testing. */
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class TestSessionManager(
     private val context: Context,
     private val invokeBackwardsCompatFlow: Boolean,
@@ -155,8 +157,11 @@ class TestSessionManager(
         sharedUiContainer: SharedUiContainer? = null,
         testSharedSessionClient: TestSharedUiSessionClient = TestSharedUiSessionClient(),
         isFailingSession: Boolean = false,
+        globalOpenSessionLatch: CountDownLatch? = null,
+        globalCloseSessionLatch: CountDownLatch? = null,
     ): TestSharedUiAdapter {
-        val adapter = TestSharedUiAdapter(isFailingSession)
+        val adapter =
+            TestSharedUiAdapter(isFailingSession, globalOpenSessionLatch, globalCloseSessionLatch)
         val adapterFromCoreLibInfo =
             SharedUiAdapterFactory.createFromCoreLibInfo(getCoreLibInfoFromSharedUiAdapter(adapter))
         if (sharedUiContainer == null) {
@@ -164,7 +169,6 @@ class TestSessionManager(
         } else {
             sharedUiContainer.setAdapter(adapterFromCoreLibInfo)
         }
-
         assertWithMessage("openSession is called on adapter")
             .that(adapter.isOpenSessionCalled)
             .isTrue()

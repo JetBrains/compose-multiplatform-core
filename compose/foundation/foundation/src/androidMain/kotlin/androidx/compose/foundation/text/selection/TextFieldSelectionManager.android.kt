@@ -30,8 +30,9 @@ import androidx.compose.foundation.text.TextContextMenuItems.Cut
 import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.addProcessedTextContextMenuItems
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -84,14 +85,14 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     manager: TextFieldSelectionManager,
     coroutineScope: CoroutineScope,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.textFieldItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
         onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
         }
@@ -120,6 +121,13 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
         }
         separator()
     }
+
+    addProcessedTextContextMenuItems(
+        context,
+        manager.editable,
+        manager.value.text,
+        manager.value.selection,
+    )
 }
 
 internal fun TextFieldSelectionManager.contextMenuBuilder(

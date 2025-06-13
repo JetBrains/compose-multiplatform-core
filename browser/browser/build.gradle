@@ -22,7 +22,6 @@ android {
             version = 1
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.browser"
 }
 
@@ -47,8 +46,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.mockitoCore4)
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.junit)
 

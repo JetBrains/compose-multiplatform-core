@@ -66,7 +66,7 @@ public open class MaterialScope
  * @property deviceConfiguration The device parameters for where the components will be rendered
  */
 internal constructor(
-    internal val context: Context,
+    public val context: Context,
     public val deviceConfiguration: DeviceParameters,
     internal val allowDynamicTheme: Boolean,
     internal val theme: MaterialTheme,

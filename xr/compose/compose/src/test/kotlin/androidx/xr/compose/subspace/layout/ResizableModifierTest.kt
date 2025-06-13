@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -562,6 +563,7 @@ class ResizableModifierTest {
         assertResizableComponentDoesNotExist("row")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentByDefault() {
         composeTestRule.setContent {
@@ -576,6 +578,7 @@ class ResizableModifierTest {
         )
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentWhenResizableIsEnabled() {
         composeTestRule.setContent {
@@ -584,6 +587,7 @@ class ResizableModifierTest {
         assertResizableComponentDoesNotExist("volume")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentWhenResizableIsDisabled() {
         composeTestRule.setContent {

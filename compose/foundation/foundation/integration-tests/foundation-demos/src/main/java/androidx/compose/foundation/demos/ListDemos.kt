@@ -162,7 +162,6 @@ val LazyListDemos =
         ComposableDemo("Staggered grid") { LazyStaggeredGridDemo() },
         ComposableDemo("Animate item placement") { AnimateItemPlacementDemo() },
         ComposableDemo("Focus Scrolling") { BringIntoViewDemo() },
-        ComposableDemo("2D Custom Lazy Layout") { Lazy2DGridDemo() },
         PagingDemos,
     )
 

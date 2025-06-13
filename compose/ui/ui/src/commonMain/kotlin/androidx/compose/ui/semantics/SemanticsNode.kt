@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
@@ -126,13 +127,15 @@ internal constructor(
      */
     val touchBoundsInRoot: Rect
         get() {
-            val entity =
-                if (unmergedConfig.isMergingSemanticsOfDescendants) {
-                    (layoutNode.outerMergingSemantics ?: outerSemanticsNode)
-                } else {
-                    outerSemanticsNode
-                }
-            return entity.node.touchBoundsInRoot(unmergedConfig.useMinimumTouchTarget)
+            val semanticsModifierNode = findSemanticsModifierNodeToGetBounds()
+            if (semanticsModifierNode == null) {
+                // If no node is found that has isImportantForBounds == true, then we fallback to
+                // the inner coordinator to get the bounds.
+                return layoutNode.innerCoordinator.touchBoundsInRoot()
+            }
+            return semanticsModifierNode.node.touchBoundsInRoot(
+                unmergedConfig.useMinimumTouchTarget
+            )
         }
 
     /** The size of the bounding box for this node, with no clipping applied */
@@ -180,14 +183,29 @@ internal constructor(
      */
     internal val boundsInParent: Rect
         get() {
-            val parent = this.parent ?: return Rect.Zero
             val currentCoordinates =
                 findCoordinatorToGetBounds()?.takeIf { it.isAttached }?.coordinates
                     ?: return Rect.Zero
-            return parent.outerSemanticsNode
-                .requireCoordinator(Nodes.Semantics)
-                .localBoundingBoxOf(currentCoordinates)
+            return boundsInImportantForBoundsAncestor(currentCoordinates)
         }
+
+    /**
+     * Calculates the bounds relative to the nearest ancestor that has any semantics modifier nodes
+     * with isImportantForBounds == true. If no such ancestor is found, returns [Rect.Zero].
+     */
+    private fun boundsInImportantForBoundsAncestor(nodeCoordinates: LayoutCoordinates): Rect {
+        val parent = this.parent ?: return Rect.Zero
+        val parentCoordinatorForBounds =
+            parent.layoutNode.nodes
+                .firstFromHead(Nodes.Semantics) { it.isImportantForBounds }
+                ?.requireCoordinator(Nodes.Semantics)
+        if (parentCoordinatorForBounds == null) {
+            // If the parent has no semantics modifier nodes that are important for bounds, continue
+            // searching upwards in the tree until we find the nearest ancestor that does.
+            return parent.boundsInImportantForBoundsAncestor(nodeCoordinates)
+        }
+        return parentCoordinatorForBounds.localBoundingBoxOf(nodeCoordinates)
+    }
 
     /** Whether this node is transparent. */
     internal val isTransparent: Boolean
@@ -407,13 +425,23 @@ internal constructor(
             ?: layoutNode.innerCoordinator
     }
 
+    /**
+     * Look for an outermost [SemanticsModifierNode] that has isImportantForBounds == true, while
+     * prioritizing nodes with shouldMergeDescendantSemantics == true. If no such node found (i.e.,
+     * there are no nodes with isImportantForBounds == true), this method returns null.
+     */
     private fun findSemanticsModifierNodeToGetBounds(): SemanticsModifierNode? {
         var nodeForBounds: SemanticsModifierNode? = null
-        layoutNode.nodes.headToTail(Nodes.Semantics) {
-            if (it.isImportantForBounds) {
-                if (it.shouldMergeDescendantSemantics) return it
-                if (nodeForBounds == null) nodeForBounds = it
+        if (unmergedConfig.isMergingSemanticsOfDescendants) {
+            layoutNode.nodes.headToTail(Nodes.Semantics) {
+                if (it.isImportantForBounds) {
+                    if (it.shouldMergeDescendantSemantics) return it
+                    if (nodeForBounds == null) nodeForBounds = it
+                }
             }
+        } else {
+            nodeForBounds =
+                layoutNode.nodes.firstFromHead(Nodes.Semantics) { it.isImportantForBounds }
         }
         return nodeForBounds
     }
@@ -482,9 +510,6 @@ internal constructor(
         return SemanticsNode(outerSemanticsNode, true, layoutNode, unmergedConfig)
     }
 }
-
-internal val LayoutNode.outerMergingSemantics: SemanticsModifierNode?
-    get() = nodes.firstFromHead(Nodes.Semantics) { it.shouldMergeDescendantSemantics }
 
 /**
  * Executes [selector] on every parent of this [LayoutNode] and returns the closest [LayoutNode] to

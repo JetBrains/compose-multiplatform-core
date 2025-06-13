@@ -61,8 +61,7 @@ class PerceivedResolutionManager(
             override fun run() {
 
                 // Update the Text
-                val leftEye =
-                    session.scene.spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
+                val leftEye = session.scene.spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
                 val leftEyeFov = leftEye?.fov
                 val fovString =
                     if (leftEyeFov != null) {
@@ -93,10 +92,10 @@ class PerceivedResolutionManager(
                 )
                 if (panelEntityManager.panelEntity != null) {
                     val panelWidthInActivitySpace: Float =
-                        panelEntityManager.panelEntity!!.getSize().width *
+                        panelEntityManager.panelEntity!!.size.width *
                             panelEntityManager.panelEntity!!.getScale(Space.ACTIVITY)
                     val panelHeightInActivitySpace: Float =
-                        panelEntityManager.panelEntity!!.getSize().height *
+                        panelEntityManager.panelEntity!!.size.height *
                             panelEntityManager.panelEntity!!.getScale(Space.ACTIVITY)
                     mTextView?.setLine(
                         "Panel Entity dimensions",

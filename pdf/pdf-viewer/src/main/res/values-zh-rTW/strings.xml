@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"無法編輯這個 PDF 檔"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"已從 PDF 複製內容"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"捲軸"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"確認"</string>
 </resources>

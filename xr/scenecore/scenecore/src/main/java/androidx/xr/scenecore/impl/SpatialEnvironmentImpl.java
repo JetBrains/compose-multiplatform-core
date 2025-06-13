@@ -60,7 +60,7 @@ import java.util.function.Supplier;
 // TODO(b/373435470): Remove "deprecation"
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings({"deprecation", "BanSynchronizedMethods"})
-final class SpatialEnvironmentImpl implements SpatialEnvironment {
+final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consumer<Node>> {
     public static final String TAG = "SpatialEnvironmentImpl";
 
     public static final String GEOMETRY_NODE_NAME = "EnvironmentGeometryNode";
@@ -70,6 +70,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
     private final boolean mUseSplitEngine;
     @Nullable private Activity mActivity;
     private Node mRootEnvironmentNode;
+    @Nullable private Consumer<Node> mOnBeforeNodeAttachedListener = null;
     private SubspaceNode mGeometrySubspaceSplitEngine;
     private int mGeometrySubspaceImpressNode;
     private boolean mIsSpatialEnvironmentPreferenceActive = false;
@@ -155,6 +156,11 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
         }
 
         return false;
+    }
+
+    @Override
+    public void accept(Consumer<Node> nodeConsumer) {
+        this.mOnBeforeNodeAttachedListener = nodeConsumer;
     }
 
     // Package Private enum to return which spatial states have changed.
@@ -464,6 +470,9 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
             } else {
                 // Environment geometry has not changed, use the existing environment node.
                 currentRootEnvironmentNode = mRootEnvironmentNode;
+            }
+            if (mOnBeforeNodeAttachedListener != null) {
+                mOnBeforeNodeAttachedListener.accept(currentRootEnvironmentNode);
             }
             mXrExtensions.attachSpatialEnvironment(
                     mActivity,

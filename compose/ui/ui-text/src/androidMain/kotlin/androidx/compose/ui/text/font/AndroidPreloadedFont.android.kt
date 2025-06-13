@@ -25,7 +25,6 @@ import android.os.ParcelFileDescriptor
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.util.fastMap
 import java.io.File
 
 internal sealed class AndroidPreloadedFont
@@ -231,10 +230,6 @@ private object TypefaceBuilderCompat {
                 // cannot reach
                 throw IllegalStateException("Required density, but not provided")
             }
-        return settings
-            .fastMap { setting ->
-                FontVariationAxis(setting.axisName, setting.toVariationValue(density))
-            }
-            .toTypedArray()
+        return toAndroidArray(density, getFontWeightAdjustment(context))
     }
 }

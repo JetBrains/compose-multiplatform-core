@@ -205,7 +205,8 @@ private fun Record.toPlatformRecordExt16(): PlatformRecord? {
 }
 
 fun PlatformRecord.toSdkRecord(): Record {
-    return toSdkRecordExt15()
+    return toSdkRecordExt16()
+        ?: toSdkRecordExt15()
         ?: toSdkRecordExt13()
         ?: when (this) {
             is PlatformActiveCaloriesBurnedRecord -> toSdkActiveCaloriesBurnedRecord()
@@ -270,6 +271,17 @@ private fun PlatformRecord.toSdkRecordExt15(): Record? {
     }
     return when (this) {
         is PlatformMindfulnessSessionRecord -> toSdkMindfulnessSessionRecord()
+        else -> null
+    }
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun PlatformRecord.toSdkRecordExt16(): Record? {
+    if (!isAtLeastSdkExtension16()) {
+        return null
+    }
+    return when (this) {
+        is PlatformActivityIntensityRecord -> toSdkActivityIntensityRecord()
         else -> null
     }
 }
@@ -501,6 +513,17 @@ private fun PlatformMindfulnessSessionRecord.toSdkMindfulnessSessionRecord() =
         mindfulnessSessionType = mindfulnessSessionType.toSdkMindfulnessSessionType(),
         title = title.toString(),
         notes = notes.toString(),
+    )
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun PlatformActivityIntensityRecord.toSdkActivityIntensityRecord() =
+    ActivityIntensityRecord(
+        startTime = startTime,
+        startZoneOffset = startZoneOffset,
+        endTime = endTime,
+        endZoneOffset = endZoneOffset,
+        metadata = metadata.toSdkMetadata(),
+        activityIntensityType = activityIntensityType,
     )
 
 private fun PlatformMenstruationPeriodRecord.toSdkMenstruationPeriodRecord() =

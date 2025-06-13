@@ -60,6 +60,9 @@ public interface PerceptionManager {
     /** AR device tracking information. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice
 
+    /** View Cameras information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>
+
     /** [Earth] tracking information. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val earth: Earth
 }

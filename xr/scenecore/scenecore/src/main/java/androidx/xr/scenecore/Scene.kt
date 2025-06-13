@@ -96,8 +96,9 @@ public class Scene : SessionConnector {
      * within a session. The returned object will not update if the capabilities change; this method
      * should be called again to get the latest set of capabilities.
      */
-    public lateinit var spatialCapabilities: SpatialCapabilities
+    public var spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
         private set
+        get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
 
     /**
      * When the scene encounters spatial mode change, this [Entity] will be placed at the
@@ -145,10 +146,10 @@ public class Scene : SessionConnector {
         perceptionSpace = PerceptionSpace.create(platformAdapter)
         activitySpace = ActivitySpace.create(platformAdapter, entityManager)
         spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
-        mainPanelEntity = PanelEntity.createMainPanelEntity(platformAdapter, entityManager)
+        mainPanelEntity =
+            PanelEntity.createMainPanelEntity(lifecycleManager, platformAdapter, entityManager)
         activitySpaceRoot =
             entityManager.getEntityForRtEntity(platformAdapter.activitySpaceRootImpl)!!
-        spatialCapabilities = platformAdapter.spatialCapabilities.toSpatialCapabilities()
         platformAdapter.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(

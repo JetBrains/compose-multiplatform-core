@@ -30,6 +30,8 @@ import org.junit.Test
 @LargeTest
 class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
 
+    val initialPage = DefaultPageCount / 2
+
     @Before
     fun setUp() {
         rule.mainClock.autoAdvance = false
@@ -41,12 +43,15 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
             // Arrange
             setContent {
                 ParameterizedPager(
+                    initialPage = initialPage,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     layoutDirection = it.layoutDirection,
                     pageSpacing = it.pageSpacing,
                     contentPadding = it.mainAxisContentPadding,
                     reverseLayout = it.reverseLayout,
+                    snapPosition = it.snapPosition.first,
+                    pageCount = { DefaultPageCount },
                 )
             }
 
@@ -54,11 +59,12 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                 val delta = pagerSize * 0.45f * param.scrollForwardSign
 
                 // Act and Assert - forward
-                repeat(DefaultAnimationRepetition) {
-                    onNodeWithTag(it.toString()).assertIsDisplayed()
-                    param.confirmPageIsInCorrectPosition(it)
+                repeat(DefaultAnimationRepetition) { repeatIndex ->
+                    val page = repeatIndex + initialPage
+                    onNodeWithTag(page.toString()).assertIsDisplayed()
+                    param.confirmPageIsInCorrectPosition(page)
                     runAndWaitForPageSettling {
-                        onNodeWithTag(it.toString()).performTouchInput {
+                        onNodeWithTag(page.toString()).performTouchInput {
                             with(param) {
                                 swipeWithVelocityAcrossMainAxis(
                                     with(rule.density) { 1.5f * MinFlingVelocityDp.toPx() },
@@ -71,7 +77,63 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
 
                 // Act - backward
                 repeat(DefaultAnimationRepetition) {
-                    val countDown = DefaultAnimationRepetition - it
+                    val countDown = DefaultAnimationRepetition - it + initialPage
+                    onNodeWithTag(countDown.toString()).assertIsDisplayed()
+                    param.confirmPageIsInCorrectPosition(countDown)
+                    runAndWaitForPageSettling {
+                        rule.onNodeWithTag(countDown.toString()).performTouchInput {
+                            with(param) {
+                                swipeWithVelocityAcrossMainAxis(
+                                    with(rule.density) { 1.5f * MinFlingVelocityDp.toPx() },
+                                    delta * -1f,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                resetTestCase()
+            }
+        }
+
+    @Test
+    fun dragForwardAndBackward_verifyPagesAreLaidOutCorrectly() =
+        with(rule) {
+            // Arrange
+            setContent {
+                ParameterizedPager(
+                    initialPage = initialPage,
+                    modifier = Modifier.fillMaxSize(),
+                    orientation = it.orientation,
+                    pageSpacing = it.pageSpacing,
+                    snapPosition = it.snapPosition.first,
+                    pageCount = { DefaultPageCount },
+                )
+            }
+
+            forEachParameter(DragParamsToTest) { param ->
+                val delta = pagerSize * 0.95f * param.scrollForwardSign
+
+                // Act and Assert - forward
+                repeat(DefaultAnimationRepetition) { repeatIndex ->
+                    val page = repeatIndex + initialPage
+                    onNodeWithTag(page.toString()).assertIsDisplayed()
+                    param.confirmPageIsInCorrectPosition(page)
+                    runAndWaitForPageSettling {
+                        onNodeWithTag(page.toString()).performTouchInput {
+                            with(param) {
+                                swipeWithVelocityAcrossMainAxis(
+                                    with(rule.density) { 1.5f * MinFlingVelocityDp.toPx() },
+                                    delta,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Act - backward
+                repeat(DefaultAnimationRepetition) {
+                    val countDown = DefaultAnimationRepetition - it + initialPage
                     onNodeWithTag(countDown.toString()).assertIsDisplayed()
                     param.confirmPageIsInCorrectPosition(countDown)
                     runAndWaitForPageSettling {
@@ -91,7 +153,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
         }
 
     private fun resetTestCase() {
-        rule.runOnIdle { runBlocking { pagerState.scrollToPage(0) } }
+        rule.runOnIdle { runBlocking { pagerState.scrollToPage(initialPage) } }
     }
 
     companion object {
@@ -113,6 +175,23 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+        val DragParamsToTest =
+            mutableListOf<SingleParamConfig>().apply {
+                for (orientation in TestOrientation) {
+                    for (pageSpacing in TestPageSpacing) {
+                        for (snapPosition in TestSnapPosition) {
+                            add(
+                                SingleParamConfig(
+                                    orientation = orientation,
+                                    pageSpacing = pageSpacing,
+                                    snapPosition = snapPosition,
+                                )
+                            )
                         }
                     }
                 }

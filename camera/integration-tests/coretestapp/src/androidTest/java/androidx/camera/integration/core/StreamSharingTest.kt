@@ -84,7 +84,6 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
     companion object {
         private const val VIDEO_TIMEOUT_SEC = 10L
         private const val TAG = "StreamSharingTest"
-        private val DEFAULT_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -99,10 +98,11 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var cameraProvider: ProcessCameraProvider
     private var surfaceFutureSemaphore: Semaphore = Semaphore(0)
+    private lateinit var defaultCameraSelector: CameraSelector
 
     @Before
     fun setUp() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_CAMERA_SELECTOR.lensFacing!!))
+        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
     }
@@ -131,7 +131,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
         // Checks whether the back camera can support four UseCases combination
         val cameraUseCaseAdapter =
             checkStreamSharingSupportAndRetrieveCameraUseCaseAdapter(
-                DEFAULT_CAMERA_SELECTOR,
+                defaultCameraSelector,
                 useCases,
             )
         assumeTrue(cameraUseCaseAdapter != null)

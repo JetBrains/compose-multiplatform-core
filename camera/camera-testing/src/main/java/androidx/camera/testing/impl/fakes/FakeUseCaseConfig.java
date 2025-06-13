@@ -263,21 +263,17 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
             return this;
         }
 
+        /** Sets the session type to the fake use case. */
+        public @NonNull Builder setSessionType(int sessionType) {
+            getMutableConfig().insertOption(OPTION_SESSION_TYPE, sessionType);
+            return this;
+        }
+
         /**
          * Sets specific target frame rate to the fake use case.
          */
         public @NonNull Builder setTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
             getMutableConfig().insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
-            return this;
-        }
-
-        /**
-         * Sets specific target high speed frame rate to the fake use case.
-         */
-        public @NonNull Builder setTargetHighSpeedFrameRate(
-                @NonNull Range<Integer> targetHighSPeedFrameRate) {
-            getMutableConfig().insertOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
-                    targetHighSPeedFrameRate);
             return this;
         }
     }

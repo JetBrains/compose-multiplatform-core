@@ -477,14 +477,11 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     /**
      * Called when an external link in the PDF is clicked. Override this method to provide custom
-     * handling for external links (e.g., URLs), as opposed to internal document navigation like
-     * `goTo` links, which are handled separately.
+     * handling for external links (e.g., URLs).
      *
-     * @param externalLink The [ExternalLink] model representing the clicked link. It contains
-     *   metadata such as the link's URL, bounds, and the page it was found on.
+     * @param externalLink The [ExternalLink] model representing the clicked link.
      * @return `true` if the link click was handled; `false` to fall back to the default behaviour.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     protected open fun onLinkClicked(externalLink: ExternalLink): Boolean {
         return false
     }

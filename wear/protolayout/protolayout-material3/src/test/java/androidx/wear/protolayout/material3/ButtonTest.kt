@@ -74,6 +74,17 @@ class ButtonTest {
     }
 
     @Test
+    fun textButton_contentDescription_default() {
+        LayoutElementAssertionsProvider(
+                materialScope(CONTEXT, DEVICE_CONFIGURATION) {
+                    textButton(onClick = CLICKABLE, labelContent = { text(TEXT.layoutString) })
+                }
+            )
+            .onRoot()
+            .assert(hasContentDescription(TEXT))
+    }
+
+    @Test
     fun pillButton_size_default() {
         LayoutElementAssertionsProvider(DEFAULT_BUTTON)
             .onRoot()

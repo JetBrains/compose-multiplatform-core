@@ -19,13 +19,24 @@ package androidx.pdf.view
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import androidx.pdf.updateContext
+import java.util.Locale
 
 /** Bare bones test helper [Activity] for [PdfView] integration tests */
-class PdfViewTestActivity : Activity() {
+open class PdfViewTestActivity : Activity() {
 
     override fun attachBaseContext(newBase: Context?) {
-        onAttachCallback?.let {
-            val wrappedContext = it.invoke(newBase!!)
+        // Update context of test activity if custom locale is injected
+        if (
+            newBase != null &&
+                intent != null &&
+                intent.hasExtra(LOCALE_LANGUAGE) &&
+                intent.hasExtra(LOCALE_COUNTRY)
+        ) {
+            val language = intent.getStringExtra(LOCALE_LANGUAGE) as String
+            val country = intent.getStringExtra(LOCALE_COUNTRY) as String
+            val newLocale = Locale(language, country)
+            val wrappedContext = updateContext(newBase, newLocale)
             return super.attachBaseContext(wrappedContext)
         }
         super.attachBaseContext(newBase)
@@ -47,7 +58,7 @@ class PdfViewTestActivity : Activity() {
     companion object {
         var onCreateCallback: ((PdfViewTestActivity) -> Unit) = {}
 
-        // TODO(b/419791000): Modify logic to avoid static callbacks
-        var onAttachCallback: ((Context) -> Context)? = null
+        const val LOCALE_LANGUAGE = "language"
+        const val LOCALE_COUNTRY = "country"
     }
 }

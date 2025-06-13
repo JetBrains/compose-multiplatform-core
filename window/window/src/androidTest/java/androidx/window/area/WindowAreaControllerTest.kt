@@ -16,13 +16,19 @@
 
 package androidx.window.area
 
+import android.app.Activity
+import android.os.Binder
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.window.WindowTestUtils.Companion.assumeAtLeastWindowExtensionVersion
 import androidx.window.core.ExperimentalWindowApi
+import java.util.concurrent.Executor
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -47,4 +53,54 @@ class WindowAreaControllerTest {
 
             assertTrue(controller1 === controller2, "Objects returned are not the same object")
         }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    @Test
+    fun testOverrideDecoratorUpdatesInstance(): Unit =
+        testScope.runTest {
+            assumeTrue(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
+            assumeAtLeastWindowExtensionVersion(minVendorApiLevel)
+            val controller1 = WindowAreaController.getOrCreate()
+
+            WindowAreaController.overrideDecorator(
+                object : WindowAreaControllerDecorator {
+                    override fun decorate(controller: WindowAreaController): WindowAreaController {
+                        return testController
+                    }
+                }
+            )
+            val controller2 = WindowAreaController.getOrCreate()
+
+            assertFalse(controller1 === controller2, "Objects returned are the same object")
+        }
+
+    companion object {
+        val testController =
+            object : WindowAreaController() {
+                override val windowAreaInfos: Flow<List<WindowAreaInfo>>
+                    get() = flowOf(listOf())
+
+                override fun transferActivityToWindowArea(
+                    token: Binder,
+                    activity: Activity,
+                    executor: Executor,
+                    windowAreaSessionCallback: WindowAreaSessionCallback,
+                ) {
+                    windowAreaSessionCallback.onSessionEnded(
+                        IllegalStateException("There are no WindowAreas")
+                    )
+                }
+
+                override fun presentContentOnWindowArea(
+                    token: Binder,
+                    activity: Activity,
+                    executor: Executor,
+                    windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
+                ) {
+                    windowAreaPresentationSessionCallback.onSessionEnded(
+                        IllegalStateException("There are no WindowAreas")
+                    )
+                }
+            }
+    }
 }

@@ -149,7 +149,7 @@ public class CameraSurfaceAdapter(
         newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,
         isPreviewStabilizationOn: Boolean,
         hasVideoCapture: Boolean,
-        allowFeatureCombinationResolutions: Boolean,
+        isFeatureComboInvocation: Boolean,
         findMaxSupportedFrameRate: Boolean,
     ): SurfaceStreamSpecQueryResult {
 
@@ -165,7 +165,7 @@ public class CameraSurfaceAdapter(
             newUseCaseConfigsSupportedSizeMap,
             isPreviewStabilizationOn,
             hasVideoCapture,
-            allowFeatureCombinationResolutions,
+            isFeatureComboInvocation,
             findMaxSupportedFrameRate,
         )
     }

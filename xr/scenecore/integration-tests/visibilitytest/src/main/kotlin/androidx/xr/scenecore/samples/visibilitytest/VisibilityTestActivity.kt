@@ -37,7 +37,11 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SpatialPointerComponent
 import androidx.xr.scenecore.SpatialPointerIconNone
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 
+@Suppress("Deprecation")
+// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
+// is/setEnabled.
 class VisibilityTestActivity : AppCompatActivity() {
 
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -66,7 +70,8 @@ class VisibilityTestActivity : AppCompatActivity() {
         }
 
         childPanelEntity2 = createPanelEntity(session, "Child Panel 2", childPanelEntity1)
-        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        val dragonModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
         dragonModelFuture.addListener(
             {
                 val dragonModel = dragonModelFuture.get()
@@ -176,7 +181,7 @@ class VisibilityTestActivity : AppCompatActivity() {
                 name,
                 Pose(Vector3(-0.5f, -0.1f, 0f)),
             )
-        panelEntity.setParent(parent)
+        panelEntity.parent = parent
         if (!panelEntity.addComponent(MovableComponent.create(session, false, false, emptySet()))) {
             throw RuntimeException("Failed to add movable component to panel")
         }
@@ -186,12 +191,12 @@ class VisibilityTestActivity : AppCompatActivity() {
 
     private fun createGltfEntities(session: Session, model: GltfModel) {
         parentGltfEntity = GltfModelEntity.create(session, model, Pose(Vector3(1.5f, 0f, -2f)))
-        parentGltfEntity?.setParent(session.scene.activitySpace)
+        parentGltfEntity?.parent = session.scene.activitySpace
 
         childGltfEntity1 = GltfModelEntity.create(session, model, Pose(Vector3(0.5f, -0.5f, 0f)))
-        childGltfEntity1?.setParent(parentGltfEntity)
+        childGltfEntity1?.parent = parentGltfEntity
 
         childGltfEntity2 = GltfModelEntity.create(session, model, Pose(Vector3(0.5f, -0.5f, 0f)))
-        childGltfEntity2?.setParent(childGltfEntity1)
+        childGltfEntity2?.parent = childGltfEntity1
     }
 }

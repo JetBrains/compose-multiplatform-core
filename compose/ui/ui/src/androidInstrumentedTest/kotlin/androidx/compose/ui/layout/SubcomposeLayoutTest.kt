@@ -2162,7 +2162,7 @@ class SubcomposeLayoutTest {
         rule.runOnIdle {
             var current: LayoutCoordinates? = coordinates
             while (current != null) {
-                assertThat(current.isAttached)
+                assertThat(current.isAttached).isTrue()
                 assertThat(current.size).isEqualTo(size)
                 current = current.parentCoordinates
             }

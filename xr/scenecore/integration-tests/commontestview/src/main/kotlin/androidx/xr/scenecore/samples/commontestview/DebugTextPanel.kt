@@ -50,7 +50,7 @@ class DebugTextPanel(
     var trackedEntity: Entity? = null
 
     init {
-        panelEntity.setParent(parent)
+        panelEntity.parent = parent
         view.setName(name)
     }
 }

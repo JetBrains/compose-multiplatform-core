@@ -143,7 +143,4 @@
     <string name="web_storage_delete_data_button">Delete page data</string>
     <string name="web_storage_delete_complete">Data deletion complete</string>
 
-    <!-- WebViewBuilder Metadata -->
-    <string name="webview_builder_title">WebViewBuilder</string>
-
 </resources>

@@ -504,6 +504,9 @@ private fun DecoratedAbiValueParameter.isBinaryCompatibleWith(
                 )
         }
     }
+    if (isCrossinline && otherParam.isNoinline) {
+        return
+    }
     if (isNoinline != otherParam.isNoinline) {
         errors.add(
             "isNoinline changed from ${otherParam.isNoinline} to $isNoinline for " +

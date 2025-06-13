@@ -35,10 +35,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
 import androidx.xr.scenecore.SpatialEnvironment
@@ -47,6 +47,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
+import java.nio.file.Paths
 import java.util.concurrent.Executors
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
@@ -64,8 +65,8 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         null
 
     private fun mainPanelPixelDimensionsString(): String {
-        val width = session!!.scene.mainPanelEntity.getSize().width
-        val height = session!!.scene.mainPanelEntity.getSize().height
+        val width = session!!.scene.mainPanelEntity.size.width
+        val height = session!!.scene.mainPanelEntity.size.height
         return "{w:$width, h:$height}"
     }
 
@@ -122,7 +123,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         findViewById<SwitchMaterial>(R.id.switch_movable_in_fsm).also {
             val movableComponent = MovableComponent.create(session!!)
             it.setOnCheckedChangeListener { _, isOn ->
-                movableComponent.size = session!!.scene.mainPanelEntity.getSize()
+                movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
                 when (isOn) {
                     true ->
                         movableActive =
@@ -144,7 +145,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                         object : ResizeListener {
                             override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
                                 Log.i(TAG, "resize event $finalSize")
-                                (entity as BasePanelEntity<*>).setSize(finalSize)
+                                (entity as PanelEntity).size = finalSize.to2d()
                                 findViewById<TextView>(R.id.text_main_panel_dimensions_value).text =
                                     mainPanelPixelDimensionsString()
                             }
@@ -152,7 +153,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     )
                 }
             it.setOnCheckedChangeListener { _, isOn ->
-                resizableComponent.size = session!!.scene.mainPanelEntity.getSize()
+                resizableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
                 when (isOn) {
                     true ->
                         resizableActive =
@@ -168,14 +169,14 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Resize to portrait in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_portrait).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1200, 1600))
+                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
             }
         }
 
         // Resize to landscape in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_landscape).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.setSizeInPixels(IntSize2d(1600, 1200))
+                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
             }
         }
 
@@ -250,7 +251,9 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            skybox = ExrImage.create(session!!, "skyboxes/BlueSkybox.zip").await()
+            skybox =
+                ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
+                    .await()
         }
     }
 

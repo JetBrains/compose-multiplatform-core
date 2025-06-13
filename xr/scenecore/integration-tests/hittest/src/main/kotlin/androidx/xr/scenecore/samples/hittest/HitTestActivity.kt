@@ -35,6 +35,7 @@ import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 
 class HitTestActivity : AppCompatActivity() {
 
@@ -58,13 +59,14 @@ class HitTestActivity : AppCompatActivity() {
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )
-        panelEntity.setParent(session.scene.activitySpace)
+        panelEntity.parent = session.scene.activitySpace
         val movableComponent = MovableComponent.create(session)
         if (!panelEntity.addComponent(movableComponent)) {
             Log.e("HitTestActivity", "Error adding MovableComponent to panelEntity")
         }
 
-        val transformWidgetModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
+        val transformWidgetModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
         transformWidgetModelFuture.addListener(
             { transformWidgetModel = transformWidgetModelFuture.get() },
             Runnable::run,
@@ -96,19 +98,20 @@ class HitTestActivity : AppCompatActivity() {
                         )
                     transformWidgetModel?.let {
                         val gltfEntity = GltfModelEntity.create(session, it, hitTestPose)
-                        gltfEntity.setParent(session.scene.activitySpace)
+                        gltfEntity.parent = session.scene.activitySpace
                     }
                 }
             }
         }
 
-        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        val dragonModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
         dragonModelFuture.addListener(
             {
                 val dragonModel = dragonModelFuture.get()
                 val gltfEntity =
                     GltfModelEntity.create(session, dragonModel, Pose(Vector3(1f, 0f, 0f)))
-                gltfEntity.setParent(session.scene.activitySpace)
+                gltfEntity.parent = session.scene.activitySpace
                 val interactableComponent = InteractableComponent.create(session, mainExecutor) {}
                 if (!gltfEntity.addComponent(interactableComponent)) {
                     Log.e("HitTestActivity", "Error adding InteractableComponent to gltfEntity")

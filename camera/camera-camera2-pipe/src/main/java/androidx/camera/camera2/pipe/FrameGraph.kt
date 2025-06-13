@@ -46,14 +46,6 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, UnsafeWrapper
         }
     }
 
-    /** A [FrameBuffer] is a handle to a set of streams that are attached to a [FrameGraph]. */
-    public interface FrameBuffer : AutoCloseable {
-        public val streams: Set<StreamId>
-
-        public val parameters: Map<Any, Any?>
-        public val capacity: Int
-    }
-
     /**
      * Add the set of [streamIds] and [parameters] to the current repeating request, updating and
      * submitting a new repeating repeating request as needed.

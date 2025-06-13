@@ -16,20 +16,23 @@
 
 package androidx.pdf.search
 
+import android.content.Context
+import android.content.Intent
 import android.view.ViewGroup.LayoutParams
 import android.widget.FrameLayout
 import androidx.pdf.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.pdf.SEARCH_VIEW_IN_LTR_MODE
 import androidx.pdf.SEARCH_VIEW_IN_RTL_MODE
 import androidx.pdf.assertScreenshot
-import androidx.pdf.updateContext
 import androidx.pdf.view.PdfViewTestActivity
+import androidx.pdf.view.PdfViewTestActivity.Companion.LOCALE_COUNTRY
+import androidx.pdf.view.PdfViewTestActivity.Companion.LOCALE_LANGUAGE
 import androidx.pdf.view.search.PdfSearchView
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import java.util.Locale
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -58,14 +61,16 @@ class PdfSearchViewScubaTest {
 
     @Test
     fun testPdfSearchViewInRTLMode() {
-        PdfViewTestActivity.onAttachCallback = { activity ->
-            // set locale that supports RTL mode
-            val rtlLocale = Locale("ar", "SA") // Arabic is an RTL language
-            updateContext(activity, rtlLocale)
-        }
         setupPdfSearchView()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val intent =
+            Intent(context, PdfViewTestActivity::class.java).apply {
+                // Arabic is an RTL language
+                putExtra(LOCALE_LANGUAGE, "ar")
+                putExtra(LOCALE_COUNTRY, "SA")
+            }
 
-        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+        with(ActivityScenario.launch<PdfViewTestActivity>(intent)) {
             assertScreenshot(PDF_SEARCH_VIEW_ID, screenshotRule, SEARCH_VIEW_IN_RTL_MODE)
 
             close()

@@ -18,7 +18,7 @@ package androidx.camera.testing.fakes;
 
 import static android.graphics.ImageFormat.YUV_420_888;
 
-import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR;
 import static androidx.camera.core.impl.SurfaceConfig.ConfigSize.PREVIEW;
 import static androidx.camera.core.impl.SurfaceConfig.ConfigType.YUV;
 
@@ -113,8 +113,8 @@ public class FakeCameraDeviceSurfaceManagerTest {
                         DynamicRange.SDR,
                         singletonList(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS),
                         preview,
-                        new Range<>(30, 30),
-                        FRAME_RATE_RANGE_UNSPECIFIED);
+                        SESSION_TYPE_REGULAR,
+                        new Range<>(30, 30));
         mFakeCameraDeviceSurfaceManager.getSuggestedStreamSpecs(
                 CameraMode.DEFAULT,
                 FAKE_CAMERA_ID0,

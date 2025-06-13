@@ -203,4 +203,34 @@ class SpatialBoxTest {
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(100.dp)
     }
+
+    @Test
+    fun spatialBox_elementsHonorWithoutPropagatedMinConstraints() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialBox(SubspaceModifier.size(300.dp), propagateMinConstraints = false) {
+                        SpatialPanel(SubspaceModifier.testTag("panel1").size(150.dp)) {
+                            Text(text = "Panel 1")
+                        }
+                        SpatialPanel(SubspaceModifier.testTag("panel2").size(150.dp)) {
+                            Text(text = "Panel 2")
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel1")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel2")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
+    }
 }

@@ -180,64 +180,6 @@ package androidx.xr.runtime {
     enum_constant public static final androidx.xr.runtime.HandJointType WRIST;
   }
 
-  public final class ManifestFeature {
-    property public static String FEATURE_XR_API_OPENXR;
-    property public static String FEATURE_XR_API_SPATIAL;
-    property public static String FEATURE_XR_INPUT_CONTROLLER;
-    property public static String FEATURE_XR_INPUT_EYE_TRACKING;
-    property public static String FEATURE_XR_INPUT_HAND_TRACKING;
-    field public static final String FEATURE_XR_API_OPENXR;
-    field public static final String FEATURE_XR_API_SPATIAL;
-    field public static final String FEATURE_XR_INPUT_CONTROLLER;
-    field public static final String FEATURE_XR_INPUT_EYE_TRACKING;
-    field public static final String FEATURE_XR_INPUT_HAND_TRACKING;
-  }
-
-  public final class ManifestPermission {
-    property public static String EYE_TRACKING_COARSE;
-    property public static String EYE_TRACKING_FINE;
-    property public static String FACE_TRACKING;
-    property public static String HAND_TRACKING;
-    property public static String HEAD_TRACKING;
-    property public static String SCENE_UNDERSTANDING_COARSE;
-    property public static String SCENE_UNDERSTANDING_FINE;
-    field public static final String EYE_TRACKING_COARSE;
-    field public static final String EYE_TRACKING_FINE;
-    field public static final String FACE_TRACKING;
-    field public static final String HAND_TRACKING;
-    field public static final String HEAD_TRACKING;
-    field public static final String SCENE_UNDERSTANDING_COARSE;
-    field public static final String SCENE_UNDERSTANDING_FINE;
-  }
-
-  public final class ManifestPermissionGroup {
-    property public static String XR_TRACKING;
-    property public static String XR_TRACKING_SENSITIVE;
-    field public static final String XR_TRACKING;
-    field public static final String XR_TRACKING_SENSITIVE;
-  }
-
-  public final class ManifestProperty {
-    property public static String PROPERTY_XR_ACTIVITY_START_MODE;
-    property public static String PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED;
-    property public static String PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION;
-    property public static String XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED;
-    property public static String XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED;
-    property public static String XR_ACTIVITY_START_MODE_HOME_SPACE;
-    property public static String XR_ACTIVITY_START_MODE_UNDEFINED;
-    property public static String XR_BOUNDARY_TYPE_LARGE;
-    property public static String XR_BOUNDARY_TYPE_NO_RECOMMENDATION;
-    field public static final String PROPERTY_XR_ACTIVITY_START_MODE;
-    field public static final String PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED;
-    field public static final String PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION;
-    field public static final String XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED;
-    field public static final String XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED;
-    field public static final String XR_ACTIVITY_START_MODE_HOME_SPACE;
-    field public static final String XR_ACTIVITY_START_MODE_UNDEFINED;
-    field public static final String XR_BOUNDARY_TYPE_LARGE;
-    field public static final String XR_BOUNDARY_TYPE_NO_RECOMMENDATION;
-  }
-
   public final class Session implements androidx.lifecycle.LifecycleOwner {
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Session(android.app.Activity activity, androidx.xr.runtime.internal.Runtime? _runtime, androidx.xr.runtime.internal.JxrPlatformAdapter? _platformAdapter);
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Session(android.app.Activity activity, androidx.xr.runtime.internal.Runtime? _runtime, androidx.xr.runtime.internal.JxrPlatformAdapter? _platformAdapter, optional java.util.List<? extends androidx.xr.runtime.StateExtender> stateExtenders);
@@ -888,6 +830,7 @@ package androidx.xr.runtime.internal {
     method public androidx.xr.runtime.internal.Entity createEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.runtime.internal.Entity parent);
     method public androidx.xr.runtime.internal.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.GltfModelResource loadedGltf, androidx.xr.runtime.internal.Entity parentEntity);
     method public androidx.xr.runtime.internal.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.runtime.internal.InputEventListener listener);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource>? createKhronosPbrMaterial(androidx.xr.runtime.internal.KhronosPbrMaterialSpec spec);
     method public androidx.xr.runtime.internal.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.internal.MovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, java.util.Set<androidx.xr.runtime.internal.AnchorPlacement> anchorPlacement, boolean shouldDisposeParentAnchor);
     method public androidx.xr.runtime.internal.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.runtime.internal.Dimensions dimensions, String name, androidx.xr.runtime.internal.Entity parent);
@@ -899,6 +842,7 @@ package androidx.xr.runtime.internal {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.runtime.internal.Dimensions size);
     method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape, int contentSecurityLevel, androidx.xr.runtime.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource>? createWaterMaterial(boolean isAlphaMapVersion);
+    method public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void destroyTexture(androidx.xr.runtime.internal.TextureResource texture);
     method public void destroyWaterMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void dispose();
@@ -925,19 +869,48 @@ package androidx.xr.runtime.internal {
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.runtime.internal.SpatialCapabilities> listener);
     method public void requestFullSpaceMode();
     method public void requestHomeSpaceMode();
-    method public void setAlphaMap(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource alphaMap);
-    method public void setAlphaStepMultiplier(androidx.xr.runtime.internal.MaterialResource material, float alphaStepMultiplier);
+    method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaCutoff);
+    method public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource alphaMap);
+    method public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaStepMultiplier);
+    method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource ambientOcclusion);
+    method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setBaseColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector4 factors);
+    method public void setBaseColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource baseColor);
+    method public void setBaseColorUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setClearcoatFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float intensity, float roughness, float normal);
+    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoatNormal);
+    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoatRoughness);
+    method public void setClearcoatTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoat);
+    method public void setEmissiveFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
+    method public void setEmissiveTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource emissive);
+    method public void setEmissiveUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
     method public android.os.Bundle setFullSpaceMode(android.os.Bundle bundle);
     method public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle bundle);
-    method public void setNormalBoundary(androidx.xr.runtime.internal.MaterialResource material, float normalBoundary);
-    method public void setNormalMap(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource normalMap);
-    method public void setNormalSpeed(androidx.xr.runtime.internal.MaterialResource material, float normalSpeed);
-    method public void setNormalTiling(androidx.xr.runtime.internal.MaterialResource material, float normalTiling);
-    method public void setNormalZ(androidx.xr.runtime.internal.MaterialResource material, float normalZ);
+    method public void setIndexOfRefractionOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float indexOfRefraction);
+    method public void setMetallicFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource metallicRoughness);
+    method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setNormalBoundaryOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalBoundary);
+    method public void setNormalFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setNormalMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource normalMap);
+    method public void setNormalSpeedOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalSpeed);
+    method public void setNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource normal);
+    method public void setNormalTilingOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalTiling);
+    method public void setNormalUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setNormalZOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalZ);
     method public void setPreferredAspectRatio(android.app.Activity activity, float preferredRatio);
-    method public void setReflectionMap(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource reflectionMap);
+    method public void setReflectionMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource reflectionMap);
+    method public void setRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setSheenColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
+    method public void setSheenColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource sheenColor);
+    method public void setSheenRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource sheenRoughness);
     method public void setSpatialModeChangeListener(androidx.xr.runtime.internal.SpatialModeChangeListener);
     method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.runtime.internal.SpatialVisibility> listener);
+    method public void setTransmissionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setTransmissionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource transmission);
+    method public void setTransmissionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
     method public void startRenderer();
     method public void stopRenderer();
     property public abstract androidx.xr.runtime.internal.ActivitySpace activitySpace;
@@ -955,6 +928,81 @@ package androidx.xr.runtime.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface JxrPlatformAdapterFactory extends androidx.xr.runtime.internal.Service {
     method public androidx.xr.runtime.internal.JxrPlatformAdapter createPlatformAdapter(android.app.Activity activity, optional boolean unscaledGravityAlignedActivitySpace);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class KhronosPbrMaterialSpec {
+    ctor public KhronosPbrMaterialSpec(@androidx.xr.runtime.internal.KhronosPbrMaterialSpec.LightingModel int lightingModel, @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.BlendMode int blendMode, @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.DoubleSidedMode int doubleSidedMode);
+    method public int getBlendMode();
+    method public int getDoubleSidedMode();
+    method public int getLightingModel();
+    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.BlendMode public int blendMode;
+    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.DoubleSidedMode public int doubleSidedMode;
+    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.LightingModel public int lightingModel;
+    field public static final androidx.xr.runtime.internal.KhronosPbrMaterialSpec.Companion Companion;
+    field public static final int DOUBLE_SIDED = 1; // 0x1
+    field public static final int LIT = 0; // 0x0
+    field public static final int MASKED = 1; // 0x1
+    field public static final int OPAQUE = 0; // 0x0
+    field public static final int REFRACTIVE = 3; // 0x3
+    field public static final int SINGLE_SIDED = 0; // 0x0
+    field public static final int TRANSPARENT = 2; // 0x2
+    field public static final int UNLIT = 1; // 0x1
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface KhronosPbrMaterialSpec.BlendMode {
+    field public static final androidx.xr.runtime.internal.KhronosPbrMaterialSpec.BlendMode.Companion Companion;
+    field public static final int MASKED = 1; // 0x1
+    field public static final int OPAQUE = 0; // 0x0
+    field public static final int REFRACTIVE = 3; // 0x3
+    field public static final int TRANSPARENT = 2; // 0x2
+  }
+
+  public static final class KhronosPbrMaterialSpec.BlendMode.Companion {
+    property public static int MASKED;
+    property public static int OPAQUE;
+    property public static int REFRACTIVE;
+    property public static int TRANSPARENT;
+    field public static final int MASKED = 1; // 0x1
+    field public static final int OPAQUE = 0; // 0x0
+    field public static final int REFRACTIVE = 3; // 0x3
+    field public static final int TRANSPARENT = 2; // 0x2
+  }
+
+  public static final class KhronosPbrMaterialSpec.Companion {
+    property public static int DOUBLE_SIDED;
+    property public static int LIT;
+    property public static int MASKED;
+    property public static int OPAQUE;
+    property public static int REFRACTIVE;
+    property public static int SINGLE_SIDED;
+    property public static int TRANSPARENT;
+    property public static int UNLIT;
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface KhronosPbrMaterialSpec.DoubleSidedMode {
+    field public static final androidx.xr.runtime.internal.KhronosPbrMaterialSpec.DoubleSidedMode.Companion Companion;
+    field public static final int DOUBLE_SIDED = 1; // 0x1
+    field public static final int SINGLE_SIDED = 0; // 0x0
+  }
+
+  public static final class KhronosPbrMaterialSpec.DoubleSidedMode.Companion {
+    property public static int DOUBLE_SIDED;
+    property public static int SINGLE_SIDED;
+    field public static final int DOUBLE_SIDED = 1; // 0x1
+    field public static final int SINGLE_SIDED = 0; // 0x0
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface KhronosPbrMaterialSpec.LightingModel {
+    field public static final androidx.xr.runtime.internal.KhronosPbrMaterialSpec.LightingModel.Companion Companion;
+    field public static final int LIT = 0; // 0x0
+    field public static final int UNLIT = 1; // 0x1
+  }
+
+  public static final class KhronosPbrMaterialSpec.LightingModel.Companion {
+    property public static int LIT;
+    property public static int UNLIT;
+    field public static final int LIT = 0; // 0x0
+    field public static final int UNLIT = 1; // 0x1
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class LifecycleException extends java.lang.Exception {
@@ -1072,6 +1120,7 @@ package androidx.xr.runtime.internal {
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand? getRightHand();
     method public java.util.Collection<androidx.xr.runtime.internal.Trackable> getTrackables();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.internal.ViewCamera> getViewCameras();
     method public java.util.List<androidx.xr.runtime.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.runtime.internal.Anchor loadAnchor(java.util.UUID uuid);
     method public androidx.xr.runtime.internal.Anchor loadAnchorFromNativePointer(long nativePointer);
@@ -1081,6 +1130,7 @@ package androidx.xr.runtime.internal {
     property public abstract androidx.xr.runtime.internal.Hand? leftHand;
     property public abstract androidx.xr.runtime.internal.Hand? rightHand;
     property public abstract java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface PerceptionSpaceActivityPose extends androidx.xr.runtime.internal.ActivityPose {
@@ -1833,12 +1883,23 @@ package androidx.xr.runtime.java {
 
 package androidx.xr.runtime.math {
 
+  public final class FloatSize2d {
+    ctor public FloatSize2d();
+    ctor public FloatSize2d(optional float width, optional float height);
+    method public float getHeight();
+    method public float getWidth();
+    method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
+    property public float height;
+    property public float width;
+  }
+
   public final class FloatSize3d {
     ctor public FloatSize3d();
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
     method public float getDepth();
     method public float getHeight();
     method public float getWidth();
+    method public androidx.xr.runtime.math.FloatSize2d to2d();
     property public float depth;
     property public float height;
     property public float width;

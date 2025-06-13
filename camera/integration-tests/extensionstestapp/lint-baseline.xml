@@ -2,15 +2,6 @@
 <issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="            assertThat(cropRectNormal.contains(cropRectWithStabilization!!))"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/camera/integration/extensions/camera2extensions/Camera2ExtensionsPreviewStabilizationTest.kt"/>
-    </issue>
-
-    <issue
         id="NewApi"
         message="`&lt;androidx.camera.integration.extensions.Camera2ExtensionsActivity>` requires API level 31 (current min is 21)"
         errorLine1="        &lt;activity"

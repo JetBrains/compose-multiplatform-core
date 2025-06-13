@@ -19,7 +19,6 @@ package androidx.camera.camera2.internal;
 import static android.hardware.camera2.params.DynamicRangeProfiles.STANDARD;
 
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
-import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -1296,10 +1295,8 @@ final class Camera2CameraImpl implements CameraInternal {
                         useCaseInfo.getStreamSpec().getDynamicRange(),
                         useCaseInfo.getCaptureTypes(),
                         useCaseInfo.getStreamSpec().getImplementationOptions(),
-                        Preconditions.checkNotNull(
-                                useCaseConfig.getTargetFrameRate(FRAME_RATE_RANGE_UNSPECIFIED)),
-                        Preconditions.checkNotNull(useCaseConfig.getTargetHighSpeedFrameRate(
-                                FRAME_RATE_RANGE_UNSPECIFIED)));
+                        useCaseInfo.getStreamSpec().getSessionType(),
+                        useCaseInfo.getStreamSpec().getExpectedFrameRateRange());
 
                 attachedSurfaces.add(attachedSurfaceInfo);
             }
@@ -1312,7 +1309,7 @@ final class Camera2CameraImpl implements CameraInternal {
                 Collections.singletonList(mMeteringRepeatingSession.getMeteringRepeatingSize()));
 
         try {
-            // TODO: b/406367951 - Pass true for allowFeatureCombinationResolutions param when
+            // TODO: b/406367951 - Pass true for isFeatureComboInvocation param when
             //   MeteringRepeating scenarios with feature combination are handled
             mSupportedSurfaceCombination.getSuggestedStreamSpecifications(cameraMode,
                     attachedSurfaces, useCaseConfigToSizeMap, false, false, false, false);

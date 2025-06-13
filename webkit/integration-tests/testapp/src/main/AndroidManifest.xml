@@ -185,9 +185,6 @@
             android:name=".WebStorageCompatActivity"
             android:exported="true" />
         <activity
-            android:name=".WebViewBuilderActivity"
-            android:exported="true" />
-        <activity
             android:name=".PaymentRequestActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true" />

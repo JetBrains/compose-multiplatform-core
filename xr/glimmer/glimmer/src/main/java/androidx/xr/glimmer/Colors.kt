@@ -46,7 +46,7 @@ public class Colors(
     public val positive: Color = Color(0xFF4CE995),
     public val negative: Color = Color(0xFFF57084),
     public val surface: Color = Color.Black,
-    public val outline: Color = Color(0xFF606164),
+    public val outline: Color = Color(0xFF606460),
     public val outlineVariant: Color = Color(0xFF42434A),
 ) {
 

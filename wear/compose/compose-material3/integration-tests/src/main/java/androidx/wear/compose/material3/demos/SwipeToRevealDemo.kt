@@ -19,21 +19,27 @@ package androidx.wear.compose.material3.demos
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -350,7 +356,7 @@ fun SwipeToRevealInScalingLazyColumn() {
                             )
                     },
                 ) {
-                    Text(item.name)
+                    Text("Name:\n${item.name}\n\nMessage:\nMessage body.")
                 }
             }
         }
@@ -666,7 +672,11 @@ fun SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo() {
                 TitleCard(
                     onClick = {},
                     title = { Text("Message #$index") },
-                    subtitle = { Text("Body of the message") },
+                    subtitle = {
+                        Text(
+                            "Body of the message that should be long enough to take at least two lines."
+                        )
+                    },
                     modifier =
                         Modifier.semantics {
                             // Use custom actions to make the primary action accessible
@@ -676,6 +686,87 @@ fun SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo() {
                                         /* Add the primary action click handler here */
                                         true
                                     }
+                                )
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(count = 100) { index ->
+            val revealState = rememberRevealState(initialValue = Covered)
+
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* Called when the primary action is executed. */ },
+                        modifier = Modifier.heightIn(70.dp),
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = {},
+                        containerColor = Color(red = 0.427f, green = 0.835f, blue = 0.549f),
+                    )
+                },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* Called when the primary action is executed. */ },
+                        modifier = Modifier.heightIn(70.dp),
+                        icon = { Icon(Icons.Outlined.Share, contentDescription = "Share") },
+                        containerColor = Color(0.949f, 0.722f, 0.71f),
+                        contentColor = Color(0.207f, 0.148f, 0.145f),
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec).graphicsLayer {
+                        with(transformationSpec) { applyContainerTransformation(scrollProgress) }
+                        // Is needed to disable clipping.
+                        compositingStrategy = CompositingStrategy.ModulateAlpha
+                        clip = false
+                    },
+                revealState = revealState,
+                revealDirection = Bidirectional,
+            ) {
+                TitleCard(
+                    onClick = {},
+                    title = {
+                        Icon(Icons.Outlined.AccountCircle, contentDescription = "Share")
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            text = "Sender #$index",
+                        )
+                    },
+                    subtitle = {
+                        Text("Message #$index")
+                        Text("Body of the message")
+                        Text("13:31")
+                    },
+                    modifier =
+                        Modifier.semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Share") {
+                                        /* Add the secondary action click handler here */
+                                        true
+                                    },
                                 )
                         },
                 )

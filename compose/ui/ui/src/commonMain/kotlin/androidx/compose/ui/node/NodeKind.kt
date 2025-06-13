@@ -331,6 +331,11 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
         }
     }
     if (Nodes.GlobalPositionAware in selfKindSet && node is GlobalPositionAwareModifierNode) {
+        if (phase == Inserted) {
+            node.requireLayoutNode().globallyPositionedObservers++
+        } else if (phase == Removed) {
+            node.requireLayoutNode().globallyPositionedObservers--
+        }
         // No need to invalidate when removing a GlobalPositionAwareModifierNode, as these won't be
         // invoked anyway
         if (phase != Removed) {

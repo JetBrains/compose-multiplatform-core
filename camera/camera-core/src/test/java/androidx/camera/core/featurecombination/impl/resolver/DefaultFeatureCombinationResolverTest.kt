@@ -383,9 +383,8 @@ class DefaultFeatureCombinationResolverTest {
     fun resolveFeatureCombination_previewStabilizationRequiredAndSupported_returnsSupported() {
         // Arrange
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
-            defaultPrivStreamSpec.copy(previewStabilizationMode = ON), // for Preview
-            defaultPrivStreamSpec.copy(previewStabilizationMode = OFF), // for VideoCapture
-            defaultJpegStreamSpec,
+            defaultPrivStreamSpec.copy(previewStabilizationMode = ON),
+            defaultJpegStreamSpec.copy(previewStabilizationMode = ON),
         )
 
         // Act
@@ -404,9 +403,8 @@ class DefaultFeatureCombinationResolverTest {
     fun resolveFeatureCombination_prevStabRequiredButOnlyImgCaptureUseCase_returnsUseCaseMissing() {
         // Arrange: Ultra HDR is required and supported, but no ImageCapture
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
-            defaultPrivStreamSpec.copy(previewStabilizationMode = ON), // for Preview
-            defaultPrivStreamSpec.copy(previewStabilizationMode = OFF), // for VideoCapture
-            defaultJpegStreamSpec,
+            defaultPrivStreamSpec.copy(previewStabilizationMode = ON),
+            defaultJpegStreamSpec.copy(previewStabilizationMode = ON),
         )
         val useCases = listOf(imageCapture) // Only ImageCapture, no Preview or VideoCapture
 
@@ -444,11 +442,11 @@ class DefaultFeatureCombinationResolverTest {
 
     @Test
     fun resolveFeatureCombination_prevStabPreferredAndSupported_returnsSupportedIncludingPrvStab() {
-        // Arrange
+        // Arrange: StabilizationMode.ON will be set to Preview only while UNSPECIFIED will be set
+        // to all other use cases for proper merging.
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
-            defaultPrivStreamSpec.copy(previewStabilizationMode = ON), // for Preview
-            defaultPrivStreamSpec.copy(previewStabilizationMode = OFF), // for VideoCapture
-            defaultJpegStreamSpec,
+            defaultPrivStreamSpec.copy(previewStabilizationMode = ON),
+            defaultJpegStreamSpec.copy(previewStabilizationMode = ON),
         )
 
         // Act
@@ -612,26 +610,22 @@ class DefaultFeatureCombinationResolverTest {
     fun resolve_allPreferredButHlg10Plus60FpsUnsupported_returnsSupportedWithPrioritizedFeatures() {
         // Arrange: Support HDR + UltraHDR + Stabilization and 60FPS + UltraHDR + Stabilization
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
-            defaultPrivStreamSpec.copy( // for Preview
+            defaultPrivStreamSpec.copy(
                 dynamicRange = DynamicRange.HLG_10_BIT,
                 previewStabilizationMode = ON,
             ),
-            defaultPrivStreamSpec.copy( // for VideoCapture
-                dynamicRange = DynamicRange.HLG_10_BIT,
-                previewStabilizationMode = OFF,
-            ),
-            defaultJpegStreamSpec.copy(imageFormat = ImageFormat.JPEG_R),
-            defaultPrivStreamSpec.copy( // for Preview
-                expectedFrameRateRange = Range(60, 60),
+            defaultJpegStreamSpec.copy(
+                imageFormat = ImageFormat.JPEG_R,
                 previewStabilizationMode = ON,
             ),
-            defaultPrivStreamSpec.copy( // for VideoCapture
+            defaultPrivStreamSpec.copy(
                 expectedFrameRateRange = Range(60, 60),
-                previewStabilizationMode = OFF,
+                previewStabilizationMode = ON,
             ),
             defaultJpegStreamSpec.copy(
                 imageFormat = ImageFormat.JPEG_R,
                 expectedFrameRateRange = Range(60, 60),
+                previewStabilizationMode = ON,
             ),
         )
 
@@ -656,26 +650,22 @@ class DefaultFeatureCombinationResolverTest {
     fun resolve_highestPriorityPreferredIsUnsupportedWithRequired_returnsSupportedCorrectly() {
         // Arrange: Support HDR + UltraHDR + Stabilization and 60FPS + UltraHDR + Stabilization
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
-            defaultPrivStreamSpec.copy( // for Preview
+            defaultPrivStreamSpec.copy(
                 dynamicRange = DynamicRange.HLG_10_BIT,
                 previewStabilizationMode = ON,
             ),
-            defaultPrivStreamSpec.copy( // for VideoCapture
-                dynamicRange = DynamicRange.HLG_10_BIT,
-                previewStabilizationMode = OFF,
-            ),
-            defaultJpegStreamSpec.copy(imageFormat = ImageFormat.JPEG_R),
-            defaultPrivStreamSpec.copy( // for Preview
-                expectedFrameRateRange = Range(60, 60),
+            defaultJpegStreamSpec.copy(
+                imageFormat = ImageFormat.JPEG_R,
                 previewStabilizationMode = ON,
             ),
-            defaultPrivStreamSpec.copy( // for VideoCapture
+            defaultPrivStreamSpec.copy(
                 expectedFrameRateRange = Range(60, 60),
-                previewStabilizationMode = OFF,
+                previewStabilizationMode = ON,
             ),
             defaultJpegStreamSpec.copy(
                 imageFormat = ImageFormat.JPEG_R,
                 expectedFrameRateRange = Range(60, 60),
+                previewStabilizationMode = ON,
             ),
         )
 
@@ -698,7 +688,7 @@ class DefaultFeatureCombinationResolverTest {
     }
 
     @Test
-    fun resolveFeatureCombination_containsRequiredFeature_featureCombinationResolutionsAllowed() {
+    fun resolveFeatureCombination_containsRequiredFeature_passesTrueForIsFeatureComboInvocation() {
         val defaultResolver =
             DefaultFeatureCombinationResolver(
                 FakeCameraInfoInternal(
@@ -709,11 +699,12 @@ class DefaultFeatureCombinationResolverTest {
                             newUseCases: List<UseCase>,
                             attachedUseCases: List<UseCase>,
                             cameraConfig: CameraConfig,
-                            targetHighSpeedFrameRate: Range<Int>,
-                            allowFeatureCombinationResolutions: Boolean,
+                            sessionType: Int,
+                            targetFrameRate: Range<Int>,
+                            isFeatureComboInvocation: Boolean,
                             findMaxSupportedFrameRate: Boolean,
                         ): StreamSpecQueryResult {
-                            assertThat(allowFeatureCombinationResolutions).isEqualTo(true)
+                            assertThat(isFeatureComboInvocation).isEqualTo(true)
                             return StreamSpecQueryResult()
                         }
                     }
@@ -726,7 +717,7 @@ class DefaultFeatureCombinationResolverTest {
     }
 
     @Test
-    fun resolveFeatureCombination_containsPreferredFeature_featureCombinationResolutionsAllowed() {
+    fun resolveFeatureCombination_containsPreferredFeature_passesTrueForIsFeatureComboInvocation() {
         val defaultResolver =
             DefaultFeatureCombinationResolver(
                 FakeCameraInfoInternal(
@@ -737,11 +728,12 @@ class DefaultFeatureCombinationResolverTest {
                             newUseCases: List<UseCase>,
                             attachedUseCases: List<UseCase>,
                             cameraConfig: CameraConfig,
-                            targetHighSpeedFrameRate: Range<Int>,
-                            allowFeatureCombinationResolutions: Boolean,
+                            sessionType: Int,
+                            targetFrameRate: Range<Int>,
+                            isFeatureComboInvocation: Boolean,
                             findMaxSupportedFrameRate: Boolean,
                         ): StreamSpecQueryResult {
-                            assertThat(allowFeatureCombinationResolutions).isEqualTo(true)
+                            assertThat(isFeatureComboInvocation).isEqualTo(true)
                             return StreamSpecQueryResult()
                         }
                     }

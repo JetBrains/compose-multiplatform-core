@@ -144,7 +144,7 @@ class AppFunctionSerializableProcessor(
                 resolvedAnnotatedSerializableProxies,
             )
 
-        val generatedFactoryClassName = "\$${annotatedClass.originalClassName.simpleName}Factory"
+        val generatedFactoryClassName = annotatedClass.factoryClassName.simpleName
         val fileSpec =
             FileSpec.builder(
                     annotatedClass.originalClassName.packageName,

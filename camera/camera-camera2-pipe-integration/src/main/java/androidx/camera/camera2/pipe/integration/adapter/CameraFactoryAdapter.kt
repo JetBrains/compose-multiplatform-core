@@ -76,7 +76,11 @@ internal class CameraFactoryAdapter(
 
     init {
         val optimizedCameraIds =
-            CameraSelectionOptimizer.getSelectedAvailableCameraIds(this, availableCamerasSelector)
+            CameraSelectionOptimizer.getSelectedAvailableCameraIds(
+                this,
+                availableCamerasSelector,
+                streamSpecsCalculator,
+            )
 
         // Use a LinkedHashSet to preserve order
         availableCameraIds =
@@ -113,9 +117,8 @@ internal class CameraFactoryAdapter(
     /** This is an implementation specific object that is specific to the integration package */
     override fun getCameraManager(): Any = appComponent
 
-    override fun getStreamSpecsCalculator(): StreamSpecsCalculator = streamSpecsCalculator
-
     override fun shutdown() {
+        cameraCoordinator.shutdown()
         if (lazyCameraPipe.isInitialized()) {
             lazyCameraPipe.value.shutdown()
         }

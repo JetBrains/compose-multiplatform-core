@@ -37,6 +37,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertTouchHeightIsEqualTo
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -386,6 +388,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
             .assertWidthIsEqualTo(10.dp)
             .assertHeightIsEqualTo(10.dp)
+            .assertTouchWidthIsEqualTo(10.dp)
+            .assertTouchHeightIsEqualTo(10.dp)
     }
 
     @Test
@@ -409,6 +413,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
             .assertWidthIsEqualTo(8.dp)
             .assertHeightIsEqualTo(8.dp)
+            .assertTouchWidthIsEqualTo(8.dp)
+            .assertTouchHeightIsEqualTo(8.dp)
     }
 
     @Test
@@ -442,6 +448,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
             .assertWidthIsEqualTo(8.dp)
             .assertHeightIsEqualTo(8.dp)
+            .assertTouchWidthIsEqualTo(8.dp)
+            .assertTouchHeightIsEqualTo(8.dp)
     }
 
     @Test
@@ -476,6 +484,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
             .assertWidthIsEqualTo(10.dp)
             .assertHeightIsEqualTo(10.dp)
+            .assertTouchWidthIsEqualTo(10.dp)
+            .assertTouchHeightIsEqualTo(10.dp)
     }
 
     @Test
@@ -509,6 +519,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
             .assertWidthIsEqualTo(10.dp)
             .assertHeightIsEqualTo(10.dp)
+            .assertTouchWidthIsEqualTo(10.dp)
+            .assertTouchHeightIsEqualTo(10.dp)
     }
 
     @Test
@@ -543,6 +555,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
             .assertWidthIsEqualTo(8.dp)
             .assertHeightIsEqualTo(8.dp)
+            .assertTouchWidthIsEqualTo(8.dp)
+            .assertTouchHeightIsEqualTo(8.dp)
     }
 
     @Test
@@ -578,6 +592,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 0.dp, expectedTop = 0.dp)
             .assertWidthIsEqualTo(10.dp)
             .assertHeightIsEqualTo(10.dp)
+            .assertTouchWidthIsEqualTo(10.dp)
+            .assertTouchHeightIsEqualTo(10.dp)
     }
 
     @Test
@@ -614,6 +630,8 @@ class SemanticsModifierNodeTest(private val precomputedSemantics: Boolean) {
             .assertPositionInRootIsEqualTo(expectedLeft = 1.dp, expectedTop = 1.dp)
             .assertWidthIsEqualTo(8.dp)
             .assertHeightIsEqualTo(8.dp)
+            .assertTouchWidthIsEqualTo(8.dp)
+            .assertTouchHeightIsEqualTo(8.dp)
     }
 
     private class TestSemanticsModifier(

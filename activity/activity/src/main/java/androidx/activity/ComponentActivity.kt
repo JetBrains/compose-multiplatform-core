@@ -35,7 +35,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnDrawListener
 import android.view.Window
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.contextaware.ContextAware
 import androidx.activity.contextaware.ContextAwareHelper
 import androidx.activity.contextaware.OnContextAvailableListener
@@ -650,8 +649,7 @@ open class ComponentActivity() :
         lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_CREATE) {
-                    val invoker = Api33Impl.getOnBackInvokedDispatcher(this@ComponentActivity)
-                    dispatcher.setOnBackInvokedDispatcher(invoker)
+                    dispatcher.setOnBackInvokedDispatcher(getOnBackInvokedDispatcher())
                 }
             }
         )
@@ -1048,13 +1046,6 @@ open class ComponentActivity() :
 
     private fun createFullyDrawnExecutor(): ReportFullyDrawnExecutor =
         ReportFullyDrawnExecutorImpl()
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private object Api33Impl {
-        fun getOnBackInvokedDispatcher(activity: Activity): OnBackInvokedDispatcher {
-            return activity.getOnBackInvokedDispatcher()
-        }
-    }
 
     private interface ReportFullyDrawnExecutor : Executor {
         fun viewCreated(view: View)

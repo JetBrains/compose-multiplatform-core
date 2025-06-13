@@ -29,12 +29,14 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3.adaptive"
+    }
     desktop()
     mac()
     ios()
@@ -122,9 +124,4 @@ androidx {
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Library"
     legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material3.adaptive"
 }

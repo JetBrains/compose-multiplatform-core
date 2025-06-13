@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.CoreState
 import kotlin.time.ComparableTimeMark
 
@@ -35,6 +36,8 @@ internal constructor(
     public val trackables: Collection<Trackable<Trackable.State>>,
     public val leftHand: Hand?,
     public val rightHand: Hand?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -43,6 +46,8 @@ internal constructor(
         if (trackables != other.trackables) return false
         if (leftHand != other.leftHand) return false
         if (rightHand != other.rightHand) return false
+        if (arDevice != other.arDevice) return false
+        if (viewCameras != other.viewCameras) return false
         return true
     }
 
@@ -51,6 +56,8 @@ internal constructor(
         result = 31 * result + trackables.hashCode()
         result = 31 * result + leftHand.hashCode()
         result = 31 * result + rightHand.hashCode()
+        result = 31 * result + arDevice.hashCode()
+        result = 31 * result + viewCameras.hashCode()
         return result
     }
 }

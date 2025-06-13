@@ -36,6 +36,7 @@ dependencies {
     api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore"))
+    api("androidx.core:core-viewtree:1.0.0")
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.savedstate:savedstate:1.2.1")

@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"இந்த PDF ஃபைலில் திருத்தம் செய்ய முடியாது"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"PDFல் இருந்து நகலெடுக்கப்பட்ட உள்ளடக்கம்"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"ஸ்க்ரோல் பார்"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"உறுதிசெய்"</string>
 </resources>

@@ -43,6 +43,8 @@ import kotlinx.serialization.serializer
  *
  * Classes/objects added to the [NavBackStack] should be annotated with [Serializable] to ensure
  * they can be saved and restored properly.
+ *
+ * @param elements the starting keys of this backStack
  */
 @Composable
 public fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack {

@@ -300,7 +300,7 @@ class DataBridgeClientTest {
         val keyValueMap = dataBridgeClient.getValues(setOfKeys)
 
         setOfKeys.forEach {
-            expect.that(keyValueMap[it]?.isSuccess)
+            expect.that(keyValueMap[it]?.isSuccess).isTrue()
             expect.that(keyValueMap[it]?.getOrNull()).isNull()
         }
     }
@@ -312,14 +312,14 @@ class DataBridgeClientTest {
         expectKeySetSuccessfully(stringKey, "stringValue")
 
         val keyValueMap = dataBridgeClient.getValues(setOfKeys)
-        expect.that(keyValueMap.get(intKey)?.getOrNull()).isEqualTo(1)
-        expect.that(keyValueMap.get(booleanKey)?.getOrNull()).isEqualTo(false)
-        expect.that(keyValueMap.get(stringKey)?.getOrNull()).isEqualTo("stringValue")
-        expect.that(keyValueMap.get(floatKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(doubleKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(longKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(stringSetKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(byteArrayKey)?.getOrNull()).isNull()
+        expect.that(keyValueMap[intKey]?.getOrNull()).isEqualTo(1)
+        expect.that(keyValueMap[booleanKey]?.getOrNull()).isEqualTo(false)
+        expect.that(keyValueMap[stringKey]?.getOrNull()).isEqualTo("stringValue")
+        expect.that(keyValueMap[floatKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[doubleKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[longKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[stringSetKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[byteArrayKey]?.getOrNull()).isNull()
     }
 
     @Test
@@ -349,16 +349,14 @@ class DataBridgeClientTest {
         )
 
         val keyValueMap = dataBridgeClient.getValues(setOfKeys)
-        expect.that(keyValueMap.get(intKey)?.getOrNull()).isEqualTo(1)
-        expect.that(keyValueMap.get(booleanKey)?.getOrNull()).isEqualTo(true)
-        expect.that(keyValueMap.get(stringKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(floatKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(doubleKey)?.getOrNull()).isNull()
-        expect.that(keyValueMap.get(longKey)?.getOrNull()).isEqualTo(1L)
-        expect
-            .that(keyValueMap.get(stringSetKey)?.getOrNull())
-            .isEqualTo(setOf("string1", "string2"))
-        expect.that(keyValueMap.get(byteArrayKey)?.getOrNull()).isNull()
+        expect.that(keyValueMap[intKey]?.getOrNull()).isEqualTo(1)
+        expect.that(keyValueMap[booleanKey]?.getOrNull()).isEqualTo(true)
+        expect.that(keyValueMap[stringKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[floatKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[doubleKey]?.getOrNull()).isNull()
+        expect.that(keyValueMap[longKey]?.getOrNull()).isEqualTo(1L)
+        expect.that(keyValueMap[stringSetKey]?.getOrNull()).isEqualTo(setOf("string1", "string2"))
+        expect.that(keyValueMap[byteArrayKey]?.getOrNull()).isNull()
     }
 
     @Test
@@ -391,14 +389,16 @@ class DataBridgeClientTest {
             val tempStringKey = Key.createStringKey("tempIntKey")
             val keyValueMap = dataBridgeClient.getValues(setOf(intKey, booleanKey, tempStringKey))
 
-            expect.that(keyValueMap[intKey]?.isSuccess)
+            expect.that(keyValueMap[intKey]?.isSuccess).isTrue()
             expect.that(keyValueMap[intKey]?.getOrNull()).isEqualTo(1)
 
-            expect.that(keyValueMap[booleanKey]?.isSuccess)
+            expect.that(keyValueMap[booleanKey]?.isSuccess).isTrue()
             expect.that(keyValueMap[booleanKey]?.getOrNull()).isEqualTo(true)
 
-            expect.that(keyValueMap[tempStringKey]?.isFailure)
-            expect.that(keyValueMap[tempStringKey]?.exceptionOrNull() is ClassCastException)
+            expect.that(keyValueMap[tempStringKey]?.isFailure).isTrue()
+            expect
+                .that(keyValueMap[tempStringKey]?.exceptionOrNull() is ClassCastException)
+                .isTrue()
         }
     }
 
@@ -413,7 +413,7 @@ class DataBridgeClientTest {
         val result = dataBridgeClient.getValue(key)
 
         expect.that(result.isFailure).isTrue()
-        expect.that(result.exceptionOrNull() is ClassCastException)
+        expect.that(result.exceptionOrNull() is ClassCastException).isTrue()
     }
 
     private suspend fun expectKeyIsMissing(key: Key) {

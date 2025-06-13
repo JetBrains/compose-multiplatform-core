@@ -24,19 +24,19 @@ import androidx.compose.foundation.layout.fitOutside
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.InsetsRulers.NavigationBars
-import androidx.compose.ui.layout.InsetsRulers.SafeContent
-import androidx.compose.ui.layout.InsetsRulers.StatusBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.NavigationBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.SafeContent
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
 
 @Sampled
 @Composable
 fun FitInsideOutsideExample() {
     Box(Modifier.fillMaxSize()) {
         // Drawn behind the status bar
-        Box(Modifier.fillMaxSize().fitOutside(StatusBars).background(Color.Blue))
+        Box(Modifier.fillMaxSize().fitOutside(StatusBars.current).background(Color.Blue))
         // Drawn behind the navigation bar
-        Box(Modifier.fillMaxSize().fitOutside(NavigationBars).background(Color.Red))
+        Box(Modifier.fillMaxSize().fitOutside(NavigationBars.current).background(Color.Red))
         // Body of the app
-        Box(Modifier.fillMaxSize().fitInside(SafeContent).background(Color.Yellow))
+        Box(Modifier.fillMaxSize().fitInside(SafeContent.current).background(Color.Yellow))
     }
 }

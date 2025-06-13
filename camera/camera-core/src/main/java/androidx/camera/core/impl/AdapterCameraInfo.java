@@ -303,8 +303,8 @@ public class AdapterCameraInfo extends ForwardingCameraInfo {
 
     @Override
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions) {
+            int cameraMode, boolean isFeatureComboInvocation) {
         return mCameraInfo.isUseCaseCombinationSupported(useCases, cameraMode,
-                allowFeatureCombinationResolutions, mCameraConfig);
+                isFeatureComboInvocation, mCameraConfig);
     }
 }

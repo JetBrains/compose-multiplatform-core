@@ -77,14 +77,14 @@ class PageTest {
 
     private fun createPage(): Page {
         return Page(
-            0,
+            pageNum = 0,
             pageSize = PAGE_SIZE,
-            pdfDocument,
-            testScope,
-            MAX_BITMAP_SIZE,
-            invalidationTracker,
-            onPageTextReady,
-            errorFlow,
+            pdfDocument = pdfDocument,
+            backgroundScope = testScope,
+            maxBitmapSizePx = MAX_BITMAP_SIZE,
+            onPageUpdate = invalidationTracker,
+            onPageTextReady = onPageTextReady,
+            errorFlow = errorFlow,
             isAccessibilityEnabled = true,
             formWidgetInfos =
                 listOf(
@@ -103,6 +103,7 @@ class PageTest {
                         accessibilityLabel = "radio",
                     ),
                 ),
+            pdfFormFillingConfig = PdfFormFillingConfig({ false }, Color.CYAN),
         )
     }
 

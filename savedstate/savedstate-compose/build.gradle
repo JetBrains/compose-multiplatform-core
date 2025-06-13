@@ -12,12 +12,19 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.savedstate.compose"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        // TODO(b/345531033)
+        experimentalProperties["android.lint.useK2Uast"] = false
+    }
     desktop()
     mingwX64()
     linux()
@@ -87,14 +94,6 @@ androidXMultiplatform {
             }
         }
     }
-}
-
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
-    namespace = "androidx.savedstate.compose"
-    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
 }
 
 androidx {

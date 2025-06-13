@@ -82,6 +82,7 @@ androidXMultiplatform {
 
 androidx {
     name = "Shell"
+    mavenVersion = LibraryVersions.TEST_UIAUTOMATOR_SHELL
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Allows executing shell command as shell user for testing purposes."

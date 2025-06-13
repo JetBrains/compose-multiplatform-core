@@ -46,6 +46,7 @@ import androidx.xr.scenecore.testapp.common.logCapabilities
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
+import java.nio.file.Paths
 import java.text.DecimalFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.guava.await
@@ -216,10 +217,14 @@ class EnvironmentActivity : AppCompatActivity() {
     }
 
     private suspend fun loadExrImagesAndModels() {
-        this.greySkybox = ExrImage.create(session!!, "skyboxes/GreySkybox.zip").await()
-        this.blueSkybox = ExrImage.create(session!!, "skyboxes/BlueSkybox.zip").await()
-        this.groundGeometry = GltfModel.create(session!!, "models/GroundGeometry.glb").await()
-        this.rockGeometry = GltfModel.create(session!!, "models/RocksGeometry.glb").await()
+        this.greySkybox =
+            ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "GreySkybox.zip")).await()
+        this.blueSkybox =
+            ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip")).await()
+        this.groundGeometry =
+            GltfModel.createAsync(session!!, Paths.get("models", "GroundGeometry.glb")).await()
+        this.rockGeometry =
+            GltfModel.createAsync(session!!, Paths.get("models", "RocksGeometry.glb")).await()
     }
 
     private fun setGeoAndSkybox(skybox: ExrImage?, geometry: GltfModel?) {

@@ -250,6 +250,12 @@ internal class SlotTable : CompositionData, Iterable<CompositionGroup> {
             anchors.search(anchor.location, groupsSize).let { it >= 0 && anchors[it] == anchor }
     }
 
+    fun inGroup(groupAnchor: Anchor, anchor: Anchor): Boolean {
+        val group = groupAnchor.location
+        val groupEnd = group + groups.groupSize(group)
+        return anchor.location in group until groupEnd
+    }
+
     /** Returns true if the [anchor] is for the group at [groupIndex] or one of it child groups. */
     fun groupContainsAnchor(groupIndex: Int, anchor: Anchor): Boolean {
         runtimeCheck(!writer) { "Writer is active" }

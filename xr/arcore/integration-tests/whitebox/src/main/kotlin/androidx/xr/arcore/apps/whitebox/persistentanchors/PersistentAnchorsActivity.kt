@@ -58,6 +58,7 @@ import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AnchorLoadInvalidUuid
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.apps.whitebox.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.common.SessionLifecycleHelper
 import androidx.xr.runtime.Config
@@ -112,7 +113,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         delay(2.seconds)
                         uuids.emit(Anchor.getPersistedAnchorUuids(session))
                     }
-                    lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
+                    lifecycleScope.launch {
+                        ArDevice.getInstance(session).state.collect { deviceState ->
+                            updatePlaneEntity(deviceState)
+                        }
+                    }
                 },
             )
         lifecycle.addObserver(sessionHelper)
@@ -129,16 +134,20 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 "movableEntity",
                 movableEntityOffset,
             )
-        movableEntity.setParent(session.scene.activitySpace)
+        movableEntity.parent = session.scene.activitySpace
         configureComposeView(composeView, this)
     }
 
-    private fun updatePlaneEntity() {
-        session.scene.spatialUser.head?.let {
-            movableEntity.setPose(
-                it.transformPoseTo(movableEntityOffset, session.scene.activitySpace)
+    private fun updatePlaneEntity(deviceState: ArDevice.State) {
+        val devicePoseInActivity =
+            session.scene.perceptionSpace.transformPoseTo(
+                deviceState.devicePose,
+                session.scene.activitySpace,
             )
-        }
+        val offsetWithDeviceRotation: Vector3 =
+            devicePoseInActivity.transformVector(movableEntityOffset.translation)
+        val entityPose = devicePoseInActivity.translate(offsetWithDeviceRotation)
+        movableEntity.setPose(entityPose)
     }
 
     private fun configureComposeView(composeView: ComposeView, activity: Activity) {
@@ -264,7 +273,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                             "anchorEntity ${anchor.hashCode()}",
                             Pose(),
                         )
-                    panelEntity.setParent(anchorEntity)
+                    panelEntity.parent = anchorEntity
                     composeView.setContent { AnchorPanel(anchor, panelEntity) }
                     configureComposeView(composeView, activity)
                     cancel()

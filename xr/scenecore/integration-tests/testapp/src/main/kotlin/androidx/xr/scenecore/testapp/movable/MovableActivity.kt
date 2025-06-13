@@ -139,8 +139,8 @@ class MovableActivity : AppCompatActivity() {
         val parentSwitch = movablePanelContentView.findViewById<MaterialSwitch>(R.id.parent_switch)
         parentSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             when (isChecked) {
-                true -> movablePanelEntity.setParent(stationaryPanelEntity)
-                false -> movablePanelEntity.setParent(session!!.scene.activitySpace)
+                true -> movablePanelEntity.parent = stationaryPanelEntity
+                false -> movablePanelEntity.parent = session!!.scene.activitySpace
             }
             movablePanelEntity.setPose(Pose(Vector3(0f, 0f, 0.1f)))
         }

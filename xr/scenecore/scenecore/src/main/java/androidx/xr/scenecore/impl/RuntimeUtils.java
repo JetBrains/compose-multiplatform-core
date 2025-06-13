@@ -28,6 +28,7 @@ import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEvent;
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo;
+import androidx.xr.runtime.internal.KhronosPbrMaterialSpec;
 import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
@@ -535,6 +536,65 @@ final class RuntimeUtils {
                 return com.google.ar.imp.apibindings.TextureSampler.CompareFunc.N;
             default:
                 throw new IllegalArgumentException("Unknown CompareFunc value: " + compareFunc);
+        }
+    }
+
+    /**
+     * Converts from JXR Core's KhronosPbrMaterialSpec to Impress' API bindings
+     * KhronosPbrMaterialSpec.
+     *
+     * @param spec a {@link com.google.vr.androidx.xr.core.KhronosPbrMaterialSpec} instance to be
+     *     converted.
+     */
+    static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec getKhronosPbrMaterialSpec(
+            @NonNull KhronosPbrMaterialSpec spec) {
+        return new com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.Builder()
+                .setLightingModel(getLightingModel(spec.getLightingModel()))
+                .setBlendMode(getBlendMode(spec.getBlendMode()))
+                .setDoubleSidedMode(getDoubleSidedMode(spec.getDoubleSidedMode()))
+                .build();
+    }
+
+    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel
+            getLightingModel(@KhronosPbrMaterialSpec.LightingModel int lightingModel) {
+        switch (lightingModel) {
+            case KhronosPbrMaterialSpec.LIT:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel.LIT;
+            case KhronosPbrMaterialSpec.UNLIT:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel.UNLIT;
+            default:
+                throw new IllegalArgumentException("Unknown LightingModel value: " + lightingModel);
+        }
+    }
+
+    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode getBlendMode(
+            @KhronosPbrMaterialSpec.BlendMode int blendMode) {
+        switch (blendMode) {
+            case KhronosPbrMaterialSpec.OPAQUE:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.OPAQUE;
+            case KhronosPbrMaterialSpec.MASKED:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.MASKED;
+            case KhronosPbrMaterialSpec.TRANSPARENT:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.TRANSPARENT;
+            case KhronosPbrMaterialSpec.REFRACTIVE:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.REFRACTIVE;
+            default:
+                throw new IllegalArgumentException("Unknown BlendMode value: " + blendMode);
+        }
+    }
+
+    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
+            getDoubleSidedMode(@KhronosPbrMaterialSpec.DoubleSidedMode int doubleSidedMode) {
+        switch (doubleSidedMode) {
+            case KhronosPbrMaterialSpec.SINGLE_SIDED:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
+                        .SINGLE_SIDED;
+            case KhronosPbrMaterialSpec.DOUBLE_SIDED:
+                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
+                        .DOUBLE_SIDED;
+            default:
+                throw new IllegalArgumentException(
+                        "Unknown DoubleSidedMode value: " + doubleSidedMode);
         }
     }
 

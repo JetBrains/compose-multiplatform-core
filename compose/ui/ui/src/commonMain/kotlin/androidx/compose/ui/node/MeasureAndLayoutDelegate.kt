@@ -27,6 +27,7 @@ import androidx.compose.ui.node.LayoutNode.LayoutState.LookaheadMeasuring
 import androidx.compose.ui.node.LayoutNode.LayoutState.Measuring
 import androidx.compose.ui.node.LayoutNode.UsageByParent.InLayoutBlock
 import androidx.compose.ui.node.LayoutNode.UsageByParent.InMeasureBlock
+import androidx.compose.ui.node.LayoutNode.UsageByParent.NotUsed
 import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
 import androidx.compose.ui.unit.Constraints
 
@@ -429,7 +430,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     fun measureOnly() {
         if (relayoutNodes.isNotEmpty()) {
             performMeasureAndLayout(fullPass = false) {
-                if (!relayoutNodes.affectsLookaheadMeasure) {
+                if (relayoutNodes.affectsLookaheadMeasure) {
                     if (root.lookaheadRoot != null) {
                         // This call will walk the tree to look for lookaheadMeasurePending nodes
                         // and
@@ -449,7 +450,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
 
     private fun remeasureLookaheadRootsInSubtree(layoutNode: LayoutNode) {
         layoutNode.forEachChild {
-            if (it.measureAffectsParent) {
+            if (it.remeasureCanAffectParentSize) {
                 if (it.isOutMostLookaheadRoot) {
                     // This call will walk the subtree to look for lookaheadMeasurePending nodes and
                     // do a recursive lookahead remeasure starting at the root.
@@ -693,8 +694,8 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         layoutNode.forEachChild { child ->
             // only proceed if child's size can affect the parent size
             if (
-                !affectsLookahead && child.measureAffectsParent ||
-                    affectsLookahead && child.measureAffectsParentLookahead
+                !affectsLookahead && child.remeasureCanAffectParentSize ||
+                    affectsLookahead && child.lookaheadRemeasureCanAffectParentSize
             ) {
                 // When LookaheadRoot's parent gets forceMeasureSubtree call, we need to check
                 // both lookahead invalidation and non-lookahead invalidation, just like a measure()
@@ -741,7 +742,9 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         if (forceDispatch) {
             onPositionedDispatcher.onRootNodePositioned(root)
         }
-        onPositionedDispatcher.dispatch()
+        if (onPositionedDispatcher.isNotEmpty()) {
+            onPositionedDispatcher.dispatch()
+        }
     }
 
     /**
@@ -753,17 +756,18 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         onPositionedDispatcher.remove(node)
     }
 
-    private val LayoutNode.measureAffectsParent
+    private val LayoutNode.remeasureCanAffectParentSize: Boolean
         get() =
-            (measuredByParent == InMeasureBlock ||
-                layoutDelegate.alignmentLinesOwner.alignmentLines.required)
+            measuredByParent == InMeasureBlock ||
+                layoutDelegate.alignmentLinesOwner.alignmentLines.required
 
-    /** Checks if there is a placed parent which size we can theoretically affect by remeasuring. */
-    private val LayoutNode.measureAffectsPlacedParent: Boolean
+    /** Checks if there is a placed parent which is using the measured size of this node. */
+    private val LayoutNode.measuredByPlacedParent: Boolean
         get() {
             var node = this
             while (
-                node.measureAffectsParent ||
+                node.measuredByParent != NotUsed ||
+                    node.layoutDelegate.alignmentLinesOwner.alignmentLines.required ||
                     // if the parent is currently measuring, then measuredByParent on children was
                     // reset to NotUsed beforehand and does not represent the real usage.
                     node.parent?.layoutState == Measuring
@@ -778,12 +782,15 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         }
 
     private val LayoutNode.canAffectPlacedParent
-        get() = measurePending && measureAffectsPlacedParent
+        get() = measurePending && measuredByPlacedParent
 
     private val LayoutNode.canAffectParentInLookahead
-        get() = lookaheadMeasurePending && measureAffectsParentLookahead
+        get() =
+            lookaheadMeasurePending &&
+                (measuredByParentInLookahead != NotUsed ||
+                    layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)
 
-    private val LayoutNode.measureAffectsParentLookahead
+    private val LayoutNode.lookaheadRemeasureCanAffectParentSize
         get() =
             (measuredByParentInLookahead == InMeasureBlock ||
                 layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)

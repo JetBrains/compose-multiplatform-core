@@ -28,6 +28,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_END
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_START
 import androidx.wear.protolayout.LayoutElementBuilders.HorizontalAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Padding
@@ -180,22 +181,30 @@ public fun MaterialScope.textButton(
     colors: ButtonColors = filledButtonColors(),
     style: TextButtonStyle = defaultTextButtonStyle(),
     contentPadding: Padding = style.innerPadding,
-): LayoutElement =
-    buttonContainer(
+): LayoutElement {
+    val content =
+        withStyle(
+            defaultTextElementStyle =
+                TextElementStyle(typography = style.labelTypography, color = colors.labelColor)
+        ) {
+            labelContent()
+        }
+    val modifierWithContentDescription =
+        (content as? Text)?.text?.let {
+            LayoutModifier.contentDescription(
+                staticValue = it.value,
+                dynamicValue = it.dynamicValue,
+            ) then modifier
+        } ?: modifier
+    return buttonContainer(
         onClick = onClick,
-        modifier = modifier.background(colors.containerColor).clip(shape),
+        modifier = modifierWithContentDescription.background(colors.containerColor).clip(shape),
         width = width,
         height = height,
         contentPadding = contentPadding,
-        content = {
-            withStyle(
-                defaultTextElementStyle =
-                    TextElementStyle(typography = style.labelTypography, color = colors.labelColor)
-            ) {
-                labelContent()
-            }
-        },
+        content = { content },
     )
+}
 
 /**
  * Opinionated ProtoLayout Material3 pill shape button that offers up to three slots to take content

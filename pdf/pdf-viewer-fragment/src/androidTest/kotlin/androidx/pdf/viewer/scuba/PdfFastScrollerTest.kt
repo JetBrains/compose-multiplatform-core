@@ -26,9 +26,9 @@ import androidx.pdf.util.Preconditions
 import androidx.pdf.viewer.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.viewer.TestPdfViewerFragment
 import androidx.pdf.viewer.fragment.R
-import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP
-import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_HIDDEN_ON_LOAD
-import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE
+import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP
+import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_HIDDEN_ON_LOAD
+import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE
 import androidx.pdf.viewer.scuba.ScubaConstants.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
@@ -103,7 +103,7 @@ class PdfFastScrollerTest {
         onView(withId(R.id.pdfLoadingProgressBar))
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
 
-        assertScreenshot(screenshotRule, FAST_SCROLLER_HIDDEN_ON_LOAD)
+        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_HIDDEN_ON_LOAD)
     }
 
     @Test
@@ -123,7 +123,7 @@ class PdfFastScrollerTest {
 
         // Swipe actions
         onView(withId(R.id.pdfView)).perform(swipeUp())
-        assertScreenshot(screenshotRule, FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE)
+        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE)
     }
 
     @Test
@@ -154,6 +154,6 @@ class PdfFastScrollerTest {
         onView(withId(R.id.pdfView)).perform(swipeUp())
         onView(withId(R.id.pdfView)).perform(swipeDown())
 
-        assertScreenshot(screenshotRule, FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP)
+        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP)
     }
 }

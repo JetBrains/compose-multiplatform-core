@@ -2,42 +2,6 @@
 <issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat(event1.isCapture)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/camera2/pipe/graph/Controller3ALock3ATest.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat(fakeImageReader.isClosed)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/camera2/pipe/media/ImageReaderImageSourceTest.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat(fakeImage.isClosed)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/androidx/camera/camera2/pipe/media/ImageReaderImageSourceTest.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat("
-        errorLine2="        ^">
-        <location
-            file="src/test/java/androidx/camera/camera2/pipe/graph/StreamGraphImplTest.kt"/>
-    </issue>
-
-    <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 26"
         errorLine1="        check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"

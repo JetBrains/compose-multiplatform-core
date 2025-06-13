@@ -42,8 +42,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.layout
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import kotlin.jvm.JvmInline
 import kotlin.math.roundToInt
 
@@ -77,6 +81,7 @@ import kotlin.math.roundToInt
  * Example of a multi-browse carousel:
  *
  * @sample androidx.compose.material3.samples.HorizontalMultiBrowseCarouselSample
+ * @sample androidx.compose.material3.samples.CarouselWithShowAllButtonSample
  * @param state The state object to be used to control the carousel's state
  * @param preferredItemWidth The width that large, fully visible items would like to be in the
  *   horizontal axis. This width is a target and will likely be adjusted by carousel in order to fit
@@ -263,6 +268,74 @@ fun HorizontalUncontainedCarousel(
 /**
  * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
  *
+ * A horizontal carousel that centers one large item between two small items.
+ *
+ * @sample androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
+ * @param state The state object to be used to control the carousel's state
+ * @param modifier A modifier instance to be applied to this carousel container
+ * @param maxItemWidth The max width a large item is allowed to be in dp. The default value of
+ *   [Dp.Unspecified] allows one large item to grow to fill the entire viewport minus space for two
+ *   surrounding small items. Values other than unspecified will add additional large items as space
+ *   allows.
+ * @param itemSpacing The amount of space used to separate items in the carousel
+ * @param flingBehavior The [TargetedFlingBehavior] to be used for post scroll gestures
+ * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
+ *   allowed.
+ * @param minSmallItemWidth The minimum allowable width of small items in dp
+ * @param maxSmallItemWidth The maximum allowable width of small items in dp
+ * @param contentPadding a padding around the whole content. This will add padding for the content
+ *   after it has been clipped. You can use it to add a padding before the first item or after the
+ *   last one. Use [itemSpacing] to add spacing between the items.
+ * @param content The carousel's content Composable
+ */
+@ExperimentalMaterial3Api
+@Composable
+fun HorizontalCenteredHeroCarousel(
+    state: CarouselState,
+    modifier: Modifier = Modifier,
+    maxItemWidth: Dp = Dp.Unspecified,
+    itemSpacing: Dp = 0.dp,
+    flingBehavior: TargetedFlingBehavior =
+        CarouselDefaults.singleAdvanceFlingBehavior(state = state),
+    userScrollEnabled: Boolean = true,
+    minSmallItemWidth: Dp = CarouselDefaults.MinSmallItemSize,
+    maxSmallItemWidth: Dp = CarouselDefaults.MaxSmallItemSize,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    content: @Composable CarouselItemScope.(itemIndex: Int) -> Unit,
+) {
+    val density = LocalDensity.current
+    Carousel(
+        state = state,
+        orientation = Orientation.Horizontal,
+        keylineList = { availableSpace, itemSpacingPx ->
+            with(density) {
+                heroKeylineList(
+                    density = this,
+                    carouselMainAxisSize = availableSpace,
+                    maxItemSize = if (maxItemWidth.isSpecified) maxItemWidth.toPx() else null,
+                    itemSpacing = itemSpacingPx,
+                    itemCount = state.pagerState.pageCountState.value.invoke(),
+                    isCentered = true,
+                    minSmallItemSize = minSmallItemWidth.toPx(),
+                    maxSmallItemSize = maxSmallItemWidth.toPx(),
+                )
+            }
+        },
+        contentPadding = contentPadding,
+        // 2 is the max number of medium and small items that can be present in a centered hero
+        // carousel and should be the upper bounds max non focal visible items.
+        maxNonFocalVisibleItemCount = 2,
+        modifier = modifier,
+        itemSpacing = itemSpacing,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        content = content,
+    )
+}
+
+/**
+ * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
+ *
  * Carousels contain a collection of items that changes sizes according to their placement and the
  * chosen strategy.
  *
@@ -367,6 +440,7 @@ internal fun Carousel(
             beyondViewportPageCount = maxNonFocalVisibleItemCount,
             snapPosition = snapPosition,
             flingBehavior = flingBehavior,
+            userScrollEnabled = userScrollEnabled,
             modifier = modifier.semantics { role = Role.Carousel },
         ) { page ->
             val carouselItemInfo = remember { CarouselItemDrawInfoImpl() }
@@ -621,6 +695,30 @@ internal fun Modifier.carouselItem(
                 },
             )
         }
+    }
+}
+
+/** A modifier to draw keylines and other features over a Carousel to help with debugging. */
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Modifier.drawDebugLines(
+    state: CarouselState,
+    pageSize: CarouselPageSize,
+    strokeColor: Color = Color.Magenta,
+    strokeWidth: Dp = 4.dp,
+): Modifier = drawWithContent {
+    drawContent()
+    val strategyResult = pageSize.strategy
+    val scrollOffset = calculateCurrentScrollOffset(state, strategyResult)
+    val maxScrollOffset = calculateMaxScrollOffset(state, strategyResult)
+    val keylines = strategyResult.getKeylineListForScrollOffset(scrollOffset, maxScrollOffset)
+    val strokeWidthPx = strokeWidth.toPx()
+    keylines.forEach {
+        drawLine(
+            color = strokeColor,
+            start = Offset(x = it.offset, y = 0f),
+            end = Offset(x = it.offset, y = 100f),
+            strokeWidth = strokeWidthPx,
+        )
     }
 }
 

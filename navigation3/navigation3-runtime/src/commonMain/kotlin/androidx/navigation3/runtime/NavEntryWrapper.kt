@@ -16,23 +16,13 @@
 
 package androidx.navigation3.runtime
 
-import androidx.compose.runtime.Composable
-
 /**
  * Class that wraps a [NavEntry] within another [NavEntry].
  *
  * This provides a nesting mechanism for [NavEntry]s that allows properly nested content.
  *
+ * @param T the type of the backStack key
  * @param navEntry the [NavEntry] to wrap
  */
 public open class NavEntryWrapper<T : Any>(public val navEntry: NavEntry<T>) :
-    NavEntry<T>(navEntry.key, navEntry.metadata, navEntry.content) {
-    override val key: T
-        get() = navEntry.key
-
-    override val metadata: Map<String, Any>
-        get() = navEntry.metadata
-
-    override val content: @Composable (T) -> Unit
-        get() = navEntry.content
-}
+    NavEntry<T>(navEntry)

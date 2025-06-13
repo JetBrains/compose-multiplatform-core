@@ -31,7 +31,15 @@ import androidx.annotation.RequiresApi
  */
 public class NavigationInputHandler(private val dispatcher: NavigationEventDispatcher) {
     private var invoker: OnBackInvokedDispatcher? = null
-    private var onBackInvokedCallback: OnBackInvokedCallback? = null
+    private val onBackInvokedCallback: OnBackInvokedCallback? =
+        if (Build.VERSION.SDK_INT == 33) {
+            OnBackInvokedCallback { dispatcher.dispatchOnCompleted() }
+        } else if (Build.VERSION.SDK_INT >= 34) {
+            createOnBackAnimationCallback(dispatcher)
+        } else {
+            null
+        }
+
     private var backInvokedCallbackRegistered = false
 
     /**
@@ -39,94 +47,50 @@ public class NavigationInputHandler(private val dispatcher: NavigationEventDispa
      *
      * @param invoker the [OnBackInvokedDispatcher] to be set on this dispatcher
      */
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @RequiresApi(33)
     public fun setOnBackInvokedDispatcher(invoker: OnBackInvokedDispatcher) {
         this.invoker = invoker
+        dispatcher.updateInput { updateBackInvokedCallbackState() }
         updateBackInvokedCallbackState()
     }
 
-    init {
-        if (Build.VERSION.SDK_INT >= 33) {
-            onBackInvokedCallback =
-                if (Build.VERSION.SDK_INT >= 34) {
-                    Api34Impl.createOnBackAnimationCallback(
-                        { navEvent -> dispatcher.dispatchOnStarted(navEvent) },
-                        { navEvent -> dispatcher.dispatchOnProgressed(navEvent) },
-                        { dispatcher.dispatchOnCompleted() },
-                        { dispatcher.dispatchOnCancelled() },
-                    )
-                } else {
-                    Api33Impl.createOnBackInvokedCallback { dispatcher.dispatchOnCompleted() }
-                }
-            dispatcher.updateInput { updateBackInvokedCallbackState() }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    internal fun updateBackInvokedCallbackState() {
+    @RequiresApi(33)
+    private fun updateBackInvokedCallbackState() {
         val shouldBeRegistered = dispatcher.hasEnabledCallbacks()
         val dispatcher = invoker
-        val onBackInvokedCallback = onBackInvokedCallback
         if (dispatcher != null && onBackInvokedCallback != null) {
             if (shouldBeRegistered && !backInvokedCallbackRegistered) {
-                Api33Impl.registerOnBackInvokedCallback(
-                    dispatcher,
+                dispatcher.registerOnBackInvokedCallback(
                     OnBackInvokedDispatcher.PRIORITY_DEFAULT,
                     onBackInvokedCallback,
                 )
                 backInvokedCallbackRegistered = true
             } else if (!shouldBeRegistered && backInvokedCallbackRegistered) {
-                Api33Impl.unregisterOnBackInvokedCallback(dispatcher, onBackInvokedCallback)
+                dispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
                 backInvokedCallbackRegistered = false
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    internal object Api33Impl {
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        fun registerOnBackInvokedCallback(dispatcher: Any, priority: Int, callback: Any) {
-            val onBackInvokedDispatcher = dispatcher as OnBackInvokedDispatcher
-            val onBackInvokedCallback = callback as OnBackInvokedCallback
-            onBackInvokedDispatcher.registerOnBackInvokedCallback(priority, onBackInvokedCallback)
-        }
-
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        fun unregisterOnBackInvokedCallback(dispatcher: Any, callback: Any) {
-            val onBackInvokedDispatcher = dispatcher as OnBackInvokedDispatcher
-            val onBackInvokedCallback = callback as OnBackInvokedCallback
-            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
-        }
-
-        fun createOnBackInvokedCallback(onBackInvoked: () -> Unit): OnBackInvokedCallback {
-            return OnBackInvokedCallback { onBackInvoked() }
-        }
-    }
-
     @RequiresApi(34)
-    internal object Api34Impl {
-        fun createOnBackAnimationCallback(
-            onBackStarted: (event: NavigationEvent) -> Unit,
-            onBackProgressed: (event: NavigationEvent) -> Unit,
-            onBackInvoked: () -> Unit,
-            onBackCancelled: () -> Unit,
-        ): OnBackInvokedCallback {
-            return object : OnBackAnimationCallback {
-                override fun onBackStarted(backEvent: BackEvent) {
-                    onBackStarted(NavigationEvent(backEvent))
-                }
+    private fun createOnBackAnimationCallback(
+        dispatcher: NavigationEventDispatcher
+    ): OnBackInvokedCallback {
+        return object : OnBackAnimationCallback {
+            override fun onBackStarted(backEvent: BackEvent) {
+                dispatcher.dispatchOnStarted(NavigationEvent(backEvent))
+            }
 
-                override fun onBackProgressed(backEvent: BackEvent) {
-                    onBackProgressed(NavigationEvent(backEvent))
-                }
+            override fun onBackProgressed(backEvent: BackEvent) {
+                dispatcher.dispatchOnProgressed(NavigationEvent(backEvent))
+            }
 
-                override fun onBackInvoked() {
-                    onBackInvoked()
-                }
+            override fun onBackInvoked() {
+                dispatcher.dispatchOnCompleted()
+            }
 
-                override fun onBackCancelled() {
-                    onBackCancelled()
-                }
+            override fun onBackCancelled() {
+                dispatcher.dispatchOnCancelled()
             }
         }
     }

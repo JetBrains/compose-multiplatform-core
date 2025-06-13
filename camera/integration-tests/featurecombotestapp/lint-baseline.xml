@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val requiredFeatures: Set&lt;Feature> = emptySet(),"
+        errorLine2="                                  ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val requiredFeatures: Set&lt;Feature> = emptySet(),"
+        errorLine2="                                  ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val requiredFeatures: Set&lt;Feature> = emptySet(),"
+        errorLine2="                                  ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val requiredFeatures: Set&lt;Feature> = emptySet(),"
+        errorLine2="                                  ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val preferredFeatures: List&lt;Feature> = emptyList(),"
+        errorLine2="                                    ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val preferredFeatures: List&lt;Feature> = emptyList(),"
+        errorLine2="                                    ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val preferredFeatures: List&lt;Feature> = emptyList(),"
+        errorLine2="                                    ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        val preferredFeatures: List&lt;Feature> = emptyList(),"
+        errorLine2="                                    ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="SessionConfig can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            SessionConfig("
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="SessionConfig.setFeatureSelectionListener can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                    setFeatureSelectionListener { features ->"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Logger.d can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                        Logger.d(TAG, &quot;Selected features: $features&quot;)"
+        errorLine2="                               ~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="PendingRecording.start can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            videoCapture.output.prepareRecording(context, mediaStoreOutput).start { event ->"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.FPS_60 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                        listOf(Feature.HDR_HLG10, Feature.FPS_60, Feature.PREVIEW_STABILIZATION)"
+        errorLine2="                                                          ~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.HDR_HLG10 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                        listOf(Feature.HDR_HLG10, Feature.FPS_60, Feature.PREVIEW_STABILIZATION)"
+        errorLine2="                                       ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.PREVIEW_STABILIZATION can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                        listOf(Feature.HDR_HLG10, Feature.FPS_60, Feature.PREVIEW_STABILIZATION)"
+        errorLine2="                                                                          ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.IMAGE_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                            Feature.IMAGE_ULTRA_HDR,"
+        errorLine2="                                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.HDR_HLG10 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                            Feature.HDR_HLG10,"
+        errorLine2="                                    ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.PREVIEW_STABILIZATION can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                            Feature.PREVIEW_STABILIZATION,"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.FPS_60 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                            Feature.FPS_60,"
+        errorLine2="                                    ~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Logger.d can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            Logger.d(TAG, &quot;updateUnsupportedFeatures: duration = $duration&quot;)"
+        errorLine2="                   ~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="CameraSelector.getLensFacing can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        Log.d(TAG, &quot;isSupported: cameraSelector lensFacing = ${cameraSelector.lensFacing}&quot;)"
+        errorLine2="                                                                              ~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="CameraSelector.getLensFacing can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        Log.d(TAG, &quot;isSupported: cameraSelector lensFacing = ${cameraSelector.lensFacing}&quot;)"
+        errorLine2="                                                                              ~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="CameraInfo.isFeatureCombinationSupported can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                .isFeatureCombinationSupported("
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="SessionConfig can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                    SessionConfig(useCases, requiredFeatures = requiredFeatures)"
+        errorLine2="                    ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="    private fun AppFeatures.toCameraXFeatures(): Set&lt;Feature> {"
+        errorLine2="                                                     ~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.IMAGE_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                features.add(Feature.IMAGE_ULTRA_HDR)"
+        errorLine2="                                     ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.HDR_HLG10 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            features.add(Feature.HDR_HLG10)"
+        errorLine2="                                 ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.FPS_60 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            features.add(Feature.FPS_60)"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.PREVIEW_STABILIZATION can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            features.add(Feature.PREVIEW_STABILIZATION)"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.HDR_HLG10 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                Feature.HDR_HLG10 -> {"
+        errorLine2="                        ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.FPS_60 can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                Feature.FPS_60 -> {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.PREVIEW_STABILIZATION can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                Feature.PREVIEW_STABILIZATION -> {"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="Feature.IMAGE_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                Feature.IMAGE_ULTRA_HDR -> {"
+        errorLine2="                        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/featurecombo/ui/CameraViewModel.kt"/>
+    </issue>
+
+</issues>

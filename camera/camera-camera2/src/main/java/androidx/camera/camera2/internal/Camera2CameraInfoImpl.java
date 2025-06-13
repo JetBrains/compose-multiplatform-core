@@ -782,7 +782,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     @Override
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions,
+            int cameraMode, boolean isFeatureComboInvocation,
             @NonNull CameraConfig cameraConfig) {
         try {
             StreamSpecsCalculator.Companion.calculateSuggestedStreamSpecsCompat(
@@ -791,7 +791,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
                     this,
                     useCases,
                     cameraConfig,
-                    allowFeatureCombinationResolutions
+                    isFeatureComboInvocation
             );
         } catch (IllegalArgumentException e) {
             Logger.d(TAG, "isUseCaseCombinationSupported: calculateSuggestedStreamSpecs failed", e);

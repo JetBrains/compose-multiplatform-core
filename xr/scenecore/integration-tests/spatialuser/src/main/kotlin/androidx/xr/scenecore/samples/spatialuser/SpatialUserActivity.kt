@@ -72,7 +72,7 @@ class SpatialUserActivity : AppCompatActivity() {
                 "panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
             )
-        panelEntity.setParent(session.scene.activitySpace)
+        panelEntity.parent = session.scene.activitySpace
 
         val buttonRecenter: Button = panelContentView.findViewById(R.id.buttonRecenter)
         buttonRecenter.setOnClickListener {
@@ -93,9 +93,9 @@ class SpatialUserActivity : AppCompatActivity() {
             while (true) {
                 delay(16L)
                 val leftCamera =
-                    session.scene.spatialUser.getCameraView(CameraView.CameraType.LEFT_EYE)
+                    session.scene.spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
                 val rightCamera =
-                    session.scene.spatialUser.getCameraView(CameraView.CameraType.RIGHT_EYE)
+                    session.scene.spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
                 val leftVisible =
                     leftCamera?.let { isEntityInView(session.scene.mainPanelEntity, it) } ?: false
                 val rightVisible =

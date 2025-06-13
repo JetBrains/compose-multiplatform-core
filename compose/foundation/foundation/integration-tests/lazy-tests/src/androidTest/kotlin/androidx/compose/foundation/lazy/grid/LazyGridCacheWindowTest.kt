@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Remeasurement
@@ -168,6 +170,67 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("13").assertDoesNotExist()
     }
 
+    @Test
+    fun datasetChanged_shouldScheduleNewPrefetching_ifWindowIsNotFull() {
+        val numItems = mutableStateOf(100)
+
+        composeGrid(firstItem = 94, numItems = numItems, cacheWindow = viewportWindow)
+        rule.onNodeWithTag("94").assertIsDisplayed()
+        rule.onNodeWithTag("95").assertIsDisplayed()
+        rule.onNodeWithTag("96").assertIsDisplayed()
+        rule.onNodeWithTag("97").assertIsDisplayed()
+        rule.onNodeWithTag("98").assertExists()
+        rule.onNodeWithTag("99").assertExists()
+
+        rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+
+        /**
+         * At this point items 96-99 are on the visible window there is still space left on the
+         * window.
+         */
+        rule.onNodeWithTag("98").assertIsDisplayed()
+        rule.onNodeWithTag("99").assertIsDisplayed()
+        rule.onNodeWithTag("100").assertDoesNotExist()
+
+        rule.runOnIdle { numItems.value = 200 }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("100").assertExists() // window is not full
+        rule.onNodeWithTag("101").assertExists() // window is not full
+    }
+
+    @Test
+    fun datasetChanged_shouldNotScheduleNewPrefetching_ifWindowIsFull() {
+        val numItems = mutableStateOf(100)
+
+        composeGrid(firstItem = 92, numItems = numItems, cacheWindow = viewportWindow)
+        rule.onNodeWithTag("92").assertIsDisplayed()
+        rule.onNodeWithTag("93").assertIsDisplayed()
+        rule.onNodeWithTag("94").assertIsDisplayed()
+        rule.onNodeWithTag("95").assertIsDisplayed()
+
+        rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+
+        /**
+         * At this point items 94-97 are on the visible window and 98-99 are in the cache window.
+         * The window is full because items 97-99 fill the window.
+         */
+        rule.onNodeWithTag("94").assertIsDisplayed()
+        rule.onNodeWithTag("95").assertIsDisplayed()
+        rule.onNodeWithTag("96").assertIsDisplayed()
+        rule.onNodeWithTag("97").assertIsDisplayed()
+        rule.onNodeWithTag("98").assertExists() // part of the window
+        rule.onNodeWithTag("99").assertExists() // part of the window
+        rule.onNodeWithTag("100").assertDoesNotExist()
+        rule.onNodeWithTag("101").assertDoesNotExist()
+
+        rule.runOnIdle { numItems.value = 200 }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("100").assertDoesNotExist() // window is full
+        rule.onNodeWithTag("101").assertDoesNotExist() // window is full
+    }
+
     private val activeNodes = mutableSetOf<Int>()
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -189,6 +252,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
+        numItems: State<Int> = mutableStateOf(100),
         contentPadding: PaddingValues = PaddingValues(0.dp),
     ) {
         rule.setContent {
@@ -212,7 +276,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
                 reverseLayout = reverseLayout,
                 contentPadding = contentPadding,
             ) {
-                items(100) {
+                items(numItems.value) {
                     DisposableEffect(it) {
                         activeNodes.add(it)
                         onDispose { activeNodes.remove(it) }

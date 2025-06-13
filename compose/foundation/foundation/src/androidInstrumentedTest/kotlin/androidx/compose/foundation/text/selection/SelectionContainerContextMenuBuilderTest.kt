@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.contextmenu.ProcessTextItemOverrideRule
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
@@ -63,6 +64,8 @@ class SelectionContainerContextMenuBuilderTest {
     private val textTag = "text"
     private val defaultText = "Text Text Text"
     private val initialClipboardText = "initialClipboardText"
+
+    @get:Rule val processTextRule = ProcessTextItemOverrideRule()
 
     @Test
     fun whenTouch_onClick_copy() = runTest {

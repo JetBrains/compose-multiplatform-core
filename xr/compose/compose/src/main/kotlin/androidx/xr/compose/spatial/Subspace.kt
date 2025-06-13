@@ -17,7 +17,6 @@
 package androidx.xr.compose.spatial
 
 import androidx.activity.ComponentActivity
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
@@ -41,6 +40,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
@@ -65,6 +65,7 @@ import androidx.xr.scenecore.ActivitySpace
 import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.CameraView.CameraType
 import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.Head
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
@@ -86,8 +87,12 @@ private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
         LocalCoreEntity.currentValue != null
     }
 
+internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
+    compositionLocalWithComputedDefaultOf {
+        LocalComposeXrOwners.currentValue?.subspaceRootNode
+    }
+
 /** Defines default values used by the Subspace composables, primarily [ApplicationSubspace]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SubspaceDefaults {
     /**
      * Default [VolumeConstraints] used as a fallback value.
@@ -130,7 +135,6 @@ public object SubspaceDefaults {
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit) {
     val activity = LocalContext.current.getActivity() as? ComponentActivity ?: return
 
@@ -154,7 +158,6 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
 
 /** Defines the behavior for applying [VolumeConstraints] to an ApplicationSubspace. */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class ConstraintsBehavior private constructor(private val value: Int) {
     public companion object {
         /**
@@ -179,7 +182,8 @@ public value class ConstraintsBehavior private constructor(private val value: In
  * [ApplicationSubspace] should be used to create the topmost [Subspace] in your application's
  * spatial UI hierarchy. This composable will throw an [IllegalStateException] if it is used to
  * create a Subspace that is nested within another [Subspace] or [ApplicationSubspace]. For nested
- * 3D content areas, use the [Subspace] composable.
+ * 3D content areas, use the [Subspace] composable. The [ApplicationSubspace] will inherit its
+ * position and scale from the system's recommended position and scale.
  *
  * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
  * Tablet).
@@ -204,7 +208,6 @@ public value class ConstraintsBehavior private constructor(private val value: In
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun ApplicationSubspace(
     constraints: VolumeConstraints = SubspaceDefaults.fallbackFieldOfViewConstraints,
     constraintsBehavior: ConstraintsBehavior = ConstraintsBehavior.FieldOfView,
@@ -251,17 +254,22 @@ private fun ApplicationSubspace(
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
+    val subspaceRootNode = LocalSubspaceRootNode.current
     val scene by remember {
-        session.scene.mainPanelEntity.setHidden(true)
+        session.scene.mainPanelEntity.setEnabled(false)
+        val subspaceRoot = ContentlessEntity.create(session, "SubspaceRoot")
+        subspaceRootNode?.let { subspaceRoot.parent = it }
         disposableValueOf(
             SpatialComposeScene(
                 ownerActivity = activity,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
+                rootEntity = CoreContentlessEntity(subspaceRoot),
             )
         ) {
             it.dispose()
-            session.scene.mainPanelEntity.setHidden(false)
+            subspaceRoot.dispose()
+            session.scene.mainPanelEntity.setEnabled(true)
         }
     }
 
@@ -291,8 +299,8 @@ private fun NestedSubspace(
     val subspaceRootContainer by remember {
         disposableValueOf(
             ContentlessEntity.create(session, "SubspaceRootContainer").apply {
-                setParent(coreEntity.entity)
-                setHidden(true)
+                parent = coreEntity.entity
+                setEnabled(false)
             }
         ) {
             it.dispose()
@@ -301,7 +309,7 @@ private fun NestedSubspace(
     val scene by remember {
         val subspaceRoot =
             ContentlessEntity.create(session, "SubspaceRoot").apply {
-                setParent(subspaceRootContainer)
+                parent = subspaceRootContainer
             }
         disposableValueOf(
             SpatialComposeScene(
@@ -331,8 +339,8 @@ private fun NestedSubspace(
         )
         // We need to wait for a single frame to ensure that the pose changes are batched to the
         // root container before we show it.
-        if (subspaceRootContainer.isHidden(false) && awaitFrame() > 0) {
-            subspaceRootContainer.setHidden(false)
+        if (!subspaceRootContainer.isEnabled(false) && awaitFrame() > 0) {
+            subspaceRootContainer.setEnabled(true)
         }
     }
 
@@ -431,9 +439,9 @@ private fun rememberCalculatedFovConstraints(
             } else {
                 val head: Head? = session.scene.spatialUser.head
                 val leftCamera: CameraView? =
-                    session.scene.spatialUser.getCameraView(CameraType.LEFT_EYE)
+                    session.scene.spatialUser.cameraViews[CameraType.LEFT_EYE]
                 val rightCamera: CameraView? =
-                    session.scene.spatialUser.getCameraView(CameraType.RIGHT_EYE)
+                    session.scene.spatialUser.cameraViews[CameraType.RIGHT_EYE]
                 val scale = activitySpace.getScale(Space.REAL_WORLD)
 
                 if (head == null || leftCamera == null || rightCamera == null || scale == 0f) {
@@ -491,8 +499,8 @@ private suspend fun pollUntilReadyAndCalculateFovConstraints(
 ): VolumeConstraints {
     while (true) {
         val head: Head? = session.scene.spatialUser.head
-        val leftCamera: CameraView? = session.scene.spatialUser.getCameraView(CameraType.LEFT_EYE)
-        val rightCamera: CameraView? = session.scene.spatialUser.getCameraView(CameraType.RIGHT_EYE)
+        val leftCamera: CameraView? = session.scene.spatialUser.cameraViews[CameraType.LEFT_EYE]
+        val rightCamera: CameraView? = session.scene.spatialUser.cameraViews[CameraType.RIGHT_EYE]
 
         if (head == null || leftCamera == null || rightCamera == null) {
             delay(PerceptionStackRetrySettings.RETRY_INTERVAL_MILLIS)

@@ -33,9 +33,9 @@ public interface SubspaceMeasurable {
     /**
      * Adjusts layout with a new [ParentLayoutParamsAdjustable].
      *
-     * This is useful in implementations of [MeasurePolicy.measure] to provide child measurables
-     * with the context objects they need to inform their parent of their layout preferences using
-     * [ParentLayoutParamsModifier.adjustParams].
+     * This is useful in implementations of [SubspaceMeasurePolicy.measure] to provide child
+     * measurables with the context objects they need to inform their parent of their layout
+     * preferences using [ParentLayoutParamsModifier.adjustParams].
      *
      * ```kotlin
      * // Child composable modifiers can modify MyParams which can be read by the parent.

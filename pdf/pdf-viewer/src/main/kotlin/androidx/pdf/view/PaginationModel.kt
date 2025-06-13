@@ -132,6 +132,12 @@ internal class PaginationModel(
         for (i in maxOf(_reach, 0) until pageNum) {
             if (pages[i] == UNKNOWN_SIZE) {
                 pages[i] = pageSize
+
+                // Use prior values as an approximation.
+                accumulatedPageHeight += pageSize.y
+                if (i > 0) {
+                    pagePositions[i] = pagePositions[i - 1] + pages[i - 1].y + pageSpacingPx
+                }
             }
         }
         if (pageSize.x > maxWidth) {

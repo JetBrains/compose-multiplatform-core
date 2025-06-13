@@ -396,6 +396,9 @@ public class AppSearchStatsTest {
         long liteIndexHitBufferUnsortedByteSize = 216;
         int pageTypeToken = QueryStats.PAGE_TOKEN_TYPE_EMPTY;
         int numResultStatesEvicted = 217;
+        int additionalPageCount = 218;
+        int numResultsReturnedAdditionalPages = 219;
+        int additionalPagesRetrievalLatency = 220;
 
         final QueryStats.Builder sStatsBuilder = new QueryStats.Builder(visibilityScope,
                 TEST_PACKAGE_NAME)
@@ -423,7 +426,10 @@ public class AppSearchStatsTest {
                 .setLiteIndexHitBufferByteSize(liteIndexHitBufferByteSize)
                 .setLiteIndexHitBufferUnsortedByteSize(liteIndexHitBufferUnsortedByteSize)
                 .setPageTokenType(pageTypeToken)
-                .setNumResultStatsEvicted(numResultStatesEvicted);
+                .setNumResultStatsEvicted(numResultStatesEvicted)
+                .setAdditionalPageCount(additionalPageCount)
+                .setAdditionalPagesReturnedResultCount(numResultsReturnedAdditionalPages)
+                .setAdditionalPageRetrievalLatencyMillis(additionalPagesRetrievalLatency);
         final QueryStats sStats = sStatsBuilder.build();
 
         assertThat(sStats.getEnabledFeatures()).isEqualTo(enabledFeatures);
@@ -464,6 +470,11 @@ public class AppSearchStatsTest {
                 .isEqualTo(liteIndexHitBufferUnsortedByteSize);
         assertThat(sStats.getPageTokenType()).isEqualTo(pageTypeToken);
         assertThat(sStats.getNumResultStatesEvicted()).isEqualTo(numResultStatesEvicted);
+        assertThat(sStats.getAdditionalPageCount()).isEqualTo(additionalPageCount);
+        assertThat(sStats.getAdditionalPagesReturnedResultCount()).isEqualTo(
+                numResultsReturnedAdditionalPages);
+        assertThat(sStats.getAdditionalPageRetrievalLatencyMillis()).isEqualTo(
+                additionalPagesRetrievalLatency);
         String expectedString = "QueryStats {\n"
                 + "package=com.google.test, database=testDataBase, status=2, total_latency=20, "
                 + "rewrite_search_spec_latency=202,\n"

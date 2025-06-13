@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.hardware.camera2.CameraCaptureSession.StateCallback
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
@@ -99,6 +98,9 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     /** @see CameraDevice.createExtensionSession */
     @RequiresApi(31) fun createExtensionSession(config: ExtensionSessionConfigData): Boolean
 
+    /** Invoked when the [CameraDevice] is being closed */
+    fun onDeviceClosing()
+
     /** Invoked when the [CameraDevice] has been closed */
     fun onDeviceClosed()
 
@@ -156,7 +158,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -209,7 +211,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create extension session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -249,7 +251,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create reprocess session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -288,7 +290,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -327,7 +329,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -371,7 +373,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create reprocess session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -449,7 +451,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -482,11 +484,17 @@ internal class AndroidCameraDevice(
         }
     }
 
-    override fun onDeviceClosed() {
+    override fun onDeviceClosing() {
         if (closed.compareAndSet(expect = false, update = true)) {
-            val lastStateCallback = _lastStateCallback.getAndSet(null)
-            lastStateCallback?.onSessionFinalized()
+            val lastStateCallback = _lastStateCallback.value
+            lastStateCallback?.onSessionDisconnectedWithTrace()
         }
+    }
+
+    override fun onDeviceClosed() {
+        check(closed.value)
+        val lastStateCallback = _lastStateCallback.getAndSet(null)
+        lastStateCallback?.onSessionFinalizedWithTrace()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -509,7 +517,7 @@ internal class AndroidCameraDevice(
         stateCallback: SessionStateCallback
     ): Pair<Boolean, SessionStateCallback?> {
         if (closed.value) {
-            stateCallback.onSessionFinalized()
+            stateCallback.onSessionFinalizedWithTrace()
             return Pair(false, null)
         }
         return Pair(true, _lastStateCallback.getAndSet(stateCallback))
@@ -517,6 +525,10 @@ internal class AndroidCameraDevice(
 
     private fun SessionStateCallback.onSessionDisconnectedWithTrace() {
         Debug.trace("${this@AndroidCameraDevice}#onSessionDisconnected") { onSessionDisconnected() }
+    }
+
+    private fun SessionStateCallback.onSessionFinalizedWithTrace() {
+        Debug.trace("${this@AndroidCameraDevice}#onSessionFinalized") { onSessionFinalized() }
     }
 }
 
@@ -667,6 +679,8 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
                 androidCameraDevice.createReprocessCaptureRequest(inputResult)
             }
         }
+
+    override fun onDeviceClosing() = androidCameraDevice.onDeviceClosing()
 
     override fun onDeviceClosed() = androidCameraDevice.onDeviceClosed()
 

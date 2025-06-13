@@ -22,8 +22,13 @@ import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -44,16 +49,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.internal.AnchoredDraggableState
 import androidx.compose.material3.internal.BackEventCompat
-import androidx.compose.material3.internal.DraggableAnchors
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.internal.PredictiveBack
 import androidx.compose.material3.internal.PredictiveBackHandler
 import androidx.compose.material3.internal.Strings
-import androidx.compose.material3.internal.anchoredDraggable
 import androidx.compose.material3.internal.getString
-import androidx.compose.material3.internal.snapTo
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -125,18 +126,20 @@ enum class DrawerValue {
 @Stable
 class DrawerState(
     initialValue: DrawerValue,
-    confirmStateChange: (DrawerValue) -> Boolean = { true },
+    internal val confirmStateChange: (DrawerValue) -> Boolean = { true },
 ) {
 
     internal var anchoredDraggableMotionSpec: FiniteAnimationSpec<Float> =
         AnchoredDraggableDefaultAnimationSpec
 
+    @Suppress("Deprecation")
     internal val anchoredDraggableState =
         AnchoredDraggableState(
             initialValue = initialValue,
-            animationSpec = { anchoredDraggableMotionSpec },
+            snapAnimationSpec = anchoredDraggableMotionSpec,
+            decayAnimationSpec = AnchoredDraggableDefaults.DecayAnimationSpec,
             confirmValueChange = confirmStateChange,
-            positionalThreshold = { distance -> distance * DrawerPositionalThreshold },
+            positionalThreshold = { distance: Float -> distance * DrawerPositionalThreshold },
             velocityThreshold = { with(requireDensity()) { DrawerVelocityThreshold.toPx() } },
         )
 
@@ -369,10 +372,7 @@ fun ModalNavigationDrawer(
         Scrim(
             open = drawerState.isOpen,
             onClose = {
-                if (
-                    gesturesEnabled &&
-                        drawerState.anchoredDraggableState.confirmValueChange(DrawerValue.Closed)
-                ) {
+                if (gesturesEnabled && drawerState.confirmStateChange(DrawerValue.Closed)) {
                     scope.launch { drawerState.close() }
                 }
             },
@@ -398,11 +398,7 @@ fun ModalNavigationDrawer(
                         paneTitle = navigationMenu
                         if (drawerState.isOpen) {
                             dismiss {
-                                if (
-                                    drawerState.anchoredDraggableState.confirmValueChange(
-                                        DrawerValue.Closed
-                                    )
-                                ) {
+                                if (drawerState.confirmStateChange(DrawerValue.Closed)) {
                                     scope.launch { drawerState.close() }
                                 }
                                 true
@@ -498,11 +494,7 @@ fun DismissibleNavigationDrawer(
                         paneTitle = navigationMenu
                         if (drawerState.isOpen) {
                             dismiss {
-                                if (
-                                    drawerState.anchoredDraggableState.confirmValueChange(
-                                        DrawerValue.Closed
-                                    )
-                                ) {
+                                if (drawerState.confirmStateChange(DrawerValue.Closed)) {
                                     scope.launch { drawerState.close() }
                                 }
                                 true

@@ -26,12 +26,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.testutils"
+        androidResources.enable = true
+    }
     desktop()
 
     sourceSets {
@@ -104,9 +107,4 @@ androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2020"
     description = "Compose internal test utils."
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.testutils"
 }

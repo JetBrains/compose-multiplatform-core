@@ -48,6 +48,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -59,6 +60,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import androidx.wear.compose.foundation.LocalScreenIsActive
 import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -629,33 +632,60 @@ public fun ScreenScaffold(
                 }
             val edgeButtonAnimatedHeight = remember { Animatable(currentEdgeButtonTargetHeight) }
 
-            content(
-                // Replace bottom content padding adjusted for the edge button.
-                ReplacePaddingValues(
-                    contentPadding,
-                    with(localDensity) {
-                        (intrinsicButtonHeight?.toDp() ?: 0.dp) + effectiveEdgeButtonSpacing
-                    },
-                )
-            )
-            Box(
-                contentAlignment = Alignment.BottomCenter,
-                content = edgeButton,
-                modifier =
-                    Modifier.align(Alignment.BottomCenter).dynamicHeight(
-                        onIntrinsicHeightMeasured = {
-                            if (intrinsicButtonHeight != it) {
-                                intrinsicButtonHeight = it
-                            }
-                        }
-                    ) {
-                        if (scrollInfoProvider.isScrollInProgress) {
-                            currentEdgeButtonTargetHeight
-                        } else {
-                            edgeButtonAnimatedHeight.value
-                        }
-                    },
-            )
+            // Remember lambdas to avoid re-evaluations on recomposition.
+            val edgeButtonContent: @Composable () -> Unit =
+                remember(edgeButton, scrollInfoProvider) {
+                    {
+                        Box(
+                            contentAlignment = Alignment.BottomCenter,
+                            content = edgeButton,
+                            modifier =
+                                Modifier.align(Alignment.BottomCenter).dynamicHeight(
+                                    onIntrinsicHeightMeasured = {
+                                        if (intrinsicButtonHeight != it) {
+                                            intrinsicButtonHeight = it
+                                        }
+                                    }
+                                ) {
+                                    if (scrollInfoProvider.isScrollInProgress) {
+                                        currentEdgeButtonTargetHeight
+                                    } else {
+                                        edgeButtonAnimatedHeight.value
+                                    }
+                                },
+                        )
+                    }
+                }
+            val mainContent: @Composable () -> Unit =
+                remember(contentPadding, effectiveEdgeButtonSpacing, content) {
+                    {
+                        content(
+                            // Replace bottom content padding adjusted for the edge button.
+                            ReplacePaddingValues(
+                                contentPadding,
+                                with(localDensity) {
+                                    (intrinsicButtonHeight?.toDp() ?: 0.dp) +
+                                        effectiveEdgeButtonSpacing
+                                },
+                            )
+                        )
+                    }
+                }
+
+            SubcomposeLayout() { constraints ->
+                // Measure the EdgeButton first, to ensure that intrinsicButtonHeight is updated
+                // before we measure the rest of the content.
+                val edgeButtonMeasurable =
+                    subcompose(SlotsEnum.EdgeButton, edgeButtonContent).first().measure(constraints)
+
+                val mainMeasurables =
+                    subcompose(SlotsEnum.Main, mainContent).fastMap { it.measure(constraints) }
+
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    mainMeasurables.fastForEach { it.place(0, 0) }
+                    edgeButtonMeasurable.place(0, 0)
+                }
+            }
 
             LaunchedEffect(
                 scrollInfoProvider,
@@ -698,6 +728,11 @@ public fun ScreenScaffold(
             }
         },
     )
+}
+
+private enum class SlotsEnum {
+    Main,
+    EdgeButton,
 }
 
 /**
@@ -841,6 +876,8 @@ private class DynamicHeightElement(
     override fun update(node: DynamicHeightNode) {
         node.heightState = heightState
         node.onIntrinsicHeightMeasured = onIntrinsicHeightMeasured
+        // Ensure we reset this if the node is reused in a different part of the tree.
+        node.lastMeasureHeight = null
     }
 
     override fun InspectorInfo.inspectableProperties() {

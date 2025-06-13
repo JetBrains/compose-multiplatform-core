@@ -1584,7 +1584,7 @@ Fix for src/com/example/test.kt line 6: Extract to static inner class:
 + import androidx.annotation.RequiresAconfigFlag
 @@ -5 +7
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("android.test.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic
@@ -1709,7 +1709,7 @@ Fix for src/flaggedapi/FlaggedUsageWithoutOutline.kt line 26: Extract to static 
 +             FlagMyFlagImpl.innerApi()
 @@ -33 +35
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("flaggedapi.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic
@@ -1727,7 +1727,7 @@ Fix for src/flaggedapi/FlaggedUsageWithoutOutline.kt line 31: Extract to static 
 +         FlagMyFlagImpl.innerApi()
 @@ -33 +35
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("flaggedapi.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic
@@ -1788,7 +1788,7 @@ Fix for src/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt line 25: Extract 
 +             val resultA = FlagMyFlagImpl.apiWithTypeArgument(null)
 @@ -30 +32
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("flaggedapi.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic
@@ -1806,7 +1806,7 @@ Fix for src/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt line 26: Extract 
 +             val resultB = FlagMyFlagImpl.apiWithGenericType(null)
 @@ -30 +32
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("flaggedapi.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic
@@ -1824,7 +1824,7 @@ Fix for src/flaggedapi/AutofixUnsafeUsageWithTypeConversion.kt line 27: Extract 
 +             val resultC = FlagMyFlagImpl.apiWithTwoDimensionalArray(null)
 @@ -30 +32
 +
-+ @RequiresAconfigFlag("myFlag")
++ @RequiresAconfigFlag("flaggedapi.myFlag")
 + internal object FlagMyFlagImpl {
 +     @DoNotInline
 +     @JvmStatic

@@ -27,8 +27,8 @@ import androidx.pdf.viewer.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.viewer.TestPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.R
-import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE
-import androidx.pdf.viewer.scuba.ScubaConstants.FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT
+import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE
+import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT
 import androidx.pdf.viewer.scuba.ScubaConstants.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -123,7 +123,7 @@ class StylingOptionsScubaTests {
 
         onView(withId(R.id.pdfView)).perform(swipeUp())
         onView(withId(R.id.pdfView)).perform(swipeDown())
-        assertScreenshot(screenshotRule, FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT)
+        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT)
     }
 
     @Test
@@ -150,6 +150,6 @@ class StylingOptionsScubaTests {
         }
 
         Espresso.onIdle()
-        assertScreenshot(screenshotRule, FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE)
+        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE)
     }
 }

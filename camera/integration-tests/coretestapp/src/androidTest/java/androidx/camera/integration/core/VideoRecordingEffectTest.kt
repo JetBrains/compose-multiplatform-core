@@ -37,7 +37,6 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
-import androidx.camera.integration.core.util.Camera2InteropUtil.setCameraCaptureSessionCallback
 import androidx.camera.integration.core.util.SensorPatternUtil.ColorChannel
 import androidx.camera.integration.core.util.SensorPatternUtil.assumeSolidColorPatternSupported
 import androidx.camera.integration.core.util.SensorPatternUtil.setSolidColorPatternToCamera
@@ -50,6 +49,7 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.util.Camera2InteropUtil.setCameraCaptureSessionCallback
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
@@ -76,9 +76,9 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class VideoRecordingEffectTest(
-    private val implName: String,
-    val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
+    private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
 
@@ -101,35 +101,29 @@ class VideoRecordingEffectTest(
     companion object {
 
         @JvmStatic
-        @Parameterized.Parameters(name = "{1}+{0}")
-        fun data(): List<Array<Any?>> {
-            return listOf(
-                arrayOf(
-                    Camera2Config::class.simpleName,
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    Camera2Config::class.simpleName,
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    CameraPipeConfig::class.simpleName,
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    CameraPipeConfig::class.simpleName,
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
-        }
+        @Parameterized.Parameters(name = "{0}")
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 
     @Before

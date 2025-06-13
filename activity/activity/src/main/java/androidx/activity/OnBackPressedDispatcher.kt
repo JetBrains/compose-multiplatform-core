@@ -204,22 +204,12 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackStarted(backEvent: BackEventCompat) {
-        onBackStarted(backEvent)
-    }
-
-    @MainThread
-    private fun onBackStarted(backEvent: BackEventCompat) {
         eventDispatcher.dispatchOnStarted(backEvent.toNavigationEvent())
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackProgressed(backEvent: BackEventCompat) {
-        onBackProgressed(backEvent)
-    }
-
-    @MainThread
-    private fun onBackProgressed(backEvent: BackEventCompat) {
         eventDispatcher.dispatchOnProgressed(backEvent.toNavigationEvent())
     }
 
@@ -239,11 +229,6 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackCancelled() {
-        onBackCancelled()
-    }
-
-    @MainThread
-    private fun onBackCancelled() {
         eventDispatcher.dispatchOnCancelled()
     }
 }

@@ -254,7 +254,8 @@ public final class EntityTest {
                         mEntityManager,
                         mFakeScheduledExecutorService);
         child.setParent(mEntity);
-        child.setScale(scale, Space.PARENT);
+        child.setScale(scale.times(scale), Space.ACTIVITY);
+
         assertVector3(child.getScale(Space.ACTIVITY), scale.times(scale));
     }
 
@@ -272,7 +273,7 @@ public final class EntityTest {
                         mEntityManager,
                         mFakeScheduledExecutorService);
         child.setParent(mEntity);
-        child.setScale(scale, Space.PARENT);
+        child.setScale(scale.times(scale.times(activitySpace.mWorldSpaceScale)), Space.REAL_WORLD);
 
         assertVector3(
                 child.getScale(Space.REAL_WORLD),

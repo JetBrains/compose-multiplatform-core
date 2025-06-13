@@ -18,7 +18,6 @@ package androidx.credentials.providerevents.service
 
 import android.app.Service
 import android.content.Intent
-import android.os.CancellationSignal
 import android.os.IBinder
 import androidx.annotation.RestrictTo
 import androidx.core.os.OutcomeReceiverCompat
@@ -27,7 +26,7 @@ import androidx.credentials.provider.CredentialProviderService
 import androidx.credentials.providerevents.exception.ExportCredentialsException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
-import androidx.credentials.providerevents.internal.CredentialEventsProviderFactory
+import androidx.credentials.providerevents.internal.DeviceSetupProviderFactory
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilities
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
@@ -68,12 +67,10 @@ import androidx.credentials.providerevents.transfer.ImportCredentialsResponse
  * - Extend this class and implement the required methods.
  * - Declare this service class within Android Manifest with corresponding intent action
  *   "androidx.credentials.DEVICE_SETUP_SERVICE_ACTION".
- *
- * TODO(b/416798373): clean up cancellation signal
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class DeviceSetupService() : Service() {
-    private val factory = CredentialEventsProviderFactory()
+    private val factory = DeviceSetupProviderFactory()
 
     override fun onBind(intent: Intent?): IBinder? {
         if (intent == null) {
@@ -96,13 +93,11 @@ public abstract class DeviceSetupService() : Service() {
      *
      * @param request The request for pulling the credentials from this device.
      * @param callingAppInfo the requesting app info
-     * @param cancellationSignal A signal to cancel the operation.
      * @param callback The callback to receive the result of the credential fetching.
      */
     public open fun onImportCredentialsRequest(
         request: ImportCredentialsRequest,
         callingAppInfo: CallingAppInfo,
-        cancellationSignal: CancellationSignal,
         callback: OutcomeReceiverCompat<ImportCredentialsResponse, ImportCredentialsException>,
     ) {}
 
@@ -115,13 +110,11 @@ public abstract class DeviceSetupService() : Service() {
      *
      * @param request The request for pushing the credentials to this device.
      * @param callingAppInfo the requesting app info
-     * @param cancellationSignal A signal to cancel the operation.
      * @param callback The callback to receive the result of the credential push.
      */
     public open fun onExportCredentialsRequest(
         request: ExportCredentialsRequest,
         callingAppInfo: CallingAppInfo,
-        cancellationSignal: CancellationSignal,
         callback: OutcomeReceiverCompat<ExportCredentialsResponse, ExportCredentialsException>,
     ) {}
 
@@ -135,13 +128,11 @@ public abstract class DeviceSetupService() : Service() {
      *
      * @param request The request for the state of the transferable credentials to this device.
      * @param callingAppInfo the requesting app info
-     * @param cancellationSignal A signal to cancel the operation.
      * @param callback The callback to receive the result of the request.
      */
     public open fun onGetCredentialTransferCapabilities(
         request: CredentialTransferCapabilitiesRequest,
         callingAppInfo: CallingAppInfo,
-        cancellationSignal: CancellationSignal,
         callback:
             OutcomeReceiverCompat<
                 CredentialTransferCapabilities,

@@ -218,7 +218,7 @@ internal class GLThread(
      */
     @WorkerThread
     private fun obtainEGLSurfaceForSession(session: SurfaceSession): EGLSurface? {
-        return if (session.eglSurface != null) {
+        return if (session.eglSurface != null && session.eglSurface != EGL14.EGL_NO_SURFACE) {
             session.eglSurface
         } else {
             createEGLSurfaceForSession(

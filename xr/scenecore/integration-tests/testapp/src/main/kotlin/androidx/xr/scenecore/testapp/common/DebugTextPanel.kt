@@ -59,7 +59,7 @@ class DebugTextPanel(
     @SuppressLint("RestrictedApi") var trackedEntity: Entity? = null
 
     init {
-        panelEntity.setParent(parent)
+        panelEntity.parent = parent
         view.setName(name)
     }
 }

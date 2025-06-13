@@ -74,6 +74,7 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -100,6 +101,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.guava.await
@@ -147,7 +149,7 @@ class SubspaceComposableApp : ComponentActivity() {
                         .scene
                         .spatialEnvironment
                         .requestHomeSpaceMode()
-                    session.scene.mainPanelEntity.setHidden(false)
+                    session.scene.mainPanelEntity.setEnabled(true)
                 }
 
                 MainContent(text = "Home Page in Home Space Mode", navController = navController)
@@ -160,7 +162,7 @@ class SubspaceComposableApp : ComponentActivity() {
                         .scene
                         .spatialEnvironment
                         .requestFullSpaceMode()
-                    session.scene.mainPanelEntity.setHidden(true)
+                    session.scene.mainPanelEntity.setEnabled(false)
                 }
 
                 Subspace { PanelGrid(navController = navController) }
@@ -172,7 +174,7 @@ class SubspaceComposableApp : ComponentActivity() {
                         .scene
                         .spatialEnvironment
                         .requestFullSpaceMode()
-                    session.scene.mainPanelEntity.setHidden(false)
+                    session.scene.mainPanelEntity.setEnabled(true)
                 }
 
                 MainContent(text = "Now some arrows are shown!", navController = navController)
@@ -324,6 +326,7 @@ class SubspaceComposableApp : ComponentActivity() {
         )
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Composable
     @SubspaceComposable
     fun XyzArrows(modifier: SubspaceModifier = SubspaceModifier) {
@@ -334,7 +337,9 @@ class SubspaceComposableApp : ComponentActivity() {
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
         val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
 
-        LaunchedEffect(Unit) { arrows = GltfModel.create(session, "models/xyzArrows.glb").await() }
+        LaunchedEffect(Unit) {
+            arrows = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb")).await()
+        }
 
         if (gltfEntity != null) {
             val angle by
@@ -359,7 +364,7 @@ class SubspaceComposableApp : ComponentActivity() {
                 gltfEntity.setPose(Pose(rotation = q))
             }
 
-            Volume(modifier) { gltfEntity.setParent(it) }
+            Volume(modifier) { gltfEntity.parent = it }
         }
     }
 }

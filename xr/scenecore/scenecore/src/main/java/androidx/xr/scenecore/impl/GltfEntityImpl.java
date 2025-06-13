@@ -129,8 +129,10 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     @Override
     public void stopAnimation() {
         // TODO(b/377907379): - Punt this logic to the UI thread.
-        mImpressApi.stopGltfModelAnimation(mModelImpressNode);
-        mAnimationState = AnimationState.STOPPED;
+        if (mAnimationState == AnimationState.PLAYING) {
+            mImpressApi.stopGltfModelAnimation(mModelImpressNode);
+            mAnimationState = AnimationState.STOPPED;
+        }
     }
 
     @Override

@@ -293,7 +293,7 @@ public class WebSettingsAdapter {
 
     /**
      * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)}
+     * {@link androidx.webkit.WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)}
      */
     public void setCookieAccessForShouldInterceptRequestEnabled(boolean enabled) {
         mBoundaryInterface.setIncludeCookiesOnIntercept(enabled);
@@ -301,7 +301,7 @@ public class WebSettingsAdapter {
 
     /**
      * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#getIncludeCookiesOnShouldInterceptRequest(WebSettings)}
+     * {@link androidx.webkit.WebSettingsCompat#isIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings)}
      */
     public boolean getCookieAccessForShouldInterceptRequestEnabled() {
         return mBoundaryInterface.getIncludeCookiesOnIntercept();

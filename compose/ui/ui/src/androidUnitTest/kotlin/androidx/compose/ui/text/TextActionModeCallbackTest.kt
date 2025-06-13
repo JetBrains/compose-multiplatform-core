@@ -104,7 +104,7 @@ class TextActionModeCallbackTest {
         val callback = TextActionModeCallback({})
         callback.updateMenuItems(menu)
 
-        assertThat(menu.menuItems.isEmpty())
+        assertThat(menu.menuItems).isEmpty()
     }
 
     @Test

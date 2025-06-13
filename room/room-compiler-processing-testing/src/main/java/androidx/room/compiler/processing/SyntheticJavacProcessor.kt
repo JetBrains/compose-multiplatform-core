@@ -30,13 +30,14 @@ private constructor(config: XProcessingEnvConfig, private val impl: SyntheticPro
         handlers: List<(XTestInvocation) -> Unit>,
     ) : this(config, SyntheticProcessorImpl(handlers))
 
+    constructor(
+        config: XProcessingEnvConfig = XProcessingEnvConfig.DEFAULT,
+        handler: (XTestInvocation) -> Unit,
+    ) : this(config, listOf(handler))
+
     override fun processingSteps(): Iterable<XProcessingStep> = impl.processingSteps()
 
-    override fun postRound(env: XProcessingEnv, round: XRoundEnv) {
-        if (!round.isProcessingOver) {
-            impl.postRound(env, round)
-        }
-    }
+    override fun postRound(env: XProcessingEnv, round: XRoundEnv) = impl.postRound(env, round)
 
     override fun getSupportedSourceVersion() = SourceVersion.latest()
 }

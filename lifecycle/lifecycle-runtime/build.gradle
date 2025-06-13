@@ -22,8 +22,9 @@ androidXMultiplatform {
     linux()
     mac()
     ios()
-    tvos()
     watchos()
+    tvos()
+    mingwX64()
     js()
     wasmJs()
 
@@ -55,12 +56,16 @@ androidXMultiplatform {
             }
         }
 
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
         desktopMain {
             dependsOn(jvmMain)
         }
 
         desktopTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
             }
@@ -77,7 +82,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.mockitoCore4)
@@ -85,7 +90,7 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.core:core-viewtree:1.0.0")
                 implementation(libs.junit)

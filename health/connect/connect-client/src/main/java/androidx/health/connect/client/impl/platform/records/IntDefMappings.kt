@@ -890,3 +890,7 @@ internal fun Int.toSdkMedicalResourceType(): Int {
 internal fun Int.toSdkDevice(): Int {
     return PLATFORM_TO_SDK_DEVICE_TYPE[this] ?: Device.TYPE_UNKNOWN
 }
+
+internal fun Int.toPlatformDevice(): Int {
+    return SDK_TO_PLATFORM_DEVICE_TYPE[this] ?: PlatformDevice.DEVICE_TYPE_UNKNOWN
+}

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.privacysandbox.ui.client.compose.SandboxedSdkUi
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
 import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.test.espresso.Espresso
@@ -68,6 +69,9 @@ import org.junit.runner.RunWith
 // TODO(b/374919355): Create a common test framework for testing Compose and View UI lib constructs
 @RunWith(AndroidJUnit4::class)
 @LargeTest
+// OptIn calling the experimental API SandboxedSdkUi(SandboxedUiAdapter, Modifier,
+// SandboxedSdkViewEventListener?, Boolean)
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class SandboxedSdkUiTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<UiLibComposeActivity>()
     private var testSandboxedUiAdapter by mutableStateOf(TestSandboxedUiAdapter())

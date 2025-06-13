@@ -20,30 +20,30 @@ import androidx.compose.ui.graphics.Shape
 
 /**
  * Class responsible for managing shadow related dependencies. This includes creation and caching of
- * various [DropShadowPainter] and [InnerShadowPainter] instances based on the provided [DropShadow]
- * and [InnerShadow] parameters
+ * various [DropShadowPainter] and [InnerShadowPainter] instances based on the provided
+ * [ShadowParams].
  */
 interface ShadowContext {
 
     /**
-     * Return an [InnerShadowPainter] instance for the provided [shape] and [innerShadow]. This may
+     * Return an [InnerShadowPainter] instance for the provided [shape] and [shadowParams]. This may
      * return a previously allocated [InnerShadowPainter] instance for the same parameters, for
      * efficiency. For example, a design system that leverages shadows may have the same properties
      * across multiple UI elements. In this case, the same dependencies for an [InnerShadowPainter]
      * can be reused.
      */
-    fun createInnerShadowPainter(shape: Shape, innerShadow: InnerShadow): InnerShadowPainter =
-        InnerShadowPainter(shape, innerShadow)
+    fun createInnerShadowPainter(shape: Shape, shadowParams: ShadowParams): InnerShadowPainter =
+        InnerShadowPainter(shape, shadowParams)
 
     /**
-     * Return a [DropShadowPainter] instance for the provided [shape] and [dropShadow]. This may
+     * Return a [DropShadowPainter] instance for the provided [shape] and [shadowParams]. This may
      * return a previously allocated [DropShadowPainter] instance for the same parameters, for
      * efficiency. For example, a design system that leverages shadows may have the same properties
      * across multiple UI elements. In this case, the same dependencies for a [DropShadowPainter]
      * can be reused.
      */
-    fun createDropShadowPainter(shape: Shape, dropShadow: DropShadow): DropShadowPainter =
-        DropShadowPainter(shape, dropShadow)
+    fun createDropShadowPainter(shape: Shape, shadowParams: ShadowParams): DropShadowPainter =
+        DropShadowPainter(shape, shadowParams)
 
     /**
      * Clear all previously cached [InnerShadowPainter] and [DropShadowPainter] instances alongside

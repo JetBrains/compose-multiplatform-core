@@ -177,7 +177,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
 
         // Verify that the video stabilization rect is within the bounds of the normal crop rect
         if (cropRectNormal != null) {
-            assertThat(cropRectNormal.contains(cropRectWithStabilization!!))
+            assertThat(cropRectNormal.contains(cropRectWithStabilization!!)).isTrue()
         }
 
         cameraSession.close()

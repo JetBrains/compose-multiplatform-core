@@ -401,6 +401,17 @@
         </activity>
 
         <activity
+            android:name=".TransformingLazyColumnMorphingNotificationsActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.TRANSFORMING_LAZY_COLUMN_MORPHING_NOTIFICATIONS_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".WindowDialogActivity"
             android:theme="@style/AppTheme"
             android:exported="true">

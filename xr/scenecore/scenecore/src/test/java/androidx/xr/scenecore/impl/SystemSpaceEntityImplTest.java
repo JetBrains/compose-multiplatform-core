@@ -260,6 +260,25 @@ public abstract class SystemSpaceEntityImplTest {
     }
 
     @Test
+    public void zeroTransform_doesNotUpdatePoseOrScaleOrCallOnSpaceUpdated() {
+        SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
+        Runnable listener = Mockito.mock(Runnable.class);
+        FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
+        Pose expectedPose = new Pose(Vector3.One, Quaternion.Identity);
+        Vector3 expectedScale = new Vector3(4f, 5f, 6f);
+
+        systemSpaceEntity.mOpenXrReferenceSpacePose = expectedPose;
+        systemSpaceEntity.mWorldSpaceScale = expectedScale;
+        systemSpaceEntity.setOnSpaceUpdatedListener(listener, executor);
+        systemSpaceEntity.setOpenXrReferenceSpacePose(Matrix4.Zero);
+        executor.runAll();
+
+        assertThat(systemSpaceEntity.mOpenXrReferenceSpacePose).isEqualTo(expectedPose);
+        assertThat(systemSpaceEntity.mWorldSpaceScale).isEqualTo(expectedScale);
+        verify(listener, Mockito.never()).run();
+    }
+
+    @Test
     public void dispose_disposesChildren() throws Exception {
         SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
         AndroidXrEntity childEntity = createChildAndroidXrEntity();

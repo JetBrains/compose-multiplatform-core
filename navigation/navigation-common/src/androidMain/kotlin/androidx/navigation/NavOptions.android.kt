@@ -260,7 +260,7 @@ internal constructor(
         return sb.toString()
     }
 
-    public actual class Builder {
+    public actual class Builder actual constructor() {
         private var singleTop = false
         private var restoreState = false
 

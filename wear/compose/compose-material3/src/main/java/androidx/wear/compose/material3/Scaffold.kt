@@ -207,7 +207,10 @@ internal object AnimationCoordinator {
     fun Looper() {
         LaunchedEffect(running) {
             if (running) {
-                while (isActive && running) {
+                // DO NOT check running in the while, since this may see changes that the
+                // LaunchedEffect misses. When running becomes false, this function will recompose
+                // and the LaunchedEffect will cancel the running coroutine anyway.
+                while (isActive) {
                     withInfiniteAnimationFrameMillis { frameMillis.longValue = it }
                 }
             } else {

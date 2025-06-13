@@ -39,11 +39,9 @@ dependencies {
     api(project(":xr:runtime:runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
+    implementation(libs.androidx.core)
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("androidx.activity:activity:1.9.3")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
-    implementation("androidx.lifecycle:lifecycle-common:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
     implementation(project(":xr:runtime:runtime-openxr"))
     implementation("com.google.ar:impress:0.0.4")
 

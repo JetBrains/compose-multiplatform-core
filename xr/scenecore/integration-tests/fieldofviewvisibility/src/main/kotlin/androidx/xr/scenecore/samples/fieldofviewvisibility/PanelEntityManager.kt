@@ -92,7 +92,7 @@ class PanelEntityManager(private val session: Session) {
                                 override fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {}
 
                                 override fun onResizeEnd(entity: Entity, newSize: FloatSize3d) {
-                                    panelEntity?.setSize(newSize)
+                                    panelEntity?.size = newSize.to2d()
                                     mTextView.text = "This Panel's dimensions are $newSize"
                                 }
                             }

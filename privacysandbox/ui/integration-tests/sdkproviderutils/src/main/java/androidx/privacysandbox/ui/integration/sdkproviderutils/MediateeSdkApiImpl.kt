@@ -71,6 +71,13 @@ class MediateeSdkApiImpl() {
                     AdType.WEBVIEW_FROM_LOCAL_ASSETS ->
                         loadWebViewBannerAdFromLocalAssets(testAdapters)
                     AdType.NON_WEBVIEW_VIDEO -> loadVideoAd(testAdapters)
+                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallbackBundle)
+                    AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
+                        loadScrollView(
+                            testAdapters,
+                            automatedTestCallbackBundle, /* appCanScroll */
+                            false,
+                        )
                     else ->
                         loadNonWebViewBannerAd(
                             testAdapters,
@@ -117,6 +124,14 @@ class MediateeSdkApiImpl() {
             automatedTestCallbackBundle: Bundle,
         ): AbstractSandboxedUiAdapter {
             return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackBundle)
+        }
+
+        private fun loadScrollView(
+            testAdapters: TestAdapters,
+            automatedTestCallbackBundle: Bundle,
+            appCanScroll: Boolean = true,
+        ): AbstractSandboxedUiAdapter {
+            return testAdapters.ScrollViewAd(automatedTestCallbackBundle, appCanScroll)
         }
     }
 

@@ -29,6 +29,7 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
+import java.nio.file.Paths
 
 class AnchorTestActivity : AppCompatActivity() {
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -39,7 +40,8 @@ class AnchorTestActivity : AppCompatActivity() {
         session.resume()
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         // Create a transform widget model and assign it to an Anchor
-        val transformWidgetModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
+        val transformWidgetModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
         transformWidgetModelFuture.addListener(
             {
                 val transformWidgetModel = transformWidgetModelFuture.get()

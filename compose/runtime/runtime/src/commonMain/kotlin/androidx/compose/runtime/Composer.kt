@@ -235,7 +235,7 @@ private class Invalidation(
     val scope: RecomposeScopeImpl,
 
     /** The index of the group in the slot table being invalidated. */
-    val location: Int,
+    var location: Int,
 
     /**
      * The instances invalidating the scope. If this is `null` or empty then the scope is
@@ -360,7 +360,10 @@ internal constructor(
 }
 
 /**
- * A Compose compiler plugin API. DO NOT call directly. Use [movableContentOf] instead.
+ * This class is used internally by [movableContentOf]. Please see [movableContentOf] which has
+ * documentation and example for how to use movable content. This class cannot be used directly.
+ *
+ * A Compose compiler plugin API. DO NOT call directly.
  *
  * An instance used to track the identity of the movable content. Using a holder object allows
  * creating unique movable content instances from the same instance of a lambda. This avoids using
@@ -388,7 +391,13 @@ internal constructor(
     internal var invalidations: List<Pair<RecomposeScopeImpl, Any?>>,
     internal val locals: PersistentCompositionLocalMap,
     internal val nestedReferences: List<MovableContentStateReference>?,
-)
+) {
+    /** Transfer any invalidations that may have accumulated since this reference was created. */
+    internal fun transferPendingInvalidations() {
+        invalidations =
+            invalidations + (composition as CompositionImpl).extractInvalidationsOf(anchor)
+    }
+}
 
 /**
  * A Compose compiler plugin API. DO NOT call directly.
@@ -3586,6 +3595,7 @@ internal class ComposerImpl(
                             val offsetChanges = ChangeList()
                             changeListWriter.withChangeList(offsetChanges) {
                                 changeListWriter.withoutImplicitRootStart {
+                                    from.transferPendingInvalidations()
                                     recomposeMovableContent(
                                         from = from.composition,
                                         to = to.composition,
@@ -3774,6 +3784,20 @@ internal class ComposerImpl(
     }
 
     fun updateComposerInvalidations(invalidationsRequested: ScopeMap<RecomposeScopeImpl, Any>) {
+        // Update any invalidations that have may have moved since they were added, removing any
+        // that are no longer in the slot table.
+        for (i in invalidations.lastIndex downTo 0) {
+            val invalidation = invalidations[i]
+            val anchor = invalidation.scope.anchor
+            if (anchor != null && anchor.valid) {
+                if (invalidation.location != anchor.location)
+                    invalidation.location = anchor.location
+            } else {
+                invalidations.removeAt(i)
+            }
+        }
+
+        // Add the requested invalidations
         invalidationsRequested.map.forEach { scope, instances ->
             scope as RecomposeScopeImpl
             val location = scope.anchor?.location ?: return@forEach
@@ -3781,6 +3805,8 @@ internal class ComposerImpl(
                 Invalidation(scope, location, instances.takeUnless { it === ScopeInvalidated })
             )
         }
+
+        // Ensure the invalidations are in sorted order.
         invalidations.sortWith(InvalidationLocationAscending)
     }
 
@@ -4046,7 +4072,7 @@ internal class ComposerImpl(
      */
     private fun reportAllMovableContent() {
         if (slotTable.containsMark()) {
-            (composition as CompositionImpl).updateMovingInvalidations()
+            composition.updateMovingInvalidations()
             val changes = ChangeList()
             deferredChanges = changes
             slotTable.read { reader ->
@@ -4805,8 +4831,8 @@ private val InvalidationLocationAscending =
  * Extract the state of movable content from the given writer. A new slot table is created and the
  * content is removed from [slots] (leaving a movable content group that, if composed over, will
  * create new content) and added to this new slot table. The invalidations that occur to recompose
- * scopes in the movable content state will be collected and forwarded to the new if the state is
- * used.
+ * scopes in the movable content state will be collected and forwarded to the new composition if the
+ * state is used.
  */
 internal fun extractMovableContentAtCurrent(
     composition: ControlledComposition,

@@ -28,7 +28,9 @@ import androidx.privacysandbox.ui.integration.testapp.fragments.compose.ResizeCo
 import androidx.privacysandbox.ui.integration.testapp.fragments.compose.ScrollComposeFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.OcclusionFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.compose.ResizeComposeHiddenFragment
+import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.compose.ScrollComposeHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.views.ResizeViewHiddenFragment
+import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.views.ScrollViewHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.views.PoolingContainerFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.views.ResizeFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.views.ScrollFragment
@@ -48,6 +50,7 @@ data class FragmentOptions(
         const val KEY_FRAGMENT = "fragment"
         const val FRAGMENT_RESIZE = "resize" // default
         const val FRAGMENT_RESIZE_HIDDEN = "resize-hidden"
+        const val FRAGMENT_SCROLL_HIDDEN = "scroll-hidden"
         const val FRAGMENT_SCROLL = "scroll"
         const val FRAGMENT_POOLING_CONTAINER = "pooling-container"
         const val FRAGMENT_OCCLUSIONS_HIDDEN = "occlusions-hidden"
@@ -64,6 +67,8 @@ data class FragmentOptions(
         const val AD_TYPE_BASIC_WEBVIEW = "basic-webview"
         const val AD_TYPE_WEBVIEW_FROM_ASSETS = "webview-from-assets"
         const val AD_TYPE_VIDEO = "video"
+        const val AD_TYPE_SCROLL_VIEW = "vertical-scroll-view"
+        const val AD_TYPE_SCROLL_VIEW_APP_CAN_NOT_SCROLL = "vertical-scroll-view-app-can-not-scroll"
 
         const val KEY_Z_ORDER = "z-order"
         const val Z_ORDER_ABOVE = "above" // default
@@ -85,6 +90,7 @@ data class FragmentOptions(
                     FRAGMENT_RESIZE_HIDDEN -> FragmentOption.RESIZE_HIDDEN
                     FRAGMENT_POOLING_CONTAINER -> FragmentOption.POOLING_CONTAINER
                     FRAGMENT_SCROLL -> FragmentOption.SCROLL
+                    FRAGMENT_SCROLL_HIDDEN -> FragmentOption.SCROLL_HIDDEN
                     FRAGMENT_OCCLUSIONS_HIDDEN -> FragmentOption.OCCLUSIONS_HIDDEN
                     else -> FragmentOption.RESIZE
                 }
@@ -106,6 +112,8 @@ data class FragmentOptions(
                     AD_TYPE_BASIC_WEBVIEW -> AdType.BASIC_WEBVIEW
                     AD_TYPE_WEBVIEW_FROM_ASSETS -> AdType.WEBVIEW_FROM_LOCAL_ASSETS
                     AD_TYPE_VIDEO -> AdType.NON_WEBVIEW_VIDEO
+                    AD_TYPE_SCROLL_VIEW -> AdType.SCROLL_VIEW
+                    AD_TYPE_SCROLL_VIEW_APP_CAN_NOT_SCROLL -> AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL
                     else -> AdType.BASIC_NON_WEBVIEW
                 }
             val zOrderExtra = extras.getString(KEY_Z_ORDER)
@@ -153,6 +161,7 @@ data class FragmentOptions(
             UiFrameworkOption.VIEW ->
                 when (cujType) {
                     FragmentOption.SCROLL -> ScrollFragment()
+                    FragmentOption.SCROLL_HIDDEN -> ScrollViewHiddenFragment()
                     FragmentOption.RESIZE -> ResizeFragment()
                     FragmentOption.RESIZE_HIDDEN -> ResizeViewHiddenFragment()
                     FragmentOption.POOLING_CONTAINER -> PoolingContainerFragment()
@@ -162,6 +171,7 @@ data class FragmentOptions(
             UiFrameworkOption.COMPOSE ->
                 when (cujType) {
                     FragmentOption.SCROLL -> ScrollComposeFragment()
+                    FragmentOption.SCROLL_HIDDEN -> ScrollComposeHiddenFragment()
                     FragmentOption.RESIZE -> ResizeComposeFragment()
                     FragmentOption.RESIZE_HIDDEN -> ResizeComposeHiddenFragment()
                     FragmentOption.POOLING_CONTAINER -> LazyListFragment()

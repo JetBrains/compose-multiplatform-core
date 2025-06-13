@@ -220,6 +220,13 @@ internal class PageMetadataLoader(
         return visiblePagesChanged || pageLocationsChanged || pageAreasChanged
     }
 
+    internal fun fetchAllPageDimensionsInBgGradually() {
+        // TODO try to do this on a lower priority thread.
+        // We try to fetch all page dimensions. We need not retry on failures because the
+        // failed values are currently approximated by new known values.
+        increaseReach(paginationModel.numPages - 1)
+    }
+
     /**
      * Sequentially enqueues requests for any pages up to [untilPage] that we haven't requested
      * dimensions for
@@ -325,8 +332,10 @@ internal class PageMetadataLoader(
                 // decouple
                 // it from service specific exceptions
                 catch (e: DeadObjectException) {
-                    // An exception happened above because of service disconnection. Propagate
-                    // error event to UI to take appropriate action.
+                    // An exception happened above because of service disconnection. Our marked
+                    // requestedReach is no longer correct. In subsequent calls the missed value
+                    // will be approximated by the next known value.
+                    // Propagate error event to UI to take appropriate action.
                     val exception =
                         RequestFailedException(
                             requestMetadata =

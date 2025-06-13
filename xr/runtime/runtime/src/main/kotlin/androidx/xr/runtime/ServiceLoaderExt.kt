@@ -20,6 +20,8 @@ import android.content.Context
 import android.os.Build
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Service
+import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
+import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import java.util.ServiceLoader
 
 /**

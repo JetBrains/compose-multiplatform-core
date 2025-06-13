@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -137,13 +138,14 @@ public fun SpatialDialog(
     properties: SpatialDialogProperties = SpatialDialogProperties(),
     content: @Composable () -> Unit,
 ) {
+    val movableContent = remember { movableContentOf(content) }
     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-        LayoutSpatialDialog(onDismissRequest, properties, content)
+        LayoutSpatialDialog(onDismissRequest, properties, movableContent)
     } else {
         Dialog(
             onDismissRequest = onDismissRequest,
             properties = properties.toBaseDialogProperties(),
-            content = content,
+            content = movableContent,
         )
     }
 }

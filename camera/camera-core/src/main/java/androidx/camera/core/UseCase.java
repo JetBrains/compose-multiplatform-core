@@ -1218,8 +1218,11 @@ public abstract class UseCase {
 
         config.insertOption(OPTION_TARGET_FRAME_RATE, fpsRange);
 
-        config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.OFF);
-        config.insertOption(OPTION_VIDEO_STABILIZATION_MODE, StabilizationMode.OFF);
+        // Setting the same preview stabilization mode to all use cases (instead of just Preview and
+        // VideoCapture who have related public APIs) lead to a simpler logic and makes code less
+        // error-prone (e.g. if the UseCases are specified and the stabilization mode is changed for
+        // some other UseCases in future, it may lead to those use cases not being handled properly
+        // and it might be hard to notice such an issue).
         switch (stabilizationMode) {
             case OFF:
                 config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.OFF);
@@ -1232,13 +1235,11 @@ public abstract class UseCase {
                 // Will result to video stabilization overall as per the CameraX impl. and API docs
                 break;
             case PREVIEW:
-                if (this instanceof Preview) {
-                    config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.ON);
-                    config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
-                            StabilizationMode.UNSPECIFIED);
-                    // Will result to preview stabilization overall as per the CameraX impl. and API
-                    // docs
-                }
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.ON);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                // Will result to preview stabilization overall as per the CameraX impl. and API
+                // docs
                 break;
         }
     }

@@ -765,10 +765,10 @@ public class WebViewFeatureInternal {
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
      * {@link WebResourceResponseCompat#setCookies(List)},
-     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)},
-     * {@link WebSettingsCompat#getIncludeCookiesOnShouldInterceptRequest(WebSettings)},
-     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(boolean)}, and
-     * {@link ServiceWorkerWebSettingsCompat#getIncludeCookiesOnShouldInterceptRequest()}.
+     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)},
+     * {@link WebSettingsCompat#isIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings)},
+     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)}, and
+     * {@link ServiceWorkerWebSettingsCompat#isIncludeCookiesOnShouldInterceptRequestEnabled()}.
      */
     public static final ApiFeature.NoFramework COOKIE_INTERCEPT = new ApiFeature.NoFramework(
             WebViewFeature.COOKIE_INTERCEPT, Features.COOKIE_INTERCEPT);

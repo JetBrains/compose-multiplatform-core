@@ -102,6 +102,7 @@ import com.google.android.icing.proto.DeleteResultProto;
 import com.google.android.icing.proto.DocumentProto;
 import com.google.android.icing.proto.DocumentStorageInfoProto;
 import com.google.android.icing.proto.GetAllNamespacesResultProto;
+import com.google.android.icing.proto.GetNextPageRequestProto;
 import com.google.android.icing.proto.GetOptimizeInfoResultProto;
 import com.google.android.icing.proto.GetResultProto;
 import com.google.android.icing.proto.GetResultSpecProto;
@@ -150,6 +151,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -212,7 +214,7 @@ public final class AppSearchImpl implements Closeable {
 
     @GuardedBy("mReadWriteLock")
     @VisibleForTesting
-    final IcingSearchEngineInterface mIcingSearchEngineLocked;
+    IcingSearchEngineInterface mIcingSearchEngineLocked;
     private final boolean mIsVMEnabled;
 
     private boolean mIsIcingSchemaDatabaseEnabled = false;
@@ -333,12 +335,17 @@ public final class AppSearchImpl implements Closeable {
         mVisibilityCheckerLocked = visibilityChecker;
         mRevocableFileDescriptorStore = revocableFileDescriptorStore;
 
+        // By default, we don't perform any retries.
+        int maxInitRetries = 0;
         mReadWriteLock.writeLock().lock();
         try {
             // We synchronize here because we don't want to call IcingSearchEngine.initialize() more
             // than once. It's unnecessary and can be a costly operation.
             if (icingSearchEngine == null) {
                 mIsVMEnabled = false;
+                if (Flags.enableInitializationRetriesBeforeReset()) {
+                    maxInitRetries = 2;
+                }
                 IcingSearchEngineOptions options = mConfig.toIcingSearchEngineOptions(
                         icingDir.getAbsolutePath(), mIsVMEnabled);
                 LogUtil.piiTrace(TAG, "Constructing IcingSearchEngine, request", options);
@@ -352,6 +359,7 @@ public final class AppSearchImpl implements Closeable {
                 mIcingSearchEngineLocked = icingSearchEngine;
                 mIsVMEnabled = true;
                 mIsIcingSchemaDatabaseEnabled = true;
+                maxInitRetries = 2;
             }
 
             // The core initialization procedure. If any part of this fails, we bail into
@@ -359,6 +367,14 @@ public final class AppSearchImpl implements Closeable {
             try {
                 LogUtil.piiTrace(TAG, "icingSearchEngine.initialize, request");
                 InitializeResultProto initializeResultProto = mIcingSearchEngineLocked.initialize();
+                while (maxInitRetries > 0 && !isSuccess(initializeResultProto.getStatus())) {
+                    Log.e(TAG, String.format(
+                            "INIT: Initialize failed with status (%d:%s). %d retries left!",
+                            initializeResultProto.getStatus().getCode().getNumber(),
+                            initializeResultProto.getStatus().getMessage(), maxInitRetries));
+                    --maxInitRetries;
+                    initializeResultProto = mIcingSearchEngineLocked.initialize();
+                }
                 LogUtil.piiTrace(
                         TAG,
                         "icingSearchEngine.initialize, response",
@@ -374,6 +390,16 @@ public final class AppSearchImpl implements Closeable {
                             .setLaunchVMEnabled(mIsVMEnabled);
                     AppSearchLoggerHelper.copyNativeStats(
                             initializeResultProto.getInitializeStats(), initStatsBuilder);
+                    if (isVMEnabled()) {
+                        // TODO(b/415387509): Add an actual atom field to capture this value.
+                        // Hack to propagate the failure cause early
+                        // Store value in IcuDataStatus because that field doesn't matter in
+                        // platform. Add 100 to separate from the range of possible values that
+                        // would otherwise be set in this field.
+                        initStatsBuilder.setNativeInitializeIcuDataStatusCode(
+                                100 + initializeResultProto.getInitializeStats()
+                                        .getFailureStage().getNumber());
+                    }
                 }
                 checkSuccess(initializeResultProto.getStatus());
 
@@ -386,9 +412,43 @@ public final class AppSearchImpl implements Closeable {
 
                 // Read all protos we need to construct AppSearchImpl's cache maps
                 long prepareSchemaAndNamespacesLatencyStartMillis = SystemClock.elapsedRealtime();
-                SchemaProto schemaProto = getSchemaProtoLocked();
+                LogUtil.piiTrace(TAG, "getSchema, request");
+                GetSchemaResultProto schemaResultProto = mIcingSearchEngineLocked.getSchema();
+                // GetSchema may return NOT_FOUND if we've initialized an empty instance.
+                while (maxInitRetries > 0
+                        && !isCodeOneOf(schemaResultProto.getStatus(),
+                        StatusProto.Code.OK, StatusProto.Code.NOT_FOUND)) {
+                    Log.e(TAG, String.format(
+                            "INIT: GetSchema failed with status (%d:%s). %d retries left!",
+                            schemaResultProto.getStatus().getCode().getNumber(),
+                            schemaResultProto.getStatus().getMessage(), maxInitRetries));
+                    --maxInitRetries;
+                    schemaResultProto = mIcingSearchEngineLocked.getSchema();
+                }
+                LogUtil.piiTrace(TAG, "getSchema, response", schemaResultProto.getStatus(),
+                        schemaResultProto);
+                checkCodeOneOf(schemaResultProto.getStatus(),
+                        StatusProto.Code.OK, StatusProto.Code.NOT_FOUND);
+                SchemaProto schemaProto = schemaResultProto.getSchema();
 
-                StorageInfoProto storageInfoProto = getRawStorageInfoProto();
+                LogUtil.piiTrace(TAG, "getStorageInfo, request");
+                StorageInfoResultProto storageInfoResult =
+                        mIcingSearchEngineLocked.getStorageInfo();
+                while (maxInitRetries > 0 && !isSuccess(storageInfoResult.getStatus())) {
+                    Log.e(TAG, String.format(
+                            "INIT: GetStorageInfo failed with status (%d:%s). %d retries left!",
+                            storageInfoResult.getStatus().getCode().getNumber(),
+                            storageInfoResult.getStatus().getMessage(), maxInitRetries));
+                    --maxInitRetries;
+                    storageInfoResult = mIcingSearchEngineLocked.getStorageInfo();
+                }
+                LogUtil.piiTrace(
+                        TAG,
+                        "getStorageInfo, response",
+                        storageInfoResult.getStatus(),
+                        storageInfoResult);
+                checkSuccess(storageInfoResult.getStatus());
+                StorageInfoProto storageInfoProto = storageInfoResult.getStorageInfo();
 
                 // Log the time it took to read the data that goes into the cache maps
                 if (initStatsBuilder != null) {
@@ -453,7 +513,7 @@ public final class AppSearchImpl implements Closeable {
 
             } catch (AppSearchException e) {
                 // Some error. Reset and see if it fixes it.
-                Log.e(TAG, "Error initializing, resetting IcingSearchEngine.", e);
+                Log.e(TAG, "Error initializing, attempting to reset IcingSearchEngine.", e);
                 if (initStatsBuilder != null) {
                     initStatsBuilder.setStatusCode(e.getResultCode());
                 }
@@ -533,6 +593,21 @@ public final class AppSearchImpl implements Closeable {
     @VisibleForTesting
     boolean useDatabaseScopedSchemaOperations() {
         return mIsIcingSchemaDatabaseEnabled;
+    }
+
+    /** Atomic method to set a new icing search engine and return the previous engine. */
+    @GuardedBy("mReadWriteLock")
+    public @NonNull IcingSearchEngineInterface swapIcingSearchEngineLocked(
+            @NonNull IcingSearchEngineInterface icingSearchEngineLocked) {
+        Objects.requireNonNull(icingSearchEngineLocked);
+        mReadWriteLock.writeLock().lock();
+        try {
+            IcingSearchEngineInterface previousIcingSearchEngine = mIcingSearchEngineLocked;
+            mIcingSearchEngineLocked = icingSearchEngineLocked;
+            return previousIcingSearchEngine;
+        } finally {
+            mReadWriteLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -2617,16 +2692,82 @@ public final class AppSearchImpl implements Closeable {
                 searchSpec, scoringSpec, resultSpec);
         LogUtil.piiTrace(
                 TAG, "search, response", searchResultProto.getResultsCount(), searchResultProto);
+
+        long nextPageToken = searchResultProto.getNextPageToken();
+        int additionalPagesRetrievalLatency = 0;
+        int numAdditionalPages = 0;
+        int totalAdditionalResults = 0;
+        if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                && searchResultProto.getResultsCount() > 0
+                && searchResultProto.getResultsCount() < resultSpec.getNumPerPage()) {
+            long additionalPageRetrievalLatencyStartMillis = SystemClock.elapsedRealtime();
+            // Did not get a full page of results in the initial search. Do getNextPage until we
+            // get a full result page or we run out of results.
+            SearchResultProto.Builder finalSearchResultProtoBuilder = SearchResultProto.newBuilder(
+                    searchResultProto);
+
+            int remainingResultCount =
+                    resultSpec.getNumPerPage() - searchResultProto.getResultsCount();
+            while (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN && remainingResultCount > 0) {
+                GetNextPageRequestProto getNextPageRequest = GetNextPageRequestProto.newBuilder()
+                        .setNextPageToken(nextPageToken)
+                        .setMaxResultsToRetrieveFromPage(remainingResultCount)
+                        .build();
+                LogUtil.piiTrace(TAG, "getNextPage, request", getNextPageRequest);
+                SearchResultProto nextResultPageProto = mIcingSearchEngineLocked.getNextPage(
+                        getNextPageRequest);
+                LogUtil.piiTrace(
+                        TAG,
+                        "getNextPage, response",
+                        nextResultPageProto.getResultsCount(),
+                        nextResultPageProto);
+                checkSuccess(nextResultPageProto.getStatus());
+
+                ++numAdditionalPages;
+                nextPageToken = nextResultPageProto.getNextPageToken();
+                mergeSearchResultProtos(nextResultPageProto, finalSearchResultProtoBuilder);
+                if (nextResultPageProto.getResultsCount() == 0) {
+                    Log.e(TAG, "Got additional page with 0 results during search. This should"
+                            + " never happen normally. GetNextPage status code: "
+                            + nextResultPageProto.getStatus().getCode());
+                    break;
+                }
+                totalAdditionalResults += nextResultPageProto.getResultsCount();
+                remainingResultCount -= nextResultPageProto.getResultsCount();
+            }
+            searchResultProto = finalSearchResultProtoBuilder.build();
+            additionalPagesRetrievalLatency = (int)
+                    (SystemClock.elapsedRealtime() - additionalPageRetrievalLatencyStartMillis);
+        }
+
         if (sStatsBuilder != null) {
             sStatsBuilder.setStatusCode(statusProtoToResultCode(searchResultProto.getStatus()));
             if (searchSpec.hasJoinSpec()) {
                 sStatsBuilder.setJoinType(AppSearchSchema.StringPropertyConfig
                         .JOINABLE_VALUE_TYPE_QUALIFIED_ID);
             }
+            // TODO(b/421230879): Restructure QueryStats to record full stats for GetNextPage calls.
+            sStatsBuilder.setAdditionalPageCount(numAdditionalPages);
+            sStatsBuilder.setAdditionalPagesReturnedResultCount(totalAdditionalResults);
+            sStatsBuilder.setAdditionalPageRetrievalLatencyMillis(additionalPagesRetrievalLatency);
             AppSearchLoggerHelper.copyNativeStats(searchResultProto.getQueryStats(), sStatsBuilder);
         }
         checkSuccess(searchResultProto.getStatus());
         return searchResultProto;
+    }
+
+    /**
+     * Merges the results from {@code searchResultProto} into the
+     * {@code finalSearchResultProtoBuilder}.
+     */
+    private void mergeSearchResultProtos(
+            @NonNull SearchResultProto searchResultProto,
+            SearchResultProto.@NonNull Builder finalSearchResultProtoBuilder) {
+        finalSearchResultProtoBuilder
+                .setStatus(searchResultProto.getStatus())
+                .addAllResults(searchResultProto.getResultsList())
+                .setNextPageToken(searchResultProto.getNextPageToken())
+                .setPageTokenNotFound(searchResultProto.getPageTokenNotFound());
     }
 
     /**
@@ -3664,6 +3805,8 @@ public final class AppSearchImpl implements Closeable {
             initStatsBuilder
                     .setHasReset(true)
                     .setResetStatusCode(statusProtoToResultCode(resetResultProto.getStatus()));
+            Log.i(TAG, "IcingSearchEngine Reset returned with status: "
+                    + resetResultProto.getStatus());
         }
 
         checkSuccess(resetResultProto.getStatus());
@@ -3973,23 +4116,36 @@ public final class AppSearchImpl implements Closeable {
      */
     private static void checkCodeOneOf(StatusProto statusProto, StatusProto.Code... codes)
             throws AppSearchException {
+        if (!isCodeOneOf(statusProto, codes)) {
+            throw new AppSearchException(
+                    ResultCodeToProtoConverter.toResultCode(statusProto.getCode()),
+                    statusProto.getMessage());
+        }
+    }
+
+    /**
+     * Returns true if the status is OK or WARNING_DATA_LOSS, false otherwise.
+     */
+    private static boolean isSuccess(StatusProto statusProto) {
+        return isCodeOneOf(statusProto, StatusProto.Code.OK);
+    }
+
+    /**
+     * Returns true if the status is one of codes or WARNING_DATA_LOSS, false otherwise.
+     */
+    private static boolean isCodeOneOf(StatusProto statusProto, StatusProto.Code... codes) {
         for (int i = 0; i < codes.length; i++) {
             if (codes[i] == statusProto.getCode()) {
-                // Everything's good
-                return;
+                return true;
             }
         }
-
         if (statusProto.getCode() == StatusProto.Code.WARNING_DATA_LOSS) {
             // TODO: May want to propagate WARNING_DATA_LOSS up to AppSearchSession so they can
             //  choose to log the error or potentially pass it on to clients.
             Log.w(TAG, "Encountered WARNING_DATA_LOSS: " + statusProto.getMessage());
-            return;
+            return true;
         }
-
-        throw new AppSearchException(
-                ResultCodeToProtoConverter.toResultCode(statusProto.getCode()),
-                statusProto.getMessage());
+        return false;
     }
 
     /**
@@ -4187,5 +4343,4 @@ public final class AppSearchImpl implements Closeable {
                             + blobHandle.getDatabaseName());
         }
     }
-
 }

@@ -20,12 +20,12 @@ plugins {
 androidXMultiplatform {
     androidTarget()
     desktop()
-    mingwX64()
-    linux()
     mac()
+    linux()
     ios()
-    tvos()
     watchos()
+    tvos()
+    mingwX64()
     js()
     wasmJs()
 
@@ -36,7 +36,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
-                api(androidx.projectOrArtifact(":lifecycle:lifecycle-common"))
+                implementation(project(":lifecycle:lifecycle-common"))
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
             }
@@ -66,7 +66,7 @@ androidXMultiplatform {
             dependencies {
                 implementation("androidx.core:core-ktx:1.13.1")
                 implementation("androidx.core:core-viewtree:1.0.0")
-                api(libs.kotlinStdlib)
+
             }
         }
 
@@ -146,6 +146,40 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(nonAndroidTest)
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        wasmJsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+                implementation(libs.kotlinTestForWasmTests)
+            }
+        }
+
+        jsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        jsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+                implementation(libs.kotlinTestJs)
+            }
         }
 
         targets.configureEach { target ->

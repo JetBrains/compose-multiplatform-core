@@ -19,7 +19,6 @@ package androidx.privacysandbox.ui.client.view
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
-import android.os.Trace
 import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceView
@@ -28,15 +27,13 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
 import androidx.core.util.Consumer
-import androidx.customview.poolingcontainer.PoolingContainerListener
-import androidx.customview.poolingcontainer.addPoolingContainerListener
-import androidx.customview.poolingcontainer.isPoolingContainer
 import androidx.customview.poolingcontainer.isWithinPoolingContainer
-import androidx.customview.poolingcontainer.removePoolingContainerListener
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter.SessionClient
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
 import androidx.privacysandbox.ui.core.SessionData
+import androidx.tracing.trace
 import kotlin.math.min
 
 /** A listener for events relating to the SandboxedSdkView UI presentation. */
@@ -89,12 +86,15 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
     private var previousChildWidth = -1
     private var previousChildHeight = -1
     private var sessionData: SessionData? = null
-    private var viewContainingPoolingContainerListener: View? = null
-    private var poolingContainerListener = PoolingContainerListener {}
     private var eventListener: SandboxedSdkViewEventListener? = null
     private val frameCommitCallback = Runnable { sendUiDisplayedEvents() }
     private var closeSessionOnWindowDetachment = true
+    private val poolingContainerListenerDelegate = PoolingContainerListenerDelegate(this)
     internal var signalMeasurer: SandboxedSdkViewSignalMeasurer? = null
+
+    // ONLY USE FOR TESTING.
+    private val isSandboxProcess =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && android.os.Process.isSdkSandbox()
 
     /**
      * Sets an event listener to the [SandboxedSdkView] and starts reporting the new events. To
@@ -135,6 +135,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
      * window. In this case, none of the contents of the client's window beneath the provider's
      * surface will be visible.
      */
+    @ExperimentalFeatures.ChangingContentUiZOrderApi
     fun orderProviderUiAboveClientUi(providerUiOnTop: Boolean) {
         if (providerUiOnTop == isZOrderOnTop) return
         client?.notifyZOrderChanged(providerUiOnTop)
@@ -172,8 +173,12 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                 windowVisibility == View.VISIBLE
         ) {
             if (client == null && !isSecondary) {
+                var tracePointName = "UiLib#checkClientOpenSession"
+                if (isSandboxProcess) {
+                    tracePointName = "UiLib#checkClientOpenSessionSandbox"
+                }
                 // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
-                CompatImpl.addTracePoint("checkClientOpenSession")
+                trace(tracePointName, {})
                 client = Client(this)
                 adapter.openSession(
                     context,
@@ -295,9 +300,8 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        if (this.isWithinPoolingContainer) {
-            attachPoolingContainerListener()
-        }
+        maybeAttachPoolingContainerListener()
+
         val childView = getChildAt(0)
         if (childView != null) {
             val childWidth = Math.max(0, width - paddingLeft - paddingRight)
@@ -351,41 +355,14 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         sessionData = null
     }
 
-    private fun attachPoolingContainerListener() {
-        val newPoolingContainerListener = PoolingContainerListener {
-            closeClient()
-            viewContainingPoolingContainerListener?.removePoolingContainerListener(
-                poolingContainerListener
-            )
-            viewContainingPoolingContainerListener = null
-        }
-
-        var currentView = this as View
-        var parentView = parent
-
-        while (parentView != null && !(parentView as View).isPoolingContainer) {
-            currentView = parentView
-            parentView = currentView.parent
-        }
-
-        if (currentView == viewContainingPoolingContainerListener) {
-            return
-        }
-
-        viewContainingPoolingContainerListener?.removePoolingContainerListener(
-            poolingContainerListener
-        )
-        currentView.addPoolingContainerListener(newPoolingContainerListener)
-        viewContainingPoolingContainerListener = currentView
-        poolingContainerListener = newPoolingContainerListener
+    private fun maybeAttachPoolingContainerListener() {
+        poolingContainerListenerDelegate.maybeAttachListener { closeClient() }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         addCallbacksOnWindowAttachment()
-        if (viewContainingPoolingContainerListener == null && this.isWithinPoolingContainer) {
-            attachPoolingContainerListener()
-        }
+        maybeAttachPoolingContainerListener()
         if (client == null) {
             CompatImpl.deriveInputTokenAndOpenSession(context, this)
         }
@@ -478,6 +455,11 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                 SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
             )
 
+        // ONLY USE FOR TESTING.
+        private val isSandboxProcess =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                android.os.Process.isSdkSandbox()
+
         fun notifyConfigurationChanged(configuration: Configuration) {
             val session = session
             if (session != null) {
@@ -516,8 +498,12 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         override fun onSessionOpened(session: SandboxedUiAdapter.Session) {
+            var tracePointName = "UiLib#ssvOnSessionOpened"
+            if (isSandboxProcess) {
+                tracePointName = "UiLib#ssvOnSessionOpenedSandbox"
+            }
             // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
-            CompatImpl.addTracePoint("onSessionOpened")
+            trace(tracePointName, {})
             if (sandboxedSdkView == null) {
                 close()
                 return
@@ -560,6 +546,8 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         override fun onSessionRefreshRequested(callback: Consumer<Boolean>) {
+            // PLEASE ASK BEFORE MOVING. Moving this may affect benchmark metrics.
+            trace("UiLib#onSessionRefreshRequested", {})
             sandboxedSdkView?.checkClientOpenSession(true, callback)
         }
 
@@ -616,12 +604,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             }
         }
 
-        fun addTracePoint(tracePointName: String) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Api29PlusImpl.addTracePoint(tracePointName)
-            }
-        }
-
         @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
         private object Api35PlusImpl {
             @JvmStatic
@@ -675,14 +657,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             @JvmStatic
             fun unregisterFrameCommitCallback(observer: ViewTreeObserver, callback: Runnable) {
                 observer.unregisterFrameCommitCallback(callback)
-            }
-
-            @JvmStatic
-            fun addTracePoint(tracePointName: String) {
-                // TODO(b/418155054): Create helper function in SdkSandboxCrossProcessLatencyMetric.
-                Trace.beginAsyncSection(tracePointName, 0)
-                // To avoid misusing API, end the section. See b/412962485.
-                Trace.endAsyncSection(tracePointName, 0)
             }
         }
     }

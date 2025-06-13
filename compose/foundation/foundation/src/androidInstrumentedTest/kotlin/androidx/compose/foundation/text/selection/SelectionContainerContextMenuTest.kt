@@ -18,12 +18,16 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.contextmenu.ContextMenuItemLabels
 import androidx.compose.foundation.contextmenu.ContextMenuItemState
+import androidx.compose.foundation.contextmenu.ProcessTextItemOverrideRule
+import androidx.compose.foundation.contextmenu.assertContextMenuItem
 import androidx.compose.foundation.contextmenu.assertContextMenuItems
 import androidx.compose.foundation.contextmenu.clickOffPopup
 import androidx.compose.foundation.contextmenu.contextMenuItemInteraction
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.contextmenu.ProcessTextApi23Impl
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHasClickAction
@@ -48,6 +53,7 @@ import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.lerp
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -60,8 +66,16 @@ open class SelectionContainerContextMenuTest {
 
     @get:Rule val rule = createComposeRule()
 
+    @get:Rule
+    val processTextRule =
+        ProcessTextItemOverrideRule(
+            ContextMenuItemLabels.PROCESS_TEXT_1,
+            ContextMenuItemLabels.PROCESS_TEXT_2,
+        )
+
     private val textTag = "text"
     private val defaultText = "Text Text Text"
+    private val initialClipboardText = "clip"
 
     // region SelectionContainer Context Menu Gesture Tests
     @Test
@@ -127,16 +141,30 @@ open class SelectionContainerContextMenuTest {
         labelToClick: String,
         expectedSelection: TextRange,
         expectedClipboardContent: String? = null,
-    ) {
-        val initialClipboardText = "clip"
+    ) =
+        runClickContextMenuItemTest(labelToClick) { selection, clipboard ->
+            // Operation was applied
+            assertThat(selection).isNotNull()
+            assertThat(selection!!.toTextRange()).isEqualTo(expectedSelection)
+            val clipboardContent = clipboard.getClipEntry()
+            assertThat(clipboardContent).isNotNull()
+            assertThat(clipboardContent!!.readText())
+                .isEqualTo(expectedClipboardContent ?: initialClipboardText)
+        }
 
+    @Suppress("SameParameterValue")
+    private suspend fun runClickContextMenuItemTest(
+        labelToClick: String,
+        text: String = defaultText,
+        assertionBlock: suspend (Selection?, clipboard: Clipboard) -> Unit,
+    ) {
         val clipboard = FakeClipboard(initialText = initialClipboardText, supportsClipEntry = true)
 
         var selection by mutableStateOf<Selection?>(null)
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
                 SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
-                    BasicText(defaultText, modifier = Modifier.testTag(textTag))
+                    BasicText(text, modifier = Modifier.testTag(textTag))
                 }
             }
         }
@@ -157,13 +185,8 @@ open class SelectionContainerContextMenuTest {
         rule.onNode(isPopup()).assertDoesNotExist()
         itemInteraction.assertDoesNotExist()
 
-        // Operation was applied
-        assertThat(selection).isNotNull()
-        assertThat(selection!!.toTextRange()).isEqualTo(expectedSelection)
-        val clipboardContent = clipboard.getClipEntry()
-        assertThat(clipboardContent).isNotNull()
-        assertThat(clipboardContent!!.readText())
-            .isEqualTo(expectedClipboardContent ?: initialClipboardText)
+        // Assert
+        assertionBlock(selection, clipboard)
     }
 
     // endregion Context Menu Item Click Tests
@@ -209,6 +232,44 @@ open class SelectionContainerContextMenuTest {
                 autofillState = ContextMenuItemState.DOES_NOT_EXIST,
             )
         }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun contextMenu_onClickProcessText() {
+        val text = "abc def ghi"
+
+        var textToProcess: String? = null
+        ProcessTextApi23Impl.onClickProcessTextItem = { _, _, editable, text, selection ->
+            // editable is always false for SelectionContainer.
+            assertThat(editable).isFalse()
+            textToProcess = text.subSequence(selection.start, selection.end).toString()
+        }
+
+        runTest {
+            runClickContextMenuItemTest(
+                labelToClick = ContextMenuItemLabels.PROCESS_TEXT_1,
+                text = text,
+            ) { _, _ ->
+                assertThat(textToProcess).isEqualTo("def")
+            }
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun contextMenu_processText_itemsMatch() = runCorrectItemsTest { selection ->
+        rule.assertContextMenuItem(
+            label = ContextMenuItemLabels.PROCESS_TEXT_1,
+            state = ContextMenuItemState.ENABLED,
+        )
+
+        rule.assertContextMenuItem(
+            label = ContextMenuItemLabels.PROCESS_TEXT_2,
+            state = ContextMenuItemState.ENABLED,
+        )
+    }
 
     private enum class SelectionAmount {
         NONE,

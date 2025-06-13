@@ -16,22 +16,30 @@
 
 package androidx.compose.material3.samples
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.annotation.Sampled
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AssistChipDefaults
@@ -40,12 +48,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
@@ -132,6 +147,43 @@ fun HorizontalUncontainedCarouselSample() {
         val item = items[i]
         Image(
             modifier = Modifier.height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
+            painter = painterResource(id = item.imageResId),
+            contentDescription = stringResource(item.contentDescriptionResId),
+            contentScale = ContentScale.Crop,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Sampled
+@Composable
+fun HorizontalCenteredHeroCarouselSample() {
+
+    data class CarouselItem(
+        val id: Int,
+        @DrawableRes val imageResId: Int,
+        @StringRes val contentDescriptionResId: Int,
+    )
+
+    val items =
+        listOf(
+            CarouselItem(0, R.drawable.carousel_image_1, R.string.carousel_image_1_description),
+            CarouselItem(1, R.drawable.carousel_image_2, R.string.carousel_image_2_description),
+            CarouselItem(2, R.drawable.carousel_image_3, R.string.carousel_image_3_description),
+            CarouselItem(3, R.drawable.carousel_image_4, R.string.carousel_image_4_description),
+            CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
+        )
+    HorizontalCenteredHeroCarousel(
+        state = rememberCarouselState { items.count() },
+        modifier = Modifier.fillMaxWidth().height(221.dp).padding(horizontal = 24.dp),
+        itemSpacing = 8.dp,
+        contentPadding = PaddingValues(horizontal = 16.dp),
+    ) { i ->
+        val item = items[i]
+        Image(
+            modifier =
+                Modifier.fillMaxWidth().height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
             painter = painterResource(id = item.imageResId),
             contentDescription = stringResource(item.contentDescriptionResId),
             contentScale = ContentScale.Crop,
@@ -254,6 +306,95 @@ fun FadingHorizontalMultiBrowseCarouselSample() {
                         )
                     },
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Sampled
+@Composable
+fun CarouselWithShowAllButtonSample() {
+
+    data class CarouselItem(
+        val id: Int,
+        @DrawableRes val imageResId: Int,
+        @StringRes val contentDescriptionResId: Int,
+    )
+
+    val items =
+        listOf(
+            CarouselItem(0, R.drawable.carousel_image_1, R.string.carousel_image_1_description),
+            CarouselItem(1, R.drawable.carousel_image_2, R.string.carousel_image_2_description),
+            CarouselItem(2, R.drawable.carousel_image_3, R.string.carousel_image_3_description),
+            CarouselItem(3, R.drawable.carousel_image_4, R.string.carousel_image_4_description),
+            CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
+        )
+    var showAllItems by remember { mutableStateOf(false) }
+    BackHandler(enabled = showAllItems) { showAllItems = false }
+    if (showAllItems) {
+        // Shows the grid page directly. For better user experience and navigation patterns,
+        // consider navigating to a dedicated screen
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+        ) {
+            items(items.size) { i ->
+                val item = items[i]
+                Image(
+                    painter = painterResource(id = item.imageResId),
+                    contentDescription = stringResource(item.contentDescriptionResId),
+                    modifier = Modifier.height(205.dp).clip(MaterialTheme.shapes.extraLarge),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+        }
+    } else {
+        Column(
+            modifier =
+                Modifier.fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 16.dp)
+        ) {
+            HorizontalMultiBrowseCarousel(
+                state = rememberCarouselState { items.count() },
+                modifier = Modifier.width(412.dp).height(221.dp),
+                preferredItemWidth = 186.dp,
+                itemSpacing = 8.dp,
+                contentPadding = PaddingValues(horizontal = 16.dp),
+            ) { i ->
+                val item = items[i]
+                Image(
+                    modifier = Modifier.height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
+                    painter = painterResource(id = item.imageResId),
+                    contentDescription = stringResource(item.contentDescriptionResId),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            TextButton(
+                onClick = { showAllItems = true },
+                modifier =
+                    Modifier.align(Alignment.End).padding(vertical = 4.dp, horizontal = 16.dp),
+            ) {
+                Text("Show all")
+            }
+            // An example of the content for the scrollable page
+            (0..4).forEach { index ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(140.dp)
+                            .padding(horizontal = 16.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(16.dp),
+                            )
+                ) {}
             }
         }
     }

@@ -27,9 +27,9 @@ import androidx.compose.foundation.text.TextContextMenuItems.Cut
 import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.addProcessedTextContextMenuItems
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.builder.item
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
@@ -61,7 +61,7 @@ internal fun TextFieldSelectionState.contextMenuBuilder(
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
     coroutineScope: CoroutineScope,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.textFieldItem(
         item: TextContextMenuItems,
         enabled: Boolean,
@@ -69,7 +69,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
         closePredicate: (() -> Boolean)? = null,
         onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
             state.updateTextToolbarState(desiredState)
@@ -104,4 +104,11 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
         }
         separator()
     }
+
+    addProcessedTextContextMenuItems(
+        context,
+        state.editable,
+        state.textFieldState.visualText.text,
+        state.textFieldState.visualText.selection,
+    )
 }

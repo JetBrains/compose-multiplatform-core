@@ -57,7 +57,7 @@ package androidx.xr.glimmer {
 
   public final class GlimmerThemeKt {
     method @androidx.compose.runtime.Composable public static void GlimmerTheme(optional androidx.xr.glimmer.Colors colors, optional androidx.xr.glimmer.Typography typography, kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableInferredTarget(scheme="[0[0]]") public static void GlimmerTheme(androidx.xr.glimmer.Colors?, androidx.xr.glimmer.Typography?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void GlimmerTheme(androidx.xr.glimmer.Colors?, androidx.xr.glimmer.Typography?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class IconKt {
@@ -86,8 +86,8 @@ package androidx.xr.glimmer {
   }
 
   public final class SurfaceKt {
-    method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier surface(androidx.compose.ui.Modifier, optional androidx.compose.ui.graphics.Shape shape, optional long color, optional long contentColor, optional androidx.compose.foundation.BorderStroke? border);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier surface-t6yy7ic(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape?, long, long, androidx.compose.foundation.BorderStroke?, androidx.compose.runtime.Composer?, int, int);
+    method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier surface(androidx.compose.ui.Modifier, optional boolean focusable, optional androidx.compose.ui.graphics.Shape shape, optional long color, optional long contentColor, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier surface-vRFhKjU(androidx.compose.ui.Modifier, boolean, androidx.compose.ui.graphics.Shape?, long, long, androidx.compose.foundation.BorderStroke?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class TextKt {

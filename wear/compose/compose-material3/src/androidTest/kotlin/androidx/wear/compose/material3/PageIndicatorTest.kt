@@ -86,17 +86,16 @@ class PageIndicatorTest {
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 12%
+        // approximately equals to 11%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 11f..14f)
-        // Unselected dots should also be visible on the screen, and should take around 9%
-        // (4.4% per dot, 2 dots total)
+            .assertColorInPercentageRange(selectedColor, 9f..13f)
+        // Unselected dots should also be visible on the screen, and should take around 7.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 7f..10f)
+            .assertColorInPercentageRange(unselectedColor, 6f..8f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -123,18 +122,17 @@ class PageIndicatorTest {
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 12%
+        // approximately equals to 11%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 10f..14f)
+            .assertColorInPercentageRange(selectedColor, 9f..13f)
         // Unselected dots ( which doesn't participate in color merge)
-        // should also be visible on the screen, and should take around 8.8%
-        // (4.4% per dot, 2 dots in total)
+        // should also be visible on the screen, and should take around 7.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 7.5f..9f)
+            .assertColorInPercentageRange(unselectedColor, 6f..8f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -223,11 +221,11 @@ class PageIndicatorTest {
         rule.waitForIdle()
 
         // Selected color should occupy 1 dot, which
-        // approximately equals to 12%
+        // approximately equals to 11.5%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 11f..13f)
+            .assertColorInPercentageRange(selectedColor, 10f..13f)
         // Unselected dots shouldn't be visible on the screen because we only have one page
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(unselectedColor)
 
@@ -255,18 +253,16 @@ class PageIndicatorTest {
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
-        // (4.4% per dot, 1 dot in total)
+        // A selected dot with specified color should be visible on the screen, which is apprx 4.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 4f..5f)
-        // Unselected dots should also be visible on the screen, and should take around 13.2%
-        // (4.4% per dot, 3 dots total)
+            .assertColorInPercentageRange(selectedColor, 3.7f..4.7f)
+        // Unselected dots should also be visible on the screen, and should take around 10%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 11f..16f)
+            .assertColorInPercentageRange(unselectedColor, 8f..12f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -292,18 +288,16 @@ class PageIndicatorTest {
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
-        // (4.% per dot, 1 dot in total)
+        // A selected dot with specified color should be visible on the screen, which is apprx 3.9%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 3.5f..5.5f)
-        // Unselected dots should also be visible on the screen, and should take around 13%
-        // (4.4% per dot, 3 dots total)
+            .assertColorInPercentageRange(selectedColor, 3.5f..4.5f)
+        // Three unselected dots should also be visible on the screen, and should take around 10%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 11f..14f)
+            .assertColorInPercentageRange(unselectedColor, 8f..12f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)

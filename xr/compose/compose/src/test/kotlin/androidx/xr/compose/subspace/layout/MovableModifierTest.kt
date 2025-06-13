@@ -30,6 +30,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -459,6 +460,7 @@ class MovableModifierTest {
         assertMovableComponentDoesNotExist("row")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun movable_volumeEntity_noComponentByDefault() {
         composeTestRule.setContent {
@@ -473,6 +475,7 @@ class MovableModifierTest {
         )
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun movable_volumeEntity_noComponentWhenMovableIsEnabled() {
         composeTestRule.setContent {
@@ -481,6 +484,7 @@ class MovableModifierTest {
         assertMovableComponentDoesNotExist("volume")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun movable_volumeEntity_noComponentWhenMovableIsDisabled() {
         composeTestRule.setContent {

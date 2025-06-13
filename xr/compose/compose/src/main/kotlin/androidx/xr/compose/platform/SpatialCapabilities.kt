@@ -16,8 +16,7 @@
 
 package androidx.xr.compose.platform
 
-import androidx.annotation.RestrictTo
-import androidx.compose.runtime.CompositionLocal
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,16 +29,16 @@ import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SP
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
 import androidx.xr.scenecore.scene
 
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public val LocalSpatialCapabilities: CompositionLocal<SpatialCapabilities> =
+/**
+ * Provides the current [SpatialCapabilities] that are currently available to the application.
+ *
+ * The [SpatialCapabilities] represents a set of inherent permissions that the application may have
+ * depending on the context. For example, in home space mode, the app may not have the ability to
+ * create spatial UI; however, in full space mode, the application may have this capability.
+ */
+public val LocalSpatialCapabilities: ProvidableCompositionLocal<SpatialCapabilities> =
     compositionLocalWithComputedDefaultOf {
-        if (LocalHasXrSpatialFeature.currentValue) {
-            SpatialCapabilities.getOrCreate(
-                checkNotNull(LocalSession.currentValue) { "Session must be initialized." }
-            )
-        } else {
-            NoSpatialCapabilities()
-        }
+        LocalComposeXrOwners.currentValue?.spatialCapabilities ?: SpatialCapabilities.NoCapabilities
     }
 
 /**
@@ -82,15 +81,18 @@ public interface SpatialCapabilities {
     public val isSpatialAudioEnabled: Boolean
 
     public companion object {
-        // TODO(b/417291809): Consider removing this map.
-        private val sessionInstances: MutableMap<Session, SpatialCapabilities> = mutableMapOf()
-
-        internal fun getOrCreate(session: Session): SpatialCapabilities =
-            sessionInstances.getOrPut(session) { SessionSpatialCapabilities(session) }
+        public val NoCapabilities: SpatialCapabilities =
+            object : SpatialCapabilities {
+                override val isSpatialUiEnabled: Boolean = false
+                override val isContent3dEnabled: Boolean = false
+                override val isAppEnvironmentEnabled: Boolean = false
+                override val isPassthroughControlEnabled: Boolean = false
+                override val isSpatialAudioEnabled: Boolean = false
+            }
     }
 }
 
-private class SessionSpatialCapabilities(session: Session) : SpatialCapabilities {
+internal class SessionSpatialCapabilities(session: Session) : SpatialCapabilities {
     private var capabilities by
         mutableStateOf(session.scene.spatialCapabilities).apply {
             session.scene.addSpatialCapabilitiesChangedListener { value = it }
@@ -110,12 +112,4 @@ private class SessionSpatialCapabilities(session: Session) : SpatialCapabilities
 
     override val isSpatialAudioEnabled: Boolean
         get() = capabilities.hasCapability(SPATIAL_CAPABILITY_SPATIAL_AUDIO)
-}
-
-private class NoSpatialCapabilities : SpatialCapabilities {
-    override val isSpatialUiEnabled: Boolean = false
-    override val isContent3dEnabled: Boolean = false
-    override val isAppEnvironmentEnabled: Boolean = false
-    override val isPassthroughControlEnabled: Boolean = false
-    override val isSpatialAudioEnabled: Boolean = false
 }

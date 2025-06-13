@@ -61,6 +61,7 @@ package androidx.xr.arcore {
   }
 
   public final class Hand {
+    method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
@@ -69,8 +70,15 @@ package androidx.xr.arcore {
   }
 
   public static final class Hand.Companion {
+    method public androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method public androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
+  }
+
+  public enum Hand.HandSide {
+    enum_constant public static final androidx.xr.arcore.Hand.HandSide LEFT;
+    enum_constant public static final androidx.xr.arcore.Hand.HandSide RIGHT;
+    enum_constant public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
   }
 
   public static final class Hand.State {

@@ -25,6 +25,7 @@ import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
 import androidx.xr.runtime.internal.Plane
 import androidx.xr.runtime.internal.Trackable
+import androidx.xr.runtime.internal.ViewCamera
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -104,6 +105,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val arDevice: OpenXrDevice
         get() = xrResources.arDevice
 
+    override val viewCameras: List<ViewCamera>
+        get() = xrResources.viewCameras
+
     override val earth: OpenXrEarth = xrResources.earth
 
     private var lastUpdateXrTime: Long = 0L
@@ -117,6 +121,11 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         for (updatable in xrResources.updatables) {
             updatable.update(xrTime)
         }
+
+        // View Cameras data are fetch within one JNI call, so they are updated separately.
+        // TODO(b/421191332): Add the View Camera config and apply it for poseInUnboundedSpace.
+        updateViewCameras(xrTime, false)
+
         lastUpdateXrTime = xrTime
     }
 
@@ -133,6 +142,15 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
                 OpenXrPlane(plane, Plane.Type.fromOpenXrType(planeTypeInt), timeSource, xrResources)
             xrResources.addTrackable(plane, trackable)
             xrResources.addUpdatable(trackable as Updatable)
+        }
+    }
+
+    internal fun updateViewCameras(xrTime: Long, poseInUnboundedSpace: Boolean) {
+        val viewCameraStates = nativeGetViewCameras(poseInUnboundedSpace, xrTime)
+        if (viewCameraStates != null) {
+            check(viewCameraStates.size == 2)
+            xrResources.viewCameras[0].update(viewCameraStates[0])
+            xrResources.viewCameras[1].update(viewCameraStates[1])
         }
     }
 
@@ -181,4 +199,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     private external fun nativeLoadAnchor(uuid: UUID): Long
 
     private external fun nativeUnpersistAnchor(uuid: UUID): Boolean
+
+    private external fun nativeGetViewCameras(
+        isHeadTrackingEnabled: Boolean,
+        timestampNs: Long,
+    ): Array<ViewCameraState>?
 }

@@ -26,7 +26,6 @@ import androidx.xr.compose.unit.Meter
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
@@ -125,7 +124,7 @@ internal sealed class CoreEntity(public val entity: Entity) : OpaqueEntity {
             // TODO(b/356952297): Remove this hack once we can save and restore the original parent.
             if (value == null) return
 
-            entity.setParent(value.entity)
+            entity.parent = value.entity
         }
 
     /**
@@ -159,11 +158,11 @@ internal class CoreContentlessEntity(entity: Entity) : CoreEntity(entity) {
 }
 
 /**
- * Wrapper class for [BasePanelEntity] to provide convenience methods for working with panel
- * entities from SceneCore.
+ * Wrapper class for [PanelEntity] to provide convenience methods for working with panel entities
+ * from SceneCore.
  */
 internal sealed class CoreBasePanelEntity(
-    private val panelEntity: BasePanelEntity<*>,
+    private val panelEntity: PanelEntity,
     private val density: Density,
 ) : CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
     override var overrideSize: IntVolumeSize? = null
@@ -197,7 +196,7 @@ internal sealed class CoreBasePanelEntity(
 
             if (super.size != nextSize) {
                 super.size = nextSize
-                panelEntity.setSizeInPixels(IntSize2d(size.width, size.height))
+                panelEntity.sizeInPixels = IntSize2d(size.width, size.height)
                 updateShape()
             }
         }
@@ -208,9 +207,10 @@ internal sealed class CoreBasePanelEntity(
      * Note that a non-hidden entity may still not be visible if its alpha is 0.
      */
     var hidden: Boolean
-        get() = entity.isHidden(includeParents = true)
+        // TODO - b/421386891: Consider renaming this field to align with Entity.is/setEnabled
+        get() = !entity.isEnabled(includeParents = true)
         set(value) {
-            entity.setHidden(value)
+            entity.setEnabled(!value)
         }
 
     /** The [SpatialShape] of this [CoreBasePanelEntity]. */
@@ -228,7 +228,7 @@ internal sealed class CoreBasePanelEntity(
         if (shape is SpatialRoundedCornerShape) {
             val radius =
                 shape.computeCornerRadius(size.width.toFloat(), size.height.toFloat(), density)
-            panelEntity.setCornerRadius(Meter.fromPixel(radius, density).toM())
+            panelEntity.cornerRadius = Meter.fromPixel(radius, density).toM()
         }
     }
 }
@@ -249,6 +249,17 @@ internal class CoreMainPanelEntity(session: Session, density: Density) :
 
     override fun dispose() {
         // Do not call super.dispose() because we don't want to dispose the main panel entity.
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (entity != (other as CoreMainPanelEntity).entity) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return entity.hashCode()
     }
 }
 

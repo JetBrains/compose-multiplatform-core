@@ -20,6 +20,7 @@ import android.content.Context;
 import android.util.Size;
 
 import androidx.camera.core.InitializationException;
+import androidx.camera.core.SessionConfig;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -81,10 +82,13 @@ public interface CameraDeviceSurfaceManager {
      *                                           suggested stream specification
      * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
      * @param hasVideoCapture                    whether the use cases has video capture.
-     * @param allowFeatureCombinationResolutions whether to allow feature combination resolutions.
+     * @param isFeatureComboInvocation           whether a code flow invoked through feature combo
+     *                                           APIs (e.g. {@link SessionConfig#requiredFeatures}).
      * @param findMaxSupportedFrameRate          if {@code true}, the maximum supported frame
      *                                           rate will be calculated and returned in
-     *                              {@link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}.
+     *                              {@link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}
+     *                                           and the target frame rate settings in use cases
+     *                                           will be ignored while calculating the stream spec.
      *                                           If {@code false}, the value of
      *                                @link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}
      *                                           is undetermined.
@@ -102,6 +106,6 @@ public interface CameraDeviceSurfaceManager {
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
             boolean hasVideoCapture,
-            boolean allowFeatureCombinationResolutions,
+            boolean isFeatureComboInvocation,
             boolean findMaxSupportedFrameRate);
 }

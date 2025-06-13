@@ -24,10 +24,10 @@ import android.util.Size
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.AttachedSurfaceInfo
-import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.internal.utils.SizeUtil.getArea
-import androidx.core.util.Preconditions.checkArgument
 
 /** A class responsible for resolving parameters for high-speed session scenario. */
 public class HighSpeedResolver(private val characteristics: CameraCharacteristicsCompat) {
@@ -187,41 +187,41 @@ public class HighSpeedResolver(private val characteristics: CameraCharacteristic
         private const val TAG = "HighSpeedResolver"
 
         /**
-         * Retrieves the target high-speed frame rate from attached surface information and use case
-         * configurations.
+         * Checks if a high-speed session is enabled based on the provided attached surfaces and new
+         * use case configurations.
          *
-         * This function ensures that all provided surfaces and configurations have the same target
-         * high-speed frame rate. If any inconsistencies are found, an `IllegalArgumentException` is
-         * thrown.
+         * If any of the session types in the `attachedSurfaces` or `newUseCaseConfigs` indicate
+         * `SESSION_TYPE_HIGH_SPEED`, then this method ensures that ALL session types are
+         * `SESSION_TYPE_HIGH_SPEED`. If there's a mix of session types when high-speed is present,
+         * an `IllegalArgumentException` is thrown.
          *
-         * @param attachedSurfaces A collection of `AttachedSurfaceInfo` objects.
-         * @param newUseCaseConfigs A collection of `UseCaseConfig` objects representing the use
-         *   cases for which to retrieve the target high-speed frame rate range.
-         * @return The target high-speed frame rate range common to all use cases, or
-         *   `FRAME_RATE_RANGE_UNSPECIFIED` if no frame rate is specified.
-         * @throws IllegalArgumentException if the target high-speed frame rate ranges specified are
-         *   not the same.
+         * @param attachedSurfaces A collection of `AttachedSurfaceInfo` objects representing
+         *   currently attached surfaces.
+         * @param newUseCaseConfigs A collection of `UseCaseConfig` objects representing new use
+         *   case configurations.
+         * @return `true` if all `attachedSurfaces` or `newUseCaseConfigs`'s session types are
+         *   `SESSION_TYPE_HIGH_SPEED`, `false` otherwise.
+         * @throws IllegalArgumentException if `SESSION_TYPE_HIGH_SPEED` is present among the
+         *   session types, but not all session types are `SESSION_TYPE_HIGH_SPEED`.
          */
         @JvmStatic
-        public fun getTargetHighSpeedFrameRate(
+        public fun isHighSpeedOn(
             attachedSurfaces: Collection<AttachedSurfaceInfo>,
             newUseCaseConfigs: Collection<UseCaseConfig<*>>,
-        ): Range<Int> {
-            val frameRates =
-                attachedSurfaces.map { it.targetHighSpeedFrameRate } +
-                    newUseCaseConfigs.map {
-                        it.getTargetHighSpeedFrameRate(FRAME_RATE_RANGE_UNSPECIFIED)!!
-                    }
+        ): Boolean {
+            val sessionTypes =
+                attachedSurfaces.map { it.sessionType } +
+                    newUseCaseConfigs.map { it.getSessionType(SESSION_TYPE_REGULAR) }
 
-            if (frameRates.isEmpty()) {
-                return FRAME_RATE_RANGE_UNSPECIFIED
-            }
+            val hasHighSpeedSessionType = sessionTypes.any { it == SESSION_TYPE_HIGH_SPEED }
 
-            val firstRate = frameRates.first()
-            checkArgument(frameRates.all { it == firstRate }) {
-                "targetHighSpeedFrameRate should be the same."
+            // If a high-speed session type is present, all session types must be high-speed.
+            if (hasHighSpeedSessionType) {
+                require(sessionTypes.all { it == SESSION_TYPE_HIGH_SPEED }) {
+                    "All sessionTypes should be high-speed when any of them is high-speed"
+                }
             }
-            return firstRate
+            return hasHighSpeedSessionType
         }
     }
 }

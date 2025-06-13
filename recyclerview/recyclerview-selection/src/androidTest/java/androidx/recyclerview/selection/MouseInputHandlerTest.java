@@ -88,12 +88,86 @@ public final class MouseInputHandlerTest {
         mDetailsLookup.initAt(RecyclerView.NO_POSITION);
     }
 
+    private boolean singleTap(MotionEvent e) {
+        return mInputDelegate.onSingleTapUp(e) || mInputDelegate.onSingleTapConfirmed(e);
+    }
+
     @Test
     public void testConfirmedClick_StartsSelection() {
         mDetailsLookup.initAt(11).setInItemSelectRegion(true);
         mInputDelegate.onSingleTapConfirmed(CLICK);
 
         mSelection.assertSelection(11);
+    }
+
+    @Test
+    public void testClickOnSelectionHotspot_False() {
+        // When nothing is selected, clicking outside the hotspot does nothing.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        // When something is selected, clicking outside the hotspot does something conditional. If
+        // clicking on a selected item, it deselects it. Otherwise, it clears the entire selection.
+
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(8, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(20).setInItemSelectRegion(false);
+        // assertFalse because mHandledTapUp is sticky. This is possibly a bug.
+        assertFalse(singleTap(CLICK));
+        mSelection.assertNoSelection();
+    }
+
+    @Test
+    public void testClickOnSelectionHotspot_True() {
+        // Clicking inside the hotspot toggles selection.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(5);
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(8, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(20).setInItemSelectRegion(true);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(8, 9, 10, 11, 20);
     }
 
     @Test

@@ -177,7 +177,6 @@ internal fun getPerceivedResolutionOfPanel(
     panelHeightInActivitySpace: Float,
     panelDistanceInActivitySpace: Float,
 ): PerceivedResolutionResult {
-    // TODO(b/417970419): Throw IllegalStateException if we don't have HEAD_TRACKING permission
     // If the panel is behind the camera or exactly at the camera's position, it's not visible
     // or would have infinite size on screen so return maximum resolution allowed.
     if (panelDistanceInActivitySpace <= PERCEIVED_RESOLUTION_EPSILON) {

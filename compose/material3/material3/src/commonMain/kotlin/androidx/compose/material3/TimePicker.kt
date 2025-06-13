@@ -980,8 +980,7 @@ internal fun HorizontalTimePicker(
     autoSwitchToMinute: Boolean,
 ) {
     Row(
-        modifier =
-            modifier.semantics { isTraversalGroup = true }.padding(bottom = ClockFaceBottomMargin),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HorizontalClockDisplay(state, colors)
@@ -1768,12 +1767,12 @@ private fun ClockText(
                     onClick {
                         scope.launch {
                             state.onTap(
-                                center.x,
-                                center.y,
-                                maxDist,
-                                autoSwitchToMinute,
-                                parentCenter,
-                                SnapSpec(),
+                                x = center.x,
+                                y = center.y,
+                                maxDist = maxDist,
+                                autoSwitchToMinute = autoSwitchToMinute,
+                                center = parentCenter,
+                                animationSpec = SnapSpec(),
                             )
                         }
                         true
@@ -2076,7 +2075,7 @@ private val PeriodToggleMargin = 12.dp
 private val TimePickerMaxHeight = 384.dp
 private val TimePickerMidHeight = 330.dp
 private val ClockDialMidContainerSize = 238.dp
-private val ClockDialMinContainerSize = 200.dp
+internal val ClockDialMinContainerSize = 200.dp
 
 /**
  * Measure the composable with 0,0 so that it stays on the screen. Necessary to correctly handle

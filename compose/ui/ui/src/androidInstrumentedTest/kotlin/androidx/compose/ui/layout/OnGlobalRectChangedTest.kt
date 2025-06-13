@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.spatial.RelativeLayoutBounds
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -1104,5 +1105,39 @@ class OnGlobalRectChangedTest {
         // Sibling Box
         assertEquals(IntOffset(0, boxSizePx), bounds4.topLeft)
         assertEquals(IntSize(siblingBoxSizePx, siblingBoxSizePx), bounds4.size)
+    }
+
+    @Test
+    fun correctPositionInRootWhenOffsetIsProvidedByLayoutCooperation() {
+        with(rule.density) {
+            val containerSize = 100
+            val width = 50
+            val height = 40
+            var actualPosition: IntOffset = IntOffset.Max
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(
+                            Modifier.requiredSize(width.toDp(), height.toDp()).onLayoutRectChanged(
+                                0,
+                                0,
+                            ) {
+                                actualPosition = it.positionInRoot
+                            }
+                        )
+                    }
+                ) { measurables, _ ->
+                    val placeable =
+                        measurables.first().measure(Constraints.fixed(containerSize, containerSize))
+                    layout(containerSize, containerSize) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle {
+                val expectedLeft = ((containerSize - width) / 2)
+                val expectedTop = ((containerSize - height) / 2)
+                assertThat(actualPosition).isEqualTo(IntOffset(expectedLeft, expectedTop))
+            }
+        }
     }
 }

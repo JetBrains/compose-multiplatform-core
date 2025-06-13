@@ -259,6 +259,8 @@ public fun rememberTransformationSpec(
  * Computes and remembers the appropriate [TransformationSpec] for the current screen size.
  *
  * It would return special NoOp version of [TransformationSpec] when ReducedMotion is on.
+ *
+ * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnNotificationsSample
  */
 @Composable
 public fun rememberTransformationSpec(): TransformationSpec {
@@ -423,6 +425,7 @@ internal class ResponsiveTransformationSpecImpl(
                 val progress = TransitionAreaProgress(scrollProgress)
                 progress.compute(scale, easing)
             },
+            height = { itemHeight },
             shape = shape,
             border = border,
             backgroundPainter = painter,

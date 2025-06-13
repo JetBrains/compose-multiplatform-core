@@ -31,10 +31,8 @@ import static androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CODEC_CAP
 import static androidx.camera.video.Recorder.VIDEO_RECORDING_TYPE_HIGH_SPEED;
 import static androidx.core.util.Preconditions.checkArgument;
 
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
-import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.RestrictTo;
@@ -65,7 +63,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +81,6 @@ import java.util.Set;
 public class RecorderVideoCapabilities implements VideoCapabilities {
     private static final String TAG = "RecorderVideoCapabilities";
 
-    private final CameraInfoInternal mCameraInfo;
     private final EncoderProfilesProvider mProfilesProvider;
     private final boolean mIsStabilizationSupported;
     private final @QualitySource int mQualitySource;
@@ -120,7 +116,6 @@ public class RecorderVideoCapabilities implements VideoCapabilities {
                         || videoCapabilitiesSource == VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES,
                 "Not a supported video capabilities source: " + videoCapabilitiesSource);
 
-        mCameraInfo = cameraInfo;
         mQualitySource = videoCaptureType == VIDEO_RECORDING_TYPE_HIGH_SPEED
                 ? QUALITY_SOURCE_HIGH_SPEED : QUALITY_SOURCE_REGULAR;
         mProfilesProvider = getEncoderProfilesProvider(videoCapabilitiesSource, cameraInfo,
@@ -160,17 +155,6 @@ public class RecorderVideoCapabilities implements VideoCapabilities {
             @NonNull DynamicRange dynamicRange) {
         CapabilitiesByQuality capabilities = getCapabilities(dynamicRange);
         return capabilities != null && capabilities.isQualitySupported(quality);
-    }
-
-    @Override
-    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(@NonNull Quality quality,
-            @NonNull DynamicRange dynamicRange) {
-        if (mQualitySource == QUALITY_SOURCE_HIGH_SPEED) {
-            return getHighSpeedSupportedFrameRateRanges(quality, dynamicRange);
-        }
-
-        // TODO: filter fps by maximum fps of quality.
-        return mCameraInfo.getSupportedFrameRateRanges();
     }
 
     @Override
@@ -307,44 +291,5 @@ public class RecorderVideoCapabilities implements VideoCapabilities {
         EncoderProfilesProvider constrainedProvider =
                 new DynamicRangeMatchedEncoderProfilesProvider(mProfilesProvider, dynamicRange);
         return new CapabilitiesByQuality(constrainedProvider, mQualitySource);
-    }
-
-    private @NonNull Set<Range<Integer>> getHighSpeedSupportedFrameRateRanges(
-            @NonNull Quality quality,
-            @NonNull DynamicRange dynamicRange) {
-        VideoValidatedEncoderProfilesProxy profiles = getProfiles(quality, dynamicRange);
-        if (profiles == null) {
-            return emptySet();
-        }
-        // Adopt the max frame rate if there are multiple.
-        int maxProfileFps = 0;
-        for (VideoProfileProxy videoProfile : profiles.getVideoProfiles()) {
-            if (videoProfile.getFrameRate() > maxProfileFps) {
-                maxProfileFps = videoProfile.getFrameRate();
-            }
-        }
-        Set<Range<Integer>> supportedFpsRanges =
-                mCameraInfo.getSupportedHighSpeedFrameRateRangesFor(
-                        profiles.getDefaultVideoProfile().getResolution());
-
-        // Retain FPS ranges where:
-        // 1. the upper bound does not exceed the profile's frame rate.
-        //   This is based on:
-        //   * CTS limitations: CTS only verifies profile's frame rate, making higher rates
-        //     potentially unreliable.
-        //   * OEM considerations: While we don't know exactly why OEM chose this frame rate
-        //     value, they often set a higher frame rate than just 120.
-        //   * For the initial version, prioritizing low-risk implementations.
-        // 2. the range is fixed (lower bound is equal to upper bound). Variable FPS ranges
-        // are not allowed for dual-surface high-speed capture which makes it practically useless.
-        // See CameraConstrainedHighSpeedCaptureSession#createHighSpeedRequestList.
-        Set<Range<Integer>> filteredFpsRanges = new LinkedHashSet<>();
-        for (Range<Integer> fpsRange : supportedFpsRanges) {
-            if (fpsRange.getUpper() <= maxProfileFps
-                    && fpsRange.getLower().equals(fpsRange.getUpper())) {
-                filteredFpsRanges.add(fpsRange);
-            }
-        }
-        return filteredFpsRanges;
     }
 }

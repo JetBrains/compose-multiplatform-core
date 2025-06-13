@@ -50,9 +50,9 @@ internal constructor(
          *
          * @param session the [Session] that is used to create the anchor.
          * @param pose the [Pose] that describes the location and orientation of the anchor.
-         * @return the result of the operation. Can be [AnchorCreateSuccess] that contains the
-         *   created [Anchor], or another [AnchorCreateResult] if there was an issue creating the
-         *   anchor.
+         * @return a subtype of [AnchorCreateResult] based on the result of the operation. If the
+         *   operation is successful, the result will be of type [AnchorCreateSuccess] with the
+         *   created [Anchor] as its property.
          */
         @JvmStatic
         public fun create(session: Session, pose: Pose): AnchorCreateResult {
@@ -124,7 +124,7 @@ internal constructor(
          * Deletes a persisted Anchor denoted by [uuid] from local storage.
          *
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.AnchorPersistenceMode.DISABLED].
+         *   [Config.AnchorPersistenceMode.DISABLED] or the provided [uuid] is invalid.
          */
         @JvmStatic
         public fun unpersist(session: Session, uuid: UUID) {
@@ -191,7 +191,8 @@ internal constructor(
      *
      * @return the [UUID] that uniquely identifies this anchor.
      * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.AnchorPersistenceMode.DISABLED].
+     *   [Config.AnchorPersistenceMode.DISABLED], or if there was an unexpected error persisting the
+     *   anchor (e.g. ran out of memory).
      */
     public suspend fun persist(): UUID {
         val config = xrResourceManager.lifecycleManager.config

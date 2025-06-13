@@ -117,7 +117,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -161,7 +161,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }

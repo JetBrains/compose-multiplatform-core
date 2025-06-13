@@ -78,10 +78,11 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 23) // Requires CaptureCallback.onCaptureBufferLost
 class VideoRecordingFrameDropTest(
-    private val implName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
-    private val perSelectorTestData: PerSelectorTestData,
+    private val implName: String,
     private val cameraConfig: CameraXConfig,
+    private val perSelectorTestData: PerSelectorTestData,
 ) {
 
     @get:Rule
@@ -119,34 +120,30 @@ class VideoRecordingFrameDropTest(
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data(): Collection<Array<Any>> {
-            return listOf(
-                arrayOf(
-                    "back+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    PerSelectorTestData(),
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    PerSelectorTestData(),
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    PerSelectorTestData(),
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    PerSelectorTestData(),
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
-        }
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                            PerSelectorTestData(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                            PerSelectorTestData(),
+                        )
+                    )
+                }
+            }
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()

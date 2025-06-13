@@ -102,14 +102,14 @@ internal class FormWidgetInteractionHandler(
      */
     fun handleInteractionWithChoiceSelectionWidget(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
         if (formWidgetInfo.multiSelect) {
-            showMultiChoiceSelectMenu(formWidgetInfo)
+            showMultiChoiceSelectMenu(pageNum, formWidgetInfo)
         } else {
-            showSingleChoiceSelectMenu(formWidgetInfo)
+            showSingleChoiceSelectMenu(pageNum, formWidgetInfo)
         }
     }
 
-    private fun showSingleChoiceSelectMenu(formWidgetInfo: FormWidgetInfo) {
-        var selectedItemIndex = 0
+    private fun showSingleChoiceSelectMenu(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
+        var selectedItemIndex: Int = formWidgetInfo.listItems.indexOfFirst { it.selected }
         val listItemValues: List<String> = formWidgetInfo.listItems.map { it.label }
 
         MaterialAlertDialogBuilder(context)
@@ -118,15 +118,19 @@ internal class FormWidgetInteractionHandler(
                 selectedItemIndex = which
             }
             .setPositiveButton(context.getString(R.string.confirm_selection)) { dialog, which ->
-                // TODO(b/410008872): Function to assemble FormEditRecord based on user selection.
+                handleSelectedItem(pageNum, formWidgetInfo, listOf(selectedItemIndex))
                 dialog.dismiss()
             }
             .show()
     }
 
-    private fun showMultiChoiceSelectMenu(formWidgetInfo: FormWidgetInfo) {
-        val selectedItems = BooleanArray(formWidgetInfo.listItems.size)
+    private fun showMultiChoiceSelectMenu(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
+        val selectedItems =
+            BooleanArray(formWidgetInfo.listItems.size) { i ->
+                formWidgetInfo.listItems[i].selected
+            }
         val listItemValues: List<String> = formWidgetInfo.listItems.map { it.label }
+
         MaterialAlertDialogBuilder(context)
             .setMultiChoiceItems(listItemValues.toTypedArray(), selectedItems) {
                 dialog,
@@ -135,10 +139,29 @@ internal class FormWidgetInteractionHandler(
                 selectedItems[which] = isChecked
             }
             .setPositiveButton(context.getString(R.string.confirm_selection)) { dialog, which ->
-                // TODO(b/410008872): Function to assemble FormEditRecord based on user selection.
+                handleSelectedItem(
+                    pageNum,
+                    formWidgetInfo,
+                    selectedItems.indices.filter { selectedItems[it] },
+                )
                 dialog.dismiss()
             }
             .show()
+    }
+
+    private fun handleSelectedItem(
+        pageNum: Int,
+        formWidgetInfo: FormWidgetInfo,
+        selectedItemIndices: List<Int>,
+    ) {
+        val formEditRecord =
+            FormEditRecord(
+                pageNum,
+                formWidgetInfo.widgetIndex,
+                selectedIndices = selectedItemIndices.toIntArray(),
+            )
+
+        applyEditRecord(pageNum, formEditRecord)
     }
 
     /** Calls pdfDocument.applyEdit inside a CoroutineScope */

@@ -22,8 +22,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.testapp.R
 
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class OcclusionFragment : BaseHiddenFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,5 +49,9 @@ class OcclusionFragment : BaseHiddenFragment() {
             ssv.alpha -= 0.001f
         }
         return inflatedView
+    }
+
+    override fun loadAd(automatedTestCallbackBundle: Bundle) {
+        TODO("Not yet implemented")
     }
 }

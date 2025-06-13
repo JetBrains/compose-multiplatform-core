@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
@@ -105,6 +106,22 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
         onPager().performTouchInput { swipeWithVelocityAcrossMainAxis(1000f) }
 
         rule.runOnIdle { assertThat(pagerState.currentPage).isNotEqualTo(5) }
+        confirmPageIsInCorrectPosition(pagerState.currentPage)
+    }
+
+    @Test
+    fun userScrollEnabledIsOn_shouldAllowMouseWheelScroll() {
+        // Arrange
+        createPager(initialPage = 5, userScrollEnabled = true, modifier = Modifier.fillMaxSize())
+
+        onPager().performMouseInput {
+            mouseWheelScrollAcrossMainAxis(
+                context = composeView!!.context,
+                deltaPx = pagerSize.toFloat() * 2.7f,
+            )
+        }
+
+        rule.runOnIdle { assertThat(pagerState.currentPage).isEqualTo(8) }
         confirmPageIsInCorrectPosition(pagerState.currentPage)
     }
 

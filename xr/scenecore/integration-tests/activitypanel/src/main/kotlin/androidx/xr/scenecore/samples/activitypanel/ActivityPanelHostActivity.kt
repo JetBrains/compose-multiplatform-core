@@ -49,7 +49,7 @@ class ActivityPanelHostActivity : AppCompatActivity() {
             activityPanelEntity.launchActivity(intent)
             activityPanelEntity.setPose(Pose(Vector3(0.5f, 0.5f, 0.0f)))
             val movableComponent = MovableComponent.create(session)
-            movableComponent.size = activityPanelEntity.getSize()
+            movableComponent.size = activityPanelEntity.size.to3d()
             @Suppress("UNUSED_VARIABLE")
             val unused = activityPanelEntity.addComponent(movableComponent)
         }
@@ -58,7 +58,7 @@ class ActivityPanelHostActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        activityPanelEntity.setParent(null)
+        activityPanelEntity.parent = null
         activityPanelEntity.dispose()
     }
 }

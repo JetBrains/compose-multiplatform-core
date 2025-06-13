@@ -47,9 +47,10 @@ import android.hardware.camera2.params.TonemapCurve
 import android.os.Build
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
-import androidx.camera.integration.core.util.Camera2InteropUtil.builder
-import androidx.camera.integration.core.util.Camera2InteropUtil.from
 import androidx.camera.testing.impl.AndroidUtil
+import androidx.camera.testing.impl.util.Camera2InteropUtil
+import androidx.camera.testing.impl.util.Camera2InteropUtil.builder
+import androidx.camera.testing.impl.util.Camera2InteropUtil.from
 import androidx.palette.graphics.Palette
 import org.junit.Assume.assumeFalse
 import org.junit.AssumptionViolatedException

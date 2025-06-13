@@ -30,6 +30,7 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.TimeSource
@@ -55,10 +56,11 @@ class StandaloneActivity : AppCompatActivity() {
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )
-        panelEntity.setParent(session.scene.activitySpace)
+        panelEntity.parent = session.scene.activitySpace
 
         // Create multiple orbiting dragon models
-        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        val dragonModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
         dragonModelFuture.addListener(
             {
                 val dragonModel = dragonModelFuture.get()
@@ -70,11 +72,11 @@ class StandaloneActivity : AppCompatActivity() {
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
         val sunDragon = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 2f, -9f)))
-        sunDragon.setParent(session.scene.activitySpace)
+        sunDragon.parent = session.scene.activitySpace
         val planetDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 2f, -9f)))
-        planetDragon.setParent(sunDragon)
+        planetDragon.parent = sunDragon
         val moonDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 2f, -9f)))
-        moonDragon.setParent(planetDragon)
+        moonDragon.parent = planetDragon
 
         orbitModelAroundParent(planetDragon, 4f, 0f, 20000f)
         orbitModelAroundParent(moonDragon, 2f, 1.67f, 5000f)

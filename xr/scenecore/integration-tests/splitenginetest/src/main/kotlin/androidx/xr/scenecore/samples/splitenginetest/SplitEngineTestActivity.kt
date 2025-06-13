@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,11 +29,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,10 +61,15 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
+import androidx.xr.scenecore.KhronosPbrMaterial
+import androidx.xr.scenecore.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
+import androidx.xr.scenecore.Texture
+import androidx.xr.scenecore.TextureSampler
 import androidx.xr.scenecore.scene
 import com.google.common.util.concurrent.ListenableFuture
+import java.nio.file.Paths
 import kotlinx.coroutines.delay
 
 class SplitEngineTestActivity : ComponentActivity() {
@@ -138,6 +145,26 @@ class SplitEngineTestActivity : ComponentActivity() {
         val glimmerModel = remember { mutableStateOf<GltfModel?>(null) }
         val glimmerEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
         var interactableAttached by remember { mutableStateOf(false) }
+        val patternTexture = remember { mutableStateOf<Texture?>(null) }
+        val khronosPbrMaterial = remember { mutableStateOf<KhronosPbrMaterial?>(null) }
+
+        var khronosPbrMaterialEmissiveR by remember { mutableFloatStateOf(0f) }
+        var khronosPbrMaterialEmissiveG by remember { mutableFloatStateOf(0f) }
+        var khronosPbrMaterialEmissiveB by remember { mutableFloatStateOf(0f) }
+
+        val updateEmissiveFactor = {
+            khronosPbrMaterial.value?.let { material ->
+                val factorVec =
+                    Vector3(
+                        x = khronosPbrMaterialEmissiveR / 100f,
+                        y = khronosPbrMaterialEmissiveG / 100f,
+                        z = khronosPbrMaterialEmissiveB / 100f,
+                    )
+                material.setEmissiveFactors(factorVec)
+            }
+        }
+        var khronosPbrMaterialMetallic by remember { mutableFloatStateOf(0.0f) }
+        var khronosPbrMaterialRoughness by remember { mutableFloatStateOf(50f) }
 
         // This will continuously poll the animation state to verify that the state is updated to
         // "STOPPED" after a single run is done. Ideally we would register a listener for this, but
@@ -159,7 +186,7 @@ class SplitEngineTestActivity : ComponentActivity() {
             ) {
                 Text(text = "System APIs", fontSize = 50.sp)
                 Button(onClick = { togglePassthrough(session) }) {
-                    Text(text = "Toggle Passthrough", fontSize = 30.sp)
+                    Text(text = "Toggle Passthrough", fontSize = 20.sp)
                 }
                 Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
                     // Set up the MoveableComponent on the first jump into FSM to allow the user to
@@ -170,13 +197,13 @@ class SplitEngineTestActivity : ComponentActivity() {
                         val unused =
                             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
                     }
-                    Text(text = "Request FSM", fontSize = 30.sp)
+                    Text(text = "Request FSM", fontSize = 20.sp)
                 }
                 Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
-                    Text(text = "Request HSM", fontSize = 30.sp)
+                    Text(text = "Request HSM", fontSize = 20.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {
-                    Text(text = "Recreate Activity", fontSize = 30.sp)
+                    Text(text = "Recreate Activity", fontSize = 20.sp)
                 }
             }
             Column(
@@ -187,7 +214,10 @@ class SplitEngineTestActivity : ComponentActivity() {
                 Button(
                     onClick = {
                         val skyboxTokenFuture: ListenableFuture<ExrImage> =
-                            ExrImage.create(session, "skyboxes/BlueSkybox.zip")
+                            ExrImage.createFromZipAsync(
+                                session,
+                                Paths.get("skyboxes", "BlueSkybox.zip"),
+                            )
                         skyboxTokenFuture.addListener(
                             {
                                 try {
@@ -203,7 +233,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Load Skybox Blue", fontSize = 30.sp)
+                    Text(text = "Load Skybox Blue", fontSize = 20.sp)
                 }
                 Button(
                     onClick = {
@@ -213,17 +243,20 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Set Skybox Blue", fontSize = 30.sp)
+                    Text(text = "Set Skybox Blue", fontSize = 20.sp)
                 }
                 Button(
                     onClick = { setSkyboxAndGeometry(null, spatialEnvironmentPreference?.geometry) }
                 ) {
-                    Text(text = "Remove Skybox Blue", fontSize = 30.sp)
+                    Text(text = "Remove Skybox Blue", fontSize = 20.sp)
                 }
                 Button(
                     onClick = {
                         val gltfTokenFuture: ListenableFuture<GltfModel> =
-                            GltfModel.create(session, "models/GroundGeometry.glb")
+                            GltfModel.createAsync(
+                                session,
+                                Paths.get("models", "GroundGeometry.glb"),
+                            )
                         gltfTokenFuture.addListener(
                             {
                                 try {
@@ -239,7 +272,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Load Ground Geometry", fontSize = 30.sp)
+                    Text(text = "Load Ground Geometry", fontSize = 20.sp)
                 }
                 Button(
                     onClick = {
@@ -249,17 +282,17 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Set Ground Geometry", fontSize = 30.sp)
+                    Text(text = "Set Ground Geometry", fontSize = 20.sp)
                 }
                 Button(
                     onClick = { setSkyboxAndGeometry(spatialEnvironmentPreference?.skybox, null) }
                 ) {
-                    Text(text = "Remove Ground Geometry", fontSize = 30.sp)
+                    Text(text = "Remove Ground Geometry", fontSize = 20.sp)
                 }
                 Button(
                     onClick = {
                         val gltfToken: ListenableFuture<GltfModel> =
-                            GltfModel.create(session, "models/l2a_pulse.glb")
+                            GltfModel.createAsync(session, Paths.get("models", "l2a_pulse.glb"))
                         gltfToken.addListener(
                             {
                                 try {
@@ -275,12 +308,15 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Load Glimmer Model", fontSize = 30.sp)
+                    Text(text = "Load Glimmer Model", fontSize = 20.sp)
                 }
                 Button(
                     onClick = {
                         val gltfTokenFuture: ListenableFuture<GltfModel> =
-                            GltfModel.create(session, "models/Dragon_Evolved.gltf")
+                            GltfModel.createAsync(
+                                session,
+                                Paths.get("models", "Dragon_Evolved.gltf"),
+                            )
                         gltfTokenFuture.addListener(
                             {
                                 try {
@@ -296,7 +332,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                         )
                     }
                 ) {
-                    Text(text = "Load Dragon Model Split Engine", fontSize = 30.sp)
+                    Text(text = "Load Dragon Model Split Engine", fontSize = 20.sp)
                 }
                 if (dragonModel.value != null) {
                     Button(
@@ -312,7 +348,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                                 )
                         }
                     ) {
-                        Text(text = "Create Dragon Entity Split Engine", fontSize = 30.sp)
+                        Text(text = "Create Dragon Entity Split Engine", fontSize = 20.sp)
                     }
                 }
                 if (dragonEntity.value != null) {
@@ -349,7 +385,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                             dragonEntity.value = null
                         }
                     ) {
-                        Text(text = "Destroy Dragon Entity Split Engine", fontSize = 30.sp)
+                        Text(text = "Destroy Dragon Entity Split Engine", fontSize = 20.sp)
                     }
                 }
             }
@@ -361,12 +397,11 @@ class SplitEngineTestActivity : ComponentActivity() {
                     Text(text = "Animation APIs", fontSize = 50.sp)
                     Button(
                         onClick = {
-                            // Independently tested this with animation name string set to Null
                             dragonEntity.value!!.startAnimation(false, "Fast_Flying")
                             dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
                         }
                     ) {
-                        Text(text = "Animate Dragon Entity", fontSize = 30.sp)
+                        Text(text = "Animate Dragon Entity", fontSize = 20.sp)
                     }
                     Button(
                         onClick = {
@@ -374,7 +409,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                             dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
                         }
                     ) {
-                        Text(text = "Loop Animate Dragon Entity", fontSize = 30.sp)
+                        Text(text = "Loop Animate Dragon Entity", fontSize = 20.sp)
                     }
                     Button(
                         onClick = {
@@ -382,13 +417,161 @@ class SplitEngineTestActivity : ComponentActivity() {
                             dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
                         }
                     ) {
-                        Text(text = "Stop Animate Dragon Entity", fontSize = 30.sp)
+                        Text(text = "Stop Animate Dragon Entity", fontSize = 20.sp)
                     }
                     Text(
-                        text =
-                            "Dragon Entity Animation State: ${dragonAnimationState.intValue!!}", // +
-                        // dragonAnimationState.intValue!!.name,
-                        fontSize = 30.sp,
+                        text = "Dragon Entity Animation State: ${dragonAnimationState.intValue}",
+                        fontSize = 20.sp,
+                    )
+                    Button(
+                        onClick = {
+                            val spec =
+                                KhronosPbrMaterialSpec.create(
+                                    lightingModel = KhronosPbrMaterialSpec.LightingModel.LIT,
+                                    blendMode = KhronosPbrMaterialSpec.BlendMode.OPAQUE,
+                                    doubleSidedMode =
+                                        KhronosPbrMaterialSpec.DoubleSidedMode.SINGLE_SIDED,
+                                )
+                            val khronosPbrMaterialFuture: ListenableFuture<KhronosPbrMaterial> =
+                                KhronosPbrMaterial.create(session, spec)
+                            khronosPbrMaterialFuture.addListener(
+                                {
+                                    try {
+                                        khronosPbrMaterial.value = khronosPbrMaterialFuture.get()
+                                    } catch (e: Exception) {
+                                        Log.e(
+                                            "SplitEngineTestActivity",
+                                            "Failed to Khronos PBR Material: " + e.message,
+                                        )
+                                    }
+                                },
+                                Runnable::run,
+                            )
+                        }
+                    ) {
+                        Text(text = "Create Khronos PBR Material Split Engine", fontSize = 20.sp)
+                    }
+                    Button(
+                        onClick = {
+                            val textureFuture: ListenableFuture<Texture> =
+                                Texture.create(
+                                    session,
+                                    "textures/pattern.png",
+                                    TextureSampler.create(),
+                                )
+                            textureFuture.addListener(
+                                {
+                                    try {
+                                        patternTexture.value = textureFuture.get()
+                                    } catch (e: Exception) {
+                                        Log.e(
+                                            "SplitEngineTestActivity",
+                                            "Failed to load Pattern Texture: " + e.message,
+                                        )
+                                    }
+                                },
+                                Runnable::run,
+                            )
+                        }
+                    ) {
+                        Text(text = "Load Pattern Texture Split Engine", fontSize = 20.sp)
+                    }
+                    Button(
+                        onClick = {
+                            khronosPbrMaterial.value?.let { material ->
+                                patternTexture.value?.let { texture ->
+                                    material.setBaseColorTexture(texture)
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Set BaseColor Pattern Texture", fontSize = 20.sp)
+                    }
+                    Button(
+                        onClick = {
+                            dragonEntity.value?.let { entity ->
+                                khronosPbrMaterial.value?.let { material ->
+                                    try {
+                                        entity.setMaterialOverride(material, "Dragon")
+                                    } catch (e: IllegalStateException) {
+                                        Log.e("Override Mesh", "Failed to set material override", e)
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Override Dragon main mesh", fontSize = 20.sp)
+                    }
+                    Text("Emissive R: ${"%.2f".format(khronosPbrMaterialEmissiveR / 100f)}")
+                    Slider(
+                        value = khronosPbrMaterialEmissiveR,
+                        valueRange = 0f..100f,
+                        steps = 99,
+                        onValueChangeFinished = { updateEmissiveFactor() },
+                        onValueChange = { it ->
+                            khronosPbrMaterialEmissiveR = it
+                            updateEmissiveFactor()
+                        },
+                    )
+                    Text("Emissive G: ${"%.2f".format(khronosPbrMaterialEmissiveG / 100f)}")
+                    Slider(
+                        value = khronosPbrMaterialEmissiveG,
+                        valueRange = 0f..100f,
+                        steps = 99,
+                        onValueChangeFinished = { updateEmissiveFactor() },
+                        onValueChange = { it ->
+                            khronosPbrMaterialEmissiveG = it
+                            updateEmissiveFactor()
+                        },
+                    )
+                    Text("Emissive B: ${"%.2f".format(khronosPbrMaterialEmissiveB / 100f)}")
+                    Slider(
+                        value = khronosPbrMaterialEmissiveB,
+                        valueRange = 0f..100f,
+                        steps = 99,
+                        onValueChangeFinished = { updateEmissiveFactor() },
+                        onValueChange = { it ->
+                            khronosPbrMaterialEmissiveB = it
+                            updateEmissiveFactor()
+                        },
+                    )
+                    Text("Metallic: ${"%.2f".format(khronosPbrMaterialMetallic / 100f)}")
+                    Slider(
+                        value = khronosPbrMaterialMetallic,
+                        onValueChange = {
+                            khronosPbrMaterialMetallic = it
+                            khronosPbrMaterial.value?.let { material ->
+                                val factor = khronosPbrMaterialMetallic / 100f
+                                material.setMetallicFactor(factor)
+                            }
+                        },
+                        valueRange = 0f..100f,
+                        steps = 99,
+                        onValueChangeFinished = {
+                            khronosPbrMaterial.value?.let { material ->
+                                val factor = khronosPbrMaterialMetallic / 100f
+                                material.setMetallicFactor(factor)
+                            }
+                        },
+                    )
+                    Text("Roughness: ${"%.2f".format(khronosPbrMaterialRoughness / 100f)}")
+                    Slider(
+                        value = khronosPbrMaterialRoughness,
+                        onValueChange = {
+                            khronosPbrMaterialRoughness = it
+                            khronosPbrMaterial.value?.let { material ->
+                                val factor = khronosPbrMaterialRoughness / 100f
+                                material.setRoughnessFactor(factor)
+                            }
+                        },
+                        valueRange = 0f..100f,
+                        steps = 99,
+                        onValueChangeFinished = {
+                            khronosPbrMaterial.value?.let { material ->
+                                val factor = khronosPbrMaterialRoughness / 100f
+                                material.setRoughnessFactor(factor)
+                            }
+                        },
                     )
                 }
             }
@@ -414,7 +597,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                             glimmerEntity.value!!.startAnimation(false)
                         }
                     ) {
-                        Text(text = "Play Glimmer", fontSize = 30.sp)
+                        Text(text = "Play Glimmer", fontSize = 20.sp)
                     }
                 }
             }

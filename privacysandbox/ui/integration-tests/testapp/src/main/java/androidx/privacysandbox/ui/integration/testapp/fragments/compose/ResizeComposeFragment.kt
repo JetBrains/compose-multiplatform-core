@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.compose.SandboxedSdkUi
 import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.testapp.R
@@ -57,6 +58,9 @@ import androidx.privacysandbox.ui.integration.testapp.fragments.BaseFragment
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
+// OptIn calling the experimental API SandboxedSdkUi(SandboxedUiAdapter, Modifier,
+// SandboxedSdkViewEventListener?, Boolean)
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class ResizeComposeFragment : BaseFragment() {
 
     private var adapter: SandboxedUiAdapter? by mutableStateOf(null)

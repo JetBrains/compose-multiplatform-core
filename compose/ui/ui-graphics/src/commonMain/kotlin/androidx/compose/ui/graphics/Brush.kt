@@ -410,12 +410,12 @@ sealed class Brush {
          * @see BlendMode
          */
         @Stable
-        fun compositeShaderBrush(dstBrush: Brush, srcBrush: Brush, blendMode: BlendMode): Brush =
+        fun composite(dstBrush: Brush, srcBrush: Brush, blendMode: BlendMode): Brush =
             CompositeShaderBrush(dstBrush.toShaderBrush(), srcBrush.toShaderBrush(), blendMode)
     }
 }
 
-private fun Brush.toShaderBrush(): ShaderBrush =
+internal fun Brush.toShaderBrush(): ShaderBrush =
     when (this) {
         is ShaderBrush -> this
         is SolidColor -> verticalGradient(listOf(value, value)) as ShaderBrush
@@ -700,13 +700,13 @@ abstract class ShaderBrush() : Brush() {
 
     private var internalTransformShader: TransformShader? = null
     private var createdSize = Size.Unspecified
-    private var transformMatrix: Matrix? = null
 
-    /** Sets a transformation matrix for the shader. */
-    fun transform(matrix: Matrix?) {
-        transformMatrix = matrix
-        internalTransformShader?.transform(matrix)
-    }
+    /** A transformation matrix for the shader. */
+    var transform: Matrix? = null
+        set(value) {
+            field = value
+            internalTransformShader?.transform(value)
+        }
 
     abstract fun createShader(size: Size): Shader
 
@@ -723,8 +723,8 @@ abstract class ShaderBrush() : Brush() {
             } else {
                 transformShader =
                     obtainTransformShader().apply {
-                        if (transformMatrix != null) {
-                            transform(transformMatrix)
+                        if (transform != null) {
+                            transform(transform)
                         }
                         shader = createShader(size)
                     }

@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.shadow.InnerShadow
+import androidx.compose.ui.graphics.shadow.ShadowParams
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -123,7 +123,7 @@ class InnerShadowTest {
                 AtLeastSize(size = 12, modifier = Modifier.background(Color.White)) {
                     val shadow =
                         if (model.value) {
-                            Modifier.innerShadow(RectangleShape, InnerShadow(2.dp))
+                            Modifier.innerShadow(RectangleShape, ShadowParams(2.dp))
                         } else {
                             Modifier
                         }
@@ -143,13 +143,13 @@ class InnerShadowTest {
     fun testInspectorValue() {
         rule.runOnUiThreadIR {
             val modifier =
-                Modifier.innerShadow(RectangleShape, InnerShadow(8.dp)).first() as InspectableValue
+                Modifier.innerShadow(RectangleShape, ShadowParams(8.dp)).first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("innerShadow")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.asIterable())
                 .containsExactly(
                     ValueElement("shape", RectangleShape),
-                    ValueElement("innerShadow", InnerShadow(8.dp)),
+                    ValueElement("innerShadow", ShadowParams(8.dp)),
                 )
         }
     }
@@ -162,7 +162,7 @@ class InnerShadowTest {
         AtLeastSize(size = 12, modifier = modifier.background(Color.White)) {
             AtLeastSize(
                 size = 8,
-                modifier = Modifier.innerShadow(RectangleShape, InnerShadow(radius.value)),
+                modifier = Modifier.innerShadow(RectangleShape, ShadowParams(radius.value)),
             ) {}
         }
     }

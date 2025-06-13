@@ -208,7 +208,8 @@ public object StreamUseCaseUtil {
         featureSettings: SupportedSurfaceCombination.FeatureSettings
     ): Boolean {
         return (featureSettings.cameraMode == CameraMode.DEFAULT &&
-            featureSettings.requiredMaxBitDepth == DynamicRange.BIT_DEPTH_8_BIT)
+            featureSettings.requiredMaxBitDepth == DynamicRange.BIT_DEPTH_8_BIT) &&
+            !featureSettings.isHighSpeedOn
     }
 
     /**

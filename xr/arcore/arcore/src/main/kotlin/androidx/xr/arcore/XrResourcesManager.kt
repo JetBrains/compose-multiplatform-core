@@ -17,11 +17,13 @@
 package androidx.xr.arcore
 
 import android.annotation.SuppressLint
+import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.internal.Earth as RuntimeEarth
 import androidx.xr.runtime.internal.Hand as RuntimeHand
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.Plane as RuntimePlane
 import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
+import androidx.xr.runtime.internal.ViewCamera as RuntimeViewCamera
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -51,6 +53,14 @@ internal class XrResourcesManager {
     val leftHand: Hand? by lazy { _leftRuntimeHand?.let { Hand(it) } }
     val rightHand: Hand? by lazy { _rightRuntimeHand?.let { Hand(it) } }
 
+    /** The ar device tracking data */
+    lateinit var arDevice: ArDevice
+        private set
+
+    /** The view camera data */
+    lateinit var viewCameras: List<ViewCamera>
+        private set
+
     /** Geospatial data */
     private var _earth: Earth? = null
     val earth: Earth
@@ -63,6 +73,14 @@ internal class XrResourcesManager {
     internal fun initiateHands(leftRuntimeHand: RuntimeHand?, rightRuntimeHand: RuntimeHand?) {
         _leftRuntimeHand = leftRuntimeHand
         _rightRuntimeHand = rightRuntimeHand
+    }
+
+    internal fun initiateArDevice(runtimeArDevice: RuntimeArDevice) {
+        arDevice = ArDevice(runtimeArDevice)
+    }
+
+    internal fun initiateViewCameras(runtimeViewCameras: List<RuntimeViewCamera>) {
+        viewCameras = runtimeViewCameras.map { ViewCamera(it) }
     }
 
     internal fun addUpdatable(updatable: Updatable) {

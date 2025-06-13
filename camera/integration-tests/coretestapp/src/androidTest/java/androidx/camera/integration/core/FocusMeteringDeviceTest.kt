@@ -22,7 +22,6 @@ import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AE
 import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AF
 import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AWB
 import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
@@ -36,14 +35,13 @@ import androidx.camera.core.FocusMeteringAction.FLAG_AF
 import androidx.camera.core.FocusMeteringAction.FLAG_AWB
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
-import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule.Companion.isLensFacingEnabledInLabTest
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
-import androidx.concurrent.futures.await
+import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
@@ -67,7 +65,7 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class FocusMeteringDeviceTest(
-    private val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
     private val cameraXConfig: CameraXConfig,
@@ -86,34 +84,29 @@ class FocusMeteringDeviceTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "selector={0},config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -333,7 +326,7 @@ class FocusMeteringDeviceTest(
         val factory = SurfaceOrientedMeteringPointFactory(1.0f, 1.0f)
         val action = FocusMeteringAction.Builder(factory.createPoint(0f, 0f)).build()
 
-        camera.cameraControl.startFocusAndMetering(action).await()
+        camera.cameraControl.startFocusAndMetering(action)
 
         val cameraCharacteristics =
             CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)!!
@@ -343,11 +336,11 @@ class FocusMeteringDeviceTest(
             cameraCharacteristics.getMaxRegionCount(CONTROL_MAX_REGIONS_AE).coerceAtMost(1)
         val expectedAwbCount =
             cameraCharacteristics.getMaxRegionCount(CONTROL_MAX_REGIONS_AWB).coerceAtMost(1)
-        captureCallback.verifyFor(numOfCaptures = 60) { _, captureResults ->
-            val captureResult = captureResults.last()
-            val afRegions = captureResult[CaptureResult.CONTROL_AF_REGIONS] ?: emptyArray()
-            val aeRegions = captureResult[CaptureResult.CONTROL_AE_REGIONS] ?: emptyArray()
-            val awbRegions = captureResult[CaptureResult.CONTROL_AWB_REGIONS] ?: emptyArray()
+        captureCallback.verifyFor(numOfCaptures = 60) { captureRequests, _ ->
+            val captureRequest = captureRequests.last()
+            val afRegions = captureRequest[CaptureRequest.CONTROL_AF_REGIONS] ?: emptyArray()
+            val aeRegions = captureRequest[CaptureRequest.CONTROL_AE_REGIONS] ?: emptyArray()
+            val awbRegions = captureRequest[CaptureRequest.CONTROL_AWB_REGIONS] ?: emptyArray()
             afRegions.weightedRegionCount == expectedAfCount &&
                 aeRegions.weightedRegionCount == expectedAeCount &&
                 awbRegions.weightedRegionCount == expectedAwbCount
@@ -368,11 +361,11 @@ class FocusMeteringDeviceTest(
 
         camera.cameraControl.startFocusAndMetering(action)
         camera.cameraControl.cancelFocusAndMetering()
-        captureCallback.verifyFor(numOfCaptures = 60) { _, captureResults ->
-            val captureResult = captureResults.last()
-            val afRegions = captureResult[CaptureResult.CONTROL_AF_REGIONS] ?: emptyArray()
-            val aeRegions = captureResult[CaptureResult.CONTROL_AE_REGIONS] ?: emptyArray()
-            val awbRegions = captureResult[CaptureResult.CONTROL_AWB_REGIONS] ?: emptyArray()
+        captureCallback.verifyFor(numOfCaptures = 60) { captureRequests, _ ->
+            val captureRequest = captureRequests.last()
+            val afRegions = captureRequest[CaptureRequest.CONTROL_AF_REGIONS] ?: emptyArray()
+            val aeRegions = captureRequest[CaptureRequest.CONTROL_AE_REGIONS] ?: emptyArray()
+            val awbRegions = captureRequest[CaptureRequest.CONTROL_AWB_REGIONS] ?: emptyArray()
 
             afRegions.weightedRegionCount == 0 &&
                 aeRegions.weightedRegionCount == 0 &&

@@ -187,8 +187,8 @@ package androidx.browser.customtabs {
   public class CustomTabsClient {
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabSession? attachAuthTabSession(androidx.browser.auth.AuthTabSession.PendingSession);
     method public androidx.browser.customtabs.CustomTabsSession? attachSession(androidx.browser.customtabs.CustomTabsSession.PendingSession);
-    method public static boolean bindCustomTabsService(android.content.Context, String?, androidx.browser.customtabs.CustomTabsServiceConnection);
-    method public static boolean bindCustomTabsServicePreservePriority(android.content.Context, String?, androidx.browser.customtabs.CustomTabsServiceConnection);
+    method public static boolean bindCustomTabsService(android.content.Context, String, androidx.browser.customtabs.CustomTabsServiceConnection);
+    method public static boolean bindCustomTabsServicePreservePriority(android.content.Context, String, androidx.browser.customtabs.CustomTabsServiceConnection);
     method public static boolean connectAndInitialize(android.content.Context, String);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public static androidx.browser.auth.AuthTabSession.PendingSession createPendingAuthTabSession(android.content.Context, int);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public static androidx.browser.auth.AuthTabSession.PendingSession createPendingAuthTabSession(android.content.Context, int, java.util.concurrent.Executor, androidx.browser.auth.AuthTabCallback);

@@ -33,6 +33,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ScenePose
 import androidx.xr.scenecore.scene
@@ -95,7 +96,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
         // Hide debug panel
         findViewById<MaterialButton>(R.id.toggle_debug_panel).setOnClickListener() {
-            mDebugPanel.panelEntity.let { it.setHidden(!it.isHidden()) }
+            mDebugPanel.panelEntity.let { it.setEnabled(!it.isEnabled()) }
         }
 
         // X Slider Setup
@@ -165,7 +166,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 name = "DebugPanel",
                 pose = Pose(Vector3(0f, -0.8f, -0.05f)),
             )
-        mDebugPanel.panelEntity.setSizeInPixels(IntSize2d(1500, 1000))
+        mDebugPanel.panelEntity.sizeInPixels = IntSize2d(1500, 1000)
     }
 
     override fun onResume() {
@@ -177,7 +178,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mHeadLockedPanel.setParent(null)
+        mHeadLockedPanel.parent = null
         mHeadLockedPanel.dispose()
     }
 
@@ -192,8 +193,8 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 name = "headLockedPanel",
             )
         this.mHeadLockedPanel.setPose(Pose(Vector3(0f, 0f, 0f)))
-        this.mHeadLockedPanel.setParent(session!!.scene.activitySpace)
-        this.mHeadLockedPanel.isHidden(false)
+        this.mHeadLockedPanel.parent = session!!.scene.activitySpace
+        this.mHeadLockedPanel.isEnabled(false)
         this.mHeadLockedPanel.setPose(Pose.Identity)
         session!!.scene.mainPanelEntity.setPose(Pose(Vector3(0.1f, 0f, 0f)))
     }
@@ -238,11 +239,21 @@ class HeadLockedUiActivity : AppCompatActivity() {
         )
         mDebugPanel.view.setLine(
             "Left Eye ActivityPose",
-            session!!.scene.spatialUser.getCameraViews()[0].activitySpacePose.toFormattedString(),
+            session!!
+                .scene
+                .spatialUser
+                .cameraViews[CameraView.CameraType.LEFT_EYE]!!
+                .activitySpacePose
+                .toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Right Eye ActivityPose",
-            session!!.scene.spatialUser.getCameraViews()[1].activitySpacePose.toFormattedString(),
+            session!!
+                .scene
+                .spatialUser
+                .cameraViews[CameraView.CameraType.RIGHT_EYE]!!
+                .activitySpacePose
+                .toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Projection Source ActivityPose",
@@ -264,8 +275,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun setProjectionSource(source: String) {
         when (source) {
-            "LeftEye" -> mProjectionSource = session!!.scene.spatialUser.getCameraViews()[0]
-            "RightEye" -> mProjectionSource = session!!.scene.spatialUser.getCameraViews()[1]
+            "LeftEye" ->
+                mProjectionSource =
+                    session!!.scene.spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+            "RightEye" ->
+                mProjectionSource =
+                    session!!.scene.spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
             "Head" -> mProjectionSource = session!!.scene.spatialUser.head!!
             else -> Log.e(TAG, "Unknown projection source: $source")
         }

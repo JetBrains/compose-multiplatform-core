@@ -952,11 +952,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             rect.right = focusRect.right.fastRoundToInt()
             rect.bottom = focusRect.bottom.fastRoundToInt()
         } else {
-            @OptIn(ExperimentalComposeUiApi::class)
-            if (
-                ComposeUiFlags.isGetFocusedRectReturnEmptyEnabled &&
-                    focusOwner.focusSearch(Down, null) { true } != true
-            ) {
+            if (focusOwner.focusSearch(Down, null) { true } != true) {
                 rect.set(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
             } else {
                 super.getFocusedRect(rect)

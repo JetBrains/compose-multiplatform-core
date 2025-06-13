@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
@@ -1047,7 +1048,7 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundInParent() {
+    fun testBoundsInParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp()).semantics {}) {
@@ -1065,10 +1066,38 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundInParent_boundInRootWhenNoParent() {
+    fun testBoundsInParent_boundsInRootWhenNoParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp())) {
+                    Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
+                        Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        val bounds = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().boundsInParent
+        assertEquals(Rect(30.0f, 50.0f, 31.0f, 51.0f), bounds)
+    }
+
+    @Test
+    fun testBoundsInParent_boundsInRootWhenParentIsNotImportantForBounds() {
+        val notImportantForBoundsSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds = false
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(100.toDp())
+                        .padding(10.toDp(), 20.toDp())
+                        .elementFor(notImportantForBoundsSemanticsModifier)
+                ) {
                     Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
                         Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
                     }

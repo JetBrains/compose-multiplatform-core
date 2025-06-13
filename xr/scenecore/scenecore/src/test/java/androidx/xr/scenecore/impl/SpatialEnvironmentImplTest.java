@@ -61,6 +61,7 @@ import org.robolectric.android.controller.ActivityController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 // Technically this doesn't need to be a Robolectric test, since it doesn't directly depend on
@@ -457,6 +458,21 @@ public final class SpatialEnvironmentImplTest {
         // The environment node should still be attached.
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getEnvironmentNode(mActivity))
                 .isNotNull();
+    }
+
+    @Test
+    public void setNewSpatialEnvironmentPreference_callsOnBeforeNodeAttachedListener() {
+        long gltf = fakeLoadGltfAsset("fakeGltfAsset");
+        AtomicInteger timesCalled = new AtomicInteger();
+
+        mEnvironment.accept(node -> timesCalled.getAndIncrement());
+
+        // Ensure that an environment is set a first time.
+        mEnvironment.setSpatialEnvironmentPreference(
+                new SpatialEnvironmentPreference(
+                        null, new GltfModelResourceImpl(gltf)));
+
+        assertThat(timesCalled.get()).isEqualTo(1);
     }
 
     @Test

@@ -212,7 +212,8 @@ class HandTest {
     @Test
     fun getHandedness_settingNotConfigured_returnsUnknown() =
         createTestSessionAndRunTest(testDispatcher) {
-            assertThat(Hand.getHandedness(mockContentResolver)).isEqualTo(Hand.Handedness.UNKNOWN)
+            assertThat(Hand.getPrimaryHandSide(mockContentResolver))
+                .isEqualTo(Hand.HandSide.UNKNOWN)
         }
 
     @Test
@@ -220,7 +221,7 @@ class HandTest {
         createTestSessionAndRunTest(testDispatcher) {
             Settings.System.putInt(mockContentResolver, Hand.PRIMARY_HAND_SETTING_NAME, 1)
 
-            assertThat(Hand.getHandedness(mockContentResolver)).isEqualTo(Hand.Handedness.RIGHT)
+            assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(Hand.HandSide.RIGHT)
         }
 
     private fun createTestSessionAndRunTest(

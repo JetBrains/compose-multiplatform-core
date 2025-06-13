@@ -173,6 +173,7 @@ internal class PageManager(
         stablePosition: Boolean,
         viewArea: Rect? = null,
         pauseBitmapFetch: Boolean,
+        pdfFormFillingConfig: PdfFormFillingConfig,
         formWidgetInfos: List<FormWidgetInfo>? = null,
     ) {
         if (pages.contains(pageNum)) return
@@ -187,6 +188,7 @@ internal class PageManager(
                     onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
                     errorFlow = errorFlow,
                     isAccessibilityEnabled = isAccessibilityEnabled,
+                    pdfFormFillingConfig = pdfFormFillingConfig,
                     formWidgetInfos = formWidgetInfos,
                 )
                 .apply {

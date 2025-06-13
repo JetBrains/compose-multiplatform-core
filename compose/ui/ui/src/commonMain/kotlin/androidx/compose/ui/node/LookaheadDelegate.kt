@@ -591,7 +591,7 @@ private class RulerTrackingMap {
             if (oldValue != value) {
                 values[index] = value
                 accessFlags[index] = AccessChanged
-            } else {
+            } else if (accessFlags[index] == AccessNotSet) {
                 accessFlags[index] = AccessNoChange
             }
         }

@@ -669,7 +669,7 @@ internal class Controller3ALock3ATest {
 
         // One request to cancel AF to start a new scan.
         val event1 = captureSequenceProcessor.nextEvent()
-        assertThat(event1.isCapture)
+        assertThat(event1.isCapture).isTrue()
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,

@@ -46,7 +46,7 @@ public fun SceneSetupNavEntryDecorator(): NavEntryDecorator<Any> {
         mutableMapOf()
     val movableContentHolderMap: MutableMap<Any, @Composable () -> Unit> = mutableMapOf()
     return navEntryDecorator { entry ->
-        val key = entry.key
+        val key = entry.contentKey
         movableContentContentHolderMap.getOrPut(key) {
             key(key) {
                 remember {
@@ -74,7 +74,7 @@ public fun SceneSetupNavEntryDecorator(): NavEntryDecorator<Any> {
             }
         }
 
-        if (LocalEntriesToRenderInCurrentScene.current.contains(entry.key)) {
+        if (LocalEntriesToRenderInCurrentScene.current.contains(key)) {
             key(key) {
                 // In case the key is removed from the backstack while this is still
                 // being rendered, we remember the MutableState directly to allow
@@ -83,7 +83,7 @@ public fun SceneSetupNavEntryDecorator(): NavEntryDecorator<Any> {
                     movableContentContentHolderMap.getValue(key)
                 }
                 // Update the state holder with the actual entry content
-                movableContentContentHolder.value = { entry.content(key) }
+                movableContentContentHolder.value = { entry.Content() }
                 // In case the key is removed from the backstack while this is still
                 // being rendered, we remember the movableContent directly to allow
                 // rendering it while we are animating out.
@@ -97,7 +97,7 @@ public fun SceneSetupNavEntryDecorator(): NavEntryDecorator<Any> {
 
 /**
  * The entry keys to render in the current [Scene], in the sense of the target of the animation for
- * an [AnimatedContent] that is transitioning between different scenes.
+ * an [androidx.compose.animation.AnimatedContent] that is transitioning between different scenes.
  */
 public val LocalEntriesToRenderInCurrentScene: ProvidableCompositionLocal<Set<Any>> =
     compositionLocalOf {

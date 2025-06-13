@@ -532,6 +532,11 @@ package androidx.test.uiautomator {
     method public static androidx.test.uiautomator.UiObject2 scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public static androidx.test.uiautomator.UiObject2 scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public static android.graphics.Bitmap takeScreenshot(androidx.test.uiautomator.UiObject2);
+    method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2);
+    method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2, optional long stableTimeoutMs);
+    method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2, optional long stableTimeoutMs, optional long stableIntervalMs);
+    method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2, optional long stableTimeoutMs, optional long stableIntervalMs, optional long stablePollIntervalMs);
+    method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2, optional long stableTimeoutMs, optional long stableIntervalMs, optional long stablePollIntervalMs, optional boolean requireStableScreenshot);
   }
 
   public class UiObjectNotFoundException extends java.lang.Exception {

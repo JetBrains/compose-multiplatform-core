@@ -95,7 +95,7 @@ internal abstract class CredentialProviderController<
          * @return a boolean indicating if the get flow had an error
          */
         @JvmStatic
-        protected fun maybeReportErrorResultCodeGet(
+        internal fun maybeReportErrorResultCodeGet(
             resultCode: Int,
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (GetCredentialException) -> Unit,
@@ -118,7 +118,7 @@ internal abstract class CredentialProviderController<
          * exception.
          */
         @JvmStatic
-        protected fun cancelOrCallbackExceptionOrResult(
+        internal fun cancelOrCallbackExceptionOrResult(
             cancellationSignal: CancellationSignal?,
             onResultOrException: () -> Unit,
         ) {

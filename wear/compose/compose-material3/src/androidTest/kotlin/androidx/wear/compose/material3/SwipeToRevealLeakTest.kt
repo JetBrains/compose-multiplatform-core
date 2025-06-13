@@ -31,6 +31,7 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.wear.compose.material3.SwipeToRevealDefaults.SingleActionAnchorWidth
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
 import leakcanary.DetectLeaksAfterTestSuccess
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -42,6 +43,7 @@ class SwipeToRevealLeakTest {
     val ruleChain: RuleChain =
         RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(composeTestRule)
 
+    @Ignore("b/391620495")
     @Test
     fun shouldNotLeak() {
         composeTestRule.setContent {

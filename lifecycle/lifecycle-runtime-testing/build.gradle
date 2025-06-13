@@ -28,15 +28,19 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.testing"
+    }
     desktop()
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
+    mingwX64()
     js()
     wasmJs()
 
@@ -68,6 +72,10 @@ androidXMultiplatform {
 
         androidMain {
             dependsOn(jvmMain)
+        }
+
+        androidUnitTest {
+            dependsOn(jvmTest)
         }
 
         androidInstrumentedTest {
@@ -133,8 +141,4 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Testing utilities for 'lifecycle' artifact"
-}
-
-android {
-    namespace = "androidx.lifecycle.testing"
 }

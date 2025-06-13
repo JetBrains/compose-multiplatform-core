@@ -75,6 +75,8 @@ fun runMetalavaWithArgs(
                 // Don't track annotations that aren't needed for review or checking compat.
                 "--exclude-annotation",
                 "androidx.annotation.ReplaceWith",
+                "--exclude-annotation",
+                "androidx.compose.runtime.ComposableInferredTarget",
             )
     val workQueue = workerExecutor.processIsolation()
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->

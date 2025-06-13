@@ -29,12 +29,17 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3"
+        androidResources.enable = true
+        // TODO(b/345531033)
+        experimentalProperties["android.lint.useK2Uast"] = false
+    }
     desktop()
     mac()
     ios()
@@ -265,11 +270,4 @@ androidx {
     metalavaK2UastEnabled = false
     samples(project(":compose:material3:material3:material3-samples"))
     addGoldenImageAssets()
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material3"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }

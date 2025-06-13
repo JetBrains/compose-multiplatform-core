@@ -822,7 +822,8 @@ public class BiometricManager {
      * it directly, instead of via canAuthenticate().
      */
     @SuppressLint("WrongConstant")
-    boolean isIdentityCheckAvailable() {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public boolean isIdentityCheckAvailable() {
         if (mIsIdentityCheckAvailable != null) {
             return mIsIdentityCheckAvailable;
         }

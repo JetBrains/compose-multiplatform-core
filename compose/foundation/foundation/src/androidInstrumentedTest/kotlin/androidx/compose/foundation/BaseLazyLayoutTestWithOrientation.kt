@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation
 
+import android.content.Context
+import android.view.ViewConfiguration
+import androidx.compose.foundation.gestures.AndroidConfig
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -25,6 +28,8 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.MouseInjectionScope
+import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -175,6 +180,16 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
                 bottom = afterContentCrossAxis,
             )
         }
+
+    fun MouseInjectionScope.mouseWheelScrollAcrossMainAxis(context: Context, deltaPx: Float) {
+        with(AndroidConfig(ViewConfiguration.get(context))) {
+            if (vertical) {
+                scroll(deltaPx / getVerticalScrollFactor(), ScrollWheel.Vertical)
+            } else {
+                scroll(deltaPx / getHorizontalScrollFactor(), ScrollWheel.Horizontal)
+            }
+        }
+    }
 
     internal fun Modifier.debugBorder(color: Color = Color.Black) = border(1.dp, color)
 

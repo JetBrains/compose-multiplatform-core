@@ -32,6 +32,7 @@ import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 
 /** Specification class defining the properties metadata for [AppFunctionData]. */
 internal abstract class AppFunctionDataSpec {
@@ -265,6 +266,25 @@ internal abstract class AppFunctionDataSpec {
             componentMetadata: AppFunctionComponentsMetadata,
         ): AppFunctionDataSpec {
             return ParametersSpec(parameterMetadataList, componentMetadata)
+        }
+
+        fun create(
+            responseMetadata: AppFunctionResponseMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ): AppFunctionDataSpec {
+            return ObjectSpec(
+                AppFunctionObjectTypeMetadata(
+                    properties =
+                        mapOf(
+                            ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE to
+                                responseMetadata.valueType
+                        ),
+                    required = listOf(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE),
+                    qualifiedName = null,
+                    isNullable = false,
+                ),
+                componentMetadata,
+            )
         }
     }
 }

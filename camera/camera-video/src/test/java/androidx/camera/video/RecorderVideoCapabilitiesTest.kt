@@ -403,43 +403,6 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
     }
 
     @Test
-    fun canGetHighSpeedSupportedFrameRateRanges() {
-        assumeTrue(isHighSpeed)
-
-        // UHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(UHD, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(UHD, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240)
-
-        // FHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(FHD, SDR)).isEmpty()
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(FHD, HLG_10_BIT)).isEmpty()
-
-        // HD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HD, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HD, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-
-        // SD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(SD, SDR)).isEmpty()
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(SD, HLG_10_BIT)).isEmpty()
-
-        // HIGHEST is UHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HIGHEST, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HIGHEST, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240)
-
-        // LOWEST is HD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(LOWEST, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(LOWEST, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-    }
-
-    @Test
     fun createBySourceCodecCapabilities_additionalQualitiesAreSupported() {
         // TODO(b/399585664): Remove this assumption when high speed quality exploration is
         //  supported.

@@ -122,7 +122,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          * Factory method for AnchorEntity.
          *
          * @param adapter JxrPlatformAdapter to use.
-         * @param bounds Bounds for this Anchor Entity.
+         * @param bounds Bounds for this Anchor Entity. Panels are inherently 2D, so `depth` of the
+         *   [FloatSize3d] is ignored.
          * @param planeType Orientation for the plane to which this Anchor should attach.
          * @param planeSemantic Semantics for the plane to which this Anchor should attach.
          * @param timeout Maximum time to search for the anchor, if a suitable plane is not found

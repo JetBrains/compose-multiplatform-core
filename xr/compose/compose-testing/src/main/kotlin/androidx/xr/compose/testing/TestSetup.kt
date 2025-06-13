@@ -22,10 +22,18 @@ import android.content.ContextWrapper
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.LocalSpatialConfiguration
+import androidx.xr.compose.platform.SpatialCapabilities
+import androidx.xr.compose.platform.SpatialConfiguration
+import androidx.xr.compose.unit.DpVolumeSize
+import androidx.xr.compose.unit.Meter
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
@@ -39,8 +47,15 @@ import androidx.xr.runtime.internal.HitTestResult
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity
 import androidx.xr.runtime.internal.PixelDimensions
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_3D_CONTENT
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_APP_ENVIRONMENT
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
+import androidx.xr.scenecore.scene
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
 
@@ -51,9 +66,8 @@ import java.util.concurrent.Executor
  * provides control over whether XR features are enabled and whether the application should operate
  * in "full space" mode or "home space" mode.
  *
- * The created fake Session is then provided down the Composable tree using [LocalSession], and a
- * boolean indicating XR availability is provided via [LocalHasXrSpatialFeature]. If [isXrEnabled]
- * is false, the Session will not be created.
+ * The created fake Session is then provided down the Composable tree using [LocalSession]. If
+ * [isXrEnabled] is false, the Session will not be created.
  *
  * @param isXrEnabled Whether the system XR Spatial feature should be enabled. If false, the Session
  *   will not be created.
@@ -87,7 +101,12 @@ public fun TestSetup(
 
     CompositionLocalProvider(
         LocalSession provides activity.session,
-        LocalHasXrSpatialFeature provides isXrEnabled,
+        LocalSpatialConfiguration provides
+            (activity.session?.let { TestSessionSpatialConfiguration(it) }
+                ?: LocalSpatialConfiguration.current),
+        LocalSpatialCapabilities provides
+            (activity.session?.let { TestSessionSpatialCapabilities(it) }
+                ?: SpatialCapabilities.NoCapabilities),
         content = content,
     )
 }
@@ -290,3 +309,51 @@ private constructor(
             TestJxrPlatformAdapter(fakeRuntimeBase = createFakeRuntime(activity))
     }
 }
+
+private class TestSessionSpatialCapabilities(session: Session) : SpatialCapabilities {
+    private var capabilities by
+        mutableStateOf(session.scene.spatialCapabilities).apply {
+            session.scene.addSpatialCapabilitiesChangedListener { value = it }
+        }
+
+    override val isSpatialUiEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_UI)
+
+    override val isContent3dEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_3D_CONTENT)
+
+    override val isAppEnvironmentEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_APP_ENVIRONMENT)
+
+    override val isPassthroughControlEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL)
+
+    override val isSpatialAudioEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_SPATIAL_AUDIO)
+}
+
+/** A [SpatialConfiguration] that is attached to the current [Session]. */
+private class TestSessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
+    override val hasXrSpatialFeature: Boolean = true
+
+    override val bounds: DpVolumeSize by
+        mutableStateOf(session.scene.activitySpace.getBounds().toDpVolumeSize()).apply {
+            session.scene.activitySpace.addBoundsChangedListener { value = it.toDpVolumeSize() }
+        }
+
+    override fun requestHomeSpaceMode() {
+        session.scene.spatialEnvironment.requestHomeSpaceMode()
+    }
+
+    override fun requestFullSpaceMode() {
+        session.scene.spatialEnvironment.requestFullSpaceMode()
+    }
+}
+
+/**
+ * Creates a [DpVolumeSize] from a [FloatSize3d] object in meters.
+ *
+ * @return a [DpVolumeSize] object representing the same volume size in Dp.
+ */
+private fun FloatSize3d.toDpVolumeSize(): DpVolumeSize =
+    DpVolumeSize(Meter(width).toDp(), Meter(height).toDp(), Meter(depth).toDp())

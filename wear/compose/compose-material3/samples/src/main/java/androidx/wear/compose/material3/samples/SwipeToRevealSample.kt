@@ -44,7 +44,6 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.RevealValue
-import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
@@ -190,7 +189,7 @@ fun SwipeToRevealNoPartiallyRevealedStateSample() {
 @Preview
 @Composable
 @Sampled
-fun SwipeToRevealWithTransformingLazyColumnSample() {
+fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()

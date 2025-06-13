@@ -41,6 +41,7 @@ import androidx.compose.material3.samples.ButtonSample
 import androidx.compose.material3.samples.ButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ButtonWithIconSample
 import androidx.compose.material3.samples.CardSample
+import androidx.compose.material3.samples.CarouselWithShowAllButtonSample
 import androidx.compose.material3.samples.CenteredHorizontalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.CenteredSliderSample
 import androidx.compose.material3.samples.CenteredVerticalFloatingToolbarWithFabSample
@@ -110,6 +111,7 @@ import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
 import androidx.compose.material3.samples.FloatingActionButtonMenuSample
 import androidx.compose.material3.samples.FloatingActionButtonSample
 import androidx.compose.material3.samples.FullScreenSearchBarScaffoldSample
+import androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarAsScaffoldFabSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.HorizontalMultiBrowseCarouselSample
@@ -607,12 +609,28 @@ val CarouselExamples =
             HorizontalUncontainedCarouselSample()
         },
         Example(
+            name = "HorizontalCenteredHeroCarouselSample",
+            description = CarouselExampleDescription,
+            sourceUrl = CarouselExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            HorizontalCenteredHeroCarouselSample()
+        },
+        Example(
             name = "FadingHorizontalMultiBrowseCarouselSample",
             description = CarouselExampleDescription,
             sourceUrl = CarouselExampleSourceUrl,
             isExpressive = false,
         ) {
             FadingHorizontalMultiBrowseCarouselSample()
+        },
+        Example(
+            name = "CarouselWithShowAllButtonSample",
+            description = CarouselExampleDescription,
+            sourceUrl = CarouselExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            CarouselWithShowAllButtonSample()
         },
     )
 

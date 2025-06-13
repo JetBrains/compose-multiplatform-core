@@ -61,7 +61,9 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         private set
 
     private var measuredOnce = false
-    private var placedOnce = false
+    var placedOnce = false
+        private set
+
     val lastConstraints: Constraints?
         get() =
             if (measuredOnce) {
@@ -635,16 +637,13 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         requirePrecondition(!layoutNode.isDeactivated) { "place is called on a deactivated node" }
         layoutState = LayoutState.LayingOut
 
-        val firstPlacement = !placedOnce
         lastPosition = position
         lastZIndex = zIndex
         lastLayerBlock = layerBlock
         lastExplicitLayer = layer
-        placedOnce = true
         onNodePlacedCalled = false
 
         val owner = layoutNode.requireOwner()
-        owner.rectManager.onLayoutPositionChanged(layoutNode, position, firstPlacement)
         if (!layoutPending && isPlaced) {
             outerCoordinator.placeSelfApparentToRealOffset(position, zIndex, layerBlock, layer)
             onNodePlaced()
@@ -663,6 +662,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         }
 
         layoutState = LayoutState.Idle
+        placedOnce = true
     }
 
     /**

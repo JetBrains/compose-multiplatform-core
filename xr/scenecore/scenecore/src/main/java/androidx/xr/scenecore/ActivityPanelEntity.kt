@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 
@@ -35,9 +36,10 @@ import androidx.xr.runtime.math.Pose
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ActivityPanelEntity
 private constructor(
+    private val lifecycleManager: LifecycleManager,
     private val rtActivityPanelEntity: RtActivityPanelEntity,
     entityManager: EntityManager,
-) : PanelEntity(rtActivityPanelEntity, entityManager) {
+) : PanelEntity(lifecycleManager, rtActivityPanelEntity, entityManager) {
 
     /**
      * Launches an activity in the given panel. Subsequent calls to this method will replace the
@@ -76,6 +78,7 @@ private constructor(
          * @param pose Pose for this panel, relative to its parent.
          */
         internal fun create(
+            lifecycleManager: LifecycleManager,
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
             windowBoundsPx: IntSize2d,
@@ -84,6 +87,7 @@ private constructor(
             pose: Pose = Pose.Identity,
         ): ActivityPanelEntity =
             ActivityPanelEntity(
+                lifecycleManager,
                 adapter.createActivityPanelEntity(
                     pose,
                     windowBoundsPx.toRtPixelDimensions(),
@@ -113,6 +117,7 @@ private constructor(
             pose: Pose = Pose.Identity,
         ): ActivityPanelEntity =
             ActivityPanelEntity.create(
+                session.runtime.lifecycleManager,
                 session.platformAdapter,
                 session.scene.entityManager,
                 IntSize2d(windowBoundsPx.width(), windowBoundsPx.height()),

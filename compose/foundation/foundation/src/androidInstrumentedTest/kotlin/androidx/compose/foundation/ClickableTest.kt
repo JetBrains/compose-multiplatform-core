@@ -6609,6 +6609,37 @@ class ClickableTest {
 
         rule.onNodeWithTag(tag).assertIsFocused()
     }
+
+    @Test
+    fun lazilyCreatedIndicatorReceivesPressedInteraction() {
+        var created = false
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { interactionSource, coroutineScope ->
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(modifier = Modifier.testTag("clickable").clickable {})
+            }
+        }
+
+        rule.runOnIdle { assertThat(created).isFalse() }
+
+        // The touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
 }
 
 /**

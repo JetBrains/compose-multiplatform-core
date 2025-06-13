@@ -17,10 +17,21 @@
 package androidx.credentials.playservices.controllers.identitycredentials.createpublickeycredential
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
 import android.os.CancellationSignal
+import android.os.Handler
+import android.os.Looper
+import android.os.ResultReceiver
+import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
+import androidx.core.os.BundleCompat.getParcelable
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
@@ -28,7 +39,10 @@ import androidx.credentials.exceptions.CreateCredentialNoCreateOptionException
 import androidx.credentials.exceptions.CreateCredentialUnknownException
 import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController
 import androidx.credentials.playservices.controllers.CredentialProviderController
+import androidx.credentials.playservices.controllers.identityauth.HiddenActivity
+import androidx.credentials.provider.PendingIntentHandler
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.UnsupportedApiCallException
@@ -38,6 +52,7 @@ import com.google.android.gms.identitycredentials.IdentityCredentialManager
 import java.util.concurrent.Executor
 
 /** A controller to handle the CreateCredential flow with play services. */
+@RequiresApi(Build.VERSION_CODES.M)
 internal class CreatePublicKeyCredentialController(private val context: Context) :
     CredentialProviderController<
         CreatePublicKeyCredentialRequest,
@@ -46,6 +61,44 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         androidx.credentials.CreateCredentialResponse,
         CreateCredentialException,
     >(context) {
+
+    /** The callback object state, used in the protected handleResponse method. */
+    @VisibleForTesting
+    private lateinit var callback:
+        CredentialManagerCallback<
+            androidx.credentials.CreateCredentialResponse,
+            CreateCredentialException,
+        >
+
+    /** The callback requires an executor to invoke it. */
+    @VisibleForTesting private lateinit var executor: Executor
+
+    /**
+     * The cancellation signal, which is shuttled around to stop the flow at any moment prior to
+     * returning data.
+     */
+    @VisibleForTesting private var cancellationSignal: CancellationSignal? = null
+    private val resultReceiver =
+        object : ResultReceiver(Handler(Looper.getMainLooper())) {
+            public override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
+                if (
+                    maybeReportErrorFromResultReceiver(
+                        resultData,
+                        CredentialProviderBaseController.Companion::
+                            createCredentialExceptionTypeToException,
+                        executor = executor,
+                        callback = callback,
+                        cancellationSignal,
+                    )
+                )
+                    return
+                handleResponse(
+                    resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
+                    resultCode,
+                    getParcelable(resultData, RESULT_DATA_TAG, Intent::class.java),
+                )
+            }
+        }
 
     override fun invokePlayServices(
         request: CreatePublicKeyCredentialRequest,
@@ -57,6 +110,9 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         executor: Executor,
         cancellationSignal: CancellationSignal?,
     ) {
+        this.cancellationSignal = cancellationSignal
+        this.callback = callback
+        this.executor = executor
         if (CredentialProviderPlayServicesImpl.Companion.cancellationReviewer(cancellationSignal)) {
             return
         }
@@ -65,11 +121,35 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         IdentityCredentialManager.Companion.getClient(context)
             .createCredential(convertedRequest)
             .addOnSuccessListener {
+                val pendingIntent = it.pendingIntent
                 val createCredentialResponse: CreateCredentialResponse? =
                     it.createCredentialResponse
-                if (createCredentialResponse == null) {
+                if (pendingIntent == null && createCredentialResponse == null) {
                     cancelOrCallbackExceptionOrResult(cancellationSignal) {
                         executor.execute { callback.onError(CreateCredentialUnknownException()) }
+                    }
+                    return@addOnSuccessListener
+                }
+                if (pendingIntent != null) {
+                    val hiddenIntent = Intent(context, HiddenActivity::class.java)
+                    generateHiddenActivityIntent(
+                        resultReceiver,
+                        hiddenIntent,
+                        CREATE_PUBLIC_KEY_CREDENTIAL_TAG,
+                    )
+                    hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, pendingIntent)
+                    try {
+                        context.startActivity(hiddenIntent)
+                    } catch (_: Exception) {
+                        cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                            this.executor.execute {
+                                this.callback.onError(
+                                    CreateCredentialUnknownException(
+                                        ERROR_MESSAGE_START_ACTIVITY_FAILED
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
                 if (createCredentialResponse != null) {
@@ -81,8 +161,10 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
                         return@addOnSuccessListener
                     }
                 }
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    executor.execute { callback.onError(CreateCredentialUnknownException()) }
+                if (pendingIntent == null) {
+                    cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                        executor.execute { callback.onError(CreateCredentialUnknownException()) }
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -91,6 +173,55 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
                     executor.execute { callback.onError(exception) }
                 }
             }
+    }
+
+    internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int, data: Intent?) {
+        if (uniqueRequestCode != CONTROLLER_REQUEST_CODE) {
+            Log.w(
+                TAG,
+                "Returned request code " +
+                    "$CONTROLLER_REQUEST_CODE does not match what was given $uniqueRequestCode",
+            )
+            return
+        }
+        if (
+            maybeReportErrorResultCodeCreate(
+                resultCode,
+                { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
+                { e -> this.executor.execute { this.callback.onError(e) } },
+                cancellationSignal,
+            )
+        ) {
+            return
+        }
+        if (data == null) {
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                executor.execute {
+                    callback.onError(CreateCredentialUnknownException("No provider data returned."))
+                }
+            }
+        } else {
+            val response =
+                PendingIntentHandler.retrieveCreateCredentialResponse(
+                    PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
+                    data,
+                )
+            if (response != null) {
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    executor.execute { callback.onResult(response) }
+                }
+            } else {
+                val providerException = PendingIntentHandler.retrieveCreateCredentialException(data)
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    executor.execute {
+                        callback.onError(
+                            providerException
+                                ?: CreateCredentialUnknownException("No provider data returned")
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun fromGmsException(e: Throwable): CreateCredentialException {
@@ -159,5 +290,7 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
         fun getInstance(context: Context): CreatePublicKeyCredentialController {
             return CreatePublicKeyCredentialController(context)
         }
+
+        private const val TAG = "CreatePublicKey"
     }
 }

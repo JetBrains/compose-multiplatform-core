@@ -27,12 +27,14 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 36
+        namespace = "androidx.compose.material3.adaptive.navigation3"
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -79,9 +81,4 @@ androidx {
     inceptionYear = "2025"
     description = "Compose Material Design Adaptive Library"
     doNotDocumentReason = "Not published to maven"
-}
-
-android {
-    compileSdk = 36
-    namespace = "androidx.compose.material3.adaptive.navigation3"
 }

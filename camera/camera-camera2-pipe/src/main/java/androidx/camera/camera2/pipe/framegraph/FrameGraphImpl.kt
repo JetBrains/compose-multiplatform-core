@@ -20,6 +20,7 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameGraph
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Parameters
@@ -39,7 +40,7 @@ internal class FrameGraphImpl
 constructor(
     private val cameraGraph: CameraGraph,
     private val frameDistributor: FrameDistributor,
-    private val frameBuffers: FrameBuffers,
+    private val frameGraphBuffers: FrameGraphBuffers,
     @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope,
 ) : FrameGraph {
     override val streams = cameraGraph.streams
@@ -55,7 +56,7 @@ constructor(
 
     init {
         // Wire up the frameStartedListener.
-        frameDistributor.frameStartedListener = frameBuffers
+        frameDistributor.frameStartedListener = frameGraphBuffers
     }
 
     override fun start() {
@@ -74,8 +75,8 @@ constructor(
         streamIds: Set<StreamId>,
         parameters: Map<Any, Any?>,
         capacity: Int,
-    ): FrameGraph.FrameBuffer {
-        return frameBuffers.attach(streamIds, parameters, capacity)
+    ): FrameBuffer {
+        return frameGraphBuffers.attach(streamIds, parameters, capacity)
     }
 
     override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {

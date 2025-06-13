@@ -22,20 +22,21 @@
  * modifying its settings.
  */
 
-
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
+import com.google.devtools.ksp.gradle.KspAATask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("androidx.stableaidl")
     id("com.google.devtools.ksp")
 }
-
 
 configurations {
     // Configuration for resolving shared archive file of androidx's SQLite compilation
@@ -48,30 +49,32 @@ configurations {
     }
 }
 
-android {
-    sourceSets {
-        main {
-            // Align AGP main source set root with KMP
-            root = 'src/androidMain'
-        }
-    }
-    buildFeatures {
-        aidl = true
-    }
-    buildTypes.configureEach {
-        consumerProguardFiles("src/androidMain/proguard-rules.pro")
-        stableAidl {
-            version = 1
-        }
-    }
-    testOptions.unitTests.returnDefaultValues = true
-    namespace = "androidx.room"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
-}
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        withJava()
+        namespace = "androidx.room"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                    new File(project.projectDir, "src/androidMain/proguard-rules.pro")
+            )
+        }
+        stableAidl {
+            version 1
+        }
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
+        experimentalProperties["android.lint.useK2Uast"] = false
+
+        // Needed for api tasks and docs generation
+        sourceSets {
+            androidMain {
+                kotlin.srcDirs += 'src/androidMain/java'
+            }
+        }
+    }
     ios() {
         // Link to sqlite3 available in iOS
         binaries.configureEach {
@@ -218,7 +221,7 @@ androidXMultiplatform {
 dependencies {
     lintChecks(project(":room:room-runtime-lint"))
     sqliteSharedArchive(project(":sqlite:sqlite-bundled"))
-    add("kspAndroidAndroidTest", project(":room:room-compiler"))
+    add("kspAndroidInstrumentedTest", project(":room:room-compiler"))
 }
 
 androidx {
@@ -229,3 +232,14 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(AndroidLintAnalysisTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(LintModelWriterTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}

@@ -78,14 +78,13 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
          * Returns the handedness of the user's primary hand.
          *
          * @param resolver the [ContentResolver] to use to retrieve the setting.
-         * @return the [Handedness] of the user's primary hand. If the setting is not configured,
-         *   returns [Handedness.UNKNOWN].
+         * @return the [HandSide] of the user's primary hand. If the setting is not configured,
+         *   returns [HandSide.UNKNOWN].
          */
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        public fun getHandedness(resolver: ContentResolver): Handedness =
-            Handedness.values()[
-                    System.getInt(resolver, PRIMARY_HAND_SETTING_NAME, Handedness.UNKNOWN.ordinal)]
+        public fun getPrimaryHandSide(resolver: ContentResolver): HandSide =
+            HandSide.values()[
+                    System.getInt(resolver, PRIMARY_HAND_SETTING_NAME, HandSide.UNKNOWN.ordinal)]
 
         private fun getPerceptionStateExtender(session: Session): PerceptionStateExtender {
             val perceptionStateExtender: PerceptionStateExtender? =
@@ -96,8 +95,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
     }
 
     /** The handedness of the user's hand. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public enum class Handedness {
+    public enum class HandSide {
         LEFT,
         RIGHT,
         /** The handedness is not available if it is not explicitly set. */

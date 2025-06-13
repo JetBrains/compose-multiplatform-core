@@ -27,6 +27,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.InitializationException
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.internal.StreamSpecsCalculator
 
 /**
  * The [CameraSelectionOptimizer] is responsible for determining available camera Ids based on
@@ -39,6 +40,7 @@ internal class CameraSelectionOptimizer {
         fun getSelectedAvailableCameraIds(
             cameraFactory: CameraFactory,
             availableCamerasSelector: CameraSelector?,
+            streamSpecsCalculator: StreamSpecsCalculator,
         ): List<String> {
             try {
                 val availableCameraIds = mutableListOf<String>()
@@ -73,7 +75,7 @@ internal class CameraSelectionOptimizer {
                         cameraAppComponent
                             .cameraBuilder()
                             .config(CameraConfig(CameraId(id)))
-                            .streamSpecsCalculator(cameraFactory.streamSpecsCalculator)
+                            .streamSpecsCalculator(streamSpecsCalculator)
                             .build()
                             .getCameraInternal()
                             .cameraInfoInternal

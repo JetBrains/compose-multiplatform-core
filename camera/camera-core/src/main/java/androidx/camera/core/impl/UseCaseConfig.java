@@ -80,16 +80,16 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
             Option.create("camerax.core.useCase.surfaceOccupancyPriority", int.class);
 
     /**
+     * Option: camerax.core.useCase.sessionType
+     */
+    Option<Integer> OPTION_SESSION_TYPE =
+            Config.Option.create("camerax.core.useCase.sessionType", int.class);
+
+    /**
      * Option: camerax.core.useCase.targetFrameRate
      */
     Option<Range<Integer>> OPTION_TARGET_FRAME_RATE =
             Config.Option.create("camerax.core.useCase.targetFrameRate", Range.class);
-
-    /**
-     * Option: camerax.core.useCase.targetHighSpeedFrameRate
-     */
-    Option<Range<Integer>> OPTION_TARGET_HIGH_SPEED_FRAME_RATE =
-            Config.Option.create("camerax.core.useCase.targetHighSpeedFrameRate", Range.class);
 
     /**
      * Option: camerax.core.useCase.zslDisabled
@@ -271,6 +271,27 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     }
 
     /**
+     * Retrieves the session type
+     *
+     * @param valueIfMissing The value to return if this configuration option has not been set.
+     * @return the stored value or <code>valueIfMissing</code> if the value does not exist in
+     * this configuration
+     */
+    default int getSessionType(int valueIfMissing) {
+        return retrieveOption(OPTION_SESSION_TYPE, valueIfMissing);
+    }
+
+    /**
+     * Retrieves the session type
+     *
+     * @return The stored value, if it exists in this configuration.
+     * @throws IllegalArgumentException if the option does not exist in this configuration.
+     */
+    default int getSessionType() {
+        return retrieveOption(OPTION_SESSION_TYPE);
+    }
+
+    /**
      * Retrieves target frame rate
      *
      * @param valueIfMissing The value to return if this configuration option has not been set.
@@ -289,28 +310,6 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
      */
     default @NonNull Range<Integer> getTargetFrameRate() {
         return retrieveOption(OPTION_TARGET_FRAME_RATE);
-    }
-
-    /**
-     * Retrieves target high speed frame rate
-     *
-     * @param valueIfMissing The value to return if this configuration option has not been set.
-     * @return the stored value or <code>valueIfMissing</code> if the value does not exist in
-     * this configuration
-     */
-    default @Nullable Range<Integer> getTargetHighSpeedFrameRate(
-            @Nullable Range<Integer> valueIfMissing) {
-        return retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE, valueIfMissing);
-    }
-
-    /**
-     * Retrieves the target high speed frame rate
-     *
-     * @return The stored value, if it exists in this configuration.
-     * @throws IllegalArgumentException if the option does not exist in this configuration.
-     */
-    default @NonNull Range<Integer> getTargetHighSpeedFrameRate() {
-        return retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE);
     }
 
     /**

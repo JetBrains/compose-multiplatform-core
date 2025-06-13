@@ -19,6 +19,7 @@
 package androidx.xr.scenecore
 
 import android.util.Log
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.Entity as RtEntity
@@ -29,29 +30,23 @@ import androidx.xr.runtime.math.Vector3
  * Interface for a spatial Entity. An Entity's [Pose]s are represented as being relative to their
  * parent. Applications create and manage Entity instances to construct spatial scenes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface Entity : ScenePose {
 
     /**
-     * Sets this Entity to be represented in the parent's coordinate space. From a User's
-     * perspective, as the parent moves, this Entity will move with it. Setting the parent to null
-     * will cause the Entity to not be rendered.
-     *
-     * @param parent The [Entity] to attach to.
+     * The parent of this Entity, from which this Entity will inherit most of its properties. For
+     * example, this Entity's [Pose] is defined in relation to the parent Entity's coordinate space,
+     * so as the parent moves, this Entity will move with it. Setting the parent to null will remove
+     * the Entity from the scene graph.
      */
-    public fun setParent(parent: Entity?)
+    public var parent: Entity?
+
+    /** Alternate text for this Entity to be consumed by Accessibility systems. */
+    public var contentDescription: String
 
     /**
-     * Returns the parent of this Entity.
-     *
-     * @return The [Entity] that this Entity is attached to. Returns null if this Entity has no
-     *   parent and is the root of its hierarchy.
-     */
-    public fun getParent(): Entity?
-
-    /**
-     * Sets an Entity to be represented in this coordinate space. From a User's perspective, as this
-     * Entity moves, the child Entity will move with it.
+     * Sets an Entity to be a child of this Entity in the scene graph. The child Entity will inherit
+     * properties from the parent, and will be represented in the parent's coordinate space. From a
+     * User's perspective, as this Entity moves, the child Entity will move with it.
      *
      * @param child The [Entity] to be attached.
      */
@@ -60,53 +55,52 @@ public interface Entity : ScenePose {
     /* TODO b/362296608: Add a getChildren() method. */
 
     /**
-     * Sets the pose for this Entity. The pose given is set relative to the space provided.
+     * Sets the [Pose] for this Entity. The Pose given is set relative to the [Space] provided.
      *
      * @param pose The [Pose] offset from the parent.
      * @param relativeTo Set the pose relative to given Space. Default value is the parent space.
      */
     public fun setPose(pose: Pose, @SpaceValue relativeTo: Int = Space.PARENT)
 
-    /**
-     * Sets the pose for this Entity, relative to its parent.
-     *
-     * @param pose The [Pose] offset from the parent.
-     */
+    /** Sets the [Pose] for this Entity, relative to its parent. */
     public fun setPose(pose: Pose): Unit = setPose(pose, Space.PARENT)
 
     /**
-     * Returns the pose for this entity, relative to the provided space.
+     * Returns the [Pose] for this Entity, relative to the provided [Space].
      *
-     * @param relativeTo Get the pose relative to given Space. Default value is the parent space.
-     * @return Current [Pose] of the entity relative to the given space.
+     * @param relativeTo Get the Pose relative to given Space. Default value is the parent space.
+     * @return Current [Pose] of the Entity relative to the given space.
      */
     public fun getPose(@SpaceValue relativeTo: Int = Space.PARENT): Pose
 
     /**
-     * Returns the pose for this entity, relative to its parent.
+     * Returns the [Pose] for this Entity, relative to its parent.
      *
      * @return Current [Pose] offset from the parent.
      */
     public fun getPose(): Pose = getPose(Space.PARENT)
 
     /**
-     * Sets the scale of this entity relative to given space. This value will affect the rendering
+     * Sets the scale of this Entity relative to given Space. This value will affect the rendering
      * of this Entity's children. As the scale increases, this will uniformly stretch the content of
      * the Entity.
      *
      * @param scale The uniform scale factor.
-     * @param relativeTo Set the scale relative to given Space. Default value is the parent space.
+     * @param relativeTo Set the scale relative to given Space. Default value is the parent Space.
      */
-    public fun setScale(scale: Float, @SpaceValue relativeTo: Int = Space.PARENT)
+    public fun setScale(
+        @FloatRange(from = 0.0) scale: Float,
+        @SpaceValue relativeTo: Int = Space.PARENT,
+    )
 
     /**
-     * Sets the scale of this entity relative to its parent. This value will affect the rendering of
+     * Sets the scale of this Entity relative to its parent. This value will affect the rendering of
      * this Entity's children. As the scale increases, this will uniformly stretch the content of
      * the Entity.
      *
      * @param scale The uniform scale factor from the parent.
      */
-    public fun setScale(scale: Float): Unit = setScale(scale, Space.PARENT)
+    public fun setScale(@FloatRange(from = 0.0) scale: Float): Unit = setScale(scale, Space.PARENT)
 
     /**
      * Returns the scale of this entity, relative to given space.
@@ -114,69 +108,102 @@ public interface Entity : ScenePose {
      * @param relativeTo Get the scale relative to given Space. Default value is the parent space.
      * @return Current uniform scale applied to self and children.
      */
-    public fun getScale(@SpaceValue relativeTo: Int = Space.PARENT): Float
+    @FloatRange(from = 0.0) public fun getScale(@SpaceValue relativeTo: Int = Space.PARENT): Float
 
     /**
-     * Returns the local scale of this entity, not inclusive of the parent's scale.
+     * Returns the local scale of this Entity, not inclusive of the parent's scale.
      *
      * @return Current uniform scale applied to self and children.
      */
-    public fun getScale(): Float = getScale(Space.PARENT)
+    @FloatRange(from = 0.0) public fun getScale(): Float = getScale(Space.PARENT)
 
     /**
-     * Sets the alpha transparency of the Entity relative to given space. Values are in the range
+     * Sets the alpha transparency of the Entity relative to given Space. Values are in the range
      * [0, 1] with 0 being fully transparent and 1 being fully opaque.
      *
      * This value will affect the rendering of this Entity's children. Children of this node will
      * have their alpha levels multiplied by this value and any alpha of this entity's ancestors.
      *
      * @param alpha Alpha transparency level for the Entity.
-     * @param relativeTo Sets alpha relative to given Space. Default value is the parent space.
+     * @param relativeTo Sets alpha relative to given Space. Default value is the parent Space.
      */
-    public fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int = Space.PARENT)
+    // TODO - b/421456320: Can a child have an alpha greater than its parent?
+    public fun setAlpha(
+        @FloatRange(from = 0.0, to = 1.0) alpha: Float,
+        @SpaceValue relativeTo: Int = Space.PARENT,
+    )
 
     /**
      * Sets the alpha transparency of the Entity and its children. Values are in the range [0, 1]
      * with 0 being fully transparent and 1 being fully opaque.
      *
      * This value will affect the rendering of this Entity's children. Children of this node will
-     * have their alpha levels multiplied by this value and any alpha of this entity's ancestors.
+     * have their alpha levels multiplied by this value and any alpha of this Entity's ancestors.
      */
-    public fun setAlpha(alpha: Float): Unit = setAlpha(alpha, Space.PARENT)
+    public fun setAlpha(@FloatRange(from = 0.0, to = 1.0) alpha: Float): Unit =
+        setAlpha(alpha, Space.PARENT)
 
     /**
-     * Returns the alpha transparency set for this Entity, relative to given space.
+     * Returns the alpha transparency set for this Entity, relative to given Space.
      *
      * @param relativeTo Gets alpha relative to given Space. Default value is the parent space.
      */
+    @FloatRange(from = 0.0, to = 1.0)
     public fun getAlpha(@SpaceValue relativeTo: Int = Space.PARENT): Float
 
     /**
      * Returns the alpha transparency set for this Entity.
      *
-     * This does not necessarily equal the perceived alpha of the entity as the entity may have some
-     * alpha difference applied from its parent or the system.
+     * This does not necessarily equal the perceived alpha of the Entity, as the Entity may have
+     * some alpha difference applied from its parent or the system.
      */
-    public fun getAlpha(): Float = getAlpha(Space.PARENT)
+    @FloatRange(from = 0.0, to = 1.0) public fun getAlpha(): Float = getAlpha(Space.PARENT)
 
     /**
-     * Sets the local hidden state of this Entity. When true, this Entity and all descendants will
-     * not be rendered in the scene. When the hidden state is false, an entity will be rendered if
+     * Sets the local enabled state of this Entity.
+     *
+     * When `false`, this Entity and all descendants will not be rendered in the scene, and the
+     * Entity will not respond to input events. If an Entity's local enabled state is `true`, the
+     * Entity will still be considered not enabled if at least one of its ancestors is not enabled.
+     *
+     * @param enabled The new local enabled state of this Entity.
+     */
+    @Suppress("Deprecation") public fun setEnabled(enabled: Boolean): Unit = setHidden(!enabled)
+
+    /**
+     * Returns the enabled status of this Entity.
+     *
+     * @param includeParents Whether to include the enabled status of parents in the returned value.
+     * @return If includeParents is `true`, the returned value will be `true` if this Entity or any
+     *   of its ancestors is enabled. If includeParents is `false`, the local enabled state is
+     *   returned. Regardless of the local enabled state, an Entity will be considered disabled if
+     *   any of its ancestors are disabled.
+     */
+    @Suppress("Deprecation")
+    public fun isEnabled(includeParents: Boolean = true): Boolean = !isHidden(includeParents)
+
+    /**
+     * Sets the local hidden state of this Entity. When `true`, this Entity and all descendants will
+     * not be rendered in the scene. When the hidden state is `false`, an entity will be rendered if
      * its ancestors are not hidden.
      *
      * @param hidden The new local hidden state of this Entity.
      */
+    @Deprecated("Use setEnabled(Boolean)")
+    // TODO - b/421386891: remove this deprecated method
     public fun setHidden(hidden: Boolean)
 
     /**
      * Returns the hidden status of this Entity.
      *
      * @param includeParents Whether to include the hidden status of parents in the returned value.
-     * @return If includeParents is true, the returned value will be true if this Entity or any of
-     *   its ancestors is hidden. If includeParents is false, the local hidden state is returned.
-     *   Regardless of the local hidden state, an entity will not be rendered if any of its
-     *   ancestors are hidden.
+     * @return If includeParents is `true`, the returned value will be `true` if this Entity or any
+     *   of its ancestors is hidden. If includeParents is `false`, the local hidden state is
+     *   returned. Regardless of the local hidden state, an Entity will not be rendered if any of
+     *   its ancestors are hidden.
      */
+    @Deprecated("Use isEnabled(Boolean)")
+    // TODO - b/421386891: remove this method
     public fun isHidden(includeParents: Boolean = true): Boolean
 
     /**
@@ -186,17 +213,10 @@ public interface Entity : ScenePose {
     public fun dispose()
 
     /**
-     * Sets alternate text for this entity to be consumed by Accessibility systems.
-     *
-     * @param text A11y content.
-     */
-    public fun setContentDescription(text: String)
-
-    /**
      * Adds a Component to this Entity.
      *
      * @param component the Component to be added to the Entity.
-     * @return True if given Component is added to the Entity.
+     * @return True if given Component was successfully added to the Entity.
      */
     public fun addComponent(component: Component): Boolean
 
@@ -228,6 +248,7 @@ public interface Entity : ScenePose {
 
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Suppress("HiddenSuperClass")
 public abstract class BaseEntity<out RtEntityType : RtEntity>
 internal constructor(
     internal val rtEntity: RtEntityType,
@@ -244,22 +265,22 @@ internal constructor(
 
     private val componentList = mutableListOf<Component>()
 
-    override fun setParent(parent: Entity?) {
-        if (parent == null) {
-            rtEntity.parent = null
-            return
-        }
+    override var contentDescription: String = ""
 
-        if (parent !is BaseEntity<RtEntity>) {
-            Log.e(TAG, "Parent must be a subclass of BaseEntity")
-            return
-        }
-        rtEntity.parent = parent.rtEntity
-    }
+    override var parent: Entity?
+        get() = rtEntity.parent?.let { entityManager.getEntityForRtEntity(it) }
+        set(value) {
+            if (value == null) {
+                rtEntity.parent = null
+                return
+            }
 
-    override fun getParent(): Entity? {
-        return rtEntity.parent?.let { entityManager.getEntityForRtEntity(it) }
-    }
+            if (value !is BaseEntity<RtEntity>) {
+                Log.e(TAG, "Parent must be a subclass of BaseEntity")
+                return
+            }
+            rtEntity.parent = value.rtEntity
+        }
 
     override fun addChild(child: Entity) {
         if (child !is BaseEntity<RtEntity>) {
@@ -292,8 +313,10 @@ internal constructor(
     override fun getAlpha(@SpaceValue relativeTo: Int): Float =
         rtEntity.getAlpha(relativeTo.toRtSpace())
 
+    @Deprecated("Use setEnabled(Boolean)")
     override fun setHidden(hidden: Boolean): Unit = rtEntity.setHidden(hidden)
 
+    @Deprecated("Use isEnabled(Boolean)")
     override fun isHidden(includeParents: Boolean): Boolean = rtEntity.isHidden(includeParents)
 
     override fun dispose() {
@@ -329,6 +352,4 @@ internal constructor(
         componentList.forEach { it.onDetach(this) }
         componentList.clear()
     }
-
-    override fun setContentDescription(text: String) {}
 }

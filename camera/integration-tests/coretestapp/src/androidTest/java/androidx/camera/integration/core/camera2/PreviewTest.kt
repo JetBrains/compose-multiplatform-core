@@ -138,7 +138,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var cameraProvider: ProcessCameraProvider
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private lateinit var cameraSelector: CameraSelector
     private var previewResolution: Size? = null
     private var frameSemaphore: Semaphore? = null
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -147,7 +147,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Before
     @Throws(ExecutionException::class, InterruptedException::class)
     fun setUp() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context).await()
@@ -158,7 +158,9 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @After
     @Throws(ExecutionException::class, InterruptedException::class, TimeoutException::class)
     fun tearDown() {
-        cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        if (::cameraProvider.isInitialized) {
+            cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        }
     }
 
     // ======================================================
@@ -952,7 +954,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     fun viewPort_OverwriteTransformation() = runBlocking {
         // Arrange.
         val rotation =
-            if (CameraUtil.getSensorOrientation(CameraSelector.LENS_FACING_BACK)!! % 180 != 0)
+            if (CameraUtil.getSensorOrientation(cameraSelector.lensFacing!!)!! % 180 != 0)
                 Surface.ROTATION_90
             else Surface.ROTATION_0
         val transformationInfoDeferred = CompletableDeferred<TransformationInfo>()
@@ -968,11 +970,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             }
             val useCaseGroup =
                 UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
         }
         val transformationInfo = withTimeoutOrNull(5000) { transformationInfoDeferred.await() }
 
@@ -1049,7 +1047,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     @Throws(InterruptedException::class)
     fun useCaseCanBeReusedInDifferentCamera() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
 
         val preview = Preview.Builder().build()
         var resultDeferred = CompletableDeferred<Int>()
@@ -1063,11 +1062,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 )
             )
             // This is the first time the use case bound to the lifecycle.
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                preview,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[0], preview)
         }
 
         // Check the frame available callback is called.
@@ -1085,11 +1080,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
         instrumentation.runOnMainSync {
             // Rebind the use case to different camera.
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_FRONT_CAMERA,
-                preview,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[1], preview)
         }
 
         // Check the frame available callback can be called after reusing the use case.
@@ -1219,13 +1210,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     fun defaultMaxResolutionCanBeKept_whenResolutionStrategyIsNotSet() =
         runBlocking(Dispatchers.Main) {
-            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
             val useCase = Preview.Builder().build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
 
             assertThat(
                     useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_MAX_RESOLUTION)
@@ -1236,7 +1222,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     fun defaultMaxResolutionCanBeRemoved_whenResolutionStrategyIsSet() =
         runBlocking(Dispatchers.Main) {
-            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
             val useCase =
                 Preview.Builder()
                     .setResolutionSelector(
@@ -1246,11 +1231,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     )
                     .build()
 
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
             assertThat(
                     useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_MAX_RESOLUTION)
                 )
@@ -1270,11 +1251,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             .build()
                     )
                     .build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase,
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
 
             val resolutionSelector =
                 useCase.currentConfig.retrieveOption(OPTION_RESOLUTION_SELECTOR)
@@ -1297,10 +1274,13 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
     @Test
     fun sessionErrorListenerReceivesError_getsFrame(): Unit = runBlocking {
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+
         // Arrange.
         val preview = Preview.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[0], preview)
             // Act.
             preview.surfaceProvider =
                 getSurfaceProvider(frameAvailableListener = { frameSemaphore!!.release() })
@@ -1313,20 +1293,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         // Rebinds to different camera
-        if (CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbind(preview)
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    preview,
-                )
-            }
-
-            // Checks that image can be received successfully when onError is received by the old
-            // error listener.
-            triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
+        withContext(Dispatchers.Main) {
+            cameraProvider.unbind(preview)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[1], preview)
         }
+
+        // Checks that image can be received successfully when onError is received by the old
+        // error listener.
+        triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         val sessionConfigBeforeValidErrorNotification = preview.sessionConfig
         // Checks that image can be received successfully when onError is received by the new

@@ -18,6 +18,8 @@ package androidx.compose.foundation.textfield
 
 import androidx.compose.foundation.contextmenu.ContextMenuItemLabels
 import androidx.compose.foundation.contextmenu.ContextMenuItemState
+import androidx.compose.foundation.contextmenu.ProcessTextItemOverrideRule
+import androidx.compose.foundation.contextmenu.assertContextMenuItem
 import androidx.compose.foundation.contextmenu.assertContextMenuItems
 import androidx.compose.foundation.contextmenu.clickOffPopup
 import androidx.compose.foundation.contextmenu.contextMenuItemInteraction
@@ -26,7 +28,9 @@ import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
+import androidx.compose.foundation.text.contextmenu.ProcessTextApi23Impl
 import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHasClickAction
@@ -66,6 +71,13 @@ class TextFieldContextMenuTest : FocusedWindowTest {
 
     private val textFieldTag = "BTF"
     private val defaultFullWidthText = "M".repeat(20)
+
+    @get:Rule
+    val processTextRule =
+        ProcessTextItemOverrideRule(
+            ContextMenuItemLabels.PROCESS_TEXT_1,
+            ContextMenuItemLabels.PROCESS_TEXT_2,
+        )
 
     // region BTF1 Context Menu Gesture Tests
     @Test
@@ -178,16 +190,50 @@ class TextFieldContextMenuTest : FocusedWindowTest {
             expectedClipboardContent = "clip",
         )
 
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun btf1_contextMenu_onClickProcessText() {
+        var textToProcess: String? = null
+        ProcessTextApi23Impl.onClickProcessTextItem = { _, _, editable, text, selection ->
+            // editable is always false for SelectionContainer.
+            assertThat(editable).isTrue()
+            textToProcess = text.subSequence(selection.start, selection.end).toString()
+        }
+
+        runBtf1ClickContextMenuItemTest(
+            labelToClick = ContextMenuItemLabels.PROCESS_TEXT_1,
+            text = "abc def ghi",
+            selection = TextRange(4, 7),
+        ) { _, _ ->
+            assertThat(textToProcess).isEqualTo("def")
+        }
+    }
+
     private fun runBtf1ClickContextMenuItemTest(
         labelToClick: String,
         expectedText: String,
         expectedSelection: TextRange,
         expectedClipboardContent: String,
+    ) =
+        runBtf1ClickContextMenuItemTest(labelToClick) { value, clipboard ->
+            // Operation was applied
+            assertThat(value.text).isEqualTo(expectedText)
+            assertThat(value.selection).isEqualTo(expectedSelection)
+            val clipboardContent = clipboard.getClipEntry()?.readText()
+            assertThat(clipboardContent).isNotNull()
+            assertThat(clipboardContent!!).isEqualTo(expectedClipboardContent)
+        }
+
+    private fun runBtf1ClickContextMenuItemTest(
+        labelToClick: String,
+        text: String = "Text Text Text",
+        selection: TextRange = TextRange(5, 9),
+        assertBlock: suspend (TextFieldValue, Clipboard) -> Unit,
     ) = runTest {
-        val text = "Text Text Text"
         val initialClipboardText = "clip"
 
-        var value by mutableStateOf(TextFieldValue(text = text, selection = TextRange(5, 9)))
+        var value by mutableStateOf(TextFieldValue(text = text, selection = selection))
 
         val clipboard = FakeClipboard(initialText = initialClipboardText, supportsClipEntry = true)
 
@@ -212,12 +258,7 @@ class TextFieldContextMenuTest : FocusedWindowTest {
         rule.onNode(isPopup()).assertDoesNotExist()
         itemInteraction.assertDoesNotExist()
 
-        // Operation was applied
-        assertThat(value.text).isEqualTo(expectedText)
-        assertThat(value.selection).isEqualTo(expectedSelection)
-        val clipboardContent = clipboard.getClipEntry()?.readText()
-        assertThat(clipboardContent).isNotNull()
-        assertThat(clipboardContent!!).isEqualTo(expectedClipboardContent)
+        assertBlock(value, clipboard)
     }
 
     // endregion BTF1 Context Menu Item Click Tests
@@ -444,6 +485,26 @@ class TextFieldContextMenuTest : FocusedWindowTest {
         }
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun btf1_contextMenu_processText_itemsMatch() = runTest {
+        runBtf1CorrectItemsTest(
+            isReadOnly = true,
+            isEmptyClipboard = true,
+            selectionAmount = SelectionAmount.ALL,
+        ) {
+            rule.assertContextMenuItem(
+                label = ContextMenuItemLabels.PROCESS_TEXT_1,
+                state = ContextMenuItemState.ENABLED,
+            )
+            rule.assertContextMenuItem(
+                label = ContextMenuItemLabels.PROCESS_TEXT_2,
+                state = ContextMenuItemState.ENABLED,
+            )
+        }
+    }
+
     private suspend fun runBtf1CorrectItemsTest(
         isPassword: Boolean = false,
         isReadOnly: Boolean = false,
@@ -597,16 +658,52 @@ class TextFieldContextMenuTest : FocusedWindowTest {
         )
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun btf2_contextMenu_onClickProcessText() {
+        var textToProcess: String? = null
+        ProcessTextApi23Impl.onClickProcessTextItem = { _, _, editable, text, selection ->
+            // editable is always false for SelectionContainer.
+            assertThat(editable).isTrue()
+            textToProcess = text.subSequence(selection.start, selection.end).toString()
+        }
+
+        runTest {
+            runBtf2ClickContextMenuItemTest(
+                labelToClick = ContextMenuItemLabels.PROCESS_TEXT_1,
+                text = "abc def ghi",
+                selection = TextRange(4, 7),
+            ) { _, _ ->
+                assertThat(textToProcess).isEqualTo("def")
+            }
+        }
+    }
+
     private suspend fun runBtf2ClickContextMenuItemTest(
         labelToClick: String,
         expectedText: String,
         expectedSelection: TextRange,
         expectedClipboardContent: String,
+    ) =
+        runBtf2ClickContextMenuItemTest(labelToClick) { state, clipboard ->
+            // Operation was applied
+            assertThat(state.text).isEqualTo(expectedText)
+            assertThat(state.selection).isEqualTo(expectedSelection)
+            val clipboardContent = clipboard.getClipEntry()?.readText()
+            assertThat(clipboardContent).isNotNull()
+            assertThat(clipboardContent!!).isEqualTo(expectedClipboardContent)
+        }
+
+    private suspend fun runBtf2ClickContextMenuItemTest(
+        labelToClick: String,
+        text: String = "Text Text Text",
+        selection: TextRange = TextRange(5, 9),
+        assertBlock: suspend (TextFieldState, Clipboard) -> Unit,
     ) {
-        val text = "Text Text Text"
         val initialClipboardText = "clip"
 
-        val state = TextFieldState(initialText = text, initialSelection = TextRange(5, 9))
+        val state = TextFieldState(initialText = text, initialSelection = selection)
 
         val clipboard = FakeClipboard(initialText = initialClipboardText, supportsClipEntry = true)
 
@@ -627,12 +724,7 @@ class TextFieldContextMenuTest : FocusedWindowTest {
         rule.onNode(isPopup()).assertDoesNotExist()
         itemInteraction.assertDoesNotExist()
 
-        // Operation was applied
-        assertThat(state.text).isEqualTo(expectedText)
-        assertThat(state.selection).isEqualTo(expectedSelection)
-        val clipboardContent = clipboard.getClipEntry()?.readText()
-        assertThat(clipboardContent).isNotNull()
-        assertThat(clipboardContent!!).isEqualTo(expectedClipboardContent)
+        assertBlock(state, clipboard)
     }
 
     // endregion BTF2 Context Menu Item Click Tests
@@ -841,6 +933,20 @@ class TextFieldContextMenuTest : FocusedWindowTest {
                 autofillState = ContextMenuItemState.DOES_NOT_EXIST,
             )
         }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23)
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    fun btf2_contextMenu_processText_itemsMatch() = runBtf2CorrectItemsTest {
+        rule.assertContextMenuItem(
+            label = ContextMenuItemLabels.PROCESS_TEXT_1,
+            state = ContextMenuItemState.ENABLED,
+        )
+        rule.assertContextMenuItem(
+            label = ContextMenuItemLabels.PROCESS_TEXT_2,
+            state = ContextMenuItemState.ENABLED,
+        )
+    }
 
     private enum class SelectionAmount {
         NONE,

@@ -30,11 +30,12 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.sqlite.db"
+    }
     ios()
     jvm()
     linux()
@@ -80,10 +81,6 @@ androidXMultiplatform {
             }
         }
     }
-}
-
-android {
-    namespace = "androidx.sqlite.db"
 }
 
 androidx {

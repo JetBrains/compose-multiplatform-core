@@ -633,10 +633,9 @@ internal class StreamGraphImplTest {
         assertThat(streamGraph.getOutputLatency(stream1.id)).isNull()
         cameraController.simulateOutputLatency()
         assertThat(
-            streamGraph
-                .getOutputLatency(stream1.id)
-                ?.equals(cameraController.outputLatencySet?.estimatedLatencyNs)
-        )
+                streamGraph.getOutputLatency(stream1.id)?.equals(cameraController.outputLatencySet)
+            )
+            .isTrue()
     }
 
     private fun deferredStreamsAreSupported(

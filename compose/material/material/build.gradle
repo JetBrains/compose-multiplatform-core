@@ -28,12 +28,15 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material"
+        androidResources.enable = true
+    }
     desktop()
     mac()
     ios()
@@ -235,11 +238,6 @@ androidx {
     metalavaK2UastEnabled = false
     samples(project(":compose:material:material:material-samples"))
     addGoldenImageAssets()
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material"
 }
 
 // TODO: Restore updateTranslations task

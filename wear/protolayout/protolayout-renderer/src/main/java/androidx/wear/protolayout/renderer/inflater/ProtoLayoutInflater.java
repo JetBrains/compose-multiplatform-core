@@ -2982,23 +2982,65 @@ public final class ProtoLayoutInflater {
             return;
         }
 
-        View parent = (View) maybeParent;
-        int availableHeight = parent.getHeight();
-        int oneLineHeight = textView.getLineHeight();
-        // This is what was set in proto, we shouldn't exceed it.
-        int maxMaxLines = textView.getMaxLines();
-        // Avoid having maxLines as 0 in case the space is really tight.
-        int availableLines = max(availableHeight / oneLineHeight, 1);
-
-        // Update only if maxLines are changed.
-        if (availableLines >= maxMaxLines) {
+        android.text.Layout textViewLayout = textView.getLayout();
+        if (textViewLayout == null) {
+            // We need Layout for calculations, skip if it's null
             return;
         }
 
-        textView.setMaxLines(availableLines);
+        View parent = (View) maybeParent;
+        // This is what was set in proto, we shouldn't exceed it.
+        int maxMaxLines = textView.getMaxLines();
+
+        // Android only respects the set lineHeight on all lines **except** the last one, where it
+        // would be set to accommodate all the glyphs. This means, that if the set lineHeight is
+        // smaller, the last line would have larger height. However, if the set lineHeight is
+        // larger, the last line would have the same number as in the first case, which will be
+        // smaller than the set lineHeight.
+        // Because of this, we can't simply do `availableHeight / oneLineHeight` (where
+        // oneLineHeight = textView.getLineHeight()) as in the second case, we would think there is
+        // less available space for lines then there is actually or in the
+        // first case, we would display more lines, that can lead into clipping of some glyphs.
+        // The most accurate way to calculate how many lines can and is displayed is to manually get
+        // the height of each line, subtract from the available height until we have no space left.
+        // For that, we will find what is the last line's lineHeight, set by Android, and for that
+        // we know there is a space, so we need to find how many additional lines can fit in the
+        // space.
+        int lineCntNum = textViewLayout.getLineCount();
+        int lastLineHeight =
+                textViewLayout.getLineBottom(lineCntNum - 1)
+                        - textViewLayout.getLineTop(lineCntNum - 1);
+
+        int availableHeight = /* total height */ parent.getHeight() - lastLineHeight;
+
+        int visibleLinesCnt = 1; // Definitely we have space for 1 ("last") line
+        int currentLineIndex = 0;
+
+        while (visibleLinesCnt < maxMaxLines // don't exceed set max lines
+                && currentLineIndex
+                        < lineCntNum - 1 // don't exceed line count and don't count last line
+                && availableHeight >= 0 // don't exceed available space
+        ) {
+            int currentLineHeight =
+                    textViewLayout.getLineBottom(currentLineIndex)
+                            - textViewLayout.getLineTop(currentLineIndex);
+
+            if (availableHeight < currentLineHeight) {
+                // Found number of lines we can display, there is not enough room for one more.
+                break;
+            }
+
+            // Include the current line in the visible lines and try one more in the next iteration.
+            availableHeight -= currentLineHeight;
+            currentLineIndex++;
+            visibleLinesCnt++;
+        }
+
+        textView.setMaxLines(visibleLinesCnt);
         // We need to trigger TextView to re-measure its content in order to place the ellipsis
         // correctly at the and of {@code availableLines}th line. Using only {@code requestLayout}
-        // or {@code invalidate} isn't enough as TextView wouldn't remeasure itself.
+        // or
+        // {@code invalidate} isn't enough as TextView wouldn't remeasure itself.
         textView.setText(textView.getText());
     }
 

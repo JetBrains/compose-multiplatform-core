@@ -80,7 +80,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_androidViewBasedSpatialPanelSizeNonZero_shouldNotBeHidden() {
+    fun CoreBasePanelEntity_androidViewBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -96,11 +96,11 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isFalse()
+        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
     }
 
     @Test
-    fun CoreBasePanelEntity_contentBasedSpatialPanelSizeNonZero_shouldNotBeHidden() {
+    fun CoreBasePanelEntity_contentBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -113,11 +113,11 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isFalse()
+        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
     }
 
     @Test
-    fun CoreBasePanelEntity_mainPanelSizeNonZero_shouldNotBeHidden() {
+    fun CoreBasePanelEntity_mainPanelSizeNonZero_shouldBeEnabled() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -130,11 +130,11 @@ class CoreEntityTest {
         val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
         val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as PanelEntity?
         assertNotNull(mainPanelSceneCoreEntity)
-        assertThat(mainPanelSceneCoreEntity.isHidden()).isFalse()
+        assertThat(mainPanelSceneCoreEntity.isEnabled()).isTrue()
     }
 
     @Test
-    fun CoreBasePanelEntity_intentBasedSpatialPanelSizeNonZero_shouldNotBeHidden() {
+    fun CoreBasePanelEntity_intentBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -150,11 +150,11 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isFalse()
+        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
     }
 
     @Test
-    fun CoreBasePanelEntity_androidViewBasedPanelSizeZeroAfterMeasure_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_androidViewBasedPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -170,7 +170,7 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isTrue()
+        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -179,7 +179,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_contentBasedSpatialPanelSizeZeroAfterMeasure_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_contentBasedSpatialPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -195,7 +195,7 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isTrue()
+        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -204,7 +204,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_mainPanelSizeZeroAfterMeasurement_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_mainPanelSizeZeroAfterMeasurement_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -217,7 +217,7 @@ class CoreEntityTest {
         val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
         val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as PanelEntity?
         assertNotNull(mainPanelSceneCoreEntity)
-        assertThat(mainPanelSceneCoreEntity.isHidden()).isTrue()
+        assertThat(mainPanelSceneCoreEntity.isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -226,7 +226,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_intentBasedPanelSizeZeroAfterMeasure_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_intentBasedPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -242,7 +242,7 @@ class CoreEntityTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isHidden()).isTrue()
+        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -251,7 +251,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_androidViewPanelresizableZeroSizeOverride_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_androidViewPanelresizableZeroSizeOverride_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -268,7 +268,7 @@ class CoreEntityTest {
 
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(panelSceneCoreEntity).isHidden()).isTrue()
+        assertThat(checkNotNull(panelSceneCoreEntity).isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -277,7 +277,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_contentBasedPanelresizableZeroSizeOverride_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_contentBasedPanelresizableZeroSizeOverride_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -293,7 +293,7 @@ class CoreEntityTest {
 
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(panelSceneCoreEntity).isHidden()).isTrue()
+        assertThat(checkNotNull(panelSceneCoreEntity).isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -302,7 +302,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_mainPanelresizableAndZeroSizeOverride_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_mainPanelresizableAndZeroSizeOverride_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -318,7 +318,7 @@ class CoreEntityTest {
 
         val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
         val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(mainPanelSceneCoreEntity).isHidden()).isTrue()
+        assertThat(checkNotNull(mainPanelSceneCoreEntity).isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",
@@ -327,7 +327,7 @@ class CoreEntityTest {
     }
 
     @Test
-    fun CoreBasePanelEntity_intentBasedPanelresizableZeroSizeOverride_shouldBeHiddenAndNotCrash() {
+    fun CoreBasePanelEntity_intentBasedPanelresizableZeroSizeOverride_shouldBeDisabledAndNotCrash() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -344,7 +344,7 @@ class CoreEntityTest {
 
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(panelSceneCoreEntity).isHidden()).isTrue()
+        assertThat(checkNotNull(panelSceneCoreEntity).isEnabled()).isFalse()
         expectedLogMessagesRule.expectLogMessage(
             Log.WARN,
             "CoreBasePanelEntity",

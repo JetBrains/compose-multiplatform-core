@@ -92,10 +92,10 @@ internal fun ListItem(
     Box(
         modifier
             .fillMaxWidth()
+            .onFocusChanged { isFocused = it.isFocused }
             .surface(
                 border = if (isFocused) SurfaceDefaults.border(4.dp) else SurfaceDefaults.border()
             )
-            .onFocusChanged { isFocused = it.isFocused }
             .clickable(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {

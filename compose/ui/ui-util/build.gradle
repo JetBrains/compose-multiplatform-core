@@ -29,12 +29,17 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.compose.ui.util"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
     desktop()
     mac()
     ios()
@@ -178,11 +183,4 @@ androidx {
 
 androidxCompose {
     composeCompilerPluginEnabled = false
-}
-
-android {
-    namespace = "androidx.compose.ui.util"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
 }

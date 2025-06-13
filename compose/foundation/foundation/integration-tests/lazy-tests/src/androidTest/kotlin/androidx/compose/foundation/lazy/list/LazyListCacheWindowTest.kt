@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
@@ -151,6 +153,58 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("8").assertDoesNotExist() // at this point we have removed this
     }
 
+    @Test
+    fun datasetChanged_shouldScheduleNewPrefetching_ifWindowIsNotFull() {
+        val numItems = mutableStateOf(100)
+
+        composeList(firstItem = 97, numItems = numItems, cacheWindow = viewportWindow)
+        rule.onNodeWithTag("97").assertIsDisplayed()
+        rule.onNodeWithTag("98").assertIsDisplayed()
+        rule.onNodeWithTag("99").assertExists()
+
+        rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+
+        /**
+         * At this point item 98 and 99 are visible and item 99 is peeking in the cache window, so
+         * there's still space.
+         */
+        rule.onNodeWithTag("98").assertIsDisplayed()
+        rule.onNodeWithTag("99").assertIsDisplayed()
+        rule.onNodeWithTag("100").assertDoesNotExist()
+
+        rule.runOnIdle { numItems.value = 200 }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("100").assertExists() // window is not full
+    }
+
+    @Test
+    fun datasetChanged_shouldNotScheduleNewPrefetching_ifWindowIsFull() {
+        val numItems = mutableStateOf(100)
+
+        composeList(firstItem = 96, numItems = numItems, cacheWindow = viewportWindow)
+        rule.onNodeWithTag("96").assertIsDisplayed()
+        rule.onNodeWithTag("97").assertIsDisplayed()
+        rule.onNodeWithTag("97").assertExists()
+
+        rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+
+        /**
+         * At this point, item 97 and 98 are visible and item 99 is in the cache window. Since the
+         * window fit 1.5 item, there's no more space left because we have 0.5 of item 98 and item
+         * 99 fully in the window.
+         */
+        rule.onNodeWithTag("97").assertIsDisplayed()
+        rule.onNodeWithTag("98").assertIsDisplayed()
+        rule.onNodeWithTag("99").assertExists() // part of the window
+        rule.onNodeWithTag("100").assertDoesNotExist()
+
+        rule.runOnIdle { numItems.value = 200 }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("100").assertDoesNotExist() // window is full
+    }
+
     private val activeNodes = mutableSetOf<Int>()
 
     private fun composeList(
@@ -158,6 +212,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
         contentPadding: PaddingValues = PaddingValues(0.dp),
+        numItems: State<Int> = mutableStateOf(100),
         cacheWindow: LazyLayoutCacheWindow,
     ) {
         rule.setContent {
@@ -181,7 +236,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                 reverseLayout = reverseLayout,
                 contentPadding = contentPadding,
             ) {
-                items(100) {
+                items(numItems.value) {
                     DisposableEffect(it) {
                         activeNodes.add(it)
                         onDispose { activeNodes.remove(it) }

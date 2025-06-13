@@ -21,7 +21,6 @@ import android.graphics.Color
 import androidx.annotation.ColorInt
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
-import androidx.annotation.RestrictTo
 import androidx.wear.protolayout.ActionBuilders.Action
 import androidx.wear.protolayout.DimensionBuilders.ContainerDimension
 import androidx.wear.protolayout.DimensionBuilders.DpProp
@@ -95,8 +94,6 @@ public fun hasContentDescription(pattern: Regex): LayoutElementMatcher =
  * Returns a [LayoutElementMatcher] which checks whether the element is marked as heading for
  * accessibility purpose.
  */
-// TODO: b/413653475 - make isSemanticsHeading() public
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun isSemanticsHeading(): LayoutElementMatcher =
     LayoutElementMatcher("Element is semantics heading.") { element ->
         element.modifiers?.semantics?.isHeading ?: false

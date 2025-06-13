@@ -732,10 +732,9 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebResourceResponseCompat#setCookies(List)}, as well as
-     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(WebSettings, boolean)} and
-     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequest(boolean)}.
+     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)} and
+     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
 
     /**

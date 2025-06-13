@@ -121,6 +121,14 @@ class SectionedItemTemplateTest {
     }
 
     @Test
+    fun createInstance_addMediaPlaybackActionAsRowSecondaryAction() {
+        val sections = listOf(RowSection.Builder().addItem(createRowWithMediaAction()).build())
+        val template = SectionedItemTemplate.Builder().setSections(sections).build()
+
+        assertThat(template.sections).containsExactlyElementsIn(sections)
+    }
+
+    @Test
     fun setActions_throwsException_whenNotFabConstrained() {
         try {
             // Cannot have more than 3 actions
@@ -195,4 +203,7 @@ class SectionedItemTemplateTest {
 
     private fun buildTemplate(block: SectionedItemTemplate.Builder.() -> Unit = {}) =
         SectionedItemTemplate.Builder().apply { block() }.build()
+
+    private fun createRowWithMediaAction(): Row =
+        Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
 }

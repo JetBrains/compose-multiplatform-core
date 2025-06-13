@@ -132,6 +132,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     public var isFormFillingEnabled: Boolean
 
+    // After the pagination model has loaded and the first set of pages are made visible (or if
+    // the view is not attached to a window, we fetch all the dimensions to optimize subsequent
+    // rendering.
+    private var startedFetchingAllDimensions = false
+
     init {
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.PdfView)
         fastScrollVerticalThumbDrawable =
@@ -299,7 +304,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * The [CoroutineScope] used to make suspending calls to [PdfDocument]. The size of the fixed
      * thread pool is arbitrary and subject to tuning.
      */
-    private val backgroundScope: CoroutineScope =
+    internal var backgroundScope: CoroutineScope =
         CoroutineScope(Executors.newFixedThreadPool(5).asCoroutineDispatcher() + SupervisorJob())
 
     private var pageMetadataLoader: PageMetadataLoader? = null
@@ -1334,6 +1339,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         // If not, we'll start doing this when we _are_ attached to a visible window
         if (isAttachedToVisibleWindow) {
             startCollectingData()
+        } else {
+            // Fetch the page dimensions upfront.
+            startedFetchingAllDimensions = true
+            pageMetadataLoader?.fetchAllPageDimensionsInBgGradually()
         }
     }
 
@@ -1446,6 +1455,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         zoom = DEFAULT_INIT_ZOOM
         pageManager = null
         pageMetadataLoader = null
+        startedFetchingAllDimensions = false
         backgroundScope.coroutineContext.cancelChildren()
         stopCollectingData()
     }
@@ -1459,6 +1469,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             positionIsStable,
             localPageLayoutManager.layingOutPages,
         )
+
+        if (!startedFetchingAllDimensions) {
+            startedFetchingAllDimensions = true
+            pageMetadataLoader?.fetchAllPageDimensionsInBgGradually()
+        }
     }
 
     /** React to a page's metadata being made available */
@@ -1476,6 +1491,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             positionIsStable,
             visiblePageArea,
             localPageLayoutManager.layingOutPages,
+            PdfFormFillingConfig(
+                { isFormFillingEnabled },
+                context.getColor(R.color.form_fields_highlight_color),
+            ),
             formWidgetInfos,
         )
         // Learning the dimensions of a page can change our understanding of the content that's in
@@ -1589,7 +1608,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private val contentWidth: Int
         get() = pageMetadataLoader?.paginationModel?.maxWidth ?: 0
 
-    private val contentHeight: Int
+    internal val contentHeight: Int
         get() = pageMetadataLoader?.paginationModel?.totalEstimatedHeight ?: 0
 
     /** The default [ActionMode.Callback2] for selection */

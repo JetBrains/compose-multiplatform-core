@@ -242,11 +242,11 @@ public fun <T : Any> NavDisplay(
         val sceneToRenderableEntryMap =
             remember(
                 mostRecentSceneKeys.toList(),
-                scenes.values.map { scene -> scene.entries.map(NavEntry<T>::key) },
+                scenes.values.map { scene -> scene.entries.map(NavEntry<T>::contentKey) },
                 transition.targetState,
             ) {
                 buildMap {
-                    val coveredEntryKeys = mutableSetOf<T>()
+                    val coveredEntryKeys = mutableSetOf<Any>()
                     (mostRecentSceneKeys.filter { it != transition.targetState } +
                             listOf(transition.targetState))
                         .fastForEachReversed { sceneKey ->
@@ -254,11 +254,11 @@ public fun <T : Any> NavDisplay(
                             put(
                                 sceneKey,
                                 scene.entries
-                                    .map { it.key }
+                                    .map { it.contentKey }
                                     .filterNot(coveredEntryKeys::contains)
                                     .toSet(),
                             )
-                            scene.entries.forEach { coveredEntryKeys.add(it.key) }
+                            scene.entries.forEach { coveredEntryKeys.add(it.contentKey) }
                         }
                 }
             }
@@ -269,7 +269,11 @@ public fun <T : Any> NavDisplay(
 
         // Consider this a pop if the current entries match the previous entries we have recorded
         // from the current state of the transition
-        val isPop = isPop(transitionCurrentStateEntries.map { it.key }, entries.map { it.key })
+        val isPop =
+            isPop(
+                transitionCurrentStateEntries.map { it.contentKey },
+                entries.map { it.contentKey },
+            )
 
         val zIndices = remember { mutableObjectFloatMapOf<Pair<KClass<*>, Any>>() }
         val initialKey = transition.currentState
@@ -399,7 +403,7 @@ public fun <T : Any> NavDisplay(
         // Show all OverlayScene instances above the AnimatedContent
         overlayScenes.fastForEachReversed { overlayScene ->
             // TODO Calculate what entries should be displayed from sceneToRenderableEntryMap
-            val allEntries = overlayScene.entries.map { it.key }.toSet()
+            val allEntries = overlayScene.entries.map { it.contentKey }.toSet()
             CompositionLocalProvider(LocalEntriesToRenderInCurrentScene provides allEntries) {
                 overlayScene.content.invoke()
             }

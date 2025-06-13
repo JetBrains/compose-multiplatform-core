@@ -148,20 +148,18 @@ abstract class WindowAreaController @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) 
                     windowAreaComponentExtensions != null &&
                     ExtensionsUtil.safeVendorApiLevel >= 3
 
-            val controller =
-                if (deviceSupported) {
-                    WindowAreaControllerImpl(windowAreaComponent = windowAreaComponentExtensions!!)
-                } else {
-                    EmptyWindowAreaControllerImpl()
-                }
-            decorator.decorate(controller)
+            if (deviceSupported) {
+                WindowAreaControllerImpl(windowAreaComponent = windowAreaComponentExtensions!!)
+            } else {
+                EmptyWindowAreaControllerImpl()
+            }
         }
 
         /** Provides an instance of [WindowAreaController]. */
         @JvmName("getOrCreate")
         @JvmStatic
         fun getOrCreate(): WindowAreaController {
-            return windowAreaController
+            return decorator.decorate(windowAreaController)
         }
 
         @JvmStatic

@@ -290,10 +290,9 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
     @Override
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions,
-            @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
         return mCameraInfoInternal.isUseCaseCombinationSupported(useCases, cameraMode,
-                allowFeatureCombinationResolutions, cameraConfig);
+                isFeatureComboInvocation, cameraConfig);
     }
 
     @Override

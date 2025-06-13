@@ -38,14 +38,17 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.tasks.BaseKapt
 
 internal class AndroidPluginIntegration(private val common: CommonIntegration) {
+
     private val agpBasePluginId = "com.android.base"
+    private val agpKmpPluginId = "com.android.kotlin.multiplatform.library"
 
     // Map of variant name to schema configuration
     private val configuredVariants = mutableMapOf<String, SchemaConfiguration>()
 
-    fun withAndroid(project: Project, roomExtension: RoomExtension) {
-        project.plugins.withId(agpBasePluginId) { configureRoomForAndroid(project, roomExtension) }
-    }
+    fun withAndroid(project: Project, roomExtension: RoomExtension) =
+        listOf(agpBasePluginId, agpKmpPluginId).forEach { agpPluginId ->
+            project.plugins.withId(agpPluginId) { configureRoomForAndroid(project, roomExtension) }
+        }
 
     private fun configureRoomForAndroid(project: Project, roomExtension: RoomExtension) {
         // TODO(b/277899741): Validate version of Room supports the AP options configured by plugin.
@@ -240,13 +243,24 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
 
         private val kspTaskAndroidName = "ksp${variantName.capitalize()}KotlinAndroid"
 
-        val taskNames = setOf(javaCompileName, kaptTaskName, kspTaskJvmName, kspTaskAndroidName)
+        private val kspTaskAndroidKmpName = "ksp${variantName.capitalize()}"
+
+        val taskNames =
+            setOf(
+                javaCompileName,
+                kaptTaskName,
+                kspTaskJvmName,
+                kspTaskAndroidName,
+                kspTaskAndroidKmpName,
+            )
 
         fun isJavaCompile(taskName: String) = taskName == javaCompileName
 
         fun isKaptTask(taskName: String) = taskName == kaptTaskName
 
         fun isKspTaskJvm(taskName: String) =
-            taskName == kspTaskJvmName || taskName == kspTaskAndroidName
+            taskName == kspTaskJvmName ||
+                taskName == kspTaskAndroidName ||
+                taskName == kspTaskAndroidKmpName
     }
 }

@@ -71,6 +71,9 @@ internal class KotlinMultiplatformPluginIntegration(private val common: CommonIn
         // Android KSP tasks are configured through the Android Gradle Plugin variant APIs.
         if (target.platformType == KotlinPlatformType.androidJvm) return
 
+        // Android KSP tasks can also be applied via the Android KMP Plugin
+        if (target.platformType == KotlinPlatformType.jvm && target.name == "android") return
+
         forSchemaConfiguration(roomExtension, target) { newConfig ->
             val oldConfig = configuredTargets.put(target.name, newConfig)
             target.compilations.configureEach { kotlinCompilation ->

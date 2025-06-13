@@ -26,7 +26,7 @@ import androidx.annotation.RestrictTo
  * @param page: The page number of the selection.
  * @param start: Boundary where the selection starts.
  * @param stop: Boundary where the selection stops.
- * @param selectedContents: list of segments of selected text content.
+ * @param selectedTextContents: list of segments of selected text content.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PageSelection(

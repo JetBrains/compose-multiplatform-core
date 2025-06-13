@@ -542,8 +542,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean allowFeatureCombinationResolutions,
-            @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
         try {
             StreamSpecsCalculator.Companion.calculateSuggestedStreamSpecsCompat(
                     mStreamSpecsCalculator,
@@ -551,7 +550,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
                     this,
                     useCases,
                     cameraConfig,
-                    allowFeatureCombinationResolutions
+                    isFeatureComboInvocation
             );
         } catch (IllegalArgumentException e) {
             Logger.d(TAG, "isUseCaseCombinationSupported: calculateSuggestedStreamSpecs failed", e);

@@ -32,6 +32,7 @@ import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
 import androidx.privacysandbox.ui.core.SessionData
@@ -62,6 +63,8 @@ import org.junit.runner.RunWith
 // TODO(b/374919355): Create a common test for View and Compose
 @RunWith(AndroidJUnit4::class)
 @LargeTest
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class SandboxedSdkViewTest {
     private lateinit var uiDevice: UiDevice
     private lateinit var context: Context

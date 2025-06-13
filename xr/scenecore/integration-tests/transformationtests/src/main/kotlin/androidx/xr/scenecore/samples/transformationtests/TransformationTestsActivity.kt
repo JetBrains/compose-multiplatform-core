@@ -30,11 +30,11 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
@@ -43,6 +43,7 @@ import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import java.lang.UnsupportedOperationException
+import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -70,7 +71,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         setupMovableMainPanel()
 
         // Create a transform widget model and assign it to an Anchor
-        val axesModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
+        val axesModelFuture = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
         axesModelFuture.addListener(
             {
                 val transformWidgetModel = axesModelFuture.get()
@@ -81,7 +82,8 @@ class TransformationTestsActivity : AppCompatActivity() {
         )
 
         // Create multiple orbiting dragon models
-        val dragonModelFuture = GltfModel.create(session, "models/Dragon_Evolved.gltf")
+        val dragonModelFuture =
+            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
         dragonModelFuture.addListener(
             {
                 val dragonModel = dragonModelFuture.get()
@@ -271,8 +273,8 @@ class TransformationTestsActivity : AppCompatActivity() {
         view.setLine("Distance to ActivitySpace", length(activitySpacePose.translation).toString())
         view.setLine("Distance to Main Panel", length(mainPanelSpacePose.translation).toString())
         when (trackedEntity) {
-            is BasePanelEntity<*> -> {
-                view.setLine("Panel size", trackedEntity.getSize().toString())
+            is PanelEntity -> {
+                view.setLine("Panel size", trackedEntity.size.toString())
                 view.setLine("Panel scale", trackedEntity.getScale().toString())
             }
         }
@@ -281,15 +283,15 @@ class TransformationTestsActivity : AppCompatActivity() {
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
         val sunDragon = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 3f, -9f)))
         sunDragon.setScale(3f)
-        sunDragon.setParent(session.scene.activitySpace)
+        sunDragon.parent = session.scene.activitySpace
 
         val planetDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 3f, -9f)))
         planetDragon.setScale(0.5f)
-        planetDragon.setParent(sunDragon)
+        planetDragon.parent = sunDragon
 
         val moonDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 3f, -9f)))
         moonDragon.setScale(0.5f)
-        moonDragon.setParent(planetDragon)
+        moonDragon.parent = planetDragon
 
         // Create debug panels for the sun, planet, and moon
         val largeLabelDimensions = FloatSize3d(700f, 200f)

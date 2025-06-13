@@ -33,6 +33,8 @@ import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.biometric.BiometricManager.Authenticators;
+import androidx.biometric.internal.BiometricFragment;
+import androidx.biometric.internal.BiometricViewModel;
 import androidx.biometric.utils.AuthenticatorUtils;
 import androidx.biometric.utils.CryptoObjectUtils;
 import androidx.fragment.app.Fragment;
@@ -87,7 +89,8 @@ public class BiometricPrompt {
     /**
      * There is no error, and the user can successfully authenticate.
      */
-    static final int BIOMETRIC_SUCCESS = 0;
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static final int BIOMETRIC_SUCCESS = 0;
 
     /**
      * The hardware is unavailable. Try again later.
@@ -275,7 +278,7 @@ public class BiometricPrompt {
      * Tag used to identify the {@link BiometricFragment} attached to the client activity/fragment.
      */
     @VisibleForTesting
-    static final String BIOMETRIC_FRAGMENT_TAG = "androidx.biometric.BiometricFragment";
+    static final String BIOMETRIC_FRAGMENT_TAG = "androidx.biometric.internal.BiometricFragment";
 
     /**
      * A wrapper class for the crypto objects supported by {@link BiometricPrompt}.
@@ -1350,7 +1353,8 @@ public class BiometricPrompt {
      * @param hostedInActivity If one of the activity-based constructors was used.
      * @return A biometric view model tied to the lifecycle owner of the fragment.
      */
-    static @NonNull BiometricViewModel getViewModel(@NonNull Fragment fragment,
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static @NonNull BiometricViewModel getViewModel(@NonNull Fragment fragment,
             boolean hostedInActivity) {
         ViewModelStoreOwner owner = hostedInActivity ? fragment.getActivity() : null;
         if (owner == null) {

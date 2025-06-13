@@ -24,9 +24,13 @@ import androidx.xr.runtime.math.Pose
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrDevice internal constructor() : ArDevice, Updatable {
 
-    // TODO("b/416275880")
-    override val devicePose: Pose = Pose() // Return a default Pose if buffer is null
+    override var devicePose: Pose = Pose()
+        private set // Return a default Pose if buffer is null
 
-    // TODO("b/416275880")
-    override fun update(xrTime: Long) {}
+    override fun update(xrTime: Long) {
+        // Keep the device pose as the previous one if native returns null.
+        devicePose = nativeGetHeadPose(xrTime) ?: devicePose
+    }
+
+    private external fun nativeGetHeadPose(timestampNs: Long): Pose?
 }

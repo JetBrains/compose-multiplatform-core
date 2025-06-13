@@ -63,19 +63,23 @@ import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FOR
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.PreviewConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.StreamSpec
-import androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE
+import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE
+import androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter.CameraException
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_NAME
+import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
 import androidx.camera.core.processing.DefaultSurfaceProcessor
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraControl
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
+import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
 import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
@@ -257,6 +261,15 @@ class CameraUseCaseAdapterTest {
     }
 
     @Test
+    fun addUseCases_withUnsupportedFrameRate_throwsException() {
+        // Arrange.
+        adapter.frameRate = Range(1, 100)
+
+        // Act.
+        assertThrows(CameraException::class.java) { adapter.addUseCases(setOf(preview)) }
+    }
+
+    @Test
     fun addUseCases_withoutResolvedFeatureCombination_useCaseFeatureCombinationIsNull() {
         // Arrange & Act.
         adapter.addUseCases(listOf(preview))
@@ -361,6 +374,26 @@ class CameraUseCaseAdapterTest {
         // Assert.
         assertThat(fakeCamera.attachedUseCases).isEmpty()
         assertThat(preview.featureCombination).isNull()
+    }
+
+    @Test
+    fun simulateAddUseCases_withUnsupportedFrameRate_throwsException() {
+        // Arrange.
+        adapter.frameRate = Range(1, 100)
+
+        // Act & Assert.
+        assertThrows(CameraException::class.java) {
+            adapter.simulateAddUseCases(setOf(preview), null, false)
+        }
+    }
+
+    @Test
+    fun simulateAddUseCases_withUnsupportedFrameRateAndFindMaxSupportedFrameRate_noException() {
+        // Arrange.
+        adapter.frameRate = Range(1, 100)
+
+        // Act & Assert: no exception
+        adapter.simulateAddUseCases(setOf(preview), null, true)
     }
 
     @Test
@@ -1519,20 +1552,27 @@ class CameraUseCaseAdapterTest {
     }
 
     @Test
-    fun setTargetHighSpeedFrameRate_updatesUseCaseConfig() {
+    fun setSessionTypeAndTargetFrameRate_updatesUseCaseConfig() {
         // Arrange: create use cases.
         val fakeUseCase1 = FakeUseCase()
         val fakeUseCase2 = FakeUseCase()
+        fakeCameraInfo.setSupportedHighSpeedResolutions(FPS_120_120, listOf(RESOLUTION_1080P))
 
-        // Act: set target high speed frame rate and add use cases.
-        val frameRate = Range(120, 120)
-        adapter.setTargetHighSpeedFrameRate(frameRate)
+        // Act: set session config, target frame rate and add use cases.
+        val sessionType = SESSION_TYPE_HIGH_SPEED
+        val frameRate = FPS_120_120
+        adapter.sessionType = sessionType
+        adapter.frameRate = frameRate
         adapter.addUseCases(listOf(fakeUseCase1, fakeUseCase2))
 
         // Assert: use case configs are updated.
-        assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE))
+        assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_SESSION_TYPE))
+            .isEqualTo(sessionType)
+        assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_TARGET_FRAME_RATE))
             .isEqualTo(frameRate)
-        assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE))
+        assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_SESSION_TYPE))
+            .isEqualTo(sessionType)
+        assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_TARGET_FRAME_RATE))
             .isEqualTo(frameRate)
     }
 

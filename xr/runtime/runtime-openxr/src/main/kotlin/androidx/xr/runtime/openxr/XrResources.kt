@@ -35,8 +35,11 @@ internal class XrResources {
     val leftHand: OpenXrHand
     val rightHand: OpenXrHand
 
-    /** The HMD tracking data */
+    /** The Device tracking data */
     val arDevice: OpenXrDevice
+
+    /** The view camera data */
+    val viewCameras: List<OpenXrViewCamera>
 
     /** The data of the Earth */
     val earth: OpenXrEarth = OpenXrEarth(this)
@@ -45,6 +48,7 @@ internal class XrResources {
         this.leftHand = OpenXrHand(isLeftHand = true)
         this.rightHand = OpenXrHand(isLeftHand = false)
         this.arDevice = OpenXrDevice()
+        this.viewCameras = listOf(OpenXrViewCamera(), OpenXrViewCamera())
     }
 
     internal fun addTrackable(trackableId: Long, trackable: Trackable) {

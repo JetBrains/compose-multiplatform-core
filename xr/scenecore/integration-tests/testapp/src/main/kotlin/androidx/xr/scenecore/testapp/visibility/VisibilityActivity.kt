@@ -29,7 +29,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -44,10 +44,15 @@ import androidx.xr.scenecore.testapp.common.SpatialMode
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
+import java.nio.file.Path
+import java.nio.file.Paths
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
+@Suppress("Deprecation")
+// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
+// is/setEnabled.
 class VisibilityActivity : AppCompatActivity() {
     private var session: Session? = null
 
@@ -167,7 +172,7 @@ class VisibilityActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             // Async get gltf model
-            model = GltfModel.create(session!!, MODEL).await()
+            model = GltfModel.createAsync(session!!, MODEL_PATH).await()
 
             // create gltf entities
             createGltfEntities()
@@ -211,11 +216,11 @@ class VisibilityActivity : AppCompatActivity() {
         }
         val panelEntity =
             PanelEntity.create(session!!, panelContentView, IntSize2d(640, 480), panelName, pose)
-        panelEntity.setParent(parent)
+        panelEntity.parent = parent
 
         val movableComponent = MovableComponent.create(session!!)
         panelEntity.addComponent(movableComponent)
-        movableComponent.size = getSizeInLocalSpace(panelEntity)
+        movableComponent.size = getSizeInLocalSpace(panelEntity).to3d()
 
         panelContentView.findViewById<Toolbar>(R.id.activity_panel_tool_bar).setTitle(panelName)
         return panelEntity
@@ -225,30 +230,26 @@ class VisibilityActivity : AppCompatActivity() {
         parentGltfEntity =
             GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, 0f, 0f))).also {
                 it.setScale(0.5f)
-                it.setParent(session!!.scene.activitySpace)
+                it.parent = session!!.scene.activitySpace
             }
 
         childGltfEntity1 =
             GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.3f, 0f))).also {
                 it.setScale(0.5f)
-                it.setParent(parentGltfEntity)
+                it.parent = parentGltfEntity
             }
 
         childGltfEntity2 =
             GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.6f, 0f))).also {
                 it.setScale(0.5f)
-                it.setParent(childGltfEntity1)
+                it.parent = childGltfEntity1
             }
     }
 
-    private fun getSizeInLocalSpace(panel: PanelEntity): FloatSize3d {
-        val scaledSize = panel.getSize()
+    private fun getSizeInLocalSpace(panel: PanelEntity): FloatSize2d {
+        val scaledSize = panel.size
         val spaceScale = panel.getScale()
-        return FloatSize3d(
-            scaledSize.width / spaceScale,
-            scaledSize.height / spaceScale,
-            scaledSize.depth / spaceScale,
-        )
+        return FloatSize2d(scaledSize.width / spaceScale, scaledSize.height / spaceScale)
     }
 
     private fun setHiddenForAllEntities(hidden: Boolean) {
@@ -280,6 +281,6 @@ class VisibilityActivity : AppCompatActivity() {
     companion object {
         const val DELAY_FOR_3_SEC: Long = 3000
         const val ACTIVITY_NAME: String = "visibilityActivity"
-        const val MODEL: String = "models/Dragon_Evolved.gltf"
+        val MODEL_PATH: Path = Paths.get("models", "Dragon_Evolved.gltf")
     }
 }

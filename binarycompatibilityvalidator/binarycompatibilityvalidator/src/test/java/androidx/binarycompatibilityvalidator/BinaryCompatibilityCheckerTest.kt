@@ -690,7 +690,7 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
-    fun paramInlineToCrossInline() {
+    fun paramNoInlineToCrossInline() {
         val beforeText =
             """
         final inline fun my.lib/myFun(noinline kotlin/Function0<kotlin/Unit>) // my.lib/myFun|myFun(kotlin.Function0<kotlin.Unit>){}[0]
@@ -699,12 +699,7 @@ class BinaryCompatibilityCheckerTest {
             """
         final inline fun my.lib/myFun(crossinline kotlin/Function0<kotlin/Unit>) // my.lib/myFun|myFun(kotlin.Function0<kotlin.Unit>){}[0]
         """
-        val expectedErrorMessages =
-            listOf(
-                "isNoinline changed from true to false for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
-                "isCrossinline changed from false to true for parameter 0: kotlin/Function0<kotlin/Unit> of my.lib/myFun",
-            )
-        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+        testBeforeAndAfterIsCompatible(beforeText, afterText)
     }
 
     @Test

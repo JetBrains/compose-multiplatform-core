@@ -23,8 +23,8 @@ class EntryTest {
 
     @Test
     fun getKey() {
-        val entry = NavEntry(key = "myKey", content = {})
-        assertThat(entry.key).isEqualTo("myKey")
+        val entry = NavEntry(key = "myKey", contentKey = "myKey", content = {})
+        assertThat(entry.contentKey).isEqualTo("myKey")
     }
 
     @Test

@@ -47,6 +47,8 @@ class ValueInternalParametrizedTest(
         expect.that(restored.type).isEqualTo(original.type)
         expect.that(restored.isValueNull).isEqualTo(original.isValueNull)
         expect.that(restored.value).isEqualTo(original.value)
+        // This verifies there are no bytes left to be read on the Parcel.
+        parcel.enforceNoDataAvail()
         parcel.recycle()
     }
 
@@ -64,7 +66,7 @@ class ValueInternalParametrizedTest(
                 arrayOf("BOOLEAN", false, true),
                 arrayOf("BOOLEAN", false, false),
                 arrayOf("STRING", false, "stringValue"),
-                arrayOf("STRING_SET", false, listOf("string1", "string2", "string3")),
+                arrayOf("STRING_SET", false, setOf("string1", "string2", "string3")),
                 arrayOf("BYTE_ARRAY", false, byteArrayOf(1, 2, 3)),
                 arrayOf("STRING", true, null),
                 arrayOf("INT", true, null),

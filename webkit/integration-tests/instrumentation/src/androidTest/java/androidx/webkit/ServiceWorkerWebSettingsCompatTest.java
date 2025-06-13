@@ -143,7 +143,7 @@ public class ServiceWorkerWebSettingsCompatTest {
             }
             if (isFeatureSupported(WebViewFeature.COOKIE_INTERCEPT)) {
                 mInterceptCookies =
-                        settingsCompat.getIncludeCookiesOnShouldInterceptRequest();
+                        settingsCompat.isIncludeCookiesOnShouldInterceptRequestEnabled();
             }
         }
 
@@ -164,7 +164,7 @@ public class ServiceWorkerWebSettingsCompatTest {
                 mSettings.setRequestedWithHeaderOriginAllowList(mRequestedHeaderOriginAllowList);
             }
             if (isFeatureSupported(WebViewFeature.COOKIE_INTERCEPT)) {
-                mSettings.setIncludeCookiesOnShouldInterceptRequest(mInterceptCookies);
+                mSettings.setIncludeCookiesOnShouldInterceptRequestEnabled(mInterceptCookies);
             }
         }
     }
@@ -354,7 +354,7 @@ public class ServiceWorkerWebSettingsCompatTest {
     @Test
     public void testCookieInterceptReceivesHeader() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
-        mSettings.setIncludeCookiesOnShouldInterceptRequest(true);
+        mSettings.setIncludeCookiesOnShouldInterceptRequestEnabled(true);
 
         BlockingQueue<Map<String, String>> interceptInfo = new LinkedBlockingQueue<>();
 
@@ -377,7 +377,7 @@ public class ServiceWorkerWebSettingsCompatTest {
     @Test
     public void testCookieInterceptNoHeadersIfDisabled() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
-        mSettings.setIncludeCookiesOnShouldInterceptRequest(false);
+        mSettings.setIncludeCookiesOnShouldInterceptRequestEnabled(false);
 
         BlockingQueue<Map<String, String>> interceptInfo = new LinkedBlockingQueue<>();
         String interceptUrl = runCookieInterceptServiceWorkerLoad(interceptInfo);
@@ -420,7 +420,7 @@ public class ServiceWorkerWebSettingsCompatTest {
                                                 TEXT_CONTENT.getBytes(StandardCharsets.UTF_8)));
                                 response.setCookies(
                                         List.of("bar=baz", "baz=foo"));
-                                return response;
+                                return response.toWebResourceResponse();
                             }
                             return null;
                         }

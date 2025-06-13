@@ -259,7 +259,7 @@ private class HierarchicalFocusCoordinatorModifierNode(
         var activeNode: HierarchicalFocusCoordinatorModifierNode? = null
         traverseDescendants {
             hasChildren = true
-            if (it.active) {
+            if (it.active && it.isAttached) {
                 activeNode = it.findActive()
                 TraverseDescendantsAction.CancelTraversal
             } else {

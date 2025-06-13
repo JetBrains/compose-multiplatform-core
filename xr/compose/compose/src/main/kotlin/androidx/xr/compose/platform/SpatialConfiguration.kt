@@ -17,8 +17,6 @@
 package androidx.xr.compose.platform
 
 import android.content.Context
-import androidx.annotation.RestrictTo
-import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
@@ -28,41 +26,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.toDpVolumeSize
-import androidx.xr.runtime.FEATURE_XR_API_SPATIAL
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import androidx.xr.scenecore.scene
 
-/** CompositionLocal indicating whether the system XR Spatial feature is enabled. */
-// TODO(b/417276392): Consider removing this composition local.
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public val LocalHasXrSpatialFeature: ProvidableCompositionLocal<Boolean> =
-    compositionLocalWithComputedDefaultOf {
-        SpatialConfiguration.hasXrSpatialFeature(LocalContext.currentValue)
-    }
-
 /**
- * Provides the current `SpatialConfiguration`.
+ * Provides the current [SpatialConfiguration].
  *
  * The behavior of the configuration object will depend on whether the system XR Spatial feature is
  * enabled. For example, if the feature is not enabled, attempting to request different mode types
  * cause an exception.
  */
-public val LocalSpatialConfiguration: CompositionLocal<SpatialConfiguration> =
+public val LocalSpatialConfiguration: ProvidableCompositionLocal<SpatialConfiguration> =
     compositionLocalWithComputedDefaultOf {
-        if (LocalHasXrSpatialFeature.currentValue) {
-            SpatialConfiguration.getOrCreate(
-                checkNotNull(LocalSession.currentValue) { "session must be initialized" },
-                LocalHasXrSpatialFeature.currentValue,
-            )
-        } else {
-            ContextOnlySpatialConfiguration(LocalContext.currentValue)
-        }
+        LocalComposeXrOwners.currentValue?.spatialConfiguration
+            ?: ContextOnlySpatialConfiguration(LocalContext.currentValue)
     }
 
 /**
  * Provides information and functionality related to the spatial configuration of the application.
  */
-public sealed interface SpatialConfiguration {
+public interface SpatialConfiguration {
     /**
      * A volume whose width, height, and depth represent the space available to the application.
      *
@@ -131,16 +115,6 @@ public sealed interface SpatialConfiguration {
         public fun hasXrSpatialFeature(context: Context): Boolean {
             return context.packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)
         }
-
-        private val sessionInstances: MutableMap<Session, SpatialConfiguration> = mutableMapOf()
-
-        internal fun getOrCreate(
-            session: Session,
-            hasXrSpatialFeature: Boolean,
-        ): SpatialConfiguration =
-            sessionInstances.getOrPut(session) {
-                SessionSpatialConfiguration(session, hasXrSpatialFeature)
-            }
     }
 }
 
@@ -159,14 +133,13 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
 }
 
 /** A [SpatialConfiguration] that is attached to the current [Session]. */
-private class SessionSpatialConfiguration(
-    private val session: Session,
-    override val hasXrSpatialFeature: Boolean,
-) : SpatialConfiguration {
+internal class SessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
     private var boundsState by
         mutableStateOf(session.scene.activitySpace.getBounds()).apply {
             session.scene.activitySpace.addBoundsChangedListener { value = it }
         }
+
+    override val hasXrSpatialFeature: Boolean = true
 
     override val bounds: DpVolumeSize
         get() = boundsState.toDpVolumeSize()

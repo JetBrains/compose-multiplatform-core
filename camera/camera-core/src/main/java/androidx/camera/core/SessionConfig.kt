@@ -21,7 +21,6 @@ import androidx.annotation.RestrictTo
 import androidx.camera.core.featurecombination.Feature
 import androidx.camera.core.featurecombination.impl.UseCaseType
 import androidx.camera.core.featurecombination.impl.UseCaseType.Companion.getFeatureComboUseCaseType
-import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -36,8 +35,8 @@ import java.util.concurrent.Executor
  * events to start and stop the camera session with this given configuration).
  *
  * It consists of a collection of [UseCase], session parameters to be applied on the camera session,
- * and common properties like the field-of-view defined by [ViewPort], the [CameraEffect], required
- * or preferred [Feature]s etc.
+ * and common properties like the field-of-view defined by [ViewPort], the [CameraEffect], frame
+ * rate, required or preferred [Feature]s etc.
  *
  * @property useCases The list of [UseCase] to be attached to the camera and receive camera data.
  *   This can't be empty.
@@ -45,6 +44,19 @@ import java.util.concurrent.Executor
  *   no viewport.
  * @property effects The list of [CameraEffect] to be applied on the camera session. If not set, the
  *   default is no effects.
+ * @property frameRateRange The desired frame rate range for the camera session. The value must be
+ *   one of the supported frame rates queried by [CameraInfo.getSupportedFrameRateRanges] with a
+ *   specific [SessionConfig], or an [IllegalStateException] will be thrown during `SessionConfig`
+ *   binding (i.e. when calling `androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle` or
+ *   `androidx.camera.lifecycle.LifecycleCameraProvider.bindToLifecycle`). When this value is set,
+ *   any target frame rate set on individual [UseCase] will be ignored during `SessionConfig`
+ *   binding. If this value is not set, the default is [FRAME_RATE_RANGE_UNSPECIFIED], which means
+ *   no specific frame rate. The range defines the acceptable minimum and maximum frame rate for the
+ *   camera session. A **dynamic range** (e.g., `[15, 30]`) allows the camera to adjust its frame
+ *   rate within the bounds, which will benefit **previewing in low light** by enabling longer
+ *   exposures for brighter, less noisy images; conversely, a **fixed range** (e.g., `[30, 30]`)
+ *   ensures a stable frame rate crucial for **video recording**, though it can lead to darker,
+ *   noisier video in low light due to shorter exposure times.
  * @throws IllegalArgumentException If the combination of config options are conflicting or
  *   unsupported, e.g.
  *     - if any of the required features is not supported on the device
@@ -52,6 +64,7 @@ import java.util.concurrent.Executor
  *     - if same feature is present in both [requiredFeatures] and [preferredFeatures]
  *     - if [ImageAnalysis] use case is added with [requiredFeatures] or [preferredFeatures]
  *     - if a [CameraEffect] is set with [requiredFeatures] or [preferredFeatures]
+ *     - if the frame rate is not supported with the [SessionConfig]
  *
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
@@ -62,6 +75,7 @@ constructor(
     useCases: List<UseCase>,
     public val viewPort: ViewPort? = null,
     public val effects: List<CameraEffect> = emptyList(),
+    public val frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
 ) {
     public val useCases: List<UseCase> = useCases.distinct()
 
@@ -75,12 +89,7 @@ constructor(
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val isLegacy: Boolean = false
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public open val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
-    // TODO(b/419462894): Refactor targetHighSpeedFrameRate into sessionType and targetFrameRate
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public open val sessionType: Int =
-        if (targetHighSpeedFrameRate != FRAME_RATE_RANGE_UNSPECIFIED) SESSION_TYPE_HIGH_SPEED
-        else SESSION_TYPE_REGULAR
+    public open val sessionType: Int = SESSION_TYPE_REGULAR
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var featureSelectionListener: Consumer<Set<Feature>> = Consumer<Set<Feature>> {}
@@ -95,9 +104,15 @@ constructor(
         useCases: List<UseCase>,
         viewPort: ViewPort? = null,
         effects: List<CameraEffect> = emptyList(),
+        frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         requiredFeatures: Set<Feature> = emptySet(),
         preferredFeatures: List<Feature> = emptyList(),
-    ) : this(useCases = useCases, viewPort = viewPort, effects = effects) {
+    ) : this(
+        useCases = useCases,
+        viewPort = viewPort,
+        effects = effects,
+        frameRateRange = frameRateRange,
+    ) {
         this.requiredFeatures = requiredFeatures
         this.preferredFeatures = preferredFeatures
         validateFeatureCombination()
@@ -182,6 +197,7 @@ constructor(
     public class Builder(private val useCases: List<UseCase>) {
         private var viewPort: ViewPort? = null
         private var effects: MutableList<CameraEffect> = mutableListOf()
+        private var frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
         private val requiredFeatures = mutableListOf<Feature>()
         private val preferredFeatures = mutableListOf<Feature>()
 
@@ -196,6 +212,18 @@ constructor(
         /** Adds a [CameraEffect] to be applied on the camera session. */
         public fun addEffect(effect: CameraEffect): Builder {
             this.effects.add(effect)
+            return this
+        }
+
+        /**
+         * Sets the frame rate range for the camera session.
+         *
+         * See [SessionConfig.frameRateRange] for more details.
+         *
+         * @param frameRateRange The frame rate range to be applied on the camera session.
+         */
+        public fun setFrameRateRange(frameRateRange: Range<Int>): Builder {
+            this.frameRateRange = frameRateRange
             return this
         }
 
@@ -242,6 +270,7 @@ constructor(
                 useCases = useCases,
                 viewPort = viewPort,
                 effects = effects.toList(),
+                frameRateRange = frameRateRange,
                 requiredFeatures = requiredFeatures.toSet(),
                 preferredFeatures = preferredFeatures.toList(),
             )
@@ -256,7 +285,6 @@ public class LegacySessionConfig(
     useCases: List<UseCase>,
     viewPort: ViewPort? = null,
     effects: List<CameraEffect> = emptyList(),
-    public override val targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
 ) : SessionConfig(useCases, viewPort, effects) {
     public override val isLegacy: Boolean = true
 

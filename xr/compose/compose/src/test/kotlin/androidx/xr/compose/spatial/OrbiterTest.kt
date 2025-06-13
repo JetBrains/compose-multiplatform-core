@@ -38,8 +38,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.SpatialCapabilities
 import androidx.xr.compose.subspace.MainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -441,8 +442,9 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    // Say we are not in XR so the SpatialCapabilities are false.
-                    CompositionLocalProvider(LocalHasXrSpatialFeature provides false) {
+                    CompositionLocalProvider(
+                        LocalSpatialCapabilities provides SpatialCapabilities.NoCapabilities
+                    ) {
                         Orbiter(position = ContentEdge.Top) {
                             Box(modifier = Modifier.fillMaxSize().testTag("orbiterContentBox")) {}
                         }

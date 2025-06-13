@@ -2,33 +2,6 @@
 <issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
-        id="CheckResult"
-        message="The result of `that` is not used"
-        errorLine1="        check(&quot;vibration()&quot;).that(actual.vibration is VibrationEffectWrapper)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/haptics/testing/AttributedVibrationSubject.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `that` is not used"
-        errorLine1="        check(&quot;attributes()&quot;).that(actual.attrs is AudioAttributesWrapper)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/haptics/testing/AttributedVibrationSubject.kt"/>
-    </issue>
-
-    <issue
-        id="CheckResult"
-        message="The result of `that` is not used"
-        errorLine1="        check(&quot;attributes()&quot;).that(actual.attrs is VibrationAttributesWrapper)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/haptics/testing/AttributedVibrationSubject.kt"/>
-    </issue>
-
-    <issue
         id="WrongConstant"
         message="Must be one of: Composition.PRIMITIVE_CLICK, Composition.PRIMITIVE_THUD, Composition.PRIMITIVE_SPIN, Composition.PRIMITIVE_QUICK_RISE, Composition.PRIMITIVE_SLOW_RISE, Composition.PRIMITIVE_QUICK_FALL, Composition.PRIMITIVE_TICK, Composition.PRIMITIVE_LOW_TICK"
         errorLine1="                        platformComposition.addPrimitive(atom.type, atom.amplitudeScale, delayMs)"

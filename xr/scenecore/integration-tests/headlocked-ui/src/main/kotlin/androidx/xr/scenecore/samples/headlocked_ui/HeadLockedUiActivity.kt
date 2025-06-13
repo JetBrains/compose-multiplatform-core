@@ -56,6 +56,7 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ScenePose
@@ -85,7 +86,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         mSession.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 
         // Set the main panel size and make the main panel movable.
-        mSession.scene.mainPanelEntity.setSizeInPixels(IntSize2d(width = 1500, height = 1100))
+        mSession.scene.mainPanelEntity.sizeInPixels = IntSize2d(width = 1500, height = 1100)
         val movableComponent =
             MovableComponent.create(mSession, systemMovable = true, scaleInZ = false)
         val unused = mSession.scene.mainPanelEntity.addComponent(movableComponent)
@@ -113,7 +114,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 name = "headLockedPanel",
                 pose = Pose(Vector3(0f, 0f, 0f)),
             )
-        this.mHeadLockedPanel.setParent(mSession.scene.activitySpace)
+        this.mHeadLockedPanel.parent = mSession.scene.activitySpace
 
         setContent { HeadLockParameterOptions(mSession, mActivity) }
     }
@@ -154,11 +155,15 @@ class HeadLockedUiActivity : AppCompatActivity() {
         )
         mDebugPanel.view.setLine(
             "Left Eye ActivityPose",
-            mSession.scene.spatialUser.getCameraViews()[0].activitySpacePose.toString(),
+            mSession.scene.spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]!!
+                .activitySpacePose
+                .toString(),
         )
         mDebugPanel.view.setLine(
             "Right Eye ActivityPose",
-            mSession.scene.spatialUser.getCameraViews()[1].activitySpacePose.toString(),
+            mSession.scene.spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]!!
+                .activitySpacePose
+                .toString(),
         )
         mDebugPanel.view.setLine(
             "Projection Source ActivityPose",
@@ -200,8 +205,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun setProjectionSource(source: String) {
         when (source) {
-            "LeftEye" -> mProjectionSource = mSession.scene.spatialUser.getCameraViews()[0]
-            "RightEye" -> mProjectionSource = mSession.scene.spatialUser.getCameraViews()[1]
+            "LeftEye" ->
+                mProjectionSource =
+                    mSession.scene.spatialUser.cameraViews[CameraView.CameraType.LEFT_EYE]
+            "RightEye" ->
+                mProjectionSource =
+                    mSession.scene.spatialUser.cameraViews[CameraView.CameraType.RIGHT_EYE]
             "Head" -> mProjectionSource = mSession.scene.spatialUser.head!!
             else -> Log.e(TAG, "Unknown projection source: $source")
         }

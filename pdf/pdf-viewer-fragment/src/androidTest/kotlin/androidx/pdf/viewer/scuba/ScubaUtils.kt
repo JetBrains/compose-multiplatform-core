@@ -16,10 +16,12 @@
 
 package androidx.pdf.viewer.scuba
 
+import android.graphics.Bitmap
 import androidx.pdf.viewer.fragment.test.R
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.captureToBitmap
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import androidx.test.screenshot.matchers.MSSIMMatcher
@@ -43,4 +45,26 @@ internal fun assertScreenshot(screenshotRule: AndroidXScreenshotTestRule, filena
                 )
             }
         )
+}
+
+/**
+ * Assert screenshot captured while executing test to available golden.
+ *
+ * @param screenshotRule Screenshot test rule.
+ * @param filename Screenshot filename.
+ */
+internal fun assertFullScreenshot(screenshotRule: AndroidXScreenshotTestRule, filename: String) {
+    val bitmap = captureEntireScreenWithKeyboard()
+    bitmap.assertAgainstGolden(
+        screenshotRule,
+        filename,
+        MSSIMMatcher(MATCHING_SIMILARITY_THRESHOLD),
+    )
+}
+
+fun captureEntireScreenWithKeyboard(): Bitmap {
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    val uiAutomation = instrumentation.uiAutomation
+
+    return uiAutomation.takeScreenshot()
 }

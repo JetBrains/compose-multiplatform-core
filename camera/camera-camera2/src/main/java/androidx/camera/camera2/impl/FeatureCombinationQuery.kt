@@ -64,8 +64,12 @@ public class FeatureCombinationQueryImpl(
      * creation of the CaptureRequest needed for the query requires the internal CameraDeviceSetup
      * which is not exposed by the Jetpack feature combination query library.
      */
-    private val cameraDeviceSetup: CameraDevice.CameraDeviceSetup by lazy {
-        cameraManagerCompat.unwrap().getCameraDeviceSetup(cameraId)
+    private val cameraDeviceSetup: CameraDevice.CameraDeviceSetup? by lazy {
+        if (cameraManagerCompat.unwrap().isCameraDeviceSetupSupported(cameraId)) {
+            cameraManagerCompat.unwrap().getCameraDeviceSetup(cameraId)
+        } else {
+            null
+        }
     }
 
     private val cameraCharacteristics: CameraCharacteristicsCompat by lazy {
@@ -83,8 +87,10 @@ public class FeatureCombinationQueryImpl(
 
     override fun isSupported(sessionConfig: SessionConfig): Boolean {
         val outputConfigs = createOutputConfigurations(sessionConfig)
+
         val camera2SessionConfiguration =
-            getCamera2SessionConfiguration(outputConfigs, sessionConfig)
+            getCamera2SessionConfiguration(outputConfigs, sessionConfig) ?: return false
+
         return cameraDeviceSetupCompat
             .isSessionConfigurationSupported(camera2SessionConfiguration)
             .supported == CameraDeviceSetupCompat.SupportQueryResult.RESULT_SUPPORTED
@@ -137,7 +143,7 @@ public class FeatureCombinationQueryImpl(
     private fun getCamera2SessionConfiguration(
         outputConfigs: List<OutputConfiguration>,
         cameraXSessionConfig: SessionConfig,
-    ): SessionConfiguration {
+    ): SessionConfiguration? {
         val camera2SessionConfig =
             SessionConfiguration(
                 SessionConfiguration.SESSION_REGULAR,
@@ -145,6 +151,8 @@ public class FeatureCombinationQueryImpl(
                 CameraXExecutors.directExecutor(),
                 NO_OP_CALLBACK,
             )
+
+        val cameraDeviceSetup = cameraDeviceSetup ?: return null
 
         camera2SessionConfig.sessionParameters =
             cameraDeviceSetup

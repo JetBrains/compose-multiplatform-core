@@ -98,7 +98,7 @@ fun <T : Any> CommonUiNavDisplay(
         // Make a copy shallow copy so that transition.currentState and transition.targetState are
         // different backstack instances. This ensures currentState reflects the old backstack when
         // the backstack (targetState) is updated.
-        val newStack = backstack.toList()
+        val newStack = entries.map { it.contentKey }
         val entry = entries.last()
         val transition = updateTransition(targetState = newStack, label = newStack.toString())
         val isPop = isPop(transition.currentState, newStack)
@@ -140,7 +140,7 @@ fun <T : Any> CommonUiNavDisplay(
                     }
                 },
             ) {
-                entries.findLast { entry -> entry.key == lastKey }?.content?.invoke(lastKey)
+                entries.findLast { entry -> entry.contentKey == lastKey }?.Content()
             }
         }
     }

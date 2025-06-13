@@ -107,7 +107,38 @@ class OpenXrManagerTest {
 
         underTest.configure(Config(handTracking = Config.HandTrackingMode.DISABLED))
 
-        assertThat(perceptionManager.xrResources.updatables).isEmpty()
+        assertThat(perceptionManager.xrResources.updatables)
+            .doesNotContain(perceptionManager.xrResources.leftHand)
+        assertThat(perceptionManager.xrResources.updatables)
+            .doesNotContain(perceptionManager.xrResources.rightHand)
+    }
+
+    @Test
+    fun configure_deviceTrackingEnabled_addsDeviceToUpdatables() = initOpenXrManagerAndRunTest {
+        underTest.create()
+        check(underTest.config.deviceTracking == Config.DeviceTrackingMode.DISABLED)
+        check(perceptionManager.xrResources.updatables.isEmpty())
+
+        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
+
+        assertThat(perceptionManager.xrResources.updatables)
+            .containsExactly(perceptionManager.xrResources.arDevice)
+    }
+
+    @Test
+    fun configure_deviceTrackingDisabled_removesDeviceToUpdatables() = initOpenXrManagerAndRunTest {
+        underTest.create()
+        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
+        check(
+            perceptionManager.xrResources.updatables.contains(
+                perceptionManager.xrResources.arDevice
+            )
+        )
+
+        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
+
+        assertThat(perceptionManager.xrResources.updatables)
+            .doesNotContain(perceptionManager.xrResources.arDevice)
     }
 
     // TODO(b/392660855): Add a test for all APIs gated by a feature that needs to be configured.

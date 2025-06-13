@@ -117,7 +117,7 @@ class PerfettoCaptureSweepTest(
                 "PerfettoCaptureTest_$it".also { label -> trace(label) { Thread.sleep(50) } }
             }
 
-        perfettoCapture.stop(traceFilePath)
+        perfettoCapture.stop(traceFilePath, null)
 
         val matchingSlices =
             TraceProcessor.runSingleSessionServer(traceFilePath) {

@@ -63,4 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"এই PDFটো সম্পাদনা কৰিব নোৱাৰি"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"PDFৰ পৰা সমল প্ৰতিলিপি কৰা হৈছে"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"স্ক্ৰ’ল কৰা দণ্ড"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"নিশ্চিত কৰক"</string>
 </resources>

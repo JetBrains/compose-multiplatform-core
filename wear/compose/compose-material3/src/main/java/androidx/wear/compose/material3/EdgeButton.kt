@@ -74,7 +74,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.wear.compose.materialcore.screenWidthDp
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -192,7 +195,6 @@ public fun EdgeButton(
                     layout(size.width, size.height) { placeable.place(0, 0) }
                 }
                 .graphicsLayer {
-
                     // Container fades when button height goes from 18dp to 0dp
                     alpha =
                         easing
@@ -381,10 +383,10 @@ private fun Modifier.sizeAndOffset(helper: ShapeHelper) = layout { measurable, c
 internal class ShapeHelper(private val density: Density) {
     private val extraSmallHeightPx =
         with(density) { EdgeButtonSize.ExtraSmall.maximumHeight.toPx() }
-    private val bottomPaddingPx = with(density) { EdgeButtonVerticalPadding.toPx() }
+    internal val bottomPaddingPx = with(density) { EdgeButtonVerticalPadding.toPx() }
     private val extraSmallEllipsisHeightPx = with(density) { EXTRA_SMALL_ELLIPSIS_HEIGHT.toPx() }
     private val targetSidePadding = with(density) { TARGET_SIDE_PADDING.toPx() }
-    private var lastSize: Size? = null
+    internal var lastSize: Size? = null
 
     // Distance on the x axis between the first pixel of the screen and the first pixel of the edge,
     // button. Same distance applies on the right side.
@@ -452,52 +454,129 @@ internal class EdgeButtonShape(private val helper: ShapeHelper) : Shape {
         val path =
             Path().apply {
                 with(helper) {
-                    // Top Side - Rounded Rect
-                    moveTo(sidePadding, r)
-                    quarterEllipsis(Offset(sidePadding + r, r), r, r, 180f)
-                    lineTo(size.width - sidePadding - r, 0f)
-                    quarterEllipsis(Offset(size.width - sidePadding - r, r), r, r, 270f)
+                    val t1Factor = 1f
 
-                    // Bottom side - Ellipsis morphing to round rect when very small.
-                    val ellipsisRadiusX =
-                        lerp((size.width - 2 * sidePadding) / 2, r, finalFadeProgress)
+                    val ellipsisCenter = Offset(size.width / 2, size.height - ellipsisHeight / 2)
                     val ellipsisRadiusY = ellipsisHeight / 2
-                    quarterEllipsis(
+                    val ellipsisRadiusX =
+                        findEllipsisRadiusX(
+                            circleRadius =
+                                (helper.lastSize ?: size).width / 2 - helper.bottomPaddingPx,
+                            radiusY = ellipsisRadiusY,
+                            target = 0f,
+                        )
+
+                    // We use an ellipsis function as a function of t, this is the point at which we
+                    // will transition between circle and ellipsis.
+                    val ellipsisCutAngle = finalFadeProgress * t1Factor * Math.PI.toFloat() / 2
+
+                    // Distance from the center of the circle to the transition point
+                    val epDist =
                         Offset(
-                            size.width - sidePadding - ellipsisRadiusX,
-                            size.height - ellipsisRadiusY,
+                            ellipsisRadiusX * cos(ellipsisCutAngle),
+                            ellipsisRadiusY * sin(ellipsisCutAngle),
+                        )
+
+                    // Point that transitions between the ellipsis and the circle
+                    val transitionPoint = ellipsisCenter + epDist
+
+                    // Normalized tangent on the point
+                    val tangent =
+                        Offset(
+                                ellipsisRadiusX * sin(ellipsisCutAngle),
+                                -ellipsisRadiusY * cos(ellipsisCutAngle),
+                            )
+                            .let { v -> v / sqrt(sqr(v.x) + sqr(v.y)) }
+
+                    // Compute the radius the circle needs so the top of the circle is at the top of
+                    // the edge button
+                    val circleRadius = transitionPoint.y / (1 + tangent.x)
+
+                    // Center of the circle/arc
+                    val circleCenter = transitionPoint + tangent.rotate90ccw() * circleRadius
+
+                    // Distance from the center of the circle to the transition point
+                    val circleTransitionVector = transitionPoint - circleCenter
+                    // Sweep
+                    val sweep =
+                        atan2(circleTransitionVector.y, circleTransitionVector.x).toDegrees() + 90f
+
+                    // Right arc
+                    moveTo(circleCenter + Offset(0f, -circleRadius))
+                    arcTo(Rect(circleCenter, circleRadius), 270f, sweep, false)
+
+                    // Bottom side - ellipsis.
+                    val epAngle = ellipsisCutAngle.toDegrees()
+                    arcTo(
+                        Rect(
+                            Offset(size.width / 2 - ellipsisRadiusX, size.height - ellipsisHeight),
+                            Size(ellipsisRadiusX * 2, ellipsisRadiusY * 2),
                         ),
-                        ellipsisRadiusX,
-                        ellipsisRadiusY,
-                        0f,
+                        epAngle,
+                        180 - 2 * epAngle,
+                        false,
                     )
-                    lineTo(sidePadding + ellipsisRadiusX, size.height)
-                    quarterEllipsis(
-                        Offset(sidePadding + ellipsisRadiusX, size.height - ellipsisRadiusY),
-                        ellipsisRadiusX,
-                        ellipsisRadiusY,
-                        90f,
+
+                    // Left arc
+                    arcTo(
+                        Rect(Offset(size.width - circleCenter.x, circleCenter.y), circleRadius),
+                        270f - sweep,
+                        sweep,
+                        false,
                     )
+
+                    // Connecting line
+                    close()
                 }
             }
 
         return Outline.Generic(path)
     }
+
+    // Does a binary search to find the maximum possible horizontal radius of the ellipsis ensuring
+    // that the distance to the circle is the target.
+    // The ellipsis and circle share a point at the bottom.
+    private fun findEllipsisRadiusX(circleRadius: Float, radiusY: Float, target: Float): Float {
+        if (radiusY >= circleRadius) return circleRadius // !?
+
+        // Initial range of the binary search.
+        var radiusXMin = radiusY
+        var radiusXMax = circleRadius
+
+        // Distance between the center of the circle and the center of the ellipsis.
+        val d = circleRadius - radiusY
+
+        // Do a binary search with 10 steps, that makes the error on the found value less than 0.1%
+        repeat(10) {
+            val radiusX = (radiusXMin + radiusXMax) / 2
+
+            // Sin of the angle, so that the point in the ellipsis that is closest to the
+            // circle is in that direction, as seen from the center of the circle.
+            val sinAlpha = (radiusY * d / (sqr(radiusX) - sqr(radiusY)))
+            if (sinAlpha > 1f) {
+                // If there is no minimum point, it means the ellipsis is too small.
+                radiusXMin = radiusX
+            } else {
+                val cosAlpha = sqrt(1 - sqr(sinAlpha))
+
+                // Closest point to the circle on the ellipse.
+                val p = Offset(radiusX * cosAlpha, d + radiusY * sinAlpha)
+
+                // Distance between the circle and the ellipsis.
+                val ecd = circleRadius - p.getDistance()
+
+                // Update the range we are searching on.
+                if (ecd > target) radiusXMin = radiusX else radiusXMax = radiusX
+            }
+        }
+        return (radiusXMin + radiusXMax) / 2
+    }
 }
 
-private fun Path.quarterEllipsis(
-    center: Offset,
-    radiusX: Float,
-    radiusY: Float,
-    startAngle: Float,
-) {
-    arcTo(
-        Rect(center.x - radiusX, center.y - radiusY, center.x + radiusX, center.y + radiusY),
-        startAngle,
-        sweepAngleDegrees = 90f,
-        forceMoveTo = false,
-    )
-}
+// TODO: move to common code?
+private fun Offset.rotate90ccw() = Offset(y, -x)
+
+private fun Path.moveTo(o: Offset) = moveTo(o.x, o.y)
 
 private fun sqr(x: Float) = x * x
 

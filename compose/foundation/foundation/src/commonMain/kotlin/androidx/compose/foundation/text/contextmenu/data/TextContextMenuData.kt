@@ -46,7 +46,7 @@ class TextContextMenuData(val components: List<TextContextMenuComponent>) {
 abstract class TextContextMenuComponent internal constructor(val key: Any)
 
 /** A [TextContextMenuComponent] separator in a text context menu. */
-object TextContextMenuSeparator : TextContextMenuComponent(TextContextMenuSeparator)
+object TextContextMenuSeparator : TextContextMenuComponent(Any())
 
 /** A session for an open text context menu that can be used to close the context menu. */
 @Suppress("NotCloseable") // AutoCloseable not available in common.

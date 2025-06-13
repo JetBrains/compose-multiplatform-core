@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 
 /**
@@ -30,7 +31,7 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  * @param sandboxedUiAdapter an adapter that provides content from a SandboxedSdk to be displayed as
  *   part of a host app's window.
  * @param modifier the [Modifier] to be applied to this SandboxedSdkUi.
- * @param providerUiOnTop sets the Z-ordering of the SandboxedSdkUi surface, relative to its window.
+ * @param providerUiOnTop sets the Z-order of the SandboxedSdkUi surface, relative to its window.
  * @param sandboxedSdkViewEventListener an event listener to the UI presentation.
  */
 @Composable
@@ -38,6 +39,7 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 @Suppress("MissingJvmstatic")
 // The listener relates to UI event and is expected to be triggered on the main thread.
 @SuppressLint("ExecutorRegistration")
+@ExperimentalFeatures.ChangingContentUiZOrderApi
 public fun SandboxedSdkUi(
     sandboxedUiAdapter: SandboxedUiAdapter,
     modifier: Modifier = Modifier,
@@ -59,4 +61,24 @@ public fun SandboxedSdkUi(
         onReset = { view -> view.setEventListener(null) },
         onRelease = { view -> view.setAdapter(null) },
     )
+}
+
+/**
+ * Similar to SandboxedSdkUi(SandboxedUiAdapter, Modifier, SandboxedSdkViewEventListener?, Boolean),
+ * but always set the Z-order of the provider surface below the client window.
+ *
+ * @see SandboxedSdkUi(SandboxedUiAdapter, Modifier, Boolean, SandboxedSdkViewEventListener?)
+ */
+@Composable
+// No need for @JvmOverloads as this is Kotlin only API
+@Suppress("MissingJvmstatic")
+// The listener relates to UI event and is expected to be triggered on the main thread.
+@SuppressLint("ExecutorRegistration")
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
+public fun SandboxedSdkUi(
+    sandboxedUiAdapter: SandboxedUiAdapter,
+    modifier: Modifier = Modifier,
+    sandboxedSdkViewEventListener: SandboxedSdkViewEventListener? = null,
+) {
+    SandboxedSdkUi(sandboxedUiAdapter, modifier, false, sandboxedSdkViewEventListener)
 }

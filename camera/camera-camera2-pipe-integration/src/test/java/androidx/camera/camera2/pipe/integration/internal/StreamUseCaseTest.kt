@@ -37,6 +37,7 @@ import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.SurfaceConfig
@@ -266,7 +267,6 @@ class StreamUseCaseTest() {
                 SupportedSurfaceCombination.FeatureSettings(
                     CameraMode.CONCURRENT_CAMERA,
                     DynamicRange.BIT_DEPTH_8_BIT,
-                    requiresFeatureComboQuery = false,
                 )
             )
         )
@@ -279,7 +279,19 @@ class StreamUseCaseTest() {
                 SupportedSurfaceCombination.FeatureSettings(
                     CameraMode.DEFAULT,
                     DynamicRange.BIT_DEPTH_10_BIT,
-                    requiresFeatureComboQuery = false,
+                )
+            )
+        )
+    }
+
+    @Test
+    fun shouldUseStreamUseCase_highSpeedNotSupported() {
+        TestCase.assertFalse(
+            StreamUseCaseUtil.shouldUseStreamUseCase(
+                SupportedSurfaceCombination.FeatureSettings(
+                    CameraMode.DEFAULT,
+                    DynamicRange.BIT_DEPTH_8_BIT,
+                    isHighSpeedOn = true,
                 )
             )
         )
@@ -692,7 +704,7 @@ class StreamUseCaseTest() {
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                FRAME_RATE_RANGE_UNSPECIFIED,
+                SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
             )
         TestCase.assertTrue(
@@ -730,7 +742,7 @@ class StreamUseCaseTest() {
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                FRAME_RATE_RANGE_UNSPECIFIED,
+                SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
             )
         TestCase.assertFalse(
@@ -889,7 +901,7 @@ class StreamUseCaseTest() {
             DynamicRange.SDR,
             captureTypes,
             StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
-            FRAME_RATE_RANGE_UNSPECIFIED,
+            SESSION_TYPE_REGULAR,
             FRAME_RATE_RANGE_UNSPECIFIED,
         )
     }

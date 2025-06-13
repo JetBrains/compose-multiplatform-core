@@ -17,9 +17,7 @@
 package androidx.credentials.providerevents
 
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.credentials.providerevents.service.CredentialProviderEventsService
-import androidx.credentials.providerevents.service.DeviceSetupService
 
 /**
  * Defines an interface for system components that handle credential event propagation APIs.
@@ -48,19 +46,6 @@ public interface CredentialEventsProvider {
      * @param service The instance of [CredentialProviderEventsService] to interact with.
      */
     public fun getStubImplementation(service: CredentialProviderEventsService): IBinder?
-
-    /**
-     * Returns the [IBinder] stub implementation.
-     *
-     * This stub is invoked by the feature provider after binding to [DeviceSetupService]. It allows
-     * the feature provider to execute custom logic before interacting with the service.
-     *
-     * @param service The instance of [CredentialProviderEventsService] to interact with.
-     *
-     * TODO(b/416798373): move to a different class
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract fun getStubImplementation(service: DeviceSetupService): IBinder?
 
     public companion object {
         /**

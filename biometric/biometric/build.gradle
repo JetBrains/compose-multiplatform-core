@@ -41,10 +41,12 @@ dependencies {
     api("androidx.fragment:fragment:1.2.5")
 
     // Internal dependencies
+    implementation("androidx.activity:activity:1.9.0")
     implementation("androidx.appcompat:appcompat:1.2.0")
     implementation("androidx.lifecycle:lifecycle-livedata-core:2.2.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.2.0")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.2.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
 
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.testCore)

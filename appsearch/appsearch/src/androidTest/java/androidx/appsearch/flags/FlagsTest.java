@@ -286,4 +286,17 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE)
                 .isEqualTo("com.android.appsearch.flags.enable_smaller_decompression_buffer_size");
     }
+
+    @Test
+    public void testFlagValue_enableEigenEmbeddingScoring() {
+        assertThat(Flags.FLAG_ENABLE_EIGEN_EMBEDDING_SCORING)
+                .isEqualTo("com.android.appsearch.flags.enable_eigen_embedding_scoring");
+    }
+
+    @Test
+    public void testFlagValue_enableInitializationRetriesBeforeReset() {
+        assertThat(Flags.FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET)
+                .isEqualTo(
+                        "com.android.appsearch.flags.enable_initialization_retries_before_reset");
+    }
 }

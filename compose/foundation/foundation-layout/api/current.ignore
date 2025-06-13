@@ -1,5 +1,25 @@
 // Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.foundation.layout.BoxWithConstraintsScope#getConstraints-msEJaDk():
+    Binary breaking change: Added method androidx.compose.foundation.layout.BoxWithConstraintsScope.getConstraints-msEJaDk()
+AddedAbstractMethod: androidx.compose.foundation.layout.BoxWithConstraintsScope#getMaxHeight-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.BoxWithConstraintsScope.getMaxHeight-D9Ej5fM()
+AddedAbstractMethod: androidx.compose.foundation.layout.BoxWithConstraintsScope#getMaxWidth-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.BoxWithConstraintsScope.getMaxWidth-D9Ej5fM()
+AddedAbstractMethod: androidx.compose.foundation.layout.BoxWithConstraintsScope#getMinHeight-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.BoxWithConstraintsScope.getMinHeight-D9Ej5fM()
+AddedAbstractMethod: androidx.compose.foundation.layout.BoxWithConstraintsScope#getMinWidth-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.BoxWithConstraintsScope.getMinWidth-D9Ej5fM()
+AddedAbstractMethod: androidx.compose.foundation.layout.PaddingValues#calculateBottomPadding-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.PaddingValues.calculateBottomPadding-D9Ej5fM()
+AddedAbstractMethod: androidx.compose.foundation.layout.PaddingValues#calculateLeftPadding-u2uoSUM(androidx.compose.ui.unit.LayoutDirection):
+    Binary breaking change: Added method androidx.compose.foundation.layout.PaddingValues.calculateLeftPadding-u2uoSUM(androidx.compose.ui.unit.LayoutDirection)
+AddedAbstractMethod: androidx.compose.foundation.layout.PaddingValues#calculateRightPadding-u2uoSUM(androidx.compose.ui.unit.LayoutDirection):
+    Binary breaking change: Added method androidx.compose.foundation.layout.PaddingValues.calculateRightPadding-u2uoSUM(androidx.compose.ui.unit.LayoutDirection)
+AddedAbstractMethod: androidx.compose.foundation.layout.PaddingValues#calculateTopPadding-D9Ej5fM():
+    Binary breaking change: Added method androidx.compose.foundation.layout.PaddingValues.calculateTopPadding-D9Ej5fM()
+
+
 ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#getConsumeWindowInsets():
-    Method androidx.compose.foundation.layout.WindowInsets_androidKt.getConsumeWindowInsets has changed 'static' qualifier
+    Binary breaking change: Method androidx.compose.foundation.layout.WindowInsets_androidKt.getConsumeWindowInsets has changed 'static' qualifier
 ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#setConsumeWindowInsets(boolean):
-    Method androidx.compose.foundation.layout.WindowInsets_androidKt.setConsumeWindowInsets has changed 'static' qualifier
+    Binary breaking change: Method androidx.compose.foundation.layout.WindowInsets_androidKt.setConsumeWindowInsets has changed 'static' qualifier

@@ -86,6 +86,14 @@ data class AnnotatedAppFunctionSerializableProxy(
         return this
     }
 
+    /** The generated factory ClassName. */
+    override val factoryClassName: ClassName by lazy {
+        ClassName(
+            originalClassName.packageName,
+            "\$${targetClassDeclaration.getJvmClassName()}Factory",
+        )
+    }
+
     /** Validates that the proxy class has a method that returns an instance of the target class. */
     private fun validateProxyHasToTargetClassMethod() {
         val toTargetClassNameFunctionList: List<KSFunctionDeclaration> =

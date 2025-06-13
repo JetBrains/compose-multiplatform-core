@@ -34,12 +34,15 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +60,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -71,6 +73,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.DrmConfiguration
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.savedstate.SavedStateRegistryOwner
@@ -98,6 +101,16 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 private const val TAG = "JXR-SurfaceEntity-VideoPlayerTestActivity"
+
+object VideoButtonColors {
+    val StandardPlayback = Color(0xFF42A5F5) // Blue 400
+    val Multiview = Color(0xFF26A69A) // Teal 400
+    val VR = Color(0xFF7E57C2) // Deep Purple 400
+    val DRM = Color(0xFF78909C) // Blue Grey 400
+    val HDR = Color(0xFF66BB6A) // Green 400
+    val Transformations = Color(0xFF757575) // Grey 600
+    val DefaultButton = Color(0xFF42A5F5) // Blue 400
+}
 
 class VideoPlayerTestActivity : ComponentActivity() {
     private var exoPlayer: ExoPlayer? = null
@@ -132,6 +145,15 @@ class VideoPlayerTestActivity : ComponentActivity() {
             }
         Log.d(TAG, "ColorCorrectionMode toggled to: $colorCorrectionMode")
     }
+
+    private var currentPoseForVideo: Pose? = null
+    private var currentVideoSize: VideoSize? = null
+    // When the video is recorded using a rotated phone, the encoded video
+    // bitstream may have a different orientation than the device's display.
+    // To correct the orientation, we need to rotate the video content by
+    // the same amount as the device's display.
+    private var currentVideoRotationDegrees: Int = 0
+    private var currentPixelAspectRatio: Float = 1.0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -198,6 +220,10 @@ class VideoPlayerTestActivity : ComponentActivity() {
     }
 
     private fun setupControlPanel(session: Session) {
+        // Dispose previous control panel if it exists
+        controlPanelEntity?.dispose()
+        controlPanelEntity = null
+
         // Technically this leaks, but it's a sample / test app.
         val panelContentView =
             ComposeView(this).apply {
@@ -215,9 +241,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 // panel edges
                 IntSize2d(640, 480),
                 "playerControls",
-                Pose(Vector3(0.0f, -0.4f, -0.85f)), // kind of low, but within a 1m radius
+                Pose.Identity,
             )
-        controlPanelEntity!!.setParent(surfaceEntity!!)
 
         // TODO: b/413478924 - Use controlPanelEntity.view when the api is available.
         val parentView: View =
@@ -253,10 +278,16 @@ class VideoPlayerTestActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        if (surfaceEntity != null) {
-            surfaceEntity!!.dispose()
-            surfaceEntity = null
-        }
+
+        surfaceEntity?.dispose()
+        surfaceEntity = null
+
+        controlPanelEntity?.dispose()
+        controlPanelEntity = null
+
+        currentPoseForVideo = null
+        currentVideoSize = null
+        currentVideoRotationDegrees = 0
         destroySubtitles()
     }
 
@@ -273,16 +304,25 @@ class VideoPlayerTestActivity : ComponentActivity() {
         }
     }
 
-    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
-        when (stereoMode) {
+    fun getCanvasAspectRatio(
+        stereoMode: Int,
+        videoWidth: Int,
+        videoHeight: Int,
+        pixelAspectRatio: Float,
+    ): FloatSize3d {
+        check(videoWidth > 0 && videoHeight > 0) { "Video dimensions must be positive." }
+        check(pixelAspectRatio > 0f) { "Pixel aspect ratio must be positive." }
+        val effectiveDisplayWidth = videoWidth.toFloat() * pixelAspectRatio
+
+        return when (stereoMode) {
             SurfaceEntity.StereoMode.MONO,
             SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
-                return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
+                FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
-                return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
+                FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
-                return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
+                FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -424,6 +464,86 @@ class VideoPlayerTestActivity : ComponentActivity() {
         } // end column
     }
 
+    private fun updateSurfaceEntityVisuals() {
+        val currentSurfaceEntity = surfaceEntity ?: return
+        val activePoseForVideo = currentPoseForVideo ?: return
+        val activeVideoSize = currentVideoSize ?: return
+
+        Log.d(
+            TAG,
+            "Updating visuals. Rotation: $currentVideoRotationDegrees, Size: ${activeVideoSize.width}x${activeVideoSize.height}, Pixel Aspect Ratio: $currentPixelAspectRatio",
+        )
+
+        Log.d(TAG, "activePoseForVideo: $activePoseForVideo")
+
+        val orientedWidth: Int
+        val orientedHeight: Int
+        if (currentVideoRotationDegrees == 90 || currentVideoRotationDegrees == 270) {
+            orientedWidth = activeVideoSize.height
+            orientedHeight = activeVideoSize.width
+        } else {
+            orientedWidth = activeVideoSize.width
+            orientedHeight = activeVideoSize.height
+        }
+
+        if (orientedWidth <= 0 || orientedHeight <= 0) {
+            Log.e(TAG, "Invalid oriented dimensions: ${orientedWidth}x${orientedHeight}")
+            return
+        }
+
+        val newShapeDimensions =
+            getCanvasAspectRatio(
+                currentSurfaceEntity.stereoMode,
+                orientedWidth,
+                orientedHeight,
+                currentPixelAspectRatio,
+            )
+        if (currentSurfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Quad) {
+            currentSurfaceEntity.canvasShape =
+                SurfaceEntity.CanvasShape.Quad(newShapeDimensions.width, newShapeDimensions.height)
+            movableComponent?.size = currentSurfaceEntity.dimensions
+        }
+
+        // Calculate the corrective rotation for the video content
+        val videoCorrectionQuaternion =
+            Quaternion.fromAxisAngle(Vector3.Backward, -currentVideoRotationDegrees.toFloat())
+
+        // Apply the correction to the base pose to get the final pose for the SurfaceEntity
+        val finalEntityRotation = activePoseForVideo.rotation * videoCorrectionQuaternion
+        val correctedPose = Pose(activePoseForVideo.translation, finalEntityRotation)
+
+        currentSurfaceEntity.setPose(correctedPose)
+        Log.i(TAG, "SurfaceEntity visuals updated. Corrected Pose Applied: $correctedPose")
+
+        // controlPanelEntity should not be rotated.
+        controlPanelEntity?.let { panel ->
+            val videoQuadHeight = currentSurfaceEntity.dimensions.height
+
+            // Position the control panel below and slightly in front of the video panel.
+            val yOffsetLocal = -(videoQuadHeight / 2f) - 0.15f
+            val zOffsetLocal = 0.05f
+
+            val controlPanelLocalOffsetTranslation = Vector3(0f, yOffsetLocal, zOffsetLocal)
+
+            // The control panel should share the same general orientation as the upright video
+            // plane. Therefore, its target rotation should be the same as the video's.
+            val targetControlPanelRotation = activePoseForVideo.rotation
+
+            // Transform the local offset to a world position based on the activePoseForVideo
+            val targetControlPanelPosition =
+                activePoseForVideo.transformPoint(controlPanelLocalOffsetTranslation)
+
+            val desiredControlPanelPose =
+                Pose(targetControlPanelPosition, targetControlPanelRotation)
+
+            panel.setPose(desiredControlPanelPose)
+            Log.i(
+                TAG,
+                "ControlPanel pose updated to remain upright and positioned relative to video panel: $desiredControlPanelPose",
+            )
+        }
+    }
+
     @Suppress("UnsafeOptInUsageError")
     @Composable
     fun PlayVideoButton(
@@ -434,6 +554,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
         pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
         buttonText: String,
+        buttonColor: Color = VideoButtonColors.DefaultButton,
         enabled: Boolean = true,
         loop: Boolean = false,
         protected: Boolean = false,
@@ -483,6 +604,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         val unused = surfaceEntity!!.addComponent(movableComponent!!)
                     }
                 }
+                currentPoseForVideo = pose
 
                 // Get or initialize the ExoPlayer.
                 val player = initializeExoPlayer(activity)
@@ -511,29 +633,12 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 player.addListener(
                     object : Player.Listener {
                         override fun onVideoSizeChanged(videoSize: VideoSize) {
-                            val width = videoSize.width
-                            val height = videoSize.height
-                            check(width >= 0 && height >= 0) { "Canvas size must be larger than 0" }
-
-                            // Resize the canvas to match the video aspect ratio - accounting for
-                            // the stereo
-                            // mode.
-                            val dimensions = getCanvasAspectRatio(stereoMode, width, height)
-                            // Set the dimensions of the Quad canvas to the video dimensions and
-                            // attach the
-                            // a MovableComponent.
-                            if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
-                                surfaceEntity?.canvasShape =
-                                    SurfaceEntity.CanvasShape.Quad(
-                                        dimensions.width,
-                                        dimensions.height,
-                                    )
-                                movableComponent?.size =
-                                    surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f)
-                            }
+                            Log.i(TAG, "Raw ${videoSize.width}x${videoSize.height}")
+                            currentVideoSize = videoSize
+                            updateSurfaceEntityVisuals()
                         }
 
-                        override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                        override fun onTracksChanged(tracks: Tracks) {
                             super.onTracksChanged(tracks)
 
                             if (
@@ -547,7 +652,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                         "ColorCorrectionMode is BEST_EFFORT. Setting contentColorMetadata to null.",
                                     )
                                 }
-                                return
                             }
 
                             // Iterate through track groups to find the selected video track
@@ -557,36 +661,65 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                 ) {
                                     if (trackGroup.length > 0) {
                                         val videoFormat = trackGroup.getTrackFormat(0)
-                                        val colorInfo: ColorInfo? = videoFormat.colorInfo
-                                        if (colorInfo != null && surfaceEntity != null) {
-                                            val colorSpace = colorInfo.colorSpace
-                                            Log.d(TAG, "colorSpace: $colorSpace")
-                                            val colorTransfer = colorInfo.colorTransfer
-                                            Log.d(TAG, "colorTransfer: $colorTransfer")
-                                            val colorRange = colorInfo.colorRange
-                                            Log.d(TAG, "colorRange: $colorRange")
-                                            val maxContentLightLevel =
-                                                parseMaxCLLFromHdrStaticInfo(
-                                                    colorInfo.hdrStaticInfo
-                                                )
-                                            Log.d(
-                                                TAG,
-                                                "maxContentLightLevel: $maxContentLightLevel",
-                                            )
 
-                                            val contentColorMetadata =
-                                                SurfaceEntity.ContentColorMetadata(
-                                                    colorSpace = colorSpace,
-                                                    colorTransfer = colorTransfer,
-                                                    colorRange = colorRange,
-                                                    maxCLL = maxContentLightLevel,
+                                        // Extract color information if necessary
+                                        if (
+                                            colorCorrectionMode != ColorCorrectionMode.BEST_EFFORT
+                                        ) {
+                                            val colorInfo: ColorInfo? = videoFormat.colorInfo
+                                            if (colorInfo != null && surfaceEntity != null) {
+                                                val colorSpace = colorInfo.colorSpace
+                                                Log.d(TAG, "colorSpace: $colorSpace")
+                                                val colorTransfer = colorInfo.colorTransfer
+                                                Log.d(TAG, "colorTransfer: $colorTransfer")
+                                                val colorRange = colorInfo.colorRange
+                                                Log.d(TAG, "colorRange: $colorRange")
+                                                val maxContentLightLevel =
+                                                    parseMaxCLLFromHdrStaticInfo(
+                                                        colorInfo.hdrStaticInfo
+                                                    )
+                                                Log.d(
+                                                    TAG,
+                                                    "maxContentLightLevel: $maxContentLightLevel",
                                                 )
-                                            surfaceEntity?.contentColorMetadata =
-                                                contentColorMetadata
-                                            Log.d(
-                                                TAG,
-                                                "SurfaceEntity contentColorMetadata updated: $contentColorMetadata",
-                                            )
+
+                                                val contentColorMetadata =
+                                                    SurfaceEntity.ContentColorMetadata(
+                                                        colorSpace = colorSpace,
+                                                        colorTransfer = colorTransfer,
+                                                        colorRange = colorRange,
+                                                        maxCLL = maxContentLightLevel,
+                                                    )
+                                                surfaceEntity?.contentColorMetadata =
+                                                    contentColorMetadata
+                                                Log.d(
+                                                    TAG,
+                                                    "SurfaceEntity contentColorMetadata updated: $contentColorMetadata",
+                                                )
+                                            }
+                                        }
+
+                                        // Extract and update rotation
+                                        var updateSurfaceEntityVisuals = false
+                                        var newRotation = videoFormat.rotationDegrees
+                                        Log.d(TAG, "newRotation: $newRotation")
+                                        if (currentVideoRotationDegrees != newRotation) {
+                                            currentVideoRotationDegrees = newRotation
+                                            updateSurfaceEntityVisuals = true
+                                        }
+
+                                        // Extract and update pixel aspect ratio
+                                        var newPixelAspectRatio = videoFormat.pixelWidthHeightRatio
+                                        Log.d(TAG, "newPixelAspectRatio: $newPixelAspectRatio")
+                                        if (currentPixelAspectRatio != newPixelAspectRatio) {
+                                            currentPixelAspectRatio = newPixelAspectRatio
+                                            updateSurfaceEntityVisuals = true
+                                        }
+
+                                        if (
+                                            currentVideoSize != null && updateSurfaceEntityVisuals
+                                        ) {
+                                            updateSurfaceEntityVisuals()
                                         }
                                         break
                                     }
@@ -616,8 +749,16 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 player.prepare()
                 setupControlPanel(session)
             },
+            modifier = Modifier.fillMaxWidth().height(28.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
         ) {
-            Text(text = buttonText, fontSize = 20.sp)
+            Text(
+                text = buttonText,
+                fontSize = 18.sp,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
     }
 
@@ -633,7 +774,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
             stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
-            buttonText = "Play Big Buck Bunny",
+            buttonText = "[Stereo] Play Big Buck Bunny",
+            buttonColor = VideoButtonColors.StandardPlayback,
             enabled = enabled,
             protected = false,
         )
@@ -657,7 +799,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
-            buttonText = "Play MVHEVC Left Primary",
+            buttonText = "[Multiview] Play MVHEVC Left Primary",
+            buttonColor = VideoButtonColors.Multiview,
             enabled = enabled,
             loop = loop,
             protected = false,
@@ -682,7 +825,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
-            buttonText = "Play MVHEVC Right Primary",
+            buttonText = "[Multiview] Play MVHEVC Right Primary",
+            buttonColor = VideoButtonColors.Multiview,
             enabled = enabled,
             loop = loop,
             protected = false,
@@ -691,6 +835,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
     @Composable
     fun Naver180Button(session: Session, activity: Activity, enabled: Boolean = true) {
+
         PlayVideoButton(
             session = session,
             activity = activity,
@@ -704,7 +849,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     session.scene.activitySpace,
                 )!!,
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
-            buttonText = "Play Naver 180 (Side-by-Side)",
+            buttonText = "[VR] Play Naver 180 (Side-by-Side)",
+            buttonColor = VideoButtonColors.VR,
             enabled = enabled,
             protected = false,
         )
@@ -726,7 +872,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     session.scene.activitySpace,
                 )!!,
             canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
-            buttonText = "Play Galaxy 360 (Top-Bottom)",
+            buttonText = "[VR] Play Galaxy 360 (Top-Bottom)",
+            buttonColor = VideoButtonColors.VR,
             enabled = enabled,
             protected = false,
         )
@@ -748,7 +895,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     session.scene.activitySpace,
                 )!!,
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
-            buttonText = "Play Naver 180 (MV-HEVC)",
+            buttonText = "[VR] Play Naver 180 (MV-HEVC)",
+            buttonColor = VideoButtonColors.VR,
             enabled = enabled,
             protected = false,
         )
@@ -771,7 +919,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     session.scene.activitySpace,
                 )!!,
             canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
-            buttonText = "Play Galaxy 360 (MV-HEVC)",
+            buttonText = "[VR] Play Galaxy 360 (MV-HEVC)",
+            buttonColor = VideoButtonColors.VR,
             enabled = enabled,
             protected = false,
         )
@@ -796,6 +945,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
             buttonText = "[DRM] Play Side-by-Side",
+            buttonColor = VideoButtonColors.DRM,
             enabled = enabled,
             loop = loop,
             protected = true,
@@ -821,6 +971,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
             buttonText = "[DRM] Play MVHEVC Left Primary",
+            buttonColor = VideoButtonColors.DRM,
             enabled = enabled,
             loop = loop,
             protected = true,
@@ -846,6 +997,59 @@ class VideoPlayerTestActivity : ComponentActivity() {
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
             buttonText = "[HDR] Play HDR PQ Video",
+            buttonColor = VideoButtonColors.HDR,
+            enabled = enabled,
+            loop = loop,
+            protected = false,
+        )
+    }
+
+    @Composable
+    fun SingleViewRotated270HalfWidthButton(
+        session: Session,
+        activity: Activity,
+        enabled: Boolean = true,
+        loop: Boolean = false,
+    ) {
+        PlayVideoButton(
+            session = session,
+            activity = activity,
+            // For Testers: Note that this translates to
+            // "/sdcard/Download/single_view_rotated_270_half_width.mp4"
+            videoUri =
+                Environment.getExternalStorageDirectory().getPath() +
+                    "/Download/single_view_rotated_270_half_width.mp4",
+            stereoMode = SurfaceEntity.StereoMode.MONO,
+            pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            buttonText = "[Transform] Play Single View (Rot 270, PAR 0.5)",
+            buttonColor = VideoButtonColors.Transformations,
+            enabled = enabled,
+            loop = loop,
+            protected = false,
+        )
+    }
+
+    @Composable
+    fun MVHEVCLeftPrimaryRotated180Button(
+        session: Session,
+        activity: Activity,
+        enabled: Boolean = true,
+        loop: Boolean = false,
+    ) {
+        PlayVideoButton(
+            session = session,
+            activity = activity,
+            // For Testers: Note that this translates to
+            // "/sdcard/Download/mvhevc_left_primary_rotated_180.mp4".
+            videoUri =
+                Environment.getExternalStorageDirectory().getPath() +
+                    "/Download/mvhevc_left_primary_rotated_180.mp4",
+            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            buttonText = "[Transform] Play MVHEVC Left Primary (Rot 180)",
+            buttonColor = VideoButtonColors.Transformations,
             enabled = enabled,
             loop = loop,
             protected = false,
@@ -873,14 +1077,13 @@ class VideoPlayerTestActivity : ComponentActivity() {
             ) {
                 Text(text = "System APIs", fontSize = 30.sp)
                 Button(onClick = { togglePassthrough(session) }) {
-                    Text(text = "Toggle Passthrough", fontSize = 20.sp)
+                    Text(text = "Toggle Passthrough", fontSize = 18.sp)
                 }
                 Button(
                     onClick = {
                         session.scene.spatialEnvironment.requestFullSpaceMode()
                         // Set up the MoveableComponent on the first jump into FSM so the user can
-                        // move the
-                        // Main Panel out of the way.
+                        // move the Main Panel out of the way.
                         if (movableComponentMP.value == null) {
                             movableComponentMP.value = MovableComponent.create(session)
                             val unused =
@@ -892,13 +1095,13 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         checkExternalStoragePermission()
                     }
                 ) {
-                    Text(text = "Request FSM", fontSize = 20.sp)
+                    Text(text = "Request FSM", fontSize = 18.sp)
                 }
                 Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
-                    Text(text = "Request HSM", fontSize = 20.sp)
+                    Text(text = "Request HSM", fontSize = 18.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {
-                    Text(text = "Recreate Activity", fontSize = 20.sp)
+                    Text(text = "Recreate Activity", fontSize = 18.sp)
                 }
                 Button(onClick = { activity.toggleColorCorrectionMode() }) {
                     val buttonTextToDisplay =
@@ -910,12 +1113,12 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         } else {
                             "CC: User Managed (Tap to Best Effort)"
                         }
-                    Text(text = buttonTextToDisplay, fontSize = 20.sp)
+                    Text(text = buttonTextToDisplay, fontSize = 18.sp)
                 }
             }
             Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f).padding(8.dp),
+                modifier = Modifier.weight(1f).padding(4.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(text = "SurfaceEntity", fontSize = 30.sp)
                 if (videoPlaying == false) {
@@ -933,6 +1136,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     SideBySideProtectedButton(session, activity)
                     MVHEVCLeftPrimaryProtectedButton(session, activity)
                     HDRVideoPlaybackButton(session, activity)
+                    SingleViewRotated270HalfWidthButton(session, activity)
+                    MVHEVCLeftPrimaryRotated180Button(session, activity)
                 } else {
                     Column(
                         verticalArrangement = Arrangement.Center,
@@ -951,7 +1156,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                 }
                             }
                         ) {
-                            Text(text = "Toggle Pause Stereo video", fontSize = 20.sp)
+                            Text(text = "Toggle Pause Stereo video", fontSize = 18.sp)
                         }
                         Button(
                             onClick = {
@@ -964,7 +1169,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                 }
                             }
                         ) {
-                            Text(text = "Toggle Alpha Mask", fontSize = 20.sp)
+                            Text(text = "Toggle Alpha Mask", fontSize = 18.sp)
                         }
                         Row(
                             Modifier.height(50.dp)
@@ -986,12 +1191,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                         checkedColor = Color.White,
                                     ),
                             )
-                            Text(
-                                text = "Toggle Subtitle",
-                                fontSize = 30.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                            )
+                            Text(text = "Toggle Subtitle", fontSize = 18.sp, color = Color.White)
                         }
                     }
                 }

@@ -78,6 +78,7 @@ constructor(
                 )
             if (currentCameras == null) {
                 Log.error { "Failed to handle quirks before closing the camera device!" }
+                cameraDeviceWrapper.onDeviceClosing()
                 cameraDeviceWrapper.onDeviceClosed()
                 androidCameraState.onFinalized(unwrappedCameraDevice)
                 return
@@ -87,6 +88,11 @@ constructor(
             val currentCameraDevice =
                 checkNotNull(currentCameraDeviceWrapper.unwrapAs(CameraDevice::class))
 
+            // This call would eventually disconnect the capture session state, preventing any
+            // additional capture session calls to be made. This is needed because we would no
+            // longer be able to make any function calls on the underlying CameraCaptureSession
+            // once we've already invoked CameraDevice.close().
+            cameraDeviceWrapper.onDeviceClosing()
             closeCameraDevice(currentCameraDevice, currentAndroidCameraState)
             cameraDeviceWrapper.onDeviceClosed()
 

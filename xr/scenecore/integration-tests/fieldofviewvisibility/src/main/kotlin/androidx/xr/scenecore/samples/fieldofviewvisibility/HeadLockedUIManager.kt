@@ -45,6 +45,9 @@ import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
 
 /** Manage the Head Locked UI. */
+@Suppress("Deprecation")
+// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
+// is/setEnabled.
 class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
     private val TAG = "HeadLockedUIManager"
     private val mSession: Session
@@ -67,7 +70,7 @@ class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
                 name = "headLockedPanel",
                 pose = Pose(Vector3(0f, 0f, 0f)),
             )
-        this.mHeadLockedPanel.setParent(mSession.scene.activitySpace)
+        this.mHeadLockedPanel.parent = mSession.scene.activitySpace
     }
 
     private fun updateHeadLockedPose() {

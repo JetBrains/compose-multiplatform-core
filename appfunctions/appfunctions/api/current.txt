@@ -51,6 +51,7 @@ package androidx.appfunctions {
 
   public static final class AppFunctionData.Builder {
     ctor public AppFunctionData.Builder(androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata objectTypeMetadata, androidx.appfunctions.metadata.AppFunctionComponentsMetadata componentMetadata);
+    ctor public AppFunctionData.Builder(androidx.appfunctions.metadata.AppFunctionResponseMetadata responseMetadata, androidx.appfunctions.metadata.AppFunctionComponentsMetadata componentMetadata);
     ctor public AppFunctionData.Builder(java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> parameterMetadataList, androidx.appfunctions.metadata.AppFunctionComponentsMetadata componentMetadata);
     method public androidx.appfunctions.AppFunctionData build();
     method public androidx.appfunctions.AppFunctionData.Builder setAppFunctionData(String key, androidx.appfunctions.AppFunctionData value);

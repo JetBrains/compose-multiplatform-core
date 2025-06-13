@@ -70,7 +70,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 35)
 class LowLightBoostDeviceTest(
-    private val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -135,7 +135,8 @@ class LowLightBoostDeviceTest(
     @LabTestRule.LabTestRearCamera
     fun turnsOnLowLightBoost_willTurnsOffTorch() {
         assumeTrue(
-            cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA && camera.cameraInfo.hasFlashUnit()
+            cameraSelector.lensFacing == CameraSelector.LENS_FACING_BACK &&
+                camera.cameraInfo.hasFlashUnit()
         )
 
         // Binds a Preview
@@ -158,7 +159,8 @@ class LowLightBoostDeviceTest(
     @Test
     fun turnsOnTorchThrowsException_whenLowLightBoostIsOn() {
         assumeTrue(
-            cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA && camera.cameraInfo.hasFlashUnit()
+            cameraSelector.lensFacing == CameraSelector.LENS_FACING_BACK &&
+                camera.cameraInfo.hasFlashUnit()
         )
 
         // Binds a Preview
@@ -379,33 +381,28 @@ class LowLightBoostDeviceTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "selector={0},config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 }

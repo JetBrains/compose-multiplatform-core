@@ -142,6 +142,9 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     loadWebViewBannerAdFromLocalAssets()
                 }
                 AdType.NON_WEBVIEW_VIDEO -> loadVideoAd()
+                AdType.SCROLL_VIEW -> loadScrollView(automatedTestCallbackBundle)
+                AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
+                    loadScrollView(automatedTestCallbackBundle, /* appCanScroll */ false)
                 else -> {
                     loadNonWebViewBannerAd(
                         "Ad type not present",
@@ -267,6 +270,13 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         val adapter = testAdapters.VideoBannerAd(playerViewProvider)
         PlayerViewabilityHandler.addObserverFactoryToAdapter(adapter, playerViewProvider)
         return adapter
+    }
+
+    private fun loadScrollView(
+        automatedTestCallbackBundle: Bundle,
+        appCanScroll: Boolean = true,
+    ): AbstractSandboxedUiAdapter {
+        return testAdapters.ScrollViewAd(automatedTestCallbackBundle, appCanScroll)
     }
 
     @OptIn(ExperimentalFeatures.DelegatingAdapterApi::class)

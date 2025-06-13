@@ -437,7 +437,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
                 visiblePagesInfo,
                 beforeContentPadding,
                 afterContentPadding,
-                pageSizeWithSpacing,
+                pageAvailableSize,
                 snapPosition,
                 pageCount,
             )

@@ -38,7 +38,7 @@ import androidx.xr.scenecore.ContentlessEntity
  * measure and position zero children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
@@ -49,7 +49,7 @@ import androidx.xr.scenecore.ContentlessEntity
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
@@ -67,7 +67,7 @@ public inline fun SubspaceLayout(
  * zero or more layout children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout
  * @param content the children composable to be laid out.
@@ -80,7 +80,7 @@ public inline fun SubspaceLayout(
 public inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
     val coreEntity = rememberCoreContentlessEntity {
         ContentlessEntity.create(session = this, name = entityName("Entity"))
@@ -105,7 +105,7 @@ public inline fun SubspaceLayout(
  * measure and position zero children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout.
  * @param coreEntity SceneCore Entity being placed in this layout. This parameter is generally not
@@ -120,7 +120,7 @@ public inline fun SubspaceLayout(
 internal inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
     coreEntity: CoreEntity? = null,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
@@ -141,7 +141,7 @@ internal inline fun SubspaceLayout(
  * zero or more layout children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout
  * @param coreEntity SceneCore Entity being placed in this layout. This parameter is generally not
@@ -160,7 +160,7 @@ internal inline fun SubspaceLayout(
     coreEntity: CoreEntity = rememberCoreContentlessEntity {
         ContentlessEntity.create(session = this, name = entityName("Entity"))
     },
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(

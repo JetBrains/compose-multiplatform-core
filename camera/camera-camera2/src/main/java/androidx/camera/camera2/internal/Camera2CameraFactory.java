@@ -146,8 +146,8 @@ public final class Camera2CameraFactory implements CameraFactory {
     }
 
     @Override
-    public @NonNull StreamSpecsCalculator getStreamSpecsCalculator() {
-        return mStreamSpecsCalculator;
+    public void shutdown() {
+        mCameraCoordinator.shutdown();
     }
 
     private List<String> getBackwardCompatibleCameraIds(

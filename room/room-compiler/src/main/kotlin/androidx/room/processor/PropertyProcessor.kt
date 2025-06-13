@@ -92,7 +92,7 @@ class PropertyProcessor(
                         nonNull,
                     ),
                 parent = propertyParent,
-                indexed = columnInfoAnnotation?.get("index")?.asBoolean() == true,
+                indexed = columnInfoAnnotation?.get("index")?.asBoolean() ?: false,
                 nonNull = nonNull,
             )
 

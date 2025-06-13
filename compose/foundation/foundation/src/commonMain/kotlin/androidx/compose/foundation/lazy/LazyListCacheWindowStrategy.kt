@@ -131,6 +131,8 @@ internal class LazyListCacheWindowScope() : CacheWindowScope {
 
     override fun getVisibleItemLine(indexInVisibleLines: Int): Int =
         layoutInfo.visibleItemsInfo[indexInVisibleLines].index
+
+    override fun getLastIndexInLine(lineIndex: Int): Int = lineIndex
 }
 
 // we use 2 here because nested list have usually > 1 visible elements, so 2 is the minimum

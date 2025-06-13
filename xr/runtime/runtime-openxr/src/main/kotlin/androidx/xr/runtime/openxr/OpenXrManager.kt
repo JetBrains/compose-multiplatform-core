@@ -97,6 +97,16 @@ internal constructor(
             }
         }
 
+        if (config.deviceTracking != this.config.deviceTracking) {
+            if (config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+                perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.arDevice)
+            } else {
+                perceptionManager.xrResources.removeUpdatable(
+                    perceptionManager.xrResources.arDevice
+                )
+            }
+        }
+
         this.config = config
     }
 
@@ -117,6 +127,7 @@ internal constructor(
         if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
             perceptionManager.updatePlanes(xrTime)
         }
+
         perceptionManager.update(xrTime)
         // Block the call for a time that is appropriate for OpenXR devices.
         // TODO: b/359871229 - Implement dynamic delay. We start with a fixed 20ms delay as it is

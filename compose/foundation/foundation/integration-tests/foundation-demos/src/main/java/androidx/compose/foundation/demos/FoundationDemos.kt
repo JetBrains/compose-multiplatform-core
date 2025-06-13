@@ -83,6 +83,7 @@ val FoundationDemos =
             ComposableDemo("Draw Modifiers") { DrawModifiersDemo() },
             ComposableDemo("External Surfaces") { AndroidExternalSurfaceDemo() },
             DemoCategory("Lazy lists", LazyListDemos),
+            DemoCategory("Lazy Layouts", LazyLayoutDemos),
             DemoCategory("Snapping", SnappingDemos),
             DemoCategory("Pagers", PagerDemos),
             ComposableDemo("Simple InteractionSource") { SimpleInteractionSourceSample() },

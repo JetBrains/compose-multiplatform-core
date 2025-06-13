@@ -315,4 +315,50 @@ class AppFunctionSerializableProcessorTest {
             goldenFileName = "${'$'}ResponseFactory.KT",
         )
     }
+
+    @Test
+    fun testProcessor_nestedClasses_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("NestedSerializablesWithSimilarNames.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$SimpleNoteFactory.kt",
+            goldenFileName = "\$SimpleNoteFactory.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$SimpleNote\$SimpleAttachmentFactory.kt",
+            goldenFileName = "\$SimpleNote\$SimpleAttachmentFactory.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$CreateSimpleNoteParamsFactory.kt",
+            goldenFileName = "\$CreateSimpleNoteParamsFactory.KT",
+        )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$SimpleMessageFactory.kt",
+            goldenFileName = "\$SimpleMessageFactory.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$SimpleMessage\$SimpleAttachmentFactory.kt",
+            goldenFileName = "\$SimpleMessage\$SimpleAttachmentFactory.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$UpdateSimpleMessageParamsFactory.kt",
+            goldenFileName = "\$UpdateSimpleMessageParamsFactory.KT",
+        )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "\$ContainsBothAttachmentsFactory.kt",
+            goldenFileName = "\$ContainsBothAttachmentsFactory.KT",
+        )
+    }
 }

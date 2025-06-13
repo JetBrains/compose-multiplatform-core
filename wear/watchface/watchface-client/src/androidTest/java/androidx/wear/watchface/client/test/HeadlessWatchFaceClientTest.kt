@@ -173,14 +173,12 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
         Truth.assertThat(headlessInstance.getUserStyleFlavors().flavors.size).isEqualTo(1)
         val flavorA = headlessInstance.getUserStyleFlavors().flavors[0]
         Truth.assertThat(flavorA.id).isEqualTo("exampleFlavor")
-        Truth.assertThat(flavorA.style.userStyleMap.containsKey("color_style_setting"))
-        Truth.assertThat(flavorA.style.userStyleMap.containsKey("watch_hand_length_style_setting"))
-        Truth.assertThat(
-            flavorA.complications.containsKey(EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID)
-        )
-        Truth.assertThat(
-            flavorA.complications.containsKey(EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID)
-        )
+        Truth.assertThat(flavorA.style.userStyleMap).containsKey("color_style_setting")
+        Truth.assertThat(flavorA.style.userStyleMap).containsKey("watch_hand_length_style_setting")
+        Truth.assertThat(flavorA.complications)
+            .containsKey(EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID)
+        Truth.assertThat(flavorA.complications)
+            .containsKey(EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID)
 
         headlessInstance.close()
     }

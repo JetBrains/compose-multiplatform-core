@@ -60,22 +60,10 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
         session = createSession(this)
         if (session == null) this.finish()
         session!!.resume()
-
-        if (
-            session!!
-                .scene
-                .spatialCapabilities
-                .hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY) &&
-                !activityPanelCreated
-        ) {
-            activityPanelEntity =
-                ActivityPanelEntity.create(session!!, Rect(0, 0, 640, 480), "activity_panel")
-            val intent = Intent(this, ActivityPanel::class.java)
-            intent.putExtra("NAV_ICON", false)
-            activityPanelEntity!!.launchActivity(intent)
-            activityPanelEntity!!.setPose(Pose(Vector3(0.75f, 0.0f, 0.0f)))
-            activityPanelCreated = true
+        session!!.scene.addSpatialCapabilitiesChangedListener { capabilities ->
+            tryToCreateActivityPanel(capabilities)
         }
+        tryToCreateActivityPanel(session!!.scene.spatialCapabilities)
 
         @SuppressLint("InflateParams")
         val panelEntityView = layoutInflater.inflate(R.layout.rounded_corner_panel_entity, null)
@@ -96,14 +84,10 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
         val mainPanelSwitch = panelEntityView.findViewById<MaterialSwitch>(R.id.main_panel_switch)
         mainPanelSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             if (isChecked) {
-                session!!.scene.mainPanelEntity.setCornerRadius(0.0f)
+                session!!.scene.mainPanelEntity.cornerRadius = 0.0f
             } else {
-                session!!
-                    .scene
-                    .mainPanelEntity
-                    .setCornerRadius(
-                        calculateCornerRadiusInMeters(session!!.scene.mainPanelEntity, 32f)
-                    )
+                session!!.scene.mainPanelEntity.cornerRadius =
+                    calculateCornerRadiusInMeters(session!!.scene.mainPanelEntity, 32f)
             }
             session!!.scene.mainPanelEntity.setPose(session!!.scene.mainPanelEntity.getPose())
         }
@@ -114,11 +98,10 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
             if (isChecked) {
-                activityPanelEntity?.setCornerRadius(0.0f)
+                activityPanelEntity?.cornerRadius = 0.0f
             } else {
-                activityPanelEntity?.setCornerRadius(
+                activityPanelEntity?.cornerRadius =
                     calculateCornerRadiusInMeters(activityPanelEntity!!, 32f)
-                )
             }
             activityPanelEntity?.setPose(activityPanelEntity!!.getPose())
         }
@@ -126,9 +109,9 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
             panelEntityView.findViewById<MaterialSwitch>(R.id.panel_entity_switch)
         panelEntitySwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             if (isChecked) {
-                panelEntity!!.setCornerRadius(0.0f)
+                panelEntity!!.cornerRadius = 0.0f
             } else {
-                panelEntity!!.setCornerRadius(calculateCornerRadiusInMeters(panelEntity!!, 32f))
+                panelEntity!!.cornerRadius = calculateCornerRadiusInMeters(panelEntity!!, 32f)
             }
             panelEntity!!.setPose(panelEntity!!.getPose())
         }
@@ -154,7 +137,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
     }
 
     fun calculateCornerRadiusInMeters(entity: PanelEntity, cornerRadiusDp: Float): Float {
-        val pixelDensity = entity.getSizeInPixels().width.toFloat() / entity.getSize().width
+        val pixelDensity = entity.sizeInPixels.width.toFloat() / entity.size.width
         val radiusPixels =
             TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
@@ -166,18 +149,33 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        activityPanelEntity?.setParent(null)
+        activityPanelEntity?.parent = null
         activityPanelEntity?.dispose()
-        panelEntity?.setParent(null)
+        panelEntity?.parent = null
         panelEntity?.dispose()
     }
 
     override fun onStop() {
         super.onStop()
-        activityPanelEntity?.setParent(null)
+        activityPanelEntity?.parent = null
         activityPanelEntity?.dispose()
-        panelEntity?.setParent(null)
+        panelEntity?.parent = null
         panelEntity?.dispose()
+    }
+
+    fun tryToCreateActivityPanel(capabilities: SpatialCapabilities) {
+        if (
+            capabilities.hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY) &&
+                !activityPanelCreated
+        ) {
+            activityPanelEntity =
+                ActivityPanelEntity.create(session!!, Rect(0, 0, 640, 480), "activity_panel")
+            val intent = Intent(this, ActivityPanel::class.java)
+            intent.putExtra("NAV_ICON", false)
+            activityPanelEntity!!.launchActivity(intent)
+            activityPanelEntity!!.setPose(Pose(Vector3(0.75f, 0.0f, 0.0f)))
+            activityPanelCreated = true
+        }
     }
 
     companion object {

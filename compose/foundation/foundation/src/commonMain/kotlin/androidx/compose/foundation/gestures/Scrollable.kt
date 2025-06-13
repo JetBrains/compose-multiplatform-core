@@ -21,6 +21,7 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.animation.splineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isFlingContinuationAtBoundsEnabled
 import androidx.compose.foundation.ComposeFoundationFlags.isOnScrollChangedCallbackEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.FocusedBoundsObserverNode
@@ -804,7 +805,13 @@ internal class ScrollingLogic(
                             // node above will be able to pick up the left over velocity and
                             // continue
                             // the fling.
-                            if (pixels.absoluteValue != 0.0f && shouldCancelFling(pixels)) {
+                            val cancelFling =
+                                if (isFlingContinuationAtBoundsEnabled) {
+                                    !isScrollableNodeAttached.invoke()
+                                } else {
+                                    shouldCancelFling(pixels)
+                                }
+                            if (pixels.absoluteValue != 0.0f && cancelFling) {
                                 throw FlingCancellationException()
                             }
 

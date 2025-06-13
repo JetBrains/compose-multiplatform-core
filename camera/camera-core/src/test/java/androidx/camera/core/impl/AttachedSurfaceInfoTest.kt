@@ -20,6 +20,7 @@ import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
@@ -43,6 +44,7 @@ class AttachedSurfaceInfoTest {
     private val dynamicRange = DynamicRange.SDR
     private val captureTypes = listOf(CaptureType.PREVIEW)
     private val inputFormat = ImageFormat.PRIVATE
+    private val sessionType = SESSION_TYPE_REGULAR
     private val targetFrameRate = Range(10, 20)
     private val config =
         FakeUseCaseConfig.Builder(CaptureType.PREVIEW, inputFormat).useCaseConfig.config
@@ -57,8 +59,8 @@ class AttachedSurfaceInfoTest {
                 dynamicRange,
                 captureTypes,
                 config,
+                sessionType,
                 targetFrameRate,
-                FRAME_RATE_RANGE_UNSPECIFIED,
             )
     }
 
@@ -118,7 +120,7 @@ class AttachedSurfaceInfoTest {
     }
 
     @Test
-    fun defaultFrameRates() {
+    fun defaultSessionTypeAndFrameRate() {
         val attachedSurfaceInfo2 =
             AttachedSurfaceInfo.create(
                 surfaceConfig,
@@ -127,12 +129,11 @@ class AttachedSurfaceInfoTest {
                 dynamicRange,
                 listOf(CaptureType.PREVIEW),
                 config,
-                FRAME_RATE_RANGE_UNSPECIFIED,
+                sessionType,
                 FRAME_RATE_RANGE_UNSPECIFIED,
             )
+        Truth.assertThat(attachedSurfaceInfo2.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         Truth.assertThat(attachedSurfaceInfo2.targetFrameRate)
-            .isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
-        Truth.assertThat(attachedSurfaceInfo2.targetHighSpeedFrameRate)
             .isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
     }
 }

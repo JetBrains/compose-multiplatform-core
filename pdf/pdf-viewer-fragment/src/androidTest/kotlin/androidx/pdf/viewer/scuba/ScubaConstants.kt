@@ -26,10 +26,16 @@ internal object ScubaConstants {
      *
      * Refer go/scuba-best-practices#use-good-naming for naming file names for scuba screenshots.
      */
-    internal const val FAST_SCROLLER_HIDDEN_ON_LOAD = "fastScroller_hidden_onLoad"
-    internal const val FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE = "fastScroller_shown_inImmersiveMode"
-    internal const val FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP =
+    internal const val FILE_FAST_SCROLLER_HIDDEN_ON_LOAD = "fastScroller_hidden_onLoad"
+    internal const val FILE_FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE =
+        "fastScroller_shown_inImmersiveMode"
+    internal const val FILE_FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP =
         "fastScroller_and_fab_shown_onScrollToTop"
-    internal const val FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT = "fastScroller_withStyle_inPortrait"
-    internal const val FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE = "fastScroller_withStyle_inLandscape"
+    internal const val FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT =
+        "fastScroller_withStyle_inPortrait"
+    internal const val FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE =
+        "fastScroller_withStyle_inLandscape"
+    internal const val FILE_PASSWORD_DIALOG_KEYBOARD_PORTRAIT = "password_dialog_keyboard_portrait"
+    internal const val FILE_PASSWORD_DIALOG_KEYBOARD_LANDSCAPE =
+        "password_dialog_keyboard_landscape"
 }

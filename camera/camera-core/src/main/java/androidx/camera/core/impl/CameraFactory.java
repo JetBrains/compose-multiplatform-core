@@ -95,14 +95,6 @@ public interface CameraFactory {
     @Nullable Object getCameraManager();
 
     /**
-     * Gets the {@link StreamSpecsCalculator} instance that is used to calculate the stream specs
-     * based on CameraX configurations and camera device capabilities.
-     */
-    default @NonNull StreamSpecsCalculator getStreamSpecsCalculator() {
-        return StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
-    }
-
-    /**
      * Instructs the CameraFactory to shut down, releasing all its held resources like threads.
      */
     default void shutdown() {}

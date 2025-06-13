@@ -19,16 +19,14 @@ package androidx.webkit;
 import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown by {@link WebViewBuilder#build} if there was an issue with validation, or constructing the
  * WebView.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class WebViewBuilderException extends Exception {
-
-    WebViewBuilderException(@NonNull String error, @Nullable Throwable cause) {
-        super(error, cause);
+public class WebViewBuilderException extends RuntimeException {
+    WebViewBuilderException(@NonNull Throwable cause) {
+        super(cause);
     }
 }

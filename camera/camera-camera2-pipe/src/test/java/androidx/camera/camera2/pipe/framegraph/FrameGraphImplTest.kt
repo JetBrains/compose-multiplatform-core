@@ -132,9 +132,9 @@ class FrameGraphImplTest {
         )
     // TODO: b/412695326 - Refactor FrameGraphImplTest to use CameraGraphSimulator
 
-    private val frameBuffers = FrameBuffers(cameraGraph, testScope)
+    private val frameGraphBuffers = FrameGraphBuffers(cameraGraph, testScope)
     private val frameGraph: FrameGraph =
-        FrameGraphImpl(cameraGraph, frameDistributor, frameBuffers, testScope.backgroundScope)
+        FrameGraphImpl(cameraGraph, frameDistributor, frameGraphBuffers, testScope.backgroundScope)
 
     private val streamId1: StreamId = StreamId(1)
     private val streamId2: StreamId = StreamId(2)

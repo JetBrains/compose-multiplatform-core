@@ -143,24 +143,6 @@ internal fun multiBrowseKeylineList(
     )
 }
 
-internal fun createLeftAlignedKeylineList(
-    carouselMainAxisSize: Float,
-    itemSpacing: Float,
-    leftAnchorSize: Float,
-    rightAnchorSize: Float,
-    arrangement: Arrangement,
-): KeylineList {
-    return keylineListOf(carouselMainAxisSize, itemSpacing, CarouselAlignment.Start) {
-        add(leftAnchorSize, isAnchor = true)
-
-        repeat(arrangement.largeCount) { add(arrangement.largeSize) }
-        repeat(arrangement.mediumCount) { add(arrangement.mediumSize) }
-        repeat(arrangement.smallCount) { add(arrangement.smallSize) }
-
-        add(rightAnchorSize, isAnchor = true)
-    }
-}
-
 /**
  * Creates a list of keylines that arranges items into the 'uncontained' configuration. This
  * configuration lays out as many items as it can in the given item size without getting cut off,
@@ -213,6 +195,135 @@ internal fun uncontainedKeylineList(
         rightAnchorSize = defaultAnchorSize,
         arrangement = arrangement,
     )
+}
+
+/**
+ * Creates a list of keylines that arrange items into a hero configuration.
+ *
+ * @param density The [Density] object that provides pixel density information of the device
+ * @param carouselMainAxisSize The carousel container's pixel size in the main scrolling axis
+ * @param maxItemSize The maximum size large items should be in the main scrolling axis. When null,
+ *   a single large item will fill the viewport minus any required small item space. When not null,
+ *   additional large items will be added as space allows.
+ * @param itemSpacing the spacing between items in pixels
+ * @param itemCount the number of items in the carousel
+ * @param isCentered whether the large item should be centered in the viewport
+ * @param minSmallItemSize the minimum allowable size of small items in pixels
+ * @param maxSmallItemSize the maximum allowable size of small items in pixels
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun heroKeylineList(
+    density: Density,
+    carouselMainAxisSize: Float,
+    maxItemSize: Float?,
+    itemSpacing: Float,
+    itemCount: Int,
+    isCentered: Boolean = false,
+    minSmallItemSize: Float = with(density) { CarouselDefaults.MinSmallItemSize.toPx() },
+    maxSmallItemSize: Float = with(density) { CarouselDefaults.MaxSmallItemSize.toPx() },
+): KeylineList {
+    if (carouselMainAxisSize == 0f) {
+        return emptyKeylineList()
+    }
+
+    // Force arrangements with less than 3 items to be start-aligned since they cannot be centered
+    val shouldCenter = isCentered && itemCount >= 3
+
+    // Centered arrangements always need even numbers of small and medium items
+    var smallCounts: IntArray = if (shouldCenter) intArrayOf(2) else intArrayOf(1)
+
+    val targetLargeSize = min(maxItemSize ?: carouselMainAxisSize, carouselMainAxisSize)
+    // Visually balanced layouts should aim to use small items that are 1/3 the size of large items
+    val targetSmallSize: Float = (targetLargeSize / 3f).coerceIn(minSmallItemSize, maxSmallItemSize)
+
+    // Ensure there is enough space for the required number of small items plus a large item that
+    // is at least 25% larger than small items.
+    val fullscreenThreshold = (minSmallItemSize * smallCounts.max()) + (minSmallItemSize * 1.25f)
+    if (carouselMainAxisSize < fullscreenThreshold) {
+        smallCounts = intArrayOf(0)
+    }
+
+    val minAvailableLargeSpace = carouselMainAxisSize - (minSmallItemSize * smallCounts.max())
+    val minLargeCount = max(1, floor(minAvailableLargeSpace / targetLargeSize).toInt())
+    val maxLargeCount = ceil(carouselMainAxisSize / targetLargeSize).toInt()
+    val largeCounts = IntArray(maxLargeCount - minLargeCount + 1) { maxLargeCount - it }
+    val anchorSize = with(density) { CarouselDefaults.AnchorSize.toPx() }
+    // TODO(b/420998605): Update Arrangement to accept a max large size parameter.
+    val arrangement =
+        Arrangement.findLowestCostArrangement(
+            availableSpace = carouselMainAxisSize,
+            itemSpacing = itemSpacing,
+            targetSmallSize = targetSmallSize,
+            minSmallSize = minSmallItemSize,
+            maxSmallSize = maxSmallItemSize,
+            smallCounts = smallCounts,
+            targetMediumSize = 0f,
+            mediumCounts = intArrayOf(0),
+            targetLargeSize = targetLargeSize,
+            largeCounts = largeCounts,
+        )
+
+    if (arrangement == null) {
+        return emptyKeylineList()
+    }
+
+    return if (shouldCenter && itemCount >= arrangement.itemCount()) {
+        // When centered and when there are enough items to fill all keyline positions, create
+        // a centered arrangement.
+        return createCenterAlignedKeylineList(
+            carouselMainAxisSize = carouselMainAxisSize,
+            itemSpacing = itemSpacing,
+            rightAnchorSize = anchorSize,
+            leftAnchorSize = anchorSize,
+            arrangement = arrangement,
+        )
+    } else {
+        createLeftAlignedKeylineList(
+            carouselMainAxisSize = carouselMainAxisSize,
+            itemSpacing = itemSpacing,
+            rightAnchorSize = anchorSize,
+            leftAnchorSize = anchorSize,
+            arrangement = arrangement,
+        )
+    }
+}
+
+internal fun createLeftAlignedKeylineList(
+    carouselMainAxisSize: Float,
+    itemSpacing: Float,
+    leftAnchorSize: Float,
+    rightAnchorSize: Float,
+    arrangement: Arrangement,
+): KeylineList {
+    return keylineListOf(carouselMainAxisSize, itemSpacing, CarouselAlignment.Start) {
+        add(leftAnchorSize, isAnchor = true)
+
+        repeat(arrangement.largeCount) { add(arrangement.largeSize) }
+        repeat(arrangement.mediumCount) { add(arrangement.mediumSize) }
+        repeat(arrangement.smallCount) { add(arrangement.smallSize) }
+
+        add(rightAnchorSize, isAnchor = true)
+    }
+}
+
+internal fun createCenterAlignedKeylineList(
+    carouselMainAxisSize: Float,
+    itemSpacing: Float,
+    leftAnchorSize: Float,
+    rightAnchorSize: Float,
+    arrangement: Arrangement,
+): KeylineList {
+    return keylineListOf(carouselMainAxisSize, itemSpacing, CarouselAlignment.Center) {
+        add(leftAnchorSize, isAnchor = true)
+
+        repeat(arrangement.smallCount / 2) { add(arrangement.smallSize) }
+        repeat(arrangement.mediumCount / 2) { add(arrangement.mediumSize) }
+        repeat(arrangement.largeCount) { add(arrangement.largeSize) }
+        repeat(arrangement.mediumCount / 2) { add(arrangement.mediumSize) }
+        repeat(arrangement.smallCount / 2) { add(arrangement.smallSize) }
+
+        add(rightAnchorSize, isAnchor = true)
+    }
 }
 
 /**

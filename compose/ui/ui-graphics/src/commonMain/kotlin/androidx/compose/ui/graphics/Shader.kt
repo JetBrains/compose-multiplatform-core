@@ -33,6 +33,7 @@ internal expect class TransformShader() {
 
     var shader: Shader?
 
+    /** Sets the transform to [matrix]. */
     fun transform(matrix: Matrix?)
 }
 

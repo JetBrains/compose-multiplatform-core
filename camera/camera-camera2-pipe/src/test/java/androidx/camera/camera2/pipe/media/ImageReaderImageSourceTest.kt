@@ -116,7 +116,7 @@ class ImageSourceTest {
     @Test
     fun closingImageSourceClosesImageReader() {
         imageSource.close()
-        assertThat(fakeImageReader.isClosed)
+        assertThat(fakeImageReader.isClosed).isTrue()
     }
 
     @Test
@@ -183,7 +183,7 @@ class ImageSourceTest {
             FakeImage(fakeImageSize.width, fakeImageSize.height, fakeImageFormat.value, 54321)
         fakeImageReader.simulateImage(fakeImage, outputId)
         // Image is immediately closed
-        assertThat(fakeImage.isClosed)
+        assertThat(fakeImage.isClosed).isTrue()
 
         // Event is fired, but the image is *not* passed down
         assertThat(testListener.onImageEvents.size).isEqualTo(4)

@@ -16,7 +16,8 @@
 
 package androidx.wear.compose.material3.demos
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -82,6 +84,16 @@ fun EdgeButtonBelowLazyColumnDemo() {
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
+                    modifier =
+                        // In case user starts scrolling from the EdgeButton.
+                        Modifier.scrollable(
+                            state,
+                            orientation = Orientation.Vertical,
+                            reverseDirection = true,
+                            // An overscroll effect should be applied to the EdgeButton for proper
+                            // scrolling behavior.
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
@@ -122,6 +134,16 @@ fun EdgeButtonBelowScalingLazyColumnDemo() {
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
+                    modifier =
+                        // In case user starts scrolling from the EdgeButton.
+                        Modifier.scrollable(
+                            state,
+                            orientation = Orientation.Vertical,
+                            reverseDirection = true,
+                            // An overscroll effect should be applied to the EdgeButton for proper
+                            // scrolling behavior.
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
@@ -161,6 +183,16 @@ fun EdgeButtonBelowTransformingLazyColumnDemo() {
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
+                    modifier =
+                        // In case user starts scrolling from the EdgeButton.
+                        Modifier.scrollable(
+                            state,
+                            orientation = Orientation.Vertical,
+                            reverseDirection = true,
+                            // An overscroll effect should be applied to the EdgeButton for proper
+                            // scrolling behavior.
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                     onClick = {},
                     buttonSize = EdgeButtonSize.Large,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
@@ -311,6 +343,16 @@ fun EdgeButtonConfigurableDemo() {
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
+                    modifier =
+                        // In case user starts scrolling from the EdgeButton.
+                        Modifier.scrollable(
+                            state,
+                            orientation = Orientation.Vertical,
+                            reverseDirection = true,
+                            // An overscroll effect should be applied to the EdgeButton for proper
+                            // scrolling behavior.
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                     onClick = {},
                     buttonSize = sizes[selectedSize].second,
                     colors = colors[selectedColor].second,

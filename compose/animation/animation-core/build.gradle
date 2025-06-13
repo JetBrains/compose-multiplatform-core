@@ -29,12 +29,18 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.animation.core"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
     desktop()
     mac()
     ios()
@@ -192,12 +198,4 @@ androidx {
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
     metalavaK2UastEnabled = false
     samples(project(":compose:animation:animation-core:animation-core-samples"))
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.animation.core"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
 }

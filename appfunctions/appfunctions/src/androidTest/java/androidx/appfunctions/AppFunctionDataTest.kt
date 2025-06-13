@@ -37,10 +37,11 @@ import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertThrows
+import kotlin.test.assertFailsWith
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
@@ -123,37 +124,37 @@ class AppFunctionDataTest {
         val builder =
             AppFunctionData.Builder(TEST_PARAMETER_METADATA, AppFunctionComponentsMetadata())
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setIntArray("int", intArrayOf(100, 200))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("int", 50) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("int", 50) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("long", longArrayOf(100, 200))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("long", 50.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("long", 50.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setFloatArray("float", floatArrayOf(50.0f, 100.0f))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("float", 20.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("float", 20.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("double", doubleArrayOf(50.0, 100.0))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setBoolean("double", true) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setBoolean("double", true) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("boolean", booleanArrayOf(false, true))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("boolean", 100) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("boolean", 100) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("string", listOf("test"))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("string", 100.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("string", 100.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setPendingIntentList(
                 "pendingIntent",
                 listOf(
@@ -161,56 +162,56 @@ class AppFunctionDataTest {
                 ),
             )
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setString("pendingIntent", "test")
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setInt("intArray", 100) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setInt("intArray", 100) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("intArray", longArrayOf(2, 3))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("longArray", 100L) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("longArray", 100L) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("longArray", doubleArrayOf(2.0))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("floatArray", 1.0) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("floatArray", 1.0) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("floatArray", doubleArrayOf(1.0))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("doubleArray", 1.0) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("doubleArray", 1.0) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("doubleArray", booleanArrayOf(false))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBoolean("booleanArray", false)
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("booleanArray", listOf("test1"))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("byteArray", booleanArrayOf(false, true))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setInt("byteArray", 1) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setInt("byteArray", 1) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setString("stringList", "test1")
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("stringList", longArrayOf(1))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setPendingIntent(
                 "pendingIntentList",
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("pendingIntentList", listOf("string"))
         }
     }
@@ -242,54 +243,52 @@ class AppFunctionDataTest {
         )
         val data = builder.build()
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("int") }
-        assertThrows(IllegalArgumentException::class.java) { data.getIntArray("int") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("int") }
+        assertFailsWith(IllegalArgumentException::class) { data.getIntArray("int") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("long") }
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("long") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("long") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("long") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("float") }
-        assertThrows(IllegalArgumentException::class.java) { data.getFloatArray("float") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("float") }
+        assertFailsWith(IllegalArgumentException::class) { data.getFloatArray("float") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("double") }
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("double") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("double") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("double") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getString("boolean") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBooleanArray("boolean") }
+        assertFailsWith(IllegalArgumentException::class) { data.getString("boolean") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBooleanArray("boolean") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("string") }
-        assertThrows(IllegalArgumentException::class.java) { data.getStringList("string") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("string") }
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("string") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getString("pendingIntent") }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { data.getString("pendingIntent") }
+        assertFailsWith(IllegalArgumentException::class) {
             data.getPendingIntentList("pendingIntent")
         }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("intArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getInt("intArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("intArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getInt("intArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("longArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("longArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("longArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("longArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("floatArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getFloat("floatArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("floatArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getFloat("floatArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getBooleanArray("doubleArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("doubleArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBooleanArray("doubleArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("doubleArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getStringList("booleanArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("booleanArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("booleanArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("booleanArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("byteArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("byteArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("byteArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("byteArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("stringList") }
-        assertThrows(IllegalArgumentException::class.java) { data.getString("stringList") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("stringList") }
+        assertFailsWith(IllegalArgumentException::class) { data.getString("stringList") }
 
-        assertThrows(IllegalArgumentException::class.java) {
-            data.getStringList("pendingIntentList")
-        }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("pendingIntentList") }
+        assertFailsWith(IllegalArgumentException::class) {
             data.getPendingIntent("pendingIntentList")
         }
     }
@@ -360,37 +359,37 @@ class AppFunctionDataTest {
     fun testWrite_asObject_notConformSpec() {
         val builder = AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setIntArray("int", intArrayOf(100, 200))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("int", 50) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("int", 50) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("long", longArrayOf(100, 200))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("long", 50.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("long", 50.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setFloatArray("float", floatArrayOf(50.0f, 100.0f))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("float", 20.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("float", 20.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("double", doubleArrayOf(50.0, 100.0))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setBoolean("double", true) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setBoolean("double", true) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("boolean", booleanArrayOf(false, true))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("boolean", 100) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("boolean", 100) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("string", listOf("test"))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("string", 100.0) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("string", 100.0) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setPendingIntentList(
                 "pendingIntent",
                 listOf(
@@ -398,56 +397,56 @@ class AppFunctionDataTest {
                 ),
             )
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setString("pendingIntent", "test")
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setInt("intArray", 100) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setInt("intArray", 100) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("intArray", longArrayOf(2, 3))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setLong("longArray", 100L) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setLong("longArray", 100L) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("longArray", doubleArrayOf(2.0))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("floatArray", 1.0) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("floatArray", 1.0) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setDoubleArray("floatArray", doubleArrayOf(1.0))
         }
 
-        assertThrows(IllegalArgumentException::class.java) { builder.setDouble("doubleArray", 1.0) }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { builder.setDouble("doubleArray", 1.0) }
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("doubleArray", booleanArrayOf(false))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBoolean("booleanArray", false)
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("booleanArray", listOf("test1"))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setBooleanArray("byteArray", booleanArrayOf(false, true))
         }
-        assertThrows(IllegalArgumentException::class.java) { builder.setInt("byteArray", 1) }
+        assertFailsWith(IllegalArgumentException::class) { builder.setInt("byteArray", 1) }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setString("stringList", "test1")
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setLongArray("stringList", longArrayOf(1))
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setPendingIntent(
                 "pendingIntentList",
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             builder.setStringList("pendingIntentList", listOf("string"))
         }
     }
@@ -478,54 +477,52 @@ class AppFunctionDataTest {
         )
         val data = builder.build()
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("int") }
-        assertThrows(IllegalArgumentException::class.java) { data.getIntArray("int") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("int") }
+        assertFailsWith(IllegalArgumentException::class) { data.getIntArray("int") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("long") }
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("long") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("long") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("long") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("float") }
-        assertThrows(IllegalArgumentException::class.java) { data.getFloatArray("float") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("float") }
+        assertFailsWith(IllegalArgumentException::class) { data.getFloatArray("float") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("double") }
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("double") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("double") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("double") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getString("boolean") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBooleanArray("boolean") }
+        assertFailsWith(IllegalArgumentException::class) { data.getString("boolean") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBooleanArray("boolean") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("string") }
-        assertThrows(IllegalArgumentException::class.java) { data.getStringList("string") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("string") }
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("string") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getString("pendingIntent") }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { data.getString("pendingIntent") }
+        assertFailsWith(IllegalArgumentException::class) {
             data.getPendingIntentList("pendingIntent")
         }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("intArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getInt("intArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("intArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getInt("intArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("longArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getLong("longArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("longArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLong("longArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getDoubleArray("floatArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getFloat("floatArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDoubleArray("floatArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getFloat("floatArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getBooleanArray("doubleArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getDouble("doubleArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBooleanArray("doubleArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getDouble("doubleArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getStringList("booleanArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("booleanArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("booleanArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("booleanArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("byteArray") }
-        assertThrows(IllegalArgumentException::class.java) { data.getBoolean("byteArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("byteArray") }
+        assertFailsWith(IllegalArgumentException::class) { data.getBoolean("byteArray") }
 
-        assertThrows(IllegalArgumentException::class.java) { data.getLongArray("stringList") }
-        assertThrows(IllegalArgumentException::class.java) { data.getString("stringList") }
+        assertFailsWith(IllegalArgumentException::class) { data.getLongArray("stringList") }
+        assertFailsWith(IllegalArgumentException::class) { data.getString("stringList") }
 
-        assertThrows(IllegalArgumentException::class.java) {
-            data.getStringList("pendingIntentList")
-        }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) { data.getStringList("pendingIntentList") }
+        assertFailsWith(IllegalArgumentException::class) {
             data.getPendingIntent("pendingIntentList")
         }
     }
@@ -695,7 +692,7 @@ class AppFunctionDataTest {
             AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
 
         incorrectInnerDataBuilder.setLong("innerDouble", 500)
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             outerDataBuilder.setAppFunctionData("nestedData", incorrectInnerDataBuilder.build())
         }
     }
@@ -742,7 +739,7 @@ class AppFunctionDataTest {
         correctInnerDataBuilder.setDouble("innerDouble", 500.0)
         incorrectInnerDataBuilder.setLong("innerDouble", 500)
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             outerDataBuilder.setAppFunctionDataList(
                 "nestedDataList",
                 listOf(correctInnerDataBuilder.build(), incorrectInnerDataBuilder.build()),
@@ -812,7 +809,7 @@ class AppFunctionDataTest {
     fun testSerialize_missingFactory() {
         val missingFactoryClass = MissingFactoryClass("test")
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             AppFunctionData.serialize(missingFactoryClass, MissingFactoryClass::class.java)
         }
     }
@@ -824,7 +821,7 @@ class AppFunctionDataTest {
                 .setString("item", "test")
                 .build()
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith(IllegalArgumentException::class) {
             data.deserialize(MissingFactoryClass::class.java)
         }
     }
@@ -847,6 +844,109 @@ class AppFunctionDataTest {
 
         assertThat(data.containsKey("id")).isTrue()
         assertThat(data.getString("id")).isEqualTo("123456")
+    }
+
+    @Test
+    fun buildAppFunctionData_withPrimitiveResponse_incorrectType() {
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+            )
+
+        assertFailsWith(IllegalArgumentException::class) {
+            AppFunctionData.Builder(responseMetadata, AppFunctionComponentsMetadata())
+                .setInt(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, 10)
+                .build()
+        }
+    }
+
+    @Test
+    fun buildAppFunctionData_withPrimitiveResponse_correctType() {
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+            )
+
+        val data =
+            AppFunctionData.Builder(responseMetadata, AppFunctionComponentsMetadata())
+                .setString(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, "test")
+                .build()
+
+        assertThat(data.getString(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE))
+            .isEqualTo("test")
+    }
+
+    @Test
+    fun buildAppFunctionData_withObjectResponse() {
+        val objectMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
+                    ),
+                required = listOf("long"),
+                isNullable = false,
+                qualifiedName = "testObject",
+            )
+        val responseMetadata = AppFunctionResponseMetadata(valueType = objectMetadata)
+
+        val data =
+            AppFunctionData.Builder(responseMetadata, AppFunctionComponentsMetadata())
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.Builder(objectMetadata, AppFunctionComponentsMetadata())
+                        .setLong("long", 100L)
+                        .build(),
+                )
+                .build()
+
+        assertThat(
+                data
+                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)!!
+                    .getLong("long")
+            )
+            .isEqualTo(100L)
+    }
+
+    @Test
+    fun buildAppFunctionData_withReferenceResponse() {
+        val objectMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
+                    ),
+                required = listOf("long"),
+                isNullable = false,
+                qualifiedName = "testObject",
+            )
+        val componentMetadata =
+            AppFunctionComponentsMetadata(dataTypes = mapOf("testObject" to objectMetadata))
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType =
+                    AppFunctionReferenceTypeMetadata(
+                        referenceDataType = "testObject",
+                        isNullable = true,
+                    )
+            )
+
+        val data =
+            AppFunctionData.Builder(responseMetadata, componentMetadata)
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.Builder(objectMetadata, componentMetadata)
+                        .setLong("long", 100L)
+                        .build(),
+                )
+                .build()
+
+        assertThat(
+                data
+                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)!!
+                    .getLong("long")
+            )
+            .isEqualTo(100L)
     }
 
     companion object {

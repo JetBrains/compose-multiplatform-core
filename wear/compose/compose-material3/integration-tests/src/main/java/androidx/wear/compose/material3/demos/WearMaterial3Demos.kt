@@ -40,7 +40,7 @@ import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
-import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnResetOnScrollSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
@@ -192,8 +192,11 @@ val WearMaterial3Demos =
                         ComposableDemo("In TransformingLazyColumn") {
                             SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo()
                         },
+                        ComposableDemo("In TLC, with icon action") {
+                            SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo()
+                        },
                         ComposableDemo("In TLC, with reset on scroll") {
-                            SwipeToRevealWithTransformingLazyColumnSample()
+                            SwipeToRevealWithTransformingLazyColumnResetOnScrollSample()
                         },
                         ComposableDemo("No Partial Reveal") {
                             ScalingLazyDemo {
@@ -231,6 +234,9 @@ val WearMaterial3Demos =
                     listOf(
                         ComposableDemo("Notifications") {
                             TransformingLazyColumnNotificationsDemo()
+                        },
+                        ComposableDemo("Morphing Notifications") {
+                            TransformingLazyColumnMorphingNotificationsDemo()
                         },
                         ComposableDemo("Expandable Cards") {
                             TransformingLazyColumnExpandableCardSample()

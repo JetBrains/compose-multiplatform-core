@@ -265,8 +265,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
                     mBoundSessionConfig = new LegacySessionConfig(
                             boundUseCases,
                             sessionConfig.getViewPort(),
-                            sessionConfig.getEffects(),
-                            sessionConfig.getTargetHighSpeedFrameRate()
+                            sessionConfig.getEffects()
                     );
                 }
                 else { // Bind sessionConfig.
@@ -282,8 +281,8 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             }
             mCameraUseCaseAdapter.setViewPort(sessionConfig.getViewPort());
             mCameraUseCaseAdapter.setEffects(sessionConfig.getEffects());
-            mCameraUseCaseAdapter.setTargetHighSpeedFrameRate(
-                    sessionConfig.getTargetHighSpeedFrameRate());
+            mCameraUseCaseAdapter.setSessionType(sessionConfig.getSessionType());
+            mCameraUseCaseAdapter.setFrameRate(sessionConfig.getFrameRateRange());
 
             ResolvedFeatureCombination resolvedFeatureCombination = resolveFeatureCombination(
                     sessionConfig, (CameraInfoInternal) getCameraInfo());
@@ -350,8 +349,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
                         : new LegacySessionConfig(
                                 boundUseCases,
                                 mBoundSessionConfig.getViewPort(),
-                                mBoundSessionConfig.getEffects(),
-                                mBoundSessionConfig.getTargetHighSpeedFrameRate()
+                                mBoundSessionConfig.getEffects()
                         );
             }
             List<UseCase> useCasesToRemove = new ArrayList<>(sessionConfig.getUseCases());

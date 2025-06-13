@@ -19,7 +19,5 @@ package androidx.testutils.lifecycle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 
-internal actual fun <T> runBlockingIfPossible(
-    dispatcher: CoroutineDispatcher,
-    block: () -> T
-): T = runBlocking(dispatcher) { block() }
+internal actual fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T =
+    runBlocking(context = dispatcher) { block() }

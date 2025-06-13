@@ -3228,10 +3228,15 @@ public class ProtoLayoutInflaterTest {
 
     @Test
     public void inflate_textView_ellipsize() {
-        String textContents = "Text that is very large so it will go to many lines";
+        // Manually set more lines because StaticLayout otherwise reports lineCount as 1.
+        String textContents =
+                "Text that is very\n"
+                    + "large so it will go to many lines\n"
+                    + " and it will\n"
+                    + " overflow a lot";
         Text.Builder text1 =
                 Text.newBuilder()
-                        .setLineHeight(sp(16))
+                        .setLineHeight(sp(16)) // Translates to around 35px or more
                         .setText(string(textContents))
                         .setFontStyle(FontStyle.newBuilder().addSize(sp(16)))
                         .setMaxLines(Int32Prop.newBuilder().setValue(6))
@@ -3241,7 +3246,7 @@ public class ProtoLayoutInflaterTest {
         Layout layout1 =
                 fingerprintedLayout(
                         LayoutElement.newBuilder()
-                                .setBox(buildFixedSizeBoxWIthText(text1))
+                                .setBox(buildFixedSizeBoxWithText(text1))
                                 .build());
 
         Text.Builder text2 =
@@ -3250,25 +3255,27 @@ public class ProtoLayoutInflaterTest {
                         // Diff
                         .setLineHeight(sp(4))
                         .setFontStyle(FontStyle.newBuilder().addSize(sp(4)))
-                        .setMaxLines(Int32Prop.newBuilder().setValue(6))
+                        .setMaxLines(Int32Prop.newBuilder().setValue(10))
                         .setOverflow(
                                 TextOverflowProp.newBuilder()
                                         .setValue(TextOverflow.TEXT_OVERFLOW_ELLIPSIZE));
         Layout layout2 =
                 fingerprintedLayout(
                         LayoutElement.newBuilder()
-                                .setBox(buildFixedSizeBoxWIthText(text2))
+                                .setBox(buildFixedSizeBoxWithText(text2))
                                 .build());
 
         // Initial layout.
         Renderer renderer = renderer(layout1);
         ViewGroup inflatedViewParent = renderer.inflate();
+        shadowOf(Looper.getMainLooper()).idle();
         TextView textView1 =
                 (TextView) ((ViewGroup) inflatedViewParent.getChildAt(0)).getChildAt(0);
 
         // Apply the mutation.
         ViewGroupMutation mutation =
                 renderer.computeMutation(getRenderedMetadata(inflatedViewParent), layout2);
+        shadowOf(Looper.getMainLooper()).idle();
         assertThat(mutation).isNotNull();
         assertThat(mutation.isNoOp()).isFalse();
         boolean mutationResult = renderer.applyMutation(inflatedViewParent, mutation);
@@ -3321,9 +3328,10 @@ public class ProtoLayoutInflaterTest {
         expect.that(textView.getFontFeatureSettings()).isEqualTo("'tnum'");
     }
 
-    private static Box.Builder buildFixedSizeBoxWIthText(Text.Builder content) {
+    private static Box.Builder buildFixedSizeBoxWithText(Text.Builder content) {
         return Box.newBuilder()
                 .setWidth(ContainerDimension.newBuilder().setLinearDimension(dp(100)))
+                // Line of text would be ~35
                 .setHeight(ContainerDimension.newBuilder().setLinearDimension(dp(120)))
                 .addContents(LayoutElement.newBuilder().setText(content));
     }

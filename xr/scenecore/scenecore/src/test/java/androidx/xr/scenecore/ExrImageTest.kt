@@ -28,6 +28,7 @@ import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import java.nio.file.Paths
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import org.junit.Before
@@ -70,10 +71,11 @@ class ExrImageTest {
         val session =
             Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
 
+        @Suppress("UNUSED_VARIABLE", "NewApi")
         val exception =
             assertFailsWith<IllegalArgumentException> {
                 val unusedExrImage: ListenableFuture<ExrImage> =
-                    ExrImage.create(session, "test.exr")
+                    ExrImage.createFromZipAsync(session, Paths.get("test.exr"))
             }
 
         assertThat(exception)
@@ -91,8 +93,9 @@ class ExrImageTest {
         }
         val session =
             Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
-
-        val exrImage: ListenableFuture<ExrImage> = ExrImage.create(session, "test.zip")
+        @Suppress("UNUSED_VARIABLE", "NewApi")
+        val exrImage: ListenableFuture<ExrImage> =
+            ExrImage.createFromZipAsync(session, Paths.get("test.zip"))
 
         assertIs<ExrImage>(exrImage.get())
         verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")

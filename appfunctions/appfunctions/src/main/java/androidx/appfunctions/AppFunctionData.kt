@@ -32,6 +32,7 @@ import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import java.time.LocalDateTime
 
 /**
@@ -753,7 +754,7 @@ internal constructor(
          *
          * @param parameterMetadataList List of [AppFunctionParameterMetadata] defining the input
          *   parameters.
-         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data type.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
          * @see [AppFunctionParameterMetadata]
          * @see [AppFunctionComponentsMetadata]
          */
@@ -771,7 +772,7 @@ internal constructor(
          * for the object.
          *
          * @param objectTypeMetadata [AppFunctionObjectTypeMetadata] defining the object structure.
-         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data type.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
          * @see [AppFunctionObjectTypeMetadata]
          * @see [AppFunctionComponentsMetadata]
          */
@@ -779,6 +780,23 @@ internal constructor(
             objectTypeMetadata: AppFunctionObjectTypeMetadata,
             componentMetadata: AppFunctionComponentsMetadata,
         ) : this(AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata))
+
+        /**
+         * Constructs a [Builder] to create [AppFunctionData] representing a response.
+         *
+         * This constructor is used when you need to create [AppFunctionData] that represents a
+         * response, as defined by an [AppFunctionResponseMetadata]. This metadata specifies the
+         * properties and their types for the response.
+         *
+         * @param responseMetadata [AppFunctionResponseMetadata] defining the response structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @see [AppFunctionResponseMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        public constructor(
+            responseMetadata: AppFunctionResponseMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ) : this(AppFunctionDataSpec.create(responseMetadata, componentMetadata))
 
         private constructor(spec: AppFunctionDataSpec) {
             this.spec = spec
@@ -1096,7 +1114,10 @@ internal constructor(
             serializableClass: Class<T>
         ): AppFunctionSerializableFactory<T> {
             val packageName = getPackageName(serializableClass)
-            val serializableSimpleName = serializableClass.simpleName
+            // Using `serializableClass.name` and not `serializableClass.simpleName` to be able to
+            // reference nested classes (e.g. OuterClass$InnerClass), to avoid ambiguity between
+            // inner classes of the same name.
+            val serializableSimpleName = serializableClass.name.substringAfterLast('.')
 
             val factorySimpleName = "${'$'}${serializableSimpleName}Factory"
             val factoryClassName = "${packageName}.${factorySimpleName}"

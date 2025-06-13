@@ -38,13 +38,13 @@ public class BloodPressureRecord(
     override val zoneOffset: ZoneOffset?,
     override val metadata: Metadata,
     /**
-     * Systolic blood pressure measurement, in [Pressure] unit. Required field. Valid range: 20-200
-     * mmHg.
+     * Systolic blood pressure measurement, in [Pressure] unit. Required field. Valid range:
+     * 20-200mmHg. For SDK extension 17 or higher, Valid range: 20-300mmHg.
      */
     public val systolic: Pressure,
     /**
-     * Diastolic blood pressure measurement, in [Pressure] unit. Required field. Valid range: 10-180
-     * mmHg.
+     * Diastolic blood pressure measurement, in [Pressure] unit. Required field. Valid range:
+     * 10-180mmHg. For SDK extension 17 or higher, Valid range: 10-300mmHg.
      */
     public val diastolic: Pressure,
     /**

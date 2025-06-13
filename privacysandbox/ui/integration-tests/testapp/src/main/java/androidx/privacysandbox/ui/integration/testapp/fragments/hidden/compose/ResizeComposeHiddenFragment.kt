@@ -43,11 +43,15 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.privacysandbox.ui.client.compose.SandboxedSdkUi
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.AbstractResizeHiddenFragment
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
+// OptIn calling the experimental API SandboxedSdkUi(SandboxedUiAdapter, Modifier,
+// SandboxedSdkViewEventListener?, Boolean)
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class ResizeComposeHiddenFragment : AbstractResizeHiddenFragment() {
 
     private var adapter: SandboxedUiAdapter? by mutableStateOf(null)

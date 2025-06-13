@@ -30,6 +30,7 @@ import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
@@ -59,6 +60,8 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @MediumTest
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
 
     @get:Rule val rule = IntegrationTestSetupRule(invokeBackwardsCompatFlow)

@@ -83,8 +83,10 @@ public class PerfettoCapture(
      * @param destinationPath Absolute path to write perfetto trace to. Must be shell-writable, such
      *   as result of `context.getExternalFilesDir(null)` or other similar `external` paths.
      */
-    public fun stop(destinationPath: String) =
-        inMemoryTrace("stop perfetto") { helper.stopCollecting(destinationPath) }
+    public fun stop(destinationPath: String, inMemoryTracingLabel: String?) =
+        inMemoryTrace("stop perfetto") {
+            helper.stopCollecting(destinationPath, inMemoryTracingLabel)
+        }
 
     /**
      * Enables Perfetto SDK tracing in the [PerfettoSdkConfig.targetPackage]

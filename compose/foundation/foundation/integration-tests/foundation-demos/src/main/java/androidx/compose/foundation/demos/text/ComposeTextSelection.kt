@@ -116,6 +116,21 @@ fun TextSelectionDemo() {
                 )
             }
         }
+        item {
+            TagLine(tag = "smart selection demo(Android only)")
+            OutlinedSelectionContainer {
+                Text(
+                    text =
+                        "This is a demo for smart selection. " +
+                            "Try long press selection on following text. \n" +
+                            "address: 1600 Amphitheatre Pkwy, Mountain View, CA 94043 \n" +
+                            "phone number: 123-456-0000\n" +
+                            "email: example_email@email.com\n",
+                    modifier =
+                        Modifier.fillMaxWidth().border(BorderStroke(1.dp, color = Color.Black)),
+                )
+            }
+        }
     }
 }
 

@@ -29,6 +29,7 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -97,6 +98,11 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      *     XrExtensions#getOpenXrActivitySpaceType()} method.
      */
     protected void setOpenXrReferenceSpacePose(Matrix4 openXrReferenceSpaceTransform) {
+        // TODO: b/420718824 - Remove this check once we have a better way to handle zero matrices.
+        float[] zero = new float[16];
+        if (Arrays.equals(openXrReferenceSpaceTransform.getData(), zero)) {
+            return;
+        }
         mOpenXrReferenceSpaceTransform.set(openXrReferenceSpaceTransform);
         // TODO: b/353511649 - Make SystemSpaceEntityImpl thread safe.
         mOpenXrReferenceSpacePose = Matrix4Ext.getUnscaled(openXrReferenceSpaceTransform).getPose();

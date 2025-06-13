@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
+import androidx.xr.compose.integration.layout.spatialcomposeapp.components.TestDialog
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.spatial.ApplicationSubspace
@@ -110,7 +111,6 @@ class StateTestAppActivity : ComponentActivity() {
 
     @Composable
     fun MainPanelContent(name: String, isInitialLaunch: Boolean = false) {
-        val config = LocalSpatialConfiguration.current
         Surface {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -124,14 +124,11 @@ class StateTestAppActivity : ComponentActivity() {
                 CounterOrbiter()
                 Button(onClick = ::startMainPanelActivity) { Text("Launch Using Main Panel") }
                 Button(onClick = ::startSpatialPanelActivity) { Text("Launch Using Spatial Panel") }
-                if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                    Button(onClick = config::requestHomeSpaceMode) {
-                        Text("Request Home Space Mode")
-                    }
-                } else {
-                    Button(onClick = config::requestFullSpaceMode) {
-                        Text("Request Full Space Mode")
-                    }
+                SwitchSpaceModeButton()
+                TestDialog {
+                    Counter("Dialog")
+                    CounterOrbiter()
+                    SwitchSpaceModeButton()
                 }
                 val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                 Button(onClick = { dispatcher?.onBackPressed() }) {
@@ -184,4 +181,14 @@ fun Counter(name: String, modifier: Modifier = Modifier) {
     }
 
     Text("$name Counter: $count", modifier = modifier.padding(16.dp))
+}
+
+@Composable
+fun SwitchSpaceModeButton() {
+    val config = LocalSpatialConfiguration.current
+    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+        Button(onClick = config::requestHomeSpaceMode) { Text("Request Home Space Mode") }
+    } else {
+        Button(onClick = config::requestFullSpaceMode) { Text("Request Full Space Mode") }
+    }
 }

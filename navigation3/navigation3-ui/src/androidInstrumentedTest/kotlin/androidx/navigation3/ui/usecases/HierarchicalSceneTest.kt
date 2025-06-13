@@ -52,7 +52,7 @@ private class HierarchicalScene<T : Any>(
     private val navEntries: List<NavEntry<T>?>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
-    override val key: T = navEntries.filterNotNull().first().key
+    override val key: Any = navEntries.filterNotNull().first().contentKey
     override val entries: List<NavEntry<T>> = navEntries.filterNotNull()
 
     override val content: @Composable () -> Unit = {
@@ -60,7 +60,7 @@ private class HierarchicalScene<T : Any>(
             navEntries.forEach { navEntry ->
                 Box(Modifier.weight(1f)) {
                     if (navEntry != null) {
-                        key(navEntry.key) { navEntry.content.invoke(navEntry.key) }
+                        key(navEntry.contentKey) { navEntry.Content() }
                     }
                 }
             }

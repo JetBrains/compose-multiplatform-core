@@ -151,7 +151,7 @@ private class DefaultLazyListPrefetchStrategy(private val initialNestedPrefetchI
      */
     private var wasScrollingForward = false
 
-    private var previousPassItemCount = 0
+    private var previousPassItemCount = UnsetItemCount
     private var previousPassDelta = 0f
 
     override fun LazyListPrefetchScope.onScroll(delta: Float, layoutInfo: LazyListLayoutInfo) {
@@ -200,7 +200,7 @@ private class DefaultLazyListPrefetchStrategy(private val initialNestedPrefetchI
         val currentPassItemCount = layoutInfo.totalItemsCount
         // total item count changed, re-trigger prefetch.
         if (
-            previousPassItemCount != 0 && // we already have info about the item count
+            previousPassItemCount != UnsetItemCount && // we already have info about the item count
                 previousPassDelta != 0.0f && // and scroll direction
                 previousPassItemCount != currentPassItemCount && // and the item count changed
                 layoutInfo.visibleItemsInfo.isNotEmpty()
@@ -273,3 +273,5 @@ internal class LazyListPrefetchResultScopeImpl(
     override val index: Int,
     override val mainAxisSize: Int,
 ) : LazyListPrefetchResultScope
+
+private const val UnsetItemCount = -1
