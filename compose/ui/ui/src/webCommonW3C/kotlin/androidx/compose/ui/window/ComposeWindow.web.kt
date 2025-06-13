@@ -89,6 +89,7 @@ import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HTMLTitleElement
@@ -176,6 +177,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
+    private val interopContainerElement: HTMLDivElement,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
 ) : LifecycleOwner, ViewModelStoreOwner {
@@ -210,19 +212,23 @@ internal class ComposeWindow(
             }
         }
 
+        @Suppress("RedundantOverride")
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset {
-            val (canvasX, canvasY) = getCanvasCoordinates()
-            return Offset(
-                x = (canvasX + localPosition.x / density.density).toFloat(),
-                y = (canvasY + localPosition.y / density.density).toFloat()
-            )
+            // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
+            // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
+            // viewport: Window Rect > Canvas Rect.
+            // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
+            // The implementation will have to rely on the <canvas> of a particular layer.
+            return super.convertLocalToWindowPosition(localPosition)
         }
 
+        @Suppress("RedundantOverride")
         override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset {
-            val (canvasX, canvasY) = getCanvasCoordinates()
-            val localX = (positionInWindow.x - canvasX) * density.density
-            val localY = (positionInWindow.y - canvasY) * density.density
-            return Offset(x = localX.toFloat(), y = localY.toFloat())
+            // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
+            // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
+            // viewport: Window Rect > Canvas Rect.
+            // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
+            return super.convertWindowToLocalPosition(positionInWindow)
         }
 
         override val textInputService = object : WebTextInputService() {
@@ -382,8 +388,6 @@ internal class ComposeWindow(
 
         scene.density = density
 
-        val interopContainerElement = document.createElement("div") as HTMLElement
-        document.body!!.appendChild(interopContainerElement)
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
         scene.setContent {
@@ -586,6 +590,7 @@ private const val defaultCanvasElementId = "ComposeTarget"
  * This can be turned off by setting [applyDefaultStyles] to false.
  */
 @ExperimentalComposeUiApi
+@Deprecated("CanvasBasedWindow doesn't support HTML interop via WebElementView API. Use ComposeViewport API instead")
 fun CanvasBasedWindow(
     title: String? = null,
     canvasElementId: String = defaultCanvasElementId,
@@ -619,6 +624,8 @@ fun CanvasBasedWindow(
 
     ComposeWindow(
         canvas = canvas,
+        // a detached container
+        interopContainerElement = document.createElement("div") as HTMLDivElement,
         content = content,
         state = if (requestResize == null) DefaultWindowState(document.documentElement!!) else ComposeWindowState.createFromLambda(requestResize)
     )
@@ -653,10 +660,29 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
 
-    viewportContainer.appendChild(canvas)
+    // Create a common container (parent html element) for canvas and the interop container
+    // to position at the same place - the interop container is position at 0,0 relative to <canvas>.
+    // It simplifies the positioning of the interop views in the container.
+    val layerRoot = document.createElement("div") as HTMLElement
+    layerRoot.style.apply {
+        position = "relative"
+    }
+
+    viewportContainer.appendChild(layerRoot)
+    layerRoot.appendChild(canvas)
+
+    val interopContainerElement = document.createElement("div") as HTMLDivElement
+    layerRoot.appendChild(interopContainerElement)
+
+    interopContainerElement.style.apply {
+        position = "absolute"
+        top = "0"
+        left = "0"
+    }
 
     ComposeWindow(
         canvas = canvas,
+        interopContainerElement = interopContainerElement,
         content = content,
         state = DefaultWindowState(viewportContainer)
     )
