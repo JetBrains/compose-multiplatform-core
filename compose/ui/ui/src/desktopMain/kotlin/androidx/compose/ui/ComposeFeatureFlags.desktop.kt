@@ -54,8 +54,9 @@ internal object ComposeFeatureFlags {
      * The default value is `OnSameCanvas`, implying that new layers
      * (such as for [Popup] and [Dialog]) are created within the initial canvas.
      */
-    val layerType: LayerType
-        get() = LayerType.parse(System.getProperty("compose.layers.type"))
+    val layerType: LayerType by lazy {
+        LayerType.parse(System.getProperty("compose.layers.type"))
+    }
 
     /**
      * Indicates whether [androidx.compose.ui.awt.ComposePanel] should use Swing graphics for rendering.
@@ -70,8 +71,9 @@ internal object ComposeFeatureFlags {
      *
      * @see androidx.compose.ui.awt.RenderSettings.SwingGraphics
      */
-    val useSwingGraphicsInComposePanel: Boolean
-        get() = System.getProperty("compose.swing.render.on.graphics").toBoolean()
+    val useSwingGraphicsInComposePanel: Boolean by lazy {
+        System.getProperty("compose.swing.render.on.graphics").toBoolean()
+    }
 
     /**
      * Indicates whether interop blending is enabled.
@@ -83,6 +85,7 @@ internal object ComposeFeatureFlags {
      * - On macOS, render and event dispatching order differs. It means that interop view might
      *   catch the mouse event even if visually it renders below Compose content
      */
-    val useInteropBlending: Boolean
-        get() = System.getProperty("compose.interop.blending").toBoolean()
+    val useInteropBlending: Boolean by lazy {
+        System.getProperty("compose.interop.blending").toBoolean()
+    }
 }

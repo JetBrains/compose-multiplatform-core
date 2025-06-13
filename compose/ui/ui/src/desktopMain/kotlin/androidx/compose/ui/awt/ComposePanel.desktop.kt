@@ -63,12 +63,13 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
          * @see ComposeFeatureFlags.useSwingGraphicsInComposePanel
          */
         @ExperimentalComposeUiApi
-        val DefaultRenderSettings: RenderSettings
-            get() = if (ComposeFeatureFlags.useSwingGraphicsInComposePanel) {
+        val DefaultRenderSettings: RenderSettings by lazy {
+            if (ComposeFeatureFlags.useSwingGraphicsInComposePanel) {
                 SwingGraphics()
             } else {
                 SkiaSurface()
             }
+        }
     }
 
     init {
