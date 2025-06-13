@@ -50,9 +50,11 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -78,6 +80,7 @@ import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
@@ -235,6 +238,20 @@ internal class ComposeWindow(
         }
 
         override val textToolbar: TextToolbar = WebTextToolbar()
+
+        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
+            ComposeWebSemanticsListener(
+                platformContext = this,
+                composeWindow = this@ComposeWindow,
+                coroutineScope = MainScope(),
+                webSemanticsRoot = (document.createElement("div") as HTMLElement).let {
+                    it.id = "a11y_root"
+                    document.body!!.appendChild(it)
+                    it.style.opacity = "0"
+                    it.style.setProperty("pointer-events", "none")
+                    it
+                },
+            )
 
         override val textInputService = object : WebTextInputService() {
 
@@ -664,6 +681,7 @@ fun ComposeViewport(
 ) {
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
+    // canvas.setAttribute("aria-hidden", "true")
 
     // Create a common container (parent html element) for canvas and the interop container
     // to position at the same place - the interop container is position at 0,0 relative to <canvas>.
