@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
+import androidx.compose.ui.awt.RenderSettings.SkiaSurface
+import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -313,3 +316,15 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     val renderApi: GraphicsApi
         get() = _composeContainer?.renderApi ?: GraphicsApi.UNKNOWN
 }
+
+/**
+ * Creates [RenderSettings] based on the current environment variable configuration.
+ *
+ * @see ComposeFeatureFlags.useSwingGraphics
+ */
+private fun RenderSettings.Companion.fromEnvironmentVariable(): RenderSettings =
+    if (ComposeFeatureFlags.useSwingGraphics) {
+        SwingGraphics()
+    } else {
+        SkiaSurface()
+    }

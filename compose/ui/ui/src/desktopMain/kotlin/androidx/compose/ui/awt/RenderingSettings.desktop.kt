@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.awt
 
-import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import org.jetbrains.skiko.SkikoProperties
 
@@ -58,14 +57,8 @@ sealed class RenderSettings {
      *   refresh, reducing latency but potentially causing visual artifacts like screen tearing.
      * - When `null`: Uses the global configuration from [SkikoProperties.vsyncEnabled].
      */
+    @ExperimentalComposeUiApi
     class SkiaSurface(val isVsyncEnabled: Boolean? = null): RenderSettings()
 
-    internal companion object {
-        internal fun fromEnvironmentVariable(): RenderSettings =
-            if (ComposeFeatureFlags.useSwingGraphics) {
-                SwingGraphics()
-            } else {
-                SkiaSurface()
-            }
-    }
+    internal companion object
 }

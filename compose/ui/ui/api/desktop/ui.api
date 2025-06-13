@@ -502,10 +502,6 @@ public final class androidx/compose/ui/awt/ComposeWindow : javax/swing/JFrame {
 	public final fun setUndecoratedResizerThickness-0680j_4 (F)V
 }
 
-public final class androidx/compose/ui/awt/RenderSettings$Companion {
-	public final fun getDefault ()Landroidx/compose/ui/awt/RenderSettings;
-}
-
 public final class androidx/compose/ui/awt/SwingDialog_desktopKt {
 	public static final fun SwingDialog (ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
