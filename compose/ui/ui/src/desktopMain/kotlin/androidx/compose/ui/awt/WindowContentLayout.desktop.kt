@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.window.LocalWindow
 
 /**
@@ -60,8 +61,8 @@ internal fun WindowContentLayout(
                 }
             }
 
-            val contentWidth = contentPlaceables.maxOfOrNull { it.measuredWidth } ?: 0
-            val contentHeight = contentPlaceables.maxOfOrNull { it.measuredHeight } ?: 0
+            val contentWidth = contentPlaceables.fastMaxOfOrNull { it.measuredWidth } ?: 0
+            val contentHeight = contentPlaceables.fastMaxOfOrNull { it.measuredHeight } ?: 0
             layout(contentWidth, contentHeight) {
                 contentPlaceables.fastForEach { placeable ->
                     placeable.place(0, 0)

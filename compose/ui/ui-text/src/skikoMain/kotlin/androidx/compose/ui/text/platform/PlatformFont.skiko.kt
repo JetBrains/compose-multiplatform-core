@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.GenericFontFamily
 import androidx.compose.ui.text.font.LoadedFontFamily
 import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.util.fastMap
 import org.jetbrains.skia.FontMgrWithFallback
 import org.jetbrains.skia.paragraph.FontCollection
 import org.jetbrains.skia.paragraph.TypefaceFontProviderWithFallback
@@ -332,7 +333,7 @@ internal class FontCache {
             is FontListFontFamily -> {
                 val fonts = fontFamily.fonts.filterIsInstance<SystemFont>()
                 if (fonts.size == fontFamily.fonts.size) {
-                    fonts.map { it.identity }
+                    fonts.fastMap { it.identity }
                 } else {
                     // not supported
                     throw IllegalArgumentException(
@@ -415,7 +416,7 @@ private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
 }
 
 internal fun FontVariation.Settings.toSkiaFontVariationList(): List<org.jetbrains.skia.FontVariation> {
-    return settings.map { setting ->
+    return settings.fastMap { setting ->
         org.jetbrains.skia.FontVariation(setting.axisName, setting.toVariationValue(null))
     }
 }

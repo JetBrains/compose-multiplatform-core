@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.lifecycle.Lifecycle
@@ -423,11 +424,12 @@ internal class ComposeWindow(
         canvas.style.width = "${boxSize.width}px"
         canvas.style.height = "${boxSize.height}px"
 
-        _windowInfo.containerSize = IntSize(width, height)
+        val containerSize = IntSize(width, height)
+        _windowInfo.containerSize = containerSize
 
         // TODO: Align with Container/Mediator architecture
         skiaLayer.attachTo(canvas)
-        scene.size = IntSize(width, height)
+        scene.size = containerSize
         skiaLayer.needRedraw()
     }
 
@@ -476,7 +478,7 @@ internal class ComposeWindow(
         } else {
             event.changedTouches.asList()
         }
-        val pointers = touches.map { touch ->
+        val pointers = touches.fastMap { touch ->
             ComposeScenePointer(
                 id = PointerId(touch.identifier.toLong()),
                 position = Offset(

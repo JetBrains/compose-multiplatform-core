@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
 import kotlin.coroutines.CoroutineContext
@@ -275,7 +276,7 @@ private class CanvasLayersComposeSceneImpl(
      */
     private fun hoveredOwner(event: PointerInputEvent): RootNodeOwner {
         val position = event.pointers.first().position
-        return layers.lastOrNull { it.isInBounds(position) }?.owner ?: mainOwner
+        return layers.fastLastOrNull { it.isInBounds(position) }?.owner ?: mainOwner
     }
 
     /**
@@ -474,7 +475,7 @@ private class CanvasLayersComposeSceneImpl(
 
     private fun releaseFocus(layer: AttachedComposeSceneLayer) {
         if (layer == focusedLayer) {
-            focusedLayer = layers.lastOrNull { it.focusable }
+            focusedLayer = layers.fastLastOrNull { it.focusable }
 
             // Enter event to new focusedOwner will be sent via synthetic event on next frame
         }

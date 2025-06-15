@@ -36,6 +36,7 @@ import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.window.Dialog
@@ -519,7 +520,7 @@ internal class ComposeContainer(
     }
 
     private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayers get() = layers.all { !it.focusable }
+        private val noFocusableLayers get() = layers.fastAll { !it.focusable }
 
         override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
         override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers

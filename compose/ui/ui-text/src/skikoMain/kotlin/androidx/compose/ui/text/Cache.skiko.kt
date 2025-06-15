@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import androidx.compose.ui.util.fastForEach
 import org.jetbrains.skiko.currentNanoTime
 
 // Extremely simple Cache interface which is enough for ui.text needs
@@ -56,7 +57,7 @@ internal class ExpireAfterAccessCache<K, V>(
         val expireTime = now - expireAfterNanos
         accessTime.keys.takeWhile {
             accessTime[it]!! < expireTime
-        }.forEach {
+        }.fastForEach {
             map.remove(it)
             accessTime.remove(it)
         }

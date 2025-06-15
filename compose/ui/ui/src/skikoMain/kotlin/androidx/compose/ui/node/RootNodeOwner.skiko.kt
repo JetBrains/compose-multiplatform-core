@@ -94,6 +94,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -203,8 +206,8 @@ internal class RootNodeOwner(
             // Don't use mainOwner.root.width here, as it strictly coerced by [constraints]
             val children = owner.root.children
             return IntSize(
-                width = children.maxOfOrNull { it.outerCoordinator.measuredWidth } ?: 0,
-                height = children.maxOfOrNull { it.outerCoordinator.measuredHeight } ?: 0,
+                width = children.fastMaxOfOrNull { it.outerCoordinator.measuredWidth } ?: 0,
+                height = children.fastMaxOfOrNull { it.outerCoordinator.measuredHeight } ?: 0,
             )
         } finally {
             measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
@@ -230,10 +233,10 @@ internal class RootNodeOwner(
                 Offset(x = width, y = 0f),
                 Offset(x = 0f, y = height),
                 Offset(x = width, y = height)
-            ).map {
+            ).fastMap {
                 platformContext.convertLocalToScreenPosition(it)
             }
-        if (corners.any { it.isUnspecified }) null else corners
+        if (corners.fastAny { it.isUnspecified }) null else corners
     }
 
     fun invalidatePositionOnScreen() {
