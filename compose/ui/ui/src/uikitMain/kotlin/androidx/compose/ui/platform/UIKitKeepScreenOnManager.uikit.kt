@@ -19,20 +19,37 @@ package androidx.compose.ui.platform
 import platform.UIKit.UIApplication
 
 internal class UIKitKeepScreenOnManager private constructor(): PlatformKeepScreenOnManager {
+
+    val isKeepScreenOnEnabled: Boolean get() = _isKeepScreenOnEnabled
+
+    private var _isKeepScreenOnEnabled: Boolean
+        get() = UIApplication.sharedApplication.idleTimerDisabled
+        set(value) { UIApplication.sharedApplication.idleTimerDisabled = value }
+
     private var keepScreenOnCount: Int = 0
 
     override fun incrementKeepScreenOnCount() {
         keepScreenOnCount++
-        updateIdleTimerState()
+        updateIsKeepScreenOnEnabled()
     }
 
     override fun decrementKeepScreenOnCount() {
         keepScreenOnCount--
-        updateIdleTimerState()
+        updateIsKeepScreenOnEnabled()
     }
 
-    private fun updateIdleTimerState() {
-        UIApplication.sharedApplication.idleTimerDisabled = keepScreenOnCount > 0
+    private fun updateIsKeepScreenOnEnabled() {
+        _isKeepScreenOnEnabled = keepScreenOnCount > 0
+    }
+
+    /**
+     * Resets the keep screen on counter to zero and updates the idle timer state.
+     *
+     * This method is intended for testing purposes only.
+     */
+    fun reset() {
+        keepScreenOnCount = 0
+        updateIsKeepScreenOnEnabled()
     }
 
     companion object {
