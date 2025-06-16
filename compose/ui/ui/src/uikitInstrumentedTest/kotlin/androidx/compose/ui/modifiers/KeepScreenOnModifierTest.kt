@@ -34,7 +34,6 @@ internal class KeepScreenOnModifierTest {
     @BeforeTest
     fun before() {
         UIKitKeepScreenOnManager.instance.reset()
-        println("Before test: isKeepScreenOnEnabled: $UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled")
     }
 
     @Test
