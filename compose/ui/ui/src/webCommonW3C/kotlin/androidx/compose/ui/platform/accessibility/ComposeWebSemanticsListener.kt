@@ -186,6 +186,8 @@ internal class ComposeWebSemanticsListener(
             htmlNode.addEventListener("click", {
                 listener.invoke()
             })
+
+            htmlNode.setAttribute("role", "button")
         }
 
         sn.layoutInfo.let {
