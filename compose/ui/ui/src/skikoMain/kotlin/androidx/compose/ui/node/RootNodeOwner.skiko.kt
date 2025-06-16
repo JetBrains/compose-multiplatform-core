@@ -96,6 +96,7 @@ import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
@@ -206,8 +207,8 @@ internal class RootNodeOwner(
             // Don't use mainOwner.root.width here, as it strictly coerced by [constraints]
             val children = owner.root.children
             return IntSize(
-                width = children.fastMaxOfOrNull { it.outerCoordinator.measuredWidth } ?: 0,
-                height = children.fastMaxOfOrNull { it.outerCoordinator.measuredHeight } ?: 0,
+                width = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredWidth },
+                height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
             measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)

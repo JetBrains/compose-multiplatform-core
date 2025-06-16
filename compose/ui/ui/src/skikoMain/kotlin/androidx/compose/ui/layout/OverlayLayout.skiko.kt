@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastMaxOfOrNull
 
 /**
@@ -35,8 +36,8 @@ internal fun OverlayLayout(modifier: Modifier, content: @Composable () -> Unit) 
     measurePolicy = { measurables, constraints ->
         val placeables = measurables.fastMap { it.measure(constraints) }
         layout(
-            placeables.fastMaxOfOrNull { it.width } ?: constraints.minWidth,
-            placeables.fastMaxOfOrNull { it.height } ?: constraints.minHeight
+            placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
+            placeables.fastMaxOfOrDefault(constraints.minHeight) { it.height }
         ) {
             placeables.fastForEach {
                 it.place(0, 0)
