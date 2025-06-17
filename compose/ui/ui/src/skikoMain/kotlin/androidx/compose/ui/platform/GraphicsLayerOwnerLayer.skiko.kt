@@ -145,6 +145,12 @@ internal class GraphicsLayerOwnerLayer(
         if (maybeChangedFields and Fields.RenderEffect != 0) {
             graphicsLayer.renderEffect = scope.renderEffect
         }
+        if (maybeChangedFields and Fields.ColorFilter != 0) {
+            graphicsLayer.colorFilter = scope.colorFilter
+        }
+        if (maybeChangedFields and Fields.BlendMode != 0) {
+            graphicsLayer.blendMode = scope.blendMode
+        }
         if (maybeChangedFields and Fields.CompositingStrategy != 0) {
             graphicsLayer.compositingStrategy =
                 when (scope.compositingStrategy) {
