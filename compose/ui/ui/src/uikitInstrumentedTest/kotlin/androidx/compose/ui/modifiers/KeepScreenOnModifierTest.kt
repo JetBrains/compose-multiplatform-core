@@ -22,31 +22,34 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.keepScreenOn
-import androidx.compose.ui.platform.UIKitKeepScreenOnManager
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import kotlin.test.BeforeTest
+import kotlin.native.runtime.GC
+import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import platform.UIKit.UIApplication
 
 internal class KeepScreenOnModifierTest {
 
-    @BeforeTest
-    fun before() {
-        UIKitKeepScreenOnManager.instance.reset()
-    }
+    val isKeepScreenOnEnabled: Boolean get() = UIApplication.sharedApplication.idleTimerDisabled
 
     @Test
     fun testFlagOnWhenModifierAdded() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         setContent {
             Box(Modifier.keepScreenOn())
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
     }
 
     @Test
     fun testFlagOffWhenModifierRemoved() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -55,17 +58,19 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertFalse(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertFalse(isKeepScreenOnEnabled)
     }
 
     @Test
     fun testFlagOffWhenParentRemovedAndModifierInChild() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -78,17 +83,19 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertFalse(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertFalse(isKeepScreenOnEnabled)
     }
 
     @Test
     fun testFlagOnWhenParentRemovedAndModifierInSibling() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -102,17 +109,19 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
     }
 
     @Test
     fun testFlagOnWhenModifierRemovedInChild() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -126,17 +135,19 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
     }
 
     @Test
     fun testFlagOnWhenModifierRemovedInSibling() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -148,18 +159,20 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
     }
 
 
     @Test
     fun testFlagOffWhenAllModifiersRemoved() = runUIKitInstrumentedTest {
+        cleanupMemory()
+
         var attach by mutableStateOf(true)
 
         setContent {
@@ -173,12 +186,20 @@ internal class KeepScreenOnModifierTest {
             }
         }
 
-        assertTrue(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertTrue(isKeepScreenOnEnabled)
 
         attach = false
 
         waitForIdle()
 
-        assertFalse(UIKitKeepScreenOnManager.instance.isKeepScreenOnEnabled)
+        assertFalse(isKeepScreenOnEnabled)
+    }
+}
+
+@OptIn(NativeRuntimeApi::class)
+private fun UIKitInstrumentedTest.cleanupMemory() {
+    repeat(6) {
+        delay(100)
+        GC.collect()
     }
 }
