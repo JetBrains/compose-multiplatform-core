@@ -30,11 +30,10 @@ internal class KeepScreenOnManager {
     fun decrementKeepScreenOnCount(client: Any) {
         val count = clientCounts.getOrElse(client) { return }
 
-        val decrementedCount = count - 1
-        if (decrementedCount < 1) {
+        if (count <= 1) {
             clientCounts.remove(client)
         } else {
-            clientCounts[client] = decrementedCount
+            clientCounts[client] = count - 1
         }
         keepScreenOnCount--
     }
