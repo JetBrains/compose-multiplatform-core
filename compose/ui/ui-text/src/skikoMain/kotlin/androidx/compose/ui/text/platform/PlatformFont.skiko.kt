@@ -346,13 +346,11 @@ internal class FontCache {
                     )
                 }
             }
-
             is LoadedFontFamily -> {
                 val typeface = fontFamily.typeface as SkiaBackedTypeface
                 ensureRegistered(typeface.nativeTypeface, typeface.alias)
                 listOf(typeface.alias)
             }
-
             is GenericFontFamily -> fontFamily.aliases
             is DefaultFontFamily -> FontFamily.SansSerif.aliases
             else -> throw IllegalArgumentException("Unknown font family type: $fontFamily")
@@ -383,15 +381,10 @@ private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
             mapOf(
                 FontFamily.SansSerif.name to listOf("Noto Sans", "DejaVu Sans", "Arial"),
                 FontFamily.Serif.name to listOf("Noto Serif", "DejaVu Serif", "Times New Roman"),
-                FontFamily.Monospace.name to listOf(
-                    "Noto Sans Mono",
-                    "DejaVu Sans Mono",
-                    "Consolas"
-                ),
+                FontFamily.Monospace.name to listOf("Noto Sans Mono", "DejaVu Sans Mono", "Consolas"),
                 // better alternative?
                 FontFamily.Cursive.name to listOf("Comic Sans MS")
             )
-
         Platform.Windows ->
             mapOf(
                 // Segoe UI is the Windows system font, so try it first.
@@ -401,29 +394,15 @@ private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
                 FontFamily.Monospace.name to listOf("Consolas"),
                 FontFamily.Cursive.name to listOf("Comic Sans MS")
             )
-
         Platform.MacOS, Platform.IOS, Platform.TvOS, Platform.WatchOS ->
             mapOf(
                 // .AppleSystem* aliases is the only legal way to get default SF and NY fonts.
-                FontFamily.SansSerif.name to listOf(
-                    ".AppleSystemUIFont",
-                    "Helvetica Neue",
-                    "Helvetica"
-                ),
-                FontFamily.Serif.name to listOf(
-                    ".AppleSystemUIFontSerif",
-                    "Times",
-                    "Times New Roman"
-                ),
-                FontFamily.Monospace.name to listOf(
-                    ".AppleSystemUIFontMonospaced",
-                    "Menlo",
-                    "Courier"
-                ),
+                FontFamily.SansSerif.name to listOf(".AppleSystemUIFont", "Helvetica Neue", "Helvetica"),
+                FontFamily.Serif.name to listOf(".AppleSystemUIFontSerif", "Times", "Times New Roman"),
+                FontFamily.Monospace.name to listOf(".AppleSystemUIFontMonospaced", "Menlo", "Courier"),
                 // Safari "font-family: cursive" real font names from macOS and iOS.
                 FontFamily.Cursive.name to listOf("Apple Chancery", "Snell Roundhand")
             )
-
         Platform.Android -> // https://m3.material.io/styles/typography/fonts
             mapOf(
                 FontFamily.SansSerif.name to listOf("Roboto", "Noto Sans"),
@@ -431,7 +410,6 @@ private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
                 FontFamily.Monospace.name to listOf("Roboto Mono", "Noto Sans Mono"),
                 FontFamily.Cursive.name to listOf("Comic Sans MS")
             )
-
         Platform.Unknown ->
             mapOf(
                 FontFamily.SansSerif.name to listOf("Arial"),
