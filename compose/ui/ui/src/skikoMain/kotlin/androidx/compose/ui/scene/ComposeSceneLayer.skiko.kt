@@ -111,7 +111,7 @@ interface ComposeSceneLayer {
 
     /**
      * Update the composition with the content described by the [content] composable. After this
-     * has been called the changes to produce the initial composition has been calculated and
+     * has been called, the changes to produce the initial composition have been calculated and
      * applied to the composition.
      *
      * Will throw an [IllegalStateException] if the composition has been disposed.
@@ -164,7 +164,10 @@ interface ComposeSceneLayer {
  * the current [ComposeScene]. This layer can be utilized to display content
  * as a new [LayoutNode] tree.
  *
- * @param focusable Indicates whether the layer is focusable. Default value is false.
+ * @see Popup
+ * @see Dialog
+ *
+ * @param focusable Indicates whether the layer is focusable. The default value is false.
  * @return The created [ComposeSceneLayer].
  */
 @Composable

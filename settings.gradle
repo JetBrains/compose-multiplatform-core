@@ -267,4 +267,4 @@ includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 includeBuild("placeholder")
 
 includeProject(":mpp")
-includeProject(":performance:performance-annotation")
+
