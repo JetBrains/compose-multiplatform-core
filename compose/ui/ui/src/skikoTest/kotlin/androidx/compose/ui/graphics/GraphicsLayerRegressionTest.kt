@@ -50,8 +50,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 
-@ExperimentalTestApi
-class GraphicsLayerTest {
+@OptIn(ExperimentalTestApi::class)
+class GraphicsLayerRegressionTest {
 
     // Bug: https://youtrack.jetbrains.com/issue/CMP-6660
     @Test
