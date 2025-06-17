@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo
+package androidx.compose.mpp.demo.graphics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
