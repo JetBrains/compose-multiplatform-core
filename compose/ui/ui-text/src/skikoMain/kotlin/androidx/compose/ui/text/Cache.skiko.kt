@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.text
 
-import androidx.compose.ui.util.fastForEach
+
 import org.jetbrains.skiko.currentNanoTime
 
 // Extremely simple Cache interface which is enough for ui.text needs
