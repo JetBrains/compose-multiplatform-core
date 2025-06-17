@@ -61,6 +61,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.keepscreenon.KeepScreenOnManager
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
@@ -107,6 +108,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
@@ -135,7 +137,7 @@ internal class RootNodeOwner(
     private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
     private val coroutineScope = CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
-
+    private val keepScreenOnManager = KeepScreenOnManager.instance
     private val _owner = OwnerImpl(layoutDirection, coroutineContext)
     val owner: Owner get() = _owner
 
@@ -182,6 +184,7 @@ internal class RootNodeOwner(
         platformContext.rootForTestListener?.onRootForTestDisposed(rootForTest)
         snapshotObserver.stopObserving()
         graphicsContext.dispose()
+
         // we don't need to call root.detach() because root will be garbage collected
         isDisposed = true
     }
@@ -692,11 +695,13 @@ internal class RootNodeOwner(
         }
 
         override fun incrementKeepScreenOnCount() {
-            platformContext.keepScreenOnManager.incrementKeepScreenOnCount()
+            keepScreenOnManager.incrementKeepScreenOnCount(this@RootNodeOwner)
+            platformContext.isKeepScreenOnEnabled = keepScreenOnManager.isKeepScreenOnEnabled
         }
 
         override fun decrementKeepScreenOnCount() {
-            platformContext.keepScreenOnManager.decrementKeepScreenOnCount()
+            keepScreenOnManager.decrementKeepScreenOnCount(this@RootNodeOwner)
+            platformContext.isKeepScreenOnEnabled = keepScreenOnManager.isKeepScreenOnEnabled
         }
     }
 
