@@ -16,6 +16,9 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,4 +39,41 @@ internal fun AssertThat<*>.containsExactly(vararg varargs: Any?) {
 
 internal fun <T> assertThat(t: T): AssertThat<T> {
     return AssertThat(t)
+}
+
+internal fun assertColorsEqual(
+    expected: Color,
+    actual: Color,
+    alphaTolerance: Float = 0.05f,
+    error: () -> String = { "$expected and $actual are not similar!" },
+) {
+    val errorString = error()
+    assertEquals(expected.red, actual.red, alphaTolerance, errorString)
+    assertEquals(expected.green, actual.green, alphaTolerance, errorString)
+    assertEquals(expected.blue, actual.blue, alphaTolerance, errorString)
+    assertEquals(expected.alpha, actual.alpha, alphaTolerance, errorString)
+}
+
+internal fun assertOffsetEqual(
+    expected: Offset,
+    actual: Offset,
+    alphaTolerance: Float = 0.05f,
+    error: () -> String = { "$expected and $actual are not similar!" },
+) {
+    val errorString = error()
+    assertEquals(expected.x, actual.x, alphaTolerance, errorString)
+    assertEquals(expected.y, actual.y, alphaTolerance, errorString)
+}
+
+internal fun assertRectEqual(
+    expected: Rect,
+    actual: Rect,
+    alphaTolerance: Float = 0.05f,
+    error: () -> String = { "$expected and $actual are not similar!" },
+) {
+    val errorString = error()
+    assertEquals(expected.left, actual.left, alphaTolerance, errorString)
+    assertEquals(expected.right, actual.right, alphaTolerance, errorString)
+    assertEquals(expected.top, actual.top, alphaTolerance, errorString)
+    assertEquals(expected.bottom, actual.bottom, alphaTolerance, errorString)
 }

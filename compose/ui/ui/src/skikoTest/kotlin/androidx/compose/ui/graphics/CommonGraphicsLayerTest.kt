@@ -40,6 +40,8 @@ import androidx.compose.ui.FixedSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Padding
 import androidx.compose.ui.assertColorsEqual
+import androidx.compose.ui.assertOffsetEqual
+import androidx.compose.ui.assertRectEqual
 import androidx.compose.ui.assertThat
 import androidx.compose.ui.background
 import androidx.compose.ui.draw.drawBehind
@@ -315,10 +317,10 @@ class CommonGraphicsLayerTest {
         }
 
         onRoot().apply {
-            assertEquals(Offset(15f, 5f), coords2!!.localPositionOf(coords1!!, Offset.Zero))
-            assertEquals(Offset(-5f, 5f), coords2!!.localPositionOf(coords1!!, Offset(20f, 0f)))
-            assertEquals(Rect(-5f, -5f, 15f, 5f), coords2!!.localBoundingBoxOf(coords1!!, false))
-            assertEquals(Rect(0f, 0f, 10f, 5f), coords2!!.localBoundingBoxOf(coords1!!, true))
+            assertOffsetEqual(Offset(15f, 5f), coords2!!.localPositionOf(coords1!!, Offset.Zero))
+            assertOffsetEqual(Offset(-5f, 5f), coords2!!.localPositionOf(coords1!!, Offset(20f, 0f)))
+            assertRectEqual(Rect(-5f, -5f, 15f, 5f), coords2!!.localBoundingBoxOf(coords1!!, false))
+            assertRectEqual(Rect(0f, 0f, 10f, 5f), coords2!!.localBoundingBoxOf(coords1!!, true))
         }
     }
 
@@ -1285,7 +1287,7 @@ class CommonGraphicsLayerTest {
             }
         }
 
-        runOnIdle { assertThat(bounds).isEqualTo(Rect(0f, 0f, 10f, 10f)) }
+        runOnIdle { assertRectEqual(bounds, Rect(0f, 0f, 10f, 10f)) }
     }
 
     @Test
@@ -1300,7 +1302,7 @@ class CommonGraphicsLayerTest {
             }
         }
 
-        runOnIdle { assertThat(bounds).isEqualTo(Rect(0f, 0f, 9f, 9f)) }
+        runOnIdle { assertRectEqual(bounds, Rect(0f, 0f, 9f, 9f)) }
     }
 
     @Test
@@ -1320,7 +1322,7 @@ class CommonGraphicsLayerTest {
             }
         }
 
-        runOnIdle { assertThat(bounds).isEqualTo(Rect(10f, 10f, 20f, 20f)) }
+        runOnIdle { assertRectEqual(bounds, Rect(10f, 10f, 20f, 20f)) }
     }
 
     @Test

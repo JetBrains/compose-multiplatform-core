@@ -47,18 +47,6 @@ import org.jetbrains.skia.Bitmap
 
 // A copy from androidInstrumentedTest/kotlin/androidx/compose/ui/AndroidLayoutDrawTest.kt
 
-fun assertColorsEqual(
-    expected: Color,
-    color: Color,
-    error: () -> String = { "$expected and $color are not similar!" },
-) {
-    val errorString = error()
-    assertEquals(expected.red, color.red, 0.05f, errorString)
-    assertEquals(expected.green, color.green, 0.05f, errorString)
-    assertEquals(expected.blue, color.blue, 0.05f, errorString)
-    assertEquals(expected.alpha, color.alpha, 0.05f, errorString)
-}
-
 @Composable
 fun AtLeastSize(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
     Layout(
