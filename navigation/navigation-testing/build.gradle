@@ -70,14 +70,6 @@ androidXMultiplatform {
             }
         }
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
         jvmMain {
             dependsOn(commonMain)
         }
@@ -88,16 +80,6 @@ androidXMultiplatform {
                 runtimeOnly(libs.kotlinTestJunit)
                 implementation(libs.junit)
             }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(nonAndroidTest)
         }
 
         androidMain {
@@ -137,12 +119,49 @@ androidXMultiplatform {
             }
         }
 
-         targets.configureEach { target ->
-             if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
-                 target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
-                 target.compilations["test"].defaultSourceSet.dependsOn(nonAndroidTest)
-             }
-         }
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
     }
 }
 

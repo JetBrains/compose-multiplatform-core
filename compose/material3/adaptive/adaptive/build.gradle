@@ -100,19 +100,45 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
         }
 
-        skikoTest {
+        nonAndroidTest {
             dependsOn(commonTest)
         }
 
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
+        }
+
         targets.configureEach { target ->
-            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(skikoMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(skikoTest)
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
