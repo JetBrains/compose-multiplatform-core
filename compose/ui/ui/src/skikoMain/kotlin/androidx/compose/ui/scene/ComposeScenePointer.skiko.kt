@@ -160,7 +160,7 @@ internal fun PointerInputEvent(
  */
 @InternalComposeUiApi
 @JvmInline
-value class PointerEventResult internal constructor(val value: Int) {
+value class PointerEventResult internal constructor(internal val value: Int) {
 
     constructor(
         anyMovementConsumed: Boolean = false,
