@@ -12,12 +12,18 @@ killall Simulator
 PREF_PLIST=~/iphonesimulator.plist
 defaults export com.apple.iphonesimulator - > "$PREF_PLIST"
 
+echo "iphonesimulator.plist before:"
+cat "$PREF_PLIST"
+
 # Adding "ConnectHardwareKeyboard = false" for every simulator from config
 /usr/libexec/PlistBuddy -c "Print :DevicePreferences" "$PREF_PLIST" | \
 grep -E '^[ ]{4}[^ ]' | awk '{print $1}' | sed 's/[^a-zA-Z0-9-]//g' | while read -r UUID; do
     /usr/libexec/PlistBuddy -c "Set :DevicePreferences:$UUID:ConnectHardwareKeyboard false" "$PREF_PLIST" 2>/dev/null || \
     /usr/libexec/PlistBuddy -c "Add :DevicePreferences:$UUID:ConnectHardwareKeyboard bool false" "$PREF_PLIST"
 done
+
+echo "iphonesimulator.plist after:"
+cat "$PREF_PLIST"
 
 # Import back the modified plist
 defaults import com.apple.iphonesimulator "$PREF_PLIST"
