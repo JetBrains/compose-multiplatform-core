@@ -22,22 +22,20 @@ fi
 PREF_PLIST=~/iphonesimulator.plist
 defaults export com.apple.iphonesimulator - > "$PREF_PLIST"
 
-echo "iphonesimulator.plist before:"
-cat "$PREF_PLIST"
-
 # Adding "ConnectHardwareKeyboard = false" for every simulator
 echo "$devices" | jq -r '.devices | to_entries[] | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS")) | .value[] | "\(.udid)"' | while read -r UUID; do
     /usr/libexec/PlistBuddy -c "Set :DevicePreferences:$UUID:ConnectHardwareKeyboard false" "$PREF_PLIST" 2>/dev/null || \
     /usr/libexec/PlistBuddy -c "Add :DevicePreferences:$UUID:ConnectHardwareKeyboard bool false" "$PREF_PLIST"
 done
 
-echo "iphonesimulator.plist after:"
-cat "$PREF_PLIST"
-
 # Import back the modified plist
 defaults import com.apple.iphonesimulator "$PREF_PLIST"
 
-open -a Simulator
+echo "BOOT:"
 xcrun simctl boot "iPhone 16"
+echo "BOOT: Launch sim"
+open -a Simulator
+echo "BOOT: Launch sim via AppleScript"
+osascript -e 'tell application "Simulator" to activate'
 
 xcodebuild test -scheme Launcher-CI -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=iPhone 16'
